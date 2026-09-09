@@ -265,19 +265,19 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
 
   const currentAvatar = AVATAR_LIST.find((a) => a.id === profile.avatarId) || AVATAR_LIST[0];
 
-  // Subject color styling helper (calm, intentional accents)
+  // Subject color styling helper (calm, intentional accents with dark mode contrast)
   const getSubjectBadge = (subj: Subject) => {
     switch (subj) {
       case 'Matematika':
-        return 'bg-blue-50 text-blue-700 border-blue-200';
+        return 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800/80';
       case 'IPA':
-        return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+        return 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800/80';
       case 'Bahasa Indonesia':
-        return 'bg-amber-50 text-amber-800 border-amber-200';
+        return 'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800/80';
       case 'Pendidikan Pancasila':
-        return 'bg-purple-50 text-purple-700 border-purple-200';
+        return 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/50 dark:text-purple-300 dark:border-purple-800/80';
       default:
-        return 'bg-slate-50 text-slate-700 border-slate-200';
+        return 'bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700';
     }
   };
 
@@ -628,29 +628,29 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                   className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200/90 dark:border-slate-800 shadow-card hover:shadow-card-hover hover:border-blue-300 dark:hover:border-blue-500/50 transition-all flex flex-col justify-between"
                 >
                   <div>
-                    {/* Header Row: Subject Badge & Grade Pill */}
-                    <div className="flex items-center justify-between gap-2 mb-3">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-2xl p-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 select-none flex-shrink-0">
-                          {quiz.coverEmoji}
-                        </span>
-                        <div className="min-w-0">
-                          <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md border inline-block truncate ${getSubjectBadge(quiz.subject)}`}>
-                            {quiz.subject}
-                          </span>
-                        </div>
+                    {/* Top Meta Row: Emoji on Left, Grade & Guru Pill on Right */}
+                    <div className="flex items-center justify-between gap-2 mb-3.5">
+                      <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 flex items-center justify-center text-2xl select-none flex-shrink-0 shadow-xs">
+                        {quiz.coverEmoji}
                       </div>
 
-                      <div className="flex items-center gap-1 flex-shrink-0">
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
                         {isCustom && (
-                          <span className="px-2 py-0.5 rounded-md bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 font-bold text-[10px]">
+                          <span className="px-2 py-0.5 rounded-lg bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 font-bold text-[11px]">
                             Guru
                           </span>
                         )}
-                        <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-[11px]">
+                        <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700 font-bold text-xs tracking-tight">
                           Kelas {quiz.grade}
                         </span>
                       </div>
+                    </div>
+
+                    {/* Subject Pill: Dedicated row above title, preventing horizontal collision */}
+                    <div className="mb-2">
+                      <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-md border inline-flex items-center gap-1 leading-normal ${getSubjectBadge(quiz.subject)}`}>
+                        {quiz.subject}
+                      </span>
                     </div>
 
                     {/* Title */}

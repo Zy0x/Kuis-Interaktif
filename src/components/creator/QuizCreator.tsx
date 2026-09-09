@@ -738,20 +738,25 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
             </div>
 
             {/* Simulated Card */}
-            <div className="bg-white dark:bg-slate-800/80 rounded-xl p-5 border border-slate-200 dark:border-slate-700 shadow-sm space-y-2">
+            <div className="bg-white dark:bg-slate-800/80 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 shadow-sm space-y-2.5">
               <div className="flex items-center justify-between">
-                <span className="text-3xl select-none">{coverEmoji}</span>
-                <div className="flex items-center gap-1.5">
-                  <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs">
+                <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-700/80 border border-slate-200 dark:border-slate-600 flex items-center justify-center text-2xl select-none flex-shrink-0 shadow-xs">
+                  {coverEmoji}
+                </div>
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                  <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-600 font-bold text-xs">
                     Kelas {grade} SD
-                  </span>
-                  <span className="px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-bold text-xs">
-                    {subject}
                   </span>
                 </div>
               </div>
 
-              <h4 className="text-base font-bold text-slate-900 dark:text-white mt-2">{title}</h4>
+              <div>
+                <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-md border inline-flex items-center gap-1 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800">
+                  {subject}
+                </span>
+              </div>
+
+              <h4 className="text-base font-bold text-slate-900 dark:text-white leading-snug break-words line-clamp-2">{title}</h4>
               <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{description || 'Kuis interaktif buatan Guru SD.'}</p>
 
               <div className="flex items-center justify-between text-xs text-slate-400 dark:text-slate-500 font-medium pt-3 border-t border-slate-100 dark:border-slate-700">
