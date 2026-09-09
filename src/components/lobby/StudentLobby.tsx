@@ -18,13 +18,18 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
   playClick,
 }) => {
   const profile = DataManager.getPlayerProfile();
-  const [nickname, setNickname] = useState(profile.nickname);
+  const isCustom = Boolean(
+    profile.nickname &&
+    profile.nickname.trim().toLowerCase() !== 'saya' &&
+    profile.nickname.trim().toLowerCase() !== 'bintang sd'
+  );
+  const [nickname, setNickname] = useState(isCustom ? profile.nickname : '');
   const [selectedAvatar, setSelectedAvatar] = useState(profile.avatarId);
 
   const handleStart = (e: React.FormEvent) => {
     e.preventDefault();
     playClick();
-    const cleanNick = nickname.trim() || 'Bintang SD';
+    const cleanNick = nickname.trim() || (isCustom ? profile.nickname : 'Saya');
     DataManager.savePlayerProfile({
       nickname: cleanNick,
       avatarId: selectedAvatar,

@@ -316,12 +316,19 @@ export const DataManager = {
   getPlayerProfile(): PlayerProfile {
     try {
       const data = localStorage.getItem(STORAGE_KEY_PLAYER);
-      if (data) return JSON.parse(data);
+      if (data) {
+        const parsed: PlayerProfile = JSON.parse(data);
+        if (parsed.nickname === 'Bintang SD') {
+          parsed.nickname = 'Saya';
+          localStorage.setItem(STORAGE_KEY_PLAYER, JSON.stringify(parsed));
+        }
+        return parsed;
+      }
     } catch {
       // ignore
     }
     return {
-      nickname: 'Bintang SD',
+      nickname: 'Saya',
       avatarId: 'lion',
       totalScore: 0,
       quizzesCompleted: 0,
@@ -333,6 +340,9 @@ export const DataManager = {
   savePlayerProfile(profile: Partial<PlayerProfile>): PlayerProfile {
     const current = this.getPlayerProfile();
     const updated: PlayerProfile = { ...current, ...profile };
+    if (!updated.nickname || !updated.nickname.trim()) {
+      updated.nickname = 'Saya';
+    }
     localStorage.setItem(STORAGE_KEY_PLAYER, JSON.stringify(updated));
     return updated;
   },

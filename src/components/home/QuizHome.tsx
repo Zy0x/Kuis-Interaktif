@@ -47,7 +47,16 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
   const [profile, setProfile] = useState(() => DataManager.getPlayerProfile());
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [rulesModalQuiz, setRulesModalQuiz] = useState<Quiz | null>(null);
-  const [tempNickname, setTempNickname] = useState(profile.nickname);
+
+  const isCustomName = (name?: string): boolean => {
+    if (!name) return false;
+    const trimmed = name.trim().toLowerCase();
+    return trimmed !== '' && trimmed !== 'saya' && trimmed !== 'bintang sd';
+  };
+
+  const [tempNickname, setTempNickname] = useState(
+    isCustomName(profile.nickname) ? profile.nickname : ''
+  );
   const [tempAvatar, setTempAvatar] = useState(profile.avatarId);
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState<string | null>(null);
@@ -83,8 +92,9 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
     playClick();
+    const cleanNick = tempNickname.trim() || 'Saya';
     const updated = DataManager.savePlayerProfile({
-      nickname: tempNickname.trim() || 'Bintang SD',
+      nickname: cleanNick,
       avatarId: tempAvatar,
     });
     setProfile(updated);
@@ -121,7 +131,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
       const res = await DataManager.signInStudent(studentEmail, studentPassword);
       if (res.success && res.profile) {
         setProfile(res.profile);
-        setTempNickname(res.profile.nickname);
+        setTempNickname(isCustomName(res.profile.nickname) ? res.profile.nickname : '');
         setTempAvatar(res.profile.avatarId);
         setProfileTab('guest');
         setIsProfileModalOpen(false);
@@ -148,7 +158,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
       const res = await DataManager.signUpStudent(
         studentEmail,
         studentPassword,
-        tempNickname.trim() || 'Bintang SD',
+        tempNickname.trim() || 'Saya',
         studentGrade
       );
       if (res.success && res.profile) {
@@ -169,7 +179,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
     playClick();
     const guest = await DataManager.signOutStudent();
     setProfile(guest);
-    setTempNickname(guest.nickname);
+    setTempNickname(isCustomName(guest.nickname) ? guest.nickname : '');
     setTempAvatar(guest.avatarId);
     setProfileTab('guest');
   };
@@ -263,7 +273,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
             <button
               onClick={() => {
                 playClick();
-                setTempNickname(profile.nickname);
+                setTempNickname(isCustomName(profile.nickname) ? profile.nickname : '');
                 setTempAvatar(profile.avatarId);
                 setIsProfileModalOpen(true);
               }}
@@ -273,7 +283,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
               <span className="text-xl select-none">{currentAvatar.emoji}</span>
               <div className="text-left hidden sm:block">
                 <p className="text-xs font-bold text-slate-800 leading-tight truncate max-w-[100px]">
-                  {profile.nickname}
+                  {isCustomName(profile.nickname) ? profile.nickname : 'Saya'}
                 </p>
                 <p className="text-[10px] text-amber-600 font-semibold flex items-center gap-0.5">
                   <Trophy className="w-2.5 h-2.5" /> {profile.starsEarned} Bintang
@@ -336,7 +346,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
               <Sparkles className="w-3.5 h-3.5 text-amber-300" /> Selamat Belajar Siswa Pintar
             </div>
             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
-              Halo, {profile.nickname}!
+              {isCustomName(profile.nickname) ? `Halo, ${profile.nickname}!` : 'Halo, Siswa Hebat!'}
             </h2>
             <p className="text-blue-100/90 text-sm sm:text-base leading-relaxed">
               Pilih kuis di bawah untuk mengasah pemahamanmu dengan soal bergambar yang interaktif dan kumpulkan 3 Bintang Emas!
@@ -705,9 +715,11 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                     maxLength={12}
                     value={tempNickname}
                     onChange={(e) => setTempNickname(e.target.value)}
-                    required
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none font-bold text-sm text-slate-900 min-h-[44px]"
                   />
+                  <p className="text-[11px] text-slate-400 mt-1 font-medium">
+                    Kosongkan jika ingin tetap menggunakan profil &quot;Saya&quot;.
+                  </p>
                 </div>
 
                 <div>
@@ -799,7 +811,9 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                       <CheckCircle2 className="w-8 h-8" />
                     </div>
                     <div>
-                      <h4 className="font-bold text-base text-slate-900">{profile.nickname}</h4>
+                      <h4 className="font-bold text-base text-slate-900">
+                        {isCustomName(profile.nickname) ? profile.nickname : 'Saya'}
+                      </h4>
                       <p className="text-xs text-slate-500 mt-0.5">{profile.email}</p>
                       <p className="text-xs font-bold text-amber-600 mt-2">
                         {profile.starsEarned} Bintang Tersimpan di Cloud
