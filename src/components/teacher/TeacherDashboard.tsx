@@ -497,10 +497,10 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                           onLaunchSmartboard(quiz);
                         }}
                         className="w-full py-2.5 px-3 rounded-xl font-bold text-xs sm:text-sm text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm flex items-center justify-center gap-2 min-h-[44px] btn-press transition-all"
-                        title="Buka Mode Smartboard (IFP) di Layar Depan Kelas"
+                        title="Mode IFP"
                       >
                         <Tv className="w-4 h-4" />
-                        <span>Buka Mode Smartboard (IFP)</span>
+                        <span>Mode IFP</span>
                       </button>
 
                       {/* Baris Tombol Sekunder: 2. Bagi Tautan & 3. Edit */}
@@ -510,12 +510,12 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                           type="button"
                           onClick={() => handleCopyLink(quiz)}
                           className="py-2.5 px-2.5 rounded-xl font-semibold text-xs text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 flex items-center justify-center gap-1.5 min-h-[44px] transition-colors btn-press"
-                          title="Bagi Tautan Langsung ke Siswa"
+                          title="Bagi Tautan"
                         >
                           {copiedLink === quiz.id ? (
                             <>
                               <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                              <span>Tersalin!</span>
+                              <span>Tersalin</span>
                             </>
                           ) : (
                             <>
@@ -533,10 +533,10 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                             onOpenCreator(quiz);
                           }}
                           className="py-2.5 px-2.5 rounded-xl font-semibold text-xs text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 flex items-center justify-center gap-1.5 min-h-[44px] transition-colors btn-press"
-                          title="Edit Soal & Konten Kuis Ini"
+                          title="Edit Kuis"
                         >
                           <Pencil className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                          <span>Edit Soal</span>
+                          <span>Edit</span>
                         </button>
                       </div>
                     </div>

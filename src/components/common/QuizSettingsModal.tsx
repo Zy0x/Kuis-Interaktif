@@ -11,13 +11,12 @@ import {
   RefreshCw, 
   Copy, 
   Check, 
-  Share2, 
   Printer, 
   Trash2, 
-  SlidersHorizontal,
   CopyPlus,
   BarChart3,
-  Loader2
+  Loader2,
+  ChevronRight
 } from 'lucide-react';
 
 export interface QuizSettingsModalProps {
@@ -64,7 +63,7 @@ export const QuizSettingsModal: React.FC<QuizSettingsModalProps> = ({
   const [isDuplicating, setIsDuplicating] = useState(false);
   const [isUpdatingVisibility, setIsUpdatingVisibility] = useState(false);
   const [isRandomizingPin, setIsRandomizingPin] = useState(false);
-  const [copiedType, setCopiedType] = useState<'pin' | 'link' | null>(null);
+  const [isCopiedPin, setIsCopiedPin] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Sinkronisasi state lokal dengan data kuis saat modal terbuka
@@ -120,17 +119,17 @@ export const QuizSettingsModal: React.FC<QuizSettingsModalProps> = ({
     onPrintWorksheet(quiz);
   };
 
-  // 4. Status Visibilitas (Publik / Privat)
-  const handleToggleVisibility = async (newVisibility: 'public' | 'private') => {
-    if (newVisibility === visibility || isUpdatingVisibility) return;
+  // 4. Status Visibilitas
+  const handleToggleVisibility = async () => {
+    const nextVisibility = visibility === 'public' ? 'private' : 'public';
     playClick();
-    setVisibility(newVisibility);
+    setVisibility(nextVisibility);
     setIsUpdatingVisibility(true);
     try {
-      await onSaveSettings(quiz.id, { visibility: newVisibility });
-      showToast(newVisibility === 'public' ? 'Visibilitas: Kuis kini Publik' : 'Visibilitas: Kuis kini Privat');
+      await onSaveSettings(quiz.id, { visibility: nextVisibility });
+      showToast(nextVisibility === 'public' ? 'Visibilitas: Publik' : 'Visibilitas: Privat');
     } catch (err) {
-      console.error('Gagal memperbarui visibilitas kuis:', err);
+      console.error('Gagal mengubah visibilitas:', err);
       setVisibility(quiz.visibility || 'public');
       showToast('Gagal mengubah visibilitas.');
     } finally {
@@ -138,8 +137,9 @@ export const QuizSettingsModal: React.FC<QuizSettingsModalProps> = ({
     }
   };
 
-  // 5. Konfigurasi PIN (Acak PIN Baru)
-  const handleRandomizePin = async () => {
+  // 5. Konfig PIN: Acak
+  const handleRandomizePin = async (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (isRandomizingPin) return;
     playClick();
     setIsRandomizingPin(true);
@@ -147,7 +147,7 @@ export const QuizSettingsModal: React.FC<QuizSettingsModalProps> = ({
     setPin(newPin);
     try {
       await onSaveSettings(quiz.id, { pinCode: newPin });
-      showToast(`PIN kuis diperbarui ke ${newPin}`);
+      showToast(`PIN baru: ${newPin}`);
     } catch (err) {
       console.error('Gagal memperbarui PIN:', err);
       setPin(quiz.pinCode || '1001');
@@ -157,24 +157,15 @@ export const QuizSettingsModal: React.FC<QuizSettingsModalProps> = ({
     }
   };
 
-  const handleCopyPin = () => {
+  // 5. Konfig PIN: Salin
+  const handleCopyPin = (e: React.MouseEvent) => {
+    e.stopPropagation();
     playClick();
     if (navigator.clipboard) {
       navigator.clipboard.writeText(pin);
-      setCopiedType('pin');
-      showToast('PIN tersalin ke papan klip!');
-      setTimeout(() => setCopiedType(null), 2000);
-    }
-  };
-
-  const handleCopyLink = () => {
-    playClick();
-    const url = `${window.location.origin}${window.location.pathname}?pin=${pin}`;
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(url);
-      setCopiedType('link');
-      showToast('Tautan kuis tersalin!');
-      setTimeout(() => setCopiedType(null), 2000);
+      setIsCopiedPin(true);
+      showToast('PIN tersalin!');
+      setTimeout(() => setIsCopiedPin(false), 2000);
     }
   };
 
@@ -206,26 +197,26 @@ export const QuizSettingsModal: React.FC<QuizSettingsModalProps> = ({
         aria-hidden="true"
       />
 
-      {/* Bottom Sheet on Mobile / Modal Dialog on Desktop */}
+      {/* Action Sheet / Settings Modal */}
       <div 
-        className="relative z-10 w-full sm:max-w-lg bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xl p-4 sm:p-6 pt-3 animate-slide-up max-h-[90vh] overflow-y-auto overscroll-contain pb-[max(env(safe-area-inset-bottom),1.25rem)] space-y-4 text-left"
+        className="relative z-10 w-full sm:max-w-md bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xl p-4 sm:p-5 pt-3 animate-slide-up max-h-[85vh] overflow-y-auto overscroll-contain pb-[max(env(safe-area-inset-bottom),1.25rem)] space-y-3 text-left"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Mobile Drag Pill */}
-        <div className="w-12 h-1.5 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto sm:hidden mb-1" />
+        <div className="w-10 h-1 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto sm:hidden mb-1" />
 
-        {/* Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 flex items-center justify-center text-blue-600 dark:text-blue-400">
-              <SlidersHorizontal className="w-4 h-4" />
-            </div>
-            <div>
-              <h3 id="quiz-settings-title" className="text-base font-bold text-slate-900 dark:text-white leading-tight">
-                Menu & Pengaturan Kuis
+        {/* Minimalist Header */}
+        <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+          <div className="flex items-center gap-2.5 min-w-0 pr-2">
+            <span className="text-xl p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 flex-shrink-0">
+              {quiz.coverEmoji}
+            </span>
+            <div className="min-w-0">
+              <h3 id="quiz-settings-title" className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                {quiz.title}
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Pusat tindakan dan opsi kuis interaktif
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                Kelas {quiz.grade} • {quiz.questions.length} Soal
               </p>
             </div>
           </div>
@@ -236,299 +227,162 @@ export const QuizSettingsModal: React.FC<QuizSettingsModalProps> = ({
               onClose();
             }}
             disabled={isDuplicating || isUpdatingVisibility}
-            className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors"
-            aria-label="Tutup Pengaturan"
+            className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors flex-shrink-0"
+            aria-label="Tutup"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Floating Mini Toast Feedback */}
+        {/* Toast Feedback */}
         {toastMessage && (
-          <div className="p-2.5 bg-blue-600 text-white text-xs font-semibold rounded-xl text-center shadow-md animate-fade-in">
+          <div className="py-1.5 px-3 bg-blue-600 text-white text-xs font-semibold rounded-xl text-center shadow-md animate-fade-in">
             {toastMessage}
           </div>
         )}
 
-        {/* Quiz Info Summary Pill */}
-        <div className="p-3 bg-slate-50 dark:bg-slate-850 rounded-2xl border border-slate-200/80 dark:border-slate-750 flex items-center gap-3">
-          <div className="w-11 h-11 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-2xl flex-shrink-0 shadow-xs">
-            {quiz.coverEmoji}
-          </div>
-          <div className="min-w-0 flex-1">
-            <h4 className="font-bold text-sm text-slate-900 dark:text-white truncate">
-              {quiz.title}
-            </h4>
-            <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              <span>{quiz.subject}</span>
-              <span>•</span>
-              <span>Kelas {quiz.grade}</span>
-              <span>•</span>
-              <span>{quiz.questions.length} Soal</span>
+        {/* Settings Action List */}
+        <div className="bg-slate-50/70 dark:bg-slate-850/60 rounded-2xl border border-slate-200/80 dark:border-slate-800 divide-y divide-slate-200/60 dark:divide-slate-800 overflow-hidden">
+          
+          {/* 1. Duplikat */}
+          <button
+            type="button"
+            onClick={handleDuplicate}
+            disabled={isDuplicating}
+            className="w-full px-3.5 py-3 flex items-center justify-between hover:bg-slate-100/80 dark:hover:bg-slate-800/60 transition-colors text-left min-h-[48px] btn-press"
+          >
+            <div className="flex items-center gap-3">
+              <CopyPlus className="w-4.5 h-4.5 text-blue-600 dark:text-blue-400 shrink-0" />
+              <span className="font-semibold text-xs sm:text-sm text-slate-800 dark:text-slate-200">
+                Duplikat
+              </span>
+            </div>
+            {isDuplicating ? (
+              <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />
+            ) : (
+              <ChevronRight className="w-4 h-4 text-slate-400" />
+            )}
+          </button>
+
+          {/* 2. Lihat Rekap */}
+          <button
+            type="button"
+            onClick={handleViewSubmissions}
+            className="w-full px-3.5 py-3 flex items-center justify-between hover:bg-slate-100/80 dark:hover:bg-slate-800/60 transition-colors text-left min-h-[48px] btn-press"
+          >
+            <div className="flex items-center gap-3">
+              <BarChart3 className="w-4.5 h-4.5 text-purple-600 dark:text-purple-400 shrink-0" />
+              <span className="font-semibold text-xs sm:text-sm text-slate-800 dark:text-slate-200">
+                Lihat Rekap
+              </span>
+            </div>
+            <ChevronRight className="w-4 h-4 text-slate-400" />
+          </button>
+
+          {/* 3. Cetak LKS */}
+          <button
+            type="button"
+            onClick={handlePrint}
+            className="w-full px-3.5 py-3 flex items-center justify-between hover:bg-slate-100/80 dark:hover:bg-slate-800/60 transition-colors text-left min-h-[48px] btn-press"
+          >
+            <div className="flex items-center gap-3">
+              <Printer className="w-4.5 h-4.5 text-teal-600 dark:text-teal-400 shrink-0" />
+              <span className="font-semibold text-xs sm:text-sm text-slate-800 dark:text-slate-200">
+                Cetak LKS
+              </span>
+            </div>
+            <ChevronRight className="w-4 h-4 text-slate-400" />
+          </button>
+
+          {/* 4. Status Visibilitas */}
+          <button
+            type="button"
+            onClick={handleToggleVisibility}
+            disabled={isUpdatingVisibility}
+            className="w-full px-3.5 py-2.5 flex items-center justify-between hover:bg-slate-100/80 dark:hover:bg-slate-800/60 transition-colors text-left min-h-[48px] btn-press"
+          >
+            <div className="flex items-center gap-3">
+              {visibility === 'public' ? (
+                <Globe className="w-4.5 h-4.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              ) : (
+                <Lock className="w-4.5 h-4.5 text-amber-600 dark:text-amber-400 shrink-0" />
+              )}
+              <span className="font-semibold text-xs sm:text-sm text-slate-800 dark:text-slate-200">
+                Status Visibilitas
+              </span>
+            </div>
+            <span
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-colors flex items-center gap-1.5 ${
+                visibility === 'public'
+                  ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
+                  : 'bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800'
+              }`}
+            >
+              <span className={`w-1.5 h-1.5 rounded-full ${visibility === 'public' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+              <span>{visibility === 'public' ? 'Publik' : 'Privat'}</span>
+            </span>
+          </button>
+
+          {/* 5. Konfig PIN */}
+          <div className="px-3.5 py-2 flex items-center justify-between min-h-[48px] gap-2">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <KeyRound className="w-4.5 h-4.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
+              <span className="font-semibold text-xs sm:text-sm text-slate-800 dark:text-slate-200 shrink-0">
+                PIN:
+              </span>
+              <span className="font-mono font-bold text-sm px-2 py-0.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 tracking-wider">
+                {pin}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1 shrink-0">
+              <button
+                type="button"
+                onClick={handleRandomizePin}
+                disabled={isRandomizingPin}
+                className="px-2.5 py-1.5 rounded-xl font-semibold text-xs text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 border border-indigo-200 dark:border-indigo-800 flex items-center gap-1 min-h-[44px] transition-colors btn-press"
+                title="Acak PIN"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isRandomizingPin ? 'animate-spin' : ''}`} />
+                <span>Acak</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleCopyPin}
+                className="px-2.5 py-1.5 rounded-xl font-semibold text-xs text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700 flex items-center gap-1 min-h-[44px] transition-colors btn-press"
+                title="Salin PIN"
+              >
+                {isCopiedPin ? (
+                  <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                ) : (
+                  <Copy className="w-3.5 h-3.5" />
+                )}
+                <span>{isCopiedPin ? 'Tersalin' : 'Salin'}</span>
+              </button>
             </div>
           </div>
+
         </div>
 
-        {/* 6 ACTIONS IN TITIK TIGA (SESUAI SPESIFIKASI) */}
-        <div className="space-y-3 pt-1">
-          
-          {/* 1. DUPLIKAT KUIS */}
-          <div className="p-3 bg-slate-50/80 dark:bg-slate-850/60 rounded-2xl border border-slate-200/80 dark:border-slate-800 flex items-center justify-between gap-2.5 sm:gap-3">
-            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
-              <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 flex items-center justify-center flex-shrink-0">
-                <CopyPlus className="w-5 h-5" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h4 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white leading-tight">
-                  1. Duplikat Kuis
-                </h4>
-                <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2">
-                  Gandakan soal kuis ini dengan PIN baru
-                </p>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={handleDuplicate}
-              disabled={isDuplicating}
-              className="px-3 sm:px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 min-h-[44px] flex items-center justify-center gap-1.5 transition-colors btn-press flex-shrink-0 shadow-xs whitespace-nowrap"
-              title="Gandakan kuis ini"
-            >
-              {isDuplicating ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <CopyPlus className="w-4 h-4" />
-              )}
-              <span>Duplikat</span>
-            </button>
-          </div>
-
-          {/* 2. LIHAT REKAP NILAI */}
-          <div className="p-3 bg-slate-50/80 dark:bg-slate-850/60 rounded-2xl border border-slate-200/80 dark:border-slate-800 flex items-center justify-between gap-2.5 sm:gap-3">
-            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
-              <div className="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 flex items-center justify-center flex-shrink-0">
-                <BarChart3 className="w-5 h-5" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h4 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white leading-tight">
-                  2. Lihat Rekap Nilai
-                </h4>
-                <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2">
-                  Pantau nilai dan analisis jawaban siswa
-                </p>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={handleViewSubmissions}
-              className="px-3 sm:px-3.5 py-2 rounded-xl text-xs font-bold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/40 hover:bg-purple-100 dark:hover:bg-purple-900/60 border border-purple-200 dark:border-purple-800 min-h-[44px] flex items-center justify-center gap-1.5 transition-colors btn-press flex-shrink-0 whitespace-nowrap"
-              title="Buka laporan rekap nilai kuis ini"
-            >
-              <BarChart3 className="w-4 h-4" />
-              <span>Buka Rekap</span>
-            </button>
-          </div>
-
-          {/* 3. CETAK LKS */}
-          <div className="p-3 bg-slate-50/80 dark:bg-slate-850/60 rounded-2xl border border-slate-200/80 dark:border-slate-800 flex items-center justify-between gap-2.5 sm:gap-3">
-            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
-              <div className="w-10 h-10 rounded-xl bg-teal-100 dark:bg-teal-950/50 text-teal-600 dark:text-teal-400 flex items-center justify-center flex-shrink-0">
-                <Printer className="w-5 h-5" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h4 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white leading-tight">
-                  3. Cetak Lembar LKS
-                </h4>
-                <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2">
-                  Format cetak kertas & kunci PDF
-                </p>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={handlePrint}
-              className="px-3 sm:px-3.5 py-2 rounded-xl text-xs font-bold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-900/60 border border-teal-200 dark:border-teal-800 min-h-[44px] flex items-center justify-center gap-1.5 transition-colors btn-press flex-shrink-0 whitespace-nowrap"
-              title="Cetak lembar kerja siswa untuk kuis ini"
-            >
-              <Printer className="w-4 h-4" />
-              <span>Cetak LKS</span>
-            </button>
-          </div>
-
-          {/* 4. STATUS VISIBILITAS */}
-          <div className="space-y-2 p-3 bg-slate-50/80 dark:bg-slate-850/60 rounded-2xl border border-slate-200/80 dark:border-slate-800">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                <Globe className="w-3.5 h-3.5 text-blue-500" />
-                <span>4. Status Visibilitas</span>
-              </span>
-              <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${
-                visibility === 'public'
-                  ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50'
-                  : 'text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/50'
-              }`}>
-                {visibility === 'public' ? 'Aktif: Publik' : 'Aktif: Privat'}
-              </span>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              {/* Pilihan Publik */}
-              <button
-                type="button"
-                onClick={() => handleToggleVisibility('public')}
-                disabled={isUpdatingVisibility}
-                className={`p-2.5 rounded-xl border text-left flex flex-col justify-between transition-all min-h-[64px] ${
-                  visibility === 'public'
-                    ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 dark:border-emerald-600 ring-2 ring-emerald-500/20'
-                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-750 hover:bg-slate-100 dark:hover:bg-slate-800'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-xs text-slate-900 dark:text-white flex items-center gap-1.5">
-                    <Globe className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                    Publik
-                  </span>
-                  {visibility === 'public' && (
-                    <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                  )}
-                </div>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
-                  Tampil di katalog beranda
-                </p>
-              </button>
-
-              {/* Pilihan Privat */}
-              <button
-                type="button"
-                onClick={() => handleToggleVisibility('private')}
-                disabled={isUpdatingVisibility}
-                className={`p-2.5 rounded-xl border text-left flex flex-col justify-between transition-all min-h-[64px] ${
-                  visibility === 'private'
-                    ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-500 dark:border-amber-600 ring-2 ring-amber-500/20'
-                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-750 hover:bg-slate-100 dark:hover:bg-slate-800'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-xs text-slate-900 dark:text-white flex items-center gap-1.5">
-                    <Lock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                    Privat
-                  </span>
-                  {visibility === 'private' && (
-                    <Check className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                  )}
-                </div>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
-                  Hanya via PIN & tautan
-                </p>
-              </button>
-            </div>
-          </div>
-
-          {/* 5. KONFIGURASI PIN */}
-          <div className="space-y-2 p-3 bg-blue-50/60 dark:bg-blue-950/30 rounded-2xl border border-blue-200/80 dark:border-blue-900/50">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
-                <KeyRound className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                <span>5. Konfigurasi PIN Siswa</span>
-              </span>
-              <span className="text-[10px] text-blue-600 dark:text-blue-400 font-bold uppercase">
-                Akses Langsung
-              </span>
-            </div>
-
-            <div className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-blue-200/60 dark:border-blue-800/60 space-y-2.5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-blue-600 text-white flex items-center justify-center text-xs font-bold">
-                    #
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 block font-semibold leading-none">PIN Kuis:</span>
-                    <span className="font-mono font-black text-lg text-slate-900 dark:text-white tracking-widest leading-tight">
-                      {pin}
-                    </span>
-                  </div>
-                </div>
-                <span className="text-[11px] font-semibold text-blue-600 dark:text-blue-400">
-                  4 Digit Unik
-                </span>
-              </div>
-
-              <div className="grid grid-cols-3 gap-1.5">
-                <button
-                  type="button"
-                  onClick={handleRandomizePin}
-                  disabled={isRandomizingPin}
-                  className="py-2 px-1.5 rounded-xl font-semibold text-xs text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800 flex items-center justify-center gap-1 min-h-[44px] transition-colors btn-press"
-                  title="Acak PIN 4 Digit Baru"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 shrink-0 ${isRandomizingPin ? 'animate-spin' : ''}`} />
-                  <span className="truncate">Acak</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleCopyPin}
-                  className="py-2 px-1.5 rounded-xl font-semibold text-xs text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-1 min-h-[44px] transition-colors btn-press"
-                  title="Salin PIN ke Papan Klip"
-                >
-                  {copiedType === 'pin' ? (
-                    <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                  ) : (
-                    <Copy className="w-3.5 h-3.5 shrink-0" />
-                  )}
-                  <span className="truncate">{copiedType === 'pin' ? 'Tersalin' : 'Salin PIN'}</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleCopyLink}
-                  className="py-2 px-1.5 rounded-xl font-semibold text-xs text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-1 min-h-[44px] transition-colors btn-press"
-                  title="Salin Tautan Siswa"
-                >
-                  {copiedType === 'link' ? (
-                    <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                  ) : (
-                    <Share2 className="w-3.5 h-3.5 shrink-0" />
-                  )}
-                  <span className="truncate">{copiedType === 'link' ? 'Tersalin' : 'Tautan'}</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* 6. HAPUS KUIS */}
-          <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+        {/* 6. Hapus Kuis (Destructive Action Row) */}
+        {canDelete && (
+          <div className="pt-1">
             <button
               type="button"
               onClick={handleDelete}
-              disabled={!canDelete}
-              className={`w-full py-2.5 px-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 min-h-[44px] border transition-all ${
-                canDelete
-                  ? 'bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-900/60 hover:bg-rose-100 dark:hover:bg-rose-900/50 btn-press'
-                  : 'opacity-50 cursor-not-allowed bg-slate-100 dark:bg-slate-800 text-slate-400 border-slate-200 dark:border-slate-700'
-              }`}
-              title={canDelete ? 'Hapus kuis ini dari bank soal' : 'Anda tidak memiliki wewenang menghapus kuis ini'}
+              className="w-full px-3.5 py-3 rounded-2xl bg-rose-50/80 dark:bg-rose-950/30 hover:bg-rose-100 dark:hover:bg-rose-900/40 border border-rose-200/80 dark:border-rose-900/60 flex items-center justify-between text-rose-600 dark:text-rose-400 transition-colors min-h-[48px] btn-press"
             >
-              <Trash2 className="w-4 h-4 text-rose-600 dark:text-rose-400" />
-              <span>6. Hapus Kuis Ini dari Bank Soal</span>
+              <div className="flex items-center gap-3">
+                <Trash2 className="w-4.5 h-4.5 text-rose-500 shrink-0" />
+                <span className="font-semibold text-xs sm:text-sm text-rose-700 dark:text-rose-300">
+                  Hapus Kuis
+                </span>
+              </div>
+              <ChevronRight className="w-4 h-4 text-rose-400/60" />
             </button>
           </div>
-        </div>
-
-        {/* Footer Close Button */}
-        <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-          <button
-            type="button"
-            onClick={() => {
-              playClick();
-              onClose();
-            }}
-            className="w-full py-2.5 px-4 rounded-xl font-semibold text-xs sm:text-sm text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 transition-colors min-h-[44px] flex items-center justify-center"
-          >
-            Tutup Menu
-          </button>
-        </div>
+        )}
       </div>
     </div>
   );

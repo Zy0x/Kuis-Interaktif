@@ -1,6 +1,29 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.32] - 2026-09-09
+### Perampingan Minimalis Menu Pengaturan Kuis & Eliminasi Teks Penjelas Berlebih (Ultra-Clean Settings Sheet & Minimalist Action UI)
+
+#### Optimalisasi Antarmuka & Penyederhanaan Desain (*Clean & Minimalist Action Menu*)
+- **Format Menu Pengaturan Ringkas (*Sleek Action Rows*):**
+  - Mengeliminasi seluruh teks penjelas, paragraf bertele-tele, dan komponen kontainer bersarang ganda pada menu titik tiga kuis.
+  - Setiap aksi kini disajikan sebagai tombol/baris pengaturan yang bersih (*native settings row*), minim kata-kata, dan langsung ke fungsi esensial:
+    1. **Duplikat:** Tombol baris bersih untuk menggandakan kuis seketika dengan indikator pemrosesan.
+    2. **Lihat Rekap:** Tombol baris bersih dengan panah navigasi menuju tab rekapitulasi nilai siswa.
+    3. **Cetak LKS:** Tombol baris bersih menuju format cetak lembar kerja siswa A4.
+    4. **Status Visibilitas:** Baris sakelar instan dengan lencana status aktif (*Publik* / *Privat*) yang dapat diubah dalam sekali klik tanpa kartu bersarang.
+    5. **PIN:** Baris ringkas dengan tampilan kode PIN font mono serta tombol aksi cepat *Acak* dan *Salin*.
+    6. **Hapus Kuis:** Baris aksi destruktif berlatar merah lembut dengan proteksi konfirmasi modal in-app.
+- **Penyelarasan Tombol Muka Kartu (*In-Card Buttons Refinement*):**
+  - Menyelaraskan teks tombol pada muka kartu menjadi ringkas dan tepat sasaran: `Mode IFP`, `Bagi Tautan`, dan `Edit`.
+
+#### Verifikasi Multi-Viewport (*Quality Gate Verification*)
+- Diuji pada resolusi Mobile-S (320px) hingga Desktop (1280px) menggunakan peramban nyata (Playwright).
+- Terverifikasi 100% bebas luapan horizontal (`hasDocOverflow: false`, `modalHasOverflow: false`) dengan target sentuh $\ge 44\times 44\text{ px}$.
+- Pengurangan ukuran bundel JavaScript sebesar ~7.4 kB berkat eliminasi teks redundan dan struktur DOM bersarang.
+
+---
+
 ## [2.2.31] - 2026-09-09
 ### Penataan Ulang Tombol Kartu Kuis dan Menu Titik Tiga Bebas Redundansi (Card Action Streamlining & Dedicated 6-Action Three-Dots Menu)
 
