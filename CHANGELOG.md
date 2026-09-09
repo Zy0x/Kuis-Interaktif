@@ -1,5 +1,34 @@
 # Catatan Perubahan (Changelog)
-Seluruh riwayat rilis dan pembaruan sistem **Kuis SD Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
+Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
+
+## [2.2.24] - 2026-09-09
+### Inspeksi dan Perombakan Menyeluruh Responsivitas Lintas Viewport: Mobile-S (320px) hingga IFP SmartBoard 4K (Comprehensive Multi-Viewport Precision & Zero-Overflow Refactor)
+
+#### Antarmuka Pengguna & Presisi Mobile-First (*Mobile-First Responsive Polish*)
+- **Penataan Fleksibel Beranda (`QuizHome`):**
+  - Mengatasi kendala pemotongan teks logo (`Kui...`) pada viewport Mobile-S 320px dengan mentransformasikan pill profil akun (Guru & Siswa) menjadi *icon-only* (target sentuh 44×44px) secara adaptif pada layar `<360px` (`<xs`), menjaga teks logo `Kuis Seru` tetap utuh dan jelas.
+  - Kartu input PIN kilat kini beralih otomatis dari baris menjadi susunan vertikal (`flex-col xs:flex-row`) pada layar berukuran sempit, memastikan kolom input dan tombol aksi *"Masuk Kuis ➔"* tetap proporsional tanpa pergeseran horizontal (*zero horizontal scrollbar*).
+  - Spanduk instalasi PWA (`InstallPrompt`) dipoles penuh dengan dukungan tema gelap (*dark-mode*), padding inset area aman (*safe-area-inset-bottom*), serta ukuran tombol yang padat dan presisi.
+- **Header Adaptif Dashboard Guru (`TeacherDashboard`):**
+  - Mengatur ulang komposisi header pada layar sempit: menyembunyikan ikon dekoratif pada `<360px`, memotong teks nama panjang secara anggun (*truncate*), serta menampilkan tombol *"Buat Kuis"* dalam bentuk ikon `[ + ]` ringkas sehingga tombol Tema, Tambah Kuis, dan Keluar Akun muat 100% di layar 320px tanpa terdorong ke luar layar.
+  - Tab navigasi koleksi kuis dan rekap nilai siswa kini dilengkapi `flex-shrink-0` dan bilah gulir halus (*horizontal scrollbar*), menjamin keterbacaan penuh di semua variasi resolusi ponsel Android non-reguler.
+- **Studio Penyusun Kuis (`QuizCreator`):**
+  - Header disederhanakan menjadi *"Studio Kuis Guru 🧑‍🏫"* dengan judul terpotong rapi (*truncate*) dan menyembunyikan lencana soal redundan pada layar `<640px`.
+  - Label tab 3 langkah adaptif: bertransformasi menjadi `1. Info`, `2. Soal (X)`, dan `3. Simpan` pada viewport `<360px`.
+- **Ruang Tunggu Siswa (`StudentLobby`):**
+  - Header navigasi disesuaikan menjadi `← Katalog` pada `<360px` serta menyembunyikan teks pendukung guna membebaskan ruang untuk tombol pengubah tema.
+- **Halaman Hasil Kuis (`QuizResult`):**
+  - Bilah tombol aksi sticky footer dipoles dengan gap responsif (`gap-1.5 xs:gap-2.5`) dan padding aman, memastikan tombol Beranda, Main Lagi, Bagikan Skor, dan Ganti Tema muat secara serasi pada layar 320px.
+- **Format Cetak LKS (`WorksheetPrintView`):**
+  - Tombol bilah atas dibuat ringkas (*Kembali* dan *Cetak*) pada layar perangkat mobile, menjaga kenyamanan pratinjau sebelum cetak.
+- **Pengamanan Global Viewport (`App.tsx`):**
+  - Menambahkan pembungkus global `w-full max-w-full overflow-x-hidden` untuk menjamin stabilitas layar terhadap pergeseran horizontal tak disengaja di seluruh platform.
+
+#### Kerapian Bahasa & Keterbacaan (*Readability First*)
+- **Pembersihan Imbuhan Kata 'SD' Redundan:**
+  - Menyelaraskan seluruh judul aplikasi, pesan salam (*time greetings*), keterangan LKS, dan footer menjadi netral dan berjenjang alami (`Kuis Seru`, `Ruang Pendidik`, `LEMBAR KERJA SISWA (LKS) INTERAKTIF`, `Kuis Interaktif Seru • Platform Belajar Terpadu`) sesuai prinsip desain tanpa label jenjang yang kaku.
+
+---
 
 ## [2.2.23] - 2026-09-09
 ### Perombakan Responsivitas Menyeluruh Arena Kuis: Dari Mobile-S (320px) hingga SmartBoard IFP 4K (Comprehensive Responsive Arena Overhaul & Mobile Tools Drawer)

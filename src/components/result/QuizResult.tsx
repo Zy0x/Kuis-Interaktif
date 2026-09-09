@@ -90,7 +90,7 @@ export const QuizResult: React.FC<QuizResultProps> = ({
 
   const handleShare = () => {
     playClick();
-    const shareText = `Aku baru saja meraih nilai ${score} (${stars} Bintang ⭐) di Kuis SD Seru: "${quiz.title}"!`;
+    const shareText = `Aku baru saja meraih nilai ${score} (${stars} Bintang ⭐) di Kuis Interaktif: "${quiz.title}"!`;
     if (navigator.clipboard) {
       navigator.clipboard.writeText(shareText);
       setCopiedShare(true);
@@ -299,17 +299,17 @@ export const QuizResult: React.FC<QuizResultProps> = ({
       </main>
 
       {/* Sticky Bottom Action Bar - Docked at viewport bottom, never covers content */}
-      <footer className="sticky bottom-0 w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200/80 dark:border-slate-800 p-3 sm:p-3.5 z-20 shadow-lg">
-        <div className="max-w-2xl mx-auto flex items-center gap-2.5">
+      <footer className="sticky bottom-0 w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200/80 dark:border-slate-800 p-2.5 xs:p-3 sm:p-3.5 z-20 shadow-lg pb-[max(env(safe-area-inset-bottom),0.625rem)]">
+        <div className="max-w-2xl mx-auto flex items-center gap-1.5 xs:gap-2.5">
           <button
             onClick={() => {
               playClick();
               onGoHome();
             }}
-            className="flex-1 py-2.5 px-3 rounded-xl font-bold text-xs sm:text-sm text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 flex items-center justify-center gap-1.5 min-h-[46px] btn-press"
+            className="flex-1 py-2 xs:py-2.5 px-2 xs:px-3 rounded-xl font-bold text-xs sm:text-sm text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 flex items-center justify-center gap-1 sm:gap-1.5 min-h-[44px] btn-press truncate"
           >
-            <Home className="w-4 h-4" />
-            <span>Beranda</span>
+            <Home className="w-4 h-4 flex-shrink-0" />
+            <span className="truncate">Beranda</span>
           </button>
 
           <button
@@ -317,15 +317,15 @@ export const QuizResult: React.FC<QuizResultProps> = ({
               playClick();
               onReplay();
             }}
-            className="flex-[2] py-2.5 px-3 rounded-xl font-bold text-xs sm:text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-sm flex items-center justify-center gap-1.5 min-h-[46px] btn-press"
+            className="flex-[1.5] xs:flex-[2] py-2 xs:py-2.5 px-2 xs:px-3 rounded-xl font-bold text-xs sm:text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-sm flex items-center justify-center gap-1 sm:gap-1.5 min-h-[44px] btn-press truncate"
           >
-            <RotateCcw className="w-4 h-4" />
-            <span>Main Lagi</span>
+            <RotateCcw className="w-4 h-4 flex-shrink-0" />
+            <span className="truncate">Main Lagi</span>
           </button>
 
           <button
             onClick={handleShare}
-            className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 min-h-[46px] min-w-[46px] flex items-center justify-center btn-press"
+            className="p-2 xs:p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 min-h-[44px] min-w-[44px] flex items-center justify-center btn-press flex-shrink-0"
             title="Bagikan Skor"
             aria-label="Bagikan Skor Kuis"
           >
@@ -333,7 +333,9 @@ export const QuizResult: React.FC<QuizResultProps> = ({
           </button>
 
           {/* Theme Toggle Button */}
-          <ThemeToggle isDark={isDark} onToggle={onToggleTheme} />
+          <div className="flex-shrink-0">
+            <ThemeToggle isDark={isDark} onToggle={onToggleTheme} />
+          </div>
         </div>
         {copiedShare && (
           <div className="text-center text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 mt-1 animate-fade-in">

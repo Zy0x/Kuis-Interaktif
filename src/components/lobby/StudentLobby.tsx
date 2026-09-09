@@ -26,7 +26,8 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
   const isCustom = Boolean(
     profile.nickname &&
     profile.nickname.trim().toLowerCase() !== 'saya' &&
-    profile.nickname.trim().toLowerCase() !== 'bintang sd'
+    profile.nickname.trim().toLowerCase() !== 'bintang sd' &&
+    profile.nickname.trim().toLowerCase() !== 'bintang pintar'
   );
   const [nickname, setNickname] = useState(isCustom ? profile.nickname : '');
   const [selectedAvatar, setSelectedAvatar] = useState(profile.avatarId);
@@ -45,24 +46,25 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col justify-between select-none">
       {/* Top Header */}
-      <header className="w-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-4 sm:px-8 py-3 sticky top-0 z-20 shadow-sm">
-        <div className="max-w-2xl mx-auto flex items-center justify-between">
+      <header className="w-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-3 sm:px-8 py-2.5 sm:py-3 sticky top-0 z-20 shadow-sm">
+        <div className="max-w-2xl mx-auto flex items-center justify-between gap-2">
           <button
             onClick={() => {
               playClick();
               onBackToHome();
             }}
-            className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 px-3 py-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors min-h-[44px]"
+            className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 px-2.5 sm:px-3 py-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors min-h-[44px] min-w-[44px] flex-shrink-0"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Katalog Kuis</span>
+            <span className="hidden xs:inline">Katalog Kuis</span>
+            <span className="xs:hidden">Katalog</span>
           </button>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
             <ThemeToggle isDark={isDark} onToggle={onToggleTheme} />
-            <div className="flex items-center gap-1.5">
-              <span className="text-xl">⭐</span>
-              <span className="text-xs font-bold text-slate-800 dark:text-slate-200">Ruang Kuis Siswa</span>
+            <div className="hidden xs:flex items-center gap-1.5">
+              <span className="text-lg sm:text-xl">⭐</span>
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-200">Ruang Kuis</span>
             </div>
           </div>
         </div>
@@ -192,7 +194,7 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
 
       {/* Footer */}
       <footer className="w-full py-3 text-center text-xs text-slate-400 dark:text-slate-500">
-        Kuis SD Seru • Platform Belajar Interaktif SD Indonesia
+        Kuis Interaktif Seru • Platform Belajar Terpadu
       </footer>
     </div>
   );

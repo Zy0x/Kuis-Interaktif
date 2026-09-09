@@ -24,41 +24,43 @@ export const WorksheetPrintView: React.FC<WorksheetPrintViewProps> = ({
     <div className="min-h-screen bg-slate-100 text-slate-900 flex flex-col items-center">
       
       {/* Non-Printable Top Bar */}
-      <header className="print:hidden w-full bg-white border-b border-slate-200 px-4 sm:px-8 py-3 sticky top-0 z-30 shadow-sm flex items-center justify-between">
+      <header className="print:hidden w-full bg-white border-b border-slate-200 px-3 sm:px-8 py-2.5 sm:py-3 sticky top-0 z-30 shadow-sm flex items-center justify-between gap-2">
         <button
           onClick={() => {
             playClick();
             onBack();
           }}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 min-h-[44px]"
+          className="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 min-h-[44px] min-w-[44px] flex-shrink-0"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>Kembali ke Dashboard</span>
+          <span className="hidden sm:inline">Kembali ke Dashboard</span>
+          <span className="sm:hidden">Kembali</span>
         </button>
 
-        <div className="text-center hidden sm:block">
+        <div className="text-center hidden md:block">
           <h2 className="text-sm font-bold text-slate-900">Format Cetak Lembar Kerja Siswa (A4)</h2>
           <p className="text-xs text-slate-500">Siap dicetak atau disimpan sebagai PDF</p>
         </div>
 
         <button
           onClick={handlePrint}
-          className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md min-h-[44px] btn-press"
+          className="flex items-center gap-1.5 px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md min-h-[44px] btn-press flex-shrink-0"
         >
           <Printer className="w-4 h-4" />
-          <span>Cetak / Simpan PDF</span>
+          <span className="hidden sm:inline">Cetak / Simpan PDF</span>
+          <span className="sm:hidden">Cetak</span>
         </button>
       </header>
 
       {/* Printable Sheet Wrapper (A4 Styling) */}
-      <main className="w-full max-w-[800px] my-6 print:my-0 print:w-full bg-white p-8 sm:p-12 shadow-lg print:shadow-none border print:border-none border-slate-200 rounded-2xl print:rounded-none">
+      <main className="w-full max-w-[800px] my-4 sm:my-6 print:my-0 print:w-full bg-white p-4 sm:p-8 md:p-12 shadow-lg print:shadow-none border print:border-none border-slate-200 rounded-2xl print:rounded-none">
         
         {/* LKS Header */}
         <div className="border-b-2 border-slate-900 pb-4 mb-6">
           <div className="flex items-start justify-between gap-4">
             <div>
               <span className="text-xs font-bold uppercase tracking-wider text-slate-600">
-                LEMBAR KERJA SISWA (LKS) SEKOLAH DASAR
+                LEMBAR KERJA SISWA (LKS) INTERAKTIF
               </span>
               <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight mt-0.5">
                 {quiz.title}

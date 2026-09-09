@@ -193,40 +193,39 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-16 flex flex-col">
       {/* Top Navbar */}
-      <header className="w-full bg-white dark:bg-slate-900 border-b border-slate-200/90 dark:border-slate-800 px-4 sm:px-8 py-3 sticky top-0 z-30 shadow-sm">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
+      <header className="w-full bg-white dark:bg-slate-900 border-b border-slate-200/90 dark:border-slate-800 px-2.5 xs:px-4 sm:px-8 py-2 xs:py-2.5 sm:py-3 sticky top-0 z-30 shadow-sm">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-1.5 xs:gap-2 sm:gap-3">
           
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 xs:gap-2 sm:gap-3 min-w-0">
             <button
               onClick={() => {
                 playClick();
                 onGoHome();
               }}
-              className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors"
+              className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 min-h-[40px] min-w-[40px] flex items-center justify-center transition-colors flex-shrink-0"
               title="Kembali ke Beranda"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
 
-            <div className="flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-xl shadow-sm">
-                <GraduationCap className="w-5 h-5" />
-              </div>
-              <div>
-                <h1 className="text-base sm:text-lg font-black text-slate-900 dark:text-white leading-tight flex items-center gap-1.5">
-                  <span>Dashboard Guru</span>
-                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                    Pro
-                  </span>
-                </h1>
-                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                  {teacher.fullName} • {teacher.schoolName || 'SD Indonesia'}
-                </p>
-              </div>
+            <div className="hidden xs:flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-blue-600 text-white font-bold text-base sm:text-xl shadow-sm flex-shrink-0">
+              <GraduationCap className="w-4 h-4 sm:w-5 sm:h-5" />
+            </div>
+
+            <div className="min-w-0">
+              <h1 className="text-xs xs:text-sm sm:text-base md:text-lg font-black text-slate-900 dark:text-white leading-tight flex items-center gap-1 truncate">
+                <span className="truncate">Dashboard Guru</span>
+                <span className="hidden sm:inline-block text-[10px] font-semibold px-1.5 py-0.2 rounded-full bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 flex-shrink-0">
+                  Pro
+                </span>
+              </h1>
+              <p className="text-[10px] xs:text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium truncate max-w-[100px] xs:max-w-[180px] sm:max-w-none">
+                {teacher.fullName}
+              </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 xs:gap-1.5 sm:gap-2 flex-shrink-0">
             {/* Dark / Light Mode Toggle */}
             <ThemeToggle isDark={isDark} onToggle={onToggleTheme} />
 
@@ -235,11 +234,12 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                 playClick();
                 onOpenCreator();
               }}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm min-h-[44px] shadow-sm transition-colors btn-press"
+              className="p-2 sm:px-3 sm:py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm min-h-[40px] min-w-[40px] flex items-center justify-center shadow-sm transition-colors btn-press flex-shrink-0"
+              title="Buat Kuis Baru"
+              aria-label="Buat Kuis Baru"
             >
-              <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">Buat Kuis Baru</span>
-              <span className="sm:hidden">Buat</span>
+              <Plus className="w-4 h-4 flex-shrink-0" />
+              <span className="hidden sm:inline ml-1">Buat Kuis Baru</span>
             </button>
 
             <button
@@ -247,7 +247,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                 playClick();
                 onLogout();
               }}
-              className="p-2.5 rounded-xl text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 border border-slate-200 dark:border-slate-700 min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors"
+              className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 border border-slate-200 dark:border-slate-700 min-h-[40px] min-w-[40px] flex items-center justify-center transition-colors flex-shrink-0"
               title="Keluar Akun Guru"
               aria-label="Keluar Akun Guru"
             >
@@ -265,7 +265,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
         <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-2 overflow-x-auto scrollbar-hover">
           <button
             onClick={() => handleTabChange('quizzes')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all min-h-[44px] whitespace-nowrap ${
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all min-h-[44px] whitespace-nowrap flex-shrink-0 ${
               activeTab === 'quizzes'
                 ? 'bg-slate-900 dark:bg-blue-600 text-white shadow-sm'
                 : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700'
@@ -277,7 +277,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
 
           <button
             onClick={() => handleTabChange('submissions')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all min-h-[44px] whitespace-nowrap ${
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all min-h-[44px] whitespace-nowrap flex-shrink-0 ${
               activeTab === 'submissions'
                 ? 'bg-slate-900 dark:bg-blue-600 text-white shadow-sm'
                 : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700'
@@ -418,7 +418,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                             {quiz.title}
                           </h3>
                           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">
-                            {quiz.description || 'Kuis interaktif kelas SD'}
+                            {quiz.description || 'Kuis interaktif tematik'}
                           </p>
                         </div>
                       </div>

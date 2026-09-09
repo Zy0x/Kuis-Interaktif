@@ -116,7 +116,7 @@ export const getTimeGreetingData = (phase: TimePhase, date: Date): TimeGreetingD
         emoji: '🌌',
         greetingPrefix: 'Selamat Dini Hari',
         studentQuote: 'Suasana fajar yang sejuk & tenang! Bangun lebih awal membuat pikiran segar menyambut ilmu baru.',
-        teacherQuote: 'Menyambut fajar hari baru penuh inspirasi. Ruang Pendidik SD siap mendampingi proses belajar anak didik.',
+        teacherQuote: 'Menyambut fajar hari baru penuh inspirasi. Ruang Pendidik siap mendampingi proses belajar anak didik.',
         gradientClass: 'bg-gradient-to-r from-indigo-950 via-purple-950 to-slate-900 dark:from-slate-950 dark:via-purple-950/60 dark:to-slate-900',
         currentTimeString,
       };

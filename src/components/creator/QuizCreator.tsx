@@ -297,29 +297,29 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     <div className="w-full min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-20 select-none flex flex-col">
       
       {/* Top Header */}
-      <header className="w-full sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-4 sm:px-8 py-3 shadow-sm">
-        <div className="w-full max-w-5xl mx-auto flex items-center justify-between gap-3">
+      <header className="w-full sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-3 sm:px-8 py-2.5 sm:py-3 shadow-sm">
+        <div className="w-full max-w-5xl mx-auto flex items-center justify-between gap-2 sm:gap-3">
           <button
             onClick={() => {
               playClick();
               onBack();
             }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs sm:text-sm min-h-[42px] btn-press transition-colors"
+            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 font-semibold text-xs sm:text-sm min-h-[44px] min-w-[44px] justify-center btn-press transition-colors flex-shrink-0"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Kembali</span>
+            <span className="hidden xs:inline">Kembali</span>
           </button>
 
-          <div className="text-center">
-            <h1 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-tight">
-              Studio Penyusun Kuis Guru 🧑‍🏫
+          <div className="text-center min-w-0 flex-1 px-1">
+            <h1 className="text-xs xs:text-sm sm:text-lg font-bold text-slate-900 dark:text-white leading-tight truncate">
+              Studio Kuis Guru 🧑‍🏫
             </h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+            <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium truncate hidden xs:block">
               Langkah {currentStep} dari 3: {currentStep === 1 ? 'Informasi Kuis' : currentStep === 2 ? 'Bank Soal' : 'Pratinjau'}
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
             {(title.trim() || questions.length > 0) && (
               <button
                 type="button"
@@ -327,60 +327,64 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                   playClick();
                   setShowResetConfirm(true);
                 }}
-                className="text-xs font-semibold text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 px-2.5 py-1.5 rounded-lg border border-rose-200 dark:border-rose-900/50 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors flex items-center gap-1 min-h-[36px]"
+                className="text-xs font-semibold text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 p-2 sm:px-2.5 sm:py-1.5 rounded-xl border border-rose-200 dark:border-rose-900/50 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors flex items-center gap-1 min-h-[44px] min-w-[44px] justify-center"
                 title="Hapus draf yang sedang diedit"
+                aria-label="Reset Draf"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Reset Draf</span>
+                <span className="hidden md:inline">Reset Draf</span>
               </button>
             )}
             <ThemeToggle isDark={isDark} onToggle={onToggleTheme} />
-            <span className="text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-2.5 py-1 rounded-lg">
+            <span className="hidden sm:inline-block text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-2.5 py-1.5 rounded-xl">
               {questions.length} Soal
             </span>
           </div>
         </div>
 
         {/* Step Tabs */}
-        <div className="w-full max-w-5xl mx-auto mt-2.5 grid grid-cols-3 gap-2">
+        <div className="w-full max-w-5xl mx-auto mt-2 grid grid-cols-3 gap-1.5 sm:gap-2">
           <button
             onClick={() => {
               playClick();
               setCurrentStep(1);
             }}
-            className={`py-2 rounded-lg font-bold text-xs sm:text-sm transition-all min-h-[40px] ${
+            className={`py-2 px-1 rounded-xl font-bold text-xs sm:text-sm transition-all min-h-[44px] truncate ${
               currentStep === 1
                 ? 'bg-blue-600 text-white shadow-sm'
                 : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
             }`}
           >
-            1. Info Kuis
+            <span className="hidden xs:inline">1. Info Kuis</span>
+            <span className="xs:hidden">1. Info</span>
           </button>
           <button
             onClick={() => {
               playClick();
               setCurrentStep(2);
             }}
-            className={`py-2 rounded-lg font-bold text-xs sm:text-sm transition-all min-h-[40px] ${
+            className={`py-2 px-1 rounded-xl font-bold text-xs sm:text-sm transition-all min-h-[44px] truncate ${
               currentStep === 2
                 ? 'bg-blue-600 text-white shadow-sm'
                 : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
             }`}
           >
-            2. Bank Soal ({questions.length})
+            <span className="hidden xs:inline">2. Bank Soal ({questions.length})</span>
+            <span className="xs:hidden">2. Soal ({questions.length})</span>
           </button>
           <button
             onClick={() => {
               playClick();
               setCurrentStep(3);
             }}
-            className={`py-2 rounded-lg font-bold text-xs sm:text-sm transition-all min-h-[40px] ${
+            className={`py-2 px-1 rounded-xl font-bold text-xs sm:text-sm transition-all min-h-[44px] truncate ${
               currentStep === 3
                 ? 'bg-blue-600 text-white shadow-sm'
                 : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
             }`}
           >
-            3. Pratinjau
+            <span className="hidden xs:inline">3. Pratinjau</span>
+            <span className="xs:hidden">3. Simpan</span>
           </button>
         </div>
       </header>

@@ -308,26 +308,26 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
     <div className="w-full min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-20 flex flex-col transition-colors">
       
       {/* Top Navbar - Clean, Minimalist, Professional */}
-      <header className="w-full sticky top-0 z-30 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 shadow-sm px-4 sm:px-8 lg:px-12 py-3 transition-colors">
-        <div className="w-full max-w-[2000px] mx-auto flex items-center justify-between gap-3">
+      <header className="w-full sticky top-0 z-30 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 shadow-sm px-3 sm:px-8 lg:px-12 py-2.5 sm:py-3 transition-colors">
+        <div className="w-full max-w-[2000px] mx-auto flex items-center justify-between gap-2 sm:gap-3">
           
           {/* Logo */}
-          <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-xl shadow-sm select-none">
+          <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-shrink">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-lg sm:text-xl shadow-sm select-none flex-shrink-0">
               ⭐
             </div>
-            <div>
-              <h1 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white tracking-tight leading-none">
-                Kuis SD <span className="text-blue-600 dark:text-blue-400 font-extrabold">Seru</span>
+            <div className="min-w-0">
+              <h1 className="text-base sm:text-xl font-bold text-slate-900 dark:text-white tracking-tight leading-none truncate">
+                Kuis <span className="text-blue-600 dark:text-blue-400 font-extrabold">Seru</span>
               </h1>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+              <p className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-0.5 hidden xs:block truncate">
                 Media Belajar Interaktif Kelas 1 - 6
               </p>
             </div>
           </div>
 
           {/* Right Action Icons */}
-          <div className="flex items-center gap-2 sm:gap-2.5">
+          <div className="flex items-center gap-1.5 sm:gap-2.5 flex-shrink-0">
             {/* Theme Toggle Button */}
             <ThemeToggle isDark={isDark} onToggle={onToggleTheme} playClick={playClick} />
 
@@ -337,7 +337,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                 playClick();
                 onToggleMute();
               }}
-              className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center btn-press shadow-xs"
+              className="p-2 sm:p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center btn-press shadow-xs"
               title={isMuted ? 'Nyalakan Suara' : 'Matikan Suara'}
               aria-label="Pengaturan Suara"
             >
@@ -352,20 +352,20 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                   playClick();
                   setIsTeacherProfileModalOpen(true);
                 }}
-                className="flex items-center gap-2 pl-2 sm:pl-2.5 pr-3 py-1.5 rounded-xl bg-blue-50 dark:bg-slate-800 hover:bg-blue-100 dark:hover:bg-slate-750 border border-blue-200 dark:border-slate-700 text-blue-900 dark:text-blue-100 transition-colors min-h-[44px] btn-press shadow-sm"
+                className="flex items-center gap-1.5 sm:gap-2 p-2 xs:pl-2.5 xs:pr-3 xs:py-1.5 rounded-xl bg-blue-50 dark:bg-slate-800 hover:bg-blue-100 dark:hover:bg-slate-750 border border-blue-200 dark:border-slate-700 text-blue-900 dark:text-blue-100 transition-colors min-h-[44px] min-w-[44px] justify-center btn-press shadow-sm max-w-[44px] xs:max-w-[180px] sm:max-w-[240px]"
                 title={`Profil Guru: ${teacher.fullName}`}
                 aria-label="Profil Akun Guru"
               >
-                <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold text-sm shadow-xs flex-shrink-0">
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold text-sm shadow-xs flex-shrink-0">
                   <GraduationCap className="w-4 h-4" />
                 </div>
-                <div className="text-left">
-                  <p className="text-xs font-extrabold text-blue-950 dark:text-white leading-tight truncate max-w-[120px] sm:max-w-[180px]">
-                    {teacher.fullName}
+                <div className="text-left min-w-0 hidden xs:block">
+                  <p className="text-xs font-extrabold text-blue-950 dark:text-white leading-tight truncate">
+                    {teacher.fullName?.trim() || 'Pendidik'}
                   </p>
-                  <p className="text-[10px] text-blue-700 dark:text-blue-300 font-semibold flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
-                    <span className="truncate max-w-[100px] sm:max-w-[150px]">{teacher.schoolName || 'Guru SD'}</span>
+                  <p className="text-[10px] text-blue-700 dark:text-blue-300 font-semibold items-center gap-1 hidden sm:flex">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block flex-shrink-0"></span>
+                    <span className="truncate">{teacher.schoolName || 'Pendidik'}</span>
                   </p>
                 </div>
               </button>
@@ -378,27 +378,27 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                   setTempAvatar(profile.avatarId);
                   setIsProfileModalOpen(true);
                 }}
-                className="flex items-center gap-2 pl-2 sm:pl-2.5 pr-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-100 transition-colors min-h-[44px] btn-press shadow-sm"
+                className="flex items-center gap-1.5 sm:gap-2 p-2 xs:pl-2.5 xs:pr-3 xs:py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-100 transition-colors min-h-[44px] min-w-[44px] justify-center btn-press shadow-sm max-w-[44px] xs:max-w-[160px] sm:max-w-[220px]"
                 title={`Profil Siswa: ${profile.nickname}`}
                 aria-label="Profil Akun Siswa"
               >
-                <span className="text-xl select-none">{currentAvatar.emoji}</span>
-                <div className="text-left">
-                  <p className="text-xs font-extrabold text-emerald-950 dark:text-emerald-100 leading-tight truncate max-w-[110px] sm:max-w-[160px]">
+                <span className="text-lg sm:text-xl select-none flex-shrink-0">{currentAvatar.emoji}</span>
+                <div className="text-left min-w-0 hidden xs:block">
+                  <p className="text-xs font-extrabold text-emerald-950 dark:text-emerald-100 leading-tight truncate">
                     {profile.nickname}
                   </p>
-                  <p className="text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                  <p className="text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold items-center gap-1 hidden sm:flex truncate">
                     <span>Kelas {profile.grade || 1}</span>
                     <span>•</span>
                     <span className="flex items-center gap-0.5 text-amber-600 dark:text-amber-400 font-bold">
-                      <Trophy className="w-2.5 h-2.5" /> {profile.starsEarned} ⭐
+                      <Trophy className="w-2.5 h-2.5" /> {profile.starsEarned}⭐
                     </span>
                   </p>
                 </div>
               </button>
             ) : (
               /* Mode Tamu: Masuk / Akun Button + Guest Avatar Quick Customizer */
-              <div className="flex items-center gap-1.5 sm:gap-2">
+              <div className="flex items-center gap-1 sm:gap-2">
                 <button
                   onClick={() => {
                     playClick();
@@ -408,11 +408,12 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                       onOpenTeacherPortal();
                     }
                   }}
-                  className="flex items-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm min-h-[44px] shadow-sm transition-all btn-press whitespace-nowrap"
+                  className="flex items-center gap-1 sm:gap-1.5 px-2.5 xs:px-3 sm:px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm min-h-[44px] shadow-sm transition-all btn-press whitespace-nowrap"
                   title="Pintu Masuk Guru & Siswa"
                 >
-                  <LogIn className="w-4 h-4" />
-                  <span>Masuk / Akun</span>
+                  <LogIn className="w-4 h-4 flex-shrink-0" />
+                  <span className="hidden xs:inline">Masuk / Akun</span>
+                  <span className="xs:hidden text-xs">Masuk</span>
                 </button>
 
                 <button
@@ -422,7 +423,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                     setTempAvatar(profile.avatarId);
                     setIsProfileModalOpen(true);
                   }}
-                  className="flex items-center gap-1.5 pl-2 pr-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700 transition-colors min-h-[44px] btn-press"
+                  className="hidden xs:flex items-center gap-1.5 pl-2 pr-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700 transition-colors min-h-[44px] btn-press"
                   title="Mode Tamu: Klik untuk sesuaikan nama/karakter"
                   aria-label="Pengaturan Profil Mode Tamu"
                 >
@@ -438,19 +439,19 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
       </header>
 
       {/* Main Fluid Content */}
-      <main className="w-full max-w-[2000px] mx-auto px-4 sm:px-8 lg:px-12 pt-5 sm:pt-7 space-y-6 flex-1">
+      <main className="w-full max-w-[2000px] mx-auto px-3 sm:px-8 lg:px-12 pt-4 sm:pt-7 space-y-5 sm:space-y-6 flex-1">
         
         {/* Quick PIN Entry Bar for Students */}
-        <div className="w-full bg-white dark:bg-slate-900 rounded-2xl p-3.5 sm:p-4 border border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
-          <form onSubmit={handlePinSubmit} className="flex flex-col sm:flex-row items-center gap-3">
-            <div className="flex items-center gap-2 text-slate-800 dark:text-slate-200 font-bold text-xs sm:text-sm whitespace-nowrap self-start sm:self-center">
-              <div className="w-8 h-8 rounded-xl bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 flex items-center justify-center">
+        <div className="w-full bg-white dark:bg-slate-900 rounded-2xl p-3 sm:p-4 border border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
+          <form onSubmit={handlePinSubmit} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3">
+            <div className="flex items-center gap-2 text-slate-800 dark:text-slate-200 font-bold text-xs sm:text-sm whitespace-nowrap self-start sm:self-center flex-shrink-0">
+              <div className="w-8 h-8 rounded-xl bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 flex items-center justify-center flex-shrink-0">
                 <KeyRound className="w-4 h-4" />
               </div>
-              <span>Punya PIN Kuis dari Guru?</span>
+              <span className="truncate">Punya PIN Kuis dari Guru?</span>
             </div>
 
-            <div className="flex-1 w-full flex items-center gap-2">
+            <div className="flex-1 w-full min-w-0 flex flex-col xs:flex-row items-stretch xs:items-center gap-2">
               <input
                 type="text"
                 maxLength={8}
@@ -461,13 +462,13 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                 }}
                 placeholder="Masukkan PIN Kuis..."
                 aria-label="Masukkan PIN Kuis"
-                className="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none font-mono font-bold text-xs sm:text-sm text-slate-900 dark:text-white min-h-[44px] uppercase tracking-wider placeholder:normal-case placeholder:font-sans placeholder:font-normal placeholder:tracking-normal placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                className="w-full xs:flex-1 min-w-0 px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none font-mono font-bold text-xs sm:text-sm text-slate-900 dark:text-white min-h-[44px] uppercase tracking-wider placeholder:normal-case placeholder:font-sans placeholder:font-normal placeholder:tracking-normal placeholder:text-slate-400 dark:placeholder:text-slate-500"
               />
 
               <button
                 type="submit"
                 disabled={isPinLoading || !pinInput.trim()}
-                className="px-4 sm:px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm min-h-[44px] flex items-center gap-1.5 shadow-sm transition-all btn-press disabled:opacity-50 whitespace-nowrap"
+                className="w-full xs:w-auto px-4 sm:px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm min-h-[44px] flex items-center justify-center gap-1.5 shadow-sm transition-all btn-press disabled:opacity-50 whitespace-nowrap flex-shrink-0"
               >
                 {isPinLoading ? 'Mencari...' : 'Masuk Kuis'}
                 <ArrowRight className="w-4 h-4" />
@@ -485,42 +486,42 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
 
         {/* Welcoming Header Banner - Dynamic Celestial Time-Aware (Zero-Obstruction Layout) */}
         {!teacher ? (
-          <div className={`w-full ${timeData.gradientClass} text-white rounded-2xl p-6 sm:p-8 shadow-card dark:border dark:border-slate-800 flex items-center justify-between gap-5 transition-all duration-500 relative overflow-hidden min-h-[190px] sm:min-h-[210px]`}>
+          <div className={`w-full ${timeData.gradientClass} text-white rounded-2xl p-4 xs:p-6 sm:p-8 shadow-card dark:border dark:border-slate-800 flex items-center justify-between gap-4 transition-all duration-500 relative overflow-hidden min-h-[170px] sm:min-h-[210px]`}>
             {/* Celestial Sky Visual Graphic (Dedicated Unobstructed Right Canvas) */}
             <CelestialSkyVisual phase={timeData.phase} />
 
             {/* Left Content Zone: Info, Greeting, Quote & Stats */}
-            <div className="space-y-3 max-w-md sm:max-w-lg lg:max-w-xl 2xl:max-w-2xl relative z-10">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 backdrop-blur-sm text-xs font-semibold text-white/95 border border-white/10 shadow-xs">
+            <div className="space-y-2.5 sm:space-y-3 max-w-md sm:max-w-lg lg:max-w-xl 2xl:max-w-2xl relative z-10 min-w-0">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full bg-white/15 backdrop-blur-sm text-[11px] sm:text-xs font-semibold text-white/95 border border-white/10 shadow-xs">
                 <span>{timeData.emoji}</span>
                 <span>{timeData.label}</span>
                 <span className="opacity-40">•</span>
-                <span className="font-mono text-[11px] opacity-90">{timeData.currentTimeString}</span>
+                <span className="font-mono text-[10px] sm:text-[11px] opacity-90">{timeData.currentTimeString}</span>
               </div>
 
-              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white drop-shadow-xs">
+              <h2 className="text-xl xs:text-2xl sm:text-3xl font-bold tracking-tight text-white drop-shadow-xs leading-snug break-words">
                 {isCustomName(profile.nickname) 
                   ? `${timeData.greetingPrefix}, ${profile.nickname}!` 
                   : `${timeData.greetingPrefix}, Siswa Hebat!`}
               </h2>
 
-              <p className="text-white/90 text-xs sm:text-sm leading-relaxed drop-shadow-xs max-w-md sm:max-w-lg">
+              <p className="text-white/90 text-xs sm:text-sm leading-relaxed drop-shadow-xs max-w-sm sm:max-w-lg">
                 {timeData.studentQuote}
               </p>
 
               {/* Kapsul Glassmorphism Bintang Siswa (Interaktif - Buka Profil & Avatar) */}
-              <div className="pt-1">
+              <div className="pt-0.5 sm:pt-1">
                 <button
                   type="button"
                   onClick={() => {
                     playClick();
                     setIsProfileModalOpen(true);
                   }}
-                  className="inline-flex items-center gap-3 px-3.5 sm:px-4 py-2 rounded-xl bg-white/15 hover:bg-white/25 active:scale-98 backdrop-blur-md border border-white/25 text-white transition-all shadow-sm min-h-[44px] btn-press group"
+                  className="inline-flex items-center gap-2.5 sm:gap-3 px-3 py-2 sm:px-4 sm:py-2 rounded-xl bg-white/15 hover:bg-white/25 active:scale-98 backdrop-blur-md border border-white/25 text-white transition-all shadow-sm min-h-[44px] btn-press group"
                   title="Buka Profil & Koleksi Prestasi Siswa"
                   aria-label={`Prestasi: ${profile.starsEarned} Bintang Terkumpul. Klik untuk buka profil.`}
                 >
-                  <span className="text-2xl select-none group-hover:scale-110 transition-transform">🏆</span>
+                  <span className="text-xl sm:text-2xl select-none group-hover:scale-110 transition-transform">🏆</span>
                   <div className="text-left">
                     <span className="text-xs sm:text-sm font-extrabold text-white flex items-center gap-1.5 leading-tight">
                       <span>{profile.starsEarned} Bintang Terkumpul</span>
@@ -535,38 +536,38 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
             </div>
           </div>
         ) : (
-          <div className={`w-full ${timeData.gradientClass} text-white rounded-2xl p-6 sm:p-8 shadow-card dark:border dark:border-slate-800 flex items-center justify-between gap-5 transition-all duration-500 relative overflow-hidden min-h-[190px] sm:min-h-[210px]`}>
+          <div className={`w-full ${timeData.gradientClass} text-white rounded-2xl p-4 xs:p-6 sm:p-8 shadow-card dark:border dark:border-slate-800 flex items-center justify-between gap-4 transition-all duration-500 relative overflow-hidden min-h-[170px] sm:min-h-[210px]`}>
             {/* Celestial Sky Visual Graphic (Dedicated Unobstructed Right Canvas) */}
             <CelestialSkyVisual phase={timeData.phase} />
 
             {/* Left Content Zone: Info, Greeting, Quote & Dashboard Action */}
-            <div className="space-y-3 max-w-md sm:max-w-lg lg:max-w-xl 2xl:max-w-2xl relative z-10">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 backdrop-blur-sm text-xs font-semibold text-white/95 border border-white/10 shadow-xs">
+            <div className="space-y-2.5 sm:space-y-3 max-w-md sm:max-w-lg lg:max-w-xl 2xl:max-w-2xl relative z-10 min-w-0">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full bg-white/15 backdrop-blur-sm text-[11px] sm:text-xs font-semibold text-white/95 border border-white/10 shadow-xs">
                 <GraduationCap className="w-3.5 h-3.5 text-amber-300" />
-                <span>Ruang Pendidik SD</span>
+                <span>Ruang Pendidik</span>
                 <span className="opacity-40">•</span>
                 <span>{timeData.emoji} {timeData.label}</span>
                 <span className="opacity-40">•</span>
-                <span className="font-mono text-[11px] opacity-90">{timeData.currentTimeString}</span>
+                <span className="font-mono text-[10px] sm:text-[11px] opacity-90">{timeData.currentTimeString}</span>
               </div>
 
-              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white drop-shadow-xs">
-                {timeData.greetingPrefix}, {teacher.fullName}!
+              <h2 className="text-xl xs:text-2xl sm:text-3xl font-bold tracking-tight text-white drop-shadow-xs leading-snug break-words">
+                {timeData.greetingPrefix}, {teacher.fullName?.trim() || 'Pendidik Hebat'}!
               </h2>
 
-              <p className="text-white/90 text-xs sm:text-sm leading-relaxed drop-shadow-xs max-w-md sm:max-w-lg">
-                {timeData.teacherQuote} Anda aktif di <strong className="text-white font-bold">{teacher.schoolName || 'SD Indonesia'}</strong>.
+              <p className="text-white/90 text-xs sm:text-sm leading-relaxed drop-shadow-xs max-w-sm sm:max-w-lg">
+                {timeData.teacherQuote} Anda aktif di <strong className="text-white font-bold">{teacher.schoolName || 'Pendidik'}</strong>.
               </p>
 
               {/* Tombol Aksi Dasbor Guru */}
-              <div className="pt-1">
+              <div className="pt-0.5 sm:pt-1">
                 <button
                   type="button"
                   onClick={() => {
                     playClick();
                     onOpenTeacherPortal();
                   }}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 sm:py-3 rounded-xl bg-white text-blue-950 hover:bg-white/90 dark:bg-blue-600 dark:hover:bg-blue-500 dark:text-white font-bold text-xs sm:text-sm shadow-md transition-colors min-h-[44px] btn-press"
+                  className="inline-flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl bg-white text-blue-950 hover:bg-white/90 dark:bg-blue-600 dark:hover:bg-blue-500 dark:text-white font-bold text-xs sm:text-sm shadow-md transition-colors min-h-[44px] btn-press"
                   aria-label="Buka Dashboard Guru"
                 >
                   <LayoutDashboard className="w-4 h-4 text-blue-600 dark:text-white" />
