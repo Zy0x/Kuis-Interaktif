@@ -3,20 +3,35 @@ Seluruh riwayat rilis dan pembaruan sistem **Kuis SD Seru** dicatat pada dokumen
 
 ---
 
-## [2.1.4] - 2026-09-09
-### Optimasi Presisi Mobile-First (Mobile-S, Mobile-M, Mobile-L) & Verifikasi E2E
+## [2.1.5] - 2026-09-09
+### Arsitektur Tata Letak Fluid Penuh (Mobile-S hingga Ultrawide & 4K)
 
-#### Peningkatan Kualitas & Presisi Tampilan (Improved)
-- **Dukungan Layar Mobile Ekstrem (Mobile-S 320px, Mobile-M 375px, Mobile-L 425px):**
-  - Penyempurnaan bilah navigasi atas (*Header Navbar*) agar tidak tumpang tindih pada layar 320 px (iPhone SE generasi awal, ponsel lipat, dan ponsel Android hemat daya).
-  - Target sentuh terverifikasi minimal 44×44 px hingga 48×55 px pada seluruh tombol navigasi, opsi pilihan ganda, tombol audio, dan avatar profil.
-  - Kartu kuis di Beranda otomatis menyesuaikan lebar (1 kolom pada Mobile-S/M/L, 2 kolom pada Tablet, 3 kolom pada Desktop/4K).
-  - Penyesuaian tipografi dinamis: teks pertanyaan berukuran 16–20 px dengan kontras warna tinggi memenuhi standar WCAG AA.
-- **Verifikasi End-to-End (E2E) Teruji Nyata:**
-  - Pengujian pembuatan kuis oleh guru dengan penyisipan stiker ilustrasi edukatif.
-  - Verifikasi otomatis masuknya kuis baru ke katalog Beranda dengan lencana *"Karya Guru"*.
-  - Pengujian permainan di Arena Kuis, pemilihan jawaban, penerimaan umpan balik audio, hingga perolehan skor 100 dan 3 Bintang Emas.
-  - Verifikasi tab Pembahasan Soal dan Papan Peringkat pada resolusi 320px, 375px, dan 425px.
+#### Peningkatan Kualitas & Presisi Visual (Improved)
+- **Penghapusan Celah Kosong Sisi Kanan/Kiri (Edge-to-Edge Fluidity):**
+  - Mengganti pembatas kaku `max-w-5xl` dengan kontainer adaptif cerdas `max-w-[2200px] w-full mx-auto px-4 sm:px-6 lg:px-10 xl:px-14`.
+  - Halaman kini mengisi seluruh lebar layar secara alami dan harmonis baik pada layar ponsel 320px maupun monitor layar lebar / *ultrawide* 1920px hingga 4K (2560px).
+- **Sistem Grid Dinamis Lintas Perangkat:**
+  - `grid-cols-1` pada Mobile-S (320px), Mobile-M (375px), Mobile-L (425px).
+  - `grid-cols-2` pada perangkat Tablet / iPad (640px–1024px).
+  - `grid-cols-3` pada Layar Laptop / Desktop Standar (1024px–1280px).
+  - `grid-cols-4` pada Monitor Full HD (1280px–1920px).
+  - `grid-cols-5` hingga `grid-cols-6` pada Monitor Lebar & Ultrawide (1920px–2560px+).
+- **Banner Beranda Berimbang (*Adaptive Hero Banner*):**
+  - Pada layar lebar, banner otomatis menampilkan ringkasan informasi kuis aktif dan bidang studi di sisi kanan sehingga tampilan tidak hampa atau memanjang canggung.
+  - Pada ponsel, banner tetap ringkas, ramah anak, dan mudah dioperasikan dengan satu tangan.
+- **Pencegahan Teks/Tombol Terpotong & Modal Aman:**
+  - Lencana kartu kuis menggunakan `flex-wrap` sehingga judul dan status "Karya Guru" tidak pernah berhimpitan atau saling tindih.
+  - Seluruh modal dialog (Aturan Singkat, Profil Pemain, Keluar Kuis) menggunakan pembatas tinggi `max-h-[92vh]` dan *scroll* internal mandiri agar aman dari risiko terpotong pada orientasi *landscape* ponsel pendek (1080×2460, 1080×2380).
+- **Studio Pembuat Kuis Dua Kolom:**
+  - Pada layar desktop/ultrawide, editor kuis guru otomatis membagi tampilan menjadi 2 kolom (Daftar Bank Soal di sisi kiri dan Formulir Input di sisi kanan) untuk efisiensi kerja guru.
+
+---
+
+## [2.1.4] - 2026-09-09
+### Optimasi Presisi Mobile-First (Mobile-S 320px, Mobile-M 375px, Mobile-L 425px) & Verifikasi E2E
+- Penyempurnaan bilah navigasi atas (*Header Navbar*) agar tidak tumpang tindih pada layar 320 px.
+- Target sentuh terverifikasi minimal 44×44 px hingga 48×55 px pada seluruh tombol navigasi dan pilihan kuis.
+- Penambahan berkas peluncur Windows sekali klik: `BUKA_KUIS.bat` dan `JALANKAN_KUIS_SD_SERU.bat`.
 
 ---
 
@@ -43,4 +58,4 @@ Seluruh riwayat rilis dan pembaruan sistem **Kuis SD Seru** dicatat pada dokumen
 ## [2.1.1] - 2026-09-09
 ### Rilis Perencanaan & Dokumen Kebutuhan Produk (PRD)
 - Penyusunan dokumen PRD komprehensif berdasarkan peta fitur Fase 1, Fase 2, dan Fase 3.
-- Penetapan standar mobile-first, arsitektur database Supabase, dan protokol backup admin.\n
+- Penetapan standar mobile-first, arsitektur database Supabase, dan protokol backup admin.
