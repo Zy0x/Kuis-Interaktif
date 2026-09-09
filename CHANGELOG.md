@@ -1,6 +1,28 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.29] - 2026-09-09
+### Dukungan Penuh Penghapusan & Pengujian Kuis Aktif oleh Admin serta Mekanisme Pemulihan Kuis Bawaan (Admin Active Quiz Deletion & Seed Restoration System)
+
+#### Manajemen Kuis & Pengujian Admin (*Quiz Management & Testing Control*)
+- **Penghapusan Kuis Aktif untuk Pengujian Fleksibel:**
+  - Menyediakan kemampuan penuh bagi Admin (`zy0x.noir@gmail.com`) untuk menghapus kuis aktif mana pun sewaktu-waktu demi kebutuhan pengujian tanpa hambatan.
+  - Memperbaiki pembatasan tombol hapus pada `TeacherDashboard.tsx` dan `QuizHome.tsx` yang sebelumnya hanya memeriksa prefix ID `custom_`. Kini tombol hapus aktif secara presisi berdasarkan model hak akses (`canDelete = isMasterTeacher || quiz.creatorId === teacher.id || isCustom`).
+  - Mengintegrasikan dialog konfirmasi `ConfirmDeleteModal` berstandar glassmorphic dengan proteksi sentuhan dan penguncian scroll body saat dialog terbuka.
+- **Mekanisme Pelacakan Kuis Terhapus (`DataManager`):**
+  - Mengimplementasikan `STORAGE_KEY_DELETED_QUIZZES` untuk mencatat kuis yang dihapus, memastikan kuis bawaan (*seed quizzes*) yang dihapus tidak muncul kembali saat halaman dimuat ulang.
+  - Menyelaraskan `getAllQuizzes`, `getQuizById`, dan `getQuizByPin` agar kuis terhapus konsisten disaring di semua pintu masuk pencarian.
+  - Mendukung penghapusan berjenjang pada Supabase (`quiz_questions` dihapus sebelum `quizzes`) untuk mencegah galat *foreign key constraint*.
+- **Tombol Pemulihan Kuis Bawaan (*One-Click Seed Restore*):**
+  - Menghadirkan tombol `Pulihkan Kuis Bawaan (N)` pada Dasbor Guru saat ada kuis bawaan yang terhapus, memungkinkan Admin mengembalikan seluruh bank soal pengujian kapan pun diperlukan.
+
+#### Standar Quality Gate Multi-Viewport (*Quality Gate Verification*)
+- **Presisi Responsif & Target Sentuh:**
+  - Terverifikasi pada Mobile-S (320px), Mobile-M (375px), Android tinggi 20.5:9 (393×896), dan Layar Lebar (1280px) dengan `hasOverflow: false`.
+  - Seluruh tombol aksi penghapusan memenuhi standar target sentuh minimal 44×44 px (Rule 1).
+
+---
+
 ## [2.2.28] - 2026-09-09
 ### Perbaikan Penjangkaran Bilah Atas Beranda (*Sticky Header*) saat Digulir Melalui Modernisasi Kontainer `overflow-x-clip` (Home Sticky Header Restoration & Ancestor Scroll Unification)
 

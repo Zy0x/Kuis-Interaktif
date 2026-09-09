@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { Quiz, TeacherProfile, StudentSubmission } from '../../types/quiz';
+import { MASTER_TEACHER_EMAIL } from '../../types/quiz';
 import { DataManager } from '../../lib/supabaseClient';
 import { useBackHandler } from '../../lib/navigationHistory';
 import { ThemeToggle } from '../common/ThemeToggle';
@@ -20,7 +21,9 @@ import {
   ArrowLeft,
   Share2,
   Lock,
-  Globe
+  Globe,
+  Trash2,
+  RotateCcw
 } from 'lucide-react';
 
 interface TeacherDashboardProps {
@@ -80,6 +83,8 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   const [quizToDelete, setQuizToDelete] = useState<Quiz | null>(null);
   const [isDeletingQuiz, setIsDeletingQuiz] = useState(false);
   const [exportNotice, setExportNotice] = useState<string | null>(null);
+  const isMasterTeacher = teacher.email.trim().toLowerCase() === MASTER_TEACHER_EMAIL.toLowerCase();
+  const [deletedCount, setDeletedCount] = useState<number>(() => DataManager.getDeletedQuizIds().length);
 
   // 1. Level 2 (Prioritas 50): Jika berada di tab Submissions / Generator, mundur ke Tab Kuis
   useBackHandler('teacher-tab-back', 50, () => {
@@ -97,8 +102,15 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   const loadData = async () => {
     const all = DataManager.getAllQuizzes({ teacherEmail: teacher.email, teacherId: teacher.id });
     setQuizzes(all);
+    setDeletedCount(DataManager.getDeletedQuizIds().length);
     const subs = await DataManager.getTeacherSubmissions();
     setSubmissions(subs);
+  };
+
+  const handleRestoreDefaultQuizzes = async () => {
+    playClick();
+    DataManager.restoreDefaultQuizzes();
+    await loadData();
   };
 
   const handleToggleVisibility = async (quiz: Quiz) => {
@@ -310,6 +322,17 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                   Bagikan 4 digit PIN kepada siswa atau buka di Smartboard / TV Interaktif ruang kelas.
                 </p>
               </div>
+
+              {isMasterTeacher && deletedCount > 0 && (
+                <button
+                  onClick={handleRestoreDefaultQuizzes}
+                  className="self-start sm:self-center py-2 px-3 rounded-xl font-bold text-xs text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/50 flex items-center gap-1.5 min-h-[40px] transition-colors btn-press"
+                  title="Pulihkan kuis bawaan yang pernah dihapus saat pengujian"
+                >
+                  <RotateCcw className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                  <span>Pulihkan Kuis Bawaan ({deletedCount})</span>
+                </button>
+              )}
             </div>
 
             {quizzes.length === 0 ? (
@@ -336,22 +359,33 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                     <Plus className="w-4 h-4" />
                     <span>Buat Kuis Baru</span>
                   </button>
-                  <button
-                    onClick={() => {
-                      playClick();
-                      setActiveTab('generator');
-                    }}
-                    className="w-full sm:w-auto px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 min-h-[44px] flex items-center justify-center gap-2 transition-colors btn-press"
-                  >
-                    <Zap className="w-4 h-4 text-amber-500" />
-                    <span>Generator Kilat</span>
-                  </button>
+                  {isMasterTeacher && deletedCount > 0 ? (
+                    <button
+                      onClick={handleRestoreDefaultQuizzes}
+                      className="w-full sm:w-auto px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/50 border border-amber-200 dark:border-amber-800 min-h-[44px] flex items-center justify-center gap-2 transition-colors btn-press"
+                    >
+                      <RotateCcw className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                      <span>Pulihkan Kuis Bawaan ({deletedCount})</span>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        playClick();
+                        setActiveTab('generator');
+                      }}
+                      className="w-full sm:w-auto px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 min-h-[44px] flex items-center justify-center gap-2 transition-colors btn-press"
+                    >
+                      <Zap className="w-4 h-4 text-amber-500" />
+                      <span>Generator Kilat</span>
+                    </button>
+                  )}
                 </div>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {quizzes.map((quiz) => {
                   const isCustom = quiz.id.startsWith('custom_');
+                  const canDelete = isMasterTeacher || quiz.creatorId === teacher.id || isCustom;
                   return (
                     <div
                       key={quiz.id}
@@ -476,12 +510,15 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                         </button>
                       </div>
 
-                      {isCustom && (
+                      {canDelete && (
                         <button
                           onClick={() => handlePromptDeleteQuiz(quiz)}
-                          className="w-full py-2 px-3 text-rose-600 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl text-xs font-semibold transition-colors text-center min-h-[44px] flex items-center justify-center"
+                          className="w-full py-2 px-3 text-rose-600 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl text-xs font-semibold transition-colors text-center min-h-[44px] flex items-center justify-center gap-1.5"
+                          title="Hapus kuis ini dari bank soal"
+                          aria-label={`Hapus kuis ${quiz.title}`}
                         >
-                          Hapus Kuis Ini
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Hapus Kuis Ini</span>
                         </button>
                       )}
                     </div>

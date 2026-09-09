@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { Quiz, GradeLevel, Subject, TeacherProfile } from '../../types/quiz';
+import { MASTER_TEACHER_EMAIL } from '../../types/quiz';
 import { AVATAR_LIST } from '../../data/seedQuizzes';
 import { DataManager } from '../../lib/supabaseClient';
 import { useBackHandler } from '../../lib/navigationHistory';
@@ -704,6 +705,8 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
           <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
             {filteredQuizzes.map((quiz) => {
               const isCustom = quiz.id.startsWith('custom_');
+              const isMasterTeacher = Boolean(teacher && teacher.email.trim().toLowerCase() === MASTER_TEACHER_EMAIL.toLowerCase());
+              const canDelete = Boolean(teacher) && (isMasterTeacher || quiz.creatorId === teacher?.id || isCustom);
               return (
                 <div
                   key={quiz.id}
@@ -727,9 +730,9 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                       </div>
 
                       <div className="flex items-center gap-1.5 flex-shrink-0">
-                        {isCustom && (
+                        {(isCustom || (quiz.creatorName && quiz.creatorName !== 'Pendidik')) && (
                           <span className="px-2 py-0.5 rounded-lg bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 font-bold text-[10px]">
-                            Guru
+                            {quiz.creatorName?.includes('Master') ? 'Admin' : 'Guru'}
                           </span>
                         )}
                         <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700 font-bold text-xs tracking-tight whitespace-nowrap">
@@ -770,7 +773,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                         <ChevronRight className="w-4 h-4" />
                       </button>
 
-                      {Boolean(teacher) && isCustom && (
+                      {canDelete && (
                         <button
                           onClick={(e) => handlePromptDeleteCustomQuiz(quiz, e)}
                           className="p-2.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl border border-slate-200 dark:border-slate-700 min-h-[46px] min-w-[46px] flex items-center justify-center transition-colors"

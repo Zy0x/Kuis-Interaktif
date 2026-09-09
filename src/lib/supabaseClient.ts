@@ -30,6 +30,7 @@ const STORAGE_KEY_ATTEMPTS = 'kuis_sd_attempts_v1';
 const STORAGE_KEY_PLAYER = 'kuis_sd_player_profile';
 const STORAGE_KEY_CUSTOM_QUIZZES = 'kuis_sd_custom_quizzes_v1';
 const STORAGE_KEY_TEACHER_PROFILE = 'kuis_sd_teacher_profile_v1';
+const STORAGE_KEY_DELETED_QUIZZES = 'kuis_sd_deleted_quizzes_v1';
 
 // 4-Digit PIN Helper
 export function generateRandomPin(): string {
@@ -44,38 +45,71 @@ INITIAL_QUIZZES.forEach((q, idx) => {
 });
 
 export const DataManager = {
-  // 1. Get All Quizzes (Default Seeds + Teacher Custom Quizzes)
+  // Deleted Quizzes Tracking (Supports deleting seed quizzes & custom quizzes for testing & admin control)
+  getDeletedQuizIds(): string[] {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY_DELETED_QUIZZES);
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  },
+
+  restoreDefaultQuizzes(): void {
+    try {
+      localStorage.removeItem(STORAGE_KEY_DELETED_QUIZZES);
+    } catch (e) {
+      console.warn('Error restoring default quizzes:', e);
+    }
+  },
+
+  // 1. Get All Quizzes (Default Seeds + Teacher Custom Quizzes - Filtered by Deletion)
   getAllQuizzes(options?: { publicOnly?: boolean; teacherEmail?: string; teacherId?: string }): Quiz[] {
     try {
+      const deletedIds = new Set(this.getDeletedQuizIds());
       const customStr = localStorage.getItem(STORAGE_KEY_CUSTOM_QUIZZES);
       let customQuizzes: Quiz[] = customStr ? JSON.parse(customStr) : [];
+      // Saring kuis kustom yang belum dihapus
+      customQuizzes = customQuizzes.filter((q) => !deletedIds.has(q.id));
+
+      // Saring kuis bawaan (seed) yang belum dihapus
+      const activeSeeds = INITIAL_QUIZZES.filter((q) => !deletedIds.has(q.id));
 
       // If teacher options are provided
       if (options?.teacherEmail) {
         const isMaster = options.teacherEmail.trim().toLowerCase() === MASTER_TEACHER_EMAIL.toLowerCase();
         if (isMaster) {
-          // Master Teacher owns/manages all custom quizzes + seed quizzes
-          if (options.teacherId) {
-            let changed = false;
-            customQuizzes = customQuizzes.map((q) => {
-              if (!q.creatorId || q.creatorId.startsWith('guru_demo_') || q.creatorId.startsWith('teacher_local_')) {
-                changed = true;
-                return { ...q, creatorId: options.teacherId, creatorName: q.creatorName || 'Pendidik' };
-              }
-              return q;
-            });
-            if (changed) {
-              localStorage.setItem(STORAGE_KEY_CUSTOM_QUIZZES, JSON.stringify(customQuizzes));
+          const teacherId = options.teacherId || 'teacher_master_zy0x';
+          const teacherName = this.getTeacherProfile()?.fullName || 'Bapak Aliridho (Master)';
+
+          // Migrasikan kepemilikan custom quizzes ke Master Teacher / Admin
+          let changed = false;
+          customQuizzes = customQuizzes.map((q) => {
+            if (!q.creatorId || q.creatorId.startsWith('guru_demo_') || q.creatorId.startsWith('teacher_local_')) {
+              changed = true;
+              return { ...q, creatorId: teacherId, creatorName: q.creatorName || teacherName };
             }
+            return q;
+          });
+          if (changed) {
+            localStorage.setItem(STORAGE_KEY_CUSTOM_QUIZZES, JSON.stringify(customQuizzes));
           }
-          return [...customQuizzes, ...INITIAL_QUIZZES];
+
+          // Migrasikan kepemilikan kuis aktif seed ke Master Teacher / Admin agar terikat sah ke akun admin
+          const claimedSeeds = activeSeeds.map((q) => ({
+            ...q,
+            creatorId: q.creatorId || teacherId,
+            creatorName: q.creatorName || teacherName,
+          }));
+
+          return [...customQuizzes, ...claimedSeeds];
         } else {
-          // Other teachers only see and manage their own created quizzes (starts empty for new teachers)
+          // Guru lain hanya melihat dan mengelola kuis buatannya sendiri
           return customQuizzes.filter((q) => q.creatorId === options.teacherId);
         }
       }
 
-      let all = [...customQuizzes, ...INITIAL_QUIZZES];
+      let all = [...customQuizzes, ...activeSeeds];
 
       // If public catalog filter is requested (for student & guest dashboard)
       if (options?.publicOnly) {
@@ -84,7 +118,8 @@ export const DataManager = {
 
       return all;
     } catch {
-      const seeds = INITIAL_QUIZZES;
+      const deletedIds = new Set(this.getDeletedQuizIds());
+      const seeds = INITIAL_QUIZZES.filter((q) => !deletedIds.has(q.id));
       return options?.publicOnly ? seeds.filter((q) => q.visibility !== 'private') : seeds;
     }
   },
@@ -128,6 +163,7 @@ export const DataManager = {
           .maybeSingle();
 
         if (!error && data) {
+          if (this.getDeletedQuizIds().includes(data.id)) return null;
           const rawQuestions = (data.quiz_questions as Array<{
             id: string;
             question_text: string;
@@ -183,6 +219,8 @@ export const DataManager = {
 
   // 3. Find Quiz by ID
   async getQuizById(id: string): Promise<Quiz | null> {
+    if (this.getDeletedQuizIds().includes(id)) return null;
+
     const all = this.getAllQuizzes();
     const local = all.find((q) => q.id === id);
     if (local) return local;
@@ -220,6 +258,7 @@ export const DataManager = {
           .maybeSingle();
 
         if (!error && data) {
+          if (this.getDeletedQuizIds().includes(data.id)) return null;
           const rawQuestions = (data.quiz_questions as Array<{
             id: string;
             question_text: string;
@@ -342,8 +381,8 @@ export const DataManager = {
     return quiz;
   },
 
-  // 5. Delete Custom Quiz (Strict RBAC Enforced)
-  async deleteCustomQuiz(quizId: string): Promise<void> {
+  // 5. Delete Quiz (Strict RBAC Enforced: Admin & Authorized Teachers)
+  async deleteQuiz(quizId: string): Promise<void> {
     // RBAC: Hanya akun Guru terautentikasi yang berhak menghapus kuis
     const teacher = this.getTeacherProfile();
     if (!teacher || !teacher.id) {
@@ -352,6 +391,14 @@ export const DataManager = {
     }
 
     try {
+      // 1. Simpan ke daftar kuis terhapus (mendukung penghapusan seed quiz maupun kuis kustom)
+      const deleted = this.getDeletedQuizIds();
+      if (!deleted.includes(quizId)) {
+        deleted.push(quizId);
+        localStorage.setItem(STORAGE_KEY_DELETED_QUIZZES, JSON.stringify(deleted));
+      }
+
+      // 2. Bersihkan dari custom quizzes lokal jika ada
       const customStr = localStorage.getItem(STORAGE_KEY_CUSTOM_QUIZZES);
       if (customStr) {
         let customQuizzes: Quiz[] = JSON.parse(customStr);
@@ -362,13 +409,19 @@ export const DataManager = {
       console.warn('Delete quiz error:', e);
     }
 
+    // 3. Hapus dari Supabase jika terhubung (hapus quiz_questions terlebih dahulu untuk relasi foreign key)
     if (supabase) {
       try {
+        await supabase.from('quiz_questions').delete().eq('quiz_id', quizId);
         await supabase.from('quizzes').delete().eq('id', quizId);
       } catch (err) {
         console.warn('Supabase quiz delete notice:', err);
       }
     }
+  },
+
+  deleteCustomQuiz(quizId: string): Promise<void> {
+    return this.deleteQuiz(quizId);
   },
 
   // 5b. Update Quiz Visibility (Public vs Private)
