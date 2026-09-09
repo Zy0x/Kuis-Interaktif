@@ -3,10 +3,12 @@ import type { Quiz, QuizAttemptAnswer } from '../../types/quiz';
 import { useBackHandler } from '../../lib/navigationHistory';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 import { ThemeToggle } from '../common/ThemeToggle';
+import { useQuizBgm } from '../../hooks/useQuizBgm';
 import { 
   X, 
   Volume2, 
   VolumeX, 
+  Music,
   CheckCircle, 
   XCircle, 
   ArrowRight, 
@@ -69,6 +71,44 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   const [streak, setStreak] = useState(0);
   const [isPollOpen, setIsPollOpen] = useState(false);
   const [pollVotes, setPollVotes] = useState<{ [key: number]: number }>({ 0: 0, 1: 0, 2: 0, 3: 0 });
+
+  // Procedural BGM (In-Game Backsound)
+  const {
+    isBgmMuted,
+    toggleBgmMute,
+    startBgm,
+    stopBgm,
+    pauseBgm,
+    resumeBgm,
+    setDucked,
+    setUrgent,
+  } = useQuizBgm();
+
+  // 1. Auto-start BGM on entry, auto-stop on unmount
+  useEffect(() => {
+    startBgm();
+    return () => {
+      stopBgm();
+    };
+  }, [startBgm, stopBgm]);
+
+  // 2. Pause BGM when quiz is paused or exit dialog is open
+  useEffect(() => {
+    if (isPaused || showExitConfirm) {
+      pauseBgm();
+    } else if (!isAnswerConfirmed) {
+      resumeBgm();
+    }
+  }, [isPaused, showExitConfirm, isAnswerConfirmed, pauseBgm, resumeBgm]);
+
+  // 3. Accelerate tempo during last 5 seconds countdown
+  useEffect(() => {
+    if (timeLeft <= 5 && timeLeft > 0 && !isAnswerConfirmed && !isPaused) {
+      setUrgent(true);
+    } else {
+      setUrgent(false);
+    }
+  }, [timeLeft, isAnswerConfirmed, isPaused, setUrgent]);
 
   // 1. Level 1 (Prioritas 100): Tutup Modal Polling IFP jika sedang terbuka
   useBackHandler('arena-poll-modal', 100, () => {
@@ -152,6 +192,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 
     setSelectedOption(optionIndex);
     setIsAnswerConfirmed(true);
+    setDucked(true);
 
     const isCorrect = optionIndex === question.correctIndex;
     if (isCorrect) {
@@ -186,8 +227,10 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   const handleNext = () => {
     playClick();
     if (isLastQuestion) {
+      stopBgm();
       onFinishQuiz(answersList, totalTimeSpent);
     } else {
+      setDucked(false);
       setCurrentIndex((prev) => prev + 1);
       setSelectedOption(null);
       setIsAnswerConfirmed(false);
@@ -296,16 +339,39 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
               <Users className="w-4 h-4" />
             </button>
 
-            {/* Audio Toggle */}
+            {/* SFX Audio Toggle */}
             <button
               onClick={() => {
                 playClick();
                 onToggleMute();
               }}
               className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors"
-              aria-label="Pengaturan Suara"
+              aria-label={isMuted ? 'Nyalakan Efek Suara (SFX)' : 'Matikan Efek Suara (SFX)'}
+              title={isMuted ? 'Nyalakan Efek Suara (SFX)' : 'Matikan Efek Suara (SFX)'}
             >
               {isMuted ? <VolumeX className="w-5 h-5 text-rose-500" /> : <Volume2 className="w-5 h-5 text-slate-700 dark:text-slate-300" />}
+            </button>
+
+            {/* In-Game Procedural BGM Music Toggle */}
+            <button
+              onClick={() => {
+                playClick();
+                toggleBgmMute();
+              }}
+              className={`p-2 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center transition-all ${
+                isBgmMuted
+                  ? 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
+                  : 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 shadow-xs'
+              }`}
+              title={isBgmMuted ? 'Nyalakan Musik Latar (BGM)' : 'Matikan Musik Latar (BGM)'}
+              aria-label={isBgmMuted ? 'Nyalakan Musik Latar' : 'Matikan Musik Latar'}
+            >
+              <div className="relative flex items-center justify-center">
+                <Music className="w-4 h-4" />
+                {isBgmMuted && (
+                  <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white dark:ring-slate-900" />
+                )}
+              </div>
             </button>
 
             {/* Fullscreen Smartboard IFP Toggle */}
@@ -516,7 +582,10 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                 Lanjutkan Kuis
               </button>
               <button
-                onClick={onExit}
+                onClick={() => {
+                  stopBgm();
+                  onExit();
+                }}
                 className="flex-1 py-2.5 rounded-xl font-bold text-xs text-white bg-rose-600 hover:bg-rose-700 min-h-[44px] transition-colors"
               >
                 Ya, Keluar

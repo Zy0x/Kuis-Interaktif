@@ -1,6 +1,25 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis SD Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.15] - 2026-09-09
+### Musik Latar In-Game Prosedural Adaptif & Tombol Kontrol Musik Mandiri (Procedural Web Audio In-Game BGM with Adaptive Dynamics)
+
+#### Fitur Audio & Musik Latar (*In-Game Procedural BGM Engine*)
+- **Sintesis Audio Prosedural Murni (*Zero-Asset Web Audio API Synthesis*):**
+  - Mengimplementasikan generator musik in-game langsung via Web Audio API tanpa perlu mengunduh file MP3/OGG berukuran besar (0 KB network overhead, zero latency, 100% ramah offline PWA).
+  - Menghasilkan nada ceria pentatonik C Mayor bernuansa marimba, bass santai ramah anak, dan shaker ritmis teratur yang meningkatkan fokus dan keseruan siswa saat menjawab soal.
+- **Dinamika Musik Adaptif (*Dynamic Audio States & Ducking*):**
+  - **Auto-Ducking:** Volume musik latar otomatis turun perlahan ke ~22% saat siswa memilih jawaban, memastikan efek suara (SFX) benar atau salah terdengar jernih tanpa tabrakan frekuensi.
+  - **Akselerasi Tempo:** Tempo ritme otomatis berakselerasi dari 110 BPM menjadi 128 BPM pada 5 detik terakhir hitung mundur soal untuk memberikan stimulasi ketegangan positif.
+  - **Sinkronisasi Jeda Guru & Modal Keluar:** Musik otomatis dijeda (*paused*) saat tombol jeda guru ditekan atau saat modal konfirmasi keluar ditampilkan, dan otomatis melanjutkan saat kuis diteruskan.
+  - **Penghentian Bersih:** Musik otomatis berhenti total (*stopped & memory cleanup*) ketika kuis selesai menuju rekap skor atau ketika pengguna keluar dari arena kuis.
+- **Tombol Kontrol Musik Mandiri di Header Arena (*Independent BGM Toggle*):**
+  - Menyediakan tombol ikon musik (🎵) tersendiri di header `QuizArena` tepat di sebelah tombol efek suara (🔊), sehingga pengguna dapat mengatur musik latar dan efek suara secara independen.
+  - Preferensi musik latar tersimpan persisten di penyimpanan lokal peramban (`localStorage` key `'kuis_sd_bgm_muted'`).
+  - Mematuhi ukuran target sentuh minimal 44×44 px dengan indikator dot visual status bisu (*mute dot indicator*).
+
+---
+
 ## [2.2.14] - 2026-09-09
 ### Otomatisasi Tema Berbasis Waktu Nyata: 18.00–07.00 Gelap & 07.00–18.00 Terang (Time-Aware Automatic Dark & Light Mode System)
 
