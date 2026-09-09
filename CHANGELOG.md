@@ -1,6 +1,25 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.27] - 2026-09-09
+### Eliminasi Pemicu Gestur Keluar Palsu saat Menggeser Filter & Penerapan Standar Quality Gate Multi-Viewport (Back Gesture Collision Fix & Responsive Quality Gate)
+
+#### Perbaikan Interaksi & Aksesibilitas (*Interaction Polish & Gesture Isolation*)
+- **Pembersihan Pemicu Usap Mundur Palsu (`navigationHistory.ts`):**
+  - Menyelesaikan masalah munculnya notifikasi *"Tekan sekali lagi untuk keluar"* ketika pengguna hanya melakukan usapan atau pengguliran horizontal (*horizontal slide/scroll*) pada deretan chip Jenjang Kelas dan Mata Pelajaran di beranda.
+  - Menghapus aturan usapan umum (*general horizontal swipe*) yang sebelumnya secara keliru mendeteksi setiap sapuan horizontal di sembarang koordinat layar.
+  - Membatasi deteksi usapan kembali secara ketat hanya pada tepi bezel fisik paling kiri (`<= 24px`) dengan sudut mendatar tegas (`deltaY <= 30px`).
+  - Menambahkan pemeriksa hierarki kontainer gulir (`isInsideScrollable(targetEl)`): jika sentuhan dimulai di dalam elemen yang dapat digulir horizontal (`overflow-x-auto`, `overflow-x-scroll`, atau `scrollWidth > clientWidth`), pelacakan gestur kembali otomatis dinonaktifkan seketika.
+- **Pembaruan Spesifikasi Meta PWA Modern (`index.html`):**
+  - Menambahkan `<meta name="mobile-web-app-capable" content="yes" />` mendampingi tag apple legacy untuk kepatuhan penuh peramban modern.
+
+#### Standar Quality Gate Responsivitas Multi-Viewport (*Quality Gate Inspection*)
+- **Verifikasi Lintas Rentang Layar Android & Desktop:**
+  - Melakukan inspeksi komprehensif pada Mobile-S (320×568), Mobile-M (375×667), Mobile-L (412×915), Android rasio tinggi non-reguler 20.5:9 (393×896), Tablet (768×1024), hingga layar 4K (2560×1440).
+  - Memastikan seluruh tampilan beranda, arena kuis, ruang tunggu, dasbor guru, dan penyusun kuis memiliki nilai `hasOverflow: false` dengan toleransi nol pergeseran horizontal.
+
+---
+
 ## [2.2.26] - 2026-09-09
 ### Perbaikan Tuntas Bilah Atas Arena Kuis pada Layar Ponsel: Penjangkaran Viewport Fixed dan Proteksi Notch Status Bar (Mobile Arena Header Viewport Lock & Notch Protection)
 

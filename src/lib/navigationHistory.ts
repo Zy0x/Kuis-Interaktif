@@ -146,16 +146,55 @@ class NavigationHistoryManager {
       }
     });
 
-    // 4. Touchscreen Edge Swipe (Usapan kanan dari tepi kiri layaknya iOS & Android)
+    // 4. Touchscreen Strict Edge Swipe (Hanya dari bezel tepi kiri <= 24px, bebas konflik dengan scroll horizontal)
+    const isInsideScrollable = (el: Element | null): boolean => {
+      let curr: Element | null = el;
+      while (curr && curr !== document.body && curr !== document.documentElement) {
+        const style = window.getComputedStyle(curr);
+        const overflowX = style.overflowX;
+        if (overflowX === 'auto' || overflowX === 'scroll') {
+          if (curr.scrollWidth > curr.clientWidth) {
+            return true;
+          }
+        }
+        curr = curr.parentElement;
+      }
+      return false;
+    };
+
     window.addEventListener(
       'touchstart',
       (e) => {
-        if (e.touches.length !== 1) return;
+        if (e.touches.length !== 1) {
+          this.isSwiping = false;
+          return;
+        }
         const touch = e.touches[0];
         this.touchStartX = touch.clientX;
         this.touchStartY = touch.clientY;
         this.touchStartTime = Date.now();
-        this.isSwiping = this.touchStartX <= 90;
+
+        // Hanya aktif jika sentuhan dimulai persis di tepi kiri layar (<= 24px)
+        // dan tidak berada di dalam kontainer yang dapat digeser horizontal (misal chip mapel/jenjang)
+        const targetEl = touch.target as Element | null;
+        const inScrollable = isInsideScrollable(targetEl);
+        this.isSwiping = this.touchStartX <= 24 && !inScrollable;
+      },
+      { passive: true }
+    );
+
+    window.addEventListener(
+      'touchmove',
+      (e) => {
+        if (!this.isSwiping || e.touches.length !== 1) return;
+        const touch = e.touches[0];
+        const deltaX = touch.clientX - this.touchStartX;
+        const deltaY = Math.abs(touch.clientY - this.touchStartY);
+
+        // Batalkan jika gerakan mengarah vertikal atau ke arah kiri
+        if (deltaY > 30 || deltaX < -10) {
+          this.isSwiping = false;
+        }
       },
       { passive: true }
     );
@@ -163,16 +202,19 @@ class NavigationHistoryManager {
     window.addEventListener(
       'touchend',
       (e) => {
-        if (e.changedTouches.length !== 1) return;
+        if (!this.isSwiping || e.changedTouches.length !== 1) {
+          this.isSwiping = false;
+          return;
+        }
         const touch = e.changedTouches[0];
         const deltaX = touch.clientX - this.touchStartX;
         const deltaY = Math.abs(touch.clientY - this.touchStartY);
         const duration = Date.now() - this.touchStartTime;
 
-        const isEdgeSwipe = this.isSwiping && deltaX > 45 && deltaY < 85 && duration < 700;
-        const isGeneralHorizontalSwipe = deltaX > 80 && deltaY < 60 && duration < 600;
+        // Gestur kembali hanya sah jika dimulai dari bezel (<=24px), usapan ke kanan tegas, dan durasi singkat
+        const isStrictEdgeSwipe = deltaX >= 55 && deltaY <= 30 && duration < 450;
 
-        if (isEdgeSwipe || isGeneralHorizontalSwipe) {
+        if (isStrictEdgeSwipe) {
           this.triggerBack();
         }
         this.isSwiping = false;
