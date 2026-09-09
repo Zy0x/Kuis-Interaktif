@@ -104,13 +104,26 @@ export const App: React.FC = () => {
     setCurrentScreen('home');
   };
 
-  const handleSaveCreatedQuiz = (newQuiz: Quiz) => {
-    DataManager.saveCustomQuiz(newQuiz);
-    playCelebration();
-    if (teacher) {
-      setCurrentScreen('teacher-dashboard');
-    } else {
+  // RBAC Guard: Cegah peran Siswa atau Tamu mengakses rute pembuat kuis atau dashboard guru
+  useEffect(() => {
+    if (!teacher && (currentScreen === 'creator' || currentScreen === 'teacher-dashboard')) {
+      console.warn('RBAC Guard: Akses rute khusus guru dialihkan ke beranda.');
       setCurrentScreen('home');
+    }
+  }, [teacher, currentScreen]);
+
+  const handleSaveCreatedQuiz = async (newQuiz: Quiz) => {
+    if (!teacher) {
+      console.error('Akses Ditolak (RBAC): Hanya peran Guru yang berhak menyimpan atau memodifikasi kuis.');
+      setCurrentScreen('home');
+      return;
+    }
+    try {
+      await DataManager.saveCustomQuiz(newQuiz);
+      playCelebration();
+      setCurrentScreen('teacher-dashboard');
+    } catch (err) {
+      console.error('Gagal menyimpan kuis:', err);
     }
   };
 
@@ -234,7 +247,7 @@ export const App: React.FC = () => {
         />
       )}
 
-      {currentScreen === 'creator' && (
+      {currentScreen === 'creator' && teacher && (
         <QuizCreator
           onBack={handleGoHome}
           onSaveQuiz={handleSaveCreatedQuiz}

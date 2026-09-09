@@ -103,3 +103,61 @@ export interface LeaderboardEntry {
   timeSpentSec: number;
   dateStr: string;
 }
+
+// ==========================================================
+// ROLE-BASED ACCESS CONTROL (RBAC) DEFINITIONS
+// ==========================================================
+export type UserRole = 'teacher' | 'student' | 'guest';
+
+export interface RolePermissions {
+  readonly canCreateQuiz: boolean;
+  readonly canEditQuiz: boolean;
+  readonly canDeleteQuiz: boolean;
+  readonly canViewTeacherDashboard: boolean;
+  readonly canViewSubmissions: boolean;
+  readonly canExportData: boolean;
+  readonly canPlayQuiz: boolean;
+  readonly canAccessSmartboard: boolean;
+}
+
+export const ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
+  teacher: {
+    canCreateQuiz: true,
+    canEditQuiz: true,
+    canDeleteQuiz: true,
+    canViewTeacherDashboard: true,
+    canViewSubmissions: true,
+    canExportData: true,
+    canPlayQuiz: true,
+    canAccessSmartboard: true,
+  },
+  student: {
+    canCreateQuiz: false,
+    canEditQuiz: false,
+    canDeleteQuiz: false,
+    canViewTeacherDashboard: false,
+    canViewSubmissions: false,
+    canExportData: false,
+    canPlayQuiz: true,
+    canAccessSmartboard: false,
+  },
+  guest: {
+    canCreateQuiz: false,
+    canEditQuiz: false,
+    canDeleteQuiz: false,
+    canViewTeacherDashboard: false,
+    canViewSubmissions: false,
+    canExportData: false,
+    canPlayQuiz: true,
+    canAccessSmartboard: false,
+  },
+};
+
+export const getRolePermissions = (role: UserRole): RolePermissions => {
+  return ROLE_PERMISSIONS[role] || ROLE_PERMISSIONS.guest;
+};
+
+export const canManageQuizzes = (teacher: TeacherProfile | null | undefined): boolean => {
+  return Boolean(teacher && teacher.id && teacher.id.trim() !== '');
+};
+

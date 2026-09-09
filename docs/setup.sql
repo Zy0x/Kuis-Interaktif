@@ -170,19 +170,26 @@ ON public.profiles_teacher FOR INSERT
 TO authenticated 
 WITH CHECK (auth.uid() = id);
 
--- Policy Quizzes: Siapapun (anon) dapat membaca kuis yang sudah terbit (published)
+-- Policy Quizzes: Siapapun (anon/siswa/tamu) hanya dapat membaca kuis yang sudah terbit (read-only)
 CREATE POLICY "Public Read Published Quizzes" 
 ON public.quizzes FOR SELECT 
 USING (is_published = TRUE AND is_archived = FALSE);
 
--- Policy Quizzes: Pembuat kuis (authenticated) dapat mengelola kuis miliknya
-CREATE POLICY "Creators Manage Own Quizzes" 
+-- Policy Quizzes: HANYA Guru terautentikasi (terdaftar di profiles_teacher) yang dapat membuat, mengubah, dan menghapus kuis
+-- Role Siswa dan Tamu dilarang keras melakukan INSERT, UPDATE, atau DELETE pada tabel quizzes
+CREATE POLICY "Teachers Manage Own Quizzes" 
 ON public.quizzes FOR ALL 
 TO authenticated 
-USING (auth.uid() = creator_id)
-WITH CHECK (auth.uid() = creator_id);
+USING (
+    auth.uid() = creator_id 
+    AND EXISTS (SELECT 1 FROM public.profiles_teacher pt WHERE pt.id = auth.uid())
+)
+WITH CHECK (
+    auth.uid() = creator_id 
+    AND EXISTS (SELECT 1 FROM public.profiles_teacher pt WHERE pt.id = auth.uid())
+);
 
--- Policy Quiz Questions: Publik dapat membaca pertanyaan kuis yang aktif
+-- Policy Quiz Questions: Publik (siswa & tamu) hanya dapat membaca pertanyaan kuis yang aktif
 CREATE POLICY "Public Read Quiz Questions" 
 ON public.quiz_questions FOR SELECT 
 USING (
@@ -190,6 +197,27 @@ USING (
         SELECT 1 FROM public.quizzes q 
         WHERE q.id = quiz_questions.quiz_id 
         AND q.is_published = TRUE
+    )
+);
+
+-- Policy Quiz Questions: HANYA Guru pemilik kuis yang berhak menambah, mengedit, atau menghapus butir pertanyaan
+CREATE POLICY "Teachers Manage Questions For Own Quizzes" 
+ON public.quiz_questions FOR ALL 
+TO authenticated 
+USING (
+    EXISTS (
+        SELECT 1 FROM public.quizzes q 
+        JOIN public.profiles_teacher pt ON pt.id = q.creator_id
+        WHERE q.id = quiz_questions.quiz_id 
+        AND q.creator_id = auth.uid()
+    )
+)
+WITH CHECK (
+    EXISTS (
+        SELECT 1 FROM public.quizzes q 
+        JOIN public.profiles_teacher pt ON pt.id = q.creator_id
+        WHERE q.id = quiz_questions.quiz_id 
+        AND q.creator_id = auth.uid()
     )
 );
 

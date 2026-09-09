@@ -1,6 +1,25 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis SD Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.17] - 2026-09-09
+### Penegakan Hak Akses Berbasis Peran Ketat: Proteksi Penuh Siswa & Tamu dari Modifikasi/Penghapusan Kuis (Strict Role-Based Access Control - RBAC Enforcement)
+
+#### Keamanan Sistem & Tata Kelola Peran (*RBAC & Data Protection Engine*)
+- **Penegakan Hak Akses Role Siswa & Tamu (*Read-Only Quiz Access*):**
+  - Mengonfigurasi model RBAC formal (`ROLE_PERMISSIONS` & `UserRole`) di mana Siswa dan Tamu berstatus murni *read-only* terhadap katalog kuis (`canPlayQuiz: true`, `canCreateQuiz: false`, `canEditQuiz: false`, `canDeleteQuiz: false`).
+  - Menghilangkan total seluruh tombol aksi hapus (`Trash2`) atau modifikasi dari antarmuka beranda ketika diakses oleh peran Siswa maupun Tamu.
+- **Proteksi Rute Layar Sensitif (*Screen & Route Guarding*):**
+  - Menambahkan *route guard* reaktif pada `App.tsx` yang secara otomatis mengalihkan navigasi kembali ke beranda jika pengguna tanpa sesi Guru aktif berusaha mengakses layar pembuat kuis (`creator`) atau panel guru (`teacher-dashboard`).
+  - Komponen `QuizCreator` hanya dirender jika terverifikasi memiliki sesi Guru aktif.
+- **Validasi Ketat di Lapisan Data (*DataManager Layer Authorization*):**
+  - Menyematkan validasi kredensial peran Guru pada `saveCustomQuiz` dan `deleteCustomQuiz` di `supabaseClient.ts`. Setiap pemanggilan mutasi tanpa profil guru akan ditolak seketika (*Access Denied Exception*).
+  - Mengikat identitas pembuat (`creatorId` & `creatorName`) secara mutlak ke sesi Guru yang sah saat kuis dibuat.
+- **Penguatan Kebijakan Database Supabase RLS (*Database Row Level Security Hardening*):**
+  - Memperbarui [docs/setup.sql](file:///E:/Data/GitHub/Kuis%20Interaktif/docs/setup.sql) dengan kebijakan RLS berkeamanan tinggi (`Teachers Manage Own Quizzes` dan `Teachers Manage Questions For Own Quizzes`).
+  - Memastikan secara arsitektural database bahwa peran Siswa, Tamu, maupun *anon public key* tidak dapat menjalankan operasi `INSERT`, `UPDATE`, maupun `DELETE` pada tabel `quizzes` dan `quiz_questions`.
+
+---
+
 ## [2.2.16] - 2026-09-09
 ### Eliminasi Dialog Bawaan Peramban & Penerapan Modal Konfirmasi Hapus In-App Kustom (Custom In-App Delete Confirmation Modal & System Dialog Elimination)
 

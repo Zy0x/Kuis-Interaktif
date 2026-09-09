@@ -255,23 +255,29 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
     setRulesModalQuiz(quiz);
   };
 
-  // Delete confirmation state (In-App Modal)
+  // Delete confirmation state (In-App Modal - Guru Only)
   const [quizToDelete, setQuizToDelete] = useState<Quiz | null>(null);
   const [isDeletingQuiz, setIsDeletingQuiz] = useState(false);
 
   const handlePromptDeleteCustomQuiz = (quiz: Quiz, e: React.MouseEvent) => {
     e.stopPropagation();
     playClick();
+    if (!teacher) {
+      console.warn('Akses Ditolak (RBAC): Siswa atau Tamu dilarang menghapus kuis.');
+      return;
+    }
     setQuizToDelete(quiz);
   };
 
   const handleConfirmDeleteCustomQuiz = async () => {
-    if (!quizToDelete) return;
+    if (!teacher || !quizToDelete) return;
     setIsDeletingQuiz(true);
     try {
       await DataManager.deleteCustomQuiz(quizToDelete.id);
       setQuizzes(DataManager.getAllQuizzes());
       setQuizToDelete(null);
+    } catch (err) {
+      console.error('Gagal menghapus kuis:', err);
     } finally {
       setIsDeletingQuiz(false);
     }
@@ -702,7 +708,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                         <ChevronRight className="w-4 h-4" />
                       </button>
 
-                      {isCustom && (
+                      {Boolean(teacher) && isCustom && (
                         <button
                           onClick={(e) => handlePromptDeleteCustomQuiz(quiz, e)}
                           className="p-2.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl border border-slate-200 dark:border-slate-700 min-h-[46px] min-w-[46px] flex items-center justify-center transition-colors"
@@ -1298,17 +1304,19 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
         </div>
       )}
 
-      {/* Modal Dialog Konfirmasi Hapus Kuis In-App */}
-      <ConfirmDeleteModal
-        isOpen={Boolean(quizToDelete)}
-        quizTitle={quizToDelete?.title}
-        isLoading={isDeletingQuiz}
-        onConfirm={handleConfirmDeleteCustomQuiz}
-        onCancel={() => {
-          playClick();
-          setQuizToDelete(null);
-        }}
-      />
+      {/* Modal Dialog Konfirmasi Hapus Kuis In-App (Hanya untuk Guru Terautentikasi) */}
+      {teacher && (
+        <ConfirmDeleteModal
+          isOpen={Boolean(quizToDelete)}
+          quizTitle={quizToDelete?.title}
+          isLoading={isDeletingQuiz}
+          onConfirm={handleConfirmDeleteCustomQuiz}
+          onCancel={() => {
+            playClick();
+            setQuizToDelete(null);
+          }}
+        />
+      )}
 
     </div>
   );

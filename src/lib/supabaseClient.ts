@@ -228,8 +228,19 @@ export const DataManager = {
     return null;
   },
 
-  // 4. Save Custom Quiz Created by Teacher
+  // 4. Save Custom Quiz Created by Teacher (Strict RBAC Enforced)
   async saveCustomQuiz(quiz: Quiz): Promise<Quiz> {
+    // RBAC: Hanya akun Guru terautentikasi yang berhak membuat atau memodifikasi kuis
+    const teacher = this.getTeacherProfile();
+    if (!teacher || !teacher.id) {
+      console.error('Akses Ditolak (RBAC): Peran Siswa atau Tamu dilarang membuat atau memodifikasi kuis.');
+      throw new Error('Akses Ditolak: Hanya Guru yang berhak membuat atau memodifikasi kuis.');
+    }
+
+    // Pastikan identitas pembuat terikat pada Guru yang sedang aktif
+    quiz.creatorId = teacher.id;
+    quiz.creatorName = teacher.fullName;
+
     // Ensure 4-digit PIN exists
     if (!quiz.pinCode) {
       quiz.pinCode = generateRandomPin();
@@ -290,8 +301,15 @@ export const DataManager = {
     return quiz;
   },
 
-  // 5. Delete Custom Quiz
+  // 5. Delete Custom Quiz (Strict RBAC Enforced)
   async deleteCustomQuiz(quizId: string): Promise<void> {
+    // RBAC: Hanya akun Guru terautentikasi yang berhak menghapus kuis
+    const teacher = this.getTeacherProfile();
+    if (!teacher || !teacher.id) {
+      console.error('Akses Ditolak (RBAC): Peran Siswa atau Tamu dilarang menghapus kuis.');
+      throw new Error('Akses Ditolak: Hanya Guru yang berhak menghapus kuis.');
+    }
+
     try {
       const customStr = localStorage.getItem(STORAGE_KEY_CUSTOM_QUIZZES);
       if (customStr) {
