@@ -1,6 +1,23 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.26] - 2026-09-09
+### Perbaikan Tuntas Bilah Atas Arena Kuis pada Layar Ponsel: Penjangkaran Viewport Fixed dan Proteksi Notch Status Bar (Mobile Arena Header Viewport Lock & Notch Protection)
+
+#### Perbaikan Bug & Presisi Mobile-First (*Mobile-First Responsive Fix*)
+- **Penjangkaran Viewport Arena Kuis Penuh (`QuizArena`):**
+  - Menyelesaikan kendala bilah atas (*header*) arena kuis (Nomor Soal, Timer, Tombol Jeda, dan Menu Alat) yang terpotong atau tidak tampil pada perangkat ponsel (Mobile-S 320px, Mobile-M 375px, dan Mobile-L 425px).
+  - Mengubah wadah utama arena kuis dari elemen alur normal bertinggi relatif menjadi penjangkaran mutlak terhadap viewport jendela (`fixed inset-0 z-30 w-full h-full h-[100dvh]`), mengeliminasi pergeseran vertikal akibat padding dokumen atau pergeseran posisi scroll dari halaman sebelumnya.
+- **Proteksi Takik Ponsel & Area Aman (*Safe Area Inset Notch & Status Bar Protection*):**
+  - Menambahkan bantalan atas area aman adaptif `pt-[max(env(safe-area-inset-top),0.625rem)]` pada bilah atas arena kuis.
+  - Menjamin seluruh tombol navigasi atas (Keluar `[ ✕ ]`, Nomor Soal, Indikator Waktu, Tombol Jeda, dan Menu Alat) tampil 100% utuh dan tidak lagi terhalang oleh lubang kamera ponsel (*punch-hole*), takik (*notch*), maupun bilah status sistem Android/iOS.
+  - Menyelaraskan padding area aman atas pada seluruh bilah navigasi aplikasi: `QuizHome`, `StudentLobby`, `TeacherDashboard`, dan `QuizCreator`.
+- **Reset Scroll Layar & Pengendalian Riwayat Navigasi (`App.tsx`):**
+  - Mengonfigurasi `window.history.scrollRestoration = 'manual'` dan menyuntikkan reset gulir otomatis (`window.scrollTo(0, 0)`) setiap kali terjadi transisi layar aplikasi (*screen state change*).
+  - Menjamin ketika pengguna menggulir daftar kuis di beranda lalu menekan *"Mulai Kuis"*, layar arena kuis langsung dimuat pada posisi paling atas secara presisi.
+
+---
+
 ## [2.2.25] - 2026-09-09
 ### Arsitektur Header Ultra-Compact Mobile dengan Smart Avatar dan Quick Action Sheet Overlay (Mobile Ultra-Compact Header & Bottom Sheet Actions)
 

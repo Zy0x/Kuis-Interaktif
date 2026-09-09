@@ -46,7 +46,7 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col justify-between select-none">
       {/* Top Header */}
-      <header className="w-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-3 sm:px-8 py-2.5 sm:py-3 sticky top-0 z-20 shadow-sm">
+      <header className="w-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-3 sm:px-8 pt-[max(env(safe-area-inset-top),0.625rem)] pb-2.5 sm:pb-3 sticky top-0 z-20 shadow-sm">
         <div className="max-w-2xl mx-auto flex items-center justify-between gap-2">
           <button
             onClick={() => {

@@ -154,8 +154,9 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     setUrgent,
   } = useQuizBgm();
 
-  // 1. Auto-start BGM on entry, auto-stop on unmount
+  // 1. Auto-start BGM on entry, auto-stop on unmount, and reset scroll to top
   useEffect(() => {
+    window.scrollTo(0, 0);
     startBgm();
     return () => {
       stopBgm();
@@ -334,10 +335,10 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   const progressPercent = ((currentIndex + 1) / quiz.questions.length) * 100;
 
   return (
-    <div className="w-full h-screen h-[100dvh] max-h-screen overflow-hidden bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col justify-between select-none">
+    <div className="fixed inset-0 z-30 w-full h-full h-[100dvh] overflow-hidden bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col justify-between select-none">
       
-      {/* Top Arena Header - Pinned at top */}
-      <header className="w-full bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800 px-2 sm:px-6 py-2 sm:py-2.5 flex-shrink-0 z-20 shadow-xs">
+      {/* Top Arena Header - Pinned at top with safe-area support */}
+      <header className="w-full bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800 px-2 sm:px-6 pt-[max(env(safe-area-inset-top),0.625rem)] pb-2 sm:pb-2.5 flex-shrink-0 z-20 shadow-xs">
         <div className="w-full max-w-2xl lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl mx-auto flex items-center justify-between gap-1.5 sm:gap-3">
           
           {/* Left: Exit Button & Question Info */}

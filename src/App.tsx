@@ -111,6 +111,14 @@ export const App: React.FC = () => {
     });
   }, [currentScreen, activeQuiz?.id, lastAnswers, lastTimeSpent]);
 
+  // Selalu reset posisi scroll ke 0 dan atur scrollRestoration manual saat pergantian layar
+  useEffect(() => {
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
+    window.scrollTo(0, 0);
+  }, [currentScreen]);
+
   // Sinkronisasi navigasi browser (Tombol Back / Forward)
   useEffect(() => {
     const handlePopState = () => {

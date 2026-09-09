@@ -310,7 +310,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
     <div className="w-full min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-20 flex flex-col transition-colors">
       
       {/* Top Navbar - Clean, Minimalist, Professional */}
-      <header className="w-full sticky top-0 z-30 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 shadow-sm px-3 sm:px-8 lg:px-12 py-2.5 sm:py-3 transition-colors">
+      <header className="w-full sticky top-0 z-30 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 shadow-sm px-3 sm:px-8 lg:px-12 pt-[max(env(safe-area-inset-top),0.625rem)] pb-2.5 sm:pb-3 transition-colors">
         <div className="w-full max-w-[2000px] mx-auto flex items-center justify-between gap-2 sm:gap-3">
           
           {/* Logo */}

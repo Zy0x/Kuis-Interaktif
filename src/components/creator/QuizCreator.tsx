@@ -297,7 +297,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     <div className="w-full min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-20 select-none flex flex-col">
       
       {/* Top Header */}
-      <header className="w-full sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-3 sm:px-8 py-2.5 sm:py-3 shadow-sm">
+      <header className="w-full sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-3 sm:px-8 pt-[max(env(safe-area-inset-top),0.625rem)] pb-2.5 sm:pb-3 shadow-sm">
         <div className="w-full max-w-5xl mx-auto flex items-center justify-between gap-2 sm:gap-3">
           <button
             onClick={() => {

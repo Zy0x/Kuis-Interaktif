@@ -193,7 +193,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-16 flex flex-col">
       {/* Top Navbar */}
-      <header className="w-full bg-white dark:bg-slate-900 border-b border-slate-200/90 dark:border-slate-800 px-2.5 xs:px-4 sm:px-8 py-2 xs:py-2.5 sm:py-3 sticky top-0 z-30 shadow-sm">
+      <header className="w-full bg-white dark:bg-slate-900 border-b border-slate-200/90 dark:border-slate-800 px-2.5 xs:px-4 sm:px-8 pt-[max(env(safe-area-inset-top),0.5rem)] pb-2 xs:pb-2.5 sm:pb-3 sticky top-0 z-30 shadow-sm">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-1.5 xs:gap-2 sm:gap-3">
           
           <div className="flex items-center gap-1.5 xs:gap-2 sm:gap-3 min-w-0">
