@@ -26,7 +26,7 @@ export const ReorientationOverlay: React.FC = () => {
   if (!isLandscapeOnSmallScreen || isDismissed) return null;
 
   return (
-    <div className="fixed bottom-3 right-3 left-3 z-40 bg-slate-900/90 backdrop-blur-sm text-white p-3 rounded-2xl shadow-xl flex items-center justify-between border border-white/20 animate-pop-in">
+    <div className="fixed bottom-3 right-3 left-3 z-40 bg-slate-900/95 text-white p-3.5 rounded-2xl shadow-xl flex items-center justify-between border border-slate-700/60 animate-fade-in">
       <div className="flex items-center gap-3">
         <div className="p-2 bg-blue-500 rounded-xl animate-wiggle">
           <RotateCw className="w-5 h-5 text-white" />

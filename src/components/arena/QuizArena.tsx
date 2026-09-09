@@ -286,8 +286,16 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 
       {/* Exit Confirmation Dialog */}
       {showExitConfirm && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-pop border border-slate-200 text-center space-y-3">
+        <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 sm:p-6">
+          {/* Static Backdrop Overlay: Smooth opacity fade only, zero transform/movement */}
+          <div
+            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm animate-backdrop-fade"
+            onClick={() => setShowExitConfirm(false)}
+            aria-hidden="true"
+          />
+
+          {/* Dialog Card: Pure card entrance animation */}
+          <div className="relative z-10 bg-white rounded-2xl p-6 max-w-sm w-full shadow-pop border border-slate-200 text-center space-y-3 animate-modal-card-in">
             <h4 className="text-base font-bold text-slate-900">Keluar dari Kuis?</h4>
             <p className="text-xs text-slate-600 leading-relaxed">
               Kuis yang sedang berlangsung akan dihentikan dan progres saat ini tidak akan disimpan.

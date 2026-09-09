@@ -3,6 +3,23 @@ Seluruh riwayat rilis dan pembaruan sistem **Kuis SD Seru** dicatat pada dokumen
 
 ---
 
+## [2.1.7] - 2026-09-09
+### Perbaikan Animasi Modal Dialog & Isolasi Lapisan Backdrop Blur (Zero Blur-Box Artifacts)
+
+#### Perbaikan Bug & Optimasi Animasi (Bug Fixes & Visual Refinements)
+- **Isolasi Penuh Lapisan Backdrop Blur & Kartu Modal:**
+  - Memisahkan elemen *Backdrop Overlay* (`fixed inset-0 bg-slate-900/40 backdrop-blur-sm`) dari elemen kartu dialog putih.
+  - Menghapus efek `transform: translateY` pada kontainer yang memiliki efek blur CSS. Sebelumnya, animasi translasi pada elemen `backdrop-filter` menyebabkan seluruh latar belakang buram bergeser 6px secara fisik (*moving blur-box artifact*).
+- **Sistem Animasi Mandiri (*Independent Motion Design*):**
+  - **Lapisan Latar Belakang (*Backdrop*):** Menggunakan `animate-backdrop-fade` (transisi *opacity* murni dari 0 ke 1 tanpa gerakan translasi). Latar belakang buram kini diam kokoh dan memudar dengan halus berstandar iOS/macOS.
+  - **Kartu Dialog (*Modal Card*):** Menggunakan `animate-modal-card-in` (skala lembut dari 0.96 ke 1 dengan pergeseran 6px yang elegan hanya pada kartu putih itu sendiri).
+- **Interaksi Pengguna Ramah & Alami (*Click-to-Dismiss*):**
+  - Mengetuk atau mengklik area luar (backdrop) di luar kartu modal kini otomatis menutup modal secara intuitif.
+- **Pembersihan Komponen PWA & Overlays:**
+  - Menghapus animasi translasi pada `ReorientationOverlay` dan beralih ke warna solid `bg-slate-900/95` untuk menghindari interferensi GPU *rasterization* pada perangkat seluler.
+
+---
+
 ## [2.1.6] - 2026-09-09
 ### Redesain UI Anti-AI-Slop, Tipografi Nyaman, Estetika Modern & Presisi Mobile-First Hingga Ultrawide
 

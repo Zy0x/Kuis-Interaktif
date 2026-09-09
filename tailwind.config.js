@@ -60,13 +60,28 @@ export default {
           '50%': { transform: 'translateY(-4px)' },
         },
         'fade-in': {
-          '0%': { opacity: '0', transform: 'translateY(6px)' },
-          '100%': { opacity: '1', transform: 'translateY(0)' },
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        'backdrop-fade': {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        'modal-card-in': {
+          '0%': { opacity: '0', transform: 'scale(0.96) translateY(6px)' },
+          '100%': { opacity: '1', transform: 'scale(1) translateY(0)' },
+        },
+        'pop-in': {
+          '0%': { opacity: '0', transform: 'scale(0.95)' },
+          '100%': { opacity: '1', transform: 'scale(1)' },
         }
       },
       animation: {
         'bounce-subtle': 'bounce-subtle 2s ease-in-out infinite',
-        'fade-in': 'fade-in 0.25s ease-out forwards',
+        'fade-in': 'fade-in 0.2s ease-out forwards',
+        'backdrop-fade': 'backdrop-fade 0.2s ease-out forwards',
+        'modal-card-in': 'modal-card-in 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+        'pop-in': 'pop-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards',
       }
     },
   },

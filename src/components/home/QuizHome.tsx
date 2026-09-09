@@ -382,8 +382,16 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
 
       {/* Modal 1: Aturan Singkat (Clean, Calm, Clear) */}
       {rulesModalQuiz && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
-          <div className="bg-white w-full max-w-md mx-auto my-auto rounded-2xl shadow-pop border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 sm:p-6">
+          {/* Static Backdrop Overlay: Smooth opacity fade only, zero transform/movement */}
+          <div
+            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm animate-backdrop-fade"
+            onClick={() => setRulesModalQuiz(null)}
+            aria-hidden="true"
+          />
+
+          {/* Dialog Card: Pure card entrance animation */}
+          <div className="relative z-10 bg-white w-full max-w-md mx-auto my-auto rounded-2xl shadow-pop border border-slate-200 overflow-hidden flex flex-col max-h-[90vh] animate-modal-card-in">
             
             {/* Header Modal */}
             <div className="p-5 border-b border-slate-100 flex items-center justify-between">
@@ -468,8 +476,16 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
 
       {/* Modal 2: Profil Pemain */}
       {isProfileModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
-          <div className="bg-white w-full max-w-md mx-auto my-auto rounded-2xl shadow-pop border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 sm:p-6">
+          {/* Static Backdrop Overlay: Smooth opacity fade only, zero transform/movement */}
+          <div
+            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm animate-backdrop-fade"
+            onClick={() => setIsProfileModalOpen(false)}
+            aria-hidden="true"
+          />
+
+          {/* Dialog Card: Pure card entrance animation */}
+          <div className="relative z-10 bg-white w-full max-w-md mx-auto my-auto rounded-2xl shadow-pop border border-slate-200 overflow-hidden flex flex-col max-h-[90vh] animate-modal-card-in">
             <div className="p-5 border-b border-slate-100 flex items-center justify-between flex-shrink-0">
               <h3 className="font-bold text-slate-900 text-base">Atur Profil Pemain</h3>
               <button
