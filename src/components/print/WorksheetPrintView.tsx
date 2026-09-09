@@ -64,7 +64,7 @@ export const WorksheetPrintView: React.FC<WorksheetPrintViewProps> = ({
                 {quiz.title}
               </h1>
               <p className="text-xs text-slate-600 mt-1 font-medium">
-                Mata Pelajaran: <strong>{quiz.subject}</strong> | Tingkat: <strong>Kelas {quiz.grade} SD</strong>
+                Mata Pelajaran: <strong>{quiz.subject}</strong> | Tingkat: <strong>Kelas {quiz.grade}</strong>
               </p>
             </div>
 

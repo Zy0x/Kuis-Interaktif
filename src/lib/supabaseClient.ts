@@ -1002,7 +1002,7 @@ export const DataManager = {
     const newQuiz: Quiz = {
       id: `custom_math_g${grade}_${Date.now()}`,
       title: `Latihan Kilat Matematika Kelas ${grade}`,
-      description: `Soal hitung cepat otomatis tingkat Kelas ${grade} SD dengan waktu terukur.`,
+      description: `Soal hitung cepat otomatis tingkat Kelas ${grade} dengan waktu terukur.`,
       subject: 'Matematika',
       grade,
       durationPerQuestionSec: 25,

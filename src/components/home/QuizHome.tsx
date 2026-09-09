@@ -584,7 +584,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
               <BookOpen className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" /> Jenjang Kelas
             </h3>
             <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">
-              {selectedGrade === 'Semua' ? 'Menampilkan Semua Jenjang' : `Khusus Kelas ${selectedGrade} SD`}
+              {selectedGrade === 'Semua' ? 'Menampilkan Semua Jenjang' : `Khusus Kelas ${selectedGrade}`}
             </span>
           </div>
 
@@ -604,7 +604,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                       : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700'
                   }`}
                 >
-                  {grade === 'Semua' ? 'Semua Kelas' : `Kelas ${grade} SD`}
+                  {grade === 'Semua' ? 'Semua Kelas' : `Kelas ${grade}`}
                 </button>
               );
             })}
@@ -1145,7 +1145,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                     {profileTab === 'register' && (
                       <div>
                         <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                          Tingkat Kelas SD
+                          Tingkat Kelas
                         </label>
                         <select
                           value={studentGrade}
@@ -1154,7 +1154,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                         >
                           {[1, 2, 3, 4, 5, 6].map((g) => (
                             <option key={g} value={g}>
-                              Kelas {g} SD
+                              Kelas {g}
                             </option>
                           ))}
                         </select>

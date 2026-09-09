@@ -399,7 +399,7 @@ export const UnifiedAuthModal: React.FC<UnifiedAuthModalProps> = ({
 
                   <div>
                     <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                      Tingkat Kelas SD <span className="text-rose-500">*</span>
+                      Tingkat Kelas <span className="text-rose-500">*</span>
                     </label>
                     <select
                       value={studentGrade}
@@ -407,7 +407,7 @@ export const UnifiedAuthModal: React.FC<UnifiedAuthModalProps> = ({
                       className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-semibold text-xs sm:text-sm focus:border-emerald-500 focus:outline-none min-h-[44px]"
                     >
                       {[1, 2, 3, 4, 5, 6].map((g) => (
-                        <option key={g} value={g}>Kelas {g} SD</option>
+                        <option key={g} value={g}>Kelas {g}</option>
                       ))}
                     </select>
                   </div>

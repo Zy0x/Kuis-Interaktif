@@ -123,7 +123,7 @@ export const QuizResult: React.FC<QuizResultProps> = ({
             {praise}
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">
-            Kuis: {quiz.title} (Kelas {quiz.grade} SD)
+            Kuis: {quiz.title} (Kelas {quiz.grade})
           </p>
 
           {/* 3 Stats Grid */}

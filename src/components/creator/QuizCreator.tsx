@@ -273,7 +273,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     const finalQuiz: Quiz = {
       id: 'custom_' + Date.now(),
       title: title.trim(),
-      description: description.trim() || `Kuis interaktif buatan Guru untuk Kelas ${grade} SD.`,
+      description: description.trim() || `Kuis interaktif buatan Guru untuk Kelas ${grade}.`,
       subject,
       grade,
       durationPerQuestionSec,
@@ -465,7 +465,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                  Target Kelas SD <span className="text-rose-500">*</span>
+                  Target Kelas <span className="text-rose-500">*</span>
                 </label>
                 <select
                   value={grade}
@@ -473,7 +473,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 focus:border-blue-500 focus:outline-none font-semibold text-sm min-h-[44px] bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                 >
                   {[1, 2, 3, 4, 5, 6].map((g) => (
-                    <option key={g} value={g}>Kelas {g} SD</option>
+                    <option key={g} value={g}>Kelas {g}</option>
                   ))}
                 </select>
               </div>
@@ -959,13 +959,13 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
 
                 <div className="flex items-center gap-1.5 flex-shrink-0">
                   <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-600 font-bold text-xs whitespace-nowrap">
-                    Kelas {grade} SD
+                    Kelas {grade}
                   </span>
                 </div>
               </div>
 
               <h4 className="text-base font-bold text-slate-900 dark:text-white leading-snug break-words line-clamp-2">{title}</h4>
-              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{description || 'Kuis interaktif buatan Guru SD.'}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{description || 'Kuis interaktif buatan Guru.'}</p>
 
               <div className="flex items-center justify-between text-xs text-slate-400 dark:text-slate-500 font-medium pt-3 border-t border-slate-100 dark:border-slate-700">
                 <span>{questions.length} Soal</span>

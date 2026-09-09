@@ -597,7 +597,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
             <div className="space-y-4 pt-2">
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">
-                  Pilih Tingkat Kelas SD:
+                  Pilih Tingkat Kelas:
                 </label>
                 <div className="grid grid-cols-6 gap-2">
                   {[1, 2, 3, 4, 5, 6].map((g) => (

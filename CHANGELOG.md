@@ -1,6 +1,23 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis SD Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.21] - 2026-09-09
+### Penyederhanaan Label Jenjang Kelas: Eliminasi Redundansi Imbuhan 'SD' (Clean Grade Level Nomenclature Polish)
+
+#### Antarmuka Pengguna & Keterbacaan (*UI Typography & Minimalist Polish*)
+- **Penyederhanaan Penamaan Jenjang Kelas Berurutan:**
+  - Menghilangkan kata 'SD' yang redundan pada tombol filter beranda (`QuizHome`), mengubah label dari *"Kelas 1 SD"* s.d. *"Kelas 6 SD"* menjadi lebih ringkas dan proporsional: **`Kelas 1`**, **`Kelas 2`**, **`Kelas 3`**, **`Kelas 4`**, **`Kelas 5`**, dan **`Kelas 6`**.
+  - Memperbarui teks indikator penyaringan di beranda menjadi *"Khusus Kelas {grade}"* dan judul bagian menjadi *"Tingkat Kelas"*.
+- **Penyelarasan Menyeluruh Lintas Komponen Aplikasi:**
+  - **Portal Autentikasi (`UnifiedAuthModal`):** Mengganti label pilihan pendaftaran siswa dari *"Kelas {g} SD"* menjadi *"Kelas {g}"*.
+  - **Studio Pembuat Kuis (`QuizCreator`):** Memperbarui formulir pemilihan target kelas dan kartu pratinjau menjadi *"Target Kelas"* dan *"Kelas {grade}"*.
+  - **Lobi PIN Siswa (`StudentLobby`):** Mempercantik pill informasi kuis menjadi *"Kelas {grade}"*.
+  - **Cetak LKPD (`WorksheetPrintView`):** Menyelaraskan informasi tingkat lembar kerja menjadi *"Tingkat: Kelas {grade}"*.
+  - **Layar Hasil Akhir (`QuizResult`):** Memperbarui teks subjudul informasi kuis menjadi *"Kuis: {title} (Kelas {grade})"*.
+  - **Generator Kilat Soal (`TeacherDashboard`):** Menyelaraskan teks instruksi generator menjadi *"Pilih Tingkat Kelas:"*.
+
+---
+
 ## [2.2.20] - 2026-09-09
 ### Mesin Persistensi Status Layar & Pemulihan Progres Kuis saat Muat Ulang Halaman (Navigation State & In-Progress Quiz Persistence Engine)
 

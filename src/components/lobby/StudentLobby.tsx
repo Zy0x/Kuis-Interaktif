@@ -89,7 +89,7 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
 
             <div className="flex items-center justify-center gap-2 flex-wrap text-xs text-slate-500 dark:text-slate-400 font-semibold">
               <span className="px-2.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                Kelas {quiz.grade} SD
+                Kelas {quiz.grade}
               </span>
               <span className="px-2.5 py-0.5 rounded-md bg-blue-100 dark:bg-blue-950/50 text-blue-800 dark:text-blue-300">
                 {quiz.subject}
