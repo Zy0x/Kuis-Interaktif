@@ -14,6 +14,7 @@ import { WorksheetPrintView } from './components/print/WorksheetPrintView';
 import { DataManager } from './lib/supabaseClient';
 import { useSoundEffects } from './hooks/useSoundEffects';
 import { useBackHandler } from './lib/navigationHistory';
+import { useTheme } from './hooks/useTheme';
 import { BackGestureIndicator } from './components/common/BackGestureIndicator';
 
 type ScreenState = 
@@ -26,6 +27,7 @@ type ScreenState =
   | 'worksheet-print';
 
 export const App: React.FC = () => {
+  const { isDark, toggleTheme } = useTheme();
   const [showSplash, setShowSplash] = useState(true);
   const [currentScreen, setCurrentScreen] = useState<ScreenState>('home');
   const [activeQuiz, setActiveQuiz] = useState<Quiz | null>(null);
@@ -186,7 +188,7 @@ export const App: React.FC = () => {
   }, currentScreen === 'teacher-dashboard');
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 antialiased selection:bg-primary-500 selection:text-white">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 antialiased selection:bg-primary-500 selection:text-white">
       {/* Visual Feedback on Back Gesture */}
       <BackGestureIndicator />
 
@@ -213,6 +215,8 @@ export const App: React.FC = () => {
           onEnterPin={handleEnterPinLobby}
           teacher={teacher}
           onTeacherLogout={handleTeacherLogout}
+          isDark={isDark}
+          onToggleTheme={toggleTheme}
           isMuted={isMuted}
           onToggleMute={toggleMute}
           playClick={playClick}
@@ -224,6 +228,8 @@ export const App: React.FC = () => {
           quiz={activeQuiz}
           onStartQuiz={() => setCurrentScreen('arena')}
           onBackToHome={handleGoHome}
+          isDark={isDark}
+          onToggleTheme={toggleTheme}
           playClick={playClick}
         />
       )}
@@ -232,6 +238,8 @@ export const App: React.FC = () => {
         <QuizCreator
           onBack={handleGoHome}
           onSaveQuiz={handleSaveCreatedQuiz}
+          isDark={isDark}
+          onToggleTheme={toggleTheme}
           playClick={playClick}
         />
       )}
@@ -244,6 +252,8 @@ export const App: React.FC = () => {
           onOpenCreator={() => setCurrentScreen('creator')}
           onLaunchSmartboard={handleLaunchSmartboard}
           onPrintWorksheet={handlePrintWorksheet}
+          isDark={isDark}
+          onToggleTheme={toggleTheme}
           playClick={playClick}
         />
       )}
@@ -267,6 +277,8 @@ export const App: React.FC = () => {
           quiz={activeQuiz}
           onFinishQuiz={handleFinishQuiz}
           onExit={handleGoHome}
+          isDark={isDark}
+          onToggleTheme={toggleTheme}
           isMuted={isMuted}
           onToggleMute={toggleMute}
           playClick={playClick}
@@ -285,6 +297,8 @@ export const App: React.FC = () => {
           totalTimeSpent={lastTimeSpent}
           onReplay={handleReplay}
           onGoHome={handleGoHome}
+          isDark={isDark}
+          onToggleTheme={toggleTheme}
           playClick={playClick}
           playCelebration={playCelebration}
         />

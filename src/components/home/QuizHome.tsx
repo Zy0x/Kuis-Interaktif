@@ -4,6 +4,7 @@ import { AVATAR_LIST } from '../../data/seedQuizzes';
 import { DataManager } from '../../lib/supabaseClient';
 import { useBackHandler } from '../../lib/navigationHistory';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
+import { ThemeToggle } from '../common/ThemeToggle';
 import { 
   Play, 
   Clock, 
@@ -35,6 +36,8 @@ interface QuizHomeProps {
   onEnterPin: (quiz: Quiz) => void;
   teacher: TeacherProfile | null;
   onTeacherLogout?: () => void;
+  isDark: boolean;
+  onToggleTheme: () => void;
   isMuted: boolean;
   onToggleMute: () => void;
   playClick: () => void;
@@ -46,6 +49,8 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
   onEnterPin,
   teacher,
   onTeacherLogout,
+  isDark,
+  onToggleTheme,
   isMuted,
   onToggleMute,
   playClick,
@@ -272,10 +277,10 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
   };
 
   return (
-    <div className="w-full min-h-screen bg-slate-50 text-slate-900 pb-20 flex flex-col">
+    <div className="w-full min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-20 flex flex-col transition-colors">
       
       {/* Top Navbar - Clean, Minimalist, Professional */}
-      <header className="w-full sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-slate-200/80 shadow-sm px-4 sm:px-8 lg:px-12 py-3">
+      <header className="w-full sticky top-0 z-30 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 shadow-sm px-4 sm:px-8 lg:px-12 py-3 transition-colors">
         <div className="w-full max-w-[2000px] mx-auto flex items-center justify-between gap-3">
           
           {/* Logo */}
@@ -284,10 +289,10 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
               ⭐
             </div>
             <div>
-              <h1 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight leading-none">
-                Kuis SD <span className="text-blue-600 font-extrabold">Seru</span>
+              <h1 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white tracking-tight leading-none">
+                Kuis SD <span className="text-blue-600 dark:text-blue-400 font-extrabold">Seru</span>
               </h1>
-              <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">
                 Media Belajar Interaktif Kelas 1 - 6
               </p>
             </div>
@@ -303,13 +308,16 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                     playClick();
                     onOpenTeacherPortal();
                   }}
-                  className="flex items-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 font-bold text-xs sm:text-sm min-h-[44px] transition-colors btn-press shadow-sm whitespace-nowrap"
+                  className="flex items-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-xl bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 font-bold text-xs sm:text-sm min-h-[44px] transition-colors btn-press shadow-sm whitespace-nowrap"
                   title="Portal Masuk Guru"
                 >
-                  <GraduationCap className="w-4 h-4 text-blue-600" />
+                  <GraduationCap className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                   <span className="hidden sm:inline">Portal Guru</span>
                   <span className="sm:hidden">Guru</span>
                 </button>
+
+                {/* Theme Toggle Button */}
+                <ThemeToggle isDark={isDark} onToggle={onToggleTheme} playClick={playClick} />
 
                 {/* Audio Toggle Button */}
                 <button
@@ -317,11 +325,11 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                     playClick();
                     onToggleMute();
                   }}
-                  className="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center btn-press"
+                  className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center btn-press shadow-xs"
                   title={isMuted ? 'Nyalakan Suara' : 'Matikan Suara'}
                   aria-label="Pengaturan Suara"
                 >
-                  {isMuted ? <VolumeX className="w-5 h-5 text-rose-500" /> : <Volume2 className="w-5 h-5 text-slate-700" />}
+                  {isMuted ? <VolumeX className="w-5 h-5 text-rose-500" /> : <Volume2 className="w-5 h-5 text-slate-700 dark:text-slate-200" />}
                 </button>
 
                 {/* Profile Avatar Pill (Mode Siswa / Tamu) */}
@@ -332,15 +340,15 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                     setTempAvatar(profile.avatarId);
                     setIsProfileModalOpen(true);
                   }}
-                  className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-colors min-h-[44px] btn-press"
+                  className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700 transition-colors min-h-[44px] btn-press"
                   aria-label="Pengaturan Profil Pemain"
                 >
                   <span className="text-xl select-none">{currentAvatar.emoji}</span>
                   <div className="text-left hidden sm:block">
-                    <p className="text-xs font-bold text-slate-800 leading-tight truncate max-w-[100px]">
+                    <p className="text-xs font-bold text-slate-800 dark:text-slate-100 leading-tight truncate max-w-[100px]">
                       {isCustomName(profile.nickname) ? profile.nickname : 'Saya'}
                     </p>
-                    <p className="text-[10px] text-amber-600 font-semibold flex items-center gap-0.5">
+                    <p className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-0.5">
                       <Trophy className="w-2.5 h-2.5" /> {profile.starsEarned} Bintang
                     </p>
                   </div>
@@ -348,17 +356,20 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
               </>
             ) : (
               <>
+                {/* Theme Toggle Button */}
+                <ThemeToggle isDark={isDark} onToggle={onToggleTheme} playClick={playClick} />
+
                 {/* Audio Toggle Button */}
                 <button
                   onClick={() => {
                     playClick();
                     onToggleMute();
                   }}
-                  className="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center btn-press"
+                  className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center btn-press shadow-xs"
                   title={isMuted ? 'Nyalakan Suara' : 'Matikan Suara'}
                   aria-label="Pengaturan Suara"
                 >
-                  {isMuted ? <VolumeX className="w-5 h-5 text-rose-500" /> : <Volume2 className="w-5 h-5 text-slate-700" />}
+                  {isMuted ? <VolumeX className="w-5 h-5 text-rose-500" /> : <Volume2 className="w-5 h-5 text-slate-700 dark:text-slate-200" />}
                 </button>
 
                 {/* Profil Resmi Guru (Menggantikan Profil Tamu Siswa) */}
@@ -367,7 +378,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                     playClick();
                     setIsTeacherProfileModalOpen(true);
                   }}
-                  className="flex items-center gap-2 pl-2 sm:pl-2.5 pr-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-900 transition-colors min-h-[44px] btn-press shadow-sm"
+                  className="flex items-center gap-2 pl-2 sm:pl-2.5 pr-3 py-1.5 rounded-xl bg-blue-50 dark:bg-slate-800 hover:bg-blue-100 dark:hover:bg-slate-750 border border-blue-200 dark:border-slate-700 text-blue-900 dark:text-blue-100 transition-colors min-h-[44px] btn-press shadow-sm"
                   title={`Profil Guru: ${teacher.fullName}`}
                   aria-label="Profil Akun Guru"
                 >
@@ -375,10 +386,10 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                     <GraduationCap className="w-4 h-4" />
                   </div>
                   <div className="text-left">
-                    <p className="text-xs font-extrabold text-blue-950 leading-tight truncate max-w-[120px] sm:max-w-[180px]">
+                    <p className="text-xs font-extrabold text-blue-950 dark:text-white leading-tight truncate max-w-[120px] sm:max-w-[180px]">
                       {teacher.fullName}
                     </p>
-                    <p className="text-[10px] text-blue-700 font-semibold flex items-center gap-1">
+                    <p className="text-[10px] text-blue-700 dark:text-blue-300 font-semibold flex items-center gap-1">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
                       <span className="truncate max-w-[100px] sm:max-w-[150px]">{teacher.schoolName || 'Guru SD'}</span>
                     </p>
@@ -394,10 +405,10 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
       <main className="w-full max-w-[2000px] mx-auto px-4 sm:px-8 lg:px-12 pt-5 sm:pt-7 space-y-6 flex-1">
         
         {/* Quick PIN Entry Bar for Students */}
-        <div className="w-full bg-white rounded-2xl p-3.5 sm:p-4 border border-slate-200 shadow-sm">
+        <div className="w-full bg-white dark:bg-slate-900 rounded-2xl p-3.5 sm:p-4 border border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
           <form onSubmit={handlePinSubmit} className="flex flex-col sm:flex-row items-center gap-3">
-            <div className="flex items-center gap-2 text-slate-800 font-bold text-xs sm:text-sm whitespace-nowrap self-start sm:self-center">
-              <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center">
+            <div className="flex items-center gap-2 text-slate-800 dark:text-slate-200 font-bold text-xs sm:text-sm whitespace-nowrap self-start sm:self-center">
+              <div className="w-8 h-8 rounded-xl bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 flex items-center justify-center">
                 <KeyRound className="w-4 h-4" />
               </div>
               <span>Punya PIN Kuis dari Guru?</span>
@@ -413,7 +424,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                   setPinError(null);
                 }}
                 aria-label="Masukkan 4 digit PIN Kuis"
-                className="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none font-mono font-bold text-xs sm:text-sm text-slate-900 min-h-[44px]"
+                className="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none font-mono font-bold text-xs sm:text-sm text-slate-900 dark:text-white min-h-[44px]"
               />
 
               <button
@@ -428,7 +439,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
           </form>
 
           {pinError && (
-            <div className="mt-2.5 p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2 animate-fade-in">
+            <div className="mt-2.5 p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2 animate-fade-in">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
               <span>{pinError}</span>
             </div>
@@ -437,7 +448,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
 
         {/* Welcoming Header Banner - Dynamic Role Based */}
         {!teacher ? (
-          <div className="w-full bg-gradient-to-r from-blue-700 via-indigo-700 to-blue-800 text-white rounded-2xl p-6 sm:p-8 shadow-card flex flex-col md:flex-row md:items-center md:justify-between gap-5">
+          <div className="w-full bg-gradient-to-r from-blue-700 via-indigo-700 to-blue-800 dark:from-slate-900 dark:via-indigo-950 dark:to-slate-900 text-white rounded-2xl p-6 sm:p-8 shadow-card dark:border dark:border-slate-800 flex flex-col md:flex-row md:items-center md:justify-between gap-5 transition-colors">
             <div className="space-y-2 max-w-xl">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 backdrop-blur-sm text-xs font-semibold text-blue-100">
                 <Sparkles className="w-3.5 h-3.5 text-amber-300" /> Selamat Belajar Siswa Pintar
@@ -461,7 +472,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
             </div>
           </div>
         ) : (
-          <div className="w-full bg-gradient-to-r from-indigo-800 via-blue-800 to-sky-800 text-white rounded-2xl p-6 sm:p-8 shadow-card flex flex-col md:flex-row md:items-center md:justify-between gap-5">
+          <div className="w-full bg-gradient-to-r from-indigo-800 via-blue-800 to-sky-800 dark:from-slate-900 dark:via-blue-950 dark:to-slate-900 text-white rounded-2xl p-6 sm:p-8 shadow-card dark:border dark:border-slate-800 flex flex-col md:flex-row md:items-center md:justify-between gap-5 transition-colors">
             <div className="space-y-2 max-w-xl">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 backdrop-blur-sm text-xs font-semibold text-indigo-100">
                 <GraduationCap className="w-3.5 h-3.5 text-amber-300" /> Ruang Pendidik SD
@@ -480,9 +491,9 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                   playClick();
                   onOpenTeacherPortal();
                 }}
-                className="px-5 py-3 rounded-xl bg-white text-blue-900 hover:bg-blue-50 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm transition-colors min-h-[44px] btn-press"
+                className="px-5 py-3 rounded-xl bg-white text-blue-900 hover:bg-blue-50 dark:bg-blue-600 dark:hover:bg-blue-500 dark:text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm transition-colors min-h-[44px] btn-press"
               >
-                <LayoutDashboard className="w-4 h-4 text-blue-600" />
+                <LayoutDashboard className="w-4 h-4 text-blue-600 dark:text-white" />
                 <span>Buka Dashboard Guru</span>
               </button>
             </div>
@@ -494,10 +505,10 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
           
           {/* Row 1: Filter Kelas */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-              <BookOpen className="w-3.5 h-3.5 text-blue-600" /> Jenjang Kelas
+            <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+              <BookOpen className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" /> Jenjang Kelas
             </h3>
-            <span className="text-xs text-slate-400 font-medium">
+            <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">
               {selectedGrade === 'Semua' ? 'Menampilkan Semua Jenjang' : `Khusus Kelas ${selectedGrade} SD`}
             </span>
           </div>
@@ -515,7 +526,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                   className={`flex-shrink-0 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all min-h-[44px] btn-press ${
                     isActive
                       ? 'bg-blue-600 text-white shadow-sm'
-                      : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                      : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700'
                   }`}
                 >
                   {grade === 'Semua' ? 'Semua Kelas' : `Kelas ${grade} SD`}
@@ -526,8 +537,8 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
 
           {/* Row 2: Filter Mata Pelajaran (Label Mapel diam / tidak ikut bergeser) */}
           <div className="flex items-center gap-2 pt-1">
-            <div className="flex-shrink-0 flex items-center gap-1.5 text-xs font-bold text-slate-600 pr-1 select-none">
-              <Layers className="w-4 h-4 text-blue-600" />
+            <div className="flex-shrink-0 flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-400 pr-1 select-none">
+              <Layers className="w-4 h-4 text-blue-600 dark:text-blue-400" />
               <span>Mapel:</span>
             </div>
             <div className="flex-1 min-w-0 flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1.5 scrollbar-hover">
@@ -542,8 +553,8 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                     }}
                     className={`flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-medium transition-all min-h-[44px] btn-press ${
                       isActive
-                        ? 'bg-slate-900 text-white font-semibold shadow-sm'
-                        : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                        ? 'bg-slate-900 dark:bg-blue-600 text-white font-semibold shadow-sm'
+                        : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700'
                     }`}
                   >
                     {subj}
@@ -558,7 +569,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
         {/* Quizzes Dynamic Grid - Fluid, Balanced, No Dead Space */}
         <section className="space-y-3.5 pt-2">
           <div className="flex items-center justify-between">
-            <h3 className="text-base sm:text-lg font-bold text-slate-900">
+            <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100">
               Daftar Kuis ({filteredQuizzes.length})
             </h3>
           </div>
@@ -569,13 +580,13 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
               return (
                 <div
                   key={quiz.id}
-                  className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-card hover:shadow-card-hover hover:border-blue-300 transition-all flex flex-col justify-between"
+                  className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200/90 dark:border-slate-800 shadow-card hover:shadow-card-hover hover:border-blue-300 dark:hover:border-blue-500/50 transition-all flex flex-col justify-between"
                 >
                   <div>
                     {/* Header Row: Subject Badge & Grade Pill */}
                     <div className="flex items-center justify-between gap-2 mb-3">
                       <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-2xl p-2 rounded-xl bg-slate-50 border border-slate-100 select-none flex-shrink-0">
+                        <span className="text-2xl p-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 select-none flex-shrink-0">
                           {quiz.coverEmoji}
                         </span>
                         <div className="min-w-0">
@@ -587,35 +598,35 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
 
                       <div className="flex items-center gap-1 flex-shrink-0">
                         {isCustom && (
-                          <span className="px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-200 font-bold text-[10px]">
+                          <span className="px-2 py-0.5 rounded-md bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 font-bold text-[10px]">
                             Guru
                           </span>
                         )}
-                        <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-bold text-[11px]">
+                        <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-[11px]">
                           Kelas {quiz.grade}
                         </span>
                       </div>
                     </div>
 
                     {/* Title */}
-                    <h4 className="text-base font-bold text-slate-900 leading-snug break-words line-clamp-2 mb-1.5">
+                    <h4 className="text-base font-bold text-slate-900 dark:text-white leading-snug break-words line-clamp-2 mb-1.5">
                       {quiz.title}
                     </h4>
 
                     {/* Description */}
-                    <p className="text-xs sm:text-sm text-slate-500 line-clamp-2 leading-relaxed mb-4">
+                    <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed mb-4">
                       {quiz.description}
                     </p>
                   </div>
 
                   {/* Footer Meta & Action */}
-                  <div className="pt-3 border-t border-slate-100 space-y-3">
-                    <div className="flex items-center justify-between text-xs text-slate-500 font-medium">
+                  <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-3">
+                    <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-medium">
                       <span className="flex items-center gap-1">
-                        <HelpCircle className="w-3.5 h-3.5 text-slate-400" /> {quiz.questions.length} Soal
+                        <HelpCircle className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" /> {quiz.questions.length} Soal
                       </span>
                       <span className="flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5 text-slate-400" /> {quiz.durationPerQuestionSec}s / soal
+                        <Clock className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" /> {quiz.durationPerQuestionSec}s / soal
                       </span>
                     </div>
 
@@ -632,7 +643,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                       {isCustom && (
                         <button
                           onClick={(e) => handleDeleteCustomQuiz(quiz.id, e)}
-                          className="p-2.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl border border-slate-200 min-h-[46px] min-w-[46px] flex items-center justify-center transition-colors"
+                          className="p-2.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl border border-slate-200 dark:border-slate-700 min-h-[46px] min-w-[46px] flex items-center justify-center transition-colors"
                           title="Hapus Kuis Ini"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -646,10 +657,10 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
           </div>
 
           {filteredQuizzes.length === 0 && (
-            <div className="w-full text-center py-14 bg-white rounded-2xl border border-dashed border-slate-200 p-6">
+            <div className="w-full text-center py-14 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 p-6">
               <div className="text-4xl mb-2">🔍</div>
-              <h4 className="text-base font-bold text-slate-800 mb-1">Belum Ada Kuis untuk Kategori Ini</h4>
-              <p className="text-xs text-slate-500 mb-3">Coba pilih jenjang kelas atau mata pelajaran lainnya.</p>
+              <h4 className="text-base font-bold text-slate-800 dark:text-slate-200 mb-1">Belum Ada Kuis untuk Kategori Ini</h4>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">Coba pilih jenjang kelas atau mata pelajaran lainnya.</p>
               <button
                 onClick={() => {
                   playClick();
@@ -671,7 +682,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
         <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 sm:p-6 modal-wrapper overscroll-contain">
           {/* Static Backdrop Overlay: Smooth opacity fade only, zero transform/movement */}
           <div
-            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm animate-backdrop-fade touch-none"
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm animate-backdrop-fade touch-none"
             onClick={() => setRulesModalQuiz(null)}
             onWheel={(e) => {
               e.preventDefault();
@@ -685,26 +696,26 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
           />
 
           {/* Dialog Card: Pure card entrance animation */}
-          <div className="relative z-10 bg-white w-full max-w-md mx-auto my-auto rounded-2xl shadow-pop border border-slate-200 overflow-hidden flex flex-col max-h-[90vh] animate-modal-card-in overscroll-contain">
+          <div className="relative z-10 bg-white dark:bg-slate-900 w-full max-w-md mx-auto my-auto rounded-2xl shadow-pop border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[90vh] animate-modal-card-in overscroll-contain">
             
             {/* Header Modal */}
-            <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+            <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
               <div className="flex items-center gap-3 min-w-0">
-                <span className="text-2xl p-1.5 rounded-lg bg-slate-50 border border-slate-100 select-none flex-shrink-0">
+                <span className="text-2xl p-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 select-none flex-shrink-0">
                   {rulesModalQuiz.coverEmoji}
                 </span>
                 <div className="min-w-0">
-                  <h3 className="font-bold text-slate-900 text-base leading-tight truncate">
+                  <h3 className="font-bold text-slate-900 dark:text-white text-base leading-tight truncate">
                     {rulesModalQuiz.title}
                   </h3>
-                  <p className="text-xs text-slate-500 font-medium">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
                     Petunjuk Pengerjaan Soal
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setRulesModalQuiz(null)}
-                className="p-2 text-slate-400 hover:text-slate-700 rounded-lg min-h-[40px] min-w-[40px] flex-shrink-0"
+                className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg min-h-[40px] min-w-[40px] flex-shrink-0"
                 aria-label="Tutup Aturan"
               >
                 <X className="w-5 h-5" />
@@ -712,32 +723,32 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
             </div>
 
             {/* Rules Content */}
-            <div className="p-5 space-y-3 text-slate-700 overflow-y-auto flex-1">
-              <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200/80">
+            <div className="p-5 space-y-3 text-slate-700 dark:text-slate-300 overflow-y-auto flex-1">
+              <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80">
                 <div className="text-xl flex-shrink-0">⏱️</div>
                 <div>
-                  <h5 className="font-bold text-xs text-slate-900">Durasi Menjawab</h5>
-                  <p className="text-xs text-slate-600 mt-0.5">
+                  <h5 className="font-bold text-xs text-slate-900 dark:text-white">Durasi Menjawab</h5>
+                  <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5">
                     Tiap soal berdurasi <strong>{rulesModalQuiz.durationPerQuestionSec} detik</strong>. Tidak perlu terburu-buru, jawablah dengan teliti.
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200/80">
+              <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80">
                 <div className="text-xl flex-shrink-0">⭐</div>
                 <div>
-                  <h5 className="font-bold text-xs text-slate-900">Sistem Bintang Prestasi</h5>
-                  <p className="text-xs text-slate-600 mt-0.5">
+                  <h5 className="font-bold text-xs text-slate-900 dark:text-white">Sistem Bintang Prestasi</h5>
+                  <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5">
                     Dapatkan hingga <strong>3 Bintang Emas</strong> dengan menjawab seluruh pertanyaan secara tepat.
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200/80">
+              <div className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80">
                 <div className="text-xl flex-shrink-0">💡</div>
                 <div>
-                  <h5 className="font-bold text-xs text-slate-900">Pembahasan di Akhir</h5>
-                  <p className="text-xs text-slate-600 mt-0.5">
+                  <h5 className="font-bold text-xs text-slate-900 dark:text-white">Pembahasan di Akhir</h5>
+                  <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5">
                     Setelah selesai, kamu bisa membaca pembahasan lengkap untuk soal yang belum kamu ketahui.
                   </p>
                 </div>
@@ -745,10 +756,10 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
             </div>
 
             {/* Footer Buttons */}
-            <div className="p-4 bg-slate-50 border-t border-slate-100 flex gap-2.5 flex-shrink-0">
+            <div className="p-4 bg-slate-50 dark:bg-slate-850 border-t border-slate-100 dark:border-slate-800 flex gap-2.5 flex-shrink-0">
               <button
                 onClick={() => setRulesModalQuiz(null)}
-                className="flex-1 py-2.5 px-4 rounded-xl font-semibold text-xs sm:text-sm text-slate-700 bg-white border border-slate-200 hover:bg-slate-100 min-h-[44px]"
+                className="flex-1 py-2.5 px-4 rounded-xl font-semibold text-xs sm:text-sm text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-750 min-h-[44px]"
               >
                 Kembali
               </button>
@@ -772,7 +783,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
       {isProfileModalOpen && (
         <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 sm:p-6 modal-wrapper overscroll-contain">
           <div
-            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm animate-backdrop-fade touch-none"
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm animate-backdrop-fade touch-none"
             onClick={() => setIsProfileModalOpen(false)}
             onWheel={(e) => {
               e.preventDefault();
@@ -785,18 +796,18 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
             aria-hidden="true"
           />
 
-          <div className="relative z-10 bg-white w-full max-w-md mx-auto my-auto rounded-3xl shadow-pop border border-slate-200 overflow-hidden flex flex-col max-h-[92vh] animate-modal-card-in overscroll-contain">
+          <div className="relative z-10 bg-white dark:bg-slate-900 w-full max-w-md mx-auto my-auto rounded-3xl shadow-pop border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[92vh] animate-modal-card-in overscroll-contain">
             {/* Header */}
-            <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between flex-shrink-0">
+            <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between flex-shrink-0">
               <div>
-                <h3 className="font-bold text-slate-900 text-base">Profil & Akun Siswa</h3>
-                <p className="text-xs text-slate-500">
+                <h3 className="font-bold text-slate-900 dark:text-white text-base">Profil & Akun Siswa</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   {profile.isLoggedIn ? 'Akun Siswa Terhubung' : 'Mode Tamu (Default Aktif)'}
                 </p>
               </div>
               <button
                 onClick={() => setIsProfileModalOpen(false)}
-                className="p-2 text-slate-400 hover:text-slate-700 rounded-xl min-h-[40px] min-w-[40px] flex items-center justify-center"
+                className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-xl min-h-[40px] min-w-[40px] flex items-center justify-center"
                 aria-label="Tutup"
               >
                 <X className="w-5 h-5" />
@@ -804,7 +815,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
             </div>
 
             {/* Mode Switcher Tabs */}
-            <div className="flex border-b border-slate-100 bg-slate-50 p-1.5 gap-1.5 flex-shrink-0">
+            <div className="flex border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 p-1.5 gap-1.5 flex-shrink-0">
               <button
                 type="button"
                 onClick={() => {
@@ -813,8 +824,8 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                 }}
                 className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all min-h-[40px] ${
                   profileTab === 'guest'
-                    ? 'bg-white text-blue-700 shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-400 shadow-sm'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                 }`}
               >
                 Profil & Maskot
@@ -828,8 +839,8 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                 }}
                 className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all min-h-[40px] ${
                   profileTab !== 'guest' || profile.isLoggedIn
-                    ? 'bg-white text-blue-700 shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-400 shadow-sm'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                 }`}
               >
                 {profile.isLoggedIn ? 'Akun Cloud Aktif' : 'Login / Simpan Cloud'}
@@ -840,18 +851,18 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
             {profileTab === 'guest' && (
               <form onSubmit={handleSaveProfile} className="p-5 space-y-4 overflow-y-auto flex-1">
                 {/* Status Badge */}
-                <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs">
-                  <span className="font-semibold text-slate-700 flex items-center gap-1.5">
+                <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 text-xs">
+                  <span className="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                     <span className={`w-2 h-2 rounded-full ${profile.isLoggedIn ? 'bg-emerald-500' : 'bg-blue-500'}`} />
                     {profile.isLoggedIn ? `Akun: ${profile.email}` : 'Status: Mode Tamu (Tanpa Login)'}
                   </span>
-                  <span className="font-bold text-amber-600 flex items-center gap-1">
+                  <span className="font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
                     <Trophy className="w-3.5 h-3.5" /> {profile.starsEarned} ⭐
                   </span>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
                     Nama Panggilan Siswa (Maksimal 12 Karakter)
                   </label>
                   <input
@@ -859,15 +870,15 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                     maxLength={12}
                     value={tempNickname}
                     onChange={(e) => setTempNickname(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none font-bold text-sm text-slate-900 min-h-[44px]"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none font-bold text-sm text-slate-900 dark:text-white min-h-[44px]"
                   />
-                  <p className="text-[11px] text-slate-400 mt-1 font-medium">
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1 font-medium">
                     Kosongkan jika ingin tetap menggunakan profil &quot;Saya&quot;.
                   </p>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-2">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">
                     Pilih Maskot Hewan
                   </label>
                   <div className="grid grid-cols-4 gap-2">
@@ -883,12 +894,12 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                           }}
                           className={`p-2.5 rounded-2xl flex flex-col items-center justify-center border transition-all min-h-[60px] ${
                             isSelected
-                              ? 'bg-blue-50 border-blue-500 ring-2 ring-blue-400 shadow-sm'
-                              : 'bg-white border-slate-200 hover:bg-slate-50'
+                              ? 'bg-blue-50 dark:bg-blue-900/40 border-blue-500 ring-2 ring-blue-400 shadow-sm'
+                              : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750'
                           }`}
                         >
                           <span className="text-2xl select-none">{avatar.emoji}</span>
-                          <span className="text-[10px] font-semibold text-slate-600 mt-1 truncate max-w-full">
+                          <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-300 mt-1 truncate max-w-full">
                             {avatar.name.split(' ')[0]}
                           </span>
                         </button>
@@ -899,8 +910,8 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
 
                 {/* Cloud account helper */}
                 {!profile.isLoggedIn ? (
-                  <div className="p-3 rounded-2xl bg-blue-50/70 border border-blue-100 flex items-center justify-between gap-2">
-                    <div className="text-[11px] text-blue-900">
+                  <div className="p-3 rounded-2xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/60 flex items-center justify-between gap-2">
+                    <div className="text-[11px] text-blue-900 dark:text-blue-200">
                       <span className="font-bold block">Ingin menyimpan bintang di cloud?</span>
                       <span>Daftar akun siswa gratis.</span>
                     </div>
@@ -917,11 +928,11 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                   </div>
                 ) : (
                   <div className="pt-1 flex items-center justify-between text-xs">
-                    <span className="text-slate-500 font-medium">Bintang tersinkronisasi otomatis.</span>
+                    <span className="text-slate-500 dark:text-slate-400 font-medium">Bintang tersinkronisasi otomatis.</span>
                     <button
                       type="button"
                       onClick={handleStudentSignOut}
-                      className="text-rose-600 hover:text-rose-700 font-bold"
+                      className="text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 font-bold"
                     >
                       Keluar Akun
                     </button>
@@ -932,7 +943,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                   <button
                     type="button"
                     onClick={() => setIsProfileModalOpen(false)}
-                    className="flex-1 py-2.5 rounded-xl font-semibold text-xs sm:text-sm text-slate-700 bg-slate-100 hover:bg-slate-200 min-h-[44px]"
+                    className="flex-1 py-2.5 rounded-xl font-semibold text-xs sm:text-sm text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 min-h-[44px]"
                   >
                     Batal
                   </button>
@@ -951,15 +962,15 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
               <div className="p-5 space-y-4 overflow-y-auto flex-1">
                 {profile.isLoggedIn ? (
                   <div className="space-y-4 text-center py-4">
-                    <div className="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto text-2xl">
+                    <div className="w-14 h-14 rounded-2xl bg-emerald-100 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto text-2xl">
                       <CheckCircle2 className="w-8 h-8" />
                     </div>
                     <div>
-                      <h4 className="font-bold text-base text-slate-900">
+                      <h4 className="font-bold text-base text-slate-900 dark:text-white">
                         {isCustomName(profile.nickname) ? profile.nickname : 'Saya'}
                       </h4>
-                      <p className="text-xs text-slate-500 mt-0.5">{profile.email}</p>
-                      <p className="text-xs font-bold text-amber-600 mt-2">
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{profile.email}</p>
+                      <p className="text-xs font-bold text-amber-600 dark:text-amber-400 mt-2">
                         {profile.starsEarned} Bintang Tersimpan di Cloud
                       </p>
                     </div>
@@ -968,7 +979,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                       <button
                         type="button"
                         onClick={handleStudentSignOut}
-                        className="flex-1 py-2.5 rounded-xl font-bold text-xs text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 min-h-[44px]"
+                        className="flex-1 py-2.5 rounded-xl font-bold text-xs text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/30 hover:bg-rose-100 dark:hover:bg-rose-900/50 border border-rose-200 dark:border-rose-900 min-h-[44px]"
                       >
                         Keluar ke Mode Tamu
                       </button>
@@ -987,13 +998,13 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                     className="space-y-3.5"
                   >
                     {studentAuthError && (
-                      <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2 animate-fade-in">
+                      <div className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2 animate-fade-in">
                         <AlertCircle className="w-4 h-4 flex-shrink-0" />
                         <span>{studentAuthError}</span>
                       </div>
                     )}
 
-                    <div className="flex bg-slate-100 p-1 rounded-xl gap-1">
+                    <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl gap-1">
                       <button
                         type="button"
                         onClick={() => {
@@ -1002,7 +1013,9 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                           setStudentAuthError(null);
                         }}
                         className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-                          profileTab === 'login' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-600'
+                          profileTab === 'login'
+                            ? 'bg-white dark:bg-slate-700 text-blue-700 dark:text-blue-300 shadow-sm'
+                            : 'text-slate-600 dark:text-slate-400'
                         }`}
                       >
                         Masuk Siswa
@@ -1015,7 +1028,9 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                           setStudentAuthError(null);
                         }}
                         className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-                          profileTab === 'register' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-600'
+                          profileTab === 'register'
+                            ? 'bg-white dark:bg-slate-700 text-blue-700 dark:text-blue-300 shadow-sm'
+                            : 'text-slate-600 dark:text-slate-400'
                         }`}
                       >
                         Daftar Akun Baru
@@ -1023,7 +1038,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                         Alamat Email Siswa
                       </label>
                       <input
@@ -1031,12 +1046,12 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                         value={studentEmail}
                         onChange={(e) => setStudentEmail(e.target.value)}
                         required
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none font-semibold text-xs sm:text-sm text-slate-900 min-h-[44px]"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none font-semibold text-xs sm:text-sm text-slate-900 dark:text-white min-h-[44px]"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                         Kata Sandi
                       </label>
                       <input
@@ -1044,19 +1059,19 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                         value={studentPassword}
                         onChange={(e) => setStudentPassword(e.target.value)}
                         required
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none font-semibold text-xs sm:text-sm text-slate-900 min-h-[44px]"
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none font-semibold text-xs sm:text-sm text-slate-900 dark:text-white min-h-[44px]"
                       />
                     </div>
 
                     {profileTab === 'register' && (
                       <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-1">
+                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                           Tingkat Kelas SD
                         </label>
                         <select
                           value={studentGrade}
                           onChange={(e) => setStudentGrade(Number(e.target.value))}
-                          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none font-bold text-xs sm:text-sm text-slate-900 min-h-[44px]"
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none font-bold text-xs sm:text-sm text-slate-900 dark:text-white min-h-[44px]"
                         >
                           {[1, 2, 3, 4, 5, 6].map((g) => (
                             <option key={g} value={g}>
@@ -1086,7 +1101,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                           playClick();
                           setProfileTab('guest');
                         }}
-                        className="w-full py-2 text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors"
+                        className="w-full py-2 text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-colors"
                       >
                         Tetap Gunakan Mode Tamu
                       </button>
@@ -1103,7 +1118,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
       {isTeacherProfileModalOpen && teacher && (
         <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 sm:p-6 modal-wrapper overscroll-contain">
           <div
-            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm animate-backdrop-fade touch-none"
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm animate-backdrop-fade touch-none"
             onClick={() => setIsTeacherProfileModalOpen(false)}
             onWheel={(e) => {
               e.preventDefault();
@@ -1117,20 +1132,20 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
           />
 
           <div 
-            className="relative z-10 bg-white w-full max-w-md mx-auto my-auto rounded-3xl shadow-pop border border-slate-200 overflow-hidden flex flex-col max-h-[90vh] animate-modal-card-in overscroll-contain"
+            className="relative z-10 bg-white dark:bg-slate-900 w-full max-w-md mx-auto my-auto rounded-3xl shadow-pop border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[90vh] animate-modal-card-in overscroll-contain"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header Modal */}
-            <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
+            <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/70 dark:bg-slate-850">
               <div className="flex items-center gap-3 min-w-0">
                 <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-xl shadow-sm flex-shrink-0">
                   <GraduationCap className="w-5 h-5" />
                 </div>
                 <div className="min-w-0">
-                  <h3 className="font-bold text-slate-900 text-base leading-tight truncate">
+                  <h3 className="font-bold text-slate-900 dark:text-white text-base leading-tight truncate">
                     Akun Pendidik & Guru
                   </h3>
-                  <p className="text-xs text-emerald-600 font-semibold flex items-center gap-1 mt-0.5">
+                  <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1 mt-0.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
                     Sesi Pendidik Aktif (Pro)
                   </p>
@@ -1138,7 +1153,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
               </div>
               <button
                 onClick={() => setIsTeacherProfileModalOpen(false)}
-                className="p-2 text-slate-400 hover:text-slate-700 rounded-lg min-h-[40px] min-w-[40px] flex-shrink-0"
+                className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg min-h-[40px] min-w-[40px] flex-shrink-0"
                 aria-label="Tutup Profil Guru"
               >
                 <X className="w-5 h-5" />
@@ -1146,42 +1161,42 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
             </div>
 
             {/* Content */}
-            <div className="p-5 space-y-4 text-slate-700 overflow-y-auto flex-1">
-              <div className="bg-blue-50/70 border border-blue-100 rounded-2xl p-4 space-y-3">
+            <div className="p-5 space-y-4 text-slate-700 dark:text-slate-300 overflow-y-auto flex-1">
+              <div className="bg-blue-50/70 dark:bg-slate-800/70 border border-blue-100 dark:border-slate-700 rounded-2xl p-4 space-y-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-white text-blue-600 flex items-center justify-center shadow-xs flex-shrink-0">
+                  <div className="w-9 h-9 rounded-xl bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 flex items-center justify-center shadow-xs flex-shrink-0">
                     <User className="w-4 h-4" />
                   </div>
                   <div className="min-w-0">
-                    <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400 block">Nama Pendidik</span>
-                    <span className="text-sm font-extrabold text-slate-900 truncate block">{teacher.fullName}</span>
+                    <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400 dark:text-slate-400 block">Nama Pendidik</span>
+                    <span className="text-sm font-extrabold text-slate-900 dark:text-white truncate block">{teacher.fullName}</span>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-white text-blue-600 flex items-center justify-center shadow-xs flex-shrink-0">
+                  <div className="w-9 h-9 rounded-xl bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 flex items-center justify-center shadow-xs flex-shrink-0">
                     <School className="w-4 h-4" />
                   </div>
                   <div className="min-w-0">
-                    <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400 block">Asal Sekolah</span>
-                    <span className="text-xs font-bold text-slate-800 truncate block">{teacher.schoolName || 'SD Indonesia'}</span>
+                    <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400 dark:text-slate-400 block">Asal Sekolah</span>
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate block">{teacher.schoolName || 'SD Indonesia'}</span>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-white text-blue-600 flex items-center justify-center shadow-xs flex-shrink-0">
+                  <div className="w-9 h-9 rounded-xl bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 flex items-center justify-center shadow-xs flex-shrink-0">
                     <Mail className="w-4 h-4" />
                   </div>
                   <div className="min-w-0">
-                    <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400 block">Email Pendidik</span>
-                    <span className="text-xs font-semibold text-slate-700 truncate block">{teacher.email}</span>
+                    <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400 dark:text-slate-400 block">Email Pendidik</span>
+                    <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 truncate block">{teacher.email}</span>
                   </div>
                 </div>
               </div>
 
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 text-xs text-slate-600 space-y-1">
-                <span className="font-bold text-slate-800 flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-blue-600" /> Hak Akses Guru Aktif:
+              <div className="p-3 bg-slate-50 dark:bg-slate-800/80 rounded-xl border border-slate-200/80 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-300 space-y-1">
+                <span className="font-bold text-slate-800 dark:text-white flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" /> Hak Akses Guru Aktif:
                 </span>
                 <p className="leading-relaxed">
                   Pembuatan kuis tak terbatas, generator soal kilat, pemantauan rekap nilai siswa, dan cetak lembar kerja siswa (LKS).
@@ -1208,7 +1223,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                       setIsTeacherProfileModalOpen(false);
                       onTeacherLogout();
                     }}
-                    className="w-full py-2.5 px-4 rounded-xl font-bold text-xs sm:text-sm text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 min-h-[44px] flex items-center justify-center gap-2 btn-press transition-colors"
+                    className="w-full py-2.5 px-4 rounded-xl font-bold text-xs sm:text-sm text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 bg-rose-50 dark:bg-rose-950/30 hover:bg-rose-100 dark:hover:bg-rose-900/50 border border-rose-200 dark:border-rose-900 min-h-[44px] flex items-center justify-center gap-2 btn-press transition-colors"
                   >
                     <LogOut className="w-4 h-4" />
                     <span>Keluar Akun Guru (Logout)</span>

@@ -89,7 +89,7 @@ export const TeacherAuthModal: React.FC<TeacherAuthModalProps> = ({
     <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 sm:p-6 select-none modal-wrapper overscroll-contain">
       {/* Static Backdrop */}
       <div
-        className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm animate-backdrop-fade touch-none"
+        className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm animate-backdrop-fade touch-none"
         onClick={onClose}
         onWheel={(e) => {
           e.preventDefault();
@@ -103,7 +103,7 @@ export const TeacherAuthModal: React.FC<TeacherAuthModalProps> = ({
       />
 
       {/* Modal Dialog Card */}
-      <div className="relative z-10 bg-white w-full max-w-md mx-auto my-auto rounded-3xl shadow-pop border border-slate-200 overflow-hidden flex flex-col max-h-[92vh] animate-modal-card-in overscroll-contain">
+      <div className="relative z-10 bg-white dark:bg-slate-900 w-full max-w-md mx-auto my-auto rounded-3xl shadow-pop border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[92vh] animate-modal-card-in overscroll-contain">
         
         {/* Header */}
         <div className="p-5 sm:p-6 bg-gradient-to-r from-blue-700 to-indigo-800 text-white flex items-center justify-between flex-shrink-0">
@@ -131,18 +131,18 @@ export const TeacherAuthModal: React.FC<TeacherAuthModalProps> = ({
         </div>
 
         {/* Supabase Status Indicator */}
-        <div className="px-6 py-2 bg-slate-50 border-b border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+        <div className="px-6 py-2 bg-slate-50 dark:bg-slate-850 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
           <span className="flex items-center gap-1.5 font-medium">
             <span className={`w-2 h-2 rounded-full ${isSupabaseConfigured ? 'bg-emerald-500' : 'bg-amber-500'}`} />
             Backend: {isSupabaseConfigured ? 'Supabase Cloud Terhubung' : 'Mode Offline / Lokal'}
           </span>
-          <span className="font-mono text-[10px] text-slate-400">v2.2.0</span>
+          <span className="font-mono text-[10px] text-slate-400 dark:text-slate-500">v2.2.6</span>
         </div>
 
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-5 sm:p-6 space-y-4 overflow-y-auto flex-1">
           {errorMessage && (
-            <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-start gap-2 animate-fade-in">
+            <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs flex items-start gap-2 animate-fade-in">
               <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
               <span>{errorMessage}</span>
             </div>
@@ -151,8 +151,8 @@ export const TeacherAuthModal: React.FC<TeacherAuthModalProps> = ({
           {isRegister && (
             <>
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1">
-                  <User className="w-3.5 h-3.5 text-blue-600" />
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1">
+                  <User className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                   <span>Nama Lengkap Guru</span>
                 </label>
                 <input
@@ -160,13 +160,13 @@ export const TeacherAuthModal: React.FC<TeacherAuthModalProps> = ({
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   required
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none text-xs sm:text-sm font-semibold text-slate-900 min-h-[44px]"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none text-xs sm:text-sm font-semibold text-slate-900 dark:text-white min-h-[44px]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1">
-                  <School className="w-3.5 h-3.5 text-blue-600" />
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1">
+                  <School className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                   <span>Nama Sekolah SD</span>
                 </label>
                 <input
@@ -174,15 +174,15 @@ export const TeacherAuthModal: React.FC<TeacherAuthModalProps> = ({
                   value={schoolName}
                   onChange={(e) => setSchoolName(e.target.value)}
                   required
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none text-xs sm:text-sm font-semibold text-slate-900 min-h-[44px]"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none text-xs sm:text-sm font-semibold text-slate-900 dark:text-white min-h-[44px]"
                 />
               </div>
             </>
           )}
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1">
-              <Mail className="w-3.5 h-3.5 text-blue-600" />
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1">
+              <Mail className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
               <span>Alamat Email</span>
             </label>
             <input
@@ -190,13 +190,13 @@ export const TeacherAuthModal: React.FC<TeacherAuthModalProps> = ({
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none text-xs sm:text-sm font-semibold text-slate-900 min-h-[44px]"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none text-xs sm:text-sm font-semibold text-slate-900 dark:text-white min-h-[44px]"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1">
-              <Lock className="w-3.5 h-3.5 text-blue-600" />
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1">
+              <Lock className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
               <span>Kata Sandi (Minimal 6 Karakter)</span>
             </label>
             <input
@@ -204,7 +204,7 @@ export const TeacherAuthModal: React.FC<TeacherAuthModalProps> = ({
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none text-xs sm:text-sm font-semibold text-slate-900 min-h-[44px]"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none text-xs sm:text-sm font-semibold text-slate-900 dark:text-white min-h-[44px]"
             />
           </div>
 
@@ -224,13 +224,13 @@ export const TeacherAuthModal: React.FC<TeacherAuthModalProps> = ({
           </button>
 
           {/* Demo Login Quick Pass */}
-          <div className="pt-2 border-t border-slate-100 flex flex-col gap-2">
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex flex-col gap-2">
             <button
               type="button"
               onClick={handleDemoLogin}
-              className="w-full py-2.5 px-3 rounded-xl border border-dashed border-blue-300 bg-blue-50/50 hover:bg-blue-50 text-blue-700 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors min-h-[42px]"
+              className="w-full py-2.5 px-3 rounded-xl border border-dashed border-blue-300 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/40 hover:bg-blue-50 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-300 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors min-h-[42px]"
             >
-              <CheckCircle2 className="w-4 h-4 text-blue-600" />
+              <CheckCircle2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
               <span>Masuk Langsung Sebagai Guru Demo (Uji Coba Cepat)</span>
             </button>
 
@@ -241,7 +241,7 @@ export const TeacherAuthModal: React.FC<TeacherAuthModalProps> = ({
                 setIsRegister(!isRegister);
                 setErrorMessage(null);
               }}
-              className="text-xs text-slate-500 hover:text-blue-600 font-medium py-1.5 text-center transition-colors"
+              className="text-xs text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 font-medium py-1.5 text-center transition-colors"
             >
               {isRegister
                 ? 'Sudah punya akun? Masuk di sini'

@@ -22,6 +22,12 @@
     -moz-osx-font-smoothing: grayscale;
     padding-bottom: env(safe-area-inset-bottom, 16px);
     padding-top: env(safe-area-inset-top, 0px);
+    transition: background-color 200ms ease, color 200ms ease;
+  }
+  
+  html.dark, html.dark body {
+    background-color: #0B0F19; /* Deep Slate 950 */
+    color: #F8FAFC; /* Slate 50 */
   }
   
   #root {
@@ -54,6 +60,16 @@
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #94A3B8;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #0F172A;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #475569;
 }
 
 /* Kunci scroll body saat modal/dialog terbuka */
