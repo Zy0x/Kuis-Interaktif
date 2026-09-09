@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import type { Quiz, QuizAttemptAnswer } from '../../types/quiz';
 import { useBackHandler } from '../../lib/navigationHistory';
+import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 import { 
   X, 
   Volume2, 
@@ -53,6 +54,9 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   const [timeLeft, setTimeLeft] = useState(quiz.durationPerQuestionSec);
   const [totalTimeSpent, setTotalTimeSpent] = useState(0);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
+
+  // Kunci scroll body saat dialog konfirmasi keluar aktif
+  useBodyScrollLock(showExitConfirm);
   
   // Smartboard / Teacher IFP Features
   const [isPaused, setIsPaused] = useState(false);
@@ -475,14 +479,23 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 
       {/* Exit Confirmation Dialog */}
       {showExitConfirm && (
-        <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 sm:p-6">
+        <div 
+          className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 sm:p-6 modal-wrapper overscroll-contain"
+          onWheel={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+        >
           <div
-            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm animate-backdrop-fade"
+            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm animate-backdrop-fade touch-none"
             onClick={() => setShowExitConfirm(false)}
+            onWheel={(e) => e.preventDefault()}
+            onTouchMove={(e) => e.preventDefault()}
             aria-hidden="true"
           />
 
-          <div className="relative z-10 bg-white rounded-3xl p-6 max-w-sm w-full shadow-pop border border-slate-200 text-center space-y-3 animate-modal-card-in">
+          <div 
+            className="relative z-10 bg-white rounded-3xl p-6 max-w-sm w-full shadow-pop border border-slate-200 text-center space-y-3 animate-modal-card-in overscroll-contain"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h4 className="text-base font-bold text-slate-900">Keluar dari Kuis?</h4>
             <p className="text-xs text-slate-600 leading-relaxed">
               Kuis yang sedang berlangsung akan dihentikan dan progres saat ini tidak akan disimpan.
@@ -490,13 +503,13 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
             <div className="flex gap-2.5 pt-2">
               <button
                 onClick={() => setShowExitConfirm(false)}
-                className="flex-1 py-2.5 rounded-xl font-semibold text-xs text-slate-700 bg-slate-100 hover:bg-slate-200 min-h-[42px]"
+                className="flex-1 py-2.5 rounded-xl font-semibold text-xs text-slate-700 bg-slate-100 hover:bg-slate-200 min-h-[44px] transition-colors"
               >
                 Lanjutkan Kuis
               </button>
               <button
                 onClick={onExit}
-                className="flex-1 py-2.5 rounded-xl font-bold text-xs text-white bg-rose-600 hover:bg-rose-700 min-h-[42px]"
+                className="flex-1 py-2.5 rounded-xl font-bold text-xs text-white bg-rose-600 hover:bg-rose-700 min-h-[44px] transition-colors"
               >
                 Ya, Keluar
               </button>

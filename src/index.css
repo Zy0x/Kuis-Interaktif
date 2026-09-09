@@ -55,3 +55,50 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #94A3B8;
 }
+
+/* Kunci scroll body saat modal/dialog terbuka */
+body.modal-open {
+  overflow: hidden !important;
+  touch-action: none !important;
+}
+
+/* Cegah scroll chaining tembus ke latar belakang */
+.modal-wrapper {
+  overscroll-behavior: contain !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Scrollbar horizontal elegan: tersembunyi secara default, hanya tampil saat di-hover */
+.scrollbar-hover {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-hover::-webkit-scrollbar {
+  height: 4px;
+  width: 4px;
+  background: transparent;
+}
+
+.scrollbar-hover::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-hover::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 9999px;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.scrollbar-hover:hover {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.5) transparent;
+}
+
+.scrollbar-hover:hover::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.5);
+}
+
+.scrollbar-hover:hover::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.8);
+}

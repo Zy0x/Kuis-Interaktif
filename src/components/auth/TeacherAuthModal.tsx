@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { DataManager, isSupabaseConfigured } from '../../lib/supabaseClient';
 import type { TeacherProfile } from '../../types/quiz';
+import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 import { X, GraduationCap, Lock, Mail, User, School, AlertCircle, ArrowRight, CheckCircle2 } from 'lucide-react';
 
 interface TeacherAuthModalProps {
@@ -16,6 +17,8 @@ export const TeacherAuthModal: React.FC<TeacherAuthModalProps> = ({
   onLoginSuccess,
   playClick,
 }) => {
+  useBodyScrollLock(isOpen);
+
   const [isRegister, setIsRegister] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -83,16 +86,24 @@ export const TeacherAuthModal: React.FC<TeacherAuthModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 sm:p-6 select-none">
+    <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 sm:p-6 select-none modal-wrapper overscroll-contain">
       {/* Static Backdrop */}
       <div
-        className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm animate-backdrop-fade"
+        className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm animate-backdrop-fade touch-none"
         onClick={onClose}
+        onWheel={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+        onTouchMove={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
         aria-hidden="true"
       />
 
       {/* Modal Dialog Card */}
-      <div className="relative z-10 bg-white w-full max-w-md mx-auto my-auto rounded-3xl shadow-pop border border-slate-200 overflow-hidden flex flex-col max-h-[92vh] animate-modal-card-in">
+      <div className="relative z-10 bg-white w-full max-w-md mx-auto my-auto rounded-3xl shadow-pop border border-slate-200 overflow-hidden flex flex-col max-h-[92vh] animate-modal-card-in overscroll-contain">
         
         {/* Header */}
         <div className="p-5 sm:p-6 bg-gradient-to-r from-blue-700 to-indigo-800 text-white flex items-center justify-between flex-shrink-0">

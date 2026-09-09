@@ -208,7 +208,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
       <main className="max-w-7xl w-full mx-auto px-4 sm:px-8 pt-6 space-y-6 flex-1">
         
         {/* Navigation Tabs */}
-        <div className="flex items-center gap-2 border-b border-slate-200 pb-2 overflow-x-auto">
+        <div className="flex items-center gap-2 border-b border-slate-200 pb-2 overflow-x-auto scrollbar-hover">
           <button
             onClick={() => {
               playClick();
@@ -415,7 +415,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
               </div>
             ) : (
               <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-card">
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto scrollbar-hover">
                   <table className="w-full text-left text-xs sm:text-sm">
                     <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold">
                       <tr>

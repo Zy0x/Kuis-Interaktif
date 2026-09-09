@@ -3,6 +3,7 @@ import type { Quiz, GradeLevel, Subject, TeacherProfile } from '../../types/quiz
 import { AVATAR_LIST } from '../../data/seedQuizzes';
 import { DataManager } from '../../lib/supabaseClient';
 import { useBackHandler } from '../../lib/navigationHistory';
+import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 import { 
   Play, 
   Clock, 
@@ -48,6 +49,9 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
   const [profile, setProfile] = useState(() => DataManager.getPlayerProfile());
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [rulesModalQuiz, setRulesModalQuiz] = useState<Quiz | null>(null);
+
+  // Kunci scroll latar belakang saat modal profil atau modal aturan terbuka
+  useBodyScrollLock(isProfileModalOpen || Boolean(rulesModalQuiz));
 
   const isCustomName = (name?: string): boolean => {
     if (!name) return false;
@@ -411,7 +415,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
             </span>
           </div>
 
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1.5 scrollbar-hover -mx-4 px-4 sm:mx-0 sm:px-0">
             {grades.map((grade) => {
               const isActive = selectedGrade === grade;
               return (
@@ -421,7 +425,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                     playClick();
                     setSelectedGrade(grade);
                   }}
-                  className={`flex-shrink-0 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all min-h-[42px] btn-press ${
+                  className={`flex-shrink-0 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all min-h-[44px] btn-press ${
                     isActive
                       ? 'bg-blue-600 text-white shadow-sm'
                       : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
@@ -433,30 +437,33 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
             })}
           </div>
 
-          {/* Row 2: Filter Mata Pelajaran */}
-          <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1 scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0 pt-1">
-            <span className="text-xs font-bold text-slate-400 flex items-center gap-1 mr-1 flex-shrink-0">
-              <Layers className="w-3.5 h-3.5" /> Mapel:
-            </span>
-            {subjects.map((subj) => {
-              const isActive = selectedSubject === subj;
-              return (
-                <button
-                  key={subj}
-                  onClick={() => {
-                    playClick();
-                    setSelectedSubject(subj);
-                  }}
-                  className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-all min-h-[38px] ${
-                    isActive
-                      ? 'bg-slate-900 text-white font-semibold shadow-sm'
-                      : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-                  }`}
-                >
-                  {subj}
-                </button>
-              );
-            })}
+          {/* Row 2: Filter Mata Pelajaran (Label Mapel diam / tidak ikut bergeser) */}
+          <div className="flex items-center gap-2 pt-1">
+            <div className="flex-shrink-0 flex items-center gap-1.5 text-xs font-bold text-slate-600 pr-1 select-none">
+              <Layers className="w-4 h-4 text-blue-600" />
+              <span>Mapel:</span>
+            </div>
+            <div className="flex-1 min-w-0 flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1.5 scrollbar-hover">
+              {subjects.map((subj) => {
+                const isActive = selectedSubject === subj;
+                return (
+                  <button
+                    key={subj}
+                    onClick={() => {
+                      playClick();
+                      setSelectedSubject(subj);
+                    }}
+                    className={`flex-shrink-0 px-3 py-1.5 rounded-xl text-xs font-medium transition-all min-h-[44px] btn-press ${
+                      isActive
+                        ? 'bg-slate-900 text-white font-semibold shadow-sm'
+                        : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                    }`}
+                  >
+                    {subj}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
         </div>
@@ -574,16 +581,24 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
 
       {/* Modal 1: Aturan Singkat (Clean, Calm, Clear) */}
       {rulesModalQuiz && (
-        <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 sm:p-6">
+        <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 sm:p-6 modal-wrapper overscroll-contain">
           {/* Static Backdrop Overlay: Smooth opacity fade only, zero transform/movement */}
           <div
-            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm animate-backdrop-fade"
+            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm animate-backdrop-fade touch-none"
             onClick={() => setRulesModalQuiz(null)}
+            onWheel={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            onTouchMove={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
             aria-hidden="true"
           />
 
           {/* Dialog Card: Pure card entrance animation */}
-          <div className="relative z-10 bg-white w-full max-w-md mx-auto my-auto rounded-2xl shadow-pop border border-slate-200 overflow-hidden flex flex-col max-h-[90vh] animate-modal-card-in">
+          <div className="relative z-10 bg-white w-full max-w-md mx-auto my-auto rounded-2xl shadow-pop border border-slate-200 overflow-hidden flex flex-col max-h-[90vh] animate-modal-card-in overscroll-contain">
             
             {/* Header Modal */}
             <div className="p-5 border-b border-slate-100 flex items-center justify-between">
@@ -668,14 +683,22 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
 
       {/* Modal 2: Profil & Akun Siswa (Default: Mode Tamu) */}
       {isProfileModalOpen && (
-        <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 sm:p-6">
+        <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 sm:p-6 modal-wrapper overscroll-contain">
           <div
-            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm animate-backdrop-fade"
+            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm animate-backdrop-fade touch-none"
             onClick={() => setIsProfileModalOpen(false)}
+            onWheel={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            onTouchMove={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
             aria-hidden="true"
           />
 
-          <div className="relative z-10 bg-white w-full max-w-md mx-auto my-auto rounded-3xl shadow-pop border border-slate-200 overflow-hidden flex flex-col max-h-[92vh] animate-modal-card-in">
+          <div className="relative z-10 bg-white w-full max-w-md mx-auto my-auto rounded-3xl shadow-pop border border-slate-200 overflow-hidden flex flex-col max-h-[92vh] animate-modal-card-in overscroll-contain">
             {/* Header */}
             <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between flex-shrink-0">
               <div>
