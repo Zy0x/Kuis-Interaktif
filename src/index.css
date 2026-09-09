@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  body {
+    font-family: 'Quicksand', 'Nunito', sans-serif;
+    user-select: none;
+    -webkit-font-smoothing: antialiased;
+    padding-bottom: env(safe-area-inset-bottom, 16px);
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+}
+
+/* Custom child-friendly button click press animation */
+.btn-playful {
+  transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.btn-playful:active {
+  transform: translateY(3px);
+}
+
+/* Custom scrollbar for wide screens */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #FEF3C7;
+}
+::-webkit-scrollbar-thumb {
+  background: #FCD34D;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #F59E0B;
+}

@@ -1,0 +1,24 @@
+{
+  "name": "Kuis SD Seru - Belajar Asyik",
+  "short_name": "Kuis SD",
+  "description": "Kuis interaktif ramah anak untuk siswa SD kelas 1 hingga 6",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFFBEB",
+  "theme_color": "#2563EB",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}

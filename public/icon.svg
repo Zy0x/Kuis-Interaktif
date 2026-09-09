@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1D4ED8;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="starGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FDE047;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#F59E0B;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <!-- Background Rounded Circle -->
+  <rect width="512" height="512" rx="128" fill="url(#grad1)" />
+  <circle cx="256" cy="256" r="210" fill="#ffffff" opacity="0.12" />
+  
+  <!-- Central Cheerful Star Mascot -->
+  <polygon points="256,90 298,185 402,196 324,266 345,368 256,316 167,368 188,266 110,196 214,185" fill="url(#starGrad)" stroke="#B45309" stroke-width="12" stroke-linejoin="round" />
+  
+  <!-- Cheerful Eyes -->
+  <ellipse cx="225" cy="235" rx="14" ry="20" fill="#1E293B" />
+  <ellipse cx="287" cy="235" rx="14" ry="20" fill="#1E293B" />
+  <circle cx="221" cy="227" r="5" fill="#FFFFFF" />
+  <circle cx="283" cy="227" r="5" fill="#FFFFFF" />
+  
+  <!-- Cheerful Smile -->
+  <path d="M 215 270 Q 256 310 297 270" stroke="#1E293B" stroke-width="10" stroke-linecap="round" fill="none" />
+  <!-- Rosy Cheeks -->
+  <ellipse cx="195" cy="265" rx="12" ry="7" fill="#F43F5E" opacity="0.6" />
+  <ellipse cx="317" cy="265" rx="12" ry="7" fill="#F43F5E" opacity="0.6" />
+
+  <!-- Graduation Cap or Badge -->
+  <polygon points="256,40 180,85 256,115 332,85" fill="#1E293B" />
+  <path d="M 180 85 L 180 120 Q 256 160 332 120 L 332 85" fill="#334155" />
+  <path d="M 332 85 L 350 140" stroke="#FBBF24" stroke-width="6" stroke-linecap="round" />
+  <circle cx="350" cy="145" r="7" fill="#FBBF24" />
+</svg>
