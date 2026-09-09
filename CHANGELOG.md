@@ -1,6 +1,19 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis SD Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.12] - 2026-09-09
+### Sinkronisasi Jam Lokal Akurat & Eliminasi Istilah Zona Waktu Bias (Strict Device Local Time & Timezone Bias Removal)
+
+#### Peningkatan Logika Waktu & Presisi UI (*Time & Localization Polish*)
+- **Penyelarasan Jam Lokal Otomatis Berbasis UTC (*Strict Local Time Clock*):**
+  - Memperbarui `useTimeGreeting` agar secara murni mengonversi stempel waktu UTC menjadi format waktu lokal perangkat pengguna (`HH:mm`) secara akurat tanpa bias wilayah.
+- **Penghapusan Label Zona Waktu Tertentu (*Timezone Label Bias Removal*):**
+  - Menghapus akhiran statis `"WIB"` pada lencana waktu banner beranda.
+  - Mencegah kebingungan bagi pengguna yang berada di zona waktu lain seperti WITA (Waktu Indonesia Tengah / UTC+8), WIT (Waktu Indonesia Timur / UTC+9), maupun pengguna internasional.
+  - Lencana waktu kini menampilkan format murni seperti `🌙 Malam Hari • 19:15`, sepenuhnya sinkron dengan jam sistem perangkat pengguna.
+
+---
+
 ## [2.2.11] - 2026-09-09
 ### Header Kartu Kompak dengan Penempatan Lencana Mapel Bersebelahan Logo Bebas Tabrakan (Ultra-Compact Side-By-Side Card Header Layout)
 

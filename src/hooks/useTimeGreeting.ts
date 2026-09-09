@@ -45,7 +45,7 @@ export const getTimePhase = (date: Date): TimePhase => {
 export const getTimeGreetingData = (phase: TimePhase, date: Date): TimeGreetingData => {
   const hoursStr = String(date.getHours()).padStart(2, '0');
   const minsStr = String(date.getMinutes()).padStart(2, '0');
-  const currentTimeString = `${hoursStr}:${minsStr} WIB`;
+  const currentTimeString = `${hoursStr}:${minsStr}`;
 
   switch (phase) {
     case 'morning':
