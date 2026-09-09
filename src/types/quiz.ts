@@ -36,7 +36,10 @@ export interface Quiz {
   creatorName?: string;
   isPublished?: boolean;
   createdAt?: string;
+  visibility?: 'public' | 'private';
 }
+
+export const MASTER_TEACHER_EMAIL = 'zy0x.noir@gmail.com';
 
 export interface PlayerProfile {
   nickname: string;

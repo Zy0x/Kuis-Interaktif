@@ -18,7 +18,9 @@ import {
   Sparkles, 
   LogOut, 
   ArrowLeft,
-  Share2
+  Share2,
+  Lock,
+  Globe
 } from 'lucide-react';
 
 interface TeacherDashboardProps {
@@ -74,10 +76,17 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   }, []);
 
   const loadData = async () => {
-    const all = DataManager.getAllQuizzes();
+    const all = DataManager.getAllQuizzes({ teacherEmail: teacher.email, teacherId: teacher.id });
     setQuizzes(all);
     const subs = await DataManager.getTeacherSubmissions();
     setSubmissions(subs);
+  };
+
+  const handleToggleVisibility = async (quiz: Quiz) => {
+    playClick();
+    const nextVis = quiz.visibility === 'private' ? 'public' : 'private';
+    await DataManager.updateQuizVisibility(quiz.id, nextVis);
+    await loadData();
   };
 
   const handleCopyPin = (pin: string) => {
@@ -122,6 +131,8 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
     try {
       const generated = DataManager.generateQuickMathQuiz(genGrade, genCount);
       generated.creatorName = teacher.fullName;
+      generated.creatorId = teacher.id;
+      generated.visibility = 'public';
       await DataManager.saveCustomQuiz(generated);
       await loadData();
       setActiveTab('quizzes');
@@ -291,39 +302,101 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {quizzes.map((quiz) => {
-                const isCustom = quiz.id.startsWith('custom_');
-                return (
-                  <div
-                    key={quiz.id}
-                    className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-card flex flex-col justify-between hover:border-blue-300 dark:hover:border-blue-500/50 transition-all space-y-4"
+            {quizzes.length === 0 ? (
+              <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 sm:p-12 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 space-y-4 max-w-lg mx-auto my-6">
+                <div className="w-16 h-16 mx-auto rounded-2xl bg-blue-50 dark:bg-blue-950/50 flex items-center justify-center text-3xl">
+                  📚
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+                    Koleksi Kuis Anda Masih Kosong
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+                    Mulai buat kuis interaktif buatan Anda sendiri atau gunakan Generator Kilat Soal untuk membuat kuis otomatis.
+                  </p>
+                </div>
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+                  <button
+                    onClick={() => {
+                      playClick();
+                      onOpenCreator();
+                    }}
+                    className="w-full sm:w-auto px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-white bg-blue-600 hover:bg-blue-700 min-h-[44px] flex items-center justify-center gap-2 shadow-sm transition-all btn-press"
                   >
-                    <div>
-                      {/* Top Row: PIN & Mapel */}
-                      <div className="flex items-center justify-between gap-2 mb-3">
-                        <div className="flex items-center gap-1.5 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-850 px-3 py-1 rounded-xl">
-                          <span className="text-[10px] uppercase font-bold text-blue-700 dark:text-blue-300">PIN:</span>
-                          <span className="font-mono font-black text-sm text-blue-900 dark:text-blue-100 tracking-wider">
-                            {quiz.pinCode || '1001'}
-                          </span>
-                          <button
-                            onClick={() => handleCopyPin(quiz.pinCode || '1001')}
-                            className="p-1 hover:text-blue-600 dark:hover:text-blue-300 rounded transition-colors"
-                            title="Salin PIN"
-                          >
-                            {copiedPin === (quiz.pinCode || '1001') ? (
-                              <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                            ) : (
-                              <Copy className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                            )}
-                          </button>
-                        </div>
+                    <Plus className="w-4 h-4" />
+                    <span>Buat Kuis Baru</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      playClick();
+                      setActiveTab('generator');
+                    }}
+                    className="w-full sm:w-auto px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 min-h-[44px] flex items-center justify-center gap-2 transition-colors btn-press"
+                  >
+                    <Zap className="w-4 h-4 text-amber-500" />
+                    <span>Generator Kilat</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {quizzes.map((quiz) => {
+                  const isCustom = quiz.id.startsWith('custom_');
+                  return (
+                    <div
+                      key={quiz.id}
+                      className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-card flex flex-col justify-between hover:border-blue-300 dark:hover:border-blue-500/50 transition-all space-y-4"
+                    >
+                      <div>
+                        {/* Top Row: PIN, Visibility Badge & Mapel */}
+                        <div className="flex items-center justify-between gap-2 mb-3">
+                          <div className="flex items-center gap-1.5 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-850 px-3 py-1 rounded-xl">
+                            <span className="text-[10px] uppercase font-bold text-blue-700 dark:text-blue-300">PIN:</span>
+                            <span className="font-mono font-black text-sm text-blue-900 dark:text-blue-100 tracking-wider">
+                              {quiz.pinCode || '1001'}
+                            </span>
+                            <button
+                              onClick={() => handleCopyPin(quiz.pinCode || '1001')}
+                              className="p-1 hover:text-blue-600 dark:hover:text-blue-300 rounded transition-colors"
+                              title="Salin PIN"
+                            >
+                              {copiedPin === (quiz.pinCode || '1001') ? (
+                                <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                              ) : (
+                                <Copy className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                              )}
+                            </button>
+                          </div>
 
-                        <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                          Kelas {quiz.grade}
-                        </span>
-                      </div>
+                          <div className="flex items-center gap-1.5">
+                            {/* 1-Click Visibility Toggle */}
+                            <button
+                              onClick={() => handleToggleVisibility(quiz)}
+                              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold border transition-all min-h-[32px] ${
+                                quiz.visibility === 'private'
+                                  ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800 hover:bg-amber-100'
+                                  : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100'
+                              }`}
+                              title={quiz.visibility === 'private' ? 'Kuis Privat (hanya via PIN/tautan). Klik untuk jadikan Publik.' : 'Kuis Publik (tampil di katalog). Klik untuk jadikan Privat.'}
+                            >
+                              {quiz.visibility === 'private' ? (
+                                <>
+                                  <Lock className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+                                  <span>Privat</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Globe className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                                  <span>Publik</span>
+                                </>
+                              )}
+                            </button>
+
+                            <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                              Kelas {quiz.grade}
+                            </span>
+                          </div>
+                        </div>
 
                       {/* Title & Emoji */}
                       <div className="flex items-start gap-2.5">
@@ -406,6 +479,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                 );
               })}
             </div>
+            )}
           </section>
         )}
 

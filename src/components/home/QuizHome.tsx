@@ -30,12 +30,14 @@ import {
   LogOut,
   School,
   Mail,
-  User
+  User,
+  LogIn
 } from 'lucide-react';
 
 interface QuizHomeProps {
   onSelectQuiz: (quiz: Quiz) => void;
   onOpenTeacherPortal: () => void;
+  onOpenAuthModal?: (tab?: 'teacher' | 'student') => void;
   onEnterPin: (quiz: Quiz) => void;
   teacher: TeacherProfile | null;
   onTeacherLogout?: () => void;
@@ -49,6 +51,7 @@ interface QuizHomeProps {
 export const QuizHome: React.FC<QuizHomeProps> = ({
   onSelectQuiz,
   onOpenTeacherPortal,
+  onOpenAuthModal,
   onEnterPin,
   teacher,
   onTeacherLogout,
@@ -58,7 +61,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
   onToggleMute,
   playClick,
 }) => {
-  const [quizzes, setQuizzes] = useState<Quiz[]>(() => DataManager.getAllQuizzes());
+  const [quizzes, setQuizzes] = useState<Quiz[]>(() => DataManager.getAllQuizzes({ publicOnly: true }));
   const [selectedGrade, setSelectedGrade] = useState<GradeLevel>('Semua');
   const [selectedSubject, setSelectedSubject] = useState<string>('Semua');
   const [profile, setProfile] = useState(() => DataManager.getPlayerProfile());
@@ -137,7 +140,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
   }, hasActiveFilter);
 
   useEffect(() => {
-    setQuizzes(DataManager.getAllQuizzes());
+    setQuizzes(DataManager.getAllQuizzes({ publicOnly: true }));
   }, []);
 
   const grades: GradeLevel[] = ['Semua', 1, 2, 3, 4, 5, 6];
@@ -274,7 +277,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
     setIsDeletingQuiz(true);
     try {
       await DataManager.deleteCustomQuiz(quizToDelete.id);
-      setQuizzes(DataManager.getAllQuizzes());
+      setQuizzes(DataManager.getAllQuizzes({ publicOnly: true }));
       setQuizToDelete(null);
     } catch (err) {
       console.error('Gagal menghapus kuis:', err);
@@ -325,39 +328,93 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
 
           {/* Right Action Icons */}
           <div className="flex items-center gap-2 sm:gap-2.5">
-            {!teacher ? (
-              <>
-                {/* Teacher Portal Entry Button */}
+            {/* Theme Toggle Button */}
+            <ThemeToggle isDark={isDark} onToggle={onToggleTheme} playClick={playClick} />
+
+            {/* Audio Toggle Button */}
+            <button
+              onClick={() => {
+                playClick();
+                onToggleMute();
+              }}
+              className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center btn-press shadow-xs"
+              title={isMuted ? 'Nyalakan Suara' : 'Matikan Suara'}
+              aria-label="Pengaturan Suara"
+            >
+              {isMuted ? <VolumeX className="w-5 h-5 text-rose-500" /> : <Volume2 className="w-5 h-5 text-slate-700 dark:text-slate-200" />}
+            </button>
+
+            {/* Unified Account / Profile Pill */}
+            {teacher ? (
+              /* Guru Pill */
+              <button
+                onClick={() => {
+                  playClick();
+                  setIsTeacherProfileModalOpen(true);
+                }}
+                className="flex items-center gap-2 pl-2 sm:pl-2.5 pr-3 py-1.5 rounded-xl bg-blue-50 dark:bg-slate-800 hover:bg-blue-100 dark:hover:bg-slate-750 border border-blue-200 dark:border-slate-700 text-blue-900 dark:text-blue-100 transition-colors min-h-[44px] btn-press shadow-sm"
+                title={`Profil Guru: ${teacher.fullName}`}
+                aria-label="Profil Akun Guru"
+              >
+                <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold text-sm shadow-xs flex-shrink-0">
+                  <GraduationCap className="w-4 h-4" />
+                </div>
+                <div className="text-left">
+                  <p className="text-xs font-extrabold text-blue-950 dark:text-white leading-tight truncate max-w-[120px] sm:max-w-[180px]">
+                    {teacher.fullName}
+                  </p>
+                  <p className="text-[10px] text-blue-700 dark:text-blue-300 font-semibold flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
+                    <span className="truncate max-w-[100px] sm:max-w-[150px]">{teacher.schoolName || 'Guru SD'}</span>
+                  </p>
+                </div>
+              </button>
+            ) : profile.isLoggedIn ? (
+              /* Siswa Pill (Logged In) */
+              <button
+                onClick={() => {
+                  playClick();
+                  setTempNickname(isCustomName(profile.nickname) ? profile.nickname : '');
+                  setTempAvatar(profile.avatarId);
+                  setIsProfileModalOpen(true);
+                }}
+                className="flex items-center gap-2 pl-2 sm:pl-2.5 pr-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-100 transition-colors min-h-[44px] btn-press shadow-sm"
+                title={`Profil Siswa: ${profile.nickname}`}
+                aria-label="Profil Akun Siswa"
+              >
+                <span className="text-xl select-none">{currentAvatar.emoji}</span>
+                <div className="text-left">
+                  <p className="text-xs font-extrabold text-emerald-950 dark:text-emerald-100 leading-tight truncate max-w-[110px] sm:max-w-[160px]">
+                    {profile.nickname}
+                  </p>
+                  <p className="text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                    <span>Kelas {profile.grade || 1}</span>
+                    <span>•</span>
+                    <span className="flex items-center gap-0.5 text-amber-600 dark:text-amber-400 font-bold">
+                      <Trophy className="w-2.5 h-2.5" /> {profile.starsEarned} ⭐
+                    </span>
+                  </p>
+                </div>
+              </button>
+            ) : (
+              /* Mode Tamu: Masuk / Akun Button + Guest Avatar Quick Customizer */
+              <div className="flex items-center gap-1.5 sm:gap-2">
                 <button
                   onClick={() => {
                     playClick();
-                    onOpenTeacherPortal();
+                    if (onOpenAuthModal) {
+                      onOpenAuthModal('student');
+                    } else {
+                      onOpenTeacherPortal();
+                    }
                   }}
-                  className="flex items-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-xl bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 font-bold text-xs sm:text-sm min-h-[44px] transition-colors btn-press shadow-sm whitespace-nowrap"
-                  title="Portal Masuk Guru"
+                  className="flex items-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm min-h-[44px] shadow-sm transition-all btn-press whitespace-nowrap"
+                  title="Pintu Masuk Guru & Siswa"
                 >
-                  <GraduationCap className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                  <span className="hidden sm:inline">Portal Guru</span>
-                  <span className="sm:hidden">Guru</span>
+                  <LogIn className="w-4 h-4" />
+                  <span>Masuk / Akun</span>
                 </button>
 
-                {/* Theme Toggle Button */}
-                <ThemeToggle isDark={isDark} onToggle={onToggleTheme} playClick={playClick} />
-
-                {/* Audio Toggle Button */}
-                <button
-                  onClick={() => {
-                    playClick();
-                    onToggleMute();
-                  }}
-                  className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center btn-press shadow-xs"
-                  title={isMuted ? 'Nyalakan Suara' : 'Matikan Suara'}
-                  aria-label="Pengaturan Suara"
-                >
-                  {isMuted ? <VolumeX className="w-5 h-5 text-rose-500" /> : <Volume2 className="w-5 h-5 text-slate-700 dark:text-slate-200" />}
-                </button>
-
-                {/* Profile Avatar Pill (Mode Siswa / Tamu) */}
                 <button
                   onClick={() => {
                     playClick();
@@ -365,62 +422,16 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                     setTempAvatar(profile.avatarId);
                     setIsProfileModalOpen(true);
                   }}
-                  className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700 transition-colors min-h-[44px] btn-press"
-                  aria-label="Pengaturan Profil Pemain"
+                  className="flex items-center gap-1.5 pl-2 pr-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700 transition-colors min-h-[44px] btn-press"
+                  title="Mode Tamu: Klik untuk sesuaikan nama/karakter"
+                  aria-label="Pengaturan Profil Mode Tamu"
                 >
-                  <span className="text-xl select-none">{currentAvatar.emoji}</span>
-                  <div className="text-left hidden sm:block">
-                    <p className="text-xs font-bold text-slate-800 dark:text-slate-100 leading-tight truncate max-w-[100px]">
-                      {isCustomName(profile.nickname) ? profile.nickname : 'Saya'}
-                    </p>
-                    <p className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-0.5">
-                      <Trophy className="w-2.5 h-2.5" /> {profile.starsEarned} Bintang
-                    </p>
-                  </div>
+                  <span className="text-lg select-none">{currentAvatar.emoji}</span>
+                  <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 hidden md:inline">
+                    {isCustomName(profile.nickname) ? profile.nickname : 'Tamu'}
+                  </span>
                 </button>
-              </>
-            ) : (
-              <>
-                {/* Theme Toggle Button */}
-                <ThemeToggle isDark={isDark} onToggle={onToggleTheme} playClick={playClick} />
-
-                {/* Audio Toggle Button */}
-                <button
-                  onClick={() => {
-                    playClick();
-                    onToggleMute();
-                  }}
-                  className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center btn-press shadow-xs"
-                  title={isMuted ? 'Nyalakan Suara' : 'Matikan Suara'}
-                  aria-label="Pengaturan Suara"
-                >
-                  {isMuted ? <VolumeX className="w-5 h-5 text-rose-500" /> : <Volume2 className="w-5 h-5 text-slate-700 dark:text-slate-200" />}
-                </button>
-
-                {/* Profil Resmi Guru (Menggantikan Profil Tamu Siswa) */}
-                <button
-                  onClick={() => {
-                    playClick();
-                    setIsTeacherProfileModalOpen(true);
-                  }}
-                  className="flex items-center gap-2 pl-2 sm:pl-2.5 pr-3 py-1.5 rounded-xl bg-blue-50 dark:bg-slate-800 hover:bg-blue-100 dark:hover:bg-slate-750 border border-blue-200 dark:border-slate-700 text-blue-900 dark:text-blue-100 transition-colors min-h-[44px] btn-press shadow-sm"
-                  title={`Profil Guru: ${teacher.fullName}`}
-                  aria-label="Profil Akun Guru"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold text-sm shadow-xs flex-shrink-0">
-                    <GraduationCap className="w-4 h-4" />
-                  </div>
-                  <div className="text-left">
-                    <p className="text-xs font-extrabold text-blue-950 dark:text-white leading-tight truncate max-w-[120px] sm:max-w-[180px]">
-                      {teacher.fullName}
-                    </p>
-                    <p className="text-[10px] text-blue-700 dark:text-blue-300 font-semibold flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
-                      <span className="truncate max-w-[100px] sm:max-w-[150px]">{teacher.schoolName || 'Guru SD'}</span>
-                    </p>
-                  </div>
-                </button>
-              </>
+              </div>
             )}
           </div>
         </div>

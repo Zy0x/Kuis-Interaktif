@@ -1,6 +1,6 @@
 -- ==========================================================
 -- SKRIP DATABASE SUPABASE MANDIRI: KUIS SD SERU
--- Versi Skema: 2.1.2
+-- Versi Skema: 2.2.18
 -- Tanggal: 2026-09-09
 -- ==========================================================
 -- Jalankan skrip ini langsung di Supabase SQL Editor milik Anda.
@@ -56,10 +56,12 @@ CREATE TABLE IF NOT EXISTS public.quizzes (
 -- Migration safety for existing tables:
 ALTER TABLE public.quizzes ADD COLUMN IF NOT EXISTS pin_code VARCHAR(8);
 ALTER TABLE public.quizzes ADD COLUMN IF NOT EXISTS creator_name VARCHAR(120);
+ALTER TABLE public.quizzes ADD COLUMN IF NOT EXISTS visibility VARCHAR(16) NOT NULL DEFAULT 'public' CHECK (visibility IN ('public', 'private'));
 
 CREATE INDEX IF NOT EXISTS idx_quizzes_grade ON public.quizzes(target_grade);
 CREATE INDEX IF NOT EXISTS idx_quizzes_subject ON public.quizzes(subject);
 CREATE INDEX IF NOT EXISTS idx_quizzes_pin ON public.quizzes(pin_code);
+CREATE INDEX IF NOT EXISTS idx_quizzes_visibility ON public.quizzes(visibility);
 CREATE INDEX IF NOT EXISTS idx_quizzes_published ON public.quizzes(is_published) WHERE is_published = TRUE;
 
 -- ==========================================================

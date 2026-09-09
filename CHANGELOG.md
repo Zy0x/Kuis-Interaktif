@@ -1,6 +1,35 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis SD Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.18] - 2026-09-09
+### Portal Akun Terpadu Guru & Siswa, Visibilitas Kuis Publik/Privat, dan Isolasi Bank Kuis Master (Unified Account Portal, Public/Private Quiz Visibility, and Multi-Tenant Teacher Bank)
+
+#### Autentikasi & Pengalaman Masuk Pengguna (*Unified Entry & Identity Management*)
+- **Portal Autentikasi Terpadu (*Single-Entry Unified Auth Portal*):**
+  - Menggabungkan autentikasi pendidik dan siswa dalam satu dialog modal terpadu (`UnifiedAuthModal`) dengan tab tersegmentasi yang bersih: 🎓 **Pendidik / Guru** dan 🎒 **Siswa / Pelajar**.
+  - Mengeliminasi tombol *Guru Demo* secara permanen demi kepatuhan integritas akun dan autentikasi nyata berbasis sesi cloud/lokal.
+  - Mempertahankan akses bermain instan bagi siswa dengan opsi *"Tetap Bermain di Mode Tamu"* tanpa mewajibkan registrasi awal.
+- **Navigasi Dinamis & Ringkas Berbasis Status Masuk:**
+  - Navbar beranda kini menampilkan pill terpadu: saat belum masuk menyajikan tombol *"Masuk / Akun"* berdampingan dengan avatar mode tamu; saat pendidik masuk bertransformasi menjadi pill nama guru dan asal instansi dengan menu profil mandiri; saat siswa terdaftar masuk menampilkan pill nama, kelas, dan jumlah bintang pencapaian.
+
+#### Tata Kelola Konten & Visibilitas Kuis (*Quiz Visibility & Privacy Engine*)
+- **Dukungan Kuis Publik vs Privat (*Public & Private Quiz Modes*):**
+  - Menambahkan atribut visibilitas kuis (`visibility: 'public' | 'private'`).
+  - **Kuis Publik:** Ditampilkan secara terbuka di beranda katalog kuis siswa sesuai jenjang kelas dan mata pelajaran yang relevan.
+  - **Kuis Privat:** Disembunyikan dari etalase publik dan hanya dapat diakses secara eksklusif melalui masukan 4 digit PIN kuis kelas atau tautan langsung yang dibagikan pendidik.
+- **Kendali Visibilitas Fleksibel di Panel Guru & Studio Pembuat:**
+  - Menyediakan tombol peralihan 1-klik (*1-click instant toggle*) pada setiap kartu kuis di **Dashboard Guru** untuk mengubah status antara `🌐 Publik` dan `🔒 Privat`.
+  - Mengintegrasikan selektor kartu radio visibilitas pada tahap pembuatan kuis di `QuizCreator` dengan deskripsi panduan yang informatif.
+
+#### Isolasi Koleksi Kuis & Hibah Kepemilikan Master Guru (*Multi-Tenant Isolation & Master Account*)
+- **Isolasi Bank Soal Antar-Guru:**
+  - Setiap pendidik yang mendaftar atau masuk ke sistem kini hanya melihat, mengedit, dan mengelola bank kuis yang dibuat oleh akunnya sendiri. Guru baru memulai dengan bank kuis bersih (`0` kuis) disertai panduan pembuatan kuis kilat.
+- **Koleksi Kuis Awal Dikelola Penuh oleh Master Teacher:**
+  - Seluruh kuis bawaan dan koleksi kuis awal secara otomatis dihibahkan dan diikat kepemilikannya ke akun pendidik utama master (`zy0x.noir@gmail.com`).
+  - Akun master memiliki visibilitas dan hak kelola menyeluruh atas seluruh kuis koleksi awal.
+
+---
+
 ## [2.2.17] - 2026-09-09
 ### Penegakan Hak Akses Berbasis Peran Ketat: Proteksi Penuh Siswa & Tamu dari Modifikasi/Penghapusan Kuis (Strict Role-Based Access Control - RBAC Enforcement)
 

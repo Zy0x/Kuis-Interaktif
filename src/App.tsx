@@ -8,7 +8,7 @@ import { QuizArena } from './components/arena/QuizArena';
 import { QuizResult } from './components/result/QuizResult';
 import { QuizCreator } from './components/creator/QuizCreator';
 import { StudentLobby } from './components/lobby/StudentLobby';
-import { TeacherAuthModal } from './components/auth/TeacherAuthModal';
+import { UnifiedAuthModal, type AuthModalTab } from './components/auth/UnifiedAuthModal';
 import { TeacherDashboard } from './components/teacher/TeacherDashboard';
 import { WorksheetPrintView } from './components/print/WorksheetPrintView';
 import { DataManager } from './lib/supabaseClient';
@@ -34,9 +34,10 @@ export const App: React.FC = () => {
   const [lastAnswers, setLastAnswers] = useState<QuizAttemptAnswer[]>([]);
   const [lastTimeSpent, setLastTimeSpent] = useState<number>(0);
 
-  // Teacher State
+  // Unified Auth State
   const [teacher, setTeacher] = useState<TeacherProfile | null>(() => DataManager.getTeacherProfile());
-  const [isTeacherAuthOpen, setIsTeacherAuthOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authInitialTab, setAuthInitialTab] = useState<AuthModalTab>('student');
 
   const {
     isMuted,
@@ -127,11 +128,16 @@ export const App: React.FC = () => {
     }
   };
 
+  const handleOpenAuthModal = (tab: AuthModalTab = 'student') => {
+    setAuthInitialTab(tab);
+    setIsAuthModalOpen(true);
+  };
+
   const handleTeacherPortalClick = () => {
     if (teacher) {
       setCurrentScreen('teacher-dashboard');
     } else {
-      setIsTeacherAuthOpen(true);
+      handleOpenAuthModal('teacher');
     }
   };
 
@@ -139,6 +145,11 @@ export const App: React.FC = () => {
     setTeacher(teacherProfile);
     playCelebration();
     setCurrentScreen('teacher-dashboard');
+  };
+
+  const handleStudentLoginSuccess = () => {
+    playCelebration();
+    // Modal will close and student session is persisted
   };
 
   const handleTeacherLogout = async () => {
@@ -157,14 +168,14 @@ export const App: React.FC = () => {
     setCurrentScreen('worksheet-print');
   };
 
-  // 1. Level 1 (Prioritas 100): Modal Login Guru
-  useBackHandler('app-teacher-auth-modal', 100, () => {
-    if (isTeacherAuthOpen) {
-      setIsTeacherAuthOpen(false);
+  // 1. Level 1 (Prioritas 100): Modal Login Terpadu
+  useBackHandler('app-unified-auth-modal', 100, () => {
+    if (isAuthModalOpen) {
+      setIsAuthModalOpen(false);
       return true;
     }
     return false;
-  }, isTeacherAuthOpen);
+  }, isAuthModalOpen);
 
   // 2. Level 3 (Prioritas 20): Transisi Layar Utama
   useBackHandler('screen-worksheet-print', 20, () => {
@@ -212,11 +223,13 @@ export const App: React.FC = () => {
       <InstallPrompt />
       <ReorientationOverlay />
 
-      {/* 3. Teacher Auth Modal */}
-      <TeacherAuthModal
-        isOpen={isTeacherAuthOpen}
-        onClose={() => setIsTeacherAuthOpen(false)}
-        onLoginSuccess={handleTeacherLoginSuccess}
+      {/* 3. Unified Auth Modal (Guru & Siswa) */}
+      <UnifiedAuthModal
+        isOpen={isAuthModalOpen}
+        initialTab={authInitialTab}
+        onClose={() => setIsAuthModalOpen(false)}
+        onLoginTeacher={handleTeacherLoginSuccess}
+        onLoginStudent={handleStudentLoginSuccess}
         playClick={playClick}
       />
 
@@ -225,6 +238,7 @@ export const App: React.FC = () => {
         <QuizHome
           onSelectQuiz={handleSelectQuiz}
           onOpenTeacherPortal={handleTeacherPortalClick}
+          onOpenAuthModal={handleOpenAuthModal}
           onEnterPin={handleEnterPinLobby}
           teacher={teacher}
           onTeacherLogout={handleTeacherLogout}

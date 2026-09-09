@@ -8,6 +8,7 @@ import type {
   StudentSubmission,
   PlayerProfile 
 } from '../types/quiz';
+import { MASTER_TEACHER_EMAIL } from '../types/quiz';
 import { INITIAL_QUIZZES } from '../data/seedQuizzes';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
@@ -44,13 +45,47 @@ INITIAL_QUIZZES.forEach((q, idx) => {
 
 export const DataManager = {
   // 1. Get All Quizzes (Default Seeds + Teacher Custom Quizzes)
-  getAllQuizzes(): Quiz[] {
+  getAllQuizzes(options?: { publicOnly?: boolean; teacherEmail?: string; teacherId?: string }): Quiz[] {
     try {
       const customStr = localStorage.getItem(STORAGE_KEY_CUSTOM_QUIZZES);
-      const customQuizzes: Quiz[] = customStr ? JSON.parse(customStr) : [];
-      return [...customQuizzes, ...INITIAL_QUIZZES];
+      let customQuizzes: Quiz[] = customStr ? JSON.parse(customStr) : [];
+
+      // If teacher options are provided
+      if (options?.teacherEmail) {
+        const isMaster = options.teacherEmail.trim().toLowerCase() === MASTER_TEACHER_EMAIL.toLowerCase();
+        if (isMaster) {
+          // Master Teacher owns/manages all custom quizzes + seed quizzes
+          if (options.teacherId) {
+            let changed = false;
+            customQuizzes = customQuizzes.map((q) => {
+              if (!q.creatorId || q.creatorId.startsWith('guru_demo_') || q.creatorId.startsWith('teacher_local_')) {
+                changed = true;
+                return { ...q, creatorId: options.teacherId, creatorName: q.creatorName || 'Pendidik' };
+              }
+              return q;
+            });
+            if (changed) {
+              localStorage.setItem(STORAGE_KEY_CUSTOM_QUIZZES, JSON.stringify(customQuizzes));
+            }
+          }
+          return [...customQuizzes, ...INITIAL_QUIZZES];
+        } else {
+          // Other teachers only see and manage their own created quizzes (starts empty for new teachers)
+          return customQuizzes.filter((q) => q.creatorId === options.teacherId);
+        }
+      }
+
+      let all = [...customQuizzes, ...INITIAL_QUIZZES];
+
+      // If public catalog filter is requested (for student & guest dashboard)
+      if (options?.publicOnly) {
+        all = all.filter((q) => q.visibility !== 'private');
+      }
+
+      return all;
     } catch {
-      return INITIAL_QUIZZES;
+      const seeds = INITIAL_QUIZZES;
+      return options?.publicOnly ? seeds.filter((q) => q.visibility !== 'private') : seeds;
     }
   },
 
@@ -76,6 +111,7 @@ export const DataManager = {
             badge_title,
             pin_code,
             creator_name,
+            visibility,
             quiz_questions (
               id,
               question_text,
@@ -119,6 +155,7 @@ export const DataManager = {
             badgeTitle: data.badge_title || 'Bintang Juara',
             pinCode: data.pin_code,
             creatorName: data.creator_name || 'Guru SD',
+            visibility: (data.visibility as 'public' | 'private') || 'public',
             questions: rawQuestions.map((q) => ({
               id: q.id,
               text: q.question_text,
@@ -166,6 +203,7 @@ export const DataManager = {
             badge_title,
             pin_code,
             creator_name,
+            visibility,
             quiz_questions (
               id,
               question_text,
@@ -208,6 +246,7 @@ export const DataManager = {
             badgeTitle: data.badge_title || 'Bintang Juara',
             pinCode: data.pin_code,
             creatorName: data.creator_name || 'Guru SD',
+            visibility: (data.visibility as 'public' | 'private') || 'public',
             questions: rawQuestions.map((q) => ({
               id: q.id,
               text: q.question_text,
@@ -240,6 +279,7 @@ export const DataManager = {
     // Pastikan identitas pembuat terikat pada Guru yang sedang aktif
     quiz.creatorId = teacher.id;
     quiz.creatorName = teacher.fullName;
+    quiz.visibility = quiz.visibility || 'public';
 
     // Ensure 4-digit PIN exists
     if (!quiz.pinCode) {
@@ -276,6 +316,7 @@ export const DataManager = {
           pin_code: quiz.pinCode,
           creator_id: quiz.creatorId || null,
           creator_name: quiz.creatorName || null,
+          visibility: quiz.visibility || 'public',
           is_published: true,
         });
 
@@ -326,6 +367,51 @@ export const DataManager = {
         await supabase.from('quizzes').delete().eq('id', quizId);
       } catch (err) {
         console.warn('Supabase quiz delete notice:', err);
+      }
+    }
+  },
+
+  // 5b. Update Quiz Visibility (Public vs Private)
+  async updateQuizVisibility(quizId: string, visibility: 'public' | 'private'): Promise<void> {
+    const teacher = this.getTeacherProfile();
+    if (!teacher || !teacher.id) {
+      console.error('Akses Ditolak (RBAC): Peran Siswa atau Tamu dilarang mengubah privasi kuis.');
+      throw new Error('Akses Ditolak: Hanya Guru yang berhak mengubah privasi kuis.');
+    }
+
+    try {
+      const customStr = localStorage.getItem(STORAGE_KEY_CUSTOM_QUIZZES);
+      let customQuizzes: Quiz[] = customStr ? JSON.parse(customStr) : [];
+      const existingIdx = customQuizzes.findIndex((q) => q.id === quizId);
+      if (existingIdx >= 0) {
+        customQuizzes[existingIdx] = {
+          ...customQuizzes[existingIdx],
+          visibility,
+        };
+      } else {
+        const seedQuiz = INITIAL_QUIZZES.find((q) => q.id === quizId);
+        if (seedQuiz) {
+          customQuizzes.unshift({
+            ...seedQuiz,
+            creatorId: teacher.id,
+            creatorName: teacher.fullName,
+            visibility,
+          });
+        }
+      }
+      localStorage.setItem(STORAGE_KEY_CUSTOM_QUIZZES, JSON.stringify(customQuizzes));
+    } catch (e) {
+      console.warn('Local update quiz visibility error:', e);
+    }
+
+    if (supabase) {
+      try {
+        await supabase
+          .from('quizzes')
+          .update({ visibility })
+          .eq('id', quizId);
+      } catch (err) {
+        console.warn('Supabase quiz update visibility notice:', err);
       }
     }
   },
@@ -698,11 +784,32 @@ export const DataManager = {
     }
   },
 
+  claimMasterTeacherQuizzes(teacherId: string, teacherName: string) {
+    try {
+      const customStr = localStorage.getItem(STORAGE_KEY_CUSTOM_QUIZZES);
+      let customQuizzes: Quiz[] = customStr ? JSON.parse(customStr) : [];
+      let updated = false;
+      customQuizzes = customQuizzes.map((q) => {
+        if (!q.creatorId || q.creatorId.startsWith('guru_demo_') || q.creatorId.startsWith('teacher_local_')) {
+          updated = true;
+          return { ...q, creatorId: teacherId, creatorName: teacherName };
+        }
+        return q;
+      });
+      if (updated) {
+        localStorage.setItem(STORAGE_KEY_CUSTOM_QUIZZES, JSON.stringify(customQuizzes));
+      }
+    } catch (e) {
+      console.warn('Error claiming master teacher quizzes:', e);
+    }
+  },
+
   async signInTeacher(email: string, pass: string): Promise<{ success: boolean; error?: string; teacher?: TeacherProfile }> {
+    const cleanEmail = email.trim();
     if (supabase) {
       try {
         const { data, error } = await supabase.auth.signInWithPassword({
-          email: email.trim(),
+          email: cleanEmail,
           password: pass,
         });
         if (error) {
@@ -711,11 +818,14 @@ export const DataManager = {
         if (data.user) {
           const profile: TeacherProfile = {
             id: data.user.id,
-            email: data.user.email || email,
-            fullName: data.user.user_metadata?.full_name || email.split('@')[0],
+            email: data.user.email || cleanEmail,
+            fullName: data.user.user_metadata?.full_name || cleanEmail.split('@')[0],
             schoolName: data.user.user_metadata?.school_name || 'SD Negeri Favorit',
           };
           this.setTeacherProfile(profile);
+          if (cleanEmail.toLowerCase() === MASTER_TEACHER_EMAIL.toLowerCase()) {
+            this.claimMasterTeacherQuizzes(profile.id, profile.fullName);
+          }
           return { success: true, teacher: profile };
         }
       } catch (err: unknown) {
@@ -726,20 +836,24 @@ export const DataManager = {
 
     // Offline / Local fallback teacher session
     const mockTeacher: TeacherProfile = {
-      id: 'teacher_local_' + Date.now(),
-      email,
-      fullName: email.split('@')[0],
+      id: cleanEmail.toLowerCase() === MASTER_TEACHER_EMAIL.toLowerCase() ? 'teacher_master_zy0x' : 'teacher_local_' + Date.now(),
+      email: cleanEmail,
+      fullName: cleanEmail.toLowerCase() === MASTER_TEACHER_EMAIL.toLowerCase() ? 'Bapak Aliridho (Master)' : cleanEmail.split('@')[0],
       schoolName: 'SD Kreatif Nusantara',
     };
     this.setTeacherProfile(mockTeacher);
+    if (cleanEmail.toLowerCase() === MASTER_TEACHER_EMAIL.toLowerCase()) {
+      this.claimMasterTeacherQuizzes(mockTeacher.id, mockTeacher.fullName);
+    }
     return { success: true, teacher: mockTeacher };
   },
 
   async signUpTeacher(email: string, pass: string, fullName: string, schoolName: string): Promise<{ success: boolean; error?: string; teacher?: TeacherProfile }> {
+    const cleanEmail = email.trim();
     if (supabase) {
       try {
         const { data, error } = await supabase.auth.signUp({
-          email: email.trim(),
+          email: cleanEmail,
           password: pass,
           options: {
             data: {
@@ -754,11 +868,14 @@ export const DataManager = {
         if (data.user) {
           const profile: TeacherProfile = {
             id: data.user.id,
-            email: data.user.email || email,
+            email: data.user.email || cleanEmail,
             fullName,
             schoolName,
           };
           this.setTeacherProfile(profile);
+          if (cleanEmail.toLowerCase() === MASTER_TEACHER_EMAIL.toLowerCase()) {
+            this.claimMasterTeacherQuizzes(profile.id, profile.fullName);
+          }
           return { success: true, teacher: profile };
         }
       } catch (err: unknown) {
@@ -768,12 +885,15 @@ export const DataManager = {
     }
 
     const mockTeacher: TeacherProfile = {
-      id: 'teacher_local_' + Date.now(),
-      email,
+      id: cleanEmail.toLowerCase() === MASTER_TEACHER_EMAIL.toLowerCase() ? 'teacher_master_zy0x' : 'teacher_local_' + Date.now(),
+      email: cleanEmail,
       fullName,
       schoolName,
     };
     this.setTeacherProfile(mockTeacher);
+    if (cleanEmail.toLowerCase() === MASTER_TEACHER_EMAIL.toLowerCase()) {
+      this.claimMasterTeacherQuizzes(mockTeacher.id, mockTeacher.fullName);
+    }
     return { success: true, teacher: mockTeacher };
   },
 

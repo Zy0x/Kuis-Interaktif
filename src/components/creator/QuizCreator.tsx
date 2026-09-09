@@ -12,7 +12,9 @@ import {
   BookOpen, 
   Eye, 
   Layers, 
-  Upload 
+  Upload,
+  Globe,
+  Lock
 } from 'lucide-react';
 
 interface QuizCreatorProps {
@@ -57,6 +59,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   const [durationPerQuestionSec, setDurationPerQuestionSec] = useState<number>(30);
   const [coverEmoji, setCoverEmoji] = useState('🍎');
   const [badgeTitle, setBadgeTitle] = useState('Bintang Pintar');
+  const [visibility, setVisibility] = useState<'public' | 'private'>('public');
 
   // Questions State
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
@@ -190,6 +193,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
       coverEmoji,
       themeColor: 'from-blue-600 to-indigo-600',
       badgeTitle: badgeTitle.trim() || 'Bintang Juara',
+      visibility,
       questions,
     };
 
@@ -402,6 +406,60 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                       {em}
                     </button>
                   ))}
+                </div>
+              </div>
+
+              {/* Visibility Selector */}
+              <div className="sm:col-span-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">
+                  Visibilitas & Akses Kuis <span className="text-rose-500">*</span>
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setVisibility('public');
+                    }}
+                    className={`p-3.5 rounded-xl border text-left flex items-start gap-3 transition-all min-h-[48px] btn-press ${
+                      visibility === 'public'
+                        ? 'bg-blue-50/80 border-blue-500 text-blue-950 dark:bg-blue-950/40 dark:border-blue-500 dark:text-blue-100 ring-2 ring-blue-400/30 shadow-sm'
+                        : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-750'
+                    }`}
+                  >
+                    <Globe className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <div className="font-bold text-xs sm:text-sm flex items-center gap-1.5">
+                        <span>🌐 Publik (Katalog Siswa)</span>
+                      </div>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-snug">
+                        Tampil di beranda siswa dan katalog publik. Semua siswa dapat langsung melihat dan memainkannya.
+                      </div>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setVisibility('private');
+                    }}
+                    className={`p-3.5 rounded-xl border text-left flex items-start gap-3 transition-all min-h-[48px] btn-press ${
+                      visibility === 'private'
+                        ? 'bg-amber-50/80 border-amber-500 text-amber-950 dark:bg-amber-950/40 dark:border-amber-500 dark:text-amber-100 ring-2 ring-amber-400/30 shadow-sm'
+                        : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-750'
+                    }`}
+                  >
+                    <Lock className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <div className="font-bold text-xs sm:text-sm flex items-center gap-1.5">
+                        <span>🔒 Privat (Hanya Lewat PIN)</span>
+                      </div>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-snug">
+                        Tersembunyi dari katalog publik siswa. Hanya siswa dengan PIN 4 digit atau tautan langsung yang dapat mengakses.
+                      </div>
+                    </div>
+                  </button>
                 </div>
               </div>
             </div>
