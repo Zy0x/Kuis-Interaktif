@@ -304,7 +304,9 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
       
       {/* Top Header */}
       <header className="w-full sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-3 sm:px-8 lg:px-12 pt-[max(env(safe-area-inset-top),0.625rem)] pb-2.5 sm:pb-3 shadow-sm">
-        <div className="w-full max-w-[2000px] mx-auto flex items-center justify-between gap-2 sm:gap-3">
+        <div className={`w-full mx-auto flex items-center justify-between gap-2 sm:gap-3 transition-all ${
+          currentStep === 2 ? 'max-w-[2000px]' : 'max-w-4xl 2xl:max-w-5xl'
+        }`}>
           <button
             onClick={() => {
               playClick();
@@ -349,7 +351,9 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
         </div>
 
         {/* Step Tabs */}
-        <div className="w-full max-w-[2000px] mx-auto mt-2 grid grid-cols-3 gap-1.5 sm:gap-2">
+        <div className={`w-full mx-auto mt-2 grid grid-cols-3 gap-1.5 sm:gap-2 transition-all ${
+          currentStep === 2 ? 'max-w-[2000px]' : 'max-w-4xl 2xl:max-w-5xl'
+        }`}>
           <button
             onClick={() => {
               playClick();

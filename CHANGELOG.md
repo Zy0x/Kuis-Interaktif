@@ -1,6 +1,23 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.37] - 2026-09-10
+### Standardisasi Baku AGENTS.md, Penyelarasan Studio Kuis & Protokol Audit Responsivitas
+
+#### Standar Utama Panduan Kerja AI (AGENTS.md)
+- **Standardisasi Baku Anti-AI Slop & Zero Backend Exposure:**
+  - Menetapkan larangan mutlak penggunaan kata-kata teknis backend (`Cloud Supabase`, `SQL Editor`, `REST API`, `schema public`, `database`, dll) di seluruh antarmuka pengguna (`src/components/`).
+  - Menjadikan kesederhanaan, keterbacaan, kehangatan pedagogis, dan teks yang ringkas (*minim kata, maksimal makna*) sebagai standar wajib seluruh pengembang/AI Agent.
+  - Membakukan penggunaan `whitespace-nowrap` dan `flex-shrink-0` pada seluruh badge/pill untuk mencegah distorsi vertikal (*anti-warping*).
+- **Protokol Audit Multi-Viewport Mandatori:**
+  - Memasukkan matriks pengujian 8 profil resolusi (Mobile-S 320px, Mobile-M 375px, Android Tall 412px, Tablet Potret 768px, Tablet Lanskap 1024px, Desktop HD 1440px, Wide Full HD 1920px, Ultrawide/4K IFP 2560px-3840px) ke dalam `AGENTS.md`.
+  - Mewajibkan verifikasi nol luapan horizontal (`scrollWidth === clientWidth`) dan target sentuh minimal 44x44 px pada setiap perubahan antarmuka.
+
+#### Penyelarasan Visual Studio Kuis Guru (QuizCreator)
+- **Harmonisasi Bilah Tahapan & Konten Utama:**
+  - Mengatasi peregangan visual yang tidak seimbang pada Step 1 (Info Kuis) dan Step 3 (Pratinjau) di mana tab navigasi sebelumnya melebar ekstrem ke 2000px sementara kartu formulir terpusat di tengah.
+  - Bilah tahapan kini menyelaraskan batas lebarnya secara dinamis (`max-w-4xl 2xl:max-w-5xl`) saat berada di Step 1 & Step 3 sehingga simetris dan sejajar presisi dengan kartu konten, serta bertransisi mulus ke `max-w-[2000px]` pada Step 2 (Bank Soal) untuk mendukung tata letak 2 kolom layar lebar.
+
 ## [2.2.36] - 2026-09-10
 ### Penyempurnaan Antarmuka Dasbor Guru & Perombakan Kartu Kuis Anti-Warping
 
