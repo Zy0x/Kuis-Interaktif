@@ -739,21 +739,23 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
 
             {/* Simulated Card */}
             <div className="bg-white dark:bg-slate-800/80 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 shadow-sm space-y-2.5">
-              <div className="flex items-center justify-between">
-                <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-700/80 border border-slate-200 dark:border-slate-600 flex items-center justify-center text-2xl select-none flex-shrink-0 shadow-xs">
-                  {coverEmoji}
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                  <div className="w-11 h-11 rounded-xl bg-slate-100 dark:bg-slate-700/80 border border-slate-200 dark:border-slate-600 flex items-center justify-center text-2xl select-none flex-shrink-0 shadow-xs">
+                    {coverEmoji}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg border block w-fit max-w-full truncate bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800">
+                      {subject}
+                    </span>
+                  </div>
                 </div>
+
                 <div className="flex items-center gap-1.5 flex-shrink-0">
-                  <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-600 font-bold text-xs">
+                  <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-600 font-bold text-xs whitespace-nowrap">
                     Kelas {grade} SD
                   </span>
                 </div>
-              </div>
-
-              <div>
-                <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-md border inline-flex items-center gap-1 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800">
-                  {subject}
-                </span>
               </div>
 
               <h4 className="text-base font-bold text-slate-900 dark:text-white leading-snug break-words line-clamp-2">{title}</h4>
