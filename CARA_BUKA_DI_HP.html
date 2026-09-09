@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Buka Kuis SD Seru di HP 📱</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #F8FAFC;
+      color: #0F172A;
+      margin: 0;
+      padding: 24px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+    .card {
+      background: white;
+      max-width: 500px;
+      width: 100%;
+      border-radius: 24px;
+      padding: 32px;
+      box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08);
+      border: 1px solid #E2E8F0;
+      text-align: center;
+    }
+    .badge {
+      display: inline-block;
+      background: #EEF2FF;
+      color: #4F46E5;
+      font-weight: 700;
+      font-size: 12px;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      margin-bottom: 12px;
+    }
+    h1 {
+      font-size: 22px;
+      font-weight: 800;
+      margin: 0 0 8px 0;
+      color: #1E293B;
+    }
+    p {
+      color: #64748B;
+      font-size: 14px;
+      margin: 0 0 20px 0;
+      line-height: 1.5;
+    }
+    .qr-container {
+      background: #F1F5F9;
+      padding: 16px;
+      border-radius: 20px;
+      display: inline-block;
+      margin-bottom: 20px;
+      border: 2px dashed #CBD5E1;
+    }
+    .qr-container img {
+      width: 220px;
+      height: 220px;
+      display: block;
+      border-radius: 12px;
+    }
+    .url-box {
+      background: #F8FAFC;
+      border: 1px solid #E2E8F0;
+      padding: 12px 16px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      font-family: monospace;
+      font-size: 16px;
+      font-weight: 700;
+      color: #2563EB;
+    }
+    .steps {
+      text-align: left;
+      background: #F8FAFC;
+      padding: 16px 20px;
+      border-radius: 16px;
+      border: 1px solid #E2E8F0;
+      margin-bottom: 16px;
+    }
+    .steps h3 {
+      font-size: 13px;
+      font-weight: 700;
+      margin: 0 0 8px 0;
+      color: #334155;
+    }
+    .steps ol {
+      margin: 0;
+      padding-left: 18px;
+      font-size: 13px;
+      color: #475569;
+      line-height: 1.7;
+    }
+    .tip {
+      background: #ECFDF5;
+      border: 1px solid #A7F3D0;
+      color: #065F46;
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 12px;
+      text-align: left;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <span class="badge">Uji Coba Langsung di Smartphone 📱</span>
+    <h1>Buka Kuis SD Seru di HP</h1>
+    <p>Scan QR Code di bawah menggunakan kamera HP Anda, atau ketik alamat URL di browser HP.</p>
+    <div class="qr-container">
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=http://192.168.1.4:5173/" alt="QR Code">
+    </div>
+    <div class="url-box">http://192.168.1.4:5173/</div>
+    <div class="steps">
+      <h3>📋 Langkah Mudah:</h3>
+      <ol>
+        <li>Pastikan HP dan Laptop/PC terhubung ke <strong>Wi-Fi yang sama</strong> (atau aktifkan Hotspot di HP dan sambungkan laptop).</li>
+        <li>Buka aplikasi <strong>Kamera</strong> atau browser (Chrome / Safari) di HP, lalu scan QR Code di atas.</li>
+        <li>Atau langsung ketik <code>http://192.168.1.4:5173/</code> di peramban ponsel.</li>
+        <li>Uji coba pasang PWA dengan klik tombol <strong>'Pasang'</strong> di banner bawah atau opsi <em>'Tambahkan ke Layar Utama'</em>.</li>
+      </ol>
+    </div>
+    <div class="tip">
+      💡 <strong>Catatan:</strong> Jika loading lama, pastikan Windows Firewall di laptop tidak memblokir port 5173 (atau pastikan kedua perangkat terhubung ke router yang sama tanpa fitur isolasi tamu).
+    </div>
+  </div>
+</body>
+</html>
