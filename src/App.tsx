@@ -13,6 +13,8 @@ import { TeacherDashboard } from './components/teacher/TeacherDashboard';
 import { WorksheetPrintView } from './components/print/WorksheetPrintView';
 import { DataManager } from './lib/supabaseClient';
 import { useSoundEffects } from './hooks/useSoundEffects';
+import { useBackHandler } from './lib/navigationHistory';
+import { BackGestureIndicator } from './components/common/BackGestureIndicator';
 
 type ScreenState = 
   | 'home' 
@@ -140,8 +142,54 @@ export const App: React.FC = () => {
     setCurrentScreen('worksheet-print');
   };
 
+  // 1. Level 1 (Prioritas 100): Modal Login Guru
+  useBackHandler('app-teacher-auth-modal', 100, () => {
+    if (isTeacherAuthOpen) {
+      setIsTeacherAuthOpen(false);
+      return true;
+    }
+    return false;
+  }, isTeacherAuthOpen);
+
+  // 2. Level 3 (Prioritas 20): Transisi Layar Utama
+  useBackHandler('screen-worksheet-print', 20, () => {
+    if (teacher) {
+      setCurrentScreen('teacher-dashboard');
+    } else {
+      setCurrentScreen('home');
+    }
+    return true;
+  }, currentScreen === 'worksheet-print');
+
+  useBackHandler('screen-result', 20, () => {
+    handleGoHome();
+    return true;
+  }, currentScreen === 'result');
+
+  useBackHandler('screen-student-lobby', 20, () => {
+    handleGoHome();
+    return true;
+  }, currentScreen === 'student-lobby');
+
+  useBackHandler('screen-creator', 20, () => {
+    if (teacher) {
+      setCurrentScreen('teacher-dashboard');
+    } else {
+      setCurrentScreen('home');
+    }
+    return true;
+  }, currentScreen === 'creator');
+
+  useBackHandler('screen-teacher-dashboard', 20, () => {
+    handleGoHome();
+    return true;
+  }, currentScreen === 'teacher-dashboard');
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 antialiased selection:bg-primary-500 selection:text-white">
+      {/* Visual Feedback on Back Gesture */}
+      <BackGestureIndicator />
+
       {/* 1. Animated Splash Screen */}
       {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
 

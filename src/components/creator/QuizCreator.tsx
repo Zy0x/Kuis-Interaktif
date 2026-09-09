@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import type { Quiz, QuizQuestion, Subject } from '../../types/quiz';
+import { useBackHandler } from '../../lib/navigationHistory';
 import { 
   ArrowLeft, 
   Plus, 
@@ -64,6 +65,28 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   const [qCorrectIndex, setQCorrectIndex] = useState<number>(0);
   const [qExplanation, setQExplanation] = useState('');
   const [isAddingQuestion, setIsAddingQuestion] = useState(true);
+
+  // 1. Level 2 (Prioritas 50): Mundur dari Langkah 3 (Pratinjau) ke Langkah 2 (Soal)
+  useBackHandler('creator-step-3', 50, () => {
+    if (currentStep === 3) {
+      setCurrentStep(2);
+      return true;
+    }
+    return false;
+  }, currentStep === 3);
+
+  // 2. Level 2 (Prioritas 50): Mundur dari Langkah 2 ke Langkah 1, atau tutup form tambah soal
+  useBackHandler('creator-step-2', 50, () => {
+    if (currentStep === 2) {
+      if (isAddingQuestion && questions.length > 0) {
+        setIsAddingQuestion(false);
+        return true;
+      }
+      setCurrentStep(1);
+      return true;
+    }
+    return false;
+  }, currentStep === 2);
 
   const handleOptionChange = (index: number, value: string) => {
     const updated = [...qOptions];

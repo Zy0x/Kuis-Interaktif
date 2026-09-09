@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { Quiz, GradeLevel, Subject, TeacherProfile } from '../../types/quiz';
 import { AVATAR_LIST } from '../../data/seedQuizzes';
 import { DataManager } from '../../lib/supabaseClient';
+import { useBackHandler } from '../../lib/navigationHistory';
 import { 
   Play, 
   Clock, 
@@ -69,6 +70,39 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
   const [studentGrade, setStudentGrade] = useState(1);
   const [studentAuthLoading, setStudentAuthLoading] = useState(false);
   const [studentAuthError, setStudentAuthError] = useState<string | null>(null);
+
+  // 1. Level 1 (Prioritas 100): Modal Aturan Kuis
+  useBackHandler('home-rules-modal', 100, () => {
+    if (rulesModalQuiz) {
+      setRulesModalQuiz(null);
+      return true;
+    }
+    return false;
+  }, Boolean(rulesModalQuiz));
+
+  // 2. Level 1 (Prioritas 100): Modal Profil Siswa
+  useBackHandler('home-profile-modal', 100, () => {
+    if (isProfileModalOpen) {
+      if (profileTab !== 'guest') {
+        setProfileTab('guest');
+        return true;
+      }
+      setIsProfileModalOpen(false);
+      return true;
+    }
+    return false;
+  }, isProfileModalOpen);
+
+  // 3. Level 4 (Prioritas 10): Reset Filter Kategori Aktif
+  const hasActiveFilter = selectedGrade !== 'Semua' || selectedSubject !== 'Semua';
+  useBackHandler('home-filter-reset', 10, () => {
+    if (hasActiveFilter) {
+      setSelectedGrade('Semua');
+      setSelectedSubject('Semua');
+      return true;
+    }
+    return false;
+  }, hasActiveFilter);
 
   useEffect(() => {
     setQuizzes(DataManager.getAllQuizzes());

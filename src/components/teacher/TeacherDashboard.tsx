@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { Quiz, TeacherProfile, StudentSubmission } from '../../types/quiz';
 import { DataManager } from '../../lib/supabaseClient';
+import { useBackHandler } from '../../lib/navigationHistory';
 import { 
   GraduationCap, 
   Plus, 
@@ -47,6 +48,15 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   const [genGrade, setGenGrade] = useState<number>(3);
   const [genCount, setGenCount] = useState<number>(5);
   const [genLoading, setGenLoading] = useState(false);
+
+  // 1. Level 2 (Prioritas 50): Jika berada di tab Submissions / Generator, mundur ke Tab Kuis
+  useBackHandler('teacher-tab-back', 50, () => {
+    if (activeTab !== 'quizzes') {
+      setActiveTab('quizzes');
+      return true;
+    }
+    return false;
+  }, activeTab !== 'quizzes');
 
   useEffect(() => {
     loadData();

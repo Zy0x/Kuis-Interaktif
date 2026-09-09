@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import type { Quiz, QuizAttemptAnswer } from '../../types/quiz';
+import { useBackHandler } from '../../lib/navigationHistory';
 import { 
   X, 
   Volume2, 
@@ -59,6 +60,34 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   const [streak, setStreak] = useState(0);
   const [isPollOpen, setIsPollOpen] = useState(false);
   const [pollVotes, setPollVotes] = useState<{ [key: number]: number }>({ 0: 0, 1: 0, 2: 0, 3: 0 });
+
+  // 1. Level 1 (Prioritas 100): Tutup Modal Polling IFP jika sedang terbuka
+  useBackHandler('arena-poll-modal', 100, () => {
+    if (isPollOpen) {
+      setIsPollOpen(false);
+      return true;
+    }
+    return false;
+  }, isPollOpen);
+
+  // 2. Level 1 (Prioritas 100): Batalkan Modal Konfirmasi Keluar jika sedang terbuka
+  useBackHandler('arena-dismiss-exit-confirm', 100, () => {
+    if (showExitConfirm) {
+      setShowExitConfirm(false);
+      return true;
+    }
+    return false;
+  }, showExitConfirm);
+
+  // 3. Level 1 Safety Guard (Prioritas 80): Mencegah soal hilang tiba-tiba dengan membuka dialog konfirmasi
+  useBackHandler('arena-prompt-exit-confirm', 80, () => {
+    if (!showExitConfirm && !isPollOpen) {
+      setIsPaused(true);
+      setShowExitConfirm(true);
+      return true;
+    }
+    return false;
+  }, true);
 
   const question = quiz.questions[currentIndex];
   const isLastQuestion = currentIndex === quiz.questions.length - 1;
