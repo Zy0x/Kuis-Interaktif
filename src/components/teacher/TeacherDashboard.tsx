@@ -4,6 +4,7 @@ import { DataManager } from '../../lib/supabaseClient';
 import { useBackHandler } from '../../lib/navigationHistory';
 import { ThemeToggle } from '../common/ThemeToggle';
 import { ConfirmDeleteModal } from '../common/ConfirmDeleteModal';
+import { saveNavigationState } from '../../lib/navigationState';
 import { 
   GraduationCap, 
   Plus, 
@@ -45,7 +46,26 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   isDark = false,
   onToggleTheme = () => {},
 }) => {
-  const [activeTab, setActiveTab] = useState<'quizzes' | 'submissions' | 'generator'>('quizzes');
+  const [activeTab, setActiveTab] = useState<'quizzes' | 'submissions' | 'generator'>(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab') as 'quizzes' | 'submissions' | 'generator' | null;
+      if (tabParam && ['quizzes', 'submissions', 'generator'].includes(tabParam)) {
+        return tabParam;
+      }
+    } catch {}
+    return 'quizzes';
+  });
+
+  const handleTabChange = (tab: 'quizzes' | 'submissions' | 'generator') => {
+    playClick();
+    setActiveTab(tab);
+    saveNavigationState({
+      screen: 'teacher-dashboard',
+      teacherTab: tab,
+      replace: true,
+    });
+  };
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [submissions, setSubmissions] = useState<StudentSubmission[]>([]);
   const [copiedPin, setCopiedPin] = useState<string | null>(null);
@@ -244,10 +264,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
         {/* Navigation Tabs */}
         <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-2 overflow-x-auto scrollbar-hover">
           <button
-            onClick={() => {
-              playClick();
-              setActiveTab('quizzes');
-            }}
+            onClick={() => handleTabChange('quizzes')}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all min-h-[44px] whitespace-nowrap ${
               activeTab === 'quizzes'
                 ? 'bg-slate-900 dark:bg-blue-600 text-white shadow-sm'
@@ -259,10 +276,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
           </button>
 
           <button
-            onClick={() => {
-              playClick();
-              setActiveTab('submissions');
-            }}
+            onClick={() => handleTabChange('submissions')}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all min-h-[44px] whitespace-nowrap ${
               activeTab === 'submissions'
                 ? 'bg-slate-900 dark:bg-blue-600 text-white shadow-sm'
@@ -274,10 +288,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
           </button>
 
           <button
-            onClick={() => {
-              playClick();
-              setActiveTab('generator');
-            }}
+            onClick={() => handleTabChange('generator')}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all min-h-[44px] whitespace-nowrap ${
               activeTab === 'generator'
                 ? 'bg-slate-900 dark:bg-blue-600 text-white shadow-sm'

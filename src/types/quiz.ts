@@ -9,6 +9,15 @@ export type Subject =
 
 export type QuestionType = 'multiple_choice' | 'true_false' | 'image_guess';
 
+export type ScreenState = 
+  | 'home' 
+  | 'arena' 
+  | 'result' 
+  | 'creator' 
+  | 'student-lobby' 
+  | 'teacher-dashboard' 
+  | 'worksheet-print';
+
 export interface QuizQuestion {
   id: string;
   text: string;

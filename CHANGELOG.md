@@ -1,6 +1,36 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis SD Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.20] - 2026-09-09
+### Mesin Persistensi Status Layar & Pemulihan Progres Kuis saat Muat Ulang Halaman (Navigation State & In-Progress Quiz Persistence Engine)
+
+#### Navigasi & Pemulihan Layar (*Screen State & Refresh Resilience Engine*)
+- **Persistensi Layar Dinamis Menghadapi Reload / F5:**
+  - Mengimplementasikan `src/lib/navigationState.ts` yang menyinkronkan status layar aktif (`ScreenState`), ID kuis aktif, kode PIN, tab aktif guru, jawaban sebelumnya, dan durasi pengerjaan.
+  - Memanfaatkan sinergi parameter URL query (`?screen=...&quiz=...&tab=...`) dan `sessionStorage` (`kuis_app_nav_session_v1`) agar perpindahan dan muat ulang halaman berlangsung presisi tanpa ketergantungan konfigurasi server rewrite.
+  - Saat pengguna memuat ulang halaman (*F5* atau *pull-to-refresh*) di Dashboard Guru (`teacher-dashboard`), Studio Pembuat Kuis (`creator`), Arena Kuis (`arena`), Lobi PIN Siswa (`student-lobby`), Lembar Hasil (`result`), maupun Cetak LKPD (`worksheet-print`), aplikasi tetap bertahan di layar yang bersangkutan.
+- **Bypass Animasi Splash Otomatis Saat Refresh:**
+  - Menghilangkan tampilan animasi splash yang redundan saat memuat ulang layar aktif atau jika pengguna telah melewati splash di sesi peramban yang sama (`kuis_splash_seen_v1`), menjaga efisiensi interaksi.
+- **Sinkronisasi Tab Pendidik:**
+  - Tab aktif di Dashboard Guru (*Koleksi Kuis*, *Rekap Nilai Siswa*, dan *Generator Kilat Soal*) terikat ke parameter URL (`?tab=...`), sehingga saat tab Rekap Nilai dimuat ulang, tampilan tetap bertahan pada rekap nilai tanpa kembali ke tab pertama.
+
+#### Ketahanan Data Pengerjaan Siswa & Draf Pembuatan Kuis (*Zero Data Loss Safeguards*)
+- **Pemulihan Progres Pengerjaan Soal Siswa di Arena Kuis (`QuizArena`):**
+  - Progres pengerjaan soal siswa (nomor soal aktif, riwayat jawaban yang sudah dikunci, sisa timer, total durasi, dan streak) tersimpan otomatis di `sessionStorage` (`kuis_arena_progress_{quizId}`).
+  - Jika koneksi atau halaman termuat ulang di tengah kuis, siswa langsung melanjutkan pada nomor soal yang sedang dikerjakan tanpa kehilangan poin atau jawaban sebelumnya.
+  - Progres otomatis dibersihkan secara bersih saat kuis telah diselesaikan atau saat siswa mengonfirmasi keluar kuis secara sukarela.
+- **Penyimpanan Draf Otomatis Studio Pembuat Kuis (`QuizCreator`):**
+  - Mengintegrasikan mesin *auto-save draft* ke `localStorage` (`kuis_creator_draft_v1`) yang menyimpan seluruh masukan judul, deskripsi, mata pelajaran, jenjang kelas, durasi per soal, visibilitas, hingga butir bank soal yang telah disusun.
+  - Membuka kembali Studio Pembuat Kuis atau memuat ulang browser akan memulihkan formulir secara instan.
+  - Menyediakan tombol *Reset Draf* dengan dialog konfirmasi in-app yang elegan serta pembersihan otomatis saat kuis berhasil disimpan dan diterbitkan.
+
+#### Antarmuka & Kepatuhan Standar (*UI Polish & Non-System Dialogs*)
+- **Pembersihan Total Dialog Sistem (`window.alert` & `window.confirm`):**
+  - Mengganti seluruh sisa panggilan `alert()` pada `QuizCreator` dengan notifikasi melayang (*floating in-app toast*) yang estetik, modern, dan tidak memblokir interaksi peramban.
+  - Menggantikan dialog konfirmasi reset draf peramban dengan modal konfirmasi in-app yang konsisten dengan tema terang/gelap.
+
+---
+
 ## [2.2.19] - 2026-09-09
 ### Penyempurnaan Desain Antarmuka: Eliminasi Teks Berlebih & Jargon Teknis pada Portal Akun (Clean UI Polish & Technical Jargon Elimination)
 

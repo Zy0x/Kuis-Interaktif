@@ -54,12 +54,53 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   isDark = false,
   onToggleTheme = () => {},
 }) => {
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const STORAGE_KEY = `kuis_arena_progress_${quiz.id}`;
+
+  const [currentIndex, setCurrentIndex] = useState<number>(() => {
+    try {
+      const saved = sessionStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (typeof parsed.currentIndex === 'number' && parsed.currentIndex < quiz.questions.length) {
+          return parsed.currentIndex;
+        }
+      }
+    } catch {}
+    return 0;
+  });
+
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isAnswerConfirmed, setIsAnswerConfirmed] = useState(false);
-  const [answersList, setAnswersList] = useState<QuizAttemptAnswer[]>([]);
-  const [timeLeft, setTimeLeft] = useState(quiz.durationPerQuestionSec);
-  const [totalTimeSpent, setTotalTimeSpent] = useState(0);
+  const [answersList, setAnswersList] = useState<QuizAttemptAnswer[]>(() => {
+    try {
+      const saved = sessionStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed.answersList)) return parsed.answersList;
+      }
+    } catch {}
+    return [];
+  });
+  const [timeLeft, setTimeLeft] = useState<number>(() => {
+    try {
+      const saved = sessionStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (typeof parsed.timeLeft === 'number' && parsed.timeLeft > 0) return parsed.timeLeft;
+      }
+    } catch {}
+    return quiz.durationPerQuestionSec;
+  });
+  const [totalTimeSpent, setTotalTimeSpent] = useState<number>(() => {
+    try {
+      const saved = sessionStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (typeof parsed.totalTimeSpent === 'number') return parsed.totalTimeSpent;
+      }
+    } catch {}
+    return 0;
+  });
   const [showExitConfirm, setShowExitConfirm] = useState(false);
 
   // Kunci scroll body saat dialog konfirmasi keluar aktif
@@ -68,9 +109,34 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   // Smartboard / Teacher IFP Features
   const [isPaused, setIsPaused] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [streak, setStreak] = useState(0);
+  const [streak, setStreak] = useState<number>(() => {
+    try {
+      const saved = sessionStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (typeof parsed.streak === 'number') return parsed.streak;
+      }
+    } catch {}
+    return 0;
+  });
   const [isPollOpen, setIsPollOpen] = useState(false);
   const [pollVotes, setPollVotes] = useState<{ [key: number]: number }>({ 0: 0, 1: 0, 2: 0, 3: 0 });
+
+  // Simpan progres kuis saat ini ke sessionStorage agar aman dari reload tidak disengaja
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          currentIndex,
+          answersList,
+          timeLeft,
+          totalTimeSpent,
+          streak,
+        })
+      );
+    } catch {}
+  }, [currentIndex, answersList, timeLeft, totalTimeSpent, streak, STORAGE_KEY]);
 
   // Procedural BGM (In-Game Backsound)
   const {
@@ -228,6 +294,9 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     playClick();
     if (isLastQuestion) {
       stopBgm();
+      try {
+        sessionStorage.removeItem(STORAGE_KEY);
+      } catch {}
       onFinishQuiz(answersList, totalTimeSpent);
     } else {
       setDucked(false);
@@ -584,6 +653,9 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
               <button
                 onClick={() => {
                   stopBgm();
+                  try {
+                    sessionStorage.removeItem(STORAGE_KEY);
+                  } catch {}
                   onExit();
                 }}
                 className="flex-1 py-2.5 rounded-xl font-bold text-xs text-white bg-rose-600 hover:bg-rose-700 min-h-[44px] transition-colors"

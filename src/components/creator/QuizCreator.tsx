@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { Quiz, QuizQuestion, Subject } from '../../types/quiz';
 import { useBackHandler } from '../../lib/navigationHistory';
 import { ThemeToggle } from '../common/ThemeToggle';
@@ -14,7 +14,9 @@ import {
   Layers, 
   Upload,
   Globe,
-  Lock
+  Lock,
+  AlertCircle,
+  RotateCcw
 } from 'lucide-react';
 
 interface QuizCreatorProps {
@@ -42,6 +44,31 @@ const PRESET_STICKERS = [
   '🪙 Koin Logam Lingkaran'
 ];
 
+const DRAFT_STORAGE_KEY = 'kuis_creator_draft_v1';
+
+interface CreatorDraft {
+  currentStep: 1 | 2 | 3;
+  title: string;
+  description: string;
+  subject: Subject;
+  grade: number;
+  durationPerQuestionSec: number;
+  coverEmoji: string;
+  badgeTitle: string;
+  visibility: 'public' | 'private';
+  questions: QuizQuestion[];
+}
+
+const loadDraft = (): CreatorDraft | null => {
+  try {
+    const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+};
+
 export const QuizCreator: React.FC<QuizCreatorProps> = ({
   onBack,
   onSaveQuiz,
@@ -49,20 +76,80 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   isDark = false,
   onToggleTheme = () => {},
 }) => {
-  const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
+  const [draft] = useState<CreatorDraft | null>(() => loadDraft());
+
+  const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(draft?.currentStep || 1);
 
   // General Quiz State
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [subject, setSubject] = useState<Subject>('Matematika');
-  const [grade, setGrade] = useState<number>(3);
-  const [durationPerQuestionSec, setDurationPerQuestionSec] = useState<number>(30);
-  const [coverEmoji, setCoverEmoji] = useState('🍎');
-  const [badgeTitle, setBadgeTitle] = useState('Bintang Pintar');
-  const [visibility, setVisibility] = useState<'public' | 'private'>('public');
+  const [title, setTitle] = useState(draft?.title || '');
+  const [description, setDescription] = useState(draft?.description || '');
+  const [subject, setSubject] = useState<Subject>(draft?.subject || 'Matematika');
+  const [grade, setGrade] = useState<number>(draft?.grade ?? 3);
+  const [durationPerQuestionSec, setDurationPerQuestionSec] = useState<number>(draft?.durationPerQuestionSec ?? 30);
+  const [coverEmoji, setCoverEmoji] = useState(draft?.coverEmoji || '🍎');
+  const [badgeTitle, setBadgeTitle] = useState(draft?.badgeTitle || 'Bintang Pintar');
+  const [visibility, setVisibility] = useState<'public' | 'private'>(draft?.visibility || 'public');
 
   // Questions State
-  const [questions, setQuestions] = useState<QuizQuestion[]>([]);
+  const [questions, setQuestions] = useState<QuizQuestion[]>(draft?.questions || []);
+
+  // Notice & Reset states (replacing alert/confirm)
+  const [noticeMessage, setNoticeMessage] = useState<string | null>(null);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+
+  const showToast = (msg: string) => {
+    setNoticeMessage(msg);
+  };
+
+  useEffect(() => {
+    if (noticeMessage) {
+      const timer = setTimeout(() => setNoticeMessage(null), 3500);
+      return () => clearTimeout(timer);
+    }
+  }, [noticeMessage]);
+
+  // Persist draft automatically
+  useEffect(() => {
+    if (title.trim() || description.trim() || questions.length > 0) {
+      const data: CreatorDraft = {
+        currentStep,
+        title,
+        description,
+        subject,
+        grade,
+        durationPerQuestionSec,
+        coverEmoji,
+        badgeTitle,
+        visibility,
+        questions,
+      };
+      try {
+        localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(data));
+      } catch {
+        // quota fallback
+      }
+    }
+  }, [currentStep, title, description, subject, grade, durationPerQuestionSec, coverEmoji, badgeTitle, visibility, questions]);
+
+  const handleResetDraft = () => {
+    try {
+      localStorage.removeItem(DRAFT_STORAGE_KEY);
+    } catch {
+      // ignore
+    }
+    setTitle('');
+    setDescription('');
+    setSubject('Matematika');
+    setGrade(3);
+    setDurationPerQuestionSec(30);
+    setCoverEmoji('🍎');
+    setBadgeTitle('Bintang Pintar');
+    setVisibility('public');
+    setQuestions([]);
+    setCurrentStep(1);
+    setShowResetConfirm(false);
+    showToast('Draf pembuatan kuis telah direset.');
+  };
 
   // Active Question Form State
   const [qText, setQText] = useState('');
@@ -129,13 +216,13 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     playClick();
 
     if (!qText.trim()) {
-      alert('Teks pertanyaan wajib diisi.');
+      showToast('Teks pertanyaan wajib diisi.');
       return;
     }
 
     const validOptions = qOptions.filter((opt) => opt.trim() !== '');
     if (validOptions.length < 2) {
-      alert('Minimal harus ada 2 pilihan jawaban.');
+      showToast('Minimal harus ada 2 pilihan jawaban.');
       return;
     }
 
@@ -173,12 +260,12 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   const handleFinalPublish = () => {
     playClick();
     if (!title.trim()) {
-      alert('Judul kuis tidak boleh kosong.');
+      showToast('Judul kuis tidak boleh kosong.');
       setCurrentStep(1);
       return;
     }
     if (questions.length === 0) {
-      alert('Kuis minimal harus memiliki 1 soal.');
+      showToast('Kuis minimal harus memiliki 1 soal.');
       setCurrentStep(2);
       return;
     }
@@ -196,6 +283,12 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
       visibility,
       questions,
     };
+
+    try {
+      localStorage.removeItem(DRAFT_STORAGE_KEY);
+    } catch {
+      // ignore
+    }
 
     onSaveQuiz(finalQuiz);
   };
@@ -227,6 +320,20 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
+            {(title.trim() || questions.length > 0) && (
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setShowResetConfirm(true);
+                }}
+                className="text-xs font-semibold text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 px-2.5 py-1.5 rounded-lg border border-rose-200 dark:border-rose-900/50 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors flex items-center gap-1 min-h-[36px]"
+                title="Hapus draf yang sedang diedit"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Reset Draf</span>
+              </button>
+            )}
             <ThemeToggle isDark={isDark} onToggle={onToggleTheme} />
             <span className="text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-2.5 py-1 rounded-lg">
               {questions.length} Soal
@@ -277,6 +384,47 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
           </button>
         </div>
       </header>
+
+      {/* Floating notice toast (replaces alert) */}
+      {noticeMessage && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 dark:bg-slate-100/95 text-white dark:text-slate-900 px-4 py-2.5 rounded-xl shadow-xl border border-slate-700/40 dark:border-slate-300/40 flex items-center gap-2.5 text-xs sm:text-sm font-semibold backdrop-blur-md animate-fade-in">
+          <AlertCircle className="w-4 h-4 text-amber-400 dark:text-amber-600 shrink-0" />
+          <span>{noticeMessage}</span>
+        </div>
+      )}
+
+      {/* Custom Reset Draft Modal */}
+      {showResetConfirm && (
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 max-w-sm w-full border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-rose-100 dark:bg-rose-950/50 flex items-center justify-center text-rose-600 dark:text-rose-400 shrink-0">
+                <RotateCcw className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">Kosongkan Draf?</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Seluruh data judul dan soal yang belum disimpan akan dihapus permanen.</p>
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => setShowResetConfirm(false)}
+                className="px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleResetDraft}
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-sm transition-colors"
+              >
+                Hapus Draf
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Form Content */}
       <main className="w-full max-w-5xl mx-auto px-4 sm:px-8 pt-5 flex-1">
@@ -470,7 +618,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                 onClick={() => {
                   playClick();
                   if (!title.trim()) {
-                    alert('Silakan isi judul kuis terlebih dahulu.');
+                    showToast('Silakan isi judul kuis terlebih dahulu.');
                     return;
                   }
                   setCurrentStep(2);
@@ -769,7 +917,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                 onClick={() => {
                   playClick();
                   if (questions.length === 0) {
-                    alert('Tambahkan minimal 1 soal terlebih dahulu.');
+                    showToast('Tambahkan minimal 1 soal terlebih dahulu.');
                     return;
                   }
                   setCurrentStep(3);

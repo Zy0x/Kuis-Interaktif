@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import type { Quiz, QuizAttemptAnswer, TeacherProfile } from './types/quiz';
+import type { Quiz, QuizAttemptAnswer, TeacherProfile, ScreenState } from './types/quiz';
 import { SplashScreen } from './components/pwa/SplashScreen';
 import { InstallPrompt } from './components/pwa/InstallPrompt';
 import { ReorientationOverlay } from './components/pwa/ReorientationOverlay';
@@ -16,26 +16,49 @@ import { useSoundEffects } from './hooks/useSoundEffects';
 import { useBackHandler } from './lib/navigationHistory';
 import { useTheme } from './hooks/useTheme';
 import { BackGestureIndicator } from './components/common/BackGestureIndicator';
-
-type ScreenState = 
-  | 'home' 
-  | 'arena' 
-  | 'result' 
-  | 'creator' 
-  | 'student-lobby' 
-  | 'teacher-dashboard' 
-  | 'worksheet-print';
+import {
+  saveNavigationState,
+  restoreNavigationState,
+  clearNavigationState,
+  hasSeenSplash,
+  markSplashSeen,
+} from './lib/navigationState';
 
 export const App: React.FC = () => {
   const { isDark, toggleTheme } = useTheme();
-  const [showSplash, setShowSplash] = useState(true);
-  const [currentScreen, setCurrentScreen] = useState<ScreenState>('home');
+
+  // 1. Pulihkan status navigasi dan sesi layar dari URL / sessionStorage
+  const [initialNav] = useState(() => restoreNavigationState());
+  const initialTeacher = DataManager.getTeacherProfile();
+
+  const isTeacherRoute = initialNav.screen === 'creator' || initialNav.screen === 'teacher-dashboard';
+  const isValidRestoredScreen = initialNav.isRestored && (!isTeacherRoute || Boolean(initialTeacher));
+
+  const [currentScreen, setCurrentScreen] = useState<ScreenState>(() => {
+    if (isValidRestoredScreen) {
+      return initialNav.screen;
+    }
+    return 'home';
+  });
+
+  const [showSplash, setShowSplash] = useState<boolean>(() => {
+    // Jika pengguna sedang memuat ulang layar aktif (misal teacher-dashboard atau arena), lewati splash
+    if (isValidRestoredScreen && initialNav.screen !== 'home') {
+      return false;
+    }
+    // Jika splash screen sudah pernah tampil di sesi tab browser ini, jangan ulangi
+    if (hasSeenSplash()) {
+      return false;
+    }
+    return true;
+  });
+
   const [activeQuiz, setActiveQuiz] = useState<Quiz | null>(null);
-  const [lastAnswers, setLastAnswers] = useState<QuizAttemptAnswer[]>([]);
-  const [lastTimeSpent, setLastTimeSpent] = useState<number>(0);
+  const [lastAnswers, setLastAnswers] = useState<QuizAttemptAnswer[]>(() => initialNav.lastAnswers || []);
+  const [lastTimeSpent, setLastTimeSpent] = useState<number>(() => initialNav.lastTimeSpent || 0);
 
   // Unified Auth State
-  const [teacher, setTeacher] = useState<TeacherProfile | null>(() => DataManager.getTeacherProfile());
+  const [teacher, setTeacher] = useState<TeacherProfile | null>(initialTeacher);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authInitialTab, setAuthInitialTab] = useState<AuthModalTab>('student');
 
@@ -51,43 +74,87 @@ export const App: React.FC = () => {
     playCelebration,
   } = useSoundEffects();
 
-  // Detect URL parameter (?pin=XXXX or ?quiz=XXXX) for Student direct link access
+  // Memulihkan data kuis saat reload (F5) berdasarkan quizId atau pin
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const pin = params.get('pin');
-    const quizId = params.get('quiz');
-
-    if (pin) {
-      DataManager.getQuizByPin(pin).then((q) => {
+    if (initialNav.quizId) {
+      DataManager.getQuizById(initialNav.quizId).then((q) => {
         if (q) {
           setActiveQuiz(q);
-          setCurrentScreen('student-lobby');
+        } else if (['arena', 'student-lobby', 'result', 'worksheet-print'].includes(currentScreen)) {
+          console.warn('Kuis tidak ditemukan untuk sesi ini, kembali ke beranda.');
+          setCurrentScreen('home');
+          clearNavigationState();
         }
       });
-    } else if (quizId) {
-      DataManager.getQuizById(quizId).then((q) => {
+    } else if (initialNav.pin) {
+      DataManager.getQuizByPin(initialNav.pin).then((q) => {
         if (q) {
           setActiveQuiz(q);
-          setCurrentScreen('student-lobby');
+          if (currentScreen === 'home') {
+            setCurrentScreen('student-lobby');
+          }
+        } else if (currentScreen === 'student-lobby') {
+          setCurrentScreen('home');
+          clearNavigationState();
         }
       });
     }
   }, []);
 
+  // Simpan otomatis status navigasi setiap terjadi perpindahan layar atau kuis aktif
+  useEffect(() => {
+    saveNavigationState({
+      screen: currentScreen,
+      quiz: activeQuiz,
+      lastAnswers,
+      lastTimeSpent,
+    });
+  }, [currentScreen, activeQuiz?.id, lastAnswers, lastTimeSpent]);
+
+  // Sinkronisasi navigasi browser (Tombol Back / Forward)
+  useEffect(() => {
+    const handlePopState = () => {
+      const restored = restoreNavigationState();
+      const isTeacherScreen = restored.screen === 'creator' || restored.screen === 'teacher-dashboard';
+      if (!isTeacherScreen || teacher) {
+        setCurrentScreen(restored.screen);
+        if (restored.quizId && (!activeQuiz || activeQuiz.id !== restored.quizId)) {
+          DataManager.getQuizById(restored.quizId).then((q) => {
+            if (q) setActiveQuiz(q);
+          });
+        }
+      } else {
+        setCurrentScreen('home');
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [teacher, activeQuiz]);
+
   const handleSelectQuiz = (quiz: Quiz) => {
     setActiveQuiz(quiz);
     setCurrentScreen('arena');
+    saveNavigationState({ screen: 'arena', quiz, replace: false });
   };
 
   const handleEnterPinLobby = (quiz: Quiz) => {
     setActiveQuiz(quiz);
     setCurrentScreen('student-lobby');
+    saveNavigationState({ screen: 'student-lobby', quiz, replace: false });
   };
 
   const handleFinishQuiz = (answers: QuizAttemptAnswer[], timeSpent: number) => {
     setLastAnswers(answers);
     setLastTimeSpent(timeSpent);
     setCurrentScreen('result');
+    saveNavigationState({
+      screen: 'result',
+      quiz: activeQuiz,
+      lastAnswers: answers,
+      lastTimeSpent: timeSpent,
+      replace: false,
+    });
   };
 
   const handleReplay = () => {
@@ -98,10 +165,12 @@ export const App: React.FC = () => {
     };
     setActiveQuiz(shuffledQuiz);
     setCurrentScreen('arena');
+    saveNavigationState({ screen: 'arena', quiz: shuffledQuiz, replace: false });
   };
 
   const handleGoHome = () => {
     setActiveQuiz(null);
+    clearNavigationState();
     setCurrentScreen('home');
   };
 
@@ -109,6 +178,7 @@ export const App: React.FC = () => {
   useEffect(() => {
     if (!teacher && (currentScreen === 'creator' || currentScreen === 'teacher-dashboard')) {
       console.warn('RBAC Guard: Akses rute khusus guru dialihkan ke beranda.');
+      clearNavigationState();
       setCurrentScreen('home');
     }
   }, [teacher, currentScreen]);
@@ -145,6 +215,7 @@ export const App: React.FC = () => {
     setTeacher(teacherProfile);
     playCelebration();
     setCurrentScreen('teacher-dashboard');
+    saveNavigationState({ screen: 'teacher-dashboard', replace: false });
   };
 
   const handleStudentLoginSuccess = () => {
@@ -155,17 +226,25 @@ export const App: React.FC = () => {
   const handleTeacherLogout = async () => {
     await DataManager.signOutTeacher();
     setTeacher(null);
+    clearNavigationState();
     setCurrentScreen('home');
   };
 
   const handleLaunchSmartboard = (quiz: Quiz) => {
     setActiveQuiz(quiz);
     setCurrentScreen('arena');
+    saveNavigationState({ screen: 'arena', quiz, replace: false });
   };
 
   const handlePrintWorksheet = (quiz: Quiz) => {
     setActiveQuiz(quiz);
     setCurrentScreen('worksheet-print');
+    saveNavigationState({ screen: 'worksheet-print', quiz, replace: false });
+  };
+
+  const handleFinishSplash = () => {
+    setShowSplash(false);
+    markSplashSeen();
   };
 
   // 1. Level 1 (Prioritas 100): Modal Login Terpadu
@@ -217,7 +296,7 @@ export const App: React.FC = () => {
       <BackGestureIndicator />
 
       {/* 1. Animated Splash Screen */}
-      {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
+      {showSplash && <SplashScreen onFinish={handleFinishSplash} />}
 
       {/* 2. PWA Utilities */}
       <InstallPrompt />
@@ -232,6 +311,14 @@ export const App: React.FC = () => {
         onLoginStudent={handleStudentLoginSuccess}
         playClick={playClick}
       />
+
+      {/* Loading state jika layar bergantung pada kuis yang sedang dipulihkan */}
+      {['arena', 'student-lobby', 'result', 'worksheet-print'].includes(currentScreen) && !activeQuiz && (
+        <div className="min-h-screen flex flex-col items-center justify-center p-6 text-slate-600 dark:text-slate-300 animate-fade-in">
+          <div className="w-10 h-10 border-4 border-blue-600/30 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+          <p className="font-bold text-sm">Menyiapkan data kuis...</p>
+        </div>
+      )}
 
       {/* 4. Main Screen Views */}
       {currentScreen === 'home' && (
@@ -253,7 +340,10 @@ export const App: React.FC = () => {
       {currentScreen === 'student-lobby' && activeQuiz && (
         <StudentLobby
           quiz={activeQuiz}
-          onStartQuiz={() => setCurrentScreen('arena')}
+          onStartQuiz={() => {
+            setCurrentScreen('arena');
+            saveNavigationState({ screen: 'arena', quiz: activeQuiz, replace: false });
+          }}
           onBackToHome={handleGoHome}
           isDark={isDark}
           onToggleTheme={toggleTheme}
@@ -263,7 +353,10 @@ export const App: React.FC = () => {
 
       {currentScreen === 'creator' && teacher && (
         <QuizCreator
-          onBack={handleGoHome}
+          onBack={() => {
+            setCurrentScreen('teacher-dashboard');
+            saveNavigationState({ screen: 'teacher-dashboard', replace: false });
+          }}
           onSaveQuiz={handleSaveCreatedQuiz}
           isDark={isDark}
           onToggleTheme={toggleTheme}
