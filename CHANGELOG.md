@@ -1,6 +1,25 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.28] - 2026-09-09
+### Perbaikan Penjangkaran Bilah Atas Beranda (*Sticky Header*) saat Digulir Melalui Modernisasi Kontainer `overflow-x-clip` (Home Sticky Header Restoration & Ancestor Scroll Unification)
+
+#### Perbaikan Tata Letak & UX Navigasi (*Layout & Navigation UX*)
+- **Pemulihan Perilaku Lengket Bilah Atas (*Sticky Header Restoration*):**
+  - Menyelesaikan masalah bilah atas beranda web (*header*) yang tenggelam atau ikut tergulir hilang saat pengguna menelusuri daftar kuis ke arah bawah.
+  - Menganalisis dan mengidentifikasi akar kendala teknis pada rantai leluhur DOM: deklarasi `overflow-x: hidden` pada `index.html`, `src/index.css`, dan kontainer pembungkus `src/App.tsx` memaksa peramban mengaktifkan kontainer gulir bersarang (*nested scroll container*), yang membatalkan kalkulasi `position: sticky; top: 0` pada viewport jendela utama.
+  - Memutakhirkan seluruh properti pemangkas luapan horizontal dari `overflow-x-hidden` menjadi standar CSS Overflow modern `overflow-x-clip` pada `index.html` (`<body>`), `src/index.css` (`html, body`), dan `src/App.tsx` (`<div className="overflow-x-clip">`).
+  - Menjamin bilah navigasi atas di Beranda (`QuizHome`), Ruang Tunggu (`StudentLobby`), Dasbor Guru (`TeacherDashboard`), dan Penyusun Kuis (`QuizCreator`) selalu menempel mantap di puncak layar (`sticky top-0 z-30`) dengan latar kabur lembut (*backdrop blur*) saat konten digulir.
+- **Konsistensi Aksesibilitas Bilah Navigasi:**
+  - Memastikan seluruh kontrol utama (Logo, Identitas Aplikasi, Avatar Profil Cerdas, dan Pintasan Dasbor) dapat diakses instan oleh pengguna tanpa harus repot menggulir balik ke atas.
+
+#### Verifikasi Quality Gate Multi-Viewport (*Quality Gate Verification*)
+- **Pengujian Gulir Lintas Resolusi (Mobile-S hingga Layar Lebar):**
+  - Dilakukan pengujian otomatis menggunakan Playwright pada simulasi gulir vertikal sejauh 400px–600px di berbagai ukuran layar: Mobile-S (320×568), Mobile-M (375×667), Mobile-L (412×915), Android rasio tinggi (393×896), Tablet (768×1024), dan Layar Lebar (1280×800).
+  - Terverifikasi 100% presisi: posisi koordinat vertikal bilah atas terkunci tepat pada `top = 0px` dengan nilai `hasOverflow: false` di semua skenario.
+
+---
+
 ## [2.2.27] - 2026-09-09
 ### Eliminasi Pemicu Gestur Keluar Palsu saat Menggeser Filter & Penerapan Standar Quality Gate Multi-Viewport (Back Gesture Collision Fix & Responsive Quality Gate)
 
