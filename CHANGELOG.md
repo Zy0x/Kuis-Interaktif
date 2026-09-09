@@ -3,6 +3,24 @@ Seluruh riwayat rilis dan pembaruan sistem **Kuis SD Seru** dicatat pada dokumen
 
 ---
 
+## [2.1.6] - 2026-09-09
+### Redesain UI Anti-AI-Slop, Tipografi Nyaman, Estetika Modern & Presisi Mobile-First Hingga Ultrawide
+
+#### Peningkatan Desain & Pengalaman Pengguna (Design & UX Refresh)
+- **Eliminasi Gaya "AI Slop" & Gradien Melelahkan:**
+  - Menghapus gradien pelangi pekat, efek garis tebal kartun berlebihan, dan pola latar belakang yang membuat mata lelah dan pusing.
+  - Menerapkan palet warna bersih dan menenangkan (*Clean Slate-50 background, Indigo/Blue primary accents, Emerald untuk jawaban benar, Rose untuk jawaban salah*).
+- **Tipografi Bersih & Hierarki Ramah Siswa:**
+  - Mengganti bobot huruf serba tebal `font-black` dengan tipografi terstruktur dan seimbang (*font-bold* untuk judul, *font-semibold* untuk kartu, dan *font-medium* untuk teks bacaan) berstandar kontras WCAG AA.
+- **Penyempurnaan Elemen Visual & PWA:**
+  - Kartu kuis dirancang ulang dengan elevasi modern lembut (`shadow-card`, rounded-2xl, dan pembatas slate-200 yang halus).
+  - Banner instalasi PWA diposisikan ulang ke *bottom toast banner* yang elegan dan tidak menghalangi bilah navigasi atas.
+  - Tombol aksi header ponsel beradaptasi otomatis dengan teks ringkas tanpa pembungkusan baris ganda (*whitespace-nowrap*).
+- **Konsistensi Responsif Mobile-S (320px) hingga Ultrawide (2560px+):**
+  - Antarmuka tetap fleksibel, adaptif, proporsional, dan nyaman dibaca oleh siswa SD di seluruh ukuran layar tanpa distorsi atau elemen terpotong.
+
+---
+
 ## [2.1.5] - 2026-09-09
 ### Arsitektur Tata Letak Fluid Penuh (Mobile-S hingga Ultrawide & 4K)
 

@@ -7,7 +7,8 @@ import {
   CheckCircle, 
   XCircle, 
   ArrowRight, 
-  HelpCircle
+  HelpCircle,
+  Clock
 } from 'lucide-react';
 
 interface QuizArenaProps {
@@ -101,30 +102,29 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   };
 
   const progressPercent = ((currentIndex + 1) / quiz.questions.length) * 100;
-  const timerPercent = (timeLeft / quiz.durationPerQuestionSec) * 100;
 
   return (
-    <div className="w-full min-h-screen bg-slate-50 flex flex-col justify-between select-none">
+    <div className="w-full min-h-screen bg-slate-50 text-slate-900 flex flex-col justify-between select-none">
       
-      {/* Top Header - Fluid */}
-      <header className="w-full bg-white border-b border-slate-200 px-3 sm:px-6 lg:px-12 py-2.5 sm:py-3 shadow-sm sticky top-0 z-20">
-        <div className="w-full max-w-4xl mx-auto flex items-center justify-between gap-2 sm:gap-4">
+      {/* Top Arena Header */}
+      <header className="w-full bg-white border-b border-slate-200/80 px-4 sm:px-8 py-3 sticky top-0 z-20 shadow-sm">
+        <div className="w-full max-w-3xl mx-auto flex items-center justify-between gap-3">
           <button
             onClick={() => {
               playClick();
               setShowExitConfirm(true);
             }}
-            className="p-2 text-slate-500 hover:text-slate-900 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center flex-shrink-0"
+            className="p-2 text-slate-500 hover:text-slate-800 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors"
             aria-label="Keluar Kuis"
           >
             <X className="w-5 h-5" />
           </button>
 
-          <div className="text-center flex-1 min-w-0 px-1">
-            <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-full inline-block">
+          <div className="text-center flex-1 min-w-0 px-2">
+            <span className="text-xs font-bold text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-md inline-block">
               Soal {currentIndex + 1} dari {quiz.questions.length}
             </span>
-            <h2 className="text-xs sm:text-base font-extrabold text-slate-700 truncate mt-0.5 max-w-md mx-auto">
+            <h2 className="text-xs sm:text-sm font-bold text-slate-700 truncate mt-0.5">
               {quiz.title}
             </h2>
           </div>
@@ -134,14 +134,15 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
               playClick();
               onToggleMute();
             }}
-            className="p-2 text-slate-500 hover:text-slate-900 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center flex-shrink-0"
-            aria-label="Toggle Suara"
+            className="p-2 text-slate-500 hover:text-slate-800 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors"
+            aria-label="Pengaturan Suara"
           >
-            {isMuted ? <VolumeX className="w-5 h-5 text-rose-500" /> : <Volume2 className="w-5 h-5 text-emerald-600" />}
+            {isMuted ? <VolumeX className="w-5 h-5 text-rose-500" /> : <Volume2 className="w-5 h-5 text-slate-700" />}
           </button>
         </div>
 
-        <div className="w-full max-w-4xl mx-auto bg-slate-100 h-1.5 mt-2 rounded-full overflow-hidden">
+        {/* Subtle, Clean Progress Track */}
+        <div className="w-full max-w-3xl mx-auto bg-slate-100 h-1 mt-2.5 rounded-full overflow-hidden">
           <div
             className="bg-blue-600 h-full transition-all duration-300 rounded-full"
             style={{ width: `${progressPercent}%` }}
@@ -149,75 +150,64 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
         </div>
       </header>
 
-      {/* Main Arena Content - Centered for optimal readability on wide displays */}
-      <main className="w-full max-w-3xl lg:max-w-4xl mx-auto p-3 sm:p-6 lg:p-8 flex flex-col justify-center space-y-4 flex-1">
+      {/* Main Quiz Arena Card - Focused Reading Experience */}
+      <main className="w-full max-w-2xl mx-auto p-4 sm:p-6 space-y-4 flex-1 flex flex-col justify-center">
         
-        {/* Timer Bar */}
-        <div className="flex items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-slate-200 shadow-sm">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">⏱️</span>
-            <span className="text-xs font-bold text-slate-600">Sisa Waktu:</span>
+        {/* Timer Pill */}
+        <div className="flex items-center justify-between bg-white px-4 py-2.5 rounded-xl border border-slate-200/80 shadow-sm">
+          <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
+            <Clock className="w-4 h-4 text-slate-400" />
+            <span>Sisa Waktu:</span>
           </div>
-          <div className="flex items-center gap-2 flex-1 max-w-[160px]">
-            <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-              <div
-                className={`h-full transition-all duration-500 rounded-full ${
-                  timeLeft <= 5 ? 'bg-rose-500 animate-pulse' : 'bg-amber-400'
-                }`}
-                style={{ width: `${timerPercent}%` }}
-              />
-            </div>
-            <span
-              className={`text-xs font-black w-7 text-right ${
-                timeLeft <= 5 ? 'text-rose-600 font-extrabold' : 'text-slate-700'
-              }`}
-            >
-              {timeLeft}s
-            </span>
-          </div>
+          <span className={`text-xs font-bold px-2 py-0.5 rounded-md ${
+            timeLeft <= 5 ? 'bg-rose-100 text-rose-700 font-extrabold animate-pulse' : 'bg-slate-100 text-slate-700'
+          }`}>
+            {timeLeft} detik
+          </span>
         </div>
 
         {/* Question Card */}
-        <div className="bg-white rounded-3xl p-5 sm:p-8 border-2 border-slate-200/90 shadow-playful space-y-4 animate-pop-in">
+        <div className="bg-white rounded-2xl p-5 sm:p-7 border border-slate-200/90 shadow-card space-y-4 animate-fade-in">
           
-          <h3 className="text-base sm:text-2xl font-black text-slate-900 leading-snug break-words">
+          <h3 className="text-base sm:text-xl font-bold text-slate-900 leading-snug break-words">
             {question.text}
           </h3>
 
+          {/* Illustration Container */}
           {question.imageUrl ? (
-            <div className="rounded-2xl overflow-hidden border-2 border-slate-200 bg-slate-50 text-center max-h-64 flex items-center justify-center p-3">
+            <div className="rounded-xl overflow-hidden border border-slate-200 bg-slate-50 text-center max-h-60 flex items-center justify-center p-2">
               <img
                 src={question.imageUrl}
                 alt="Ilustrasi Soal"
-                className="max-h-60 w-auto rounded-xl object-contain mx-auto"
+                className="max-h-56 w-auto rounded-lg object-contain mx-auto"
               />
             </div>
           ) : question.imageCaption ? (
-            <div className="bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200/80 rounded-2xl p-4 sm:p-7 text-center shadow-inner">
-              <div className="text-4xl sm:text-6xl select-none tracking-widest mb-2 animate-bounce-soft">
+            <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-4 text-center">
+              <div className="text-3xl sm:text-4xl select-none mb-1">
                 {question.imageCaption}
               </div>
-              <span className="text-xs sm:text-sm font-bold text-amber-800/80">
-                Perhatikan gambar ilustrasi di atas dengan teliti
+              <span className="text-xs text-slate-500 font-medium">
+                Perhatikan petunjuk ilustrasi di atas
               </span>
             </div>
           ) : null}
 
-          {/* Options Grid */}
-          <div className="grid grid-cols-1 gap-2.5 sm:gap-3 pt-1">
+          {/* Answer Options */}
+          <div className="grid grid-cols-1 gap-2.5 pt-1">
             {question.options.map((optText, idx) => {
               const isSelected = selectedOption === idx;
               const isCorrectOpt = question.correctIndex === idx;
 
-              let btnClass = 'bg-white border-2 border-slate-200 text-slate-800 hover:border-blue-400 hover:bg-blue-50/40';
+              let btnStyle = 'bg-white border border-slate-200 text-slate-800 hover:border-blue-300 hover:bg-slate-50';
 
               if (isAnswerConfirmed) {
                 if (isCorrectOpt) {
-                  btnClass = 'bg-emerald-500 text-white border-2 border-emerald-600 shadow-md font-black';
+                  btnStyle = 'bg-emerald-50 border-2 border-emerald-500 text-emerald-900 font-bold';
                 } else if (isSelected && !isCorrectOpt) {
-                  btnClass = 'bg-rose-500 text-white border-2 border-rose-600 shadow-md font-black animate-wiggle';
+                  btnStyle = 'bg-rose-50 border-2 border-rose-400 text-rose-900 font-bold';
                 } else {
-                  btnClass = 'bg-slate-100 text-slate-400 border border-slate-200 opacity-60';
+                  btnStyle = 'bg-slate-50 border border-slate-200 text-slate-400 opacity-60';
                 }
               }
 
@@ -228,39 +218,42 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                   key={idx}
                   disabled={isAnswerConfirmed}
                   onClick={() => handleAnswerSelect(idx)}
-                  className={`w-full p-3.5 sm:p-4 rounded-2xl text-left flex items-center justify-between transition-all min-h-[52px] btn-playful ${btnClass}`}
+                  className={`w-full p-3.5 sm:p-4 rounded-xl text-left flex items-center justify-between transition-all min-h-[50px] btn-press ${btnStyle}`}
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <span
-                      className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs sm:text-sm flex-shrink-0 ${
-                        isAnswerConfirmed && (isCorrectOpt || isSelected)
-                          ? 'bg-white/30 text-white'
+                      className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center font-bold text-xs sm:text-sm flex-shrink-0 ${
+                        isAnswerConfirmed && isCorrectOpt
+                          ? 'bg-emerald-600 text-white'
+                          : isAnswerConfirmed && isSelected
+                          ? 'bg-rose-600 text-white'
                           : 'bg-slate-100 text-slate-700'
                       }`}
                     >
                       {question.type === 'true_false' ? (idx === 0 ? '✓' : '✗') : letters[idx]}
                     </span>
-                    <span className="text-sm sm:text-base font-bold break-words">{optText}</span>
+                    <span className="text-xs sm:text-sm font-semibold break-words">{optText}</span>
                   </div>
 
                   {isAnswerConfirmed && isCorrectOpt && (
-                    <CheckCircle className="w-5 h-5 text-white flex-shrink-0 ml-2" />
+                    <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0 ml-2" />
                   )}
                   {isAnswerConfirmed && isSelected && !isCorrectOpt && (
-                    <XCircle className="w-5 h-5 text-white flex-shrink-0 ml-2" />
+                    <XCircle className="w-5 h-5 text-rose-500 flex-shrink-0 ml-2" />
                   )}
                 </button>
               );
             })}
           </div>
 
+          {/* Explanation Callout */}
           {isAnswerConfirmed && (
-            <div className="bg-blue-50 border border-blue-200 p-4 rounded-2xl space-y-1.5 animate-pop-in">
-              <div className="flex items-center gap-1.5 text-blue-900 font-extrabold text-xs sm:text-sm">
+            <div className="bg-blue-50/70 border-l-4 border-blue-600 p-4 rounded-r-xl space-y-1 animate-fade-in">
+              <div className="flex items-center gap-1.5 text-blue-900 font-bold text-xs">
                 <HelpCircle className="w-4 h-4 text-blue-600 flex-shrink-0" />
-                <span>Pembahasan Singkat:</span>
+                <span>Penjelasan Konsep:</span>
               </div>
-              <p className="text-xs sm:text-sm text-blue-800 leading-relaxed">
+              <p className="text-xs sm:text-sm text-blue-800/90 leading-relaxed">
                 {question.explanation}
               </p>
             </div>
@@ -269,47 +262,46 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
         </div>
       </main>
 
-      {/* Bottom Floating Control Bar */}
-      <footer className="w-full bg-white border-t border-slate-200 p-3.5 sm:p-4 sticky bottom-0 z-20">
-        <div className="w-full max-w-3xl lg:max-w-4xl mx-auto flex items-center justify-between gap-3">
-          <div className="text-xs font-bold text-slate-500 hidden sm:block">
-            {isAnswerConfirmed ? 'Ketuk lanjut untuk soal berikutnya' : 'Pilih salah satu jawaban di atas'}
-          </div>
+      {/* Bottom Footer Control */}
+      <footer className="w-full bg-white border-t border-slate-200/80 p-3.5 sm:p-4 sticky bottom-0 z-20">
+        <div className="w-full max-w-2xl mx-auto flex items-center justify-between gap-3">
+          <span className="text-xs text-slate-400 font-medium hidden sm:block">
+            {isAnswerConfirmed ? 'Tekan lanjut untuk soal berikutnya' : 'Pilih jawaban yang menurutmu benar'}
+          </span>
 
           <button
             disabled={!isAnswerConfirmed}
             onClick={handleNext}
-            className={`w-full sm:w-auto px-7 py-3 rounded-2xl font-black text-sm flex items-center justify-center gap-2 transition-all min-h-[48px] btn-playful ${
+            className={`w-full sm:w-auto px-6 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all min-h-[46px] btn-press ${
               isAnswerConfirmed
-                ? 'bg-blue-600 hover:bg-blue-500 text-white shadow-playful'
-                : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm'
+                : 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
             }`}
           >
-            <span>{isLastQuestion ? 'Lihat Hasil Kuis' : 'Soal Berikutnya'}</span>
+            <span>{isLastQuestion ? 'Selesai & Lihat Hasil' : 'Soal Berikutnya'}</span>
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>
       </footer>
 
-      {/* Exit Confirmation Modal */}
+      {/* Exit Confirmation Dialog */}
       {showExitConfirm && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-pop-in">
-          <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border-4 border-amber-200 text-center space-y-4">
-            <div className="text-5xl select-none">⚠️</div>
-            <h4 className="text-lg font-black text-slate-900">Yakin Mau Keluar?</h4>
-            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-              Kuis yang sedang berlangsung akan berhenti dan nilaimu belum tersimpan ke papan peringkat.
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-pop border border-slate-200 text-center space-y-3">
+            <h4 className="text-base font-bold text-slate-900">Keluar dari Kuis?</h4>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Kuis yang sedang berlangsung akan dihentikan dan progres saat ini tidak akan disimpan.
             </p>
-            <div className="flex gap-3 pt-1">
+            <div className="flex gap-2.5 pt-2">
               <button
                 onClick={() => setShowExitConfirm(false)}
-                className="flex-1 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-slate-700 bg-slate-100 hover:bg-slate-200 min-h-[44px]"
+                className="flex-1 py-2.5 rounded-xl font-semibold text-xs text-slate-700 bg-slate-100 hover:bg-slate-200 min-h-[42px]"
               >
-                Lanjut Main
+                Lanjutkan Kuis
               </button>
               <button
                 onClick={onExit}
-                className="flex-1 py-2.5 rounded-xl font-black text-xs sm:text-sm text-white bg-rose-600 hover:bg-rose-500 shadow-md min-h-[44px]"
+                className="flex-1 py-2.5 rounded-xl font-bold text-xs text-white bg-rose-600 hover:bg-rose-700 min-h-[42px]"
               >
                 Ya, Keluar
               </button>

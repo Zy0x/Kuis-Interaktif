@@ -62,7 +62,7 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-amber-50/30 text-slate-800">
+    <div className="min-h-screen bg-slate-50 text-slate-900 antialiased selection:bg-primary-500 selection:text-white">
       {/* 1. Animated Splash Screen */}
       {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
 

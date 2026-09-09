@@ -46,30 +46,30 @@ export const InstallPrompt: React.FC = () => {
   if (!isVisible) return null;
 
   return (
-    <div className="fixed top-4 left-4 right-4 max-w-md mx-auto z-40 bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-3.5 rounded-3xl shadow-2xl border-2 border-white/30 flex items-center justify-between gap-3 animate-pop-in">
+    <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:w-96 z-50 bg-white text-slate-900 p-4 rounded-2xl shadow-xl border border-slate-200 flex items-center justify-between gap-3 animate-fade-in">
       <div className="flex items-center gap-3">
-        <div className="w-11 h-11 bg-amber-400 rounded-2xl flex items-center justify-center text-slate-900 text-xl font-bold shadow-md">
-          <Sparkles className="w-6 h-6 text-slate-900" />
+        <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 flex-shrink-0">
+          <Sparkles className="w-5 h-5" />
         </div>
         <div>
-          <h4 className="font-extrabold text-sm sm:text-base leading-tight">Pasang Kuis SD Seru</h4>
-          <p className="text-xs text-blue-100">Buka kuis lebih cepat tanpa lewat browser!</p>
+          <h4 className="font-bold text-sm text-slate-900 leading-tight">Pasang Kuis SD Seru</h4>
+          <p className="text-xs text-slate-500 mt-0.5">Akses cepat & belajar tanpa ribet browser</p>
         </div>
       </div>
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1.5 flex-shrink-0">
         <button
           onClick={handleInstall}
-          className="bg-amber-400 hover:bg-amber-300 text-slate-900 font-extrabold px-3.5 py-2 rounded-2xl text-xs sm:text-sm shadow-md transition-transform active:scale-95 flex items-center gap-1 min-h-[44px]"
+          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-3 py-2 rounded-xl text-xs shadow-sm transition-colors active:scale-95 flex items-center gap-1 min-h-[40px]"
         >
-          <Download className="w-4 h-4" />
+          <Download className="w-3.5 h-3.5" />
           <span>Pasang</span>
         </button>
         <button
           onClick={handleClose}
-          className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-white/80 hover:text-white"
+          className="p-2 min-h-[40px] min-w-[40px] flex items-center justify-center text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors"
           aria-label="Tutup promosi instalasi"
         >
-          <X className="w-5 h-5" />
+          <X className="w-4 h-4" />
         </button>
       </div>
     </div>
