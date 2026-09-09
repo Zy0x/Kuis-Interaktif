@@ -94,8 +94,8 @@ export const QuizResult: React.FC<QuizResultProps> = ({
   };
 
   return (
-    <div className="w-full min-h-screen bg-slate-50 p-4 sm:p-8 pb-28 select-none flex flex-col items-center">
-      <div className="w-full max-w-2xl mx-auto space-y-5 flex-1">
+    <div className="w-full min-h-screen bg-slate-50 text-slate-900 select-none flex flex-col justify-between">
+      <main className="w-full max-w-2xl mx-auto p-4 sm:p-6 pb-8 space-y-5 flex-1">
         
         {/* Results Card */}
         <div className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200/90 shadow-card text-center relative overflow-hidden animate-fade-in">
@@ -289,10 +289,12 @@ export const QuizResult: React.FC<QuizResultProps> = ({
           </div>
         )}
 
-      </div>
+        {/* Bottom Clearance Spacer */}
+        <div className="h-4 w-full" aria-hidden="true" />
+      </main>
 
-      {/* Floating Bottom Action */}
-      <footer className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200/80 p-3 z-30 shadow-lg">
+      {/* Sticky Bottom Action Bar - Docked at viewport bottom, never covers content */}
+      <footer className="sticky bottom-0 w-full bg-white/95 backdrop-blur-md border-t border-slate-200/80 p-3 sm:p-3.5 z-20 shadow-lg">
         <div className="max-w-2xl mx-auto flex items-center gap-2.5">
           <button
             onClick={() => {
