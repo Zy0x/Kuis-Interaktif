@@ -1,6 +1,22 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.34] - 2026-09-10
+### Otomatisasi Penuh Deployment Skema Database Cloud & Panduan Kerja AI (Autonomous Supabase Deployment & AGENTS.md Integration)
+
+#### Otomatisasi Deployment Mandiri (*Autonomous Database Pipeline*)
+- **Pipeline Deployment Supabase Terprogram (`npm run db:deploy`):**
+  - Membuat utilitas otomatis [`scripts/deploy-supabase.js`](file:///E:/Data/GitHub/Kuis%20Interaktif/scripts/deploy-supabase.js) yang mengeksekusi skema database langsung ke Supabase Management API menggunakan token akses terenkripsi tanpa intervensi manual.
+  - Skrip membaca konfigurasi proyek secara otomatis dari `.env` dan memvalidasi integritas baris data di seluruh tabel (`quizzes`, `quiz_questions`, `profiles_player`, `profiles_teacher`, `quiz_attempts`).
+  - Berhasil mengeksekusi dan memverifikasi skema database cloud: 6 kuis dan 22 butir soal resmi kini 100% aktif di PostgreSQL Supabase.
+
+#### Standar Operasional AI Agent (*SOP Standard & AI Protocol*)
+- **Dokumen Prosedur AI Agent Resmi ([`AGENTS.md`](file:///E:/Data/GitHub/Kuis%20Interaktif/AGENTS.md)):**
+  - Menetapkan aturan mutlak bagi seluruh AI Agent untuk selalu mengeksekusi `npm run db:deploy` setiap kali ada perubahan pada skema atau seed data, tanpa meminta pengguna melakukan salin-tempel manual.
+  - Mendokumentasikan kepatuhan keamanan data tingkat tinggi (Rule 9 & 10), standar mobile-first (Rule 1), target sentuh $\ge 44\times 44\text{ px}$, dan verifikasi kualitas.
+
+---
+
 ## [2.2.33] - 2026-09-10
 ### Aktivasi Sinkronisasi Database Cloud Penuh & Skrip Migrasi Skema Mandiri (Full Cloud Database Sync & Resilient Schema Migration)
 
