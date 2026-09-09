@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import type { Quiz, GradeLevel, Subject } from '../../types/quiz';
+import type { Quiz, GradeLevel, Subject, TeacherProfile } from '../../types/quiz';
 import { AVATAR_LIST } from '../../data/seedQuizzes';
 import { DataManager } from '../../lib/supabaseClient';
 import { 
@@ -16,12 +16,19 @@ import {
   Plus,
   Trash2,
   Layers,
-  Sparkles
+  Sparkles,
+  GraduationCap,
+  KeyRound,
+  ArrowRight,
+  AlertCircle
 } from 'lucide-react';
 
 interface QuizHomeProps {
   onSelectQuiz: (quiz: Quiz) => void;
   onOpenCreator: () => void;
+  onOpenTeacherPortal: () => void;
+  onEnterPin: (quiz: Quiz) => void;
+  teacher: TeacherProfile | null;
   isMuted: boolean;
   onToggleMute: () => void;
   playClick: () => void;
@@ -30,6 +37,9 @@ interface QuizHomeProps {
 export const QuizHome: React.FC<QuizHomeProps> = ({
   onSelectQuiz,
   onOpenCreator,
+  onOpenTeacherPortal,
+  onEnterPin,
+  teacher,
   isMuted,
   onToggleMute,
   playClick,
@@ -42,6 +52,9 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
   const [rulesModalQuiz, setRulesModalQuiz] = useState<Quiz | null>(null);
   const [tempNickname, setTempNickname] = useState(profile.nickname);
   const [tempAvatar, setTempAvatar] = useState(profile.avatarId);
+  const [pinInput, setPinInput] = useState('');
+  const [pinError, setPinError] = useState<string | null>(null);
+  const [isPinLoading, setIsPinLoading] = useState(false);
 
   useEffect(() => {
     setQuizzes(DataManager.getAllQuizzes());
@@ -71,6 +84,27 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
     });
     setProfile(updated);
     setIsProfileModalOpen(false);
+  };
+
+  const handlePinSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    playClick();
+    if (!pinInput.trim()) return;
+    setPinError(null);
+    setIsPinLoading(true);
+
+    try {
+      const match = await DataManager.getQuizByPin(pinInput.trim());
+      if (match) {
+        onEnterPin(match);
+      } else {
+        setPinError('PIN Kuis tidak ditemukan. Silakan periksa kembali 4 digit PIN dari gurumu.');
+      }
+    } catch {
+      setPinError('Gagal memeriksa PIN. Coba lagi sebentar.');
+    } finally {
+      setIsPinLoading(false);
+    }
   };
 
   const handleStartWithRules = (quiz: Quiz) => {
@@ -129,6 +163,22 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
 
           {/* Right Action Icons */}
           <div className="flex items-center gap-2 sm:gap-2.5">
+            {/* Teacher Portal Button */}
+            <button
+              onClick={() => {
+                playClick();
+                onOpenTeacherPortal();
+              }}
+              className="flex items-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 font-bold text-xs sm:text-sm min-h-[44px] transition-colors btn-press shadow-sm whitespace-nowrap"
+              title={teacher ? `Dashboard Guru: ${teacher.fullName}` : 'Portal Masuk Guru'}
+            >
+              <GraduationCap className="w-4 h-4 text-blue-600" />
+              <span className="hidden sm:inline">
+                {teacher ? teacher.fullName.split(' ')[0] : 'Portal Guru'}
+              </span>
+              <span className="sm:hidden">Guru</span>
+            </button>
+
             <button
               onClick={() => {
                 playClick();
@@ -182,6 +232,48 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
       {/* Main Fluid Content */}
       <main className="w-full max-w-[2000px] mx-auto px-4 sm:px-8 lg:px-12 pt-5 sm:pt-7 space-y-6 flex-1">
         
+        {/* Quick PIN Entry Bar for Students */}
+        <div className="w-full bg-white rounded-2xl p-3.5 sm:p-4 border border-slate-200 shadow-sm">
+          <form onSubmit={handlePinSubmit} className="flex flex-col sm:flex-row items-center gap-3">
+            <div className="flex items-center gap-2 text-slate-800 font-bold text-xs sm:text-sm whitespace-nowrap self-start sm:self-center">
+              <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center">
+                <KeyRound className="w-4 h-4" />
+              </div>
+              <span>Punya PIN Kuis dari Guru?</span>
+            </div>
+
+            <div className="flex-1 w-full flex items-center gap-2">
+              <input
+                type="text"
+                maxLength={8}
+                value={pinInput}
+                onChange={(e) => {
+                  setPinInput(e.target.value);
+                  setPinError(null);
+                }}
+                placeholder="Ketik 4 digit PIN (misal: 1001)"
+                className="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none font-mono font-bold text-xs sm:text-sm text-slate-900 min-h-[44px]"
+              />
+
+              <button
+                type="submit"
+                disabled={isPinLoading || !pinInput.trim()}
+                className="px-4 sm:px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm min-h-[44px] flex items-center gap-1.5 shadow-sm transition-all btn-press disabled:opacity-50 whitespace-nowrap"
+              >
+                {isPinLoading ? 'Mencari...' : 'Masuk Kuis'}
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </form>
+
+          {pinError && (
+            <div className="mt-2.5 p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2 animate-fade-in">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              <span>{pinError}</span>
+            </div>
+          )}
+        </div>
+
         {/* Welcoming Header Banner - Calm, Sophisticated, Encouraging */}
         <div className="w-full bg-gradient-to-r from-blue-700 via-indigo-700 to-blue-800 text-white rounded-2xl p-6 sm:p-8 shadow-card flex flex-col md:flex-row md:items-center md:justify-between gap-5">
           <div className="space-y-2 max-w-xl">

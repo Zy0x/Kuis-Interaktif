@@ -1,5 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
-import type { LeaderboardEntry, QuizAttemptResult, Quiz } from '../types/quiz';
+import type { 
+  LeaderboardEntry, 
+  QuizAttemptResult, 
+  Quiz, 
+  QuizQuestion,
+  TeacherProfile, 
+  StudentSubmission 
+} from '../types/quiz';
 import { INITIAL_QUIZZES } from '../data/seedQuizzes';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
@@ -15,11 +22,24 @@ export const supabase = isSupabaseConfigured
   ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
   : null;
 
-// Dual-Storage Manager (Local Storage reactive fallback + Supabase Sync)
+// Local Storage Keys
 const STORAGE_KEY_LEADERBOARD = 'kuis_sd_leaderboard_v1';
 const STORAGE_KEY_ATTEMPTS = 'kuis_sd_attempts_v1';
 const STORAGE_KEY_PLAYER = 'kuis_sd_player_profile';
 const STORAGE_KEY_CUSTOM_QUIZZES = 'kuis_sd_custom_quizzes_v1';
+const STORAGE_KEY_TEACHER_PROFILE = 'kuis_sd_teacher_profile_v1';
+
+// 4-Digit PIN Helper
+export function generateRandomPin(): string {
+  return Math.floor(1000 + Math.random() * 9000).toString();
+}
+
+// Ensure seed quizzes have friendly fallback PINs
+INITIAL_QUIZZES.forEach((q, idx) => {
+  if (!q.pinCode) {
+    q.pinCode = (1001 + idx).toString();
+  }
+});
 
 export const DataManager = {
   // 1. Get All Quizzes (Default Seeds + Teacher Custom Quizzes)
@@ -33,12 +53,190 @@ export const DataManager = {
     }
   },
 
-  // 2. Save Custom Quiz Created by Teacher
-  async saveCustomQuiz(quiz: Quiz): Promise<void> {
+  // 2. Find Quiz by PIN (Online Supabase + Offline Fallback)
+  async getQuizByPin(pin: string): Promise<Quiz | null> {
+    const cleanPin = pin.trim();
+    if (!cleanPin) return null;
+
+    // 1. Try Supabase first if available
+    if (supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('quizzes')
+          .select(`
+            id,
+            title,
+            description,
+            subject,
+            target_grade,
+            duration_per_question_sec,
+            cover_emoji,
+            theme_color,
+            badge_title,
+            pin_code,
+            creator_name,
+            quiz_questions (
+              id,
+              question_text,
+              question_type,
+              image_url,
+              image_caption,
+              options,
+              correct_index,
+              explanation,
+              order_number
+            )
+          `)
+          .eq('pin_code', cleanPin)
+          .maybeSingle();
+
+        if (!error && data) {
+          const rawQuestions = (data.quiz_questions as Array<{
+            id: string;
+            question_text: string;
+            question_type: string;
+            image_url: string | null;
+            image_caption: string | null;
+            options: string[];
+            correct_index: number;
+            explanation: string;
+            order_number: number;
+          }>) || [];
+
+          // Sort questions by order_number
+          rawQuestions.sort((a, b) => a.order_number - b.order_number);
+
+          const formattedQuiz: Quiz = {
+            id: data.id,
+            title: data.title,
+            description: data.description || '',
+            subject: data.subject as Quiz['subject'],
+            grade: data.target_grade,
+            durationPerQuestionSec: data.duration_per_question_sec,
+            coverEmoji: data.cover_emoji || '⭐',
+            themeColor: data.theme_color || 'from-blue-500 to-indigo-600',
+            badgeTitle: data.badge_title || 'Bintang Juara',
+            pinCode: data.pin_code,
+            creatorName: data.creator_name || 'Guru SD',
+            questions: rawQuestions.map((q) => ({
+              id: q.id,
+              text: q.question_text,
+              type: q.question_type as QuizQuestion['type'],
+              imageUrl: q.image_url || undefined,
+              imageCaption: q.image_caption || undefined,
+              options: Array.isArray(q.options) ? q.options : JSON.parse(q.options || '[]'),
+              correctIndex: q.correct_index,
+              explanation: q.explanation || '',
+            })),
+          };
+
+          return formattedQuiz;
+        }
+      } catch (e) {
+        console.warn('Supabase PIN lookup notice:', e);
+      }
+    }
+
+    // 2. Fallback to Local Quizzes & Seed Quizzes
+    const all = this.getAllQuizzes();
+    const match = all.find((q) => q.pinCode === cleanPin || q.id === cleanPin);
+    return match || null;
+  },
+
+  // 3. Find Quiz by ID
+  async getQuizById(id: string): Promise<Quiz | null> {
+    const all = this.getAllQuizzes();
+    const local = all.find((q) => q.id === id);
+    if (local) return local;
+
+    if (supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('quizzes')
+          .select(`
+            id,
+            title,
+            description,
+            subject,
+            target_grade,
+            duration_per_question_sec,
+            cover_emoji,
+            theme_color,
+            badge_title,
+            pin_code,
+            creator_name,
+            quiz_questions (
+              id,
+              question_text,
+              question_type,
+              image_url,
+              image_caption,
+              options,
+              correct_index,
+              explanation,
+              order_number
+            )
+          `)
+          .eq('id', id)
+          .maybeSingle();
+
+        if (!error && data) {
+          const rawQuestions = (data.quiz_questions as Array<{
+            id: string;
+            question_text: string;
+            question_type: string;
+            image_url: string | null;
+            image_caption: string | null;
+            options: string[];
+            correct_index: number;
+            explanation: string;
+            order_number: number;
+          }>) || [];
+
+          rawQuestions.sort((a, b) => a.order_number - b.order_number);
+
+          return {
+            id: data.id,
+            title: data.title,
+            description: data.description || '',
+            subject: data.subject as Quiz['subject'],
+            grade: data.target_grade,
+            durationPerQuestionSec: data.duration_per_question_sec,
+            coverEmoji: data.cover_emoji || '⭐',
+            themeColor: data.theme_color || 'from-blue-500 to-indigo-600',
+            badgeTitle: data.badge_title || 'Bintang Juara',
+            pinCode: data.pin_code,
+            creatorName: data.creator_name || 'Guru SD',
+            questions: rawQuestions.map((q) => ({
+              id: q.id,
+              text: q.question_text,
+              type: q.question_type as QuizQuestion['type'],
+              imageUrl: q.image_url || undefined,
+              imageCaption: q.image_caption || undefined,
+              options: Array.isArray(q.options) ? q.options : JSON.parse(q.options || '[]'),
+              correctIndex: q.correct_index,
+              explanation: q.explanation || '',
+            })),
+          };
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    return null;
+  },
+
+  // 4. Save Custom Quiz Created by Teacher
+  async saveCustomQuiz(quiz: Quiz): Promise<Quiz> {
+    // Ensure 4-digit PIN exists
+    if (!quiz.pinCode) {
+      quiz.pinCode = generateRandomPin();
+    }
+
     try {
       const customStr = localStorage.getItem(STORAGE_KEY_CUSTOM_QUIZZES);
       let customQuizzes: Quiz[] = customStr ? JSON.parse(customStr) : [];
-      // If already exists, replace; else prepend
       const existingIdx = customQuizzes.findIndex((q) => q.id === quiz.id);
       if (existingIdx >= 0) {
         customQuizzes[existingIdx] = quiz;
@@ -53,7 +251,7 @@ export const DataManager = {
     // Sync to user Supabase if configured
     if (supabase) {
       try {
-        await supabase.from('quizzes').insert({
+        await supabase.from('quizzes').upsert({
           id: quiz.id,
           title: quiz.title,
           description: quiz.description,
@@ -63,6 +261,9 @@ export const DataManager = {
           cover_emoji: quiz.coverEmoji,
           theme_color: quiz.themeColor,
           badge_title: quiz.badgeTitle,
+          pin_code: quiz.pinCode,
+          creator_id: quiz.creatorId || null,
+          creator_name: quiz.creatorName || null,
           is_published: true,
         });
 
@@ -78,15 +279,18 @@ export const DataManager = {
           explanation: q.explanation,
           order_number: idx + 1,
         }));
+        await supabase.from('quiz_questions').delete().eq('quiz_id', quiz.id);
         await supabase.from('quiz_questions').insert(formattedQuestions);
       } catch (err) {
-        console.warn('Supabase quiz sync background notice:', err);
+        console.warn('Supabase quiz sync notice:', err);
       }
     }
+
+    return quiz;
   },
 
-  // 3. Delete Custom Quiz
-  deleteCustomQuiz(quizId: string): void {
+  // 5. Delete Custom Quiz
+  async deleteCustomQuiz(quizId: string): Promise<void> {
     try {
       const customStr = localStorage.getItem(STORAGE_KEY_CUSTOM_QUIZZES);
       if (customStr) {
@@ -97,9 +301,17 @@ export const DataManager = {
     } catch (e) {
       console.warn('Delete quiz error:', e);
     }
+
+    if (supabase) {
+      try {
+        await supabase.from('quizzes').delete().eq('id', quizId);
+      } catch (err) {
+        console.warn('Supabase quiz delete notice:', err);
+      }
+    }
   },
 
-  // 4. Get Player Profile
+  // 6. Get Player Profile
   getPlayerProfile() {
     try {
       const data = localStorage.getItem(STORAGE_KEY_PLAYER);
@@ -123,7 +335,7 @@ export const DataManager = {
     return updated;
   },
 
-  // 5. Save Quiz Attempt & Update Leaderboard
+  // 7. Save Quiz Attempt & Update Leaderboard
   async recordQuizAttempt(result: QuizAttemptResult): Promise<void> {
     const player = this.getPlayerProfile();
     
@@ -131,7 +343,7 @@ export const DataManager = {
       const historyStr = localStorage.getItem(STORAGE_KEY_ATTEMPTS) || '[]';
       const history: QuizAttemptResult[] = JSON.parse(historyStr);
       history.unshift(result);
-      localStorage.setItem(STORAGE_KEY_ATTEMPTS, JSON.stringify(history.slice(0, 50)));
+      localStorage.setItem(STORAGE_KEY_ATTEMPTS, JSON.stringify(history.slice(0, 100)));
 
       // Update Player Stats
       player.quizzesCompleted += 1;
@@ -176,7 +388,7 @@ export const DataManager = {
     }
   },
 
-  // 6. Get Leaderboard for a Quiz
+  // 8. Get Leaderboard for a Quiz
   async getLeaderboard(quizId: string): Promise<LeaderboardEntry[]> {
     if (supabase) {
       try {
@@ -222,5 +434,307 @@ export const DataManager = {
     } catch {
       return [];
     }
+  },
+
+  // 9. Teacher Gradebook Submissions (Rekap Nilai Siswa)
+  async getTeacherSubmissions(quizId?: string): Promise<StudentSubmission[]> {
+    if (supabase) {
+      try {
+        let query = supabase
+          .from('quiz_attempts')
+          .select(`
+            id,
+            quiz_id,
+            score,
+            stars,
+            total_questions,
+            correct_answers,
+            time_spent_sec,
+            player_nickname,
+            player_avatar,
+            created_at,
+            quizzes (
+              title
+            )
+          `)
+          .order('created_at', { ascending: false })
+          .limit(100);
+
+        if (quizId) {
+          query = query.eq('quiz_id', quizId);
+        }
+
+        const { data, error } = await query;
+        if (!error && data && data.length > 0) {
+          return (data as any[]).map((d: any) => {
+            const qTitle = Array.isArray(d.quizzes) ? d.quizzes[0]?.title : d.quizzes?.title;
+            return {
+              id: d.id,
+              quizId: d.quiz_id,
+              quizTitle: qTitle || 'Kuis Interaktif SD',
+              studentName: d.player_nickname || 'Siswa Pintar',
+              avatarId: d.player_avatar || 'lion',
+              score: d.score,
+              stars: d.stars,
+              correctCount: d.correct_answers,
+              totalCount: d.total_questions,
+              timeSpentSec: d.time_spent_sec,
+              submittedAt: new Date(d.created_at).toLocaleString('id-ID', {
+                day: 'numeric',
+                month: 'short',
+                hour: '2-digit',
+                minute: '2-digit',
+              }),
+            };
+          });
+        }
+      } catch {
+        // fallback
+      }
+    }
+
+    // Fallback to local storage attempts
+    try {
+      const historyStr = localStorage.getItem(STORAGE_KEY_ATTEMPTS) || '[]';
+      const history: QuizAttemptResult[] = JSON.parse(historyStr);
+      const filtered = quizId ? history.filter((h) => h.quizId === quizId) : history;
+      return filtered.map((h, i) => ({
+        id: 'sub_' + i + '_' + (h.completedAt || Date.now()),
+        quizId: h.quizId,
+        quizTitle: h.quizTitle,
+        studentName: this.getPlayerProfile().nickname,
+        avatarId: this.getPlayerProfile().avatarId,
+        score: h.score,
+        stars: h.stars,
+        correctCount: h.correctCount,
+        totalCount: h.totalCount,
+        timeSpentSec: h.timeSpentSec,
+        submittedAt: new Date(h.completedAt).toLocaleString('id-ID', {
+          day: 'numeric',
+          month: 'short',
+          hour: '2-digit',
+          minute: '2-digit',
+        }),
+      }));
+    } catch {
+      return [];
+    }
+  },
+
+  // 10. Teacher Auth & Profile
+  getTeacherProfile(): TeacherProfile | null {
+    try {
+      const data = localStorage.getItem(STORAGE_KEY_TEACHER_PROFILE);
+      return data ? JSON.parse(data) : null;
+    } catch {
+      return null;
+    }
+  },
+
+  setTeacherProfile(profile: TeacherProfile | null) {
+    if (profile) {
+      localStorage.setItem(STORAGE_KEY_TEACHER_PROFILE, JSON.stringify(profile));
+    } else {
+      localStorage.removeItem(STORAGE_KEY_TEACHER_PROFILE);
+    }
+  },
+
+  async signInTeacher(email: string, pass: string): Promise<{ success: boolean; error?: string; teacher?: TeacherProfile }> {
+    if (supabase) {
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password: pass,
+        });
+        if (error) {
+          return { success: false, error: error.message };
+        }
+        if (data.user) {
+          const profile: TeacherProfile = {
+            id: data.user.id,
+            email: data.user.email || email,
+            fullName: data.user.user_metadata?.full_name || email.split('@')[0],
+            schoolName: data.user.user_metadata?.school_name || 'SD Negeri Favorit',
+          };
+          this.setTeacherProfile(profile);
+          return { success: true, teacher: profile };
+        }
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Gagal menghubungi server Supabase';
+        return { success: false, error: message };
+      }
+    }
+
+    // Offline / Local fallback teacher session
+    const mockTeacher: TeacherProfile = {
+      id: 'teacher_local_' + Date.now(),
+      email,
+      fullName: email.split('@')[0],
+      schoolName: 'SD Kreatif Nusantara',
+    };
+    this.setTeacherProfile(mockTeacher);
+    return { success: true, teacher: mockTeacher };
+  },
+
+  async signUpTeacher(email: string, pass: string, fullName: string, schoolName: string): Promise<{ success: boolean; error?: string; teacher?: TeacherProfile }> {
+    if (supabase) {
+      try {
+        const { data, error } = await supabase.auth.signUp({
+          email: email.trim(),
+          password: pass,
+          options: {
+            data: {
+              full_name: fullName,
+              school_name: schoolName,
+            },
+          },
+        });
+        if (error) {
+          return { success: false, error: error.message };
+        }
+        if (data.user) {
+          const profile: TeacherProfile = {
+            id: data.user.id,
+            email: data.user.email || email,
+            fullName,
+            schoolName,
+          };
+          this.setTeacherProfile(profile);
+          return { success: true, teacher: profile };
+        }
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Gagal mendaftar ke server Supabase';
+        return { success: false, error: message };
+      }
+    }
+
+    const mockTeacher: TeacherProfile = {
+      id: 'teacher_local_' + Date.now(),
+      email,
+      fullName,
+      schoolName,
+    };
+    this.setTeacherProfile(mockTeacher);
+    return { success: true, teacher: mockTeacher };
+  },
+
+  async signOutTeacher() {
+    if (supabase) {
+      try {
+        await supabase.auth.signOut();
+      } catch {
+        // ignore
+      }
+    }
+    this.setTeacherProfile(null);
+  },
+
+  // 11. Quick Math Quiz Generator
+  generateQuickMathQuiz(grade: number, count: number = 5): Quiz {
+    const questions: QuizQuestion[] = [];
+    const pin = generateRandomPin();
+
+    for (let i = 0; i < count; i++) {
+      let text = '';
+      let correctAnswer = 0;
+      let explanation = '';
+
+      if (grade === 1 || grade === 2) {
+        // Simple addition & subtraction (under 20 for grade 1, under 50 for grade 2)
+        const max = grade === 1 ? 15 : 40;
+        const a = Math.floor(Math.random() * max) + 2;
+        const b = Math.floor(Math.random() * max) + 1;
+        const isAdd = Math.random() > 0.4;
+
+        if (isAdd) {
+          correctAnswer = a + b;
+          text = `Berapakah hasil dari ${a} + ${b}?`;
+          explanation = `Hasil penjumlahan ${a} ditambah ${b} adalah ${correctAnswer}.`;
+        } else {
+          const bigger = Math.max(a, b);
+          const smaller = Math.min(a, b);
+          correctAnswer = bigger - smaller;
+          text = `Berapakah hasil dari ${bigger} - ${smaller}?`;
+          explanation = `Hasil pengurangan ${bigger} dikurang ${smaller} adalah ${correctAnswer}.`;
+        }
+      } else if (grade === 3 || grade === 4) {
+        // Multiplication & Division
+        const isMul = Math.random() > 0.4;
+        const a = Math.floor(Math.random() * 9) + 2;
+        const b = Math.floor(Math.random() * 9) + 2;
+
+        if (isMul) {
+          correctAnswer = a * b;
+          text = `Berapakah hasil dari perkalian ${a} × ${b}?`;
+          explanation = `${a} dikalikan ${b} adalah ${correctAnswer}.`;
+        } else {
+          const product = a * b;
+          correctAnswer = a;
+          text = `Berapakah hasil pembagian dari ${product} ÷ ${b}?`;
+          explanation = `${product} dibagi ${b} menghasilkan ${correctAnswer}.`;
+        }
+      } else {
+        // Grade 5 & 6 (Fractions, Percentages, Multi-step)
+        const type = Math.floor(Math.random() * 3);
+        if (type === 0) {
+          const a = (Math.floor(Math.random() * 8) + 2) * 10;
+          const b = Math.floor(Math.random() * 5) + 2;
+          correctAnswer = a * b + 15;
+          text = `Hitunglah operasi hitung campuran: (${a} × ${b}) + 15 = ...`;
+          explanation = `Kerjakan perkalian terlebih dahulu: ${a} × ${b} = ${a * b}. Lalu jumlahkan dengan 15 menjadi ${correctAnswer}.`;
+        } else if (type === 1) {
+          const percent = [10, 20, 25, 50][Math.floor(Math.random() * 4)];
+          const base = [100, 200, 400, 500][Math.floor(Math.random() * 4)];
+          correctAnswer = (percent / 100) * base;
+          text = `Berapakah ${percent}% dari ${base}?`;
+          explanation = `${percent}% dari ${base} adalah (${percent}/100) × ${base} = ${correctAnswer}.`;
+        } else {
+          const a = Math.floor(Math.random() * 15) + 10;
+          const b = Math.floor(Math.random() * 10) + 5;
+          correctAnswer = a * a + b;
+          text = `Berapakah hasil dari ${a}² + ${b}?`;
+          explanation = `${a}² = ${a * a}, lalu ditambah ${b} = ${correctAnswer}.`;
+        }
+      }
+
+      // Generate 3 plausible distractors
+      const distractors = new Set<number>();
+      distractors.add(correctAnswer + 1);
+      distractors.add(Math.max(1, correctAnswer - 1));
+      distractors.add(correctAnswer + (Math.random() > 0.5 ? 2 : -2));
+      distractors.add(correctAnswer + 10);
+      distractors.delete(correctAnswer);
+
+      const options = [correctAnswer.toString(), ...Array.from(distractors).slice(0, 3).map(String)];
+      // Shuffle options
+      const shuffledOptions = [...options].sort(() => Math.random() - 0.5);
+      const correctIndex = shuffledOptions.indexOf(correctAnswer.toString());
+
+      questions.push({
+        id: `gen_q_${i + 1}_${Date.now()}`,
+        text,
+        type: 'multiple_choice',
+        options: shuffledOptions,
+        correctIndex,
+        explanation,
+      });
+    }
+
+    const newQuiz: Quiz = {
+      id: `custom_math_g${grade}_${Date.now()}`,
+      title: `Latihan Kilat Matematika Kelas ${grade}`,
+      description: `Soal hitung cepat otomatis tingkat Kelas ${grade} SD dengan waktu terukur.`,
+      subject: 'Matematika',
+      grade,
+      durationPerQuestionSec: 25,
+      coverEmoji: '⚡',
+      themeColor: 'from-blue-600 to-cyan-500',
+      badgeTitle: 'Master Berhitung',
+      pinCode: pin,
+      creatorName: 'Generator Guru Pintar',
+      questions,
+    };
+
+    return newQuiz;
   },
 };

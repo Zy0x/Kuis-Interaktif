@@ -54,37 +54,60 @@ export function useSoundEffects() {
     }
   }, [isMuted, getAudioContext]);
 
-  // 2. Play Cheerful Correct Chime (C5 -> E5 -> G5)
-  const playCorrect = useCallback(() => {
+  // 2. Play Cheerful Correct Chime with Dynamic Streak Fanfare
+  const playCorrect = useCallback((streak: number = 1) => {
     if (isMuted) return;
     try {
       const ctx = getAudioContext();
       if (!ctx) return;
       
       const now = ctx.currentTime;
-      const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
-      
-      notes.forEach((freq, i) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(freq, now + i * 0.08);
-        
-        gain.gain.setValueAtTime(0.18, now + i * 0.08);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.08 + 0.22);
-        
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        
-        osc.start(now + i * 0.08);
-        osc.stop(now + i * 0.08 + 0.23);
-      });
+
+      if (streak >= 3) {
+        // High Combo Fanfare (Sparkling arpeggio + triad)
+        const notes = [
+          523.25, 659.25, 783.99, 1046.50, 1318.51 // C5, E5, G5, C6, E6
+        ];
+        notes.forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, now + i * 0.06);
+          
+          gain.gain.setValueAtTime(0.22, now + i * 0.06);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.06 + 0.28);
+          
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          
+          osc.start(now + i * 0.06);
+          osc.stop(now + i * 0.06 + 0.3);
+        });
+      } else {
+        // Standard Correct Chime (C5 -> E5 -> G5 -> C6)
+        const notes = [523.25, 659.25, 783.99, 1046.50];
+        notes.forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, now + i * 0.07);
+          
+          gain.gain.setValueAtTime(0.18, now + i * 0.07);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.07 + 0.22);
+          
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          
+          osc.start(now + i * 0.07);
+          osc.stop(now + i * 0.07 + 0.23);
+        });
+      }
     } catch {
       // Audio fallback
     }
   }, [isMuted, getAudioContext]);
 
-  // 3. Play Gentle Soft Wrong Note (F3 -> D3)
+  // 3. Play Gentle Cartoon Boing for Incorrect Answers
   const playWrong = useCallback(() => {
     if (isMuted) return;
     try {
@@ -95,24 +118,119 @@ export function useSoundEffects() {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       
+      // Fun downward comic slide: 260Hz -> 130Hz
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(220, now);
-      osc.frequency.linearRampToValueAtTime(160, now + 0.25);
+      osc.frequency.setValueAtTime(260, now);
+      osc.frequency.exponentialRampToValueAtTime(130, now + 0.25);
       
-      gain.gain.setValueAtTime(0.2, now);
-      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.28);
+      gain.gain.setValueAtTime(0.22, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.26);
       
       osc.connect(gain);
       gain.connect(ctx.destination);
       
       osc.start(now);
-      osc.stop(now + 0.3);
+      osc.stop(now + 0.28);
     } catch {
       // Audio fallback
     }
   }, [isMuted, getAudioContext]);
 
-  // 4. Play Fanfare Victory (Completion fanfare)
+  // 4. Play 5-Second Countdown Tick
+  const playTick = useCallback(() => {
+    if (isMuted) return;
+    try {
+      const ctx = getAudioContext();
+      if (!ctx) return;
+      
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(800, now);
+      osc.frequency.exponentialRampToValueAtTime(400, now + 0.03);
+      
+      gain.gain.setValueAtTime(0.1, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      osc.start(now);
+      osc.stop(now + 0.035);
+    } catch {
+      // Audio fallback
+    }
+  }, [isMuted, getAudioContext]);
+
+  // 5. Play Magical Reveal Chime (When Teacher Reveals Answer)
+  const playReveal = useCallback(() => {
+    if (isMuted) return;
+    try {
+      const ctx = getAudioContext();
+      if (!ctx) return;
+      
+      const now = ctx.currentTime;
+      const notes = [659.25, 783.99, 987.77, 1318.51]; // E5, G5, B5, E6
+      notes.forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now + i * 0.05);
+        gain.gain.setValueAtTime(0.15, now + i * 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.05 + 0.35);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + i * 0.05);
+        osc.stop(now + i * 0.05 + 0.36);
+      });
+    } catch {
+      // Audio fallback
+    }
+  }, [isMuted, getAudioContext]);
+
+  // 6. Play Classroom Applause (Cheering noise bursts)
+  const playApplause = useCallback(() => {
+    if (isMuted) return;
+    try {
+      const ctx = getAudioContext();
+      if (!ctx) return;
+      
+      const bufferSize = ctx.sampleRate * 1.5;
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      
+      for (let i = 0; i < bufferSize; i++) {
+        // Modulate white noise for rhythmic applause bursts
+        const envelope = Math.sin((i / bufferSize) * Math.PI);
+        const clapPulse = Math.sin((i / (ctx.sampleRate * 0.08)) * Math.PI * 2);
+        data[i] = (Math.random() * 2 - 1) * envelope * (0.6 + 0.4 * Math.abs(clapPulse));
+      }
+      
+      const noise = ctx.createBufferSource();
+      noise.buffer = buffer;
+      
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.value = 1100;
+      filter.Q.value = 1.8;
+      
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.18, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.5);
+      
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(ctx.destination);
+      
+      noise.start();
+    } catch {
+      // Audio fallback
+    }
+  }, [isMuted, getAudioContext]);
+
+  // 7. Play Fanfare Victory (Completion fanfare)
   const playCelebration = useCallback(() => {
     if (isMuted) return;
     try {
@@ -153,6 +271,9 @@ export function useSoundEffects() {
     playClick,
     playCorrect,
     playWrong,
+    playTick,
+    playReveal,
+    playApplause,
     playCelebration,
   };
 }

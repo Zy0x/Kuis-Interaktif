@@ -37,6 +37,8 @@ CREATE INDEX IF NOT EXISTS idx_profiles_player_score ON public.profiles_player(t
 CREATE TABLE IF NOT EXISTS public.quizzes (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     creator_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+    creator_name VARCHAR(120),
+    pin_code VARCHAR(8),
     title VARCHAR(255) NOT NULL,
     description TEXT,
     subject VARCHAR(64) NOT NULL,
@@ -51,9 +53,25 @@ CREATE TABLE IF NOT EXISTS public.quizzes (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- Migration safety for existing tables:
+ALTER TABLE public.quizzes ADD COLUMN IF NOT EXISTS pin_code VARCHAR(8);
+ALTER TABLE public.quizzes ADD COLUMN IF NOT EXISTS creator_name VARCHAR(120);
+
 CREATE INDEX IF NOT EXISTS idx_quizzes_grade ON public.quizzes(target_grade);
 CREATE INDEX IF NOT EXISTS idx_quizzes_subject ON public.quizzes(subject);
+CREATE INDEX IF NOT EXISTS idx_quizzes_pin ON public.quizzes(pin_code);
 CREATE INDEX IF NOT EXISTS idx_quizzes_published ON public.quizzes(is_published) WHERE is_published = TRUE;
+
+-- ==========================================================
+-- 3B. TABEL PROFIL GURU (PROFILES_TEACHER)
+-- ==========================================================
+CREATE TABLE IF NOT EXISTS public.profiles_teacher (
+    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    full_name VARCHAR(120) NOT NULL,
+    school_name VARCHAR(150),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 
 -- ==========================================================
 -- 4. TABEL BANK SOAL KUIS (QUIZ_QUESTIONS)
@@ -125,6 +143,7 @@ CREATE TABLE IF NOT EXISTS public.system_backups (
 -- 8. AKTIFKAN ROW LEVEL SECURITY (RLS) DI SELURUH TABEL
 -- ==========================================================
 ALTER TABLE public.profiles_player ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.profiles_teacher ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.quizzes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.quiz_questions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.quiz_attempts ENABLE ROW LEVEL SECURITY;
@@ -134,6 +153,22 @@ ALTER TABLE public.system_backups ENABLE ROW LEVEL SECURITY;
 -- ==========================================================
 -- 9. KEBIJAKAN RLS (POLICIES)
 -- ==========================================================
+
+-- Policy Teacher Profiles: Guru dapat membaca dan mengupdate profilnya sendiri
+CREATE POLICY "Teacher Read Own Profile" 
+ON public.profiles_teacher FOR SELECT 
+TO authenticated 
+USING (auth.uid() = id);
+
+CREATE POLICY "Teacher Update Own Profile" 
+ON public.profiles_teacher FOR UPDATE 
+TO authenticated 
+USING (auth.uid() = id);
+
+CREATE POLICY "Teacher Insert Own Profile" 
+ON public.profiles_teacher FOR INSERT 
+TO authenticated 
+WITH CHECK (auth.uid() = id);
 
 -- Policy Quizzes: Siapapun (anon) dapat membaca kuis yang sudah terbit (published)
 CREATE POLICY "Public Read Published Quizzes" 
