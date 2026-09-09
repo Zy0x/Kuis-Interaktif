@@ -303,8 +303,8 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     <div className="w-full min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-20 select-none flex flex-col">
       
       {/* Top Header */}
-      <header className="w-full sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-3 sm:px-8 pt-[max(env(safe-area-inset-top),0.625rem)] pb-2.5 sm:pb-3 shadow-sm">
-        <div className="w-full max-w-5xl mx-auto flex items-center justify-between gap-2 sm:gap-3">
+      <header className="w-full sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-3 sm:px-8 lg:px-12 pt-[max(env(safe-area-inset-top),0.625rem)] pb-2.5 sm:pb-3 shadow-sm">
+        <div className="w-full max-w-[2000px] mx-auto flex items-center justify-between gap-2 sm:gap-3">
           <button
             onClick={() => {
               playClick();
@@ -349,7 +349,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
         </div>
 
         {/* Step Tabs */}
-        <div className="w-full max-w-5xl mx-auto mt-2 grid grid-cols-3 gap-1.5 sm:gap-2">
+        <div className="w-full max-w-[2000px] mx-auto mt-2 grid grid-cols-3 gap-1.5 sm:gap-2">
           <button
             onClick={() => {
               playClick();
@@ -437,11 +437,11 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
       )}
 
       {/* Main Form Content */}
-      <main className="w-full max-w-5xl mx-auto px-4 sm:px-8 pt-5 flex-1">
+      <main className="w-full max-w-[2000px] mx-auto px-3 xs:px-4 sm:px-8 lg:px-12 pt-5 flex-1">
 
         {/* ================= STEP 1: GENERAL INFO ================= */}
         {currentStep === 1 && (
-          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-card space-y-5 animate-fade-in">
+          <div className="max-w-4xl 2xl:max-w-5xl mx-auto bg-white dark:bg-slate-900 rounded-2xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-card space-y-5 animate-fade-in">
             <div className="flex items-center gap-2 pb-3 border-b border-slate-100 dark:border-slate-800">
               <BookOpen className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">Informasi Dasar Kuis</h2>
@@ -644,10 +644,10 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
         {/* ================= STEP 2: BANK SOAL ================= */}
         {currentStep === 2 && (
           <div className="space-y-5 animate-fade-in">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 2xl:gap-8 items-start">
               
               {/* Question Bank List */}
-              <div className="lg:col-span-5 bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
+              <div className="lg:col-span-5 2xl:col-span-4 bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
                 <div className="flex items-center justify-between">
                   <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                     <Layers className="w-4 h-4 text-blue-600 dark:text-blue-400" /> Bank Soal ({questions.length})
@@ -705,7 +705,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
               </div>
 
               {/* Form Input Soal */}
-              <div className="lg:col-span-7">
+              <div className="lg:col-span-7 2xl:col-span-8">
                 {isAddingQuestion ? (
                   <form
                     onSubmit={handleSaveQuestion}
@@ -944,7 +944,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
 
         {/* ================= STEP 3: PREVIEW & PUBLISH ================= */}
         {currentStep === 3 && (
-          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-card space-y-5 animate-fade-in max-w-3xl mx-auto">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-card space-y-5 animate-fade-in max-w-3xl 2xl:max-w-4xl mx-auto">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-2">
                 <Eye className="w-4 h-4 text-blue-600 dark:text-blue-400" />

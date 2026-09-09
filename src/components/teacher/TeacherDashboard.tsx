@@ -248,8 +248,8 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-16 flex flex-col">
       {/* Top Navbar */}
-      <header className="w-full bg-white dark:bg-slate-900 border-b border-slate-200/90 dark:border-slate-800 px-2.5 xs:px-4 sm:px-8 pt-[max(env(safe-area-inset-top),0.5rem)] pb-2 xs:pb-2.5 sm:pb-3 sticky top-0 z-30 shadow-sm">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-1.5 xs:gap-2 sm:gap-3">
+      <header className="w-full bg-white dark:bg-slate-900 border-b border-slate-200/90 dark:border-slate-800 px-3 sm:px-8 lg:px-12 pt-[max(env(safe-area-inset-top),0.5rem)] pb-2 xs:pb-2.5 sm:pb-3 sticky top-0 z-30 shadow-sm transition-colors">
+        <div className="w-full max-w-[2000px] mx-auto flex items-center justify-between gap-1.5 xs:gap-2 sm:gap-3">
           
           <div className="flex items-center gap-1.5 xs:gap-2 sm:gap-3 min-w-0">
             <button
@@ -333,7 +333,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
       </header>
 
       {/* Main Container */}
-      <main className="max-w-7xl w-full mx-auto px-4 sm:px-8 pt-6 space-y-6 flex-1">
+      <main className="w-full max-w-[2000px] mx-auto px-3 xs:px-4 sm:px-8 lg:px-12 pt-5 sm:pt-6 space-y-6 flex-1">
         
         {/* Navigation Tabs */}
         <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-2 overflow-x-auto scrollbar-hover">
@@ -470,7 +470,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 gap-4 sm:gap-5">
                 {quizzes.map((quiz) => {
                   return (
                     <div
@@ -520,10 +520,6 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                               )}
                             </span>
 
-                            <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                              Kelas {quiz.grade}
-                            </span>
-
                             {/* Three-Dots Menu Button */}
                             <button
                               type="button"
@@ -540,12 +536,20 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                           </div>
                         </div>
 
-                      {/* Title & Emoji */}
+                      {/* Title & Emoji with Subject & Grade badges */}
                       <div className="flex items-start gap-2.5">
                         <span className="text-2xl p-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 select-none flex-shrink-0">
                           {quiz.coverEmoji}
                         </span>
-                        <div className="min-w-0">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700">
+                              Kelas {quiz.grade}
+                            </span>
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900/60">
+                              {quiz.subject}
+                            </span>
+                          </div>
                           <h3 className="font-bold text-slate-900 dark:text-white text-sm sm:text-base leading-snug line-clamp-2">
                             {quiz.title}
                           </h3>
@@ -559,8 +563,10 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                     {/* Meta info */}
                     <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center justify-between border-t border-slate-100 dark:border-slate-800 pt-3">
                       <span>{quiz.questions.length} Soal</span>
+                      <span>•</span>
                       <span>{quiz.durationPerQuestionSec}s / soal</span>
-                      <span>{quiz.subject}</span>
+                      <span>•</span>
+                      <span>PIN: {quiz.pinCode || '1001'}</span>
                     </div>
 
                     {/* Action Buttons (Tombol in Card: 1. Mode IFP, 2. Bagi Tautan, 3. Edit) */}
@@ -712,7 +718,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
 
         {/* TAB 3: GENERATOR KILAT SOAL */}
         {activeTab === 'generator' && (
-          <section className="max-w-2xl mx-auto bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-card space-y-6 animate-fade-in">
+          <section className="max-w-3xl 2xl:max-w-4xl mx-auto bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-card space-y-6 animate-fade-in">
             <div className="space-y-2 text-center">
               <div className="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto text-2xl">
                 ⚡

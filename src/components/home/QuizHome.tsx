@@ -716,7 +716,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
             </h3>
           </div>
 
-          <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
+          <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 gap-4 sm:gap-5">
             {filteredQuizzes.map((quiz) => {
               const isCustom = quiz.id.startsWith('custom_');
               return (

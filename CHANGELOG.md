@@ -1,6 +1,37 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.35] - 2026-09-10
+### Audit Visual Menyeluruh & Eliminasi Celah Lebar Antar-Platform (Mobile-S hingga IFP Smartboard 4K)
+
+#### Tata Letak Responsif & Eliminasi Celah Sisi (*Zero Dead-Space Across All Viewports*)
+- **Penyesuaian Lebar Kontainer Komprehensif (`max-w-[2000px]`):**
+  - Mengeliminasi celah hitam/kosong di sisi kiri dan kanan pada monitor desktop lebar (1920px Full HD), layar Ultrawide (2560px/3440px), hingga Interactive Flat Panel (IFP) Smartboard 4K (3840px).
+  - Menyelaraskan seluruh kontainer utama aplikasi (`QuizHome`, `TeacherDashboard`, `QuizCreator`, `StudentLobby`, `QuizArena`, dan `QuizResult`) ke grid fluida adaptif `w-full max-w-[2000px] mx-auto px-3 xs:px-4 sm:px-8 lg:px-12`.
+  - Grid kartu kuis kini beradaptasi secara berjenjang dari 1 kolom (Mobile-S/M/L), 2 kolom (Tablet potret), 3 kolom (Tablet lanskap), 4 kolom (Desktop), 5 kolom (2xl), hingga 6 kolom (3xl/IFP 4K).
+
+#### Optimalisasi Antarmuka Kuis & Ruang Belajar Guru (*Studio & Arena UI Scaling*)
+- **Studio Kuis Guru (`QuizCreator`):**
+  - Header navigasi dan bilah tahapan (1. Info Kuis, 2. Bank Soal, 3. Pratinjau) kini mengisi lebar tampilan monitor secara seimbang tanpa terpotong.
+  - Tahap 2 (Bank Soal) mengadopsi tata letak dua kolom proporsional pada layar lebar (`lg:col-span-5 2xl:col-span-4` untuk daftar soal dan `lg:col-span-7 2xl:col-span-8` untuk formulir input pertanyaan).
+  - Formulir informasi kuis dan pratinjau kartu kuis diposisikan secara simetris dan elegan (`max-w-4xl 2xl:max-w-5xl mx-auto`).
+
+- **Arena Kuis & Mode Interaktif IFP Smartboard (`QuizArena`):**
+  - Memperluas kontainer kartu pertanyaan kuis dari pembatas statis 768px menjadi `max-w-2xl lg:max-w-4xl xl:max-w-5xl 2xl:max-w-6xl 3xl:max-w-7xl 4k:max-w-[1800px] mx-auto`.
+  - Target sentuh tombol opsi jawaban diperbesar hingga `519px`–`583px` dengan tinggi sentuh $\ge 72\text{ px}$ (hingga $80\text{ px}$ pada IFP 4K), menjamin kemudahan interaksi sentuhan langsung di papan tulis digital kelas.
+  - Tipografi pertanyaan ditingkatkan secara proporsional hingga `3xl:text-4xl` agar mudah dibaca oleh seluruh siswa dari sudut ruang kelas mana pun.
+
+- **Halaman Hasil Belajar Siswa (`QuizResult`):**
+  - Memperluas kontainer ulasan nilai dan pembahasan soal menjadi `max-w-2xl lg:max-w-4xl xl:max-w-5xl 2xl:max-w-6xl mx-auto`.
+  - Pada layar lebar, ulasan butir soal disajikan dalam grid 2 kolom (`grid-cols-1 lg:grid-cols-2`) yang rapi dan meminimalkan ruang kosong vertikal.
+
+#### Audit Presisi Mobile-S & Target Sentuh (*Rule 1 & Rule 2 Verified*)
+- **Verifikasi Nol Overflow Horizontal (`scrollWidth === clientWidth`):**
+  - Melakukan audit otomatis dengan peramban tanpa kepala pada 10 profil resolusi (Mobile-S 320px, Mobile-M 375px, Mobile-L 425px, Android Non-Reguler 412x915, Tablet Potret 768px, Tablet Lanskap 1024px, Desktop HD 1440px, Wide 1920px, Ultra-Wide 2560px, dan IFP 4K 3840px).
+  - Seluruh halaman lulus pengujian dengan 0px horizontal scroll dan 100% kepatuhan ukuran target sentuh minimal $\ge 44\times 44\text{ px}$.
+
+---
+
 ## [2.2.34] - 2026-09-10
 ### Otomatisasi Penuh Deployment Skema Database Cloud & Panduan Kerja AI (Autonomous Supabase Deployment & AGENTS.md Integration)
 

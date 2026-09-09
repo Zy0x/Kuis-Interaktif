@@ -339,7 +339,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
       
       {/* Top Arena Header - Pinned at top with safe-area support */}
       <header className="w-full bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800 px-2 sm:px-6 pt-[max(env(safe-area-inset-top),0.625rem)] pb-2 sm:pb-2.5 flex-shrink-0 z-20 shadow-xs">
-        <div className="w-full max-w-2xl lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl mx-auto flex items-center justify-between gap-1.5 sm:gap-3">
+        <div className="w-full max-w-2xl lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl 3xl:max-w-6xl 4k:max-w-7xl mx-auto flex items-center justify-between gap-1.5 sm:gap-3">
           
           {/* Left: Exit Button & Question Info */}
           <div className="flex items-center gap-1 sm:gap-2 min-w-0 flex-shrink">
@@ -489,7 +489,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
         </div>
 
         {/* Progress Track */}
-        <div className="w-full max-w-2xl lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl mx-auto bg-slate-100 dark:bg-slate-800 h-1 sm:h-1.5 mt-2 rounded-full overflow-hidden">
+        <div className="w-full max-w-2xl lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl 3xl:max-w-6xl 4k:max-w-7xl mx-auto bg-slate-100 dark:bg-slate-800 h-1 sm:h-1.5 mt-2 rounded-full overflow-hidden">
           <div
             className="bg-blue-600 h-full transition-all duration-300 rounded-full"
             style={{ width: `${progressPercent}%` }}
@@ -499,7 +499,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 
       {/* Main Quiz Arena Card - Locked to Viewport with Auto-centering & Smooth Top-to-Bottom Overflow */}
       <main className="flex-1 min-h-0 w-full overflow-y-auto px-3 py-2 sm:px-6 sm:py-4 flex flex-col items-center overscroll-contain">
-        <div className="w-full max-w-2xl lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl bg-white dark:bg-slate-900 rounded-3xl p-4 sm:p-6 md:p-8 2xl:p-10 border border-slate-200/90 dark:border-slate-800 shadow-card flex flex-col gap-3.5 sm:gap-5 xl:gap-6 my-auto animate-fade-in relative">
+        <div className="w-full max-w-2xl lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl 3xl:max-w-6xl 4k:max-w-7xl bg-white dark:bg-slate-900 rounded-3xl p-4 sm:p-6 md:p-8 2xl:p-10 3xl:p-12 border border-slate-200/90 dark:border-slate-800 shadow-card flex flex-col gap-3.5 sm:gap-5 xl:gap-6 my-auto animate-fade-in relative">
           
           {/* Paused Overlay Banner */}
           {isPaused && (
@@ -510,7 +510,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
           )}
 
           {/* Question Text */}
-          <h3 className="text-sm xs:text-base sm:text-lg md:text-xl xl:text-2xl 2xl:text-3xl font-extrabold text-slate-900 dark:text-white leading-snug break-words">
+          <h3 className="text-sm xs:text-base sm:text-lg md:text-xl xl:text-2xl 2xl:text-3xl 3xl:text-4xl font-extrabold text-slate-900 dark:text-white leading-snug break-words">
             {question.text}
           </h3>
 
@@ -559,11 +559,11 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                   key={idx}
                   disabled={isAnswerConfirmed}
                   onClick={() => handleAnswerSelect(idx)}
-                  className={`w-full p-3 sm:p-4 xl:p-5 rounded-2xl text-left flex items-center justify-between transition-all min-h-[48px] sm:min-h-[56px] xl:min-h-[64px] 2xl:min-h-[72px] btn-press ${btnStyle}`}
+                  className={`w-full p-3 sm:p-4 xl:p-5 3xl:p-6 rounded-2xl text-left flex items-center justify-between transition-all min-h-[48px] sm:min-h-[56px] xl:min-h-[64px] 2xl:min-h-[72px] 3xl:min-h-[80px] btn-press ${btnStyle}`}
                 >
                   <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
                     <span
-                      className={`w-8 h-8 sm:w-9 sm:h-9 xl:w-11 xl:h-11 rounded-xl flex items-center justify-center font-bold text-xs sm:text-sm xl:text-base flex-shrink-0 ${
+                      className={`w-8 h-8 sm:w-9 sm:h-9 xl:w-11 xl:h-11 3xl:w-14 3xl:h-14 rounded-xl flex items-center justify-center font-bold text-xs sm:text-sm xl:text-base 3xl:text-xl flex-shrink-0 ${
                         isAnswerConfirmed && isCorrectOpt
                           ? 'bg-emerald-600 text-white'
                           : isAnswerConfirmed && isSelected
@@ -573,7 +573,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                     >
                       {question.type === 'true_false' ? (idx === 0 ? '✓' : '✗') : letters[idx]}
                     </span>
-                    <span className="text-xs sm:text-sm md:text-base xl:text-lg font-bold break-words leading-snug">{optText}</span>
+                    <span className="text-xs sm:text-sm md:text-base xl:text-lg 3xl:text-xl font-bold break-words leading-snug">{optText}</span>
                   </div>
 
                   <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -620,7 +620,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 
       {/* Bottom Footer Control */}
       <footer className="w-full bg-white dark:bg-slate-900 border-t border-slate-200/80 dark:border-slate-800 px-3 sm:px-6 py-2.5 sm:py-3 pb-[max(env(safe-area-inset-bottom),0.625rem)] flex-shrink-0 z-20 shadow-sm">
-        <div className="w-full max-w-2xl lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl mx-auto flex items-center justify-between gap-3">
+        <div className="w-full max-w-2xl lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl 3xl:max-w-6xl 4k:max-w-7xl mx-auto flex items-center justify-between gap-3">
           
           {/* Teacher Reveal Button (Smartboard superpower) */}
           {!isAnswerConfirmed ? (

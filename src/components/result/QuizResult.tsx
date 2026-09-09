@@ -100,7 +100,7 @@ export const QuizResult: React.FC<QuizResultProps> = ({
 
   return (
     <div className="w-full min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 select-none flex flex-col justify-between">
-      <main className="w-full max-w-2xl mx-auto p-4 sm:p-6 pb-8 space-y-5 flex-1">
+      <main className="w-full max-w-2xl lg:max-w-4xl xl:max-w-5xl 2xl:max-w-6xl mx-auto p-4 sm:p-6 pb-8 space-y-5 flex-1">
         
         {/* Results Card */}
         <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 sm:p-8 border border-slate-200/90 dark:border-slate-800 shadow-card text-center relative overflow-hidden animate-fade-in">
@@ -184,6 +184,7 @@ export const QuizResult: React.FC<QuizResultProps> = ({
               Ulasan Jawaban & Penjelasan ({quiz.questions.length} Soal)
             </h3>
 
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
             {quiz.questions.map((q, idx) => {
               const studentAnswer = answers.find((a) => a.questionId === q.id);
               const isCorrect = studentAnswer?.isCorrect;
@@ -245,6 +246,7 @@ export const QuizResult: React.FC<QuizResultProps> = ({
                 </div>
               );
             })}
+            </div>
           </div>
         )}
 
@@ -300,7 +302,7 @@ export const QuizResult: React.FC<QuizResultProps> = ({
 
       {/* Sticky Bottom Action Bar - Docked at viewport bottom, never covers content */}
       <footer className="sticky bottom-0 w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200/80 dark:border-slate-800 p-2.5 xs:p-3 sm:p-3.5 z-20 shadow-lg pb-[max(env(safe-area-inset-bottom),0.625rem)]">
-        <div className="max-w-2xl mx-auto flex items-center gap-1.5 xs:gap-2.5">
+        <div className="max-w-2xl lg:max-w-4xl xl:max-w-5xl 2xl:max-w-6xl mx-auto flex items-center gap-1.5 xs:gap-2.5">
           <button
             onClick={() => {
               playClick();
