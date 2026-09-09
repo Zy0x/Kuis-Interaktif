@@ -20,6 +20,20 @@
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=Quicksand:wght@600;700;800&display=swap" rel="stylesheet" />
 
     <title>Kuis SD Seru 🌟 Belajar Asyik & Menyenangkan</title>
+    <script>
+      (function() {
+        try {
+          var manual = sessionStorage.getItem('kuis_sd_manual_theme');
+          var h = new Date().getHours();
+          var isDark = manual ? manual === 'dark' : (h >= 18 || h < 7);
+          if (isDark) {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body class="bg-amber-50/40 text-slate-800 antialiased selection:bg-brand-yellow selection:text-slate-900 overflow-x-hidden min-h-screen">
     <div id="root"></div>

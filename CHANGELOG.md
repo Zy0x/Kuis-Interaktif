@@ -1,6 +1,22 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis SD Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.14] - 2026-09-09
+### Otomatisasi Tema Berbasis Waktu Nyata: 18.00–07.00 Gelap & 07.00–18.00 Terang (Time-Aware Automatic Dark & Light Mode System)
+
+#### Fitur Tema & Otomatisasi Waktu (*Time-Driven Ambient Theme Engine*)
+- **Aturan Tema Berbasis Jam Lokal (*Automated Circadian Theme Logic*):**
+  - **Malam Hari (18.00 - 06.59.59):** Aplikasi secara otomatis menerapkan **Mode Gelap (*Dark Theme*)** untuk kenyamanan mata pengguna di malam hari.
+  - **Siang Hari (07.00 - 17.59.59):** Aplikasi secara otomatis menerapkan **Mode Terang (*Light Theme*)** dengan latar bersih dan kontras tinggi.
+- **Deteksi Jam Otomatis Tanpa Kedip (*Zero-Flicker Inline Boot Script*):**
+  - Menanamkan inisialisasi skrip langsung pada `<head>` di `index.html` sehingga tema gelap/terang terpasang instan pada milidetik ke-0 tanpa ada kedipan putih (*no flash of unstyled theme*).
+- **Sinkronisasi Waktu Nyata (*Live Heartbeat Check*):**
+  - Memeriksa waktu lokal perangkat secara berkala setiap 30 detik melalui `useTheme`, sehingga jika pengguna menggunakan aplikasi saat jam melintasi batas 18:00 atau 07:00, tema akan berpindah secara halus.
+- **Dukungan Toggle Manual Pengguna:**
+  - Pengguna tetap memiliki kebebasan penuh menekan tombol toggle tema (Matahari / Bulan) di bilah navigasi untuk berganti mode sesuai preferensi ruang baca saat itu, yang tersimpan aman pada sesi peramban.
+
+---
+
 ## [2.2.13] - 2026-09-09
 ### Relokasi Proyek ke Disk E: & Pembersihan Penuh Disk C: Sistem (Full Project Migration to E:\Data\GitHub\Kuis Interaktif)
 
