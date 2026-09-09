@@ -13,7 +13,7 @@ export const CelestialSkyVisual: React.FC<CelestialSkyVisualProps> = ({ phase, c
       className={`pointer-events-none select-none absolute inset-0 overflow-hidden rounded-2xl flex items-center justify-end ${className}`}
     >
       {/* Dynamic Ambient Background Glow */}
-      <div className="absolute right-0 top-1/2 -translate-y-1/2 w-64 h-64 sm:w-80 sm:h-80 rounded-full blur-3xl opacity-35 transition-all duration-700 pointer-events-none">
+      <div className="absolute right-0 top-1/2 -translate-y-1/2 w-64 h-64 sm:w-96 sm:h-96 2xl:w-[500px] 2xl:h-[500px] rounded-full blur-3xl opacity-35 transition-all duration-700 pointer-events-none">
         {phase === 'morning' && <div className="w-full h-full bg-amber-400" />}
         {phase === 'noon' && <div className="w-full h-full bg-amber-300" />}
         {phase === 'afternoon' && <div className="w-full h-full bg-orange-500" />}
@@ -22,10 +22,10 @@ export const CelestialSkyVisual: React.FC<CelestialSkyVisualProps> = ({ phase, c
         {phase === 'dawn' && <div className="w-full h-full bg-purple-500" />}
       </div>
 
-      {/* SVG Container */}
+      {/* SVG Container - Fluid scaling across 360px up to 4K Smartboards */}
       <svg
         viewBox="0 0 320 200"
-        className="w-56 h-36 sm:w-72 sm:h-44 lg:w-80 lg:h-48 flex-shrink-0 transition-opacity duration-500 mr-2 sm:mr-6"
+        className="w-40 h-28 xs:w-48 xs:h-32 sm:w-64 sm:h-40 md:w-72 md:h-44 lg:w-80 lg:h-48 xl:w-96 xl:h-56 2xl:w-[420px] 2xl:h-[260px] flex-shrink-0 transition-all duration-500 mr-1 xs:mr-2 sm:mr-6 md:mr-10 xl:mr-16"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
       >

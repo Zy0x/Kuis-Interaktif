@@ -451,45 +451,64 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
           )}
         </div>
 
-        {/* Welcoming Header Banner - Dynamic Celestial Time-Aware */}
+        {/* Welcoming Header Banner - Dynamic Celestial Time-Aware (Zero-Obstruction Layout) */}
         {!teacher ? (
-          <div className={`w-full ${timeData.gradientClass} text-white rounded-2xl p-6 sm:p-8 shadow-card dark:border dark:border-slate-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 transition-all duration-500 relative overflow-hidden`}>
-            {/* Celestial Sky Visual Graphic (Sun, Moon, Stars, Clouds) */}
+          <div className={`w-full ${timeData.gradientClass} text-white rounded-2xl p-6 sm:p-8 shadow-card dark:border dark:border-slate-800 flex items-center justify-between gap-5 transition-all duration-500 relative overflow-hidden min-h-[190px] sm:min-h-[210px]`}>
+            {/* Celestial Sky Visual Graphic (Dedicated Unobstructed Right Canvas) */}
             <CelestialSkyVisual phase={timeData.phase} />
 
-            <div className="space-y-2 max-w-xl relative z-10">
+            {/* Left Content Zone: Info, Greeting, Quote & Stats */}
+            <div className="space-y-3 max-w-md sm:max-w-lg lg:max-w-xl 2xl:max-w-2xl relative z-10">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 backdrop-blur-sm text-xs font-semibold text-white/95 border border-white/10 shadow-xs">
                 <span>{timeData.emoji}</span>
                 <span>{timeData.label}</span>
                 <span className="opacity-40">•</span>
                 <span className="font-mono text-[11px] opacity-90">{timeData.currentTimeString}</span>
               </div>
+
               <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white drop-shadow-xs">
                 {isCustomName(profile.nickname) 
                   ? `${timeData.greetingPrefix}, ${profile.nickname}!` 
                   : `${timeData.greetingPrefix}, Siswa Hebat!`}
               </h2>
-              <p className="text-white/90 text-sm sm:text-base leading-relaxed drop-shadow-xs">
+
+              <p className="text-white/90 text-xs sm:text-sm leading-relaxed drop-shadow-xs max-w-md sm:max-w-lg">
                 {timeData.studentQuote}
               </p>
-            </div>
 
-            <div className="flex items-center gap-3 bg-white/15 backdrop-blur-md border border-white/20 rounded-xl p-3.5 sm:p-4 flex-shrink-0 relative z-10 shadow-sm w-fit self-start md:self-auto">
-              <div className="text-3xl select-none">🏆</div>
-              <div>
-                <span className="text-xs text-white/80 block font-medium">Bintang Terkumpul</span>
-                <span className="text-lg sm:text-xl font-extrabold text-white flex items-center gap-1">
-                  {profile.starsEarned} <span className="text-amber-300 text-sm">⭐ Bintang</span>
-                </span>
+              {/* Kapsul Glassmorphism Bintang Siswa (Interaktif - Buka Profil & Avatar) */}
+              <div className="pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    setIsProfileModalOpen(true);
+                  }}
+                  className="inline-flex items-center gap-3 px-3.5 sm:px-4 py-2 rounded-xl bg-white/15 hover:bg-white/25 active:scale-98 backdrop-blur-md border border-white/25 text-white transition-all shadow-sm min-h-[44px] btn-press group"
+                  title="Buka Profil & Koleksi Prestasi Siswa"
+                  aria-label={`Prestasi: ${profile.starsEarned} Bintang Terkumpul. Klik untuk buka profil.`}
+                >
+                  <span className="text-2xl select-none group-hover:scale-110 transition-transform">🏆</span>
+                  <div className="text-left">
+                    <span className="text-xs sm:text-sm font-extrabold text-white flex items-center gap-1.5 leading-tight">
+                      <span>{profile.starsEarned} Bintang Terkumpul</span>
+                      <span className="text-amber-300">⭐</span>
+                    </span>
+                    <span className="text-[10px] text-white/80 block leading-tight font-medium">
+                      Atur nama & koleksi avatar ›
+                    </span>
+                  </div>
+                </button>
               </div>
             </div>
           </div>
         ) : (
-          <div className={`w-full ${timeData.gradientClass} text-white rounded-2xl p-6 sm:p-8 shadow-card dark:border dark:border-slate-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 transition-all duration-500 relative overflow-hidden`}>
-            {/* Celestial Sky Visual Graphic (Sun, Moon, Stars, Clouds) */}
+          <div className={`w-full ${timeData.gradientClass} text-white rounded-2xl p-6 sm:p-8 shadow-card dark:border dark:border-slate-800 flex items-center justify-between gap-5 transition-all duration-500 relative overflow-hidden min-h-[190px] sm:min-h-[210px]`}>
+            {/* Celestial Sky Visual Graphic (Dedicated Unobstructed Right Canvas) */}
             <CelestialSkyVisual phase={timeData.phase} />
 
-            <div className="space-y-2 max-w-xl relative z-10">
+            {/* Left Content Zone: Info, Greeting, Quote & Dashboard Action */}
+            <div className="space-y-3 max-w-md sm:max-w-lg lg:max-w-xl 2xl:max-w-2xl relative z-10">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 backdrop-blur-sm text-xs font-semibold text-white/95 border border-white/10 shadow-xs">
                 <GraduationCap className="w-3.5 h-3.5 text-amber-300" />
                 <span>Ruang Pendidik SD</span>
@@ -498,25 +517,30 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                 <span className="opacity-40">•</span>
                 <span className="font-mono text-[11px] opacity-90">{timeData.currentTimeString}</span>
               </div>
+
               <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white drop-shadow-xs">
                 {timeData.greetingPrefix}, {teacher.fullName}!
               </h2>
-              <p className="text-white/90 text-sm sm:text-base leading-relaxed drop-shadow-xs">
+
+              <p className="text-white/90 text-xs sm:text-sm leading-relaxed drop-shadow-xs max-w-md sm:max-w-lg">
                 {timeData.teacherQuote} Anda aktif di <strong className="text-white font-bold">{teacher.schoolName || 'SD Indonesia'}</strong>.
               </p>
-            </div>
 
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 flex-shrink-0 relative z-10">
-              <button
-                onClick={() => {
-                  playClick();
-                  onOpenTeacherPortal();
-                }}
-                className="px-5 py-3 rounded-xl bg-white text-blue-950 hover:bg-white/90 dark:bg-blue-600 dark:hover:bg-blue-500 dark:text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition-colors min-h-[44px] btn-press"
-              >
-                <LayoutDashboard className="w-4 h-4 text-blue-600 dark:text-white" />
-                <span>Buka Dashboard Guru</span>
-              </button>
+              {/* Tombol Aksi Dasbor Guru */}
+              <div className="pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    onOpenTeacherPortal();
+                  }}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 sm:py-3 rounded-xl bg-white text-blue-950 hover:bg-white/90 dark:bg-blue-600 dark:hover:bg-blue-500 dark:text-white font-bold text-xs sm:text-sm shadow-md transition-colors min-h-[44px] btn-press"
+                  aria-label="Buka Dashboard Guru"
+                >
+                  <LayoutDashboard className="w-4 h-4 text-blue-600 dark:text-white" />
+                  <span>Buka Dashboard Guru</span>
+                </button>
+              </div>
             </div>
           </div>
         )}
