@@ -494,6 +494,25 @@ export const DataManager = {
     return updatedQuiz;
   },
 
+  // 5c. Duplicate Quiz (Clone questions and metadata with new PIN)
+  async duplicateQuiz(quizId: string): Promise<Quiz | null> {
+    const original = await this.getQuizById(quizId);
+    if (!original) return null;
+    const teacher = this.getTeacherProfile();
+    const newId = 'custom_' + Date.now();
+    const duplicated: Quiz = {
+      ...JSON.parse(JSON.stringify(original)),
+      id: newId,
+      title: `${original.title} (Salinan)`,
+      pinCode: generateRandomPin(),
+      creatorId: teacher?.id || original.creatorId,
+      creatorName: teacher?.fullName || original.creatorName,
+      createdAt: new Date().toISOString(),
+    };
+    await this.saveCustomQuiz(duplicated);
+    return duplicated;
+  },
+
   // 5c. Update Quiz Visibility (Public vs Private)
   async updateQuizVisibility(quizId: string, visibility: 'public' | 'private'): Promise<void> {
     await this.updateQuizSettings(quizId, { visibility });

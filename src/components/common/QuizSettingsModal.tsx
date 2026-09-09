@@ -7,18 +7,16 @@ import {
   X, 
   Globe, 
   Lock, 
-  Clock, 
   KeyRound, 
   RefreshCw, 
   Copy, 
   Check, 
   Share2, 
-  Tv, 
   Printer, 
   Trash2, 
-  Save, 
   SlidersHorizontal,
-  CheckCircle2,
+  CopyPlus,
+  BarChart3,
   Loader2
 } from 'lucide-react';
 
@@ -26,23 +24,23 @@ export interface QuizSettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   quiz: Quiz | null;
+  onDuplicate: (quiz: Quiz) => Promise<void> | void;
+  onViewSubmissions?: (quiz: Quiz) => void;
+  onPrintWorksheet: (quiz: Quiz) => void;
   onSaveSettings: (quizId: string, updates: Partial<Quiz>) => Promise<void>;
-  onLaunchSmartboard?: (quiz: Quiz) => void;
-  onPrintWorksheet?: (quiz: Quiz) => void;
   onRequestDelete?: (quiz: Quiz) => void;
   canDelete?: boolean;
   playClick: () => void;
 }
 
-const TIMER_OPTIONS = [15, 20, 25, 30, 45, 60];
-
 export const QuizSettingsModal: React.FC<QuizSettingsModalProps> = ({
   isOpen,
   onClose,
   quiz,
-  onSaveSettings,
-  onLaunchSmartboard,
+  onDuplicate,
+  onViewSubmissions,
   onPrintWorksheet,
+  onSaveSettings,
   onRequestDelete,
   canDelete = false,
   playClick,
@@ -62,28 +60,101 @@ export const QuizSettingsModal: React.FC<QuizSettingsModalProps> = ({
   );
 
   const [visibility, setVisibility] = useState<'public' | 'private'>('public');
-  const [duration, setDuration] = useState<number>(25);
   const [pin, setPin] = useState<string>('1001');
-  const [isSaving, setIsSaving] = useState(false);
-  const [isSavedSuccess, setIsSavedSuccess] = useState(false);
+  const [isDuplicating, setIsDuplicating] = useState(false);
+  const [isUpdatingVisibility, setIsUpdatingVisibility] = useState(false);
+  const [isRandomizingPin, setIsRandomizingPin] = useState(false);
   const [copiedType, setCopiedType] = useState<'pin' | 'link' | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Sync internal state with quiz when opened
+  // Sinkronisasi state lokal dengan data kuis saat modal terbuka
   useEffect(() => {
     if (quiz) {
       setVisibility(quiz.visibility || 'public');
-      setDuration(quiz.durationPerQuestionSec || 25);
       setPin(quiz.pinCode || '1001');
-      setIsSavedSuccess(false);
+      setIsDuplicating(false);
+      setIsUpdatingVisibility(false);
+      setIsRandomizingPin(false);
+      setToastMessage(null);
     }
   }, [quiz]);
 
   if (!isOpen || !quiz) return null;
 
-  const handleRandomizePin = () => {
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 2500);
+  };
+
+  // 1. Duplikat Kuis
+  const handleDuplicate = async () => {
     playClick();
+    setIsDuplicating(true);
+    try {
+      await onDuplicate(quiz);
+      showToast('Kuis berhasil diduplikasi!');
+      setTimeout(() => {
+        onClose();
+      }, 900);
+    } catch (err) {
+      console.error('Gagal menduplikasi kuis:', err);
+      showToast('Gagal menduplikasi kuis.');
+    } finally {
+      setIsDuplicating(false);
+    }
+  };
+
+  // 2. Lihat Rekap Nilai
+  const handleViewSubmissions = () => {
+    playClick();
+    onClose();
+    if (onViewSubmissions) {
+      onViewSubmissions(quiz);
+    }
+  };
+
+  // 3. Cetak LKS
+  const handlePrint = () => {
+    playClick();
+    onClose();
+    onPrintWorksheet(quiz);
+  };
+
+  // 4. Status Visibilitas (Publik / Privat)
+  const handleToggleVisibility = async (newVisibility: 'public' | 'private') => {
+    if (newVisibility === visibility || isUpdatingVisibility) return;
+    playClick();
+    setVisibility(newVisibility);
+    setIsUpdatingVisibility(true);
+    try {
+      await onSaveSettings(quiz.id, { visibility: newVisibility });
+      showToast(newVisibility === 'public' ? 'Visibilitas: Kuis kini Publik' : 'Visibilitas: Kuis kini Privat');
+    } catch (err) {
+      console.error('Gagal memperbarui visibilitas kuis:', err);
+      setVisibility(quiz.visibility || 'public');
+      showToast('Gagal mengubah visibilitas.');
+    } finally {
+      setIsUpdatingVisibility(false);
+    }
+  };
+
+  // 5. Konfigurasi PIN (Acak PIN Baru)
+  const handleRandomizePin = async () => {
+    if (isRandomizingPin) return;
+    playClick();
+    setIsRandomizingPin(true);
     const newPin = generateRandomPin();
     setPin(newPin);
+    try {
+      await onSaveSettings(quiz.id, { pinCode: newPin });
+      showToast(`PIN kuis diperbarui ke ${newPin}`);
+    } catch (err) {
+      console.error('Gagal memperbarui PIN:', err);
+      setPin(quiz.pinCode || '1001');
+      showToast('Gagal memperbarui PIN.');
+    } finally {
+      setIsRandomizingPin(false);
+    }
   };
 
   const handleCopyPin = () => {
@@ -91,6 +162,7 @@ export const QuizSettingsModal: React.FC<QuizSettingsModalProps> = ({
     if (navigator.clipboard) {
       navigator.clipboard.writeText(pin);
       setCopiedType('pin');
+      showToast('PIN tersalin ke papan klip!');
       setTimeout(() => setCopiedType(null), 2000);
     }
   };
@@ -101,35 +173,19 @@ export const QuizSettingsModal: React.FC<QuizSettingsModalProps> = ({
     if (navigator.clipboard) {
       navigator.clipboard.writeText(url);
       setCopiedType('link');
+      showToast('Tautan kuis tersalin!');
       setTimeout(() => setCopiedType(null), 2000);
     }
   };
 
-  const handleSave = async () => {
+  // 6. Hapus Kuis
+  const handleDelete = () => {
     playClick();
-    setIsSaving(true);
-    try {
-      await onSaveSettings(quiz.id, {
-        visibility,
-        durationPerQuestionSec: duration,
-        pinCode: pin,
-      });
-      setIsSavedSuccess(true);
-      setTimeout(() => {
-        setIsSavedSuccess(false);
-        onClose();
-      }, 700);
-    } catch (err) {
-      console.error('Error saving quiz settings:', err);
-    } finally {
-      setIsSaving(false);
+    onClose();
+    if (onRequestDelete) {
+      onRequestDelete(quiz);
     }
   };
-
-  const hasChanges = 
-    visibility !== (quiz.visibility || 'public') ||
-    duration !== (quiz.durationPerQuestionSec || 25) ||
-    pin !== (quiz.pinCode || '1001');
 
   return (
     <div
@@ -142,7 +198,7 @@ export const QuizSettingsModal: React.FC<QuizSettingsModalProps> = ({
       <div
         className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs animate-backdrop-fade touch-none"
         onClick={() => {
-          if (!isSaving) {
+          if (!isDuplicating && !isUpdatingVisibility) {
             playClick();
             onClose();
           }
@@ -150,26 +206,26 @@ export const QuizSettingsModal: React.FC<QuizSettingsModalProps> = ({
         aria-hidden="true"
       />
 
-      {/* Bottom Sheet / Modal Dialog */}
+      {/* Bottom Sheet on Mobile / Modal Dialog on Desktop */}
       <div 
-        className="relative z-10 w-full sm:max-w-lg bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xl p-4 sm:p-6 pt-3 animate-slide-up max-h-[90vh] overflow-y-auto overscroll-contain pb-[max(env(safe-area-inset-bottom),1.25rem)] space-y-5 text-left"
+        className="relative z-10 w-full sm:max-w-lg bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xl p-4 sm:p-6 pt-3 animate-slide-up max-h-[90vh] overflow-y-auto overscroll-contain pb-[max(env(safe-area-inset-bottom),1.25rem)] space-y-4 text-left"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Mobile Drag Pill */}
-        <div className="w-12 h-1.5 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto sm:hidden" />
+        <div className="w-12 h-1.5 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto sm:hidden mb-1" />
 
-        {/* Modal Header */}
+        {/* Header */}
         <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 flex items-center justify-center text-blue-600 dark:text-blue-400">
               <SlidersHorizontal className="w-4 h-4" />
             </div>
             <div>
-              <h3 id="quiz-settings-title" className="text-base font-bold text-slate-900 dark:text-white">
-                Pengaturan Kuis
+              <h3 id="quiz-settings-title" className="text-base font-bold text-slate-900 dark:text-white leading-tight">
+                Menu & Pengaturan Kuis
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Konfigurasi visibilitas, waktu, dan kode ruangan
+                Pusat tindakan dan opsi kuis interaktif
               </p>
             </div>
           </div>
@@ -179,7 +235,7 @@ export const QuizSettingsModal: React.FC<QuizSettingsModalProps> = ({
               playClick();
               onClose();
             }}
-            disabled={isSaving}
+            disabled={isDuplicating || isUpdatingVisibility}
             className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors"
             aria-label="Tutup Pengaturan"
           >
@@ -187,8 +243,15 @@ export const QuizSettingsModal: React.FC<QuizSettingsModalProps> = ({
           </button>
         </div>
 
+        {/* Floating Mini Toast Feedback */}
+        {toastMessage && (
+          <div className="p-2.5 bg-blue-600 text-white text-xs font-semibold rounded-xl text-center shadow-md animate-fade-in">
+            {toastMessage}
+          </div>
+        )}
+
         {/* Quiz Info Summary Pill */}
-        <div className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 flex items-center gap-3">
+        <div className="p-3 bg-slate-50 dark:bg-slate-850 rounded-2xl border border-slate-200/80 dark:border-slate-750 flex items-center gap-3">
           <div className="w-11 h-11 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-2xl flex-shrink-0 shadow-xs">
             {quiz.coverEmoji}
           </div>
@@ -206,273 +269,264 @@ export const QuizSettingsModal: React.FC<QuizSettingsModalProps> = ({
           </div>
         </div>
 
-        {/* SECTION 1: VISIBILITAS KUIS (PUBLIK VS PRIVAT) */}
-        <div className="space-y-2.5">
-          <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-            Visibilitas Kuis di Aplikasi
-          </label>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            {/* Opsi Publik */}
+        {/* 6 ACTIONS IN TITIK TIGA (SESUAI SPESIFIKASI) */}
+        <div className="space-y-3 pt-1">
+          
+          {/* 1. DUPLIKAT KUIS */}
+          <div className="p-3 bg-slate-50/80 dark:bg-slate-850/60 rounded-2xl border border-slate-200/80 dark:border-slate-800 flex items-center justify-between gap-2.5 sm:gap-3">
+            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+              <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 flex items-center justify-center flex-shrink-0">
+                <CopyPlus className="w-5 h-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h4 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white leading-tight">
+                  1. Duplikat Kuis
+                </h4>
+                <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2">
+                  Gandakan soal kuis ini dengan PIN baru
+                </p>
+              </div>
+            </div>
             <button
               type="button"
-              onClick={() => {
-                playClick();
-                setVisibility('public');
-              }}
-              className={`p-3.5 rounded-2xl border text-left flex flex-col justify-between transition-all min-h-[88px] ${
+              onClick={handleDuplicate}
+              disabled={isDuplicating}
+              className="px-3 sm:px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 min-h-[44px] flex items-center justify-center gap-1.5 transition-colors btn-press flex-shrink-0 shadow-xs whitespace-nowrap"
+              title="Gandakan kuis ini"
+            >
+              {isDuplicating ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <CopyPlus className="w-4 h-4" />
+              )}
+              <span>Duplikat</span>
+            </button>
+          </div>
+
+          {/* 2. LIHAT REKAP NILAI */}
+          <div className="p-3 bg-slate-50/80 dark:bg-slate-850/60 rounded-2xl border border-slate-200/80 dark:border-slate-800 flex items-center justify-between gap-2.5 sm:gap-3">
+            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+              <div className="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 flex items-center justify-center flex-shrink-0">
+                <BarChart3 className="w-5 h-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h4 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white leading-tight">
+                  2. Lihat Rekap Nilai
+                </h4>
+                <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2">
+                  Pantau nilai dan analisis jawaban siswa
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleViewSubmissions}
+              className="px-3 sm:px-3.5 py-2 rounded-xl text-xs font-bold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/40 hover:bg-purple-100 dark:hover:bg-purple-900/60 border border-purple-200 dark:border-purple-800 min-h-[44px] flex items-center justify-center gap-1.5 transition-colors btn-press flex-shrink-0 whitespace-nowrap"
+              title="Buka laporan rekap nilai kuis ini"
+            >
+              <BarChart3 className="w-4 h-4" />
+              <span>Buka Rekap</span>
+            </button>
+          </div>
+
+          {/* 3. CETAK LKS */}
+          <div className="p-3 bg-slate-50/80 dark:bg-slate-850/60 rounded-2xl border border-slate-200/80 dark:border-slate-800 flex items-center justify-between gap-2.5 sm:gap-3">
+            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+              <div className="w-10 h-10 rounded-xl bg-teal-100 dark:bg-teal-950/50 text-teal-600 dark:text-teal-400 flex items-center justify-center flex-shrink-0">
+                <Printer className="w-5 h-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h4 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white leading-tight">
+                  3. Cetak Lembar LKS
+                </h4>
+                <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2">
+                  Format cetak kertas & kunci PDF
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handlePrint}
+              className="px-3 sm:px-3.5 py-2 rounded-xl text-xs font-bold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 dark:hover:bg-teal-900/60 border border-teal-200 dark:border-teal-800 min-h-[44px] flex items-center justify-center gap-1.5 transition-colors btn-press flex-shrink-0 whitespace-nowrap"
+              title="Cetak lembar kerja siswa untuk kuis ini"
+            >
+              <Printer className="w-4 h-4" />
+              <span>Cetak LKS</span>
+            </button>
+          </div>
+
+          {/* 4. STATUS VISIBILITAS */}
+          <div className="space-y-2 p-3 bg-slate-50/80 dark:bg-slate-850/60 rounded-2xl border border-slate-200/80 dark:border-slate-800">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                <Globe className="w-3.5 h-3.5 text-blue-500" />
+                <span>4. Status Visibilitas</span>
+              </span>
+              <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${
                 visibility === 'public'
-                  ? 'bg-emerald-50/80 dark:bg-emerald-950/40 border-emerald-500 dark:border-emerald-600 ring-2 ring-emerald-500/20 shadow-xs'
-                  : 'bg-white dark:bg-slate-850 border-slate-200 dark:border-slate-750 hover:bg-slate-50 dark:hover:bg-slate-800'
-              }`}
-            >
-              <div className="flex items-center justify-between gap-2 mb-1.5">
-                <div className="flex items-center gap-2">
-                  <Globe className={`w-4 h-4 ${visibility === 'public' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`} />
-                  <span className="font-bold text-sm text-slate-900 dark:text-white">Kuis Publik</span>
-                </div>
-                {visibility === 'public' && (
-                  <span className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px]">
-                    ✓
-                  </span>
-                )}
-              </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                Tampil di katalog beranda dan bisa dimainkan langsung oleh seluruh siswa.
-              </p>
-            </button>
+                  ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50'
+                  : 'text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/50'
+              }`}>
+                {visibility === 'public' ? 'Aktif: Publik' : 'Aktif: Privat'}
+              </span>
+            </div>
 
-            {/* Opsi Privat */}
-            <button
-              type="button"
-              onClick={() => {
-                playClick();
-                setVisibility('private');
-              }}
-              className={`p-3.5 rounded-2xl border text-left flex flex-col justify-between transition-all min-h-[88px] ${
-                visibility === 'private'
-                  ? 'bg-amber-50/80 dark:bg-amber-950/40 border-amber-500 dark:border-amber-600 ring-2 ring-amber-500/20 shadow-xs'
-                  : 'bg-white dark:bg-slate-850 border-slate-200 dark:border-slate-750 hover:bg-slate-50 dark:hover:bg-slate-800'
-              }`}
-            >
-              <div className="flex items-center justify-between gap-2 mb-1.5">
-                <div className="flex items-center gap-2">
-                  <Lock className={`w-4 h-4 ${visibility === 'private' ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400'}`} />
-                  <span className="font-bold text-sm text-slate-900 dark:text-white">Kuis Privat</span>
-                </div>
-                {visibility === 'private' && (
-                  <span className="w-5 h-5 rounded-full bg-amber-600 text-white flex items-center justify-center text-[10px]">
-                    ✓
-                  </span>
-                )}
-              </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                Disembunyikan dari beranda. Hanya dapat dibuka via PIN atau tautan khusus.
-              </p>
-            </button>
-          </div>
-        </div>
-
-        {/* SECTION 2: WAKTU TIMER PER SOAL */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5 text-blue-500" />
-              <span>Alokasi Waktu per Soal</span>
-            </label>
-            <span className="text-xs font-bold text-blue-600 dark:text-blue-400">
-              {duration} detik
-            </span>
-          </div>
-
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-            {TIMER_OPTIONS.map((sec) => (
+            <div className="grid grid-cols-2 gap-2">
+              {/* Pilihan Publik */}
               <button
-                key={sec}
                 type="button"
-                onClick={() => {
-                  playClick();
-                  setDuration(sec);
-                }}
-                className={`py-2 px-2.5 rounded-xl font-bold text-xs transition-all min-h-[44px] flex items-center justify-center border ${
-                  duration === sec
-                    ? 'bg-blue-600 text-white border-blue-600 shadow-xs ring-2 ring-blue-500/20'
-                    : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-750'
+                onClick={() => handleToggleVisibility('public')}
+                disabled={isUpdatingVisibility}
+                className={`p-2.5 rounded-xl border text-left flex flex-col justify-between transition-all min-h-[64px] ${
+                  visibility === 'public'
+                    ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 dark:border-emerald-600 ring-2 ring-emerald-500/20'
+                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-750 hover:bg-slate-100 dark:hover:bg-slate-800'
                 }`}
               >
-                {sec}s
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* SECTION 3: KODE PIN RUANG KUIS */}
-        <div className="space-y-2">
-          <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-            Kode PIN Ruang Ujian
-          </label>
-
-          <div className="p-3 bg-blue-50/70 dark:bg-blue-950/30 rounded-2xl border border-blue-200/80 dark:border-blue-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center flex-shrink-0">
-                <KeyRound className="w-4 h-4" />
-              </div>
-              <div>
-                <span className="text-[10px] uppercase font-bold text-blue-700 dark:text-blue-300 block">
-                  PIN Siswa:
-                </span>
-                <span className="font-mono font-black text-lg text-blue-950 dark:text-blue-100 tracking-wider">
-                  {pin}
-                </span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap">
-              <button
-                type="button"
-                onClick={handleRandomizePin}
-                className="flex-1 sm:flex-initial py-2 px-2.5 rounded-xl font-semibold text-xs text-blue-700 dark:text-blue-300 bg-white dark:bg-slate-800 hover:bg-blue-100 dark:hover:bg-slate-750 border border-blue-200 dark:border-blue-800 flex items-center justify-center gap-1 min-h-[40px] transition-colors"
-                title="Acak PIN Baru"
-              >
-                <RefreshCw className="w-3.5 h-3.5" />
-                <span>Acak PIN</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleCopyPin}
-                className="flex-1 sm:flex-initial py-2 px-2.5 rounded-xl font-semibold text-xs text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-1 min-h-[40px] transition-colors"
-                title="Salin PIN"
-              >
-                {copiedType === 'pin' ? (
-                  <>
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-xs text-slate-900 dark:text-white flex items-center gap-1.5">
+                    <Globe className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                    Publik
+                  </span>
+                  {visibility === 'public' && (
                     <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                    <span>Tersalin</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-3.5 h-3.5" />
-                    <span>Salin</span>
-                  </>
-                )}
+                  )}
+                </div>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
+                  Tampil di katalog beranda
+                </p>
               </button>
 
+              {/* Pilihan Privat */}
               <button
                 type="button"
-                onClick={handleCopyLink}
-                className="flex-1 sm:flex-initial py-2 px-2.5 rounded-xl font-semibold text-xs text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-1 min-h-[40px] transition-colors"
-                title="Salin Tautan Langsung"
+                onClick={() => handleToggleVisibility('private')}
+                disabled={isUpdatingVisibility}
+                className={`p-2.5 rounded-xl border text-left flex flex-col justify-between transition-all min-h-[64px] ${
+                  visibility === 'private'
+                    ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-500 dark:border-amber-600 ring-2 ring-amber-500/20'
+                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-750 hover:bg-slate-100 dark:hover:bg-slate-800'
+                }`}
               >
-                {copiedType === 'link' ? (
-                  <>
-                    <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                    <span>Tautan Tersalin</span>
-                  </>
-                ) : (
-                  <>
-                    <Share2 className="w-3.5 h-3.5" />
-                    <span>Tautan</span>
-                  </>
-                )}
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-xs text-slate-900 dark:text-white flex items-center gap-1.5">
+                    <Lock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                    Privat
+                  </span>
+                  {visibility === 'private' && (
+                    <Check className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                  )}
+                </div>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
+                  Hanya via PIN & tautan
+                </p>
               </button>
             </div>
           </div>
-        </div>
 
-        {/* SECTION 4: PINTASAN AKSI KHUSUS */}
-        <div className="space-y-2 pt-1 border-t border-slate-100 dark:border-slate-800">
-          <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-            Aksi Kuis
-          </label>
+          {/* 5. KONFIGURASI PIN */}
+          <div className="space-y-2 p-3 bg-blue-50/60 dark:bg-blue-950/30 rounded-2xl border border-blue-200/80 dark:border-blue-900/50">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
+                <KeyRound className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                <span>5. Konfigurasi PIN Siswa</span>
+              </span>
+              <span className="text-[10px] text-blue-600 dark:text-blue-400 font-bold uppercase">
+                Akses Langsung
+              </span>
+            </div>
 
-          <div className="grid grid-cols-2 gap-2">
-            {onLaunchSmartboard && (
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  onClose();
-                  onLaunchSmartboard(quiz);
-                }}
-                className="py-2.5 px-3 rounded-xl font-semibold text-xs text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 flex items-center justify-center gap-1.5 min-h-[44px] transition-colors"
-              >
-                <Tv className="w-4 h-4 text-indigo-500" />
-                <span>Smartboard (IFP)</span>
-              </button>
-            )}
+            <div className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-blue-200/60 dark:border-blue-800/60 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-blue-600 text-white flex items-center justify-center text-xs font-bold">
+                    #
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 block font-semibold leading-none">PIN Kuis:</span>
+                    <span className="font-mono font-black text-lg text-slate-900 dark:text-white tracking-widest leading-tight">
+                      {pin}
+                    </span>
+                  </div>
+                </div>
+                <span className="text-[11px] font-semibold text-blue-600 dark:text-blue-400">
+                  4 Digit Unik
+                </span>
+              </div>
 
-            {onPrintWorksheet && (
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  onClose();
-                  onPrintWorksheet(quiz);
-                }}
-                className="py-2.5 px-3 rounded-xl font-semibold text-xs text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 flex items-center justify-center gap-1.5 min-h-[44px] transition-colors"
-              >
-                <Printer className="w-4 h-4 text-slate-600 dark:text-slate-300" />
-                <span>Cetak Lembar LKS</span>
-              </button>
-            )}
+              <div className="grid grid-cols-3 gap-1.5">
+                <button
+                  type="button"
+                  onClick={handleRandomizePin}
+                  disabled={isRandomizingPin}
+                  className="py-2 px-1.5 rounded-xl font-semibold text-xs text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800 flex items-center justify-center gap-1 min-h-[44px] transition-colors btn-press"
+                  title="Acak PIN 4 Digit Baru"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 shrink-0 ${isRandomizingPin ? 'animate-spin' : ''}`} />
+                  <span className="truncate">Acak</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleCopyPin}
+                  className="py-2 px-1.5 rounded-xl font-semibold text-xs text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-1 min-h-[44px] transition-colors btn-press"
+                  title="Salin PIN ke Papan Klip"
+                >
+                  {copiedType === 'pin' ? (
+                    <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  ) : (
+                    <Copy className="w-3.5 h-3.5 shrink-0" />
+                  )}
+                  <span className="truncate">{copiedType === 'pin' ? 'Tersalin' : 'Salin PIN'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleCopyLink}
+                  className="py-2 px-1.5 rounded-xl font-semibold text-xs text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-1 min-h-[44px] transition-colors btn-press"
+                  title="Salin Tautan Siswa"
+                >
+                  {copiedType === 'link' ? (
+                    <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  ) : (
+                    <Share2 className="w-3.5 h-3.5 shrink-0" />
+                  )}
+                  <span className="truncate">{copiedType === 'link' ? 'Tersalin' : 'Tautan'}</span>
+                </button>
+              </div>
+            </div>
           </div>
 
-          {canDelete && onRequestDelete && (
+          {/* 6. HAPUS KUIS */}
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
             <button
               type="button"
-              onClick={() => {
-                playClick();
-                onClose();
-                onRequestDelete(quiz);
-              }}
-              className="w-full py-2.5 px-3 rounded-xl font-semibold text-xs text-rose-600 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300 bg-rose-50 dark:bg-rose-950/30 hover:bg-rose-100 dark:hover:bg-rose-900/50 border border-rose-200 dark:border-rose-900/60 flex items-center justify-center gap-1.5 min-h-[44px] transition-colors"
+              onClick={handleDelete}
+              disabled={!canDelete}
+              className={`w-full py-2.5 px-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 min-h-[44px] border transition-all ${
+                canDelete
+                  ? 'bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-900/60 hover:bg-rose-100 dark:hover:bg-rose-900/50 btn-press'
+                  : 'opacity-50 cursor-not-allowed bg-slate-100 dark:bg-slate-800 text-slate-400 border-slate-200 dark:border-slate-700'
+              }`}
+              title={canDelete ? 'Hapus kuis ini dari bank soal' : 'Anda tidak memiliki wewenang menghapus kuis ini'}
             >
-              <Trash2 className="w-4 h-4" />
-              <span>Hapus Kuis Ini dari Bank Soal</span>
+              <Trash2 className="w-4 h-4 text-rose-600 dark:text-rose-400" />
+              <span>6. Hapus Kuis Ini dari Bank Soal</span>
             </button>
-          )}
+          </div>
         </div>
 
-        {/* MODAL FOOTER: SIMPAN KONFIGURASI */}
-        <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2">
+        {/* Footer Close Button */}
+        <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
           <button
             type="button"
             onClick={() => {
               playClick();
               onClose();
             }}
-            disabled={isSaving}
-            className="flex-1 py-3 px-4 rounded-xl font-bold text-xs sm:text-sm text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 min-h-[48px] flex items-center justify-center transition-colors"
+            className="w-full py-2.5 px-4 rounded-xl font-semibold text-xs sm:text-sm text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 transition-colors min-h-[44px] flex items-center justify-center"
           >
-            Tutup
-          </button>
-
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={isSaving}
-            className={`flex-2 py-3 px-5 rounded-xl font-bold text-xs sm:text-sm text-white flex items-center justify-center gap-2 min-h-[48px] shadow-sm transition-all btn-press ${
-              isSavedSuccess
-                ? 'bg-emerald-600 hover:bg-emerald-700'
-                : 'bg-blue-600 hover:bg-blue-700'
-            }`}
-          >
-            {isSaving ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Menyimpan...</span>
-              </>
-            ) : isSavedSuccess ? (
-              <>
-                <CheckCircle2 className="w-4 h-4" />
-                <span>Tersimpan!</span>
-              </>
-            ) : (
-              <>
-                <Save className="w-4 h-4" />
-                <span>{hasChanges ? 'Simpan Perubahan' : 'Selesai'}</span>
-              </>
-            )}
+            Tutup Menu
           </button>
         </div>
       </div>

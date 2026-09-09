@@ -43,6 +43,7 @@ interface QuizHomeProps {
   onEnterPin: (quiz: Quiz) => void;
   teacher: TeacherProfile | null;
   onTeacherLogout?: () => void;
+  onPrintWorksheet?: (quiz: Quiz) => void;
   isDark: boolean;
   onToggleTheme: () => void;
   isMuted: boolean;
@@ -57,6 +58,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
   onEnterPin,
   teacher,
   onTeacherLogout,
+  onPrintWorksheet,
   isDark,
   onToggleTheme,
   isMuted,
@@ -1370,6 +1372,20 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
           onClose={() => {
             playClick();
             setSelectedQuizForSettings(null);
+          }}
+          onDuplicate={async (q) => {
+            await DataManager.duplicateQuiz(q.id);
+            setQuizzes(DataManager.getAllQuizzes({ publicOnly: true }));
+          }}
+          onViewSubmissions={() => {
+            onOpenTeacherPortal();
+          }}
+          onPrintWorksheet={(q) => {
+            if (onPrintWorksheet) {
+              onPrintWorksheet(q);
+            } else {
+              onOpenTeacherPortal();
+            }
           }}
           onSaveSettings={handleSaveQuizSettings}
           onRequestDelete={(q) => {

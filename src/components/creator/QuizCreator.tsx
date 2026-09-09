@@ -25,6 +25,7 @@ interface QuizCreatorProps {
   playClick: () => void;
   isDark?: boolean;
   onToggleTheme?: () => void;
+  editingQuiz?: Quiz | null;
 }
 
 const EMOJI_OPTIONS = ['🍎', '📐', '🐸', '🌱', '🫀', '🦅', '🚀', '📚', '🎨', '🔬', '⚽', '🦁', '🐯', '🐼', '💡', '🧩'];
@@ -75,23 +76,24 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   playClick,
   isDark = false,
   onToggleTheme = () => {},
+  editingQuiz = null,
 }) => {
-  const [draft] = useState<CreatorDraft | null>(() => loadDraft());
+  const [draft] = useState<CreatorDraft | null>(() => (editingQuiz ? null : loadDraft()));
 
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(draft?.currentStep || 1);
 
   // General Quiz State
-  const [title, setTitle] = useState(draft?.title || '');
-  const [description, setDescription] = useState(draft?.description || '');
-  const [subject, setSubject] = useState<Subject>(draft?.subject || 'Matematika');
-  const [grade, setGrade] = useState<number>(draft?.grade ?? 3);
-  const [durationPerQuestionSec, setDurationPerQuestionSec] = useState<number>(draft?.durationPerQuestionSec ?? 30);
-  const [coverEmoji, setCoverEmoji] = useState(draft?.coverEmoji || '🍎');
-  const [badgeTitle, setBadgeTitle] = useState(draft?.badgeTitle || 'Bintang Pintar');
-  const [visibility, setVisibility] = useState<'public' | 'private'>(draft?.visibility || 'public');
+  const [title, setTitle] = useState(editingQuiz?.title || draft?.title || '');
+  const [description, setDescription] = useState(editingQuiz?.description || draft?.description || '');
+  const [subject, setSubject] = useState<Subject>(editingQuiz?.subject || draft?.subject || 'Matematika');
+  const [grade, setGrade] = useState<number>(editingQuiz?.grade ?? draft?.grade ?? 3);
+  const [durationPerQuestionSec, setDurationPerQuestionSec] = useState<number>(editingQuiz?.durationPerQuestionSec ?? draft?.durationPerQuestionSec ?? 30);
+  const [coverEmoji, setCoverEmoji] = useState(editingQuiz?.coverEmoji || draft?.coverEmoji || '🍎');
+  const [badgeTitle, setBadgeTitle] = useState(editingQuiz?.badgeTitle || draft?.badgeTitle || 'Bintang Pintar');
+  const [visibility, setVisibility] = useState<'public' | 'private'>(editingQuiz?.visibility || draft?.visibility || 'public');
 
   // Questions State
-  const [questions, setQuestions] = useState<QuizQuestion[]>(draft?.questions || []);
+  const [questions, setQuestions] = useState<QuizQuestion[]>(editingQuiz?.questions || draft?.questions || []);
 
   // Notice & Reset states (replacing alert/confirm)
   const [noticeMessage, setNoticeMessage] = useState<string | null>(null);
@@ -108,8 +110,9 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     }
   }, [noticeMessage]);
 
-  // Persist draft automatically
+  // Persist draft automatically (only if creating new quiz)
   useEffect(() => {
+    if (editingQuiz) return;
     if (title.trim() || description.trim() || questions.length > 0) {
       const data: CreatorDraft = {
         currentStep,
@@ -271,17 +274,20 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     }
 
     const finalQuiz: Quiz = {
-      id: 'custom_' + Date.now(),
+      id: editingQuiz?.id || ('custom_' + Date.now()),
       title: title.trim(),
       description: description.trim() || `Kuis interaktif buatan Guru untuk Kelas ${grade}.`,
       subject,
       grade,
       durationPerQuestionSec,
       coverEmoji,
-      themeColor: 'from-blue-600 to-indigo-600',
+      themeColor: editingQuiz?.themeColor || 'from-blue-600 to-indigo-600',
       badgeTitle: badgeTitle.trim() || 'Bintang Juara',
       visibility,
       questions,
+      pinCode: editingQuiz?.pinCode,
+      creatorId: editingQuiz?.creatorId,
+      creatorName: editingQuiz?.creatorName,
     };
 
     try {
@@ -312,7 +318,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
 
           <div className="text-center min-w-0 flex-1 px-1">
             <h1 className="text-xs xs:text-sm sm:text-lg font-bold text-slate-900 dark:text-white leading-tight truncate">
-              Studio Kuis Guru 🧑‍🏫
+              {editingQuiz ? 'Edit Kuis ✏️' : 'Studio Kuis Guru 🧑‍🏫'}
             </h1>
             <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium truncate hidden xs:block">
               Langkah {currentStep} dari 3: {currentStep === 1 ? 'Informasi Kuis' : currentStep === 2 ? 'Bank Soal' : 'Pratinjau'}
@@ -1018,7 +1024,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                 className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-5 rounded-xl shadow-sm flex items-center justify-center gap-2 min-h-[44px] btn-press text-xs sm:text-sm"
               >
                 <Save className="w-4 h-4" />
-                <span>Terbitkan Kuis Sekarang</span>
+                <span>{editingQuiz ? 'Simpan Perubahan Kuis' : 'Terbitkan Kuis Sekarang'}</span>
               </button>
             </div>
           </div>

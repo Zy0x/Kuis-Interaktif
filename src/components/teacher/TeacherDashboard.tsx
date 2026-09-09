@@ -10,7 +10,6 @@ import { saveNavigationState } from '../../lib/navigationState';
 import { 
   GraduationCap, 
   Plus, 
-  Printer, 
   Tv, 
   Copy, 
   Check, 
@@ -23,16 +22,16 @@ import {
   Share2,
   Lock,
   Globe,
-  Trash2,
   RotateCcw,
-  MoreVertical
+  MoreVertical,
+  Pencil
 } from 'lucide-react';
 
 interface TeacherDashboardProps {
   teacher: TeacherProfile;
   onLogout: () => void;
   onGoHome: () => void;
-  onOpenCreator: () => void;
+  onOpenCreator: (quizToEdit?: Quiz) => void;
   onLaunchSmartboard: (quiz: Quiz) => void;
   onPrintWorksheet: (quiz: Quiz) => void;
   playClick: () => void;
@@ -120,6 +119,17 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
     const updated = await DataManager.updateQuizSettings(quizId, updates);
     await loadData();
     setSelectedQuizForSettings(updated);
+  };
+
+  const handleDuplicateQuiz = async (quiz: Quiz) => {
+    const dup = await DataManager.duplicateQuiz(quiz.id);
+    if (dup) {
+      await loadData();
+    }
+  };
+
+  const handleViewSubmissionsFromQuiz = (_quiz: Quiz) => {
+    handleTabChange('submissions');
   };
 
   const handleCopyPin = (pin: string) => {
@@ -386,8 +396,6 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {quizzes.map((quiz) => {
-                  const isCustom = quiz.id.startsWith('custom_');
-                  const canDelete = isMasterTeacher || quiz.creatorId === teacher.id || isCustom;
                   return (
                     <div
                       key={quiz.id}
@@ -479,25 +487,30 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                       <span>{quiz.subject}</span>
                     </div>
 
-                    {/* Action Buttons */}
+                    {/* Action Buttons (Tombol in Card: 1. Mode IFP, 2. Bagi Tautan, 3. Edit) */}
                     <div className="space-y-2 pt-1">
-                      {/* Smartboard IFP Launch Button */}
+                      {/* 1. Mode IFP */}
                       <button
+                        type="button"
                         onClick={() => {
                           playClick();
                           onLaunchSmartboard(quiz);
                         }}
                         className="w-full py-2.5 px-3 rounded-xl font-bold text-xs sm:text-sm text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm flex items-center justify-center gap-2 min-h-[44px] btn-press transition-all"
+                        title="Buka Mode Smartboard (IFP) di Layar Depan Kelas"
                       >
                         <Tv className="w-4 h-4" />
                         <span>Buka Mode Smartboard (IFP)</span>
                       </button>
 
-                      {/* Secondary Buttons Row */}
+                      {/* Baris Tombol Sekunder: 2. Bagi Tautan & 3. Edit */}
                       <div className="grid grid-cols-2 gap-2">
+                        {/* 2. Bagi Tautan */}
                         <button
+                          type="button"
                           onClick={() => handleCopyLink(quiz)}
-                          className="py-2 px-2.5 rounded-xl font-semibold text-xs text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 flex items-center justify-center gap-1.5 min-h-[42px] transition-colors"
+                          className="py-2.5 px-2.5 rounded-xl font-semibold text-xs text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 flex items-center justify-center gap-1.5 min-h-[44px] transition-colors btn-press"
+                          title="Bagi Tautan Langsung ke Siswa"
                         >
                           {copiedLink === quiz.id ? (
                             <>
@@ -506,35 +519,26 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                             </>
                           ) : (
                             <>
-                              <Share2 className="w-3.5 h-3.5" />
+                              <Share2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                               <span>Bagi Tautan</span>
                             </>
                           )}
                         </button>
 
+                        {/* 3. Edit */}
                         <button
+                          type="button"
                           onClick={() => {
                             playClick();
-                            onPrintWorksheet(quiz);
+                            onOpenCreator(quiz);
                           }}
-                          className="py-2 px-2.5 rounded-xl font-semibold text-xs text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 flex items-center justify-center gap-1.5 min-h-[42px] transition-colors"
+                          className="py-2.5 px-2.5 rounded-xl font-semibold text-xs text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 flex items-center justify-center gap-1.5 min-h-[44px] transition-colors btn-press"
+                          title="Edit Soal & Konten Kuis Ini"
                         >
-                          <Printer className="w-3.5 h-3.5" />
-                          <span>Cetak LKS</span>
+                          <Pencil className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                          <span>Edit Soal</span>
                         </button>
                       </div>
-
-                      {canDelete && (
-                        <button
-                          onClick={() => handlePromptDeleteQuiz(quiz)}
-                          className="w-full py-2 px-3 text-rose-600 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl text-xs font-semibold transition-colors text-center min-h-[44px] flex items-center justify-center gap-1.5"
-                          title="Hapus kuis ini dari bank soal"
-                          aria-label={`Hapus kuis ${quiz.title}`}
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          <span>Hapus Kuis Ini</span>
-                        </button>
-                      )}
                     </div>
                   </div>
                 );
@@ -732,9 +736,10 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
           playClick();
           setSelectedQuizForSettings(null);
         }}
-        onSaveSettings={handleSaveQuizSettings}
-        onLaunchSmartboard={onLaunchSmartboard}
+        onDuplicate={handleDuplicateQuiz}
+        onViewSubmissions={handleViewSubmissionsFromQuiz}
         onPrintWorksheet={onPrintWorksheet}
+        onSaveSettings={handleSaveQuizSettings}
         onRequestDelete={(q) => {
           setSelectedQuizForSettings(null);
           handlePromptDeleteQuiz(q);

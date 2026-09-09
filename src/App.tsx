@@ -59,6 +59,7 @@ export const App: React.FC = () => {
 
   // Unified Auth State
   const [teacher, setTeacher] = useState<TeacherProfile | null>(initialTeacher);
+  const [editingQuiz, setEditingQuiz] = useState<Quiz | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authInitialTab, setAuthInitialTab] = useState<AuthModalTab>('student');
 
@@ -200,6 +201,7 @@ export const App: React.FC = () => {
     try {
       await DataManager.saveCustomQuiz(newQuiz);
       playCelebration();
+      setEditingQuiz(null);
       setCurrentScreen('teacher-dashboard');
     } catch (err) {
       console.error('Gagal menyimpan kuis:', err);
@@ -337,6 +339,7 @@ export const App: React.FC = () => {
           onEnterPin={handleEnterPinLobby}
           teacher={teacher}
           onTeacherLogout={handleTeacherLogout}
+          onPrintWorksheet={handlePrintWorksheet}
           isDark={isDark}
           onToggleTheme={toggleTheme}
           isMuted={isMuted}
@@ -361,7 +364,9 @@ export const App: React.FC = () => {
 
       {currentScreen === 'creator' && teacher && (
         <QuizCreator
+          editingQuiz={editingQuiz}
           onBack={() => {
+            setEditingQuiz(null);
             setCurrentScreen('teacher-dashboard');
             saveNavigationState({ screen: 'teacher-dashboard', replace: false });
           }}
@@ -377,7 +382,11 @@ export const App: React.FC = () => {
           teacher={teacher}
           onLogout={handleTeacherLogout}
           onGoHome={handleGoHome}
-          onOpenCreator={() => setCurrentScreen('creator')}
+          onOpenCreator={(quizToEdit?: Quiz) => {
+            setEditingQuiz(quizToEdit || null);
+            setCurrentScreen('creator');
+            saveNavigationState({ screen: 'creator', quiz: quizToEdit, replace: false });
+          }}
           onLaunchSmartboard={handleLaunchSmartboard}
           onPrintWorksheet={handlePrintWorksheet}
           isDark={isDark}

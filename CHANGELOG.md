@@ -1,6 +1,33 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.31] - 2026-09-09
+### Penataan Ulang Tombol Kartu Kuis dan Menu Titik Tiga Bebas Redundansi (Card Action Streamlining & Dedicated 6-Action Three-Dots Menu)
+
+#### Optimalisasi Antarmuka & Pemisahan Aksi (*Action Hierarchy & Redundancy Removal*)
+- **Penataan Tombol Muka Kartu Kuis (*In-Card Actions*):**
+  - Muka kartu kuis pada Dasbor Guru kini disederhanakan secara presisi menjadi 3 tombol esensial bebas dari penumpukan tombol:
+    1. **Mode IFP:** Tombol primer untuk langsung membuka kuis di Smartboard / Interactive Flat Panel ruang kelas.
+    2. **Bagi Tautan:** Tombol sekunder untuk menyalin tautan langsung ruang kuis dengan umpan balik visual tersalin.
+    3. **Edit Soal:** Membuka kuis langsung ke antarmuka *Quiz Creator* dengan seluruh draf dan pertanyaan terisi lengkap untuk penyuntingan instan.
+  - Memindahkan tombol *Cetak LKS* dan tombol *Hapus Kuis* dari muka kartu ke dalam menu titik tiga, menjadikan kartu kuis ramping dan ergonomis.
+- **Penyempurnaan Menu Titik Tiga 6-Aksi (*Dedicated 6-Item Three-Dots Bottom Sheet*):**
+  - Mengonfigurasi lembar aksi titik tiga agar fokus pada 6 tindakan manajemen kuis yang tidak redundan dengan muka kartu:
+    1. **Duplikat Kuis:** Menggandakan kuis dengan judul salinan dan kode PIN ruang unik baru secara instan (`DataManager.duplicateQuiz`).
+    2. **Lihat Rekap Nilai:** Mengarahkan guru langsung ke tab Rekap Nilai Siswa untuk menganalisis akurasi dan jawaban kelas.
+    3. **Cetak Lembar LKS:** Membuka tampilan cetak lembar kerja siswa format kertas dan kunci jawaban PDF.
+    4. **Status Visibilitas:** Pengalihan visibilitas kuis secara interaktif antara mode *Publik* dan *Privat*.
+    5. **Konfigurasi PIN Siswa:** Tampilan kode PIN dengan tata letak grid 3 kolom responsif berisi opsi *Acak PIN*, *Salin PIN*, dan *Salin Tautan*.
+    6. **Hapus Kuis Ini:** Aksi destruktif di posisi bawah dengan warna peringatan merah dan perlindungan konfirmasi modal in-app.
+
+#### Verifikasi Quality Gate Multi-Viewport (*Quality Gate Verification*)
+- **Ketahanan Tampilan Mobile-S (320px) hingga Desktop (1280px):**
+  - Diuji pada peramban nyata dengan Playwright pada resolusi Mobile-S (320px), Mobile-M (375px), dan Layar Lebar (1280px).
+  - Terverifikasi 100% bebas dari teks terpotong (`overflow-x: clip`, `hasDocOverflow: false`, `modalHasOverflow: false`).
+  - Seluruh tombol interaktif memenuhi batas minimal target sentuh $\ge 44\times 44\text{ px}$ (Rule 1).
+
+---
+
 ## [2.2.30] - 2026-09-09
 ### Implementasi Menu Titik Tiga & Lembar Pengaturan Kuis Interaktif (Interactive Quiz Settings Bottom Sheet & Three-Dots Action Menu)
 
