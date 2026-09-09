@@ -1,6 +1,20 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis SD Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.13] - 2026-09-09
+### Relokasi Proyek ke Disk E: & Pembersihan Penuh Disk C: Sistem (Full Project Migration to E:\Data\GitHub\Kuis Interaktif)
+
+#### Manajemen Ruang Kerja & Infrastruktur (*Workspace & Infrastructure Migration*)
+- **Migrasi Penuh ke Partisi Data (`E:\Data\GitHub\Kuis Interaktif`):**
+  - Memindahkan seluruh kode sumber, konfigurasi PWA, aset, dan riwayat repositori Git dari direktori sementara Disk C ke direktori kerja permanen di `E:\Data\GitHub\Kuis Interaktif`.
+  - Mengonfigurasi dependensi dan deduplikasi bundler Vite (`resolve.dedupe: ['react', 'react-dom']`) untuk stabilitas eksekusi lintas partisi penyimpanan.
+- **Pembersihan Bersih Disk C: Sistem Windows (*Complete System Drive Cleanup*):**
+  - Menghapus direktori proyek lama di partisi C: secara tuntas (`Remove-Item -Recurse -Force`), menjaga integritas dan keleluasaan kapasitas penyimpanan partisi sistem operasi Windows.
+- **Server Pengembangan Berjalan di Lokasi Baru:**
+  - Menjalankan kembali server Vite Dev Server langsung dari direktori baru di drive E: dan memverifikasi fungsionalitas aplikasi tetap 100% normal tanpa eror.
+
+---
+
 ## [2.2.12] - 2026-09-09
 ### Sinkronisasi Jam Lokal Akurat & Eliminasi Istilah Zona Waktu Bias (Strict Device Local Time & Timezone Bias Removal)
 
