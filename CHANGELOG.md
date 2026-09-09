@@ -1,6 +1,28 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.36] - 2026-09-10
+### Penyempurnaan Antarmuka Dasbor Guru & Perombakan Kartu Kuis Anti-Warping
+
+#### Pembersihan Istilah Teknis & Penyederhanaan Visual (*Clarity & Aesthetics First*)
+- **Eliminasi Teks Teknis & Slop Non-Edukatif:**
+  - Menghapus label teknis backend dan banner status database pada dasbor guru sehingga antarmuka berfokus sepenuhnya pada pengalaman belajar-mengajar yang intuitif.
+  - Memperbarui label identitas pada bilah atas dasbor dengan nama sekolah/institusi pendidik yang lebih komunikatif dan profesional.
+  - Menyelaraskan teks keterangan rekap nilai siswa menjadi bahasa yang ringkas, komunikatif, dan ramah pengguna.
+
+#### Desain Ulang Kartu Kuis (*Anti-Warping & Fluid Spacing*)
+- **Tata Letak Kartu yang Kokoh & Estetis:**
+  - Mengatasi kendala pelipatan teks/badge (warping) pada indikator kelas dan mata pelajaran dengan penerapan `whitespace-nowrap` dan pemisahan baris yang ergonomis.
+  - Mengelompokkan nomor PIN kuis di sisi kiri atas dan status visibilitas (Publik/Privat) beserta tombol menu aksi tiga titik di sisi kanan atas secara seimbang.
+  - Menata avatar ikon kuis tematik dalam wadah persegi lengkung modern berdampingan dengan judul dan deskripsi kuis.
+- **Bilah Informasi & Tombol Aksi Edukatif:**
+  - Menyederhanakan baris ringkasan soal dengan indikator jumlah pertanyaan dan durasi per soal yang bersih tanpa pengulangan informasi.
+  - Mempertahankan akses cepat tombol primer *Mode IFP* untuk layar interaktif ruang kelas, didukung tombol sekunder *Bagi Tautan* dan *Edit* dengan target sentuh responsif minimal 44x44 px.
+
+#### Verifikasi Multi-Tema & Multi-Perangkat
+- Menguji keselarasan tampilan kartu kuis pada mode terang dan gelap (*Dark & Light Mode*).
+- Memastikan tata letak tetap proporsional dan nyaman dioperasikan dari layar smartphone ringkas hingga monitor layar lebar.
+
 ## [2.2.35] - 2026-09-10
 ### Audit Visual Menyeluruh & Eliminasi Celah Lebar Antar-Platform (Mobile-S hingga IFP Smartboard 4K)
 

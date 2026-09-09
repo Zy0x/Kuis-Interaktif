@@ -25,9 +25,24 @@ import {
   RotateCcw,
   MoreVertical,
   Pencil,
-  RefreshCw,
-  AlertTriangle
+  HelpCircle,
+  Clock
 } from 'lucide-react';
+
+const getSubjectBadge = (subject: string) => {
+  switch (subject) {
+    case 'Matematika':
+      return 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-900/60';
+    case 'IPA':
+      return 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/60';
+    case 'Bahasa Indonesia':
+      return 'bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-900/60';
+    case 'Pendidikan Pancasila':
+      return 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-900/60';
+    default:
+      return 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700';
+  }
+};
 
 interface TeacherDashboardProps {
   teacher: TeacherProfile;
@@ -90,16 +105,6 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   const [deletedCount, setDeletedCount] = useState<number>(() => DataManager.getDeletedQuizIds().length);
   const [selectedQuizForSettings, setSelectedQuizForSettings] = useState<Quiz | null>(null);
 
-  // Cloud Supabase Health & Live Sync State
-  const [dbHealth, setDbHealth] = useState<{
-    connected: boolean;
-    configured: boolean;
-    tablesReady: boolean;
-    message: string;
-    details?: string;
-  } | null>(null);
-  const [isSyncingCloud, setIsSyncingCloud] = useState(false);
-
   // 1. Level 2 (Prioritas 50): Jika berada di tab Submissions / Generator, mundur ke Tab Kuis
   useBackHandler('teacher-tab-back', 50, () => {
     if (activeTab !== 'quizzes') {
@@ -122,11 +127,8 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
     setSubmissions(subs);
 
     // 2. Query Supabase health and fetch live cloud data
-    setIsSyncingCloud(true);
     try {
       const health = await DataManager.checkSupabaseHealth();
-      setDbHealth(health);
-
       if (health.tablesReady) {
         const cloudQuizzes = await DataManager.fetchQuizzesFromCloud({ teacherEmail: teacher.email, teacherId: teacher.id });
         setQuizzes(cloudQuizzes);
@@ -135,8 +137,6 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
       }
     } catch (e) {
       console.warn('TeacherDashboard cloud sync notice:', e);
-    } finally {
-      setIsSyncingCloud(false);
     }
   };
 
@@ -268,32 +268,15 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
             </div>
 
             <div className="min-w-0">
-              <h1 className="text-xs xs:text-sm sm:text-base md:text-lg font-black text-slate-900 dark:text-white leading-tight flex items-center gap-1 truncate">
+              <h1 className="text-xs xs:text-sm sm:text-base md:text-lg font-black text-slate-900 dark:text-white leading-tight flex items-center gap-1.5 truncate">
                 <span className="truncate">Dashboard Guru</span>
-                <span className="hidden sm:inline-block text-[10px] font-semibold px-1.5 py-0.2 rounded-full bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 flex-shrink-0">
-                  Pro
-                </span>
-                {dbHealth && (
-                  <span
-                    className={`inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full border ${
-                      dbHealth.tablesReady
-                        ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
-                        : dbHealth.connected
-                          ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800'
-                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
-                    }`}
-                    title={dbHealth.message}
-                  >
-                    <span className={`w-1.5 h-1.5 rounded-full ${
-                      dbHealth.tablesReady ? 'bg-emerald-500 animate-pulse' : dbHealth.connected ? 'bg-amber-500' : 'bg-slate-400'
-                    }`} />
-                    <span className="hidden md:inline">
-                      {dbHealth.tablesReady ? 'Cloud Supabase' : dbHealth.connected ? 'Setup SQL Diperlukan' : 'Lokal'}
-                    </span>
+                {teacher.schoolName && (
+                  <span className="hidden sm:inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 flex-shrink-0">
+                    {teacher.schoolName}
                   </span>
                 )}
               </h1>
-              <p className="text-[10px] xs:text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium truncate max-w-[100px] xs:max-w-[180px] sm:max-w-none">
+              <p className="text-[10px] xs:text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium truncate max-w-[120px] xs:max-w-[200px] sm:max-w-none">
                 {teacher.fullName}
               </p>
             </div>
@@ -374,32 +357,6 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
           </button>
         </div>
 
-        {/* Database Status Alert Banner */}
-        {dbHealth && dbHealth.connected && !dbHealth.tablesReady && (
-          <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-amber-900 dark:text-amber-200 text-xs shadow-sm">
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-              <div>
-                <h3 className="font-bold text-sm text-amber-950 dark:text-amber-100">Koneksi Supabase Aktif — Menunggu Eksekusi Tabel</h3>
-                <p className="mt-0.5 text-amber-800 dark:text-amber-300 leading-relaxed">
-                  Proyek Supabase Anda telah terhubung sempurna via REST API, namun tabel-tabel database belum dibuat di schema <code className="px-1 py-0.5 bg-amber-100 dark:bg-amber-900/60 rounded font-mono text-[11px]">public</code>. Silakan buka <strong>Supabase SQL Editor</strong> dan jalankan skrip <code className="px-1 py-0.5 bg-amber-100 dark:bg-amber-900/60 rounded font-mono text-[11px]">docs/setup.sql</code> untuk mengaktifkan seluruh tabel, RLS, dan kuis secara otomatis.
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={() => {
-                playClick();
-                loadData();
-              }}
-              disabled={isSyncingCloud}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-bold text-xs shadow-sm flex-shrink-0 transition-all btn-press disabled:opacity-50"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${isSyncingCloud ? 'animate-spin' : ''}`} />
-              <span>{isSyncingCloud ? 'Memeriksa...' : 'Cek Status Tabel'}</span>
-            </button>
-          </div>
-        )}
-
         {/* TAB 1: BANK KUIS & PIN KELAS */}
         {activeTab === 'quizzes' && (
           <section className="space-y-4 animate-fade-in">
@@ -475,20 +432,22 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                   return (
                     <div
                       key={quiz.id}
-                      className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-card flex flex-col justify-between hover:border-blue-300 dark:hover:border-blue-500/50 transition-all space-y-4"
+                      className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-slate-200 dark:border-slate-800 shadow-card flex flex-col justify-between hover:border-blue-300 dark:hover:border-blue-500/50 transition-all space-y-3.5"
                     >
-                      <div>
-                        {/* Top Row: PIN, Visibility Badge & Mapel */}
-                        <div className="flex items-center justify-between gap-2 mb-3">
-                          <div className="flex items-center gap-1.5 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-850 px-3 py-1 rounded-xl">
+                      <div className="space-y-3">
+                        {/* Row 1: Header (PIN Left, Visibility & Three-Dots Right) */}
+                        <div className="flex items-center justify-between gap-2">
+                          {/* PIN Pill */}
+                          <div className="flex items-center gap-1.5 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-850 px-2.5 py-1 rounded-xl whitespace-nowrap flex-shrink-0">
                             <span className="text-[10px] uppercase font-bold text-blue-700 dark:text-blue-300">PIN:</span>
-                            <span className="font-mono font-black text-sm text-blue-900 dark:text-blue-100 tracking-wider">
+                            <span className="font-mono font-black text-xs sm:text-sm text-blue-900 dark:text-blue-100 tracking-wider">
                               {quiz.pinCode || '1001'}
                             </span>
                             <button
                               onClick={() => handleCopyPin(quiz.pinCode || '1001')}
-                              className="p-1 hover:text-blue-600 dark:hover:text-blue-300 rounded transition-colors"
+                              className="p-1 hover:text-blue-600 dark:hover:text-blue-300 rounded transition-colors flex-shrink-0"
                               title="Salin PIN"
+                              aria-label={`Salin PIN ${quiz.pinCode || '1001'}`}
                             >
                               {copiedPin === (quiz.pinCode || '1001') ? (
                                 <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
@@ -498,10 +457,10 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                             </button>
                           </div>
 
-                          <div className="flex items-center gap-1.5">
-                            {/* Status Visibility Pill Badge */}
+                          {/* Visibility Pill & Three-Dots Menu */}
+                          <div className="flex items-center gap-1.5 flex-shrink-0">
                             <span
-                              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold border select-none ${
+                              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold border select-none whitespace-nowrap flex-shrink-0 ${
                                 quiz.visibility === 'private'
                                   ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800'
                                   : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
@@ -509,25 +468,24 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                             >
                               {quiz.visibility === 'private' ? (
                                 <>
-                                  <Lock className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+                                  <Lock className="w-3 h-3 text-amber-600 dark:text-amber-400 flex-shrink-0" />
                                   <span>Privat</span>
                                 </>
                               ) : (
                                 <>
-                                  <Globe className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                                  <Globe className="w-3 h-3 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
                                   <span>Publik</span>
                                 </>
                               )}
                             </span>
 
-                            {/* Three-Dots Menu Button */}
                             <button
                               type="button"
                               onClick={() => {
                                 playClick();
                                 setSelectedQuizForSettings(quiz);
                               }}
-                              className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors"
+                              className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors flex-shrink-0"
                               title="Pengaturan & Konfigurasi Kuis"
                               aria-label={`Pengaturan kuis ${quiz.title}`}
                             >
@@ -536,96 +494,98 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                           </div>
                         </div>
 
-                      {/* Title & Emoji with Subject & Grade badges */}
-                      <div className="flex items-start gap-2.5">
-                        <span className="text-2xl p-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 select-none flex-shrink-0">
-                          {quiz.coverEmoji}
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-1.5 mb-1 flex-wrap">
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700">
-                              Kelas {quiz.grade}
-                            </span>
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900/60">
-                              {quiz.subject}
-                            </span>
+                        {/* Row 2: Emoji & Details */}
+                        <div className="flex items-start gap-3 min-w-0">
+                          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-750 flex items-center justify-center text-2xl flex-shrink-0 shadow-xs border border-slate-200/60 dark:border-slate-700/60 select-none">
+                            {quiz.coverEmoji}
                           </div>
-                          <h3 className="font-bold text-slate-900 dark:text-white text-sm sm:text-base leading-snug line-clamp-2">
-                            {quiz.title}
-                          </h3>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">
-                            {quiz.description || 'Kuis interaktif tematik'}
-                          </p>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
+                              <span className="inline-flex items-center text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700 whitespace-nowrap flex-shrink-0">
+                                Kelas {quiz.grade}
+                              </span>
+                              <span className={`inline-flex items-center text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-lg border whitespace-nowrap truncate max-w-[140px] xs:max-w-[170px] ${getSubjectBadge(quiz.subject)}`}>
+                                {quiz.subject}
+                              </span>
+                            </div>
+                            <h3 className="font-bold text-slate-900 dark:text-white text-sm sm:text-base leading-snug line-clamp-2" title={quiz.title}>
+                              {quiz.title}
+                            </h3>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2 leading-relaxed">
+                              {quiz.description || 'Kuis interaktif tematik'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        {/* Row 3: Meta Info */}
+                        <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center justify-between border-t border-slate-100 dark:border-slate-800 pt-2.5">
+                          <span className="inline-flex items-center gap-1 font-medium whitespace-nowrap">
+                            <HelpCircle className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
+                            {quiz.questions.length} Soal
+                          </span>
+                          <span className="text-slate-300 dark:text-slate-700">•</span>
+                          <span className="inline-flex items-center gap-1 font-medium whitespace-nowrap">
+                            <Clock className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+                            {quiz.durationPerQuestionSec}s / soal
+                          </span>
+                        </div>
+
+                        {/* Row 4: Action Buttons (1. Mode IFP, 2. Bagi Tautan, 3. Edit) */}
+                        <div className="space-y-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              playClick();
+                              onLaunchSmartboard(quiz);
+                            }}
+                            className="w-full py-2.5 px-3 rounded-xl font-bold text-xs sm:text-sm text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm flex items-center justify-center gap-2 min-h-[44px] btn-press transition-all"
+                            title="Buka Kuis di Smartboard / TV Interaktif (Mode IFP)"
+                          >
+                            <Tv className="w-4 h-4" />
+                            <span>Mode IFP</span>
+                          </button>
+
+                          <div className="grid grid-cols-2 gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleCopyLink(quiz)}
+                              className="py-2.5 px-2 rounded-xl font-semibold text-xs text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 flex items-center justify-center gap-1.5 min-h-[44px] transition-colors btn-press whitespace-nowrap"
+                              title="Salin Tautan Kuis"
+                            >
+                              {copiedLink === quiz.id ? (
+                                <>
+                                  <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                                  <span>Tersalin</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Share2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                                  <span>Bagi Tautan</span>
+                                </>
+                              )}
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                playClick();
+                                onOpenCreator(quiz);
+                              }}
+                              className="py-2.5 px-2 rounded-xl font-semibold text-xs text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 flex items-center justify-center gap-1.5 min-h-[44px] transition-colors btn-press whitespace-nowrap"
+                              title="Edit Kuis"
+                            >
+                              <Pencil className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                              <span>Edit</span>
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
-
-                    {/* Meta info */}
-                    <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center justify-between border-t border-slate-100 dark:border-slate-800 pt-3">
-                      <span>{quiz.questions.length} Soal</span>
-                      <span>•</span>
-                      <span>{quiz.durationPerQuestionSec}s / soal</span>
-                      <span>•</span>
-                      <span>PIN: {quiz.pinCode || '1001'}</span>
-                    </div>
-
-                    {/* Action Buttons (Tombol in Card: 1. Mode IFP, 2. Bagi Tautan, 3. Edit) */}
-                    <div className="space-y-2 pt-1">
-                      {/* 1. Mode IFP */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          playClick();
-                          onLaunchSmartboard(quiz);
-                        }}
-                        className="w-full py-2.5 px-3 rounded-xl font-bold text-xs sm:text-sm text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm flex items-center justify-center gap-2 min-h-[44px] btn-press transition-all"
-                        title="Mode IFP"
-                      >
-                        <Tv className="w-4 h-4" />
-                        <span>Mode IFP</span>
-                      </button>
-
-                      {/* Baris Tombol Sekunder: 2. Bagi Tautan & 3. Edit */}
-                      <div className="grid grid-cols-2 gap-2">
-                        {/* 2. Bagi Tautan */}
-                        <button
-                          type="button"
-                          onClick={() => handleCopyLink(quiz)}
-                          className="py-2.5 px-2.5 rounded-xl font-semibold text-xs text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 flex items-center justify-center gap-1.5 min-h-[44px] transition-colors btn-press"
-                          title="Bagi Tautan"
-                        >
-                          {copiedLink === quiz.id ? (
-                            <>
-                              <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                              <span>Tersalin</span>
-                            </>
-                          ) : (
-                            <>
-                              <Share2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                              <span>Bagi Tautan</span>
-                            </>
-                          )}
-                        </button>
-
-                        {/* 3. Edit */}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            playClick();
-                            onOpenCreator(quiz);
-                          }}
-                          className="py-2.5 px-2.5 rounded-xl font-semibold text-xs text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 flex items-center justify-center gap-1.5 min-h-[44px] transition-colors btn-press"
-                          title="Edit Kuis"
-                        >
-                          <Pencil className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                          <span>Edit</span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
             )}
           </section>
         )}
@@ -637,7 +597,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
               <div>
                 <h2 className="text-base font-bold text-slate-900 dark:text-white">Rekap Nilai Siswa Real-Time</h2>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Data hasil pengerjaan kuis siswa tersimpan otomatis ke database.
+                  Data rekap hasil pengerjaan kuis siswa tersimpan rapi secara otomatis.
                 </p>
               </div>
 
