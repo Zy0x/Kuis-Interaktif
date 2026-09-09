@@ -1,6 +1,27 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.25] - 2026-09-09
+### Arsitektur Header Ultra-Compact Mobile dengan Smart Avatar dan Quick Action Sheet Overlay (Mobile Ultra-Compact Header & Bottom Sheet Actions)
+
+#### Antarmuka Pengguna & Presisi Mobile-First (*Mobile-First Responsive Precision*)
+- **Arsitektur Header Ultra-Compact Mobile (`QuizHome`):**
+  - Mengatasi kepadatan tombol di bilah atas (*navbar*) pada perangkat mobile (Mobile-S 320px, Mobile-M 375px, dan Mobile-L 425px) dengan menerapkan sistem hibrida cerdas.
+  - Pada layar ponsel (`<640px` / `<sm`), seluruh tombol yang sebelumnya memenuhi header (Sakelar Tema, Tombol Audio, dan Pil Akun) dikonsolidasikan menjadi satu tombol **Smart Avatar** ramah sentuhan (target sentuh minimal 44×44px) di sisi kanan atas.
+  - Memberikan ruang horizontal ekstra (~136px pada layar 320px) sehingga logo dan nama aplikasi `Kuis Seru` dapat bernapas lega tanpa distorsi, pembungkusan teks (*warping*), maupun penambahan tinggi bilah header.
+  - Pada layar tablet, desktop, dan papan interaktif kelas IFP SmartBoard (`≥640px` / `≥sm`), toolbar lengkap tetap dipertahankan untuk akses langsung 1-klik yang efisien.
+- **Lembar Aksi Cepat Bawah Ponsel (`MobileProfileSheet`):**
+  - Menghadirkan komponen modal *bottom sheet* bergaya aplikasi *native* yang meluncur mulus dari bawah saat tombol Smart Avatar ditekan.
+  - Dilengkapi bilah pegangan geser (*drag bar*), tombol tutup cepat, penguncian gulir latar belakang (*Body Scroll Lock*), serta integrasi tombol kembali fisik Android (*Hardware Back Button*) prioritas 80.
+  - Menampilkan ringkasan status akun pengguna yang kontekstual:
+    - **Guru:** Lencana *Guru Pro*, nama sekolah, dan email dinas.
+    - **Siswa:** Nama panggilan, jenjang kelas, serta jumlah perolehan bintang prestasi.
+    - **Tamu:** Status tamu ramah anak dengan ajakan personalisasi avatar.
+  - Menyediakan ubin sakelar cepat (*Quick Settings Tiles*) berukuran 64px (target sentuh 48px) untuk **Mode Tampilan (Terang / Gelap)** dan **Efek Suara (SFX Aktif / Senyap)** lengkap dengan lencana indikator status.
+  - Tombol tindakan utama akun disesuaikan dengan peran: akses ke Dashboard Guru, pengelolaan profil/sekolah, pergantian maskot avatar, masuk/daftar akun, hingga keluar sistem secara aman.
+
+---
+
 ## [2.2.24] - 2026-09-09
 ### Inspeksi dan Perombakan Menyeluruh Responsivitas Lintas Viewport: Mobile-S (320px) hingga IFP SmartBoard 4K (Comprehensive Multi-Viewport Precision & Zero-Overflow Refactor)
 

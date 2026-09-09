@@ -8,6 +8,7 @@ import { useTimeGreeting } from '../../hooks/useTimeGreeting';
 import { CelestialSkyVisual } from './CelestialSkyVisual';
 import { ThemeToggle } from '../common/ThemeToggle';
 import { ConfirmDeleteModal } from '../common/ConfirmDeleteModal';
+import { MobileProfileSheet } from './MobileProfileSheet';
 import { 
   Play, 
   Clock, 
@@ -66,6 +67,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
   const [profile, setProfile] = useState(() => DataManager.getPlayerProfile());
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isTeacherProfileModalOpen, setIsTeacherProfileModalOpen] = useState(false);
+  const [isMobileProfileSheetOpen, setIsMobileProfileSheetOpen] = useState(false);
   const [rulesModalQuiz, setRulesModalQuiz] = useState<Quiz | null>(null);
 
   // Data fase waktu dan sapaan dinamis (Pagi, Siang, Sore, Malam, Tengah Malam, Dini Hari)
@@ -326,96 +328,98 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
             </div>
           </div>
 
-          {/* Right Action Icons */}
+          {/* Right Action Controls: Mode Hibrida (Mobile Single Smart Avatar vs Desktop Full Toolbar) */}
           <div className="flex items-center gap-1.5 sm:gap-2.5 flex-shrink-0">
-            {/* Theme Toggle Button */}
-            <ThemeToggle isDark={isDark} onToggle={onToggleTheme} playClick={playClick} />
-
-            {/* Audio Toggle Button */}
-            <button
-              onClick={() => {
-                playClick();
-                onToggleMute();
-              }}
-              className="p-2 sm:p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center btn-press shadow-xs"
-              title={isMuted ? 'Nyalakan Suara' : 'Matikan Suara'}
-              aria-label="Pengaturan Suara"
-            >
-              {isMuted ? <VolumeX className="w-5 h-5 text-rose-500" /> : <Volume2 className="w-5 h-5 text-slate-700 dark:text-slate-200" />}
-            </button>
-
-            {/* Unified Account / Profile Pill */}
+            {/* 1. Mobile Smart Avatar Button (<sm / <640px) */}
             {teacher ? (
-              /* Guru Pill */
               <button
+                type="button"
                 onClick={() => {
                   playClick();
-                  setIsTeacherProfileModalOpen(true);
+                  setIsMobileProfileSheetOpen(true);
                 }}
-                className="flex items-center gap-1.5 sm:gap-2 p-2 xs:pl-2.5 xs:pr-3 xs:py-1.5 rounded-xl bg-blue-50 dark:bg-slate-800 hover:bg-blue-100 dark:hover:bg-slate-750 border border-blue-200 dark:border-slate-700 text-blue-900 dark:text-blue-100 transition-colors min-h-[44px] min-w-[44px] justify-center btn-press shadow-sm max-w-[44px] xs:max-w-[180px] sm:max-w-[240px]"
-                title={`Profil Guru: ${teacher.fullName}`}
-                aria-label="Profil Akun Guru"
+                className="sm:hidden p-2 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white shadow-sm flex items-center justify-center min-h-[44px] min-w-[44px] relative btn-press transition-transform"
+                title={`Buka Menu Profil Guru & Pengaturan: ${teacher.fullName}`}
+                aria-label="Buka Menu Profil Guru & Pengaturan"
               >
-                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold text-sm shadow-xs flex-shrink-0">
-                  <GraduationCap className="w-4 h-4" />
-                </div>
-                <div className="text-left min-w-0 hidden xs:block">
-                  <p className="text-xs font-extrabold text-blue-950 dark:text-white leading-tight truncate">
-                    {teacher.fullName?.trim() || 'Pendidik'}
-                  </p>
-                  <p className="text-[10px] text-blue-700 dark:text-blue-300 font-semibold items-center gap-1 hidden sm:flex">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block flex-shrink-0"></span>
-                    <span className="truncate">{teacher.schoolName || 'Pendidik'}</span>
-                  </p>
-                </div>
+                <GraduationCap className="w-5 h-5" />
+                <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 border-2 border-white dark:border-slate-900 rounded-full" />
               </button>
             ) : profile.isLoggedIn ? (
-              /* Siswa Pill (Logged In) */
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setIsMobileProfileSheetOpen(true);
+                }}
+                className="sm:hidden p-1.5 rounded-2xl bg-emerald-100 dark:bg-emerald-950/70 border border-emerald-300 dark:border-emerald-800 text-emerald-900 dark:text-emerald-100 shadow-xs flex items-center justify-center min-h-[44px] min-w-[44px] relative btn-press text-2xl select-none transition-transform"
+                title={`Buka Menu Profil Siswa & Pengaturan: ${profile.nickname}`}
+                aria-label="Buka Menu Profil Siswa & Pengaturan"
+              >
+                {currentAvatar.emoji}
+                <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-amber-400 border-2 border-white dark:border-slate-900 rounded-full" />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setIsMobileProfileSheetOpen(true);
+                }}
+                className="sm:hidden flex items-center gap-1.5 pl-2.5 pr-3 py-1.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs min-h-[44px] shadow-sm transition-all btn-press"
+                title="Buka Menu Masuk & Pengaturan"
+                aria-label="Buka Menu Masuk & Pengaturan"
+              >
+                <span className="text-base select-none">{currentAvatar.emoji}</span>
+                <span>Masuk</span>
+              </button>
+            )}
+
+            {/* 2. Desktop / Tablet Full Toolbar (>=sm / >=640px) */}
+            <div className="hidden sm:flex items-center gap-2 sm:gap-2.5">
+              {/* Theme Toggle Button */}
+              <ThemeToggle isDark={isDark} onToggle={onToggleTheme} playClick={playClick} />
+
+              {/* Audio Toggle Button */}
               <button
                 onClick={() => {
                   playClick();
-                  setTempNickname(isCustomName(profile.nickname) ? profile.nickname : '');
-                  setTempAvatar(profile.avatarId);
-                  setIsProfileModalOpen(true);
+                  onToggleMute();
                 }}
-                className="flex items-center gap-1.5 sm:gap-2 p-2 xs:pl-2.5 xs:pr-3 xs:py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-100 transition-colors min-h-[44px] min-w-[44px] justify-center btn-press shadow-sm max-w-[44px] xs:max-w-[160px] sm:max-w-[220px]"
-                title={`Profil Siswa: ${profile.nickname}`}
-                aria-label="Profil Akun Siswa"
+                className="p-2 sm:p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 border border-slate-200/80 dark:border-slate-700 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center btn-press shadow-xs"
+                title={isMuted ? 'Nyalakan Suara' : 'Matikan Suara'}
+                aria-label="Pengaturan Suara"
               >
-                <span className="text-lg sm:text-xl select-none flex-shrink-0">{currentAvatar.emoji}</span>
-                <div className="text-left min-w-0 hidden xs:block">
-                  <p className="text-xs font-extrabold text-emerald-950 dark:text-emerald-100 leading-tight truncate">
-                    {profile.nickname}
-                  </p>
-                  <p className="text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold items-center gap-1 hidden sm:flex truncate">
-                    <span>Kelas {profile.grade || 1}</span>
-                    <span>•</span>
-                    <span className="flex items-center gap-0.5 text-amber-600 dark:text-amber-400 font-bold">
-                      <Trophy className="w-2.5 h-2.5" /> {profile.starsEarned}⭐
-                    </span>
-                  </p>
-                </div>
+                {isMuted ? <VolumeX className="w-5 h-5 text-rose-500" /> : <Volume2 className="w-5 h-5 text-slate-700 dark:text-slate-200" />}
               </button>
-            ) : (
-              /* Mode Tamu: Masuk / Akun Button + Guest Avatar Quick Customizer */
-              <div className="flex items-center gap-1 sm:gap-2">
+
+              {/* Unified Account / Profile Pill */}
+              {teacher ? (
+                /* Guru Pill */
                 <button
                   onClick={() => {
                     playClick();
-                    if (onOpenAuthModal) {
-                      onOpenAuthModal('student');
-                    } else {
-                      onOpenTeacherPortal();
-                    }
+                    setIsTeacherProfileModalOpen(true);
                   }}
-                  className="flex items-center gap-1 sm:gap-1.5 px-2.5 xs:px-3 sm:px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm min-h-[44px] shadow-sm transition-all btn-press whitespace-nowrap"
-                  title="Pintu Masuk Guru & Siswa"
+                  className="flex items-center gap-2 pl-2.5 pr-3 py-1.5 rounded-xl bg-blue-50 dark:bg-slate-800 hover:bg-blue-100 dark:hover:bg-slate-750 border border-blue-200 dark:border-slate-700 text-blue-900 dark:text-blue-100 transition-colors min-h-[44px] btn-press shadow-sm max-w-[240px]"
+                  title={`Profil Guru: ${teacher.fullName}`}
+                  aria-label="Profil Akun Guru"
                 >
-                  <LogIn className="w-4 h-4 flex-shrink-0" />
-                  <span className="hidden xs:inline">Masuk / Akun</span>
-                  <span className="xs:hidden text-xs">Masuk</span>
+                  <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold text-sm shadow-xs flex-shrink-0">
+                    <GraduationCap className="w-4 h-4" />
+                  </div>
+                  <div className="text-left min-w-0">
+                    <p className="text-xs font-extrabold text-blue-950 dark:text-white leading-tight truncate">
+                      {teacher.fullName?.trim() || 'Pendidik'}
+                    </p>
+                    <p className="text-[10px] text-blue-700 dark:text-blue-300 font-semibold items-center gap-1 flex">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block flex-shrink-0"></span>
+                      <span className="truncate">{teacher.schoolName || 'Pendidik'}</span>
+                    </p>
+                  </div>
                 </button>
-
+              ) : profile.isLoggedIn ? (
+                /* Siswa Pill (Logged In) */
                 <button
                   onClick={() => {
                     playClick();
@@ -423,17 +427,62 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                     setTempAvatar(profile.avatarId);
                     setIsProfileModalOpen(true);
                   }}
-                  className="hidden xs:flex items-center gap-1.5 pl-2 pr-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700 transition-colors min-h-[44px] btn-press"
-                  title="Mode Tamu: Klik untuk sesuaikan nama/karakter"
-                  aria-label="Pengaturan Profil Mode Tamu"
+                  className="flex items-center gap-2 pl-2.5 pr-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-100 transition-colors min-h-[44px] btn-press shadow-sm max-w-[220px]"
+                  title={`Profil Siswa: ${profile.nickname}`}
+                  aria-label="Profil Akun Siswa"
                 >
-                  <span className="text-lg select-none">{currentAvatar.emoji}</span>
-                  <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 hidden md:inline">
-                    {isCustomName(profile.nickname) ? profile.nickname : 'Tamu'}
-                  </span>
+                  <span className="text-xl select-none flex-shrink-0">{currentAvatar.emoji}</span>
+                  <div className="text-left min-w-0">
+                    <p className="text-xs font-extrabold text-emerald-950 dark:text-emerald-100 leading-tight truncate">
+                      {profile.nickname}
+                    </p>
+                    <p className="text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold items-center gap-1 flex truncate">
+                      <span>Kelas {profile.grade || 1}</span>
+                      <span>•</span>
+                      <span className="flex items-center gap-0.5 text-amber-600 dark:text-amber-400 font-bold">
+                        <Trophy className="w-2.5 h-2.5" /> {profile.starsEarned}⭐
+                      </span>
+                    </p>
+                  </div>
                 </button>
-              </div>
-            )}
+              ) : (
+                /* Mode Tamu: Masuk / Akun Button + Guest Avatar Quick Customizer */
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      playClick();
+                      if (onOpenAuthModal) {
+                        onOpenAuthModal('student');
+                      } else {
+                        onOpenTeacherPortal();
+                      }
+                    }}
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm min-h-[44px] shadow-sm transition-all btn-press whitespace-nowrap"
+                    title="Pintu Masuk Guru & Siswa"
+                  >
+                    <LogIn className="w-4 h-4 flex-shrink-0" />
+                    <span>Masuk / Akun</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      playClick();
+                      setTempNickname(isCustomName(profile.nickname) ? profile.nickname : '');
+                      setTempAvatar(profile.avatarId);
+                      setIsProfileModalOpen(true);
+                    }}
+                    className="flex items-center gap-1.5 pl-2 pr-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700 transition-colors min-h-[44px] btn-press"
+                    title="Mode Tamu: Klik untuk sesuaikan nama/karakter"
+                    aria-label="Pengaturan Profil Mode Tamu"
+                  >
+                    <span className="text-lg select-none">{currentAvatar.emoji}</span>
+                    <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                      {isCustomName(profile.nickname) ? profile.nickname : 'Tamu'}
+                    </span>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </header>
@@ -1321,6 +1370,28 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
           }}
         />
       )}
+
+      {/* Mobile Profile Quick-Access Bottom Sheet Overlay */}
+      <MobileProfileSheet
+        isOpen={isMobileProfileSheetOpen}
+        onClose={() => setIsMobileProfileSheetOpen(false)}
+        teacher={teacher}
+        profile={profile}
+        isDark={isDark}
+        onToggleTheme={onToggleTheme}
+        isMuted={isMuted}
+        onToggleMute={onToggleMute}
+        onOpenTeacherPortal={onOpenTeacherPortal}
+        onOpenAuthModal={onOpenAuthModal}
+        onOpenProfileModal={() => {
+          setIsProfileModalOpen(true);
+          setTempNickname(isCustomName(profile.nickname) ? profile.nickname : '');
+          setTempAvatar(profile.avatarId);
+        }}
+        onOpenTeacherProfileModal={() => setIsTeacherProfileModalOpen(true)}
+        onTeacherLogout={onTeacherLogout}
+        playClick={playClick}
+      />
 
     </div>
   );
