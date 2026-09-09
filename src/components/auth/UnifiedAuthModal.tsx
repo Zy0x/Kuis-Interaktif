@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { DataManager, isSupabaseConfigured } from '../../lib/supabaseClient';
+import { DataManager } from '../../lib/supabaseClient';
 import type { TeacherProfile, PlayerProfile } from '../../types/quiz';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 import { useBackHandler } from '../../lib/navigationHistory';
@@ -13,7 +13,6 @@ import {
   School, 
   AlertCircle, 
   ArrowRight, 
-  Sparkles,
   Eye,
   EyeOff,
   Smile
@@ -166,10 +165,10 @@ export const UnifiedAuthModal: React.FC<UnifiedAuthModalProps> = ({
         <div className="flex items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
           <div>
             <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white tracking-tight">
-              Pintu Masuk & Akun
+              Masuk / Daftar Akun
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Pilih peran Anda untuk masuk ke sistem kuis
+              Pilih peran Anda untuk melanjutkan
             </p>
           </div>
           <button
@@ -221,17 +220,6 @@ export const UnifiedAuthModal: React.FC<UnifiedAuthModalProps> = ({
             <Backpack className="w-4 h-4" />
             <span>Siswa / Pelajar</span>
           </button>
-        </div>
-
-        {/* Status Indicator */}
-        <div className="mt-3.5 flex items-center justify-between text-[11px] px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400">
-          <span className="flex items-center gap-1.5">
-            <span className={`w-2 h-2 rounded-full ${isSupabaseConfigured ? 'bg-emerald-500 animate-pulse' : 'bg-amber-400'}`}></span>
-            {isSupabaseConfigured ? 'Sinkronisasi Cloud Supabase Aktif' : 'Penyimpanan Sesi Aman Lokal'}
-          </span>
-          <span className="font-semibold text-slate-600 dark:text-slate-300">
-            {activeTab === 'teacher' ? 'Portal Guru' : 'Portal Belajar Siswa'}
-          </span>
         </div>
 
         {/* Error Alert */}
@@ -363,13 +351,6 @@ export const UnifiedAuthModal: React.FC<UnifiedAuthModalProps> = ({
                 </button>
               </div>
             </form>
-
-            <div className="p-3 bg-blue-50/60 dark:bg-blue-950/30 rounded-xl border border-blue-100 dark:border-blue-900/40 text-[11px] text-blue-800 dark:text-blue-300 flex items-start gap-2">
-              <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
-              <span>
-                Dashboard Guru menyediakan pengelolaan Bank Kuis, penentuan visibilitas kuis (Publik / Privat), Mode Smartboard IFP untuk ruang kelas, dan unduh rekap nilai siswa.
-              </span>
-            </div>
           </div>
         )}
 

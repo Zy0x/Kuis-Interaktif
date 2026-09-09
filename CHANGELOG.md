@@ -1,6 +1,21 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis SD Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.19] - 2026-09-09
+### Penyempurnaan Desain Antarmuka: Eliminasi Teks Berlebih & Jargon Teknis pada Portal Akun (Clean UI Polish & Technical Jargon Elimination)
+
+#### Antarmuka Pengguna & Keterbacaan (*UI Design & Readability Polish*)
+- **Pembersihan Total Teks Status & Jargon Teknis:**
+  - Mengeliminasi bilah status teknis (*"Sinkronisasi Cloud Supabase Aktif"*) pada dialog autentikasi terpadu (`UnifiedAuthModal`).
+  - Menghapus kotak promosi fitur berbasis ikon kilau (*Sparkles*) di bawah form masuk guru demi menyajikan pengalaman masuk yang bersih, profesional, dan fokus pada formulir utama.
+  - Memperbarui tajuk modal menjadi ringkas dan komunikatif: *"Masuk / Daftar Akun"* dengan deskripsi *"Pilih peran Anda untuk melanjutkan"*.
+- **Penyelarasan Bahasa Alami pada Seluruh Modul Pengguna:**
+  - Menghilangkan frasa teknis pada modal profil siswa di beranda (`QuizHome`), mengganti istilah berbasis backend/cloud menjadi bahasa alami yang ramah anak (*"Simpan prestasi belajar Anda"*, *"Prestasi tersimpan di akun"*, dan *"Bintang Terkumpul"*).
+  - Menyederhanakan tampilan modal profil guru dengan menghapus blok deskripsi hak akses yang bertele-tele dan menyisakan aksi navigasi penting (*"Buka Dashboard Guru"* dan *"Keluar Akun Guru"*).
+  - Mengganti ikon kilau pada generator soal di Dashboard Guru dengan ikon edukasi buku terbuka (`BookOpen`) yang lebih sesuai dengan ranah pedagogis sekolah.
+
+---
+
 ## [2.2.18] - 2026-09-09
 ### Portal Akun Terpadu Guru & Siswa, Visibilitas Kuis Publik/Privat, dan Isolasi Bank Kuis Master (Unified Account Portal, Public/Private Quiz Visibility, and Multi-Tenant Teacher Bank)
 

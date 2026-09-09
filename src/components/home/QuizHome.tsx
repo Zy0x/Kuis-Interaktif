@@ -21,7 +21,6 @@ import {
   X,
   Trash2,
   Layers,
-  Sparkles,
   GraduationCap,
   KeyRound,
   ArrowRight,
@@ -923,7 +922,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                 }`}
               >
-                {profile.isLoggedIn ? 'Akun Cloud Aktif' : 'Login / Simpan Cloud'}
+                {profile.isLoggedIn ? 'Akun Siswa' : 'Masuk / Daftar'}
               </button>
             </div>
 
@@ -934,7 +933,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                 <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 text-xs">
                   <span className="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                     <span className={`w-2 h-2 rounded-full ${profile.isLoggedIn ? 'bg-emerald-500' : 'bg-blue-500'}`} />
-                    {profile.isLoggedIn ? `Akun: ${profile.email}` : 'Status: Mode Tamu (Tanpa Login)'}
+                    {profile.isLoggedIn ? `Akun: ${profile.email}` : 'Mode Tamu'}
                   </span>
                   <span className="font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
                     <Trophy className="w-3.5 h-3.5" /> {profile.starsEarned} ⭐
@@ -988,12 +987,12 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                   </div>
                 </div>
 
-                {/* Cloud account helper */}
+                {/* Account helper */}
                 {!profile.isLoggedIn ? (
                   <div className="p-3 rounded-2xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/60 flex items-center justify-between gap-2">
                     <div className="text-[11px] text-blue-900 dark:text-blue-200">
-                      <span className="font-bold block">Ingin menyimpan bintang di cloud?</span>
-                      <span>Daftar akun siswa gratis.</span>
+                      <span className="font-bold block">Simpan prestasi belajar Anda</span>
+                      <span>Masuk dengan akun siswa.</span>
                     </div>
                     <button
                       type="button"
@@ -1008,7 +1007,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                   </div>
                 ) : (
                   <div className="pt-1 flex items-center justify-between text-xs">
-                    <span className="text-slate-500 dark:text-slate-400 font-medium">Bintang tersinkronisasi otomatis.</span>
+                    <span className="text-slate-500 dark:text-slate-400 font-medium">Prestasi tersimpan di akun.</span>
                     <button
                       type="button"
                       onClick={handleStudentSignOut}
@@ -1037,7 +1036,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
               </form>
             )}
 
-            {/* TAB 2: Login / Daftar Akun Siswa (Cloud Sync) */}
+            {/* TAB 2: Login / Daftar Akun Siswa */}
             {profileTab !== 'guest' && (
               <div className="p-5 space-y-4 overflow-y-auto flex-1">
                 {profile.isLoggedIn ? (
@@ -1051,7 +1050,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                       </h4>
                       <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{profile.email}</p>
                       <p className="text-xs font-bold text-amber-600 dark:text-amber-400 mt-2">
-                        {profile.starsEarned} Bintang Tersimpan di Cloud
+                        {profile.starsEarned} Bintang Terkumpul
                       </p>
                     </div>
 
@@ -1272,15 +1271,6 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                     <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 truncate block">{teacher.email}</span>
                   </div>
                 </div>
-              </div>
-
-              <div className="p-3 bg-slate-50 dark:bg-slate-800/80 rounded-xl border border-slate-200/80 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-300 space-y-1">
-                <span className="font-bold text-slate-800 dark:text-white flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" /> Hak Akses Guru Aktif:
-                </span>
-                <p className="leading-relaxed">
-                  Pembuatan kuis tak terbatas, generator soal kilat, pemantauan rekap nilai siswa, dan cetak lembar kerja siswa (LKS).
-                </p>
               </div>
 
               <div className="pt-2 space-y-2.5">

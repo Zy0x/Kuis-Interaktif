@@ -15,7 +15,6 @@ import {
   Zap, 
   BookOpen, 
   Users, 
-  Sparkles, 
   LogOut, 
   ArrowLeft,
   Share2,
@@ -637,7 +636,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
 
               <div className="p-4 rounded-2xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/60 text-xs text-blue-900 dark:text-blue-200 space-y-1">
                 <span className="font-bold flex items-center gap-1">
-                  <Sparkles className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" /> Spesifikasi Soal Kelas {genGrade}:
+                  <BookOpen className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" /> Spesifikasi Soal Kelas {genGrade}:
                 </span>
                 <p className="text-blue-800 dark:text-blue-300">
                   {genGrade <= 2
