@@ -72,8 +72,9 @@ export const DataManager = {
       // Saring kuis kustom yang belum dihapus
       customQuizzes = customQuizzes.filter((q) => !deletedIds.has(q.id));
 
-      // Saring kuis bawaan (seed) yang belum dihapus
-      const activeSeeds = INITIAL_QUIZZES.filter((q) => !deletedIds.has(q.id));
+      const customIds = new Set(customQuizzes.map((q) => q.id));
+      // Saring kuis bawaan (seed) yang belum dihapus dan belum dimodifikasi di custom quizzes
+      const activeSeeds = INITIAL_QUIZZES.filter((q) => !deletedIds.has(q.id) && !customIds.has(q.id));
 
       // If teacher options are provided
       if (options?.teacherEmail) {
@@ -424,49 +425,78 @@ export const DataManager = {
     return this.deleteQuiz(quizId);
   },
 
-  // 5b. Update Quiz Visibility (Public vs Private)
-  async updateQuizVisibility(quizId: string, visibility: 'public' | 'private'): Promise<void> {
+  // 5b. Update Quiz Settings (Visibility, Duration, PIN, etc.)
+  async updateQuizSettings(quizId: string, updates: Partial<Quiz>): Promise<Quiz> {
     const teacher = this.getTeacherProfile();
     if (!teacher || !teacher.id) {
-      console.error('Akses Ditolak (RBAC): Peran Siswa atau Tamu dilarang mengubah privasi kuis.');
-      throw new Error('Akses Ditolak: Hanya Guru yang berhak mengubah privasi kuis.');
+      console.error('Akses Ditolak (RBAC): Peran Siswa atau Tamu dilarang mengubah konfigurasi kuis.');
+      throw new Error('Akses Ditolak: Hanya Guru yang berhak mengubah konfigurasi kuis.');
     }
+
+    let updatedQuiz: Quiz | null = null;
 
     try {
       const customStr = localStorage.getItem(STORAGE_KEY_CUSTOM_QUIZZES);
       let customQuizzes: Quiz[] = customStr ? JSON.parse(customStr) : [];
       const existingIdx = customQuizzes.findIndex((q) => q.id === quizId);
+
       if (existingIdx >= 0) {
-        customQuizzes[existingIdx] = {
+        updatedQuiz = {
           ...customQuizzes[existingIdx],
-          visibility,
+          ...updates,
         };
+        customQuizzes[existingIdx] = updatedQuiz;
       } else {
         const seedQuiz = INITIAL_QUIZZES.find((q) => q.id === quizId);
         if (seedQuiz) {
-          customQuizzes.unshift({
+          updatedQuiz = {
             ...seedQuiz,
             creatorId: teacher.id,
             creatorName: teacher.fullName,
-            visibility,
-          });
+            ...updates,
+          };
+          customQuizzes.unshift(updatedQuiz);
         }
       }
-      localStorage.setItem(STORAGE_KEY_CUSTOM_QUIZZES, JSON.stringify(customQuizzes));
+
+      if (updatedQuiz) {
+        localStorage.setItem(STORAGE_KEY_CUSTOM_QUIZZES, JSON.stringify(customQuizzes));
+      }
     } catch (e) {
-      console.warn('Local update quiz visibility error:', e);
+      console.warn('Local update quiz settings error:', e);
     }
 
+    if (!updatedQuiz) {
+      throw new Error(`Kuis dengan ID "${quizId}" tidak ditemukan.`);
+    }
+
+    // Sync to Supabase if connected
     if (supabase) {
       try {
-        await supabase
-          .from('quizzes')
-          .update({ visibility })
-          .eq('id', quizId);
+        const dbUpdates: Record<string, unknown> = {};
+        if (updates.visibility !== undefined) dbUpdates.visibility = updates.visibility;
+        if (updates.durationPerQuestionSec !== undefined) dbUpdates.duration_per_question_sec = updates.durationPerQuestionSec;
+        if (updates.pinCode !== undefined) dbUpdates.pin_code = updates.pinCode;
+        if (updates.title !== undefined) dbUpdates.title = updates.title;
+        if (updates.description !== undefined) dbUpdates.description = updates.description;
+
+        if (Object.keys(dbUpdates).length > 0) {
+          await supabase
+            .from('quizzes')
+            .update(dbUpdates)
+            .eq('id', quizId);
+        }
       } catch (err) {
-        console.warn('Supabase quiz update visibility notice:', err);
+        console.warn('Supabase quiz settings update notice:', err);
       }
     }
+
+    return updatedQuiz;
+  },
+
+  // 5c. Update Quiz Visibility (Public vs Private)
+  async updateQuizVisibility(quizId: string, visibility: 'public' | 'private'): Promise<void> {
+    await this.updateQuizSettings(quizId, { visibility });
   },
 
   // 6. Get Player Profile (Default Mode Tamu)

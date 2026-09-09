@@ -9,6 +9,7 @@ import { useTimeGreeting } from '../../hooks/useTimeGreeting';
 import { CelestialSkyVisual } from './CelestialSkyVisual';
 import { ThemeToggle } from '../common/ThemeToggle';
 import { ConfirmDeleteModal } from '../common/ConfirmDeleteModal';
+import { QuizSettingsModal } from '../common/QuizSettingsModal';
 import { MobileProfileSheet } from './MobileProfileSheet';
 import { 
   Play, 
@@ -21,7 +22,6 @@ import {
   BookOpen,
   CheckCircle2,
   X,
-  Trash2,
   Layers,
   GraduationCap,
   KeyRound,
@@ -32,7 +32,8 @@ import {
   School,
   Mail,
   User,
-  LogIn
+  LogIn,
+  MoreVertical
 } from 'lucide-react';
 
 interface QuizHomeProps {
@@ -264,15 +265,12 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
   // Delete confirmation state (In-App Modal - Guru Only)
   const [quizToDelete, setQuizToDelete] = useState<Quiz | null>(null);
   const [isDeletingQuiz, setIsDeletingQuiz] = useState(false);
+  const [selectedQuizForSettings, setSelectedQuizForSettings] = useState<Quiz | null>(null);
 
-  const handlePromptDeleteCustomQuiz = (quiz: Quiz, e: React.MouseEvent) => {
-    e.stopPropagation();
-    playClick();
-    if (!teacher) {
-      console.warn('Akses Ditolak (RBAC): Siswa atau Tamu dilarang menghapus kuis.');
-      return;
-    }
-    setQuizToDelete(quiz);
+  const handleSaveQuizSettings = async (quizId: string, updates: Partial<Quiz>) => {
+    const updated = await DataManager.updateQuizSettings(quizId, updates);
+    setQuizzes(DataManager.getAllQuizzes({ publicOnly: true }));
+    setSelectedQuizForSettings(updated);
   };
 
   const handleConfirmDeleteCustomQuiz = async () => {
@@ -289,6 +287,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
     }
   };
 
+  const isMasterTeacher = Boolean(teacher && teacher.email.trim().toLowerCase() === MASTER_TEACHER_EMAIL.toLowerCase());
   const currentAvatar = AVATAR_LIST.find((a) => a.id === profile.avatarId) || AVATAR_LIST[0];
 
   // Subject color styling helper (calm, intentional accents with dark mode contrast)
@@ -705,8 +704,6 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
           <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
             {filteredQuizzes.map((quiz) => {
               const isCustom = quiz.id.startsWith('custom_');
-              const isMasterTeacher = Boolean(teacher && teacher.email.trim().toLowerCase() === MASTER_TEACHER_EMAIL.toLowerCase());
-              const canDelete = Boolean(teacher) && (isMasterTeacher || quiz.creatorId === teacher?.id || isCustom);
               return (
                 <div
                   key={quiz.id}
@@ -773,14 +770,19 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                         <ChevronRight className="w-4 h-4" />
                       </button>
 
-                      {canDelete && (
+                      {Boolean(teacher) && (
                         <button
-                          onClick={(e) => handlePromptDeleteCustomQuiz(quiz, e)}
-                          className="p-2.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl border border-slate-200 dark:border-slate-700 min-h-[46px] min-w-[46px] flex items-center justify-center transition-colors"
-                          title="Hapus Kuis Ini"
-                          aria-label={`Hapus kuis ${quiz.title}`}
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            playClick();
+                            setSelectedQuizForSettings(quiz);
+                          }}
+                          className="p-2.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 min-h-[46px] min-w-[46px] flex items-center justify-center transition-colors"
+                          title="Pengaturan Kuis"
+                          aria-label={`Pengaturan kuis ${quiz.title}`}
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <MoreVertical className="w-4 h-4" />
                         </button>
                       )}
                     </div>
@@ -1358,6 +1360,31 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Interactive Bottom Sheet for Quiz Settings & Reconfiguration */}
+      {teacher && (
+        <QuizSettingsModal
+          isOpen={Boolean(selectedQuizForSettings)}
+          quiz={selectedQuizForSettings}
+          onClose={() => {
+            playClick();
+            setSelectedQuizForSettings(null);
+          }}
+          onSaveSettings={handleSaveQuizSettings}
+          onRequestDelete={(q) => {
+            setSelectedQuizForSettings(null);
+            setQuizToDelete(q);
+          }}
+          canDelete={Boolean(
+            selectedQuizForSettings && (
+              isMasterTeacher ||
+              selectedQuizForSettings.creatorId === teacher.id ||
+              selectedQuizForSettings.id.startsWith('custom_')
+            )
+          )}
+          playClick={playClick}
+        />
       )}
 
       {/* Modal Dialog Konfirmasi Hapus Kuis In-App (Hanya untuk Guru Terautentikasi) */}

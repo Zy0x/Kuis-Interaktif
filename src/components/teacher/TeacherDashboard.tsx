@@ -5,6 +5,7 @@ import { DataManager } from '../../lib/supabaseClient';
 import { useBackHandler } from '../../lib/navigationHistory';
 import { ThemeToggle } from '../common/ThemeToggle';
 import { ConfirmDeleteModal } from '../common/ConfirmDeleteModal';
+import { QuizSettingsModal } from '../common/QuizSettingsModal';
 import { saveNavigationState } from '../../lib/navigationState';
 import { 
   GraduationCap, 
@@ -23,7 +24,8 @@ import {
   Lock,
   Globe,
   Trash2,
-  RotateCcw
+  RotateCcw,
+  MoreVertical
 } from 'lucide-react';
 
 interface TeacherDashboardProps {
@@ -85,6 +87,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   const [exportNotice, setExportNotice] = useState<string | null>(null);
   const isMasterTeacher = teacher.email.trim().toLowerCase() === MASTER_TEACHER_EMAIL.toLowerCase();
   const [deletedCount, setDeletedCount] = useState<number>(() => DataManager.getDeletedQuizIds().length);
+  const [selectedQuizForSettings, setSelectedQuizForSettings] = useState<Quiz | null>(null);
 
   // 1. Level 2 (Prioritas 50): Jika berada di tab Submissions / Generator, mundur ke Tab Kuis
   useBackHandler('teacher-tab-back', 50, () => {
@@ -113,11 +116,10 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
     await loadData();
   };
 
-  const handleToggleVisibility = async (quiz: Quiz) => {
-    playClick();
-    const nextVis = quiz.visibility === 'private' ? 'public' : 'private';
-    await DataManager.updateQuizVisibility(quiz.id, nextVis);
+  const handleSaveQuizSettings = async (quizId: string, updates: Partial<Quiz>) => {
+    const updated = await DataManager.updateQuizSettings(quizId, updates);
     await loadData();
+    setSelectedQuizForSettings(updated);
   };
 
   const handleCopyPin = (pin: string) => {
@@ -413,15 +415,13 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                           </div>
 
                           <div className="flex items-center gap-1.5">
-                            {/* 1-Click Visibility Toggle */}
-                            <button
-                              onClick={() => handleToggleVisibility(quiz)}
-                              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold border transition-all min-h-[32px] ${
+                            {/* Status Visibility Pill Badge */}
+                            <span
+                              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold border select-none ${
                                 quiz.visibility === 'private'
-                                  ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800 hover:bg-amber-100'
-                                  : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100'
+                                  ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800'
+                                  : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
                               }`}
-                              title={quiz.visibility === 'private' ? 'Kuis Privat (hanya via PIN/tautan). Klik untuk jadikan Publik.' : 'Kuis Publik (tampil di katalog). Klik untuk jadikan Privat.'}
                             >
                               {quiz.visibility === 'private' ? (
                                 <>
@@ -434,11 +434,25 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                                   <span>Publik</span>
                                 </>
                               )}
-                            </button>
+                            </span>
 
                             <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
                               Kelas {quiz.grade}
                             </span>
+
+                            {/* Three-Dots Menu Button */}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                playClick();
+                                setSelectedQuizForSettings(quiz);
+                              }}
+                              className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors"
+                              title="Pengaturan & Konfigurasi Kuis"
+                              aria-label={`Pengaturan kuis ${quiz.title}`}
+                            >
+                              <MoreVertical className="w-4 h-4" />
+                            </button>
                           </div>
                         </div>
 
@@ -709,6 +723,31 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
         )}
 
       </main>
+
+      {/* Interactive Bottom Sheet for Quiz Settings & Reconfiguration */}
+      <QuizSettingsModal
+        isOpen={Boolean(selectedQuizForSettings)}
+        quiz={selectedQuizForSettings}
+        onClose={() => {
+          playClick();
+          setSelectedQuizForSettings(null);
+        }}
+        onSaveSettings={handleSaveQuizSettings}
+        onLaunchSmartboard={onLaunchSmartboard}
+        onPrintWorksheet={onPrintWorksheet}
+        onRequestDelete={(q) => {
+          setSelectedQuizForSettings(null);
+          handlePromptDeleteQuiz(q);
+        }}
+        canDelete={Boolean(
+          selectedQuizForSettings && (
+            isMasterTeacher ||
+            selectedQuizForSettings.creatorId === teacher.id ||
+            selectedQuizForSettings.id.startsWith('custom_')
+          )
+        )}
+        playClick={playClick}
+      />
 
       {/* In-App Custom Delete Confirmation Modal */}
       <ConfirmDeleteModal

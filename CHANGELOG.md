@@ -1,6 +1,33 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.30] - 2026-09-09
+### Implementasi Menu Titik Tiga & Lembar Pengaturan Kuis Interaktif (Interactive Quiz Settings Bottom Sheet & Three-Dots Action Menu)
+
+#### Antarmuka Pengguna & Interaksi Pengaturan Kuis (*UI & Quiz Settings Flow*)
+- **Tombol Menu Titik Tiga Terintegrasi (*Three-Dots Action Button*):**
+  - Menggantikan tombol sakelar publik/privat yang sebelumnya sempit dan rawan salah tekan pada kartu kuis dengan tombol menu titik tiga (`MoreVertical`) yang bersih, ergonomis, dan intuitif.
+  - Memisahkan indikator status kuis (lencana status *Publik* / *Privat*) dari tombol pemicu konfigurasi untuk keterbacaan yang jauh lebih baik.
+  - Memastikan ukuran target sentuh memenuhi standar minimum 44×44 px (`min-h-[44px] min-w-[44px]`) untuk kenyamanan penggunaan pada layar ponsel dan tablet.
+- **Lembar Pengaturan Kuis Interaktif (*Interactive Quiz Settings Bottom Sheet & Modal*):**
+  - Menghadirkan komponen antarmuka baru `QuizSettingsModal.tsx` yang secara otomatis bertransformasi menjadi *Bottom Sheet* halus dengan pegangan geser (*drag handle pill*) pada perangkat seluler, serta modal terpusat berlatar kabur lembut (*glassmorphic dialog*) pada layar desktop/tablet.
+  - **Konfigurasi Visibilitas Beranda:** Kartu pilihan interaktif untuk mode *Publik* (tampil di beranda bagi seluruh siswa) dan mode *Privat* (disembunyikan dari beranda, hanya dapat diakses melalui PIN atau tautan langsung) dengan penjelasan ringkas dan tanda centang aktif yang jelas.
+  - **Penyesuaian Alokasi Waktu per Soal:** Tombol pilihan waktu instan (*chips*) dengan opsi 15s, 20s, 25s, 30s, 45s, dan 60s per soal beserta kalkulasi durasi otomatis.
+  - **Manajemen PIN Ruang Ujian:** Tampilan kartu PIN siswa dengan fitur *Acak PIN* (regenerasi kode 4 digit unik), salin PIN, dan salin tautan kuis langsung ke papan klip dengan umpan balik visual instan.
+  - **Pintasan Aksi & Manajemen Lanjutan:** Tombol akses cepat ke Mode Smartboard (IFP), Cetak Lembar LKS, serta opsi penghapusan kuis berproteksi konfirmasi.
+  - **Tombol Simpan & Umpan Balik Responsif:** Tombol simpan cerdas yang hanya aktif saat terdapat perubahan data, dilengkapi animasi sukses dan penutupan otomatis.
+- **Sinkronisasi Data Real-Time (`DataManager.updateQuizSettings`):**
+  - Menyediakan fungsi mutasi pengaturan kuis yang tersinkronisasi langsung, baik pada penyimpanan lokal maupun basis data daring.
+  - Mengimplementasikan penyaringan deduplikasi kuis bawaan agar kuis yang disesuaikan tidak terduplikasi pada katalog kuis.
+
+#### Standar Quality Gate Multi-Viewport (*Quality Gate Verification*)
+- **Verifikasi Lintas Perangkat (Mobile-S 320px hingga Desktop 1280px):**
+  - Diuji secara menyeluruh menggunakan Playwright pada Mobile-S (320px), Mobile-M (375px), dan Layar Lebar (1280px).
+  - Terverifikasi 100% bebas dari luapan horizontal (`hasDocOverflow: false`, `modalHasOverflow: false`).
+  - Mendukung penutupan intuitif via gestur tombol kembali Android, tombol Esc keyboard, serta klik area luar modal.
+
+---
+
 ## [2.2.29] - 2026-09-09
 ### Dukungan Penuh Penghapusan & Pengujian Kuis Aktif oleh Admin serta Mekanisme Pemulihan Kuis Bawaan (Admin Active Quiz Deletion & Seed Restoration System)
 
