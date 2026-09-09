@@ -21,7 +21,12 @@ import {
   GraduationCap,
   KeyRound,
   ArrowRight,
-  AlertCircle
+  AlertCircle,
+  LayoutDashboard,
+  LogOut,
+  School,
+  Mail,
+  User
 } from 'lucide-react';
 
 interface QuizHomeProps {
@@ -29,6 +34,7 @@ interface QuizHomeProps {
   onOpenTeacherPortal: () => void;
   onEnterPin: (quiz: Quiz) => void;
   teacher: TeacherProfile | null;
+  onTeacherLogout?: () => void;
   isMuted: boolean;
   onToggleMute: () => void;
   playClick: () => void;
@@ -39,6 +45,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
   onOpenTeacherPortal,
   onEnterPin,
   teacher,
+  onTeacherLogout,
   isMuted,
   onToggleMute,
   playClick,
@@ -48,10 +55,11 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
   const [selectedSubject, setSelectedSubject] = useState<string>('Semua');
   const [profile, setProfile] = useState(() => DataManager.getPlayerProfile());
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isTeacherProfileModalOpen, setIsTeacherProfileModalOpen] = useState(false);
   const [rulesModalQuiz, setRulesModalQuiz] = useState<Quiz | null>(null);
 
-  // Kunci scroll latar belakang saat modal profil atau modal aturan terbuka
-  useBodyScrollLock(isProfileModalOpen || Boolean(rulesModalQuiz));
+  // Kunci scroll latar belakang saat modal profil siswa, modal guru, atau modal aturan terbuka
+  useBodyScrollLock(isProfileModalOpen || isTeacherProfileModalOpen || Boolean(rulesModalQuiz));
 
   const isCustomName = (name?: string): boolean => {
     if (!name) return false;
@@ -96,6 +104,15 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
     }
     return false;
   }, isProfileModalOpen);
+
+  // 2b. Level 1 (Prioritas 100): Modal Profil Guru
+  useBackHandler('home-teacher-profile-modal', 100, () => {
+    if (isTeacherProfileModalOpen) {
+      setIsTeacherProfileModalOpen(false);
+      return true;
+    }
+    return false;
+  }, isTeacherProfileModalOpen);
 
   // 3. Level 4 (Prioritas 10): Reset Filter Kategori Aktif
   const hasActiveFilter = selectedGrade !== 'Semua' || selectedSubject !== 'Semua';
@@ -278,56 +295,97 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
 
           {/* Right Action Icons */}
           <div className="flex items-center gap-2 sm:gap-2.5">
-            {/* Teacher Portal Button */}
-            <button
-              onClick={() => {
-                playClick();
-                onOpenTeacherPortal();
-              }}
-              className="flex items-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 font-bold text-xs sm:text-sm min-h-[44px] transition-colors btn-press shadow-sm whitespace-nowrap"
-              title={teacher ? `Dashboard Guru: ${teacher.fullName}` : 'Portal Masuk Guru'}
-            >
-              <GraduationCap className="w-4 h-4 text-blue-600" />
-              <span className="hidden sm:inline">
-                {teacher ? teacher.fullName.split(' ')[0] : 'Portal Guru'}
-              </span>
-              <span className="sm:hidden">Guru</span>
-            </button>
+            {!teacher ? (
+              <>
+                {/* Teacher Portal Entry Button */}
+                <button
+                  onClick={() => {
+                    playClick();
+                    onOpenTeacherPortal();
+                  }}
+                  className="flex items-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 font-bold text-xs sm:text-sm min-h-[44px] transition-colors btn-press shadow-sm whitespace-nowrap"
+                  title="Portal Masuk Guru"
+                >
+                  <GraduationCap className="w-4 h-4 text-blue-600" />
+                  <span className="hidden sm:inline">Portal Guru</span>
+                  <span className="sm:hidden">Guru</span>
+                </button>
 
-            {/* Audio Toggle Button */}
-            <button
-              onClick={() => {
-                playClick();
-                onToggleMute();
-              }}
-              className="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center btn-press"
-              title={isMuted ? 'Nyalakan Suara' : 'Matikan Suara'}
-              aria-label="Pengaturan Suara"
-            >
-              {isMuted ? <VolumeX className="w-5 h-5 text-rose-500" /> : <Volume2 className="w-5 h-5 text-slate-700" />}
-            </button>
+                {/* Audio Toggle Button */}
+                <button
+                  onClick={() => {
+                    playClick();
+                    onToggleMute();
+                  }}
+                  className="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center btn-press"
+                  title={isMuted ? 'Nyalakan Suara' : 'Matikan Suara'}
+                  aria-label="Pengaturan Suara"
+                >
+                  {isMuted ? <VolumeX className="w-5 h-5 text-rose-500" /> : <Volume2 className="w-5 h-5 text-slate-700" />}
+                </button>
 
-            {/* Profile Avatar Pill */}
-            <button
-              onClick={() => {
-                playClick();
-                setTempNickname(isCustomName(profile.nickname) ? profile.nickname : '');
-                setTempAvatar(profile.avatarId);
-                setIsProfileModalOpen(true);
-              }}
-              className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-colors min-h-[44px] btn-press"
-              aria-label="Pengaturan Profil Pemain"
-            >
-              <span className="text-xl select-none">{currentAvatar.emoji}</span>
-              <div className="text-left hidden sm:block">
-                <p className="text-xs font-bold text-slate-800 leading-tight truncate max-w-[100px]">
-                  {isCustomName(profile.nickname) ? profile.nickname : 'Saya'}
-                </p>
-                <p className="text-[10px] text-amber-600 font-semibold flex items-center gap-0.5">
-                  <Trophy className="w-2.5 h-2.5" /> {profile.starsEarned} Bintang
-                </p>
-              </div>
-            </button>
+                {/* Profile Avatar Pill (Mode Siswa / Tamu) */}
+                <button
+                  onClick={() => {
+                    playClick();
+                    setTempNickname(isCustomName(profile.nickname) ? profile.nickname : '');
+                    setTempAvatar(profile.avatarId);
+                    setIsProfileModalOpen(true);
+                  }}
+                  className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-colors min-h-[44px] btn-press"
+                  aria-label="Pengaturan Profil Pemain"
+                >
+                  <span className="text-xl select-none">{currentAvatar.emoji}</span>
+                  <div className="text-left hidden sm:block">
+                    <p className="text-xs font-bold text-slate-800 leading-tight truncate max-w-[100px]">
+                      {isCustomName(profile.nickname) ? profile.nickname : 'Saya'}
+                    </p>
+                    <p className="text-[10px] text-amber-600 font-semibold flex items-center gap-0.5">
+                      <Trophy className="w-2.5 h-2.5" /> {profile.starsEarned} Bintang
+                    </p>
+                  </div>
+                </button>
+              </>
+            ) : (
+              <>
+                {/* Audio Toggle Button */}
+                <button
+                  onClick={() => {
+                    playClick();
+                    onToggleMute();
+                  }}
+                  className="p-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center btn-press"
+                  title={isMuted ? 'Nyalakan Suara' : 'Matikan Suara'}
+                  aria-label="Pengaturan Suara"
+                >
+                  {isMuted ? <VolumeX className="w-5 h-5 text-rose-500" /> : <Volume2 className="w-5 h-5 text-slate-700" />}
+                </button>
+
+                {/* Profil Resmi Guru (Menggantikan Profil Tamu Siswa) */}
+                <button
+                  onClick={() => {
+                    playClick();
+                    setIsTeacherProfileModalOpen(true);
+                  }}
+                  className="flex items-center gap-2 pl-2 sm:pl-2.5 pr-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-900 transition-colors min-h-[44px] btn-press shadow-sm"
+                  title={`Profil Guru: ${teacher.fullName}`}
+                  aria-label="Profil Akun Guru"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold text-sm shadow-xs flex-shrink-0">
+                    <GraduationCap className="w-4 h-4" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-xs font-extrabold text-blue-950 leading-tight truncate max-w-[120px] sm:max-w-[180px]">
+                      {teacher.fullName}
+                    </p>
+                    <p className="text-[10px] text-blue-700 font-semibold flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
+                      <span className="truncate max-w-[100px] sm:max-w-[150px]">{teacher.schoolName || 'Guru SD'}</span>
+                    </p>
+                  </div>
+                </button>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -377,30 +435,59 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
           )}
         </div>
 
-        {/* Welcoming Header Banner - Calm, Sophisticated, Encouraging */}
-        <div className="w-full bg-gradient-to-r from-blue-700 via-indigo-700 to-blue-800 text-white rounded-2xl p-6 sm:p-8 shadow-card flex flex-col md:flex-row md:items-center md:justify-between gap-5">
-          <div className="space-y-2 max-w-xl">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 backdrop-blur-sm text-xs font-semibold text-blue-100">
-              <Sparkles className="w-3.5 h-3.5 text-amber-300" /> Selamat Belajar Siswa Pintar
+        {/* Welcoming Header Banner - Dynamic Role Based */}
+        {!teacher ? (
+          <div className="w-full bg-gradient-to-r from-blue-700 via-indigo-700 to-blue-800 text-white rounded-2xl p-6 sm:p-8 shadow-card flex flex-col md:flex-row md:items-center md:justify-between gap-5">
+            <div className="space-y-2 max-w-xl">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 backdrop-blur-sm text-xs font-semibold text-blue-100">
+                <Sparkles className="w-3.5 h-3.5 text-amber-300" /> Selamat Belajar Siswa Pintar
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
+                {isCustomName(profile.nickname) ? `Halo, ${profile.nickname}!` : 'Halo, Siswa Hebat!'}
+              </h2>
+              <p className="text-blue-100/90 text-sm sm:text-base leading-relaxed">
+                Pilih kuis di bawah untuk mengasah pemahamanmu dengan soal bergambar yang interaktif dan kumpulkan 3 Bintang Emas!
+              </p>
             </div>
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
-              {isCustomName(profile.nickname) ? `Halo, ${profile.nickname}!` : 'Halo, Siswa Hebat!'}
-            </h2>
-            <p className="text-blue-100/90 text-sm sm:text-base leading-relaxed">
-              Pilih kuis di bawah untuk mengasah pemahamanmu dengan soal bergambar yang interaktif dan kumpulkan 3 Bintang Emas!
-            </p>
-          </div>
 
-          <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm border border-white/15 rounded-xl p-4 flex-shrink-0">
-            <div className="text-3xl select-none">🏆</div>
-            <div>
-              <span className="text-xs text-blue-200 block font-medium">Bintang Terkumpul</span>
-              <span className="text-lg sm:text-xl font-extrabold text-white flex items-center gap-1">
-                {profile.starsEarned} <span className="text-amber-300 text-sm">⭐ Bintang</span>
-              </span>
+            <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm border border-white/15 rounded-xl p-4 flex-shrink-0">
+              <div className="text-3xl select-none">🏆</div>
+              <div>
+                <span className="text-xs text-blue-200 block font-medium">Bintang Terkumpul</span>
+                <span className="text-lg sm:text-xl font-extrabold text-white flex items-center gap-1">
+                  {profile.starsEarned} <span className="text-amber-300 text-sm">⭐ Bintang</span>
+                </span>
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <div className="w-full bg-gradient-to-r from-indigo-800 via-blue-800 to-sky-800 text-white rounded-2xl p-6 sm:p-8 shadow-card flex flex-col md:flex-row md:items-center md:justify-between gap-5">
+            <div className="space-y-2 max-w-xl">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 backdrop-blur-sm text-xs font-semibold text-indigo-100">
+                <GraduationCap className="w-3.5 h-3.5 text-amber-300" /> Ruang Pendidik SD
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
+                Halo, {teacher.fullName}!
+              </h2>
+              <p className="text-blue-100/90 text-sm sm:text-base leading-relaxed">
+                Anda sedang aktif sebagai Guru di <strong className="text-white">{teacher.schoolName || 'SD Indonesia'}</strong>. Tinjau kuis aktif siswa, luncurkan kuis ke Smartboard kelas, atau kelola soal di Dasbor Guru.
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 flex-shrink-0">
+              <button
+                onClick={() => {
+                  playClick();
+                  onOpenTeacherPortal();
+                }}
+                className="px-5 py-3 rounded-xl bg-white text-blue-900 hover:bg-blue-50 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm transition-colors min-h-[44px] btn-press"
+              >
+                <LayoutDashboard className="w-4 h-4 text-blue-600" />
+                <span>Buka Dashboard Guru</span>
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Filter Section: Kelas & Mata Pelajaran */}
         <div className="space-y-3">
@@ -1008,6 +1095,127 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                 )}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Modal 3: Profil Akun Guru (Terbuka saat Guru mengklik identitasnya di Beranda) */}
+      {isTeacherProfileModalOpen && teacher && (
+        <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 sm:p-6 modal-wrapper overscroll-contain">
+          <div
+            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm animate-backdrop-fade touch-none"
+            onClick={() => setIsTeacherProfileModalOpen(false)}
+            onWheel={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            onTouchMove={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            aria-hidden="true"
+          />
+
+          <div 
+            className="relative z-10 bg-white w-full max-w-md mx-auto my-auto rounded-3xl shadow-pop border border-slate-200 overflow-hidden flex flex-col max-h-[90vh] animate-modal-card-in overscroll-contain"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header Modal */}
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-xl shadow-sm flex-shrink-0">
+                  <GraduationCap className="w-5 h-5" />
+                </div>
+                <div className="min-w-0">
+                  <h3 className="font-bold text-slate-900 text-base leading-tight truncate">
+                    Akun Pendidik & Guru
+                  </h3>
+                  <p className="text-xs text-emerald-600 font-semibold flex items-center gap-1 mt-0.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
+                    Sesi Pendidik Aktif (Pro)
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsTeacherProfileModalOpen(false)}
+                className="p-2 text-slate-400 hover:text-slate-700 rounded-lg min-h-[40px] min-w-[40px] flex-shrink-0"
+                aria-label="Tutup Profil Guru"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-5 space-y-4 text-slate-700 overflow-y-auto flex-1">
+              <div className="bg-blue-50/70 border border-blue-100 rounded-2xl p-4 space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-white text-blue-600 flex items-center justify-center shadow-xs flex-shrink-0">
+                    <User className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400 block">Nama Pendidik</span>
+                    <span className="text-sm font-extrabold text-slate-900 truncate block">{teacher.fullName}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-white text-blue-600 flex items-center justify-center shadow-xs flex-shrink-0">
+                    <School className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400 block">Asal Sekolah</span>
+                    <span className="text-xs font-bold text-slate-800 truncate block">{teacher.schoolName || 'SD Indonesia'}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-white text-blue-600 flex items-center justify-center shadow-xs flex-shrink-0">
+                    <Mail className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400 block">Email Pendidik</span>
+                    <span className="text-xs font-semibold text-slate-700 truncate block">{teacher.email}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 text-xs text-slate-600 space-y-1">
+                <span className="font-bold text-slate-800 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-blue-600" /> Hak Akses Guru Aktif:
+                </span>
+                <p className="leading-relaxed">
+                  Pembuatan kuis tak terbatas, generator soal kilat, pemantauan rekap nilai siswa, dan cetak lembar kerja siswa (LKS).
+                </p>
+              </div>
+
+              <div className="pt-2 space-y-2.5">
+                <button
+                  onClick={() => {
+                    playClick();
+                    setIsTeacherProfileModalOpen(false);
+                    onOpenTeacherPortal();
+                  }}
+                  className="w-full py-2.5 px-4 rounded-xl font-bold text-xs sm:text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-sm min-h-[44px] flex items-center justify-center gap-2 btn-press transition-colors"
+                >
+                  <LayoutDashboard className="w-4 h-4" />
+                  <span>Buka Dashboard Guru</span>
+                </button>
+
+                {onTeacherLogout && (
+                  <button
+                    onClick={() => {
+                      playClick();
+                      setIsTeacherProfileModalOpen(false);
+                      onTeacherLogout();
+                    }}
+                    className="w-full py-2.5 px-4 rounded-xl font-bold text-xs sm:text-sm text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 min-h-[44px] flex items-center justify-center gap-2 btn-press transition-colors"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span>Keluar Akun Guru (Logout)</span>
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}

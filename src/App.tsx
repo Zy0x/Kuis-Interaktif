@@ -212,6 +212,7 @@ export const App: React.FC = () => {
           onOpenTeacherPortal={handleTeacherPortalClick}
           onEnterPin={handleEnterPinLobby}
           teacher={teacher}
+          onTeacherLogout={handleTeacherLogout}
           isMuted={isMuted}
           onToggleMute={toggleMute}
           playClick={playClick}
