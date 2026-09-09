@@ -125,6 +125,192 @@ export const DataManager = {
     }
   },
 
+  // 1b. Check Supabase Cloud Connection & Schema Cache
+  async checkSupabaseHealth(): Promise<{
+    connected: boolean;
+    configured: boolean;
+    tablesReady: boolean;
+    message: string;
+    details?: string;
+  }> {
+    if (!isSupabaseConfigured || !supabase) {
+      return {
+        connected: false,
+        configured: false,
+        tablesReady: false,
+        message: 'Kredensial Supabase (.env) belum dikonfigurasi.',
+      };
+    }
+
+    try {
+      const { error } = await supabase.from('quizzes').select('id').limit(1);
+
+      if (error) {
+        if (error.code === 'PGRST205' || error.message?.includes('schema cache') || error.message?.includes('does not exist')) {
+          return {
+            connected: true,
+            configured: true,
+            tablesReady: false,
+            message: 'Tabel database belum dibuat di Supabase.',
+            details: 'Jalankan skrip docs/setup.sql di Supabase SQL Editor untuk mengaktifkan seluruh tabel.',
+          };
+        }
+        return {
+          connected: false,
+          configured: true,
+          tablesReady: false,
+          message: `Koneksi Supabase notice: ${error.message}`,
+          details: error.details || error.hint || undefined,
+        };
+      }
+
+      return {
+        connected: true,
+        configured: true,
+        tablesReady: true,
+        message: 'Database Supabase aktif dan terhubung sempurna.',
+      };
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      return {
+        connected: false,
+        configured: true,
+        tablesReady: false,
+        message: `Gagal menghubungi Supabase: ${msg}`,
+      };
+    }
+  },
+
+  // 1c. Fetch All Quizzes directly from Supabase Cloud (with live sync & fallback)
+  async fetchQuizzesFromCloud(options?: { publicOnly?: boolean; teacherEmail?: string; teacherId?: string }): Promise<Quiz[]> {
+    if (!supabase) {
+      return this.getAllQuizzes(options);
+    }
+
+    try {
+      let query = supabase
+        .from('quizzes')
+        .select(`
+          id,
+          title,
+          description,
+          subject,
+          target_grade,
+          duration_per_question_sec,
+          cover_emoji,
+          theme_color,
+          badge_title,
+          pin_code,
+          creator_id,
+          creator_name,
+          visibility,
+          is_published,
+          created_at,
+          quiz_questions (
+            id,
+            question_text,
+            question_type,
+            image_url,
+            image_caption,
+            options,
+            correct_index,
+            explanation,
+            order_number
+          )
+        `);
+
+      if (options?.publicOnly) {
+        query = query.neq('visibility', 'private');
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false });
+
+      if (error || !data) {
+        console.warn('Supabase fetch quizzes notice:', error);
+        return this.getAllQuizzes(options);
+      }
+
+      const deletedIds = new Set(this.getDeletedQuizIds());
+
+      const cloudQuizzes: Quiz[] = data
+        .filter((row: any) => !deletedIds.has(row.id))
+        .map((row: any) => {
+          const rawQuestions = (row.quiz_questions as Array<{
+            id: string;
+            question_text: string;
+            question_type: string;
+            image_url: string | null;
+            image_caption: string | null;
+            options: any;
+            correct_index: number;
+            explanation: string;
+            order_number: number;
+          }>) || [];
+
+          rawQuestions.sort((a, b) => (a.order_number || 0) - (b.order_number || 0));
+
+          return {
+            id: row.id,
+            title: row.title,
+            description: row.description || '',
+            subject: row.subject as Quiz['subject'],
+            grade: row.target_grade,
+            durationPerQuestionSec: row.duration_per_question_sec,
+            coverEmoji: row.cover_emoji || '⭐',
+            themeColor: row.theme_color || 'from-blue-500 to-indigo-600',
+            badgeTitle: row.badge_title || 'Bintang Juara',
+            pinCode: row.pin_code,
+            creatorId: row.creator_id || undefined,
+            creatorName: row.creator_name || 'Guru SD',
+            visibility: (row.visibility as 'public' | 'private') || 'public',
+            createdAt: row.created_at,
+            questions: rawQuestions.map((q) => ({
+              id: q.id,
+              text: q.question_text,
+              type: q.question_type as QuizQuestion['type'],
+              imageUrl: q.image_url || undefined,
+              imageCaption: q.image_caption || undefined,
+              options: Array.isArray(q.options) ? q.options : (typeof q.options === 'string' ? JSON.parse(q.options || '[]') : []),
+              correctIndex: q.correct_index,
+              explanation: q.explanation || '',
+            })),
+          };
+        });
+
+      let finalQuizzes = cloudQuizzes;
+      if (options?.teacherEmail) {
+        const isMaster = options.teacherEmail.trim().toLowerCase() === MASTER_TEACHER_EMAIL.toLowerCase();
+        if (!isMaster && options.teacherId) {
+          finalQuizzes = finalQuizzes.filter((q) => q.creatorId === options.teacherId);
+        }
+      }
+
+      // Sync cloud quizzes with local custom cache for high-availability offline capability
+      if (cloudQuizzes.length > 0) {
+        try {
+          const currentCustomStr = localStorage.getItem(STORAGE_KEY_CUSTOM_QUIZZES);
+          const currentCustom: Quiz[] = currentCustomStr ? JSON.parse(currentCustomStr) : [];
+          const cloudMap = new Map(cloudQuizzes.map((q) => [q.id, q]));
+
+          const merged = [...cloudQuizzes];
+          for (const localQ of currentCustom) {
+            if (!cloudMap.has(localQ.id) && !deletedIds.has(localQ.id)) {
+              merged.push(localQ);
+            }
+          }
+          localStorage.setItem(STORAGE_KEY_CUSTOM_QUIZZES, JSON.stringify(merged));
+        } catch (cacheErr) {
+          console.warn('Cache sync error:', cacheErr);
+        }
+      }
+
+      return finalQuizzes.length > 0 ? finalQuizzes : this.getAllQuizzes(options);
+    } catch (err) {
+      console.warn('fetchQuizzesFromCloud error, falling back to local:', err);
+      return this.getAllQuizzes(options);
+    }
+  },
+
   // 2. Find Quiz by PIN (Online Supabase + Offline Fallback)
   async getQuizByPin(pin: string): Promise<Quiz | null> {
     const cleanPin = pin.trim().toUpperCase();
@@ -918,11 +1104,29 @@ export const DataManager = {
           return { success: false, error: error.message };
         }
         if (data.user) {
+          let fullName = data.user.user_metadata?.full_name;
+          let schoolName = data.user.user_metadata?.school_name;
+
+          try {
+            const { data: tRow } = await supabase
+              .from('profiles_teacher')
+              .select('*')
+              .or(`id.eq.${data.user.id},auth_user_id.eq.${data.user.id}`)
+              .maybeSingle();
+
+            if (tRow) {
+              fullName = tRow.full_name || fullName;
+              schoolName = tRow.school_name || schoolName;
+            }
+          } catch {
+            // ignore
+          }
+
           const profile: TeacherProfile = {
             id: data.user.id,
             email: data.user.email || cleanEmail,
-            fullName: data.user.user_metadata?.full_name || cleanEmail.split('@')[0],
-            schoolName: data.user.user_metadata?.school_name || 'SD Negeri Favorit',
+            fullName: fullName || cleanEmail.split('@')[0],
+            schoolName: schoolName || 'SD Negeri Favorit',
           };
           this.setTeacherProfile(profile);
           if (cleanEmail.toLowerCase() === MASTER_TEACHER_EMAIL.toLowerCase()) {
@@ -975,6 +1179,20 @@ export const DataManager = {
             schoolName,
           };
           this.setTeacherProfile(profile);
+
+          // Upsert to profiles_teacher table in Supabase
+          try {
+            await supabase.from('profiles_teacher').upsert({
+              id: data.user.id,
+              auth_user_id: data.user.id,
+              email: cleanEmail,
+              full_name: fullName,
+              school_name: schoolName,
+            });
+          } catch (e) {
+            console.warn('Teacher profile upsert notice:', e);
+          }
+
           if (cleanEmail.toLowerCase() === MASTER_TEACHER_EMAIL.toLowerCase()) {
             this.claimMasterTeacherQuizzes(profile.id, profile.fullName);
           }

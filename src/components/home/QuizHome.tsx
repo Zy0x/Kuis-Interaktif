@@ -102,6 +102,19 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
   const [studentAuthLoading, setStudentAuthLoading] = useState(false);
   const [studentAuthError, setStudentAuthError] = useState<string | null>(null);
 
+  // Ambil kuis terbaru dari Supabase Cloud saat komponen dimuat
+  useEffect(() => {
+    DataManager.fetchQuizzesFromCloud({ publicOnly: true })
+      .then((cloudQuizzes) => {
+        if (cloudQuizzes && cloudQuizzes.length > 0) {
+          setQuizzes(cloudQuizzes);
+        }
+      })
+      .catch((err) => {
+        console.warn('QuizHome cloud quiz sync notice:', err);
+      });
+  }, []);
+
   // 1. Level 1 (Prioritas 100): Modal Aturan Kuis
   useBackHandler('home-rules-modal', 100, () => {
     if (rulesModalQuiz) {

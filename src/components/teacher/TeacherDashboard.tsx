@@ -24,7 +24,9 @@ import {
   Globe,
   RotateCcw,
   MoreVertical,
-  Pencil
+  Pencil,
+  RefreshCw,
+  AlertTriangle
 } from 'lucide-react';
 
 interface TeacherDashboardProps {
@@ -88,6 +90,16 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   const [deletedCount, setDeletedCount] = useState<number>(() => DataManager.getDeletedQuizIds().length);
   const [selectedQuizForSettings, setSelectedQuizForSettings] = useState<Quiz | null>(null);
 
+  // Cloud Supabase Health & Live Sync State
+  const [dbHealth, setDbHealth] = useState<{
+    connected: boolean;
+    configured: boolean;
+    tablesReady: boolean;
+    message: string;
+    details?: string;
+  } | null>(null);
+  const [isSyncingCloud, setIsSyncingCloud] = useState(false);
+
   // 1. Level 2 (Prioritas 50): Jika berada di tab Submissions / Generator, mundur ke Tab Kuis
   useBackHandler('teacher-tab-back', 50, () => {
     if (activeTab !== 'quizzes') {
@@ -102,11 +114,30 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   }, []);
 
   const loadData = async () => {
+    // 1. Load instant local cached data first
     const all = DataManager.getAllQuizzes({ teacherEmail: teacher.email, teacherId: teacher.id });
     setQuizzes(all);
     setDeletedCount(DataManager.getDeletedQuizIds().length);
     const subs = await DataManager.getTeacherSubmissions();
     setSubmissions(subs);
+
+    // 2. Query Supabase health and fetch live cloud data
+    setIsSyncingCloud(true);
+    try {
+      const health = await DataManager.checkSupabaseHealth();
+      setDbHealth(health);
+
+      if (health.tablesReady) {
+        const cloudQuizzes = await DataManager.fetchQuizzesFromCloud({ teacherEmail: teacher.email, teacherId: teacher.id });
+        setQuizzes(cloudQuizzes);
+        const cloudSubs = await DataManager.getTeacherSubmissions();
+        setSubmissions(cloudSubs);
+      }
+    } catch (e) {
+      console.warn('TeacherDashboard cloud sync notice:', e);
+    } finally {
+      setIsSyncingCloud(false);
+    }
   };
 
   const handleRestoreDefaultQuizzes = async () => {
@@ -242,6 +273,25 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                 <span className="hidden sm:inline-block text-[10px] font-semibold px-1.5 py-0.2 rounded-full bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 flex-shrink-0">
                   Pro
                 </span>
+                {dbHealth && (
+                  <span
+                    className={`inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full border ${
+                      dbHealth.tablesReady
+                        ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
+                        : dbHealth.connected
+                          ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
+                    }`}
+                    title={dbHealth.message}
+                  >
+                    <span className={`w-1.5 h-1.5 rounded-full ${
+                      dbHealth.tablesReady ? 'bg-emerald-500 animate-pulse' : dbHealth.connected ? 'bg-amber-500' : 'bg-slate-400'
+                    }`} />
+                    <span className="hidden md:inline">
+                      {dbHealth.tablesReady ? 'Cloud Supabase' : dbHealth.connected ? 'Setup SQL Diperlukan' : 'Lokal'}
+                    </span>
+                  </span>
+                )}
               </h1>
               <p className="text-[10px] xs:text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium truncate max-w-[100px] xs:max-w-[180px] sm:max-w-none">
                 {teacher.fullName}
@@ -323,6 +373,32 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
             <span>Generator Kilat Soal</span>
           </button>
         </div>
+
+        {/* Database Status Alert Banner */}
+        {dbHealth && dbHealth.connected && !dbHealth.tablesReady && (
+          <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-amber-900 dark:text-amber-200 text-xs shadow-sm">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <h3 className="font-bold text-sm text-amber-950 dark:text-amber-100">Koneksi Supabase Aktif — Menunggu Eksekusi Tabel</h3>
+                <p className="mt-0.5 text-amber-800 dark:text-amber-300 leading-relaxed">
+                  Proyek Supabase Anda telah terhubung sempurna via REST API, namun tabel-tabel database belum dibuat di schema <code className="px-1 py-0.5 bg-amber-100 dark:bg-amber-900/60 rounded font-mono text-[11px]">public</code>. Silakan buka <strong>Supabase SQL Editor</strong> dan jalankan skrip <code className="px-1 py-0.5 bg-amber-100 dark:bg-amber-900/60 rounded font-mono text-[11px]">docs/setup.sql</code> untuk mengaktifkan seluruh tabel, RLS, dan kuis secara otomatis.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                playClick();
+                loadData();
+              }}
+              disabled={isSyncingCloud}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-bold text-xs shadow-sm flex-shrink-0 transition-all btn-press disabled:opacity-50"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isSyncingCloud ? 'animate-spin' : ''}`} />
+              <span>{isSyncingCloud ? 'Memeriksa...' : 'Cek Status Tabel'}</span>
+            </button>
+          </div>
+        )}
 
         {/* TAB 1: BANK KUIS & PIN KELAS */}
         {activeTab === 'quizzes' && (

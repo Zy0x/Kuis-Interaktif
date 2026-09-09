@@ -1,6 +1,29 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.33] - 2026-09-10
+### Aktivasi Sinkronisasi Database Cloud Penuh & Skrip Migrasi Skema Mandiri (Full Cloud Database Sync & Resilient Schema Migration)
+
+#### Integrasi Database & Sinkronisasi Cloud (*Full Cloud Integration & Live Sync*)
+- **Sinkronisasi Otomatis Beranda & Dasbor Guru (*Live Cloud Fetch & Cache Fallback*):**
+  - Mengimplementasikan `fetchQuizzesFromCloud()` pada `DataManager` yang mengambil data kuis dan bank butir soal secara langsung dari database cloud saat halaman dimuat.
+  - Memperbarui sistem penyimpanan lokal secara adaptif sebagai lapisan *offline-first cache* berkecepatan tinggi, sehingga aplikasi tetap dapat dimainkan saat jaringan lambat atau terputus.
+  - Penyelarasan mutasi data real-time: pembuatan kuis baru, penyuntingan pertanyaan, penggandaan, pembaruan pengaturan, serta pencatatan skor dan rekapitulasi nilai tersinkronisasi langsung ke entitas tabel cloud.
+
+- **Pemeriksaan Kesehatan Koneksi & Skema (*Database Health Check & Diagnostic Status*):**
+  - Menambahkan metode diagnostik `checkSupabaseHealth()` untuk memverifikasi kesiapan koneksi REST API dan ketersediaan tabel di skema database.
+  - Menampilkan lencana status cerdas di navbar Dasbor Guru yang mengindikasikan kondisi koneksi (*Aktif*, *Menunggu Setup SQL*, atau *Mode Offline*).
+  - Menampilkan banner edukatif interaktif pada Dasbor Guru yang memandu pengguna saat tabel database belum dieksekusi, lengkap dengan tombol verifikasi ulang instan (*Cek Status Tabel*).
+
+- **Skrip Skema Database Lengkap & Kebijakan Akses (*Complete Database Schema & Safe RLS Policies*):**
+  - Memperbarui dokumen migrasi skema resmi [`docs/setup.sql`](file:///E:/Data/GitHub/Kuis%20Interaktif/docs/setup.sql) ke versi `2.2.33`.
+  - Mengonfigurasi seluruh tabel inti sistem: `profiles_player`, `profiles_teacher`, `quizzes`, `quiz_questions`, `quiz_attempts`, `audit_logs`, dan `system_backups`.
+  - Mengaktifkan *Row Level Security* (RLS) di seluruh tabel dengan kebijakan yang aman untuk akses publik kuis sekolah, pencatatan hasil siswa, serta pengelolaan kuis oleh guru.
+  - Menyertakan pemicu otomatis (*triggers*) untuk sinkronisasi profil pengguna baru dan pembaruan stempel waktu (*timestamp*).
+  - Menyertakan data benih (*seed data*) 6 kuis interaktif resmi beserta 23 butir soal kurikulum SD.
+
+---
+
 ## [2.2.32] - 2026-09-09
 ### Perampingan Minimalis Menu Pengaturan Kuis & Eliminasi Teks Penjelas Berlebih (Ultra-Clean Settings Sheet & Minimalist Action UI)
 
