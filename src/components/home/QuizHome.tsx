@@ -4,6 +4,8 @@ import { AVATAR_LIST } from '../../data/seedQuizzes';
 import { DataManager } from '../../lib/supabaseClient';
 import { useBackHandler } from '../../lib/navigationHistory';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
+import { useTimeGreeting } from '../../hooks/useTimeGreeting';
+import { CelestialSkyVisual } from './CelestialSkyVisual';
 import { ThemeToggle } from '../common/ThemeToggle';
 import { 
   Play, 
@@ -62,6 +64,9 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isTeacherProfileModalOpen, setIsTeacherProfileModalOpen] = useState(false);
   const [rulesModalQuiz, setRulesModalQuiz] = useState<Quiz | null>(null);
+
+  // Data fase waktu dan sapaan dinamis (Pagi, Siang, Sore, Malam, Tengah Malam, Dini Hari)
+  const timeData = useTimeGreeting();
 
   // Kunci scroll latar belakang saat modal profil siswa, modal guru, atau modal aturan terbuka
   useBodyScrollLock(isProfileModalOpen || isTeacherProfileModalOpen || Boolean(rulesModalQuiz));
@@ -446,25 +451,33 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
           )}
         </div>
 
-        {/* Welcoming Header Banner - Dynamic Role Based */}
+        {/* Welcoming Header Banner - Dynamic Celestial Time-Aware */}
         {!teacher ? (
-          <div className="w-full bg-gradient-to-r from-blue-700 via-indigo-700 to-blue-800 dark:from-slate-900 dark:via-indigo-950 dark:to-slate-900 text-white rounded-2xl p-6 sm:p-8 shadow-card dark:border dark:border-slate-800 flex flex-col md:flex-row md:items-center md:justify-between gap-5 transition-colors">
-            <div className="space-y-2 max-w-xl">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 backdrop-blur-sm text-xs font-semibold text-blue-100">
-                <Sparkles className="w-3.5 h-3.5 text-amber-300" /> Selamat Belajar Siswa Pintar
+          <div className={`w-full ${timeData.gradientClass} text-white rounded-2xl p-6 sm:p-8 shadow-card dark:border dark:border-slate-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 transition-all duration-500 relative overflow-hidden`}>
+            {/* Celestial Sky Visual Graphic (Sun, Moon, Stars, Clouds) */}
+            <CelestialSkyVisual phase={timeData.phase} />
+
+            <div className="space-y-2 max-w-xl relative z-10">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 backdrop-blur-sm text-xs font-semibold text-white/95 border border-white/10 shadow-xs">
+                <span>{timeData.emoji}</span>
+                <span>{timeData.label}</span>
+                <span className="opacity-40">•</span>
+                <span className="font-mono text-[11px] opacity-90">{timeData.currentTimeString}</span>
               </div>
-              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
-                {isCustomName(profile.nickname) ? `Halo, ${profile.nickname}!` : 'Halo, Siswa Hebat!'}
+              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white drop-shadow-xs">
+                {isCustomName(profile.nickname) 
+                  ? `${timeData.greetingPrefix}, ${profile.nickname}!` 
+                  : `${timeData.greetingPrefix}, Siswa Hebat!`}
               </h2>
-              <p className="text-blue-100/90 text-sm sm:text-base leading-relaxed">
-                Pilih kuis di bawah untuk mengasah pemahamanmu dengan soal bergambar yang interaktif dan kumpulkan 3 Bintang Emas!
+              <p className="text-white/90 text-sm sm:text-base leading-relaxed drop-shadow-xs">
+                {timeData.studentQuote}
               </p>
             </div>
 
-            <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm border border-white/15 rounded-xl p-4 flex-shrink-0">
+            <div className="flex items-center gap-3 bg-white/15 backdrop-blur-md border border-white/20 rounded-xl p-3.5 sm:p-4 flex-shrink-0 relative z-10 shadow-sm w-fit self-start md:self-auto">
               <div className="text-3xl select-none">🏆</div>
               <div>
-                <span className="text-xs text-blue-200 block font-medium">Bintang Terkumpul</span>
+                <span className="text-xs text-white/80 block font-medium">Bintang Terkumpul</span>
                 <span className="text-lg sm:text-xl font-extrabold text-white flex items-center gap-1">
                   {profile.starsEarned} <span className="text-amber-300 text-sm">⭐ Bintang</span>
                 </span>
@@ -472,26 +485,34 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
             </div>
           </div>
         ) : (
-          <div className="w-full bg-gradient-to-r from-indigo-800 via-blue-800 to-sky-800 dark:from-slate-900 dark:via-blue-950 dark:to-slate-900 text-white rounded-2xl p-6 sm:p-8 shadow-card dark:border dark:border-slate-800 flex flex-col md:flex-row md:items-center md:justify-between gap-5 transition-colors">
-            <div className="space-y-2 max-w-xl">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 backdrop-blur-sm text-xs font-semibold text-indigo-100">
-                <GraduationCap className="w-3.5 h-3.5 text-amber-300" /> Ruang Pendidik SD
+          <div className={`w-full ${timeData.gradientClass} text-white rounded-2xl p-6 sm:p-8 shadow-card dark:border dark:border-slate-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 transition-all duration-500 relative overflow-hidden`}>
+            {/* Celestial Sky Visual Graphic (Sun, Moon, Stars, Clouds) */}
+            <CelestialSkyVisual phase={timeData.phase} />
+
+            <div className="space-y-2 max-w-xl relative z-10">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 backdrop-blur-sm text-xs font-semibold text-white/95 border border-white/10 shadow-xs">
+                <GraduationCap className="w-3.5 h-3.5 text-amber-300" />
+                <span>Ruang Pendidik SD</span>
+                <span className="opacity-40">•</span>
+                <span>{timeData.emoji} {timeData.label}</span>
+                <span className="opacity-40">•</span>
+                <span className="font-mono text-[11px] opacity-90">{timeData.currentTimeString}</span>
               </div>
-              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
-                Halo, {teacher.fullName}!
+              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white drop-shadow-xs">
+                {timeData.greetingPrefix}, {teacher.fullName}!
               </h2>
-              <p className="text-blue-100/90 text-sm sm:text-base leading-relaxed">
-                Anda sedang aktif sebagai Guru di <strong className="text-white">{teacher.schoolName || 'SD Indonesia'}</strong>. Tinjau kuis aktif siswa, luncurkan kuis ke Smartboard kelas, atau kelola soal di Dasbor Guru.
+              <p className="text-white/90 text-sm sm:text-base leading-relaxed drop-shadow-xs">
+                {timeData.teacherQuote} Anda aktif di <strong className="text-white font-bold">{teacher.schoolName || 'SD Indonesia'}</strong>.
               </p>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 flex-shrink-0">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 flex-shrink-0 relative z-10">
               <button
                 onClick={() => {
                   playClick();
                   onOpenTeacherPortal();
                 }}
-                className="px-5 py-3 rounded-xl bg-white text-blue-900 hover:bg-blue-50 dark:bg-blue-600 dark:hover:bg-blue-500 dark:text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm transition-colors min-h-[44px] btn-press"
+                className="px-5 py-3 rounded-xl bg-white text-blue-950 hover:bg-white/90 dark:bg-blue-600 dark:hover:bg-blue-500 dark:text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition-colors min-h-[44px] btn-press"
               >
                 <LayoutDashboard className="w-4 h-4 text-blue-600 dark:text-white" />
                 <span>Buka Dashboard Guru</span>

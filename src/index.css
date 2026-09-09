@@ -118,3 +118,65 @@ body.modal-open {
 .scrollbar-hover:hover::-webkit-scrollbar-thumb:hover {
   background: rgba(100, 116, 139, 0.8);
 }
+
+/* ================= CELESTIAL SKY ANIMATIONS ================= */
+@keyframes celestial-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.92;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+}
+
+@keyframes celestial-float {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px);
+  }
+  50% {
+    transform: translateY(-3px) translateX(2px);
+  }
+}
+
+@keyframes star-twinkle {
+  0%, 100% {
+    opacity: 0.25;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+@keyframes horizon-glow {
+  0%, 100% {
+    opacity: 0.65;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+.animate-celestial-pulse {
+  animation: celestial-pulse 4s ease-in-out infinite;
+}
+
+.animate-celestial-float {
+  animation: celestial-float 6s ease-in-out infinite;
+}
+
+.animate-star-twinkle {
+  animation: star-twinkle 2.5s ease-in-out infinite;
+}
+
+.animate-star-twinkle-delayed {
+  animation: star-twinkle 3.2s ease-in-out 1.2s infinite;
+}
+
+.animate-horizon-glow {
+  animation: horizon-glow 5s ease-in-out infinite;
+}
+
