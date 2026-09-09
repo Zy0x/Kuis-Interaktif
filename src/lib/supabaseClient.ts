@@ -91,7 +91,7 @@ export const DataManager = {
 
   // 2. Find Quiz by PIN (Online Supabase + Offline Fallback)
   async getQuizByPin(pin: string): Promise<Quiz | null> {
-    const cleanPin = pin.trim();
+    const cleanPin = pin.trim().toUpperCase();
     if (!cleanPin) return null;
 
     // 1. Try Supabase first if available
@@ -177,7 +177,7 @@ export const DataManager = {
 
     // 2. Fallback to Local Quizzes & Seed Quizzes
     const all = this.getAllQuizzes();
-    const match = all.find((q) => q.pinCode === cleanPin || q.id === cleanPin);
+    const match = all.find((q) => (q.pinCode && q.pinCode.trim().toUpperCase() === cleanPin) || (q.id && q.id.trim().toUpperCase() === cleanPin));
     return match || null;
   },
 

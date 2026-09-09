@@ -1,6 +1,19 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis SD Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.22] - 2026-09-09
+### Otomatisasi Kapitalisasi Input PIN Kuis: Eliminasi Human-Error Huruf Kecil/Besar (Auto-Uppercase PIN Input & Case-Insensitive Matching)
+
+#### Pengalaman Pengguna & Validasi Input (*UX Polish & Input Normalization*)
+- **Transformasi Otomatis Huruf Kapital pada Input PIN:**
+  - Input teks PIN kuis pada beranda (`QuizHome`) kini secara otomatis mentransformasikan setiap karakter huruf yang diketik menjadi huruf kapital (`e.target.value.toUpperCase()`).
+  - Menghilangkan potensi kesalahan tak disengaja pengguna akibat perbedaan penggunaan *Caps Lock* atau keyboard perangkat ponsel.
+  - Menambahkan kelas CSS visual `uppercase tracking-wider font-mono` untuk penyajian teks PIN yang rapi dan konsisten, dengan placeholder natural (`Masukkan PIN Kuis...`).
+- **Pencocokan PIN Fleksibel (*Case-Insensitive Database & Local Matching*):**
+  - Pada lapisan `DataManager` dan `supabaseClient.ts`, pencarian kuis via PIN dinormalisasi menggunakan `trim().toUpperCase()` baik untuk kueri Supabase maupun fallback data lokal, memastikan kecocokan 100% tanpa sensitivitas huruf.
+
+---
+
 ## [2.2.21] - 2026-09-09
 ### Penyederhanaan Label Jenjang Kelas: Eliminasi Redundansi Imbuhan 'SD' (Clean Grade Level Nomenclature Polish)
 

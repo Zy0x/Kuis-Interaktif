@@ -172,16 +172,17 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
   const handlePinSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     playClick();
-    if (!pinInput.trim()) return;
+    const cleanPin = pinInput.trim().toUpperCase();
+    if (!cleanPin) return;
     setPinError(null);
     setIsPinLoading(true);
 
     try {
-      const match = await DataManager.getQuizByPin(pinInput.trim());
+      const match = await DataManager.getQuizByPin(cleanPin);
       if (match) {
         onEnterPin(match);
       } else {
-        setPinError('PIN Kuis tidak ditemukan. Silakan periksa kembali 4 digit PIN dari gurumu.');
+        setPinError('PIN Kuis tidak ditemukan. Silakan periksa kembali PIN dari gurumu.');
       }
     } catch {
       setPinError('Gagal memeriksa PIN. Coba lagi sebentar.');
@@ -455,11 +456,12 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                 maxLength={8}
                 value={pinInput}
                 onChange={(e) => {
-                  setPinInput(e.target.value);
+                  setPinInput(e.target.value.toUpperCase());
                   setPinError(null);
                 }}
-                aria-label="Masukkan 4 digit PIN Kuis"
-                className="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none font-mono font-bold text-xs sm:text-sm text-slate-900 dark:text-white min-h-[44px]"
+                placeholder="Masukkan PIN Kuis..."
+                aria-label="Masukkan PIN Kuis"
+                className="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none font-mono font-bold text-xs sm:text-sm text-slate-900 dark:text-white min-h-[44px] uppercase tracking-wider placeholder:normal-case placeholder:font-sans placeholder:font-normal placeholder:tracking-normal placeholder:text-slate-400 dark:placeholder:text-slate-500"
               />
 
               <button
