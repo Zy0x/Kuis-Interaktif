@@ -299,7 +299,7 @@ export const App: React.FC = () => {
       {showSplash && <SplashScreen onFinish={handleFinishSplash} />}
 
       {/* 2. PWA Utilities */}
-      <InstallPrompt />
+      {currentScreen === 'home' && <InstallPrompt />}
       <ReorientationOverlay />
 
       {/* 3. Unified Auth Modal (Guru & Siswa) */}

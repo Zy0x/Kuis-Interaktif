@@ -1,6 +1,29 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis SD Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.23] - 2026-09-09
+### Perombakan Responsivitas Menyeluruh Arena Kuis: Dari Mobile-S (320px) hingga SmartBoard IFP 4K (Comprehensive Responsive Arena Overhaul & Mobile Tools Drawer)
+
+#### Antarmuka Pengguna & Responsivitas Mobile-First (*Mobile-First Responsive Polish*)
+- **Penataan Ulang Header Arena Kuis Satu Baris (*Single-Row Header Architecture*):**
+  - Mengeliminasi penumpukan dan pembengkakan tinggi (*warping*) pada header arena kuis di perangkat mobile berlayar kecil (Mobile S 320px, Mobile M 375px, Mobile L 425px).
+  - Mengelompokkan tombol kontrol kuis di perangkat mobile (<640px) menjadi tombol aksi cepat utama (*Jeda/Lanjut*) serta pemicu menu alat (*Mobile Tools Trigger* `[ ⋮ ]`).
+  - Menyembunyikan atau memotong teks judul kuis secara adaptif sesuai lebar layar agar indikator nomor soal (`Soal 1/4`) dan pil pengatur waktu kuis tetap proporsional tanpa saling tumpang tindih.
+- **Laci Pengaturan & Fitur Sesi Mobile (*Mobile Tools Sheet Modal*):**
+  - Menghadirkan modal bottom-sheet alat mobile yang ramah sentuhan (target sentuh minimum 48px) untuk mengakses pengaturan tema (Terang/Gelap), efek suara (SFX), musik latar prosedural (BGM), mode layar penuh (Fullscreen), dan pencatatan suara kelas (Polling).
+  - Terintegrasi dengan sistem navigasi tombol kembali Android (*Hardware Back Button*) prioritas tingkat 1 (100) serta penguncian gulir latar belakang (*Body Scroll Lock*).
+
+#### Skalabilitas Layar Besar & Papan Interaktif (*SmartBoard & IFP Classroom Optimization*)
+- **Skalabilitas Kartu & Tipografi Kelas:**
+  - Kartu kuis kini berskala secara bertingkat dari `max-w-2xl` di perangkat mobile hingga `max-w-5xl` pada layar desktop dan papan tulis digital interaktif (*IFP SmartBoard 1080p / 4K*).
+  - Ukuran teks soal dan pilihan ganda meningkat proporsional (hingga `2xl:text-3xl`) sehingga dapat dibaca dengan jelas oleh seluruh siswa di ruang kelas dari jarak jauh.
+  - Target sentuh tombol opsi jawaban dan navigasi diperbesar secara dinamis (hingga 72px pada IFP) untuk kenyamanan penggunaan jari maupun pena stylus interaktif.
+- **Penyempurnaan Alur Gulir & Penanganan Orientasi Layar:**
+  - Memperbaiki penataan flexbox menggunakan `my-auto` agar konten soal yang panjang atau memiliki ilustrasi tinggi dapat digulirkan secara alami dari atas ke bawah tanpa terpotong di bagian atas pada layar pendek atau orientasi landscape.
+  - Memastikan spanduk instalasi PWA hanya aktif di beranda utama (`home`) dan tidak menutupi tombol navigasi di dalam arena kuis.
+
+---
+
 ## [2.2.22] - 2026-09-09
 ### Otomatisasi Kapitalisasi Input PIN Kuis: Eliminasi Human-Error Huruf Kecil/Besar (Auto-Uppercase PIN Input & Case-Insensitive Matching)
 
