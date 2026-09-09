@@ -148,7 +148,6 @@ export const TeacherAuthModal: React.FC<TeacherAuthModalProps> = ({
                   type="text"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  placeholder="Contoh: Ibu Rahmawati, S.Pd"
                   required
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none text-xs sm:text-sm font-semibold text-slate-900 min-h-[44px]"
                 />
@@ -163,7 +162,6 @@ export const TeacherAuthModal: React.FC<TeacherAuthModalProps> = ({
                   type="text"
                   value={schoolName}
                   onChange={(e) => setSchoolName(e.target.value)}
-                  placeholder="Contoh: SD Negeri Teladan 01"
                   required
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none text-xs sm:text-sm font-semibold text-slate-900 min-h-[44px]"
                 />
@@ -180,7 +178,6 @@ export const TeacherAuthModal: React.FC<TeacherAuthModalProps> = ({
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="nama.guru@sekolah.sch.id"
               required
               className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none text-xs sm:text-sm font-semibold text-slate-900 min-h-[44px]"
             />
@@ -189,13 +186,12 @@ export const TeacherAuthModal: React.FC<TeacherAuthModalProps> = ({
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1">
               <Lock className="w-3.5 h-3.5 text-blue-600" />
-              <span>Kata Sandi</span>
+              <span>Kata Sandi (Minimal 6 Karakter)</span>
             </label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Minimal 6 karakter"
               required
               className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none text-xs sm:text-sm font-semibold text-slate-900 min-h-[44px]"
             />

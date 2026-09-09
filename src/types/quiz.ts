@@ -44,6 +44,10 @@ export interface PlayerProfile {
   totalScore: number;
   quizzesCompleted: number;
   starsEarned: number;
+  isLoggedIn?: boolean;
+  email?: string;
+  studentId?: string;
+  grade?: number;
 }
 
 export interface TeacherProfile {

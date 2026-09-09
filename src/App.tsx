@@ -161,7 +161,6 @@ export const App: React.FC = () => {
       {currentScreen === 'home' && (
         <QuizHome
           onSelectQuiz={handleSelectQuiz}
-          onOpenCreator={() => setCurrentScreen('creator')}
           onOpenTeacherPortal={handleTeacherPortalClick}
           onEnterPin={handleEnterPinLobby}
           teacher={teacher}

@@ -13,7 +13,6 @@ import {
   BookOpen,
   CheckCircle2,
   X,
-  Plus,
   Trash2,
   Layers,
   Sparkles,
@@ -25,7 +24,6 @@ import {
 
 interface QuizHomeProps {
   onSelectQuiz: (quiz: Quiz) => void;
-  onOpenCreator: () => void;
   onOpenTeacherPortal: () => void;
   onEnterPin: (quiz: Quiz) => void;
   teacher: TeacherProfile | null;
@@ -36,7 +34,6 @@ interface QuizHomeProps {
 
 export const QuizHome: React.FC<QuizHomeProps> = ({
   onSelectQuiz,
-  onOpenCreator,
   onOpenTeacherPortal,
   onEnterPin,
   teacher,
@@ -55,6 +52,14 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState<string | null>(null);
   const [isPinLoading, setIsPinLoading] = useState(false);
+
+  // Student Cloud Auth State (Mode Tamu is Default)
+  const [profileTab, setProfileTab] = useState<'guest' | 'login' | 'register'>('guest');
+  const [studentEmail, setStudentEmail] = useState('');
+  const [studentPassword, setStudentPassword] = useState('');
+  const [studentGrade, setStudentGrade] = useState(1);
+  const [studentAuthLoading, setStudentAuthLoading] = useState(false);
+  const [studentAuthError, setStudentAuthError] = useState<string | null>(null);
 
   useEffect(() => {
     setQuizzes(DataManager.getAllQuizzes());
@@ -105,6 +110,68 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
     } finally {
       setIsPinLoading(false);
     }
+  };
+
+  const handleStudentSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    playClick();
+    setStudentAuthError(null);
+    setStudentAuthLoading(true);
+    try {
+      const res = await DataManager.signInStudent(studentEmail, studentPassword);
+      if (res.success && res.profile) {
+        setProfile(res.profile);
+        setTempNickname(res.profile.nickname);
+        setTempAvatar(res.profile.avatarId);
+        setProfileTab('guest');
+        setIsProfileModalOpen(false);
+      } else {
+        setStudentAuthError(res.error || 'Email atau kata sandi tidak sesuai.');
+      }
+    } catch {
+      setStudentAuthError('Gagal menghubungi server.');
+    } finally {
+      setStudentAuthLoading(false);
+    }
+  };
+
+  const handleStudentSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    playClick();
+    if (studentPassword.length < 6) {
+      setStudentAuthError('Kata sandi minimal 6 karakter.');
+      return;
+    }
+    setStudentAuthError(null);
+    setStudentAuthLoading(true);
+    try {
+      const res = await DataManager.signUpStudent(
+        studentEmail,
+        studentPassword,
+        tempNickname.trim() || 'Bintang SD',
+        studentGrade
+      );
+      if (res.success && res.profile) {
+        setProfile(res.profile);
+        setProfileTab('guest');
+        setIsProfileModalOpen(false);
+      } else {
+        setStudentAuthError(res.error || 'Gagal mendaftar akun siswa.');
+      }
+    } catch {
+      setStudentAuthError('Gagal mendaftar akun siswa.');
+    } finally {
+      setStudentAuthLoading(false);
+    }
+  };
+
+  const handleStudentSignOut = async () => {
+    playClick();
+    const guest = await DataManager.signOutStudent();
+    setProfile(guest);
+    setTempNickname(guest.nickname);
+    setTempAvatar(guest.avatarId);
+    setProfileTab('guest');
   };
 
   const handleStartWithRules = (quiz: Quiz) => {
@@ -179,18 +246,6 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
               <span className="sm:hidden">Guru</span>
             </button>
 
-            <button
-              onClick={() => {
-                playClick();
-                onOpenCreator();
-              }}
-              className="flex items-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs sm:text-sm min-h-[44px] transition-colors btn-press shadow-sm whitespace-nowrap"
-            >
-              <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">Buat Kuis Guru</span>
-              <span className="sm:hidden">Buat Kuis</span>
-            </button>
-
             {/* Audio Toggle Button */}
             <button
               onClick={() => {
@@ -251,7 +306,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                   setPinInput(e.target.value);
                   setPinError(null);
                 }}
-                placeholder="Ketik 4 digit PIN (misal: 1001)"
+                aria-label="Masukkan 4 digit PIN Kuis"
                 className="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none font-mono font-bold text-xs sm:text-sm text-slate-900 min-h-[44px]"
               />
 
@@ -460,11 +515,12 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
               <button
                 onClick={() => {
                   playClick();
-                  onOpenCreator();
+                  setSelectedGrade('Semua');
+                  setSelectedSubject('Semua');
                 }}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold text-xs min-h-[42px]"
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs min-h-[42px] btn-press shadow-sm"
               >
-                <Plus className="w-4 h-4" /> Buat Kuis Baru
+                <span>Tampilkan Semua Kuis</span>
               </button>
             </div>
           )}
@@ -566,91 +622,321 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
         </div>
       )}
 
-      {/* Modal 2: Profil Pemain */}
+      {/* Modal 2: Profil & Akun Siswa (Default: Mode Tamu) */}
       {isProfileModalOpen && (
         <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 sm:p-6">
-          {/* Static Backdrop Overlay: Smooth opacity fade only, zero transform/movement */}
           <div
             className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm animate-backdrop-fade"
             onClick={() => setIsProfileModalOpen(false)}
             aria-hidden="true"
           />
 
-          {/* Dialog Card: Pure card entrance animation */}
-          <div className="relative z-10 bg-white w-full max-w-md mx-auto my-auto rounded-2xl shadow-pop border border-slate-200 overflow-hidden flex flex-col max-h-[90vh] animate-modal-card-in">
-            <div className="p-5 border-b border-slate-100 flex items-center justify-between flex-shrink-0">
-              <h3 className="font-bold text-slate-900 text-base">Atur Profil Pemain</h3>
+          <div className="relative z-10 bg-white w-full max-w-md mx-auto my-auto rounded-3xl shadow-pop border border-slate-200 overflow-hidden flex flex-col max-h-[92vh] animate-modal-card-in">
+            {/* Header */}
+            <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between flex-shrink-0">
+              <div>
+                <h3 className="font-bold text-slate-900 text-base">Profil & Akun Siswa</h3>
+                <p className="text-xs text-slate-500">
+                  {profile.isLoggedIn ? 'Akun Siswa Terhubung' : 'Mode Tamu (Default Aktif)'}
+                </p>
+              </div>
               <button
                 onClick={() => setIsProfileModalOpen(false)}
-                className="p-2 text-slate-400 hover:text-slate-700 rounded-lg min-h-[40px] min-w-[40px]"
+                className="p-2 text-slate-400 hover:text-slate-700 rounded-xl min-h-[40px] min-w-[40px] flex items-center justify-center"
+                aria-label="Tutup"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleSaveProfile} className="p-5 space-y-4 overflow-y-auto flex-1">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                  Nama Panggilan (Maksimal 12 Karakter)
-                </label>
-                <input
-                  type="text"
-                  maxLength={12}
-                  value={tempNickname}
-                  onChange={(e) => setTempNickname(e.target.value)}
-                  placeholder="Contoh: Budi Juara"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none font-semibold text-sm text-slate-900 min-h-[44px]"
-                  required
-                />
-              </div>
+            {/* Mode Switcher Tabs */}
+            <div className="flex border-b border-slate-100 bg-slate-50 p-1.5 gap-1.5 flex-shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setProfileTab('guest');
+                }}
+                className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all min-h-[40px] ${
+                  profileTab === 'guest'
+                    ? 'bg-white text-blue-700 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Profil & Maskot
+              </button>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-2">
-                  Pilih Avatar
-                </label>
-                <div className="grid grid-cols-4 gap-2">
-                  {AVATAR_LIST.map((avatar) => {
-                    const isSelected = tempAvatar === avatar.id;
-                    return (
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setProfileTab(profile.isLoggedIn ? 'guest' : 'login');
+                }}
+                className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all min-h-[40px] ${
+                  profileTab !== 'guest' || profile.isLoggedIn
+                    ? 'bg-white text-blue-700 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                {profile.isLoggedIn ? 'Akun Cloud Aktif' : 'Login / Simpan Cloud'}
+              </button>
+            </div>
+
+            {/* TAB 1: Mode Tamu (Profil & Maskot) */}
+            {profileTab === 'guest' && (
+              <form onSubmit={handleSaveProfile} className="p-5 space-y-4 overflow-y-auto flex-1">
+                {/* Status Badge */}
+                <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs">
+                  <span className="font-semibold text-slate-700 flex items-center gap-1.5">
+                    <span className={`w-2 h-2 rounded-full ${profile.isLoggedIn ? 'bg-emerald-500' : 'bg-blue-500'}`} />
+                    {profile.isLoggedIn ? `Akun: ${profile.email}` : 'Status: Mode Tamu (Tanpa Login)'}
+                  </span>
+                  <span className="font-bold text-amber-600 flex items-center gap-1">
+                    <Trophy className="w-3.5 h-3.5" /> {profile.starsEarned} ⭐
+                  </span>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                    Nama Panggilan Siswa (Maksimal 12 Karakter)
+                  </label>
+                  <input
+                    type="text"
+                    maxLength={12}
+                    value={tempNickname}
+                    onChange={(e) => setTempNickname(e.target.value)}
+                    required
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none font-bold text-sm text-slate-900 min-h-[44px]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-2">
+                    Pilih Maskot Hewan
+                  </label>
+                  <div className="grid grid-cols-4 gap-2">
+                    {AVATAR_LIST.map((avatar) => {
+                      const isSelected = tempAvatar === avatar.id;
+                      return (
+                        <button
+                          type="button"
+                          key={avatar.id}
+                          onClick={() => {
+                            playClick();
+                            setTempAvatar(avatar.id);
+                          }}
+                          className={`p-2.5 rounded-2xl flex flex-col items-center justify-center border transition-all min-h-[60px] ${
+                            isSelected
+                              ? 'bg-blue-50 border-blue-500 ring-2 ring-blue-400 shadow-sm'
+                              : 'bg-white border-slate-200 hover:bg-slate-50'
+                          }`}
+                        >
+                          <span className="text-2xl select-none">{avatar.emoji}</span>
+                          <span className="text-[10px] font-semibold text-slate-600 mt-1 truncate max-w-full">
+                            {avatar.name.split(' ')[0]}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Cloud account helper */}
+                {!profile.isLoggedIn ? (
+                  <div className="p-3 rounded-2xl bg-blue-50/70 border border-blue-100 flex items-center justify-between gap-2">
+                    <div className="text-[11px] text-blue-900">
+                      <span className="font-bold block">Ingin menyimpan bintang di cloud?</span>
+                      <span>Daftar akun siswa gratis.</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        setProfileTab('login');
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-blue-600 text-white font-bold text-[11px] hover:bg-blue-700 min-h-[36px] whitespace-nowrap"
+                    >
+                      Masuk / Daftar
+                    </button>
+                  </div>
+                ) : (
+                  <div className="pt-1 flex items-center justify-between text-xs">
+                    <span className="text-slate-500 font-medium">Bintang tersinkronisasi otomatis.</span>
+                    <button
+                      type="button"
+                      onClick={handleStudentSignOut}
+                      className="text-rose-600 hover:text-rose-700 font-bold"
+                    >
+                      Keluar Akun
+                    </button>
+                  </div>
+                )}
+
+                <div className="pt-2 flex gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => setIsProfileModalOpen(false)}
+                    className="flex-1 py-2.5 rounded-xl font-semibold text-xs sm:text-sm text-slate-700 bg-slate-100 hover:bg-slate-200 min-h-[44px]"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-sm min-h-[44px] btn-press"
+                  >
+                    Simpan Profil
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* TAB 2: Login / Daftar Akun Siswa (Cloud Sync) */}
+            {profileTab !== 'guest' && (
+              <div className="p-5 space-y-4 overflow-y-auto flex-1">
+                {profile.isLoggedIn ? (
+                  <div className="space-y-4 text-center py-4">
+                    <div className="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto text-2xl">
+                      <CheckCircle2 className="w-8 h-8" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-base text-slate-900">{profile.nickname}</h4>
+                      <p className="text-xs text-slate-500 mt-0.5">{profile.email}</p>
+                      <p className="text-xs font-bold text-amber-600 mt-2">
+                        {profile.starsEarned} Bintang Tersimpan di Cloud
+                      </p>
+                    </div>
+
+                    <div className="pt-4 flex gap-2.5">
                       <button
                         type="button"
-                        key={avatar.id}
+                        onClick={handleStudentSignOut}
+                        className="flex-1 py-2.5 rounded-xl font-bold text-xs text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 min-h-[44px]"
+                      >
+                        Keluar ke Mode Tamu
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setProfileTab('guest')}
+                        className="flex-1 py-2.5 rounded-xl font-bold text-xs text-white bg-blue-600 hover:bg-blue-700 min-h-[44px]"
+                      >
+                        Tutup
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <form
+                    onSubmit={profileTab === 'login' ? handleStudentSignIn : handleStudentSignUp}
+                    className="space-y-3.5"
+                  >
+                    {studentAuthError && (
+                      <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2 animate-fade-in">
+                        <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                        <span>{studentAuthError}</span>
+                      </div>
+                    )}
+
+                    <div className="flex bg-slate-100 p-1 rounded-xl gap-1">
+                      <button
+                        type="button"
                         onClick={() => {
                           playClick();
-                          setTempAvatar(avatar.id);
+                          setProfileTab('login');
+                          setStudentAuthError(null);
                         }}
-                        className={`p-2.5 rounded-xl flex flex-col items-center justify-center border transition-all min-h-[60px] ${
-                          isSelected
-                            ? 'bg-blue-50 border-blue-500 ring-2 ring-blue-400 shadow-sm'
-                            : 'bg-white border-slate-200 hover:bg-slate-50'
+                        className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                          profileTab === 'login' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-600'
                         }`}
                       >
-                        <span className="text-2xl select-none">{avatar.emoji}</span>
-                        <span className="text-[10px] font-semibold text-slate-600 mt-1 truncate max-w-full">
-                          {avatar.name.split(' ')[0]}
-                        </span>
+                        Masuk Siswa
                       </button>
-                    );
-                  })}
-                </div>
-              </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          playClick();
+                          setProfileTab('register');
+                          setStudentAuthError(null);
+                        }}
+                        className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                          profileTab === 'register' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-600'
+                        }`}
+                      >
+                        Daftar Akun Baru
+                      </button>
+                    </div>
 
-              <div className="pt-2 flex gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => setIsProfileModalOpen(false)}
-                  className="flex-1 py-2.5 rounded-xl font-semibold text-xs sm:text-sm text-slate-700 bg-slate-100 hover:bg-slate-200 min-h-[44px]"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-sm min-h-[44px] btn-press"
-                >
-                  Simpan Profil
-                </button>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        Alamat Email Siswa
+                      </label>
+                      <input
+                        type="email"
+                        value={studentEmail}
+                        onChange={(e) => setStudentEmail(e.target.value)}
+                        required
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none font-semibold text-xs sm:text-sm text-slate-900 min-h-[44px]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        Kata Sandi
+                      </label>
+                      <input
+                        type="password"
+                        value={studentPassword}
+                        onChange={(e) => setStudentPassword(e.target.value)}
+                        required
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none font-semibold text-xs sm:text-sm text-slate-900 min-h-[44px]"
+                      />
+                    </div>
+
+                    {profileTab === 'register' && (
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">
+                          Tingkat Kelas SD
+                        </label>
+                        <select
+                          value={studentGrade}
+                          onChange={(e) => setStudentGrade(Number(e.target.value))}
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none font-bold text-xs sm:text-sm text-slate-900 min-h-[44px]"
+                        >
+                          {[1, 2, 3, 4, 5, 6].map((g) => (
+                            <option key={g} value={g}>
+                              Kelas {g} SD
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
+                    <div className="pt-2 space-y-2">
+                      <button
+                        type="submit"
+                        disabled={studentAuthLoading}
+                        className="w-full py-2.5 rounded-xl font-bold text-xs sm:text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-sm min-h-[44px] btn-press disabled:opacity-50"
+                      >
+                        {studentAuthLoading
+                          ? 'Memproses...'
+                          : profileTab === 'login'
+                          ? 'Masuk ke Akun Siswa'
+                          : 'Daftar & Hubungkan Akun'}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          playClick();
+                          setProfileTab('guest');
+                        }}
+                        className="w-full py-2 text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors"
+                      >
+                        Tetap Gunakan Mode Tamu
+                      </button>
+                    </div>
+                  </form>
+                )}
               </div>
-            </form>
+            )}
           </div>
         </div>
       )}

@@ -5,7 +5,8 @@ import type {
   Quiz, 
   QuizQuestion,
   TeacherProfile, 
-  StudentSubmission 
+  StudentSubmission,
+  PlayerProfile 
 } from '../types/quiz';
 import { INITIAL_QUIZZES } from '../data/seedQuizzes';
 
@@ -311,8 +312,8 @@ export const DataManager = {
     }
   },
 
-  // 6. Get Player Profile
-  getPlayerProfile() {
+  // 6. Get Player Profile (Default Mode Tamu)
+  getPlayerProfile(): PlayerProfile {
     try {
       const data = localStorage.getItem(STORAGE_KEY_PLAYER);
       if (data) return JSON.parse(data);
@@ -325,14 +326,144 @@ export const DataManager = {
       totalScore: 0,
       quizzesCompleted: 0,
       starsEarned: 0,
+      isLoggedIn: false,
     };
   },
 
-  savePlayerProfile(profile: { nickname: string; avatarId: string }) {
+  savePlayerProfile(profile: Partial<PlayerProfile>): PlayerProfile {
     const current = this.getPlayerProfile();
-    const updated = { ...current, ...profile };
+    const updated: PlayerProfile = { ...current, ...profile };
     localStorage.setItem(STORAGE_KEY_PLAYER, JSON.stringify(updated));
     return updated;
+  },
+
+  // Student Cloud Auth
+  async signInStudent(email: string, pass: string): Promise<{ success: boolean; error?: string; profile?: PlayerProfile }> {
+    if (supabase) {
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password: pass,
+        });
+        if (error) {
+          return { success: false, error: error.message };
+        }
+        if (data.user) {
+          const { data: pData } = await supabase
+            .from('profiles_player')
+            .select('*')
+            .eq('auth_user_id', data.user.id)
+            .maybeSingle();
+
+          const current = this.getPlayerProfile();
+          const studentProfile: PlayerProfile = {
+            ...current,
+            isLoggedIn: true,
+            email: data.user.email || email,
+            studentId: data.user.id,
+            nickname: pData?.nickname || data.user.user_metadata?.nickname || email.split('@')[0],
+            avatarId: pData?.avatar_id || current.avatarId,
+            starsEarned: pData?.stars_earned ?? current.starsEarned,
+            totalScore: pData?.total_score ?? current.totalScore,
+            quizzesCompleted: pData?.quizzes_completed ?? current.quizzesCompleted,
+            grade: pData?.grade_level || current.grade || 1,
+          };
+          this.savePlayerProfile(studentProfile);
+          return { success: true, profile: studentProfile };
+        }
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Gagal menghubungi server Supabase';
+        return { success: false, error: message };
+      }
+    }
+
+    // Mock student fallback
+    const current = this.getPlayerProfile();
+    const mockStudent: PlayerProfile = {
+      ...current,
+      isLoggedIn: true,
+      email,
+      studentId: 'student_local_' + Date.now(),
+      nickname: email.split('@')[0],
+    };
+    this.savePlayerProfile(mockStudent);
+    return { success: true, profile: mockStudent };
+  },
+
+  async signUpStudent(email: string, pass: string, nickname: string, gradeLevel: number = 1): Promise<{ success: boolean; error?: string; profile?: PlayerProfile }> {
+    if (supabase) {
+      try {
+        const { data, error } = await supabase.auth.signUp({
+          email: email.trim(),
+          password: pass,
+          options: {
+            data: {
+              nickname,
+              grade_level: gradeLevel,
+            },
+          },
+        });
+        if (error) {
+          return { success: false, error: error.message };
+        }
+        if (data.user) {
+          await supabase.from('profiles_player').insert({
+            auth_user_id: data.user.id,
+            nickname,
+            grade_level: gradeLevel,
+            avatar_id: this.getPlayerProfile().avatarId,
+            stars_earned: this.getPlayerProfile().starsEarned,
+            total_score: this.getPlayerProfile().totalScore,
+          });
+
+          const studentProfile: PlayerProfile = {
+            ...this.getPlayerProfile(),
+            isLoggedIn: true,
+            email: data.user.email || email,
+            studentId: data.user.id,
+            nickname,
+            grade: gradeLevel,
+          };
+          this.savePlayerProfile(studentProfile);
+          return { success: true, profile: studentProfile };
+        }
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Gagal mendaftar akun siswa';
+        return { success: false, error: message };
+      }
+    }
+
+    const mockStudent: PlayerProfile = {
+      ...this.getPlayerProfile(),
+      isLoggedIn: true,
+      email,
+      studentId: 'student_local_' + Date.now(),
+      nickname,
+      grade: gradeLevel,
+    };
+    this.savePlayerProfile(mockStudent);
+    return { success: true, profile: mockStudent };
+  },
+
+  async signOutStudent(): Promise<PlayerProfile> {
+    if (supabase) {
+      try {
+        await supabase.auth.signOut();
+      } catch {
+        // ignore
+      }
+    }
+    const current = this.getPlayerProfile();
+    const guestProfile: PlayerProfile = {
+      nickname: current.nickname,
+      avatarId: current.avatarId,
+      totalScore: current.totalScore,
+      quizzesCompleted: current.quizzesCompleted,
+      starsEarned: current.starsEarned,
+      isLoggedIn: false,
+    };
+    this.savePlayerProfile(guestProfile);
+    return guestProfile;
   },
 
   // 7. Save Quiz Attempt & Update Leaderboard

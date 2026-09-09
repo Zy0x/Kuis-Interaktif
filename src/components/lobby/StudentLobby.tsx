@@ -126,7 +126,6 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
                 maxLength={16}
                 value={nickname}
                 onChange={(e) => setNickname(e.target.value)}
-                placeholder="Contoh: Farhan Juara"
                 required
                 className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none font-bold text-sm text-slate-900 min-h-[48px]"
               />

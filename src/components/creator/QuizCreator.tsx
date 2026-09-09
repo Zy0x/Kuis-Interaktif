@@ -265,7 +265,6 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Contoh: Ulangan Harian IPA: Mengenal Tumbuhan"
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none font-semibold text-sm min-h-[44px]"
                   required
                 />
@@ -278,7 +277,6 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Tuliskan petunjuk pengerjaan yang ramah anak..."
                   rows={2}
                   className="w-full px-3.5 py-2 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none text-sm font-medium"
                 />
@@ -349,7 +347,6 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                   type="text"
                   value={badgeTitle}
                   onChange={(e) => setBadgeTitle(e.target.value)}
-                  placeholder="Misal: Juara Matematika"
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-blue-500 focus:outline-none font-semibold text-sm min-h-[44px]"
                 />
               </div>
@@ -508,7 +505,6 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                       <textarea
                         value={qText}
                         onChange={(e) => setQText(e.target.value)}
-                        placeholder="Tuliskan pertanyaan yang jelas dan mudah dipahami..."
                         rows={2}
                         className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none font-semibold text-sm min-h-[44px]"
                         required
@@ -546,7 +542,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                           type="text"
                           value={qImageCaption}
                           onChange={(e) => setQImageCaption(e.target.value)}
-                          placeholder="Ketik deskripsi ilustrasi..."
+                          aria-label="Deskripsi ilustrasi"
                           className="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs font-medium bg-white"
                         />
 
@@ -603,7 +599,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                               type="text"
                               value={opt}
                               onChange={(e) => handleOptionChange(idx, e.target.value)}
-                              placeholder={`Pilihan ${letters[idx]}`}
+                              aria-label={`Pilihan ${letters[idx]}`}
                               disabled={qType === 'true_false'}
                               className="flex-1 px-3 py-1.5 rounded-lg border border-slate-200 text-xs sm:text-sm font-semibold focus:outline-none focus:border-blue-500 min-h-[38px]"
                               required
@@ -628,7 +624,6 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                         type="text"
                         value={qExplanation}
                         onChange={(e) => setQExplanation(e.target.value)}
-                        placeholder="Contoh: Karena katak bernapas dengan paru-paru dan kulit..."
                         className="w-full px-3.5 py-2 rounded-xl border border-slate-300 focus:border-blue-500 focus:outline-none font-medium text-xs sm:text-sm min-h-[40px]"
                       />
                     </div>
