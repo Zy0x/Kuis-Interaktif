@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
-import type { LeaderboardEntry, QuizAttemptResult } from '../types/quiz';
+import type { LeaderboardEntry, QuizAttemptResult, Quiz } from '../types/quiz';
+import { INITIAL_QUIZZES } from '../data/seedQuizzes';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
@@ -18,9 +19,87 @@ export const supabase = isSupabaseConfigured
 const STORAGE_KEY_LEADERBOARD = 'kuis_sd_leaderboard_v1';
 const STORAGE_KEY_ATTEMPTS = 'kuis_sd_attempts_v1';
 const STORAGE_KEY_PLAYER = 'kuis_sd_player_profile';
+const STORAGE_KEY_CUSTOM_QUIZZES = 'kuis_sd_custom_quizzes_v1';
 
 export const DataManager = {
-  // 1. Get Player Profile
+  // 1. Get All Quizzes (Default Seeds + Teacher Custom Quizzes)
+  getAllQuizzes(): Quiz[] {
+    try {
+      const customStr = localStorage.getItem(STORAGE_KEY_CUSTOM_QUIZZES);
+      const customQuizzes: Quiz[] = customStr ? JSON.parse(customStr) : [];
+      return [...customQuizzes, ...INITIAL_QUIZZES];
+    } catch {
+      return INITIAL_QUIZZES;
+    }
+  },
+
+  // 2. Save Custom Quiz Created by Teacher
+  async saveCustomQuiz(quiz: Quiz): Promise<void> {
+    try {
+      const customStr = localStorage.getItem(STORAGE_KEY_CUSTOM_QUIZZES);
+      let customQuizzes: Quiz[] = customStr ? JSON.parse(customStr) : [];
+      // If already exists, replace; else prepend
+      const existingIdx = customQuizzes.findIndex((q) => q.id === quiz.id);
+      if (existingIdx >= 0) {
+        customQuizzes[existingIdx] = quiz;
+      } else {
+        customQuizzes.unshift(quiz);
+      }
+      localStorage.setItem(STORAGE_KEY_CUSTOM_QUIZZES, JSON.stringify(customQuizzes));
+    } catch (e) {
+      console.warn('Local save error:', e);
+    }
+
+    // Sync to user Supabase if configured
+    if (supabase) {
+      try {
+        await supabase.from('quizzes').insert({
+          id: quiz.id,
+          title: quiz.title,
+          description: quiz.description,
+          subject: quiz.subject,
+          target_grade: quiz.grade,
+          duration_per_question_sec: quiz.durationPerQuestionSec,
+          cover_emoji: quiz.coverEmoji,
+          theme_color: quiz.themeColor,
+          badge_title: quiz.badgeTitle,
+          is_published: true,
+        });
+
+        // Insert questions
+        const formattedQuestions = quiz.questions.map((q, idx) => ({
+          quiz_id: quiz.id,
+          question_text: q.text,
+          question_type: q.type,
+          image_url: q.imageUrl || null,
+          image_caption: q.imageCaption || null,
+          options: q.options,
+          correct_index: q.correctIndex,
+          explanation: q.explanation,
+          order_number: idx + 1,
+        }));
+        await supabase.from('quiz_questions').insert(formattedQuestions);
+      } catch (err) {
+        console.warn('Supabase quiz sync background notice:', err);
+      }
+    }
+  },
+
+  // 3. Delete Custom Quiz
+  deleteCustomQuiz(quizId: string): void {
+    try {
+      const customStr = localStorage.getItem(STORAGE_KEY_CUSTOM_QUIZZES);
+      if (customStr) {
+        let customQuizzes: Quiz[] = JSON.parse(customStr);
+        customQuizzes = customQuizzes.filter((q) => q.id !== quizId);
+        localStorage.setItem(STORAGE_KEY_CUSTOM_QUIZZES, JSON.stringify(customQuizzes));
+      }
+    } catch (e) {
+      console.warn('Delete quiz error:', e);
+    }
+  },
+
+  // 4. Get Player Profile
   getPlayerProfile() {
     try {
       const data = localStorage.getItem(STORAGE_KEY_PLAYER);
@@ -44,11 +123,10 @@ export const DataManager = {
     return updated;
   },
 
-  // 2. Save Quiz Attempt & Update Leaderboard
+  // 5. Save Quiz Attempt & Update Leaderboard
   async recordQuizAttempt(result: QuizAttemptResult): Promise<void> {
     const player = this.getPlayerProfile();
     
-    // Save to Local Attempts History
     try {
       const historyStr = localStorage.getItem(STORAGE_KEY_ATTEMPTS) || '[]';
       const history: QuizAttemptResult[] = JSON.parse(historyStr);
@@ -80,7 +158,6 @@ export const DataManager = {
       console.warn('Local storage save error:', e);
     }
 
-    // Sync to user Supabase if configured
     if (supabase) {
       try {
         await supabase.from('quiz_attempts').insert({
@@ -99,9 +176,8 @@ export const DataManager = {
     }
   },
 
-  // 3. Get Leaderboard for a Quiz
+  // 6. Get Leaderboard for a Quiz
   async getLeaderboard(quizId: string): Promise<LeaderboardEntry[]> {
-    // If Supabase is connected, try to fetch real-time
     if (supabase) {
       try {
         const { data, error } = await supabase
@@ -129,13 +205,11 @@ export const DataManager = {
       }
     }
 
-    // Local Storage fallback with default seed leaderboard
     try {
       const stored = localStorage.getItem(STORAGE_KEY_LEADERBOARD);
       let list: LeaderboardEntry[] = stored ? JSON.parse(stored) : [];
       list = list.filter((e) => e.quizId === quizId);
 
-      // Default mock champions if list is empty
       if (list.length === 0) {
         list = [
           { id: '1', quizId, nickname: 'Rani Ceria', avatarId: 'rabbit', score: 100, stars: 3, timeSpentSec: 42, dateStr: 'Hari ini' },

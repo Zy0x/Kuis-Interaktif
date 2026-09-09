@@ -3,44 +3,35 @@ Seluruh riwayat rilis dan pembaruan sistem **Kuis SD Seru** dicatat pada dokumen
 
 ---
 
-## [2.1.2] - 2026-09-09
-### Pondasi Arsitektur & Rilis Fitur Fase 1 (Core Gameplay & PWA)
+## [2.1.3] - 2026-09-09
+### Rilis Fitur Fase 2: Studio Penyusun Kuis Guru (Quiz Creator Studio)
 
 #### Fitur Baru (Added)
-- **Beranda Kuis Ramah Anak:**
-  - Penjelajah kuis dengan filter jenjang Kelas 1 hingga 6 SD serta filter mata pelajaran (Matematika, IPA, dan Pendidikan Pancasila).
-  - Mulai sekali ketuk (*1-Tap Play*) tanpa registrasi rumit yang membebani siswa.
-  - Modal Aturan Singkat visual berilustrasi ceria sebelum kuis dimulai.
-- **Arena Kuis Interaktif:**
-  - Desain sentuh nyaman (*touch-first*) dengan target sentuh minimal 48×48 px.
-  - Ragam model soal: Pilihan Ganda ceria, Benar/Salah (*True/False*), dan Tebak Gambar.
-  - Timer visual progresif ramah anak dengan animasi peringatan lembut saat waktu tersisa 5 detik.
-  - Feedback instan beranimasi (150–300 ms) saat jawaban dipilih.
-  - Kotak pembahasan singkat otomatis untuk membantu anak memahami konsep secara langsung.
-- **Hasil Kuis & Gamifikasi:**
-  - Kartu rekap nilai edukatif dengan perolehan 1 hingga 3 Bintang Emas.
-  - Efek selebrasi konfeti interaktif saat kuis selesai.
-  - Tab pembahasan lengkap yang menampilkan jawaban siswa, jawaban benar, dan alasan edukatif.
-  - Tab Papan Peringkat (*Leaderboard*) ramah anak berbasis nama panggilan dan avatar kartun.
-  - Tombol main ulang instan dengan pengacakan urutan soal (*shuffle*).
-- **Progressive Web App (PWA):**
-  - Web App Manifest lengkap dengan dukungan tema warna cerah.
-  - Service Worker untuk *offline caching* dan pemuatan instan.
-  - Layar pembuka (*Splash Screen*) beranimasi logo ceria maskot bintang SD (1.5 detik).
-  - Dialog pasang aplikasi (*Add to Home Screen*) cepat.
-  - Komponen bantuan reorientasi layar mobile responsif.
-- **Efek Suara Berbasis Web Audio API:**
-  - Synthesizer melodi nada denting ceria instan tanpa file media eksternal besar.
-  - Kontrol matikan/nyalakan suara (*mute toggle*) yang tersimpan otomatis.
-- **Basis Data & Dokumentasi Supabase Eksternal:**
-  - Skrip DDL lengkap `docs/setup.sql` dengan 6 tabel ber-RLS ketat dan trigger timestamp.
-  - Panduan administrasi pencadangan terenkripsi AES-256 dan pemulihan `docs/backup-restore-guide.md`.
-  - Panduan arsitektur data dan konfigurasi `docs/database-architecture.md`.
+- **Studio Penyusun Kuis Mandiri Guru (`QuizCreator.tsx`):**
+  - Wizard penyusunan bertahap 3 langkah: Identitas Kuis -> Bank Soal & Gambar -> Pratinjau Mobile & Publikasi.
+  - Penyesuaian parameter kuis: Judul, deskripsi, tingkat kelas (1–6 SD), mata pelajaran, durasi waktu per soal (15–60 detik), ikon emoji sampul, dan gelar lencana prestasi.
+  - Editor bank soal interaktif: Pilihan Ganda (2–4 opsi) dan Benar/Salah (*True/False*).
+  - Penentuan kunci jawaban satu-klik berbingkai hijau yang intuitif dan bebas kesalahan.
+  - Kolom catatan pembahasan edukatif untuk membantu pemahaman konsep belajar anak.
+- **Fitur Sisipkan Gambar & Ilustrasi Soal:**
+  - Pemilih cepat stiker ilustrasi edukatif populer (pecahan pizza, geometri segitiga/persegi, organ tubuh, lambang Garuda, katak amfibi, dsb.).
+  - Unggah foto/ilustrasi kustom langsung dari galeri HP atau komputer dengan pratinjau instan.
+- **Pratinjau Mobile & Integrasi Katalog Beranda:**
+  - Pratinjau langsung simulasi kartu kuis dan format tampilan sebelum kuis diterbitkan.
+  - Kuis buatan guru otomatis muncul di Beranda dengan lencana khusus *"Karya Guru 🧑‍🏫"*.
+  - Opsi hapus kuis buatan guru secara mandiri dengan konfirmasi perlindungan.
+- **Penyimpanan Ganda Cerdas (*Dual Storage Sync*):**
+  - Otomatis tersimpan ke LocalStorage responsif dan langsung tersinkron ke tabel `quizzes` serta `quiz_questions` Supabase jika variabel environment terkonfigurasi.
 
-#### Peningkatan Kualitas (Improved)
-- Antarmuka responsif stabil pada resolusi standar maupun non-reguler (1080×2460, 1080×2380, rentang 720p hingga 4K).
-- Tipografi menggunakan font keterbacaan tinggi (*Quicksand* dan *Nunito*) dengan kontras warna memenuhi standar WCAG AA.
-- Tidak ada ketergantungan interaksi *hover-only*.
+---
+
+## [2.1.2] - 2026-09-09
+### Pondasi Arsitektur & Rilis Fitur Fase 1 (Core Gameplay & PWA)
+- Implementasi Beranda Kuis dengan filter kelas 1–6 SD dan mata pelajaran.
+- Implementasi Arena Kuis ramah anak dengan target sentuh minimal 48×48 px dan umpan balik suara instan Web Audio API.
+- Implementasi Hasil Kuis dengan evaluasi 3 Bintang Emas, konfeti selebrasi, tab pembahasan soal edukatif, dan Papan Peringkat (*Leaderboard*).
+- Implementasi standar PWA: Manifest, Service Worker offline caching, Splash Screen animasi 1.5s, dan Reorientation Overlay.
+- Penyusunan skrip backend Supabase mandiri `docs/setup.sql` ber-RLS ketat, `docs/backup-restore-guide.md`, dan `docs/database-architecture.md`.
 
 ---
 

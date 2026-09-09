@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { Quiz, GradeLevel, Subject } from '../../types/quiz';
-import { AVATAR_LIST, INITIAL_QUIZZES } from '../../data/seedQuizzes';
+import { AVATAR_LIST } from '../../data/seedQuizzes';
 import { DataManager } from '../../lib/supabaseClient';
 import { 
   Play, 
@@ -15,11 +15,14 @@ import {
   BookOpen,
   Award,
   CheckCircle2,
-  X
+  X,
+  PlusCircle,
+  Trash2
 } from 'lucide-react';
 
 interface QuizHomeProps {
   onSelectQuiz: (quiz: Quiz) => void;
+  onOpenCreator: () => void;
   isMuted: boolean;
   onToggleMute: () => void;
   playClick: () => void;
@@ -27,10 +30,12 @@ interface QuizHomeProps {
 
 export const QuizHome: React.FC<QuizHomeProps> = ({
   onSelectQuiz,
+  onOpenCreator,
   isMuted,
   onToggleMute,
   playClick,
 }) => {
+  const [quizzes, setQuizzes] = useState<Quiz[]>(() => DataManager.getAllQuizzes());
   const [selectedGrade, setSelectedGrade] = useState<GradeLevel>('Semua');
   const [selectedSubject, setSelectedSubject] = useState<string>('Semua');
   const [profile, setProfile] = useState(() => DataManager.getPlayerProfile());
@@ -39,15 +44,21 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
   const [tempNickname, setTempNickname] = useState(profile.nickname);
   const [tempAvatar, setTempAvatar] = useState(profile.avatarId);
 
+  // Reload quizzes on mount
+  useEffect(() => {
+    setQuizzes(DataManager.getAllQuizzes());
+  }, []);
+
   const grades: GradeLevel[] = ['Semua', 1, 2, 3, 4, 5, 6];
   const subjects: (Subject | 'Semua')[] = [
     'Semua',
     'Matematika',
     'IPA',
+    'Bahasa Indonesia',
     'Pendidikan Pancasila'
   ];
 
-  const filteredQuizzes = INITIAL_QUIZZES.filter((quiz) => {
+  const filteredQuizzes = quizzes.filter((quiz) => {
     const matchGrade = selectedGrade === 'Semua' || quiz.grade === selectedGrade;
     const matchSubject = selectedSubject === 'Semua' || quiz.subject === selectedSubject;
     return matchGrade && matchSubject;
@@ -67,6 +78,15 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
   const handleStartWithRules = (quiz: Quiz) => {
     playClick();
     setRulesModalQuiz(quiz);
+  };
+
+  const handleDeleteCustomQuiz = (quizId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    playClick();
+    if (window.confirm('Yakin ingin menghapus kuis buatan ini?')) {
+      DataManager.deleteCustomQuiz(quizId);
+      setQuizzes(DataManager.getAllQuizzes());
+    }
   };
 
   const currentAvatar = AVATAR_LIST.find((a) => a.id === profile.avatarId) || AVATAR_LIST[0];
@@ -93,6 +113,18 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
 
           {/* Right Action Icons */}
           <div className="flex items-center gap-2">
+            {/* Mode Guru Button */}
+            <button
+              onClick={() => {
+                playClick();
+                onOpenCreator();
+              }}
+              className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs min-h-[48px] shadow-sm btn-playful"
+            >
+              <PlusCircle className="w-4 h-4" />
+              <span>Buat Kuis Guru</span>
+            </button>
+
             {/* Audio Toggle */}
             <button
               onClick={() => {
@@ -143,9 +175,23 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
             <h2 className="text-2xl sm:text-3xl font-black leading-tight mb-2">
               Halo, {profile.nickname}! 👋
             </h2>
-            <p className="text-blue-100 text-sm sm:text-base font-medium leading-relaxed">
+            <p className="text-blue-100 text-sm sm:text-base font-medium leading-relaxed mb-4">
               Pilih kuis favoritmu, jawab tantangan soal bergambar, dan kumpulkan bintang prestasimu!
             </p>
+
+            {/* Quick Button for Mobile Guru Mode */}
+            <div className="sm:hidden pt-1">
+              <button
+                onClick={() => {
+                  playClick();
+                  onOpenCreator();
+                }}
+                className="w-full bg-amber-400 hover:bg-amber-300 text-slate-900 font-black py-2.5 px-4 rounded-2xl text-xs shadow-md flex items-center justify-center gap-1.5 min-h-[44px] btn-playful"
+              >
+                <PlusCircle className="w-4 h-4" />
+                <span>Mode Guru: Buat Kuis Baru Sendiri ✍️</span>
+              </button>
+            </div>
           </div>
           {/* Decorative Emojis */}
           <div className="absolute -right-2 -bottom-4 text-7xl sm:text-8xl opacity-30 select-none pointer-events-none">
@@ -225,66 +271,95 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-            {filteredQuizzes.map((quiz) => (
-              <div
-                key={quiz.id}
-                className="group relative bg-white rounded-3xl p-5 border-2 border-slate-200/80 shadow-playful hover:shadow-card-glow hover:border-blue-400 transition-all flex flex-col justify-between"
-              >
-                <div>
-                  {/* Card Top Header */}
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-3xl p-2 bg-amber-50 rounded-2xl border border-amber-200/60 select-none shadow-sm">
-                      {quiz.coverEmoji}
-                    </span>
-                    <div className="flex items-center gap-1.5">
-                      <span className="px-2.5 py-1 rounded-full bg-blue-100 text-blue-800 font-extrabold text-xs">
-                        Kelas {quiz.grade}
+            {filteredQuizzes.map((quiz) => {
+              const isCustom = quiz.id.startsWith('custom_');
+              return (
+                <div
+                  key={quiz.id}
+                  className="group relative bg-white rounded-3xl p-5 border-2 border-slate-200/80 shadow-playful hover:shadow-card-glow hover:border-blue-400 transition-all flex flex-col justify-between"
+                >
+                  <div>
+                    {/* Card Top Header */}
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-3xl p-2 bg-amber-50 rounded-2xl border border-amber-200/60 select-none shadow-sm">
+                        {quiz.coverEmoji}
                       </span>
-                      <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 font-bold text-xs">
-                        {quiz.subject}
+                      <div className="flex items-center gap-1.5">
+                        {isCustom && (
+                          <span className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 font-extrabold text-[10px]">
+                            Karya Guru
+                          </span>
+                        )}
+                        <span className="px-2.5 py-1 rounded-full bg-blue-100 text-blue-800 font-extrabold text-xs">
+                          Kelas {quiz.grade}
+                        </span>
+                        <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 font-bold text-xs">
+                          {quiz.subject}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Title & Description */}
+                    <h4 className="text-base sm:text-lg font-black text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-1 mb-1.5">
+                      {quiz.title}
+                    </h4>
+                    <p className="text-xs sm:text-sm text-slate-600 line-clamp-2 leading-relaxed mb-4">
+                      {quiz.description}
+                    </p>
+                  </div>
+
+                  {/* Card Footer Details */}
+                  <div className="pt-3 border-t border-slate-100 space-y-3">
+                    <div className="flex items-center justify-between text-xs font-bold text-slate-500">
+                      <span className="flex items-center gap-1">
+                        <HelpCircle className="w-3.5 h-3.5 text-blue-500" /> {quiz.questions.length} Soal
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5 text-amber-500" /> {quiz.durationPerQuestionSec}s / soal
                       </span>
                     </div>
+
+                    {/* Action buttons */}
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleStartWithRules(quiz)}
+                        className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-black py-3 px-4 rounded-2xl shadow-md transition-all active:scale-[0.98] flex items-center justify-center gap-2 min-h-[48px] btn-playful"
+                      >
+                        <Play className="w-4 h-4 fill-white" />
+                        <span>Mulai Kuis</span>
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+
+                      {isCustom && (
+                        <button
+                          onClick={(e) => handleDeleteCustomQuiz(quiz.id, e)}
+                          className="p-3 text-rose-500 hover:bg-rose-50 rounded-2xl border border-rose-200 min-h-[48px] min-w-[48px] flex items-center justify-center"
+                          title="Hapus Kuis Ini"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
                   </div>
-
-                  {/* Title & Description */}
-                  <h4 className="text-base sm:text-lg font-black text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-1 mb-1.5">
-                    {quiz.title}
-                  </h4>
-                  <p className="text-xs sm:text-sm text-slate-600 line-clamp-2 leading-relaxed mb-4">
-                    {quiz.description}
-                  </p>
                 </div>
-
-                {/* Card Footer Details */}
-                <div className="pt-3 border-t border-slate-100 space-y-3">
-                  <div className="flex items-center justify-between text-xs font-bold text-slate-500">
-                    <span className="flex items-center gap-1">
-                      <HelpCircle className="w-3.5 h-3.5 text-blue-500" /> {quiz.questions.length} Soal
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5 text-amber-500" /> {quiz.durationPerQuestionSec}s / soal
-                    </span>
-                  </div>
-
-                  {/* 1-Tap Play Button (Min 48px Touch Target) */}
-                  <button
-                    onClick={() => handleStartWithRules(quiz)}
-                    className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-black py-3 px-4 rounded-2xl shadow-md transition-all active:scale-[0.98] flex items-center justify-center gap-2 min-h-[48px] btn-playful"
-                  >
-                    <Play className="w-4 h-4 fill-white" />
-                    <span>Mulai Kuis</span>
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {filteredQuizzes.length === 0 && (
             <div className="text-center py-12 bg-white rounded-3xl border-2 border-dashed border-slate-300 p-6">
               <div className="text-5xl mb-3">🔍</div>
               <h4 className="text-base font-black text-slate-800 mb-1">Belum Ada Kuis untuk Filter Ini</h4>
-              <p className="text-xs sm:text-sm text-slate-500">Coba pilih jenjang kelas atau mata pelajaran lainnya ya!</p>
+              <p className="text-xs sm:text-sm text-slate-500 mb-3">Coba pilih jenjang kelas atau mata pelajaran lainnya ya!</p>
+              <button
+                onClick={() => {
+                  playClick();
+                  onOpenCreator();
+                }}
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-blue-600 text-white font-black text-xs"
+              >
+                <PlusCircle className="w-4 h-4" /> Buat Kuis Baru Sekarang
+              </button>
             </div>
           )}
         </section>

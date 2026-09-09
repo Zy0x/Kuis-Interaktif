@@ -6,9 +6,11 @@ import { ReorientationOverlay } from './components/pwa/ReorientationOverlay';
 import { QuizHome } from './components/home/QuizHome';
 import { QuizArena } from './components/arena/QuizArena';
 import { QuizResult } from './components/result/QuizResult';
+import { QuizCreator } from './components/creator/QuizCreator';
+import { DataManager } from './lib/supabaseClient';
 import { useSoundEffects } from './hooks/useSoundEffects';
 
-type ScreenState = 'home' | 'arena' | 'result';
+type ScreenState = 'home' | 'arena' | 'result' | 'creator';
 
 export const App: React.FC = () => {
   const [showSplash, setShowSplash] = useState(true);
@@ -53,6 +55,12 @@ export const App: React.FC = () => {
     setCurrentScreen('home');
   };
 
+  const handleSaveCreatedQuiz = (newQuiz: Quiz) => {
+    DataManager.saveCustomQuiz(newQuiz);
+    playCelebration();
+    setCurrentScreen('home');
+  };
+
   return (
     <div className="min-h-screen bg-amber-50/30 text-slate-800">
       {/* 1. Animated Splash Screen */}
@@ -66,8 +74,17 @@ export const App: React.FC = () => {
       {currentScreen === 'home' && (
         <QuizHome
           onSelectQuiz={handleSelectQuiz}
+          onOpenCreator={() => setCurrentScreen('creator')}
           isMuted={isMuted}
           onToggleMute={toggleMute}
+          playClick={playClick}
+        />
+      )}
+
+      {currentScreen === 'creator' && (
+        <QuizCreator
+          onBack={handleGoHome}
+          onSaveQuiz={handleSaveCreatedQuiz}
           playClick={playClick}
         />
       )}
