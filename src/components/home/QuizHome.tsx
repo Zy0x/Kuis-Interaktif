@@ -7,6 +7,7 @@ import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 import { useTimeGreeting } from '../../hooks/useTimeGreeting';
 import { CelestialSkyVisual } from './CelestialSkyVisual';
 import { ThemeToggle } from '../common/ThemeToggle';
+import { ConfirmDeleteModal } from '../common/ConfirmDeleteModal';
 import { 
   Play, 
   Clock, 
@@ -254,12 +255,25 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
     setRulesModalQuiz(quiz);
   };
 
-  const handleDeleteCustomQuiz = (quizId: string, e: React.MouseEvent) => {
+  // Delete confirmation state (In-App Modal)
+  const [quizToDelete, setQuizToDelete] = useState<Quiz | null>(null);
+  const [isDeletingQuiz, setIsDeletingQuiz] = useState(false);
+
+  const handlePromptDeleteCustomQuiz = (quiz: Quiz, e: React.MouseEvent) => {
     e.stopPropagation();
     playClick();
-    if (window.confirm('Hapus kuis ini dari daftar kuis guru?')) {
-      DataManager.deleteCustomQuiz(quizId);
+    setQuizToDelete(quiz);
+  };
+
+  const handleConfirmDeleteCustomQuiz = async () => {
+    if (!quizToDelete) return;
+    setIsDeletingQuiz(true);
+    try {
+      await DataManager.deleteCustomQuiz(quizToDelete.id);
       setQuizzes(DataManager.getAllQuizzes());
+      setQuizToDelete(null);
+    } finally {
+      setIsDeletingQuiz(false);
     }
   };
 
@@ -690,9 +704,10 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
 
                       {isCustom && (
                         <button
-                          onClick={(e) => handleDeleteCustomQuiz(quiz.id, e)}
+                          onClick={(e) => handlePromptDeleteCustomQuiz(quiz, e)}
                           className="p-2.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl border border-slate-200 dark:border-slate-700 min-h-[46px] min-w-[46px] flex items-center justify-center transition-colors"
                           title="Hapus Kuis Ini"
+                          aria-label={`Hapus kuis ${quiz.title}`}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -1282,6 +1297,18 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
           </div>
         </div>
       )}
+
+      {/* Modal Dialog Konfirmasi Hapus Kuis In-App */}
+      <ConfirmDeleteModal
+        isOpen={Boolean(quizToDelete)}
+        quizTitle={quizToDelete?.title}
+        isLoading={isDeletingQuiz}
+        onConfirm={handleConfirmDeleteCustomQuiz}
+        onCancel={() => {
+          playClick();
+          setQuizToDelete(null);
+        }}
+      />
 
     </div>
   );

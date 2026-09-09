@@ -1,6 +1,26 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis SD Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.16] - 2026-09-09
+### Eliminasi Dialog Bawaan Peramban & Penerapan Modal Konfirmasi Hapus In-App Kustom (Custom In-App Delete Confirmation Modal & System Dialog Elimination)
+
+#### Antarmuka Pengguna & Dialog Interaktif (*UI & Modal Experience Polish*)
+- **Penggantian Penuh `window.confirm` Bawaan Browser:**
+  - Mengeliminasi seluruh popup dialog sistem bawaan peramban (`localhost says: Yakin ingin menghapus kuis ini?`) yang kaku dan mengganggu estetika web.
+  - Menghadirkan komponen reusable baru `ConfirmDeleteModal` dengan desain modern glassmorphic, visual backdrop blur halus (`backdrop-blur-sm`), dan animasi kartu masuk yang mulus.
+- **Kejelasan Konteks & Keamanan Tindakan (*Action Clarity & Safety Guard*):**
+  - Menampilkan lencana ikon peringatan hapus (`Trash2`) dalam lingkaran merah lembut tematik.
+  - Menyebutkan secara eksplisit judul kuis yang akan dihapus (misal: *"Latihan Kilat Matematika Kelas 3"*) beserta pesan peringatan permanen agar guru terhindar dari kesalahan hapus tak disengaja.
+  - Menyediakan dua tombol berjarak aman: tombol netral "Batal" dan tombol destruktif berpenegasan "Ya, Hapus Kuis".
+- **Presisi Mobile-First & Aksesibilitas:**
+  - Kedua tombol mematuhi standar ukuran sentuh minimal 44×44 px (`min-h-[44px]`).
+  - Terintegrasi otomatis dengan penguncian scroll latar (`useBodyScrollLock`) dan dukungan tombol kembali Android/Desktop (`useBackHandler`) berprioritas tinggi.
+- **Konsistensi Lintas Modul:**
+  - Diterapkan menyeluruh pada **Dashboard Guru** (`TeacherDashboard`) dan kartu kuis beranda (`QuizHome`).
+  - Menggantikan `alert()` bawaan browser pada ekspor rekapan pengerjaan kosong menjadi notifikasi peringatan in-app yang elegan dan non-intrusif.
+
+---
+
 ## [2.2.15] - 2026-09-09
 ### Musik Latar In-Game Prosedural Adaptif & Tombol Kontrol Musik Mandiri (Procedural Web Audio In-Game BGM with Adaptive Dynamics)
 

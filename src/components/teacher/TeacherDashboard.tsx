@@ -3,6 +3,7 @@ import type { Quiz, TeacherProfile, StudentSubmission } from '../../types/quiz';
 import { DataManager } from '../../lib/supabaseClient';
 import { useBackHandler } from '../../lib/navigationHistory';
 import { ThemeToggle } from '../common/ThemeToggle';
+import { ConfirmDeleteModal } from '../common/ConfirmDeleteModal';
 import { 
   GraduationCap, 
   Plus, 
@@ -54,6 +55,11 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   const [genCount, setGenCount] = useState<number>(5);
   const [genLoading, setGenLoading] = useState(false);
 
+  // Delete confirmation state (In-App Modal)
+  const [quizToDelete, setQuizToDelete] = useState<Quiz | null>(null);
+  const [isDeletingQuiz, setIsDeletingQuiz] = useState(false);
+  const [exportNotice, setExportNotice] = useState<string | null>(null);
+
   // 1. Level 2 (Prioritas 50): Jika berada di tab Submissions / Generator, mundur ke Tab Kuis
   useBackHandler('teacher-tab-back', 50, () => {
     if (activeTab !== 'quizzes') {
@@ -93,11 +99,20 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
     }
   };
 
-  const handleDeleteQuiz = async (quizId: string) => {
+  const handlePromptDeleteQuiz = (quiz: Quiz) => {
     playClick();
-    if (window.confirm('Yakin ingin menghapus kuis ini?')) {
-      await DataManager.deleteCustomQuiz(quizId);
-      loadData();
+    setQuizToDelete(quiz);
+  };
+
+  const handleConfirmDeleteQuiz = async () => {
+    if (!quizToDelete) return;
+    setIsDeletingQuiz(true);
+    try {
+      await DataManager.deleteCustomQuiz(quizToDelete.id);
+      await loadData();
+      setQuizToDelete(null);
+    } finally {
+      setIsDeletingQuiz(false);
     }
   };
 
@@ -118,7 +133,8 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   const handleExportCSV = () => {
     playClick();
     if (submissions.length === 0) {
-      alert('Belum ada data pengerjaan siswa untuk diekspor.');
+      setExportNotice('Belum ada data pengerjaan siswa untuk diekspor.');
+      setTimeout(() => setExportNotice(null), 3500);
       return;
     }
 
@@ -379,8 +395,8 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
 
                       {isCustom && (
                         <button
-                          onClick={() => handleDeleteQuiz(quiz.id)}
-                          className="w-full py-1.5 text-rose-500 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300 text-[11px] font-medium transition-colors text-center"
+                          onClick={() => handlePromptDeleteQuiz(quiz)}
+                          className="w-full py-2 px-3 text-rose-600 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl text-xs font-semibold transition-colors text-center min-h-[44px] flex items-center justify-center"
                         >
                           Hapus Kuis Ini
                         </button>
@@ -406,12 +422,19 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
 
               <button
                 onClick={handleExportCSV}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 min-h-[44px] transition-colors btn-press self-start sm:self-auto"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700 min-h-[44px] transition-colors btn-press self-start sm:self-auto"
               >
                 <Download className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                 <span>Unduh Rekap (CSV/Excel)</span>
               </button>
             </div>
+
+            {exportNotice && (
+              <div className="p-3.5 bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in">
+                <span>⚠️</span>
+                <span>{exportNotice}</span>
+              </div>
+            )}
 
             {submissions.length === 0 ? (
               <div className="bg-white dark:bg-slate-900 rounded-2xl p-12 text-center border border-dashed border-slate-200 dark:border-slate-800">
@@ -565,6 +588,18 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
         )}
 
       </main>
+
+      {/* In-App Custom Delete Confirmation Modal */}
+      <ConfirmDeleteModal
+        isOpen={Boolean(quizToDelete)}
+        quizTitle={quizToDelete?.title}
+        isLoading={isDeletingQuiz}
+        onConfirm={handleConfirmDeleteQuiz}
+        onCancel={() => {
+          playClick();
+          setQuizToDelete(null);
+        }}
+      />
     </div>
   );
 };
