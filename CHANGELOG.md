@@ -1,6 +1,21 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.89] - 2026-09-11
+### Penyederhanaan Pilihan Mesin AI 3-Pilar & Eliminasi Navigasi Bawah Redundan
+
+#### 1. Restrukturisasi Pilihan Mesin AI Menjadi 3 Pilar Utama
+- Menyederhanakan tata letak pilihan mesin AI pada Tahap 4 dari sebelumnya 6 kartu terbuka sekaligus menjadi 3 Pilar Inti yang mudah dipahami:
+  - **Otomatis (Direkomendasikan)**: Kartu utama lebar penuh dengan deteksi pintar ketersediaan server AI dan kunci API aktif.
+  - **Lokal (Offline)**: Kartu ringkas untuk pemrosesan mandiri di peramban tanpa koneksi internet.
+  - **Prompt / Berkas (Manual)**: Kartu ringkas untuk salin-tempel prompt eksternal atau impor berkas secara fleksibel.
+- Menghadirkan menu lipat (*collapsible accordion*) elegan **"Pilih Model Cloud Tertentu (DeepSeek, Groq, Gemini)"** yang menyembunyikan opsi lanjutan agar tidak membingungkan pengguna umum, namun tetap dapat dibuka sewaktu-waktu hanya dengan satu klik.
+- Menghemat ruang vertikal hingga ~300px sehingga area input berkas atau prompt langsung tampak ergonomis di layar tanpa perlu *scrolling* panjang.
+
+#### 2. Eliminasi Tombol Navigasi Bawah Redundan & Penataan Tombol Aksi Utama
+- Menghapus tombol *"Kembali ke Format"* di navigasi bawah Tahap 4 karena navigasi antar-tahap telah tersedia secara jelas pada Stepper atas dan tombol *badge* konteks.
+- Menata ulang tombol aksi primer (*"Buat Kuis Sekarang"* / *"Periksa & Buka Bank Soal"*) agar rata kanan (`justify-end`) di layar desktop/tablet dan membentang ergonomis penuh (`w-full`) di layar ponsel cerdas (*mobile-first*).
+
 ## [2.2.88] - 2026-09-11
 ### Penataan Responsif Toolbar Aksi Mesin AI (Bebas AI Slop)
 
