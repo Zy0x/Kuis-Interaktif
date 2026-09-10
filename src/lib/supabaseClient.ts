@@ -874,14 +874,20 @@ export const DataManager = {
           return { success: false, error: error.message };
         }
         if (data.user) {
-          await supabase.from('profiles_player').insert({
-            auth_user_id: data.user.id,
-            nickname,
-            grade_level: gradeLevel,
-            avatar_id: this.getPlayerProfile().avatarId,
-            stars_earned: this.getPlayerProfile().starsEarned,
-            total_score: this.getPlayerProfile().totalScore,
-          });
+          try {
+            await supabase.from('profiles_player').upsert({
+              id: data.user.id,
+              auth_user_id: data.user.id,
+              email: email.trim(),
+              nickname,
+              grade_level: gradeLevel,
+              avatar_id: this.getPlayerProfile().avatarId,
+              stars_earned: this.getPlayerProfile().starsEarned,
+              total_score: this.getPlayerProfile().totalScore,
+            });
+          } catch (e) {
+            console.warn('Student profile upsert notice:', e);
+          }
 
           const studentProfile: PlayerProfile = {
             ...this.getPlayerProfile(),

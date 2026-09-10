@@ -1,6 +1,23 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.49] - 2026-09-10
+### Sinkronisasi Penuh Autentikasi Cloud Supabase (Guru & Siswa) & Auto-Confirm Email
+
+#### 1. Integrasi Menyeluruh Auth Supabase (Guru & Siswa)
+- Mengintegrasikan seluruh pintu masuk dan pendaftaran (*Sign In* dan *Sign Up*) akun Guru dan Siswa langsung ke Supabase Cloud Auth (`auth.users`) dan tabel publik (`profiles_teacher` & `profiles_player`).
+- Memastikan seluruh kata sandi dienkripsi dengan standar kriptografi server-side Supabase (*bcrypt/argon2* - Rule 9), tanpa penyimpanan plaintext di sisi frontend atau penyimpanan lokal.
+- Sinkronisasi metadata otomatis: profil Guru menyimpan nama lengkap dan nama sekolah, sedangkan profil Siswa menyimpan nama panggilan (*nickname*), jenjang kelas, dan data kemajuan bermain.
+
+#### 2. Auto-Confirm Email Otomatis untuk Lingkungan Belajar Sekolah
+- Mengimplementasikan trigger cerdas database `trigger_auto_confirm_user` pada tabel `auth.users` (`BEFORE INSERT`).
+- Siswa dan guru yang baru mendaftar langsung terverifikasi secara instan tanpa hambatan tautan konfirmasi email (*zero-friction instant login*), sangat ideal untuk penggunaan cepat di laboratorium komputer dan kelas sekolah.
+- Menjamin sinkronisasi dua arah antara `auth.users` dengan tabel profil publik melalui trigger `on_auth_user_created` (`handle_new_user()`).
+
+#### 3. Keamanan Tingkat Tinggi & Robust Fallback
+- Memastikan proteksi data akun dengan Row Level Security (RLS) berbasis `auth.uid()`.
+- Menjaga integritas data profil siswa dengan mekanisme `upsert` yang sinkron dan bebas konflik UUID.
+
 ## [2.2.48] - 2026-09-10
 ### Integrasi Penuh AI Server-Side via Supabase Secrets & Edge Functions (Zero-Leak Security)
 
