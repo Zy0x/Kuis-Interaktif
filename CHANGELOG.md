@@ -1,6 +1,34 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.52] - 2026-09-10
+### Rekonstruksi Alur Pembuatan Kuis AI (Two-Stage Creation Flow & Eliminasi Redundansi UX)
+
+#### 1. Penghapusan Istilah Robotik & AI Slop
+- Menghapus sepenuhnya label "*Generator AI Wizard*" dan istilah-istilah artifisial yang tidak komunikatif untuk menghadirkan pengalaman pengguna (*UX*) yang bersih, elegan, dan ramah pendidik.
+- Menyederhanakan tata nama menjadi **Asisten Racik Kuis AI** yang komunikatif dan profesional (sesuai Rule 3).
+
+#### 2. Penerapan Arsitektur Dua Fase (Funnel ➔ Studio Kuis Utama)
+- **Fase 1: Asisten Racik Kuis AI (Creation Funnel)**:
+  - Bilah tab navigasi Studio (*Bank Soal*, *Pengaturan Kuis*, *Pratinjau*) disembunyikan sepenuhnya selama guru berada dalam fase peracikan, menghapus beban kognitif ganda (*double-stepper redundancy*).
+  - Alur peracikan disederhanakan menjadi **2 Tahap Alami**:
+    - **Tahap 1 (Materi & Sasaran Pembelajaran)**: Pemilihan 5 kartu mata pelajaran Kurikulum Merdeka (1 baris desktop), tingkat kelas SD (1–6), kolom input topik & rekomendasi topik cerdas interaktif, serta area catatan khusus dan tips instruksional guru.
+    - **Tahap 2 (Pengaturan Soal & Pilihan Mesin AI)**: Penentuan jumlah butir soal, mode proporsi format (Otomatis Seimbang vs Kustom Mandiri), kotak centang gambar edukasi AI, serta 4 pilihan mesin (Kurikulum SD Lokal, Groq Cloud LPU, Google Gemini AI, dan Salin Prompt / Berkas).
+- **Transisi Instan Tanpa Langkah Konfirmasi Redundan**:
+  - Memilih mesin AI langsung meracik butir soal dan secara otomatis membuka **Studio Bank Soal**, meniadakan klik konfirmasi yang tidak perlu.
+  - Memilih Salin Prompt / Berkas membuka laci kerja interaktif berdampingan (prompt siap pakai di kiri, kolom input/unggah berkas di kanan) dengan tombol periksa langsung ke Bank Soal.
+
+#### 3. Konsolidasi 3 Tab Bersih di Studio Kuis Utama
+- Mengkonsolidasikan navigasi Studio Kuis menjadi **3 Tab Utama yang Simetris & Intuitif**:
+  - `[ 1. Bank Soal (N) ]`: Tempat utama guru memeriksa, mengoreksi, menduplikasi, dan menambah butir soal baru (dilengkapi tombol modal *Asisten AI*).
+  - `[ 2. Pengaturan Kuis ]`: Mengatur judul kuis, deskripsi, durasi timer per soal, acak opsi, dan aksesibilitas.
+  - `[ 3. Pratinjau & Simpan ]`: Pratinjau tampilan kartu kuis siswa dan penerbitan langsung ke database.
+- Tombol navigasi bawah disinkronkan secara konsisten di setiap tab dengan tombol *Racik Ulang dengan AI* yang memudahkan kembali ke funnel jika diinginkan.
+
+#### 4. Kepatuhan Presisi Tampilan Mobile-First & Aksesibilitas (Rule 1 & 8)
+- Seluruh elemen antarmuka diuji dan dioptimalkan untuk perangkat mobile portrait (390px), landscape, tablet, hingga resolusi monitor ultra-wide (2000px).
+- Menjamin target sentuh minimal $\ge 44\text{px}$ (48px direkomendasikan) pada seluruh tombol, selektor opsi, dan kontrol formulir.
+
 ## [2.2.51] - 2026-09-10
 ### Optimalisasi Tata Letak Responsif Monitor Lebar & Ultra-Wide (Studio Kuis AI)
 

@@ -2,32 +2,30 @@ import React, { useState, useEffect, useMemo } from 'react';
 import type { Subject, QuizQuestion } from '../../types/quiz';
 import { 
   generateHybridQuizQuestions, 
-  checkSupabaseAiStatus,
-  getSupabaseAiStatusSync,
-  type AiProvider,
-  type SupabaseAiStatus
+  checkSupabaseAiStatus, 
+  getSupabaseAiStatusSync, 
+  type AiProvider, 
+  type SupabaseAiStatus 
 } from '../../lib/geminiApi';
 import { 
   parseRawQuestionsText, 
   generateAiPrompt, 
-  getQuestionCsvTemplate, 
-  type ParsedQuestionItem 
+  getQuestionCsvTemplate 
 } from '../../lib/aiQuestionParser';
 import { 
   Sparkles, 
   Zap, 
   ArrowLeft, 
-  ArrowRight,
+  ArrowRight, 
   Loader2, 
-  AlertCircle,
-  CheckCircle2,
-  Cloud,
-  Download,
-  UploadCloud,
-  Copy,
-  Check,
-  Shuffle,
-  Info,
+  AlertCircle, 
+  Cloud, 
+  Download, 
+  UploadCloud, 
+  Copy, 
+  Check, 
+  Shuffle, 
+  Info, 
   Eye
 } from 'lucide-react';
 
@@ -209,7 +207,7 @@ const SMART_TOPICS_BY_SUBJECT_AND_GRADE: Record<Subject, Record<number, TopicRec
   }
 };
 
-type SubStepNumber = 1 | 2 | 3 | 4 | 5 | 6 | 7;
+type CreationStage = 1 | 2;
 
 export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
   onGenerated,
@@ -218,19 +216,17 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
   initialSubject = 'IPA',
   initialGrade = 4,
 }) => {
-  // Wizard Sub-Step Navigation (1 s.d. 7)
-  const [subStep, setSubStep] = useState<SubStepNumber>(1);
+  // 2-Stage Creation Funnel
+  const [stage, setStage] = useState<CreationStage>(1);
 
-  // Step 1: Mata Pelajaran & Kelas
+  // Tahap 1: Materi & Sasaran
   const [subject, setSubject] = useState<Subject>(initialSubject);
   const [grade, setGrade] = useState<number>(initialGrade);
-
-  // Step 2: Topik & Bahan Pertimbangan AI
   const [topic, setTopic] = useState('');
   const [contextNotes, setContextNotes] = useState('');
   const [randomSeed, setRandomSeed] = useState(0);
 
-  // Step 3: Jumlah Soal, Format Proporsi & Gambar
+  // Tahap 2: Pengaturan Soal & Mesin AI
   const [questionCount, setQuestionCount] = useState<number>(5);
   const [customCountStr, setCustomCountStr] = useState<string>('5');
   const [proportionMode, setProportionMode] = useState<'balanced' | 'custom'>('balanced');
@@ -247,26 +243,19 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
   });
   const [includeAiImages, setIncludeAiImages] = useState<boolean>(false);
 
-  // Step 4: Mesin Pembuat Soal
+  // Mesin Pembuat Soal
   const [selectedEngine, setSelectedEngine] = useState<AiProvider | 'local' | 'prompt'>('local');
 
-  // Step 5: Teks Prompt & Unggah Berkas
+  // Input Berkas / Prompt Eksternal (jika selectedEngine === 'prompt')
   const [rawInputText, setRawInputText] = useState('');
   const [copiedPrompt, setCopiedPrompt] = useState(false);
   const [inputMethodTab, setInputMethodTab] = useState<'paste' | 'file'>('paste');
-
-  // Step 6: Hasil Parsing Inspektor
-  const [parsedItems, setParsedItems] = useState<ParsedQuestionItem[]>([]);
-
-  // Step 7: Kumpulan Soal Terakhir & Sumber Alur
-  const [finalQuestions, setFinalQuestions] = useState<QuizQuestion[]>([]);
-  const [flowSource, setFlowSource] = useState<'ai_direct' | 'prompt_flow'>('ai_direct');
 
   // Loading & Error States
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Supabase Cloud AI Status (Rule 9 & 10)
+  // Supabase Cloud AI Status
   const [supabaseAi, setSupabaseAi] = useState<SupabaseAiStatus>(() => getSupabaseAiStatusSync());
   const [isCheckingCloudAi, setIsCheckingCloudAi] = useState<boolean>(true);
 
@@ -294,7 +283,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
     };
   }, []);
 
-  // Saran Topik Cerdas Berdasarkan Mapel & Kelas
+  // Saran Topik Cerdas Kurikulum Merdeka
   const topicRecommendations = useMemo(() => {
     const bySubject = SMART_TOPICS_BY_SUBJECT_AND_GRADE[subject] || SMART_TOPICS_BY_SUBJECT_AND_GRADE['IPA'];
     const list = bySubject[grade] || bySubject[3] || [];
@@ -302,7 +291,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
     return [...list].reverse();
   }, [subject, grade, randomSeed]);
 
-  // Total Soal Terkalkulasi untuk Proporsi
+  // Total Soal Terkalkulasi
   const currentTotalQuestions = parseInt(customCountStr) || questionCount || 5;
   const sumCustomProportions = 
     proportions.multiple_choice + 
@@ -310,7 +299,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
     proportions.short_answer + 
     proportions.matching_pairs;
 
-  // Auto-balance helper saat beralih atau menambah jumlah
+  // Auto-distribute helper
   const handleAutoDistributeProportions = (targetTotal: number) => {
     const mc = Math.max(1, Math.round(targetTotal * 0.5));
     const tf = Math.max(0, Math.round(targetTotal * 0.2));
@@ -324,7 +313,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
     });
   };
 
-  // Prompt Teks Ultra-Presisi untuk Step 5
+  // Prompt Teks Siap Pakai
   const generatedPromptText = useMemo(() => {
     return generateAiPrompt({
       subject,
@@ -338,7 +327,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
     });
   }, [subject, grade, topic, currentTotalQuestions, proportionMode, proportions, contextNotes, includeAiImages]);
 
-  // Handler Salin Teks Prompt
+  // Handler Salin Prompt
   const handleCopyPrompt = async () => {
     playClick();
     try {
@@ -346,7 +335,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
       setCopiedPrompt(true);
       setTimeout(() => setCopiedPrompt(false), 2500);
     } catch {
-      // Fallback
+      // ignore
     }
   };
 
@@ -365,7 +354,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
     URL.revokeObjectURL(url);
   };
 
-  // Handler Unggah Berkas (CSV / JSON / TXT)
+  // Handler Unggah Berkas
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -389,14 +378,14 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
     reader.readAsText(file);
   };
 
-  // Eksekusi AI Direct (Step 4 -> Step 7)
+  // Eksekusi AI Direct (Lokal / Groq / Gemini) -> Langsung Buka Studio Bank Soal
   const handleExecuteAiDirect = async () => {
     playClick();
     setErrorMessage(null);
 
     if (!topic.trim()) {
       setErrorMessage('Mohon lengkapi judul atau topik kuis terlebih dahulu.');
-      setSubStep(2);
+      setStage(1);
       return;
     }
 
@@ -418,9 +407,16 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
         throw new Error('Tidak ada butir soal yang berhasil diracik. Silakan coba kembali.');
       }
 
-      setFinalQuestions(result.questions);
-      setFlowSource('ai_direct');
-      setSubStep(7);
+      // Langsung buka Studio Bank Soal
+      onGenerated({
+        questions: result.questions,
+        topic: topic.trim(),
+        subject,
+        grade,
+        questionCount: result.questions.length,
+        coverEmoji: EMOJI_BY_SUBJECT[subject] || '🌟',
+        badgeTitle: 'Bintang Pintar',
+      });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Terjadi kendala saat meracik soal AI.';
       setErrorMessage(msg);
@@ -429,8 +425,8 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
     }
   };
 
-  // Eksekusi Verifikasi Prompt (Step 5 -> Step 6)
-  const handleParseAndGoToPreview = () => {
+  // Eksekusi Verifikasi Prompt / Berkas -> Langsung Buka Studio Bank Soal
+  const handleParseAndOpenStudio = () => {
     playClick();
     setErrorMessage(null);
 
@@ -442,73 +438,50 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
 
     try {
       const parsed = parseRawQuestionsText(trimmed);
-      const validQuestions = parsed.filter((p) => p.valid);
+      const validQuestions = parsed.filter((p) => p.valid).map((p) => p.question);
 
       if (validQuestions.length === 0) {
         setErrorMessage('Format soal tidak dapat dikenali. Pastikan teks berisi pertanyaan, opsi pilihan, dan kunci jawaban.');
         return;
       }
 
-      setParsedItems(parsed);
-      setFinalQuestions(validQuestions.map((p) => p.question));
-      setFlowSource('prompt_flow');
-      setSubStep(6);
+      onGenerated({
+        questions: validQuestions,
+        topic: topic.trim() || `Kuis ${subject} Kelas ${grade}`,
+        subject,
+        grade,
+        questionCount: validQuestions.length,
+        coverEmoji: EMOJI_BY_SUBJECT[subject] || '🌟',
+        badgeTitle: 'Bintang Pintar',
+      });
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Gagal mengurai teks soal.';
       setErrorMessage(msg);
     }
   };
 
-  // Finalisasi Selesai di Step 7 -> Masuk ke Bank Soal
-  const handleFinishToQuestionBank = () => {
-    playClick();
-    if (finalQuestions.length === 0) {
-      setErrorMessage('Belum ada butir soal yang siap dimasukkan ke Bank Soal.');
-      return;
-    }
-
-    onGenerated({
-      questions: finalQuestions,
-      topic: topic.trim() || `Kuis ${subject} Kelas ${grade}`,
-      subject,
-      grade,
-      questionCount: finalQuestions.length,
-      coverEmoji: EMOJI_BY_SUBJECT[subject] || '🌟',
-      badgeTitle: 'Bintang Pintar',
-    });
-  };
-
-  // Stepper Title Maps
-  const STEP_TITLES: Record<SubStepNumber, { title: string; subtitle: string }> = {
-    1: { title: 'Mata Pelajaran & Kelas SD', subtitle: 'Tentukan kurikulum dasar kuis interaktif yang akan dibuat' },
-    2: { title: 'Topik & Bahan Pertimbangan AI', subtitle: 'Tuliskan materi pembelajaran dan konteks khusus yang diinginkan' },
-    3: { title: 'Jumlah & Proporsi Format Soal', subtitle: 'Atur jumlah butir soal, pembagian format, dan ilustrasi gambar' },
-    4: { title: 'Mesin Pembuat Soal', subtitle: 'Pilih mesin komputasi AI atau metode pembuatan prompt' },
-    5: { title: 'Salin Prompt & Unggah Berkas', subtitle: 'Salin instruksi prompt ke AI eksternal atau tempel/unggah berkas soal' },
-    6: { title: 'Inspektor Verifikasi Visual', subtitle: 'Periksa kelengkapan seluruh butir soal sebelum dikonfirmasi' },
-    7: { title: 'Konfirmasi Spesifikasi Target Kuis', subtitle: 'Ringkasan akhir spesifikasi sebelum masuk ke editor Bank Soal' },
-  };
-
   return (
     <div className="w-full max-w-[2000px] mx-auto px-3 xs:px-4 sm:px-8 lg:px-12 py-4 sm:py-6 animate-fade-in space-y-6">
       
-      {/* Top Stepper Indicator */}
-      <div className="bg-white dark:bg-slate-900 rounded-3xl p-4 sm:p-6 lg:p-7 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4 sm:space-y-5">
+      {/* Funnel Stage Header & Stepper */}
+      <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-7 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
         <div className="flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
           <div>
             <div className="flex items-center gap-2">
               <span className="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-black bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300">
-                Langkah {subStep} dari 7
+                Tahap {stage} dari 2
               </span>
-              <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 hidden sm:inline">
-                • Generator AI Wizard
+              <span className="text-xs font-semibold text-slate-400 dark:text-slate-500">
+                {stage === 1 ? 'Materi & Sasaran Kuis' : 'Pengaturan Soal & Mesin AI'}
               </span>
             </div>
             <h2 className="text-base sm:text-xl lg:text-2xl font-black text-slate-900 dark:text-white mt-1">
-              {STEP_TITLES[subStep].title}
+              {stage === 1 ? 'Materi & Sasaran Pembelajaran' : 'Pengaturan Soal & Pilihan Mesin AI'}
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-              {STEP_TITLES[subStep].subtitle}
+              {stage === 1 
+                ? 'Pilih mata pelajaran, jenjang kelas SD, materi pembahasan, dan konteks pembelajaran yang dituju.'
+                : 'Atur jumlah butir, proporsi tipe soal, dan pilih mesin pembuat soal otomatis.'}
             </p>
           </div>
 
@@ -518,60 +491,45 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
               playClick();
               onBack();
             }}
-            className="px-3.5 sm:px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-750 font-bold text-xs sm:text-sm flex items-center gap-2 transition-colors shrink-0 min-h-[44px] btn-press"
+            className="px-4 sm:px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-750 font-bold text-xs sm:text-sm flex items-center gap-2 transition-colors shrink-0 min-h-[44px] btn-press"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Ganti Metode</span>
           </button>
         </div>
 
-        {/* Progress Track */}
-        <div className="w-full bg-slate-100 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden flex">
-          <div 
-            className="bg-blue-600 h-full transition-all duration-300 ease-out rounded-full"
-            style={{ width: `${(subStep / 7) * 100}%` }}
+        {/* 2-Stage Progress Bar */}
+        <div className="grid grid-cols-2 gap-2 pt-1">
+          <button
+            type="button"
+            onClick={() => {
+              playClick();
+              setStage(1);
+            }}
+            className={`h-2 rounded-full transition-all text-left ${
+              stage >= 1 ? 'bg-blue-600' : 'bg-slate-200 dark:bg-slate-800'
+            }`}
+            title="Tahap 1: Materi & Sasaran"
           />
-        </div>
-
-        {/* Step Indicator Badges */}
-        <div className="flex items-center justify-between gap-1 overflow-x-auto pb-1 no-scrollbar text-[11px] sm:text-xs font-bold text-slate-400">
-          {[1, 2, 3, 4, 5, 6, 7].map((num) => (
-            <div 
-              key={num} 
-              className={`flex items-center gap-1.5 shrink-0 transition-colors ${
-                subStep === num 
-                  ? 'text-blue-600 dark:text-blue-400 font-black' 
-                  : subStep > num 
-                    ? 'text-emerald-600 dark:text-emerald-400' 
-                    : 'text-slate-400 dark:text-slate-600'
-              }`}
-            >
-              <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-[10px] sm:text-xs transition-all ${
-                subStep === num 
-                  ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-300/40' 
-                  : subStep > num 
-                    ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300' 
-                    : 'bg-slate-100 dark:bg-slate-800'
-              }`}>
-                {subStep > num ? '✓' : num}
-              </div>
-              <span className="hidden sm:inline text-xs font-bold">
-                {num === 1 && '1. Mapel & Kelas'}
-                {num === 2 && '2. Topik & Saran'}
-                {num === 3 && '3. Format & Proporsi'}
-                {num === 4 && '4. Mesin Pembuat'}
-                {num === 5 && '5. Prompt / Berkas'}
-                {num === 6 && '6. Inspeksi Soal'}
-                {num === 7 && '7. Konfirmasi'}
-              </span>
-            </div>
-          ))}
+          <button
+            type="button"
+            onClick={() => {
+              if (topic.trim()) {
+                playClick();
+                setStage(2);
+              }
+            }}
+            className={`h-2 rounded-full transition-all text-left ${
+              stage >= 2 ? 'bg-blue-600' : 'bg-slate-200 dark:bg-slate-800'
+            }`}
+            title="Tahap 2: Pengaturan Soal & AI"
+          />
         </div>
       </div>
 
-      {/* Error Message Toast Banner */}
+      {/* Error Message Banner */}
       {errorMessage && (
-        <div className="mb-6 p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 flex items-start gap-3 text-xs sm:text-sm animate-shake">
+        <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 flex items-start gap-3 text-xs sm:text-sm animate-shake">
           <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-rose-600" />
           <div className="flex-1 font-medium">{errorMessage}</div>
           <button 
@@ -585,12 +543,12 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
       )}
 
       {/* ========================================================================= */}
-      {/* SUB-STEP 1: MATA PELAJARAN DAN TINGKAT KELAS SD */}
+      {/* TAHAP 1: MATERI, SASARAN, & REKOMENDASI TOPIK CERDAS */}
       {/* ========================================================================= */}
-      {subStep === 1 && (
+      {stage === 1 && (
         <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-8 lg:p-10 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6 sm:space-y-8">
           
-          {/* Pilihan Mata Pelajaran */}
+          {/* Pilihan Mata Pelajaran (1 Baris di Desktop) */}
           <div>
             <div className="flex items-center justify-between mb-3">
               <label className="block text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white">
@@ -635,7 +593,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                 Pilih Tingkat Kelas SD <span className="text-rose-500">*</span>
               </label>
               <span className="text-xs text-slate-400 dark:text-slate-500 hidden sm:inline">
-                Fase A (1-2), B (3-4), C (5-6)
+                Fase A (1-2), Fase B (3-4), Fase C (5-6)
               </span>
             </div>
 
@@ -661,47 +619,10 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
             </div>
           </div>
 
-          {/* Navigasi Bawah */}
-          <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end">
-            <button
-              type="button"
-              onClick={() => {
-                playClick();
-                setSubStep(2);
-              }}
-              className="w-full sm:w-auto px-8 py-3.5 rounded-2xl font-black text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-md flex items-center justify-center gap-2 min-h-[48px] btn-press transition-all"
-            >
-              <span>Lanjut ke Topik Kuis</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </div>
-
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* SUB-STEP 2: TOPIK, BAHAN PERTIMBANGAN AI, & SARAN CERDAS */}
-      {/* ========================================================================= */}
-      {subStep === 2 && (
-        <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-8 lg:p-10 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6 sm:space-y-8">
-          
-          {/* Tag Penanda Konteks */}
-          <div className="flex items-center justify-between gap-3 flex-wrap p-3.5 rounded-2xl bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900/60">
-            <div className="flex items-center gap-2.5 text-blue-900 dark:text-blue-200 text-xs sm:text-sm font-black">
-              <span className="text-xl sm:text-2xl">{EMOJI_BY_SUBJECT[subject]}</span>
-              <span>Mata Pelajaran: {subject}</span>
-              <span className="text-blue-400">•</span>
-              <span>Tingkat: Kelas {grade} SD</span>
-            </div>
-            <span className="text-[11px] font-bold text-blue-700 dark:text-blue-300 bg-blue-100/80 dark:bg-blue-900/60 px-2.5 py-1 rounded-lg">
-              Kurikulum Merdeka
-            </span>
-          </div>
-
-          {/* 2-Column Responsive Layout for Desktop */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+          {/* 2-Kolom: Topik & Saran Cerdas (Kiri) vs Catatan & Tips (Kanan) */}
+          <div className="pt-5 border-t border-slate-100 dark:border-slate-800 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
             
-            {/* Left Column: Topik & Rekomendasi Cerdas */}
+            {/* Kolom Kiri: Input Topik & Rekomendasi Cerdas */}
             <div className="lg:col-span-6 space-y-5">
               <div>
                 <label className="block text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white mb-2">
@@ -716,7 +637,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                 />
               </div>
 
-              {/* Saran Topik Cerdas */}
+              {/* Rekomendasi Topik Cerdas */}
               <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-850/60 border border-slate-200 dark:border-slate-800 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
@@ -759,11 +680,11 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
               </div>
             </div>
 
-            {/* Right Column: Bahan Pertimbangan AI & Panduan */}
+            {/* Kolom Kanan: Catatan Khusus & Panduan Guru */}
             <div className="lg:col-span-6 space-y-5">
               <div>
                 <label className="block text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white mb-2">
-                  Informasi Singkat / Bahan Pertimbangan AI <span className="text-slate-400 font-normal">(Opsional)</span>
+                  Catatan / Bahan Pertimbangan Khusus <span className="text-slate-400 font-normal">(Opsional)</span>
                 </label>
                 <textarea
                   rows={4}
@@ -777,30 +698,30 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
               <div className="p-4 rounded-2xl bg-indigo-50/60 dark:bg-indigo-950/30 border border-indigo-200/70 dark:border-indigo-900/50 space-y-2">
                 <div className="flex items-center gap-2 text-indigo-900 dark:text-indigo-200 font-bold text-xs">
                   <Info className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
-                  <span>Tips Memberikan Konteks kepada AI:</span>
+                  <span>Tips Instruksional untuk Guru SD:</span>
                 </div>
                 <ul className="text-[11px] sm:text-xs text-indigo-800 dark:text-indigo-300/90 space-y-1 pl-6 list-disc leading-relaxed">
-                  <li>Tentukan fokus sub-materi tertentu agar tidak melebar.</li>
-                  <li>Sebutkan jika ada istilah khusus yang ingin dikenalkan kepada siswa.</li>
-                  <li>AI akan menyesuaikan tingkat kerumitan kalimat dengan usia siswa kelas {grade} SD.</li>
+                  <li>Tentukan fokus sub-materi tertentu agar kuis lebih padat dan tepat sasaran.</li>
+                  <li>Konteks akan membantu AI menyesuaikan gaya kalimat dengan psikologi siswa Kelas {grade} SD.</li>
+                  <li>Anda tetap dapat mengedit, menambah, atau merevisi butir soal secara leluasa di Studio Bank Soal.</li>
                 </ul>
               </div>
             </div>
 
           </div>
 
-          {/* Navigasi Bawah */}
+          {/* Navigasi Tahap 1 */}
           <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
             <button
               type="button"
               onClick={() => {
                 playClick();
-                setSubStep(1);
+                onBack();
               }}
               className="px-6 py-3.5 rounded-2xl font-bold text-xs sm:text-sm text-slate-600 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 min-h-[48px] flex items-center gap-2 btn-press transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span>Kembali</span>
+              <span>Ganti Metode</span>
             </button>
 
             <button
@@ -808,15 +729,15 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
               onClick={() => {
                 playClick();
                 if (!topic.trim()) {
-                  setErrorMessage('Mohon isi topik atau materi pembelajaran terlebih dahulu.');
+                  setErrorMessage('Mohon tentukan materi atau topik pembahasan kuis terlebih dahulu.');
                   return;
                 }
                 setErrorMessage(null);
-                setSubStep(3);
+                setStage(2);
               }}
               className="px-8 py-3.5 rounded-2xl font-black text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-md flex items-center gap-2 min-h-[48px] btn-press transition-all"
             >
-              <span>Lanjut ke Format Soal</span>
+              <span>Lanjut ke Pengaturan Soal & AI</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
@@ -825,23 +746,45 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
       )}
 
       {/* ========================================================================= */}
-      {/* SUB-STEP 3: JUMLAH SOAL, PROPORSI FORMAT, & GAMBAR */}
+      {/* TAHAP 2: PENGATURAN SOAL & PILIHAN MESIN AI */}
       {/* ========================================================================= */}
-      {subStep === 3 && (
+      {stage === 2 && (
         <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-8 lg:p-10 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6 sm:space-y-8">
           
-          {/* Pilihan Jumlah Soal */}
+          {/* Pill Ringkasan Materi */}
+          <div className="flex items-center justify-between gap-2.5 flex-wrap p-3.5 sm:p-4 rounded-2xl bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900/60">
+            <div className="flex items-center gap-2 text-blue-900 dark:text-blue-200 text-xs sm:text-sm font-black flex-wrap min-w-0 flex-1">
+              <span className="text-xl sm:text-2xl shrink-0">{EMOJI_BY_SUBJECT[subject]}</span>
+              <span className="shrink-0">{subject}</span>
+              <span className="text-blue-400 shrink-0">•</span>
+              <span className="shrink-0">Kelas {grade} SD</span>
+              <span className="text-blue-400 shrink-0">•</span>
+              <span className="truncate max-w-[160px] xs:max-w-[220px] sm:max-w-md font-semibold">"{topic}"</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                setStage(1);
+              }}
+              className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline px-2.5 py-1 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/50 shrink-0"
+            >
+              Ubah Materi ✏️
+            </button>
+          </div>
+
+          {/* Pilihan Jumlah Butir Soal */}
           <div>
             <div className="flex items-center justify-between mb-3">
               <label className="block text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white">
                 Jumlah Butir Soal <span className="text-rose-500">*</span>
               </label>
               <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">
-                Pilih opsi cepat atau ketik angka (1 - 50 butir)
+                Pilih opsi cepat atau ketik kustom (1 - 50 butir)
               </span>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2.5 sm:gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3">
               {[5, 10, 15, 20, 25].map((cnt) => (
                 <button
                   key={cnt}
@@ -886,7 +829,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
             </div>
           </div>
 
-          {/* Mode Format Tipe Soal */}
+          {/* Mode Format Tipe Soal & Proporsi */}
           <div className="pt-6 border-t border-slate-100 dark:border-slate-800 space-y-4">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div>
@@ -894,11 +837,11 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                   Format Tipe Soal & Proporsi
                 </label>
                 <p className="text-xs text-slate-400 dark:text-slate-500">
-                  Tentukan bagaimana AI membagi tipe soal yang dihasilkan.
+                  Tentukan bagaimana AI membagi variasi tipe soal.
                 </p>
               </div>
 
-              {/* Mode Toggle */}
+              {/* Mode Switcher */}
               <div className="flex p-1.5 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60">
                 <button
                   type="button"
@@ -933,14 +876,14 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
             </div>
 
             {proportionMode === 'balanced' ? (
-              <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-850/60 border border-slate-200/80 dark:border-slate-700/60 text-xs sm:text-sm text-slate-600 dark:text-slate-300 flex items-start gap-3">
+              <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 dark:bg-slate-850/60 border border-slate-200/80 dark:border-slate-700/60 text-xs sm:text-sm text-slate-600 dark:text-slate-300 flex items-start gap-3">
                 <Info className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
                 <div className="space-y-1 leading-relaxed">
                   <span className="font-bold text-slate-800 dark:text-slate-200 block">
-                    Mode Otomatis Berimbang Aktif:
+                    Distribusi Otomatis Berimbang:
                   </span>
                   <span>
-                    AI akan secara cerdas meracik distribusi berimbang antara <strong>Pilihan Ganda (~50%)</strong>, <strong>Benar/Salah (~20%)</strong>, <strong>Isian Singkat (~20%)</strong>, dan <strong>Menjodohkan (~10%)</strong> sesuai karakteristik kognitif anak kelas {grade} SD.
+                    AI secara proporsional meracik <strong>Pilihan Ganda (~50%)</strong>, <strong>Benar/Salah (~20%)</strong>, <strong>Isian Singkat (~20%)</strong>, dan <strong>Menjodohkan (~10%)</strong> sesuai kebutuhan kompetensi dasar siswa Kelas {grade} SD.
                   </span>
                 </div>
               </div>
@@ -1078,14 +1021,14 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                 {sumCustomProportions !== currentTotalQuestions && (
                   <p className="text-[11px] sm:text-xs font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1.5 pt-1">
                     <span>⚠️</span>
-                    <span>Total proporsi ({sumCustomProportions}) harus persis sama dengan total butir terpilih ({currentTotalQuestions}). Silakan sesuaikan jumlah di atas.</span>
+                    <span>Total alokasi ({sumCustomProportions}) harus sama dengan total butir kuis ({currentTotalQuestions}).</span>
                   </p>
                 )}
               </div>
             )}
           </div>
 
-          {/* Kotak Include Gambar */}
+          {/* Kotak Sertakan Gambar AI */}
           <div className="pt-6 border-t border-slate-100 dark:border-slate-800">
             <label className="flex items-center gap-4 p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-850/60 cursor-pointer min-h-[60px] hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors btn-press">
               <input
@@ -1099,66 +1042,32 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                   🎨 Sertakan Gambar Ilustrasi Edukasi AI
                 </span>
                 <span className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 block mt-0.5">
-                  Menyertakan prompt visual dan gambar edukasi relevan pada butir soal untuk merangsang daya visual siswa SD.
+                  Menyertakan gambar edukasi visual yang relevan untuk merangsang imajinasi dan ketertarikan belajar siswa SD.
                 </span>
               </div>
             </label>
           </div>
 
-          {/* Navigasi Bawah */}
-          <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
-            <button
-              type="button"
-              onClick={() => {
-                playClick();
-                setSubStep(2);
-              }}
-              className="px-6 py-3.5 rounded-2xl font-bold text-xs sm:text-sm text-slate-600 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 min-h-[48px] flex items-center gap-2 btn-press transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Kembali</span>
-            </button>
+          {/* Pilihan Mesin Pembuat Soal */}
+          <div className="pt-6 border-t border-slate-100 dark:border-slate-800 space-y-4">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div>
+                <label className="block text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white">
+                  Pilih Mesin Pembuat Soal
+                </label>
+                <p className="text-xs text-slate-400 dark:text-slate-500">
+                  Gunakan pembuat otomatis langsung, atau gunakan fitur salin prompt / unggah berkas.
+                </p>
+              </div>
 
-            <button
-              type="button"
-              disabled={proportionMode === 'custom' && sumCustomProportions !== currentTotalQuestions}
-              onClick={() => {
-                playClick();
-                setErrorMessage(null);
-                setSubStep(4);
-              }}
-              className="px-8 py-3.5 rounded-2xl font-black text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-md flex items-center gap-2 min-h-[48px] btn-press transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <span>Lanjut ke Mesin Pembuat</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </div>
-
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* SUB-STEP 4: MESIN PEMBUAT SOAL (LOKAL, GROQ, GEMINI, GENERATE PROMPT) */}
-      {/* ========================================================================= */}
-      {subStep === 4 && (
-        <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-8 lg:p-10 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6 sm:space-y-8">
-          
-          <div>
-            <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
-              <label className="block text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white">
-                Pilih Mesin Pembuat Soal
-              </label>
               {isCheckingCloudAi && (
                 <span className="text-[11px] text-blue-500 font-bold flex items-center gap-1.5 bg-blue-50 dark:bg-blue-950/50 px-2.5 py-1 rounded-lg">
                   <Loader2 className="w-3.5 h-3.5 animate-spin" /> Memeriksa Status Cloud...
                 </span>
               )}
             </div>
-            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mb-5">
-              Pilih salah satu dari 3 model langsung untuk meracik instan, atau pilih <strong>Generate Prompt</strong> jika ingin menggunakan AI eksternal atau berkas dokumen Anda.
-            </p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               
               {/* Option 1: Kurikulum SD Lokal */}
               <button
@@ -1179,12 +1088,12 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                       🤖
                     </div>
                     <span className="text-[10px] px-2 py-0.5 rounded-md font-bold bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
-                      Mandiri / Offline
+                      Mandiri / Cepat
                     </span>
                   </div>
                   <span className="font-black text-sm sm:text-base block">Kurikulum SD Lokal</span>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-snug">
-                    Pembuat soal cepat berbasis bank materi Kurikulum Merdeka lokal tanpa ketergantungan kuota API.
+                    Pembuat soal cepat materi Kurikulum Merdeka tanpa ketergantungan kuota API.
                   </p>
                 </div>
                 <div className="pt-2 text-[11px] font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1">
@@ -1222,7 +1131,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                   </div>
                   <span className="font-black text-sm sm:text-base block">Groq Cloud LPU</span>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-snug">
-                    Komputasi LPU Llama 3.3 70B super kilat (&lt;1 detik) dengan pemahaman silabus kurikulum presisi.
+                    Komputasi LPU Llama 3.3 70B super kilat (&lt;1 detik) dengan pemahaman kurikulum presisi.
                   </p>
                 </div>
                 <div className="pt-2 text-[11px] font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
@@ -1254,13 +1163,13 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                       </span>
                     ) : (
                       <span className="text-[10px] px-2 py-0.5 rounded-md font-bold bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300">
-                        Cerdas & Kaya
+                        Cerdas & Kontekstual
                       </span>
                     )}
                   </div>
                   <span className="font-black text-sm sm:text-base block">Google Gemini AI</span>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-snug">
-                    Penalaran edukatif mendalam, kaya variasi pertanyaan kontekstual ramah anak SD.
+                    Penalaran edukatif mendalam dengan variasi pertanyaan kontekstual ramah anak SD.
                   </p>
                 </div>
                 <div className="pt-2 text-[11px] font-bold text-purple-600 dark:text-purple-400 flex items-center gap-1">
@@ -1268,7 +1177,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                 </div>
               </button>
 
-              {/* Option 4: Generate Prompt */}
+              {/* Option 4: Salin Prompt / Berkas Dokumen */}
               <button
                 type="button"
                 onClick={() => {
@@ -1287,12 +1196,12 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                       📝
                     </div>
                     <span className="text-[10px] px-2 py-0.5 rounded-md font-bold bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300">
-                      Fleksibel / Berkas
+                      Salin / Impor
                     </span>
                   </div>
-                  <span className="font-black text-sm sm:text-base block">Generate Prompt / Berkas</span>
+                  <span className="font-black text-sm sm:text-base block">Salin Prompt / Berkas</span>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-snug">
-                    Gunakan ChatGPT / Claude, atau unggah tabel Excel/CSV/JSON/Teks dokumen kuis Anda.
+                    Salin teks prompt ke ChatGPT/Claude, atau unggah tabel Excel/CSV/JSON/Teks kuis Anda.
                   </p>
                 </div>
                 <div className="pt-2 text-[11px] font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
@@ -1303,540 +1212,192 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
             </div>
           </div>
 
-          {/* Action Footer */}
+          {/* Area Interaktif Khusus jika Salin Prompt / Berkas Dipilih */}
+          {selectedEngine === 'prompt' && (
+            <div className="pt-6 border-t border-slate-100 dark:border-slate-800 animate-fade-in space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+                
+                {/* Kolom Kiri: Teks Prompt Siap Pakai */}
+                <div className="lg:col-span-6 flex flex-col justify-between p-5 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-200/80 dark:border-indigo-900/60 space-y-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <span className="font-extrabold text-xs sm:text-sm text-indigo-950 dark:text-indigo-200 flex items-center gap-2">
+                        <span>1.</span> Teks Prompt Edukasi Kurikulum Merdeka
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={handleCopyPrompt}
+                        className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center gap-2 shadow-xs btn-press min-h-[40px]"
+                      >
+                        {copiedPrompt ? (
+                          <>
+                            <Check className="w-4 h-4 text-emerald-300" />
+                            <span>Tersalin ke Clipboard!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-4 h-4" />
+                            <span>Salin Teks Prompt</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    <textarea
+                      readOnly
+                      rows={10}
+                      value={generatedPromptText}
+                      className="w-full p-4 rounded-xl bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-900 text-xs font-mono text-slate-700 dark:text-slate-300 focus:outline-none select-all leading-relaxed"
+                    />
+                  </div>
+
+                  <div className="p-3.5 rounded-xl bg-indigo-100/70 dark:bg-indigo-900/40 text-[11px] sm:text-xs text-indigo-800 dark:text-indigo-300 leading-relaxed font-medium">
+                    💡 <strong>Cara Pakai:</strong> Salin prompt di atas → tempel ke ChatGPT, Claude, atau Gemini → salin respons AI dan tempelkan pada kotak di sebelah kanan.
+                  </div>
+                </div>
+
+                {/* Kolom Kanan: Input Hasil Soal / Unggah Berkas */}
+                <div className="lg:col-span-6 flex flex-col justify-between p-5 rounded-2xl bg-slate-50/80 dark:bg-slate-850/80 border border-slate-200 dark:border-slate-800 space-y-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <span className="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                        <span>2.</span> Masukkan Hasil Soal atau Berkas
+                      </span>
+
+                      <div className="flex p-1 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            playClick();
+                            setInputMethodTab('paste');
+                          }}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all min-h-[34px] ${
+                            inputMethodTab === 'paste'
+                              ? 'bg-blue-600 text-white shadow-xs'
+                              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                          }`}
+                        >
+                          📝 Tempel Teks
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            playClick();
+                            setInputMethodTab('file');
+                          }}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all min-h-[34px] ${
+                            inputMethodTab === 'file'
+                              ? 'bg-blue-600 text-white shadow-xs'
+                              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                          }`}
+                        >
+                          📂 Unggah Berkas
+                        </button>
+                      </div>
+                    </div>
+
+                    {inputMethodTab === 'paste' ? (
+                      <div>
+                        <textarea
+                          rows={10}
+                          value={rawInputText}
+                          onChange={(e) => setRawInputText(e.target.value)}
+                          placeholder="Tempelkan teks respons JSON dari AI atau teks daftar soal bernomor (1. Pertanyaan... A. Opsi... B. Opsi... Kunci: ...) di sini..."
+                          className="w-full p-4 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 font-mono text-xs sm:text-sm focus:border-blue-500 focus:outline-none leading-relaxed shadow-xs"
+                        />
+                        <div className="flex items-center justify-between text-[11px] text-slate-400 mt-1">
+                          <span>Mendukung format JSON Array maupun teks soal bernomor.</span>
+                          <span className="font-bold">{rawInputText.length} karakter</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-8 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-center space-y-4">
+                        <UploadCloud className="w-12 h-12 text-blue-500 mx-auto" />
+                        <div>
+                          <label className="inline-block px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm cursor-pointer shadow-md min-h-[44px] btn-press">
+                            Pilih Berkas (.xlsx, .csv, .json, .txt)
+                            <input
+                              type="file"
+                              accept=".xlsx,.xls,.csv,.json,.txt"
+                              onChange={handleFileUpload}
+                              className="hidden"
+                            />
+                          </label>
+                          <p className="text-xs text-slate-400 mt-2">
+                            Mendukung file spreadsheet CSV, Excel, atau berkas teks.
+                          </p>
+                        </div>
+
+                        <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-center">
+                          <button
+                            type="button"
+                            onClick={handleDownloadCsvTemplate}
+                            className="text-xs text-blue-600 dark:text-blue-400 font-bold hover:underline flex items-center gap-1.5 min-h-[36px]"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            Unduh Contoh Format Template CSV
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500">
+                    ⚡ Seluruh butir soal akan otomatis diekstrak dan siap diperiksa di Studio Bank Soal.
+                  </p>
+                </div>
+
+              </div>
+            </div>
+          )}
+
+          {/* Action Footer Tahap 2 */}
           <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
             <button
               type="button"
               disabled={isLoading}
               onClick={() => {
                 playClick();
-                setSubStep(3);
+                setStage(1);
               }}
               className="px-6 py-3.5 rounded-2xl font-bold text-xs sm:text-sm text-slate-600 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 min-h-[48px] flex items-center gap-2 btn-press transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span>Kembali</span>
+              <span>Kembali ke Materi</span>
             </button>
 
             {selectedEngine === 'prompt' ? (
               <button
                 type="button"
-                onClick={() => {
-                  playClick();
-                  setErrorMessage(null);
-                  setSubStep(5);
-                }}
-                className="px-8 py-3.5 rounded-2xl font-black text-sm text-white bg-indigo-600 hover:bg-indigo-700 shadow-md flex items-center gap-2 min-h-[48px] btn-press transition-all"
+                onClick={handleParseAndOpenStudio}
+                className="px-8 py-3.5 rounded-2xl font-black text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-md flex items-center gap-2 min-h-[48px] btn-press transition-all"
               >
-                <span>Buka Generator Prompt (Langkah 5)</span>
+                <Eye className="w-4 h-4" />
+                <span>Periksa & Buka Bank Soal</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             ) : (
               <button
                 type="button"
-                disabled={isLoading}
+                disabled={isLoading || (proportionMode === 'custom' && sumCustomProportions !== currentTotalQuestions)}
                 onClick={handleExecuteAiDirect}
-                className="px-8 py-3.5 rounded-2xl font-black text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-md flex items-center gap-2 min-h-[48px] btn-press transition-all disabled:opacity-50"
+                className="px-8 py-3.5 rounded-2xl font-black text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/25 flex items-center gap-2 min-h-[48px] btn-press transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Sedang Meracik Soal...</span>
+                    <span>Sedang Meracik Butir Soal SD...</span>
                   </>
                 ) : (
                   <>
                     <Zap className="w-4 h-4 text-amber-300 fill-amber-300" />
-                    <span>Buat Soal & Lanjut ke Langkah 7</span>
+                    <span>Buat Kuis Sekarang & Buka Bank Soal</span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
               </button>
             )}
-          </div>
-
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* SUB-STEP 5: SALIN PROMPT & UNGGAH BERKAS */}
-      {/* ========================================================================= */}
-      {subStep === 5 && (
-        <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-8 lg:p-10 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6 sm:space-y-8">
-          
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-stretch">
-            
-            {/* Card 1: Kotak Prompt Siap Pakai (Left Column on Desktop) */}
-            <div className="lg:col-span-6 flex flex-col justify-between p-5 sm:p-6 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-200/80 dark:border-indigo-900/60 space-y-4 shadow-xs">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between flex-wrap gap-2">
-                  <div className="flex items-center gap-2.5">
-                    <span className="w-7 h-7 rounded-xl bg-indigo-600 text-white flex items-center justify-center text-xs font-black">
-                      1
-                    </span>
-                    <span className="font-extrabold text-xs sm:text-sm text-indigo-950 dark:text-indigo-200">
-                      Teks Prompt Siap Pakai (Anti AI Slop)
-                    </span>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={handleCopyPrompt}
-                    className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center gap-2 shadow-xs btn-press min-h-[40px]"
-                  >
-                    {copiedPrompt ? (
-                      <>
-                        <Check className="w-4 h-4 text-emerald-300" />
-                        <span>Tersalin ke Clipboard!</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-4 h-4" />
-                        <span>Salin Teks Prompt</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-
-                {/* Readonly Prompt Box */}
-                <div className="relative">
-                  <textarea
-                    readOnly
-                    rows={11}
-                    value={generatedPromptText}
-                    className="w-full p-4 rounded-xl bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-900 text-xs font-mono text-slate-700 dark:text-slate-300 focus:outline-none select-all leading-relaxed"
-                  />
-                </div>
-              </div>
-
-              <div className="p-3.5 rounded-xl bg-indigo-100/70 dark:bg-indigo-900/40 text-[11px] sm:text-xs text-indigo-800 dark:text-indigo-300 leading-relaxed font-medium">
-                💡 <strong>Alur Praktis:</strong> 1. Salin prompt di atas → 2. Tempel ke ChatGPT, Claude, atau Gemini → 3. Salin jawaban AI dan tempelkan pada kolom di sebelah kanan.
-              </div>
-            </div>
-
-            {/* Card 2: Area Masukan (Right Column on Desktop) */}
-            <div className="lg:col-span-6 flex flex-col justify-between p-5 sm:p-6 rounded-2xl bg-slate-50/80 dark:bg-slate-850/80 border border-slate-200 dark:border-slate-800 space-y-4 shadow-xs">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between flex-wrap gap-2">
-                  <div className="flex items-center gap-2.5">
-                    <span className="w-7 h-7 rounded-xl bg-blue-600 text-white flex items-center justify-center text-xs font-black">
-                      2
-                    </span>
-                    <span className="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-white">
-                      Masukkan Hasil Soal atau Berkas
-                    </span>
-                  </div>
-
-                  {/* Sub-tab Switcher */}
-                  <div className="flex p-1 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        playClick();
-                        setInputMethodTab('paste');
-                      }}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all min-h-[34px] ${
-                        inputMethodTab === 'paste'
-                          ? 'bg-blue-600 text-white shadow-xs'
-                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
-                      }`}
-                    >
-                      📝 Tempel Teks / JSON
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        playClick();
-                        setInputMethodTab('file');
-                      }}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all min-h-[34px] ${
-                        inputMethodTab === 'file'
-                          ? 'bg-blue-600 text-white shadow-xs'
-                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
-                      }`}
-                    >
-                      📂 Unggah Berkas
-                    </button>
-                  </div>
-                </div>
-
-                {inputMethodTab === 'paste' ? (
-                  <div>
-                    <textarea
-                      rows={11}
-                      value={rawInputText}
-                      onChange={(e) => setRawInputText(e.target.value)}
-                      placeholder="Tempelkan teks respons JSON dari AI atau teks daftar soal bernomor (1. ... A. ... B. ... Kunci: ...) di sini..."
-                      className="w-full p-4 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 font-mono text-xs sm:text-sm focus:border-blue-500 focus:outline-none leading-relaxed shadow-xs"
-                    />
-                    <div className="flex items-center justify-between text-[11px] text-slate-400 mt-1">
-                      <span>Mendukung format JSON Array maupun format teks soal bernomor.</span>
-                      <span className="font-bold">{rawInputText.length} karakter</span>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="p-8 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-center space-y-4">
-                    <UploadCloud className="w-12 h-12 text-blue-500 mx-auto" />
-                    <div>
-                      <label className="inline-block px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm cursor-pointer shadow-md min-h-[44px] btn-press">
-                        Pilih Berkas (.xlsx, .csv, .json, .txt)
-                        <input
-                          type="file"
-                          accept=".xlsx,.xls,.csv,.json,.txt"
-                          onChange={handleFileUpload}
-                          className="hidden"
-                        />
-                      </label>
-                      <p className="text-xs text-slate-400 mt-2">
-                        Mendukung berkas spreadsheet CSV, Excel, dokumen teks, atau berkas JSON.
-                      </p>
-                    </div>
-
-                    <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-center">
-                      <button
-                        type="button"
-                        onClick={handleDownloadCsvTemplate}
-                        className="text-xs text-blue-600 dark:text-blue-400 font-bold hover:underline flex items-center gap-1.5 min-h-[36px]"
-                      >
-                        <Download className="w-3.5 h-3.5" />
-                        Unduh Contoh Format Template CSV/Excel
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <p className="text-[11px] text-slate-400 dark:text-slate-500">
-                ⚡ Parser cerdas otomatis mendeteksi format, kunci jawaban, dan pembahasan soal.
-              </p>
-            </div>
-
-          </div>
-
-          {/* Action Footer */}
-          <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
-            <button
-              type="button"
-              onClick={() => {
-                playClick();
-                setSubStep(4);
-              }}
-              className="px-6 py-3.5 rounded-2xl font-bold text-xs sm:text-sm text-slate-600 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 min-h-[48px] flex items-center gap-2 btn-press transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Kembali ke Mesin</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleParseAndGoToPreview}
-              className="px-8 py-3.5 rounded-2xl font-black text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-md flex items-center gap-2 min-h-[48px] btn-press transition-all"
-            >
-              <Eye className="w-4 h-4" />
-              <span>Periksa & Pratinjau Soal (Langkah 6)</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </div>
-
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* SUB-STEP 6: INSPEKTOR VERIFIKASI VISUAL (READ-ONLY) */}
-      {/* ========================================================================= */}
-      {subStep === 6 && (
-        <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-8 lg:p-10 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6 sm:space-y-8">
-          
-          {/* Header Status Deteksi */}
-          <div className="p-4 sm:p-5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 flex items-center justify-between flex-wrap gap-3">
-            <div className="flex items-center gap-3">
-              <CheckCircle2 className="w-6 h-6 text-emerald-600 dark:text-emerald-400 shrink-0" />
-              <div>
-                <span className="font-extrabold text-xs sm:text-sm text-emerald-950 dark:text-emerald-200 block">
-                  {parsedItems.filter((p) => p.valid).length} Butir Soal Terdeteksi Sempurna
-                </span>
-                <span className="text-[11px] sm:text-xs text-emerald-700 dark:text-emerald-400 block mt-0.5">
-                  Seluruh pertanyaan, kunci jawaban, dan pembahasan telah diverifikasi siap pakai.
-                </span>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => {
-                playClick();
-                setSubStep(5);
-              }}
-              className="px-4 py-2 rounded-xl border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-slate-900 text-emerald-800 dark:text-emerald-300 font-bold text-xs flex items-center gap-2 btn-press min-h-[40px] shadow-xs"
-            >
-              <span>✏️ Perbaiki Teks di Step 5</span>
-            </button>
-          </div>
-
-          {/* Notice Callout */}
-          <div className="p-4 rounded-2xl bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200/60 dark:border-blue-900/40 text-xs text-blue-800 dark:text-blue-300 flex items-center gap-2.5">
-            <Info className="w-4 h-4 text-blue-600 shrink-0" />
-            <span>
-              💡 <strong>Tips Guru:</strong> Anda dapat memeriksa seluruh butir di bawah. Pengeditan teks mendalam, penambahan butir baru, atau penggantian gambar dapat dilakukan leluasa pada <strong>Tab 2 (Bank Soal)</strong> nanti.
-            </span>
-          </div>
-
-          {/* List Kartu Soal Pratinjau Read-Only (Multi-column on Desktop) */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-4 max-h-[620px] overflow-y-auto pr-1.5 p-1">
-            {finalQuestions.map((q, idx) => (
-              <div
-                key={q.id || idx}
-                className="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-850 space-y-3 flex flex-col justify-between shadow-xs"
-              >
-                <div className="space-y-2.5">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <span className="w-6 h-6 rounded-lg bg-slate-200 dark:bg-slate-700 font-black text-xs text-slate-700 dark:text-slate-300 flex items-center justify-center">
-                        {idx + 1}
-                      </span>
-                      <span className="text-[10px] px-2.5 py-0.5 rounded-md font-bold uppercase tracking-wider bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300">
-                        {q.type === 'multiple_choice' && 'Pilihan Ganda'}
-                        {q.type === 'true_false' && 'Benar / Salah'}
-                        {q.type === 'short_answer' && 'Isian Singkat'}
-                        {q.type === 'matching_pairs' && 'Menjodohkan'}
-                        {q.type === 'image_guess' && 'Tebak Gambar'}
-                      </span>
-                    </div>
-                    <span className="text-[10px] font-black text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/60 px-2 py-0.5 rounded-md">
-                      {q.points || 10} Poin
-                    </span>
-                  </div>
-
-                  <p className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white leading-snug">
-                    {q.text}
-                  </p>
-
-                  {/* Display Opsi / Jawaban */}
-                  {q.type === 'multiple_choice' && (
-                    <div className="grid grid-cols-1 gap-1.5 pt-1">
-                      {q.options.map((opt, oIdx) => (
-                        <div
-                          key={oIdx}
-                          className={`p-2.5 rounded-xl text-xs font-semibold flex items-center justify-between ${
-                            oIdx === q.correctIndex
-                              ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-900 dark:text-emerald-100 border border-emerald-300 dark:border-emerald-700 font-bold'
-                              : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800'
-                          }`}
-                        >
-                          <span>{String.fromCharCode(65 + oIdx)}. {opt}</span>
-                          {oIdx === q.correctIndex && <Check className="w-4 h-4 text-emerald-600 shrink-0" />}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {q.type === 'true_false' && (
-                    <div className="flex items-center gap-2 pt-1">
-                      {['Benar', 'Salah'].map((opt, oIdx) => (
-                        <div
-                          key={opt}
-                          className={`flex-1 p-2.5 rounded-xl text-xs font-bold text-center ${
-                            oIdx === q.correctIndex
-                              ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 border border-emerald-300'
-                              : 'bg-white dark:bg-slate-900 text-slate-400 border border-slate-200 dark:border-slate-800'
-                          }`}
-                        >
-                          {opt} {oIdx === q.correctIndex && '✓'}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {q.type === 'short_answer' && (
-                    <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs">
-                      <span className="text-slate-400 mr-2">Kunci Jawaban:</span>
-                      <span className="font-black text-emerald-600 dark:text-emerald-400">
-                        {q.acceptableAnswers?.join(' / ') || q.options[0] || '-'}
-                      </span>
-                    </div>
-                  )}
-
-                  {q.type === 'matching_pairs' && q.matchingPairs && (
-                    <div className="space-y-1.5 pt-1 text-xs">
-                      {q.matchingPairs.map((p, pIdx) => (
-                        <div key={pIdx} className="p-2 px-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-between">
-                          <span className="font-semibold text-slate-800 dark:text-slate-200">{p.left}</span>
-                          <span className="text-slate-400 font-bold">➔</span>
-                          <span className="font-bold text-emerald-600 dark:text-emerald-400">{p.right}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Explanation */}
-                {q.explanation && (
-                  <div className="text-[11px] text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-200/60 dark:border-slate-800 flex items-start gap-1.5">
-                    <span>💡</span>
-                    <span>{q.explanation}</span>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-
-          {/* Action Footer */}
-          <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
-            <button
-              type="button"
-              onClick={() => {
-                playClick();
-                setSubStep(5);
-              }}
-              className="px-6 py-3.5 rounded-2xl font-bold text-xs sm:text-sm text-slate-600 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 min-h-[48px] flex items-center gap-2 btn-press transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Kembali ke Step 5</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                playClick();
-                setSubStep(7);
-              }}
-              className="px-8 py-3.5 rounded-2xl font-black text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-md flex items-center gap-2 min-h-[48px] btn-press transition-all"
-            >
-              <span>Lanjut ke Konfirmasi (Langkah 7)</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </div>
-
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* SUB-STEP 7: KONFIRMASI SPESIFIKASI TARGET KUIS (READ-ONLY) */}
-      {/* ========================================================================= */}
-      {subStep === 7 && (
-        <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-8 lg:p-10 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6 sm:space-y-8">
-          
-          <div className="text-center space-y-1 pb-2">
-            <div className="w-14 h-14 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto text-3xl mb-2 shadow-sm ring-4 ring-blue-100 dark:ring-blue-900/30">
-              {EMOJI_BY_SUBJECT[subject]}
-            </div>
-            <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
-              Konfirmasi Spesifikasi Kuis
-            </h3>
-            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-lg mx-auto">
-              Periksa ringkasan konfigurasi kuis Anda di bawah sebelum melangkah ke Bank Soal.
-            </p>
-          </div>
-
-          {/* Executive 4-Card Metric Grid on Desktop */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
-            
-            {/* Card 1: Mapel & Kelas */}
-            <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-800 space-y-2 shadow-xs">
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-                Kurikulum & Sasaran
-              </span>
-              <div className="flex items-center gap-2">
-                <span className="text-2xl">{EMOJI_BY_SUBJECT[subject]}</span>
-                <div>
-                  <h4 className="font-black text-sm sm:text-base text-slate-900 dark:text-white leading-tight">
-                    {subject}
-                  </h4>
-                  <span className="text-xs text-blue-600 dark:text-blue-400 font-bold">
-                    Kelas {grade} SD • Merdeka
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Card 2: Topik Pembahasan */}
-            <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-800 space-y-2 shadow-xs">
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-                Topik / Materi Kuis
-              </span>
-              <h4 className="font-black text-sm sm:text-base text-slate-900 dark:text-white leading-tight line-clamp-2" title={topic}>
-                {topic || 'Materi Pelajaran'}
-              </h4>
-              <span className="text-xs text-slate-500 dark:text-slate-400 block truncate">
-                {contextNotes ? `Konteks: "${contextNotes.slice(0, 30)}..."` : 'Tanpa catatan khusus'}
-              </span>
-            </div>
-
-            {/* Card 3: Jumlah & Tipe Soal */}
-            <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-800 space-y-2 shadow-xs">
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-                Total Butir & Format
-              </span>
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-2xl sm:text-3xl font-black text-blue-600 dark:text-blue-400">
-                  {finalQuestions.length}
-                </span>
-                <span className="text-xs font-bold text-slate-500">Butir Soal</span>
-              </div>
-              <span className="text-xs text-slate-600 dark:text-slate-300 font-semibold block">
-                {proportionMode === 'balanced' ? '⚖️ Campuran Seimbang' : '🎛️ Proporsi Mandiri'}
-              </span>
-            </div>
-
-            {/* Card 4: Mesin Sumber Soal */}
-            <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-800 space-y-2 shadow-xs">
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-                Mesin Sumber Soal
-              </span>
-              <h4 className="font-black text-sm sm:text-base text-slate-900 dark:text-white leading-tight">
-                {selectedEngine === 'local' && '🤖 Kurikulum Lokal'}
-                {selectedEngine === 'groq' && '⚡ Groq Cloud LPU'}
-                {selectedEngine === 'gemini' && '✨ Google Gemini AI'}
-                {selectedEngine === 'prompt' && '📝 Generator Prompt'}
-              </h4>
-              <span className={`text-xs font-bold block ${includeAiImages ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`}>
-                {includeAiImages ? '🎨 Gambar Edukasi Aktif' : '📄 Teks Murni'}
-              </span>
-            </div>
-
-          </div>
-
-          {/* Context Notes Banner (if provided) */}
-          {contextNotes && (
-            <div className="p-4 sm:p-5 rounded-2xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900/60 flex items-start gap-3">
-              <Info className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
-              <div>
-                <span className="font-extrabold text-xs sm:text-sm text-blue-950 dark:text-blue-200 block">
-                  Bahan Pertimbangan Tambahan:
-                </span>
-                <p className="text-xs sm:text-sm text-blue-900/90 dark:text-blue-300 mt-1 italic leading-relaxed">
-                  "{contextNotes}"
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Action Footer */}
-          <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
-            <button
-              type="button"
-              onClick={() => {
-                playClick();
-                if (flowSource === 'prompt_flow') {
-                  setSubStep(6);
-                } else {
-                  setSubStep(4);
-                }
-              }}
-              className="px-6 py-3.5 rounded-2xl font-bold text-xs sm:text-sm text-slate-600 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 min-h-[48px] flex items-center gap-2 btn-press transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Kembali</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleFinishToQuestionBank}
-              className="px-8 py-3.5 rounded-2xl font-black text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/25 flex items-center gap-2 min-h-[48px] btn-press transition-all"
-            >
-              <Zap className="w-4 h-4 text-amber-300 fill-amber-300" />
-              <span>Buat Kuis Sekarang & Buka Bank Soal</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
           </div>
 
         </div>
