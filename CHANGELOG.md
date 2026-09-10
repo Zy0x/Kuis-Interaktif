@@ -1,6 +1,15 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.67] - 2026-09-10
+### Transformasi Ringkasan Mapel Menjadi Strip Pill Mini Ramping 1 Baris (Opsi B)
+
+#### 1. Penggantian Card Besar dengan Strip Konteks Mini
+- Mengganti kartu ringkasan mata pelajaran dan kelas di Tahap 2 yang sebelumnya memakan ruang vertikal besar (~60–75 px) menjadi strip pill mini ramping 1 baris (`inline-flex` ~32 px).
+- Menghapus tombol *"Ubah ✏️"* terpisah yang redundan dengan Tab 1 Mapel pada sticky header atas.
+- Strip pill mini tetap berfungsi informatif sebagai penunjuk konteks mapel/kelas yang aktif, sekaligus dapat diklik secara halus untuk kembali ke Tahap 1 jika pengguna menginginkannya.
+- Menghemat ruang vertikal secara drastis di layar ponsel, sehingga formulir input topik dan catatan langsung terlihat tanpa perlu menggulir (*zero clutter / mobile-first*).
+
 ## [2.2.66] - 2026-09-10
 ### Eliminasi Redundansi Tombol Kembali Bawah & Penyempurnaan Ergonomi Tombol Lanjut (Mobile-First)
 

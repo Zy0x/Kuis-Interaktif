@@ -2021,30 +2021,23 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
       {stage === 2 && (
         <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-8 lg:p-10 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6 sm:space-y-8 animate-fade-in">
           
-          {/* Pill Ringkasan Mapel & Kelas */}
-          <div className="flex items-center justify-between gap-3 p-3.5 sm:p-4 rounded-2xl bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900/60">
-            <div className="flex items-center gap-2.5 min-w-0 flex-1">
-              <span className="text-xl sm:text-2xl shrink-0">{EMOJI_BY_SUBJECT[subject]}</span>
-              <div className="min-w-0">
-                <div className="text-xs sm:text-sm font-black text-blue-950 dark:text-blue-100 truncate">
-                  {subject}
-                </div>
-                <div className="text-[11px] sm:text-xs font-semibold text-blue-700 dark:text-blue-300">
-                  Kelas {grade} {educationLevel === 'SMA' ? 'SMA / SMK' : educationLevel === 'SMP' ? 'SMP' : 'SD'}
-                </div>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                playClick();
-                onStageChange(1);
-              }}
-              className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline px-2.5 py-1.5 rounded-xl hover:bg-blue-100 dark:hover:bg-blue-900/50 shrink-0 btn-press"
-            >
-              Ubah ✏️
-            </button>
-          </div>
+          {/* Strip Konteks Mapel & Kelas (Ramping 1 Baris, Opsi B) */}
+          <button
+            type="button"
+            onClick={() => {
+              playClick();
+              onStageChange(1);
+            }}
+            title="Klik untuk ubah mapel atau kelas pada Tahap 1"
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200/70 dark:border-blue-900/50 hover:bg-blue-100/70 dark:hover:bg-blue-900/60 text-blue-950 dark:text-blue-100 text-xs font-bold max-w-full transition-colors cursor-pointer group text-left shadow-2xs"
+          >
+            <span className="text-base shrink-0">{EMOJI_BY_SUBJECT[subject]}</span>
+            <span className="truncate">{subject}</span>
+            <span className="text-blue-400 dark:text-blue-500 shrink-0">•</span>
+            <span className="text-blue-700 dark:text-blue-300 shrink-0 font-semibold text-[11px] sm:text-xs">
+              Kelas {grade} {educationLevel === 'SMA' ? 'SMA / SMK' : educationLevel === 'SMP' ? 'SMP' : 'SD'}
+            </span>
+          </button>
 
           {/* 2-Kolom: Topik & Saran Cerdas (Kiri) vs Catatan Khusus (Kanan) */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 lg:gap-8 items-start">
