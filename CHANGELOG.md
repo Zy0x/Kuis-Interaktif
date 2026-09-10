@@ -1,6 +1,26 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.94] - 2026-09-11
+### Peningkatan Presisi Responsivitas, Estetika & Standar Aksesibilitas Notifikasi Toast
+
+#### 1. Optimalisasi Dimensi & Kerapian Tata Letak Multi-Perangkat (Mobile-First)
+- **Penanganan Lebar Responsif Proporsional**: Mengganti lebar dinamis sempit yang sebelumnya memotong teks menjadi 3 baris kecil pada ponsel sempit dengan konfigurasi lebar adaptif: `w-[calc(100vw-2rem)] xs:w-[calc(100vw-2.5rem)] sm:w-auto sm:min-w-[360px] sm:max-w-[480px]`.
+- **Kerapian Tipografi 2 Tingkat**: Menyematkan badge kategori ringkas (*BERHASIL*, *PERHATIAN*, *KENDALA*, *INFORMASI*) dengan teks utama yang mengalir alami tanpa terpotong kaku.
+- **Dukungan Penuh Safe-Area Inset**: Menjaga jarak aman dari bilah navigasi bawah sistem Android dan gesture bar iOS (`bottom-[calc(1.25rem+env(safe-area-inset-bottom,0px))] sm:bottom-8`).
+
+#### 2. Peningkatan Estetika & Keterbacaan Kontras Tinggi (Anti-AI Slop)
+- **Desain Permukaan Glassmorphic Slate**: Menggantikan latar belakang neon pekat yang bertabrakan dengan tema menjadi kartu mengambang *slate-900* dengan *backdrop-blur-xl*, bayangan lembut (*ambient glow*), serta garis tepi halus beraksen status.
+- **Kenyamanan Visual Lintas Mode**: Kontras teks putih jernih (`text-slate-100`) terbukti nyaman di mata dan terbaca jelas baik pada mode terang (*Light Mode*) maupun mode gelap (*Dark Mode*).
+- **Badge Ikon Status Proporsional**: Wadah ikon tersendiri (`w-9 h-9 sm:w-10 sm:h-10 rounded-xl`) dengan latar transparan beraksen lembut sesuai jenis notifikasi.
+
+#### 3. Kepatuhan Target Sentuh Standar (Touch-Target Compliance)
+- **Tombol Tutup 44×44 px**: Memperbesar target sentuh tombol silang penutup dari sebelumnya `28×28 px` menjadi ukuran standar minimum `44×44 px` (`min-w-[44px] min-h-[44px] w-11 h-11`) untuk kemudahan interaksi satu tangan di layar sentuh.
+
+#### 4. Animasi Ringan & Indikator Hitung Mundur (Motion & Feedback)
+- **Transisi Halus 240 ms**: Menggantikan animasi pantulan kasar (*bounce*) dengan transisi *slide-up* dan *scale* halus (240 ms) sesuai batasan performa perangkat rendah.
+- **Bilah Progres Auto-Dismiss**: Menambahkan garis progres dinamis 2.5 px di dasar notifikasi yang bergerak menyusut secara sinkron dengan durasi 3.8 detik penutupan otomatis.
+
 ## [2.2.93] - 2026-09-11
 ### Perbaikan Penanganan Penyalinan Prompt AI & Sistem Clipboard Multi-Tier Universal
 

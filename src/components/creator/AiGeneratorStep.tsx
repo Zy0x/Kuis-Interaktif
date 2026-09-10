@@ -4127,42 +4127,97 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
         document.body
       )}
 
-      {/* Floating Toast Notification (Portal mengambang di atas seluruh konten dan selalu terlihat di viewport) */}
+      {/* Floating Toast Notification (Portal mengambang presisi di atas seluruh konten dan selalu terlihat di viewport) */}
       {toast && typeof document !== 'undefined' && createPortal(
         <div
           role="alert"
           aria-live="assertive"
-          className="fixed bottom-6 sm:bottom-8 left-1/2 -translate-x-1/2 z-[200] max-w-[92vw] sm:max-w-md w-auto animate-bounce-in pointer-events-auto"
+          className="fixed bottom-[calc(1.25rem+env(safe-area-inset-bottom,0px))] sm:bottom-8 left-1/2 z-[200] w-[calc(100vw-2rem)] xs:w-[calc(100vw-2.5rem)] sm:w-auto sm:min-w-[360px] sm:max-w-[480px] animate-toast-slide-up pointer-events-auto"
         >
           <div
-            className={`px-4 py-3 rounded-2xl shadow-2xl backdrop-blur-md flex items-center gap-3 text-xs sm:text-sm font-semibold border ${
+            className={`relative overflow-hidden rounded-2xl p-3 sm:p-3.5 shadow-2xl backdrop-blur-xl border flex items-center gap-3 transition-all ${
               toast.type === 'error'
-                ? 'bg-rose-600/95 text-white border-rose-400/40 shadow-rose-950/40'
+                ? 'bg-slate-900/95 dark:bg-slate-900/95 border-rose-500/40 text-slate-100 shadow-[0_16px_36px_-6px_rgba(244,63,94,0.25)]'
                 : toast.type === 'warning'
-                ? 'bg-amber-600/95 text-white border-amber-400/40 shadow-amber-950/40'
+                ? 'bg-slate-900/95 dark:bg-slate-900/95 border-amber-500/40 text-slate-100 shadow-[0_16px_36px_-6px_rgba(245,158,11,0.25)]'
                 : toast.type === 'success'
-                ? 'bg-emerald-600/95 text-white border-emerald-400/40 shadow-emerald-950/40'
-                : 'bg-slate-900/95 text-white border-slate-700/50 shadow-slate-950/40'
+                ? 'bg-slate-900/95 dark:bg-slate-900/95 border-emerald-500/40 text-slate-100 shadow-[0_16px_36px_-6px_rgba(16,185,129,0.25)]'
+                : 'bg-slate-900/95 dark:bg-slate-900/95 border-blue-500/40 text-slate-100 shadow-[0_16px_36px_-6px_rgba(59,130,246,0.25)]'
             }`}
           >
-            {toast.type === 'error' ? (
-              <AlertCircle className="w-5 h-5 shrink-0 text-white" />
-            ) : toast.type === 'warning' ? (
-              <AlertTriangle className="w-5 h-5 shrink-0 text-white" />
-            ) : toast.type === 'success' ? (
-              <CheckCircle2 className="w-5 h-5 shrink-0 text-white" />
-            ) : (
-              <Sparkles className="w-5 h-5 shrink-0 text-white" />
-            )}
-            <span className="flex-1 leading-snug break-words">{toast.message}</span>
+            {/* Left Icon Badge */}
+            <div
+              className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shrink-0 border ${
+                toast.type === 'error'
+                  ? 'bg-rose-500/20 text-rose-400 border-rose-500/30'
+                  : toast.type === 'warning'
+                  ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+                  : toast.type === 'success'
+                  ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                  : 'bg-blue-500/20 text-blue-400 border-blue-500/30'
+              }`}
+            >
+              {toast.type === 'error' ? (
+                <AlertCircle className="w-5 h-5" />
+              ) : toast.type === 'warning' ? (
+                <AlertTriangle className="w-5 h-5" />
+              ) : toast.type === 'success' ? (
+                <CheckCircle2 className="w-5 h-5" />
+              ) : (
+                <Sparkles className="w-5 h-5" />
+              )}
+            </div>
+
+            {/* Text Message Area */}
+            <div className="flex-1 min-w-0 pr-1">
+              <div className="flex items-center gap-1.5 mb-0.5">
+                <span
+                  className={`text-[10px] font-black uppercase tracking-wider ${
+                    toast.type === 'error'
+                      ? 'text-rose-400'
+                      : toast.type === 'warning'
+                      ? 'text-amber-400'
+                      : toast.type === 'success'
+                      ? 'text-emerald-400'
+                      : 'text-blue-400'
+                  }`}
+                >
+                  {toast.type === 'error'
+                    ? 'Kendala'
+                    : toast.type === 'warning'
+                    ? 'Perhatian'
+                    : toast.type === 'success'
+                    ? 'Berhasil'
+                    : 'Informasi'}
+                </span>
+              </div>
+              <p className="text-xs sm:text-sm font-semibold text-slate-100 leading-snug break-words">
+                {toast.message}
+              </p>
+            </div>
+
+            {/* Close Button - Target Sentuh Standar 44x44px (User Rule 1) */}
             <button
               type="button"
               onClick={() => setToast(null)}
-              className="p-1 -mr-1 rounded-lg text-white/80 hover:text-white hover:bg-white/20 transition-colors shrink-0 min-w-[28px] min-h-[28px] flex items-center justify-center"
+              className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors flex items-center justify-center shrink-0 -mr-1 cursor-pointer focus:outline-none focus:ring-2 focus:ring-white/20"
               aria-label="Tutup notifikasi"
             >
               <X className="w-4 h-4" />
             </button>
+
+            {/* Animated Progress Bar */}
+            <div
+              className={`absolute bottom-0 left-0 h-[2.5px] rounded-full animate-toast-progress ${
+                toast.type === 'error'
+                  ? 'bg-rose-500'
+                  : toast.type === 'warning'
+                  ? 'bg-amber-500'
+                  : toast.type === 'success'
+                  ? 'bg-emerald-500'
+                  : 'bg-blue-500'
+              }`}
+            />
           </div>
         </div>,
         document.body
