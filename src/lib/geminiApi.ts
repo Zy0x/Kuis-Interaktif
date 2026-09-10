@@ -86,6 +86,8 @@ export interface GenerateAiQuestionsParams {
     matching_pairs?: number;
   };
   contextNotes?: string;
+  cognitiveFocus?: 'balanced' | 'hots' | 'lots';
+  kurmerContext?: 'daily_life' | 'science_nature' | 'literacy_numeracy' | 'general';
   mcOptionCount?: number; // 3, 4, atau 5 opsi pilihan ganda
   trueFalseStyle?: 'benar_salah' | 'sesuai_tidak' | 'ya_tidak';
   matchingPairCount?: number; // 3, 4, atau 5 pasang menjodohkan
@@ -937,19 +939,84 @@ function buildInstructionText(params: GenerateAiQuestionsParams): string {
     }
   }
   const levelText = level === 'SMA'
-    ? `Kelas ${grade} SMA / SMK (Fase ${grade === 10 ? 'E' : 'F'})`
+    ? `Kelas ${grade} SMA / SMK`
     : level === 'SMP'
-      ? `Kelas ${grade} SMP (Fase D)`
-      : `Kelas ${grade} SD (Fase ${grade <= 2 ? 'A' : grade <= 4 ? 'B' : 'C'})`;
+      ? `Kelas ${grade} SMP`
+      : `Kelas ${grade} SD`;
 
-  const roleText = level === 'SMA'
-    ? `Anda adalah Asisten Pakar Kurikulum Merdeka SMA / SMK Indonesia.
-Tugas Anda adalah merancang butir soal kuis interaktif berorientasi penalaran analitis kritis tingkat tinggi (HOTS), pengujian konsep mendalam, studi kasus saintifik/sosial kontekstual, dan bahasa Indonesia akademis yang lugas sesuai daya nalar siswa SMA/SMK.`
+  // 1. Karakteristik Fase Kurikulum Merdeka & Bahasa Peserta Didik
+  const faseLabel = level === 'SMA'
+    ? (grade === 10 ? 'Fase E • Kelas 10 SMA/SMK' : 'Fase F • Kelas 11-12 SMA/SMK')
     : level === 'SMP'
-      ? `Anda adalah Asisten Pakar Kurikulum Merdeka Sekolah Menengah Pertama (SMP) Indonesia.
-Tugas Anda adalah merancang butir soal kuis interaktif yang komunikatif ramah remaja, merangsang daya nalar terapan, studi kasus kontekstual, dan literasi-numerasi terpadu sesuai fase kognitif siswa SMP.`
-      : `Anda adalah Asisten Pakar Kurikulum Merdeka Sekolah Dasar (SD) Indonesia.
-Tugas Anda adalah merancang butir soal kuis interaktif yang mendidik, seru, menggunakan bahasa Indonesia yang baik, komunikatif, dan sesuai dengan daya tangkap siswa SD.`;
+      ? 'Fase D • Kelas 7-9 SMP'
+      : grade <= 2
+        ? 'Fase A • Kelas 1-2 SD • Usia 6-8 Tahun'
+        : grade <= 4
+          ? 'Fase B • Kelas 3-4 SD • Usia 8-10 Tahun'
+          : 'Fase C • Kelas 5-6 SD • Usia 10-12 Tahun';
+
+  let phasePedagogyRules = '';
+  if (level === 'SD') {
+    if (grade <= 2) {
+      phasePedagogyRules = `PANDUAN BAHASA & DAYA NALAR KHUSUS FASE A (KELAS 1-2 SD):
+- Gunakan bahasa yang SANGAT KONKRET, kalimat pendek dan lugas (maksimal 1-2 klausa per kalimat).
+- Hindari istilah ilmiah atau kosakata abstrak yang belum dikenal anak usia 6-8 tahun.
+- Tokoh/stimulus berbasis keseharian anak: keluarga, teman bermain, hewan peliharaan, mainan, benda di kelas.
+- Soal HOTS pada Fase A: mengelompokkan benda berdasarkan ciri yang teramati, menemukan perbedaan/persamaan, memprediksi kejadian langsung, atau memecahkan masalah hitung konkret sederhana.`;
+    } else if (grade <= 4) {
+      phasePedagogyRules = `PANDUAN BAHASA & DAYA NALAR KHUSUS FASE B (KELAS 3-4 SD):
+- Awali dengan stimulus cerita mini kontekstual (2-3 kalimat lugas, ceria, dan bersahabat).
+- Kosakata komunikatif edukatif sesuai perkembangan nalar anak usia 8-10 tahun.
+- Soal HOTS pada Fase B: membandingkan dua kondisi/peristiwa, menelaah hubungan sebab-akibat sederhana, menafsirkan data sederhana (misal tabel buah, jadwal, atau benda sekitar), dan mengambil kesimpulan logis.`;
+    } else {
+      phasePedagogyRules = `PANDUAN BAHASA & DAYA NALAR KHUSUS FASE C (KELAS 5-6 SD):
+- Bahasa bernalar analitis, terstruktur, komunikatif, dan memicu daya kritis anak usia 10-12 tahun.
+- Soal HOTS pada Fase C: studi kasus kontekstual, keterkaitan sebab-akibat multi-faktor, evaluasi alternatif solusi terbaik, mendeteksi kesalahan argumen, dan pemecahan masalah (problem solving) terpadu.`;
+    }
+  } else if (level === 'SMP') {
+    phasePedagogyRules = `PANDUAN BAHASA & DAYA NALAR FASE D (SMP):
+- Bahasa komunikatif ramah remaja, merangsang daya nalar kritis, studi kasus lingkungan/sosial terpadu, dan literasi-numerasi terapan.`;
+  } else {
+    phasePedagogyRules = `PANDUAN BAHASA & DAYA NALAR FASE E/F (SMA/SMK):
+- Bahasa akademis baku yang lugas, penalaran saintifik/sosial tingkat tinggi, analisis data, evaluasi komparatif, dan pemecahan masalah kompleks.`;
+  }
+
+  // 2. Fokus Kognitif (HOTS / MOTS / LOTS)
+  const cognitiveFocus = params.cognitiveFocus || 'balanced';
+  let cognitiveInstruction = '';
+  if (cognitiveFocus === 'hots') {
+    cognitiveInstruction = `FOKUS KOGNITIF: 100% SOAL HOTS (Higher Order Thinking Skills - Level Kognitif C4 Menganalisis, C5 Mengevaluasi, C6 Mengkreasi/Merancang Solusi).
+- WAJIB diawali stimulus nyata (skenario kasus mini, pengamatan fenomena, atau data konkret sederhana).
+- DILARANG membuat soal hafalan kamus kering (seperti "Apa pengertian dari...", "Sebutkan 3 macam...").
+- Siswa harus menalar, membandingkan informasi pada stimulus, dan mengambil kesimpulan untuk menemukan jawaban yang tepat.`;
+  } else if (cognitiveFocus === 'lots') {
+    cognitiveInstruction = `FOKUS KOGNITIF: PENGUATAN FONDASI & PEMAHAMAN KONSEP DASAR (Level Kognitif C1 Mengingat Fakta Esensial, C2 Memahami Konsep, C3 Aplikasi Langsung).
+- Fokuskan pada kejelasan konsep inti materi agar siswa yang baru belajar atau sedang remedial memahaminya secara kokoh.
+- Bahasa bersahabat, membimbing nalar anak secara bertahap tanpa jebakan yang membingungkan.`;
+  } else {
+    cognitiveInstruction = `FOKUS KOGNITIF: KOMBINASI BERIMBANG STANDAR ASESMEN NASIONAL (40% MOTS C2-C3 Pemahaman/Aplikasi Konsep + 60% HOTS C4-C5 Penalaran Analitis & Studi Kasus).
+- Padukan antara pengujian pemahaman konsep inti materi dengan soal bernalar berbasis stimulus yang menantang rasa ingin tahu siswa.`;
+  }
+
+  // 3. Konteks Stimulus Kurikulum Merdeka
+  const kurmerContext = params.kurmerContext || 'daily_life';
+  let contextInstruction = '';
+  if (kurmerContext === 'daily_life') {
+    contextInstruction = `TEMA STIMULUS: Keseharian & Budaya Nusantara (Kurikulum Merdeka).
+- Integrasikan latar nyata kehidupan anak Indonesia (rumah bersama keluarga, pertemanan di sekolah, pasar tradisional, permainan tradisional, atau kerja bakti warga) dengan karakter akrab (Siti, Edo, Dayu, Budi, Lani, Beni).`;
+  } else if (kurmerContext === 'science_nature') {
+    contextInstruction = `TEMA STIMULUS: Eksplorasi Sains, Alam Sekitar & Kepedulian Lingkungan.
+- Awali butir soal dengan fenomena alam konkret (pengamatan tumbuhan di halaman sekolah, hewan peliharaan, perubahan cuaca, siklus air, daur ulang sampah, atau hemat energi).`;
+  } else if (kurmerContext === 'literacy_numeracy') {
+    contextInstruction = `TEMA STIMULUS: Penguatan Literasi Informasi & Numerasi Terapan (AKM).
+- Hadirkan data konkret mini (daftar belanjaan di kantin, catatan berat barang, perbandingan waktu kegiatan, atau petunjuk langkah praktis) yang harus dicermati peserta didik.`;
+  } else {
+    contextInstruction = `TEMA STIMULUS: Kontekstual & Relevan dengan Kehidupan Nyata.
+- Tautkan materi pelajaran dengan situasi nyata yang masuk akal dan relevan bagi peserta didik.`;
+  }
+
+  const roleText = `Anda bertindak murni sebagai ENGINE GENERATOR DATA SOAL berstandar resmi Kurikulum Merdeka (Panduan Pembelajaran & Asesmen BSKAP Kemendikdasmen RI).
+Anda BUKAN pemandu kuis interaktif, BUKAN asisten obrolan, dan BUKAN lawan bermain kuis.`;
 
   const imageInstruction = params.includeAiImages
     ? `\nFITUR ILUSTRASI GAMBAR EDUKASI (BETA):
@@ -959,27 +1026,38 @@ Karena opsi ilustrasi diaktifkan, sertakan pada butir soal konsep gambar visual 
     : '';
 
   const contextBlock = params.contextNotes && params.contextNotes.trim()
-    ? `\n- Catatan / Konteks Khusus: "${params.contextNotes.trim()}"`
+    ? `\n- Catatan Khusus Pendidik: "${params.contextNotes.trim()}"`
     : '';
 
   return `${roleText}
 
-SPESIFIKASI SOAL:
+SPESIFIKASI KURIKULUM MERDEKA & SASARAN BELAJAR:
 - Mata Pelajaran: ${subject}
-- Tingkat: ${levelText}
-- Topik / Materi: ${topic}${contextBlock}
-- Jumlah Soal: ${count} butir soal
+- Tingkat / Jenjang: ${levelText} (${faseLabel})
+- Topik / Materi: "${topic}"${contextBlock}
+- Target Jumlah: TEPAT ${count} butir soal lengkap
+- ${cognitiveInstruction}
+- ${contextInstruction}
+- Profil Pelajar Pancasila: Integrasikan secara alami nilai-nilai karakter (Bernalar Kritis, Mandiri, Gotong Royong, Kreatif) ke dalam konteks soal.
 - Format: ${formatInstruction}${imageInstruction}
+
+${phasePedagogyRules}
+
+STANDAR KUALITAS BUTIR SOAL (ANTI-AI SLOP & HIGH-PEDAGOGY):
+1. Stimulus Nyata & Kontekstual: Setiap soal wajib memiliki konteks atau skenario pemantik (misal: "Di perpustakaan sekolah...", "Ibu membeli buah...", "Saat mengamati daun..."). DILARANG membuat pertanyaan hafalan kamus kering ("Apa pengertian...", "Sebutkan definisi...").
+2. Pengecoh Masuk Akal (Plausible Distractors): Pilihan salah pada 'options' WAJIB berasal dari miskonsepsi umum peserta didik, BUKAN jawaban konyol yang terlalu mudah ditebak.
+3. Kesetaraan Panjang Opsi: Panjang teks pilihan jawaban (A, B, C, D) harus proporsional dan seimbang. DILARANG membuat kunci jawaban selalu menjadi pilihan paling panjang!
+4. Pembahasan Edukatif Berbobot (Explanation): Properti "explanation" WAJIB menjelaskan konsep mengapa jawaban benar dan mengapa opsi lain keliru dengan bahasa santun dan menumbuhkan rasa percaya diri anak (1-3 kalimat).
 
 ATURAN WAJIB OUTPUT:
 1. Kembalikan HANYA format JSON valid tanpa pembuka/penutup obrolan teks.
 2. Setiap butir soal harus memiliki struktur:
 {
-  "text": "Pertanyaan soal yang ramah anak...",
+  "text": "Pertanyaan soal yang diawali stimulus kontekstual yang jelas...",
   "type": "${questionType === 'campuran' ? 'multiple_choice / true_false / short_answer / matching_pairs / image_guess' : questionType}",
   "options": ["Opsi 1", "Opsi 2", "Opsi 3", "Opsi 4"],
   "correctIndex": 0,
-  "explanation": "Penjelasan edukatif singkat...",
+  "explanation": "Penjelasan konsep mengapa kunci benar dan opsi lain keliru...",
   "points": 10,
   "customDurationSec": 30,
   "acceptableAnswers": ["Kunci", "Sinonim"],

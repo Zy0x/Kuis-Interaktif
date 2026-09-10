@@ -1197,6 +1197,10 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
   const [trueFalseStyle, setTrueFalseStyle] = useState<'benar_salah' | 'sesuai_tidak' | 'ya_tidak'>('benar_salah');
   const [matchingPairCount, setMatchingPairCount] = useState<3 | 4 | 5>(4);
 
+  // Karakteristik Kognitif HOTS & Stimulus Kurikulum Merdeka (BSKAP)
+  const [cognitiveFocus, setCognitiveFocus] = useState<'balanced' | 'hots' | 'lots'>('balanced');
+  const [kurmerContext, setKurmerContext] = useState<'daily_life' | 'science_nature' | 'literacy_numeracy' | 'general'>('daily_life');
+
   // Pilihan Mesin AI (default 'auto' untuk memilih mesin terbaik secara otomatis)
   const [selectedEngine, setSelectedEngine] = useState<'auto' | 'local' | 'deepseek' | 'groq' | 'gemini' | 'prompt'>('auto');
   const [showSpecificCloudModels, setShowSpecificCloudModels] = useState(false);
@@ -1471,8 +1475,10 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
       mcOptionCount,
       trueFalseStyle,
       matchingPairCount,
+      cognitiveFocus,
+      kurmerContext,
     });
-  }, [subject, grade, educationLevel, topic, currentTotalQuestions, selectedQuestionTypes, proportions, contextNotes, includeAiImages, mcOptionCount, trueFalseStyle, matchingPairCount]);
+  }, [subject, grade, educationLevel, topic, currentTotalQuestions, selectedQuestionTypes, proportions, contextNotes, includeAiImages, mcOptionCount, trueFalseStyle, matchingPairCount, cognitiveFocus, kurmerContext]);
 
   // Handler Salin Prompt (Kompatibel dengan segala browser, mobile, & non-HTTPS)
   const handleCopyPrompt = async () => {
@@ -1587,6 +1593,8 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
       mcOptionCount,
       trueFalseStyle,
       matchingPairCount,
+      cognitiveFocus,
+      kurmerContext,
     };
 
     // Rantai fallback — mode Auto mencoba semua engine cloud yang tersedia secara berurutan
@@ -2751,6 +2759,174 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                 )}
               </div>
             )}
+
+            {/* SELEKTOR TINGKAT PENALARAN & KARAKTER SOAL (HOTS) - STANDAR BSKAP KURIKULUM MERDEKA */}
+            <div className="space-y-3 pt-3 border-t border-slate-100 dark:border-slate-800 animate-fade-in">
+              <div className="flex items-center justify-between flex-wrap gap-1.5">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <label className="block text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white">
+                      Tingkat Penalaran & Karakter Soal (HOTS)
+                    </label>
+                    <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-300/80 dark:border-blue-700/80 uppercase tracking-wider">
+                      Kurmer BSKAP
+                    </span>
+                  </div>
+                  <span className="text-[11px] sm:text-xs text-slate-400 dark:text-slate-500 font-medium">
+                    Tentukan kedalaman kognitif dan karakter stimulus asesmen
+                  </span>
+                </div>
+              </div>
+
+              {/* 3 Kartu Pilihan HOTS / MOTS / LOTS */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
+                {[
+                  {
+                    id: 'balanced' as const,
+                    title: 'Seimbang (MOTS + HOTS)',
+                    badge: 'Direkomendasikan',
+                    badgeColor: 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800',
+                    icon: '⚖️',
+                    sub: '40% Konsep • 60% Penalaran',
+                    desc: 'Kombinasi ideal pemahaman konsep dan penalaran analitis berbasis stimulus nyata.',
+                    activeRing: 'border-blue-500 bg-blue-50/70 dark:bg-blue-950/40 ring-2 ring-blue-500/20 text-blue-950 dark:text-blue-100',
+                  },
+                  {
+                    id: 'hots' as const,
+                    title: 'Fokus Penuh HOTS',
+                    badge: 'Level C4-C6 (AKM)',
+                    badgeColor: 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-800',
+                    icon: '🧠',
+                    sub: '100% Analisis & Pemecahan Masalah',
+                    desc: 'Stimulus kontekstual non-algoritmik yang melatih daya kritis, evaluasi, dan logika.',
+                    activeRing: 'border-amber-500 bg-amber-50/70 dark:bg-amber-950/40 ring-2 ring-amber-500/20 text-amber-950 dark:text-amber-100',
+                  },
+                  {
+                    id: 'lots' as const,
+                    title: 'Penguatan Fondasi',
+                    badge: 'Level C1-C3',
+                    badgeColor: 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700',
+                    icon: '🌱',
+                    sub: '100% Konsep Inti & Fakta Dasar',
+                    desc: 'Bahasa bersahabat, memperkuat konsep esensial tanpa jebakan (ramah pemula/remedial).',
+                    activeRing: 'border-emerald-500 bg-emerald-50/70 dark:bg-emerald-950/40 ring-2 ring-emerald-500/20 text-emerald-950 dark:text-emerald-100',
+                  },
+                ].map((item) => {
+                  const isSelected = cognitiveFocus === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        setCognitiveFocus(item.id);
+                      }}
+                      className={`p-3 sm:p-3.5 rounded-2xl border text-left transition-all min-h-[108px] flex flex-col justify-between btn-press ${
+                        isSelected
+                          ? item.activeRing
+                          : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700'
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between gap-1.5 mb-1.5">
+                          <span className="text-xl shrink-0">{item.icon}</span>
+                          <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-full border ${item.badgeColor}`}>
+                            {item.badge}
+                          </span>
+                        </div>
+                        <span className="font-extrabold text-xs sm:text-sm block leading-snug">
+                          {item.title}
+                        </span>
+                        <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 block mt-0.5">
+                          {item.sub}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5 leading-snug">
+                        {item.desc}
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* SELEKTOR LATAR CERITA & KONTEKS STIMULUS */}
+              <div className="p-3 sm:p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-850/50 space-y-2.5 mt-2">
+                <div className="flex items-center justify-between flex-wrap gap-1.5">
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                    <span>🎭 Latar Cerita & Konteks Stimulus:</span>
+                  </span>
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500">
+                    Konteks cerita nyata anak Indonesia
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {[
+                    { id: 'daily_life' as const, label: 'Keseharian & Budaya', icon: '🏠', desc: 'Keluarga, pasar, gotong royong' },
+                    { id: 'science_nature' as const, label: 'Sains & Alam Sekitar', icon: '🌿', desc: 'Tumbuhan, hewan, cuaca, energi' },
+                    { id: 'literacy_numeracy' as const, label: 'Literasi & Numerasi', icon: '📊', desc: 'Tabel mini, data jadwal nyata' },
+                    { id: 'general' as const, label: 'Sesuai Topik Materi', icon: '🎯', desc: 'Konteks alami materi pelajaran' },
+                  ].map((ctx) => {
+                    const isSelected = kurmerContext === ctx.id;
+                    return (
+                      <button
+                        key={ctx.id}
+                        type="button"
+                        onClick={() => {
+                          playClick();
+                          setKurmerContext(ctx.id);
+                        }}
+                        className={`p-2 sm:p-2.5 rounded-xl border text-left transition-all min-h-[46px] flex flex-col justify-center btn-press ${
+                          isSelected
+                            ? 'border-blue-500 bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 font-extrabold shadow-2xs ring-1 ring-blue-400/30'
+                            : 'border-slate-200 dark:border-slate-700/80 bg-white/70 dark:bg-slate-800/70 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
+                        }`}
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-sm shrink-0">{ctx.icon}</span>
+                          <span className="text-[11px] sm:text-xs font-bold leading-tight truncate">
+                            {ctx.label}
+                          </span>
+                        </div>
+                        <span className="text-[9px] text-slate-400 dark:text-slate-500 mt-0.5 leading-none truncate block">
+                          {ctx.desc}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* KOTAK PANDUAN KARAKTERISTIK FASE AKTIF */}
+              <div className="p-3 sm:p-3.5 rounded-2xl bg-blue-50/50 dark:bg-blue-950/30 border border-blue-200/70 dark:border-blue-800/60 flex items-start gap-2.5 text-xs text-slate-700 dark:text-slate-300">
+                <span className="text-base shrink-0 mt-0.5">📐</span>
+                <div className="space-y-0.5 leading-relaxed">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-extrabold text-blue-900 dark:text-blue-200 text-xs">
+                      {educationLevel === 'SMA'
+                        ? (grade === 10 ? 'Fase E (Kelas 10 SMA/SMK)' : 'Fase F (Kelas 11-12 SMA/SMK)')
+                        : educationLevel === 'SMP'
+                        ? 'Fase D (Kelas 7-9 SMP)'
+                        : grade <= 2
+                        ? 'Fase A (Kelas 1-2 SD • Usia 6-8 Tahun)'
+                        : grade <= 4
+                        ? 'Fase B (Kelas 3-4 SD • Usia 8-10 Tahun)'
+                        : 'Fase C (Kelas 5-6 SD • Usia 10-12 Tahun)'}
+                    </span>
+                    <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 font-bold">
+                      Standar Kognitif Otomatis
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-normal">
+                    {educationLevel === 'SD' && grade <= 2 && 'Bahasa konkret, kalimat pendek 1-2 baris tanpa istilah teknis asing. Soal HOTS fokus pada pengelompokan benda, pola, dan prediksi langsung.'}
+                    {educationLevel === 'SD' && (grade === 3 || grade === 4) && 'Stimulus cerita mini 2-3 baris yang akrab dengan anak, menelaah hubungan sebab-akibat terapan, serta pengecoh berbasis miskonsepsi umum.'}
+                    {educationLevel === 'SD' && grade >= 5 && 'Studi kasus kontekstual, penalaran sebab-akibat multi-faktor, pemecahan masalah sederhana, dan evaluasi alternatif solusi terbaik.'}
+                    {educationLevel === 'SMP' && 'Bahasa komunikatif ramah remaja, merangsang penalaran kritis, studi kasus lingkungan/sosial terpadu, dan literasi-numerasi terapan.'}
+                    {educationLevel === 'SMA' && 'Bahasa akademis baku lugas, penalaran saintifik/sosial tingkat tinggi, evaluasi komparatif, dan pemecahan masalah kompleks.'}
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Kotak Sertakan Gambar AI */}

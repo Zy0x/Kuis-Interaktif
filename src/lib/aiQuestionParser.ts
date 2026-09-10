@@ -8,6 +8,8 @@ export interface GeneratePromptParams {
   educationLevel?: EducationLevel;
   questionType?: QuestionType | 'campuran';
   difficulty?: 'mudah' | 'sedang' | 'menantang';
+  cognitiveFocus?: 'balanced' | 'hots' | 'lots'; // 'balanced' (MOTS+HOTS), 'hots' (100% C4-C6 Analisis/AKM), 'lots' (C1-C3 Pemahaman Dasar)
+  kurmerContext?: 'daily_life' | 'science_nature' | 'literacy_numeracy' | 'general';
   contextNotes?: string;
   typeProportions?: {
     multiple_choice?: number;
@@ -326,7 +328,7 @@ export const generateAiPrompt = (params: GeneratePromptParams): string => {
   }
 
   const contextBlock = params.contextNotes && params.contextNotes.trim()
-    ? `- Bahan Pertimbangan / Konteks Khusus: "${params.contextNotes.trim()}"\n`
+    ? `- Catatan Khusus Pendidik: "${params.contextNotes.trim()}"\n`
     : '';
 
   const imageBlock = params.includeImages
@@ -334,10 +336,81 @@ export const generateAiPrompt = (params: GeneratePromptParams): string => {
     : '';
 
   const levelText = level === 'SMA'
-    ? `Kelas ${params.grade} SMA / SMK (Fase ${params.grade === 10 ? 'E' : 'F'})`
+    ? `Kelas ${params.grade} SMA / SMK`
     : level === 'SMP'
-      ? `Kelas ${params.grade} SMP (Fase D)`
-      : `Kelas ${params.grade} SD (Fase ${params.grade <= 2 ? 'A' : params.grade <= 4 ? 'B' : 'C'})`;
+      ? `Kelas ${params.grade} SMP`
+      : `Kelas ${params.grade} SD`;
+
+  // 1. Karakteristik Fase Kurikulum Merdeka & Bahasa Peserta Didik
+  const faseLabel = level === 'SMA'
+    ? (params.grade === 10 ? 'Fase E • Kelas 10 SMA/SMK' : 'Fase F • Kelas 11-12 SMA/SMK')
+    : level === 'SMP'
+      ? 'Fase D • Kelas 7-9 SMP'
+      : params.grade <= 2
+        ? 'Fase A • Kelas 1-2 SD • Usia 6-8 Tahun'
+        : params.grade <= 4
+          ? 'Fase B • Kelas 3-4 SD • Usia 8-10 Tahun'
+          : 'Fase C • Kelas 5-6 SD • Usia 10-12 Tahun';
+
+  let phasePedagogyRules = '';
+  if (level === 'SD') {
+    if (params.grade <= 2) {
+      phasePedagogyRules = `PANDUAN BAHASA & DAYA NALAR KHUSUS FASE A (KELAS 1-2 SD):
+- Gunakan bahasa yang SANGAT KONKRET, kalimat pendek dan lugas (maksimal 1-2 klausa per kalimat).
+- Hindari istilah ilmiah atau kosakata abstrak yang belum dikenal anak usia 6-8 tahun.
+- Tokoh/stimulus berbasis keseharian anak: keluarga, teman bermain, hewan peliharaan, mainan, benda di kelas.
+- Soal HOTS pada Fase A: mengelompokkan benda berdasarkan ciri yang teramati, menemukan perbedaan/persamaan, memprediksi kejadian langsung, atau memecahkan masalah hitung konkret sederhana.`;
+    } else if (params.grade <= 4) {
+      phasePedagogyRules = `PANDUAN BAHASA & DAYA NALAR KHUSUS FASE B (KELAS 3-4 SD):
+- Awali dengan stimulus cerita mini kontekstual (2-3 kalimat lugas, ceria, dan bersahabat).
+- Kosakata komunikatif edukatif sesuai perkembangan nalar anak usia 8-10 tahun.
+- Soal HOTS pada Fase B: membandingkan dua kondisi/peristiwa, menelaah hubungan sebab-akibat sederhana, menafsirkan data sederhana (misal tabel buah, jadwal, atau benda sekitar), dan mengambil kesimpulan logis.`;
+    } else {
+      phasePedagogyRules = `PANDUAN BAHASA & DAYA NALAR KHUSUS FASE C (KELAS 5-6 SD):
+- Bahasa bernalar analitis, terstruktur, komunikatif, dan memicu daya kritis anak usia 10-12 tahun.
+- Soal HOTS pada Fase C: studi kasus kontekstual, keterkaitan sebab-akibat multi-faktor, evaluasi alternatif solusi terbaik, mendeteksi kesalahan argumen, dan pemecahan masalah (problem solving) terpadu.`;
+    }
+  } else if (level === 'SMP') {
+    phasePedagogyRules = `PANDUAN BAHASA & DAYA NALAR FASE D (SMP):
+- Bahasa komunikatif ramah remaja, merangsang daya nalar kritis, studi kasus lingkungan/sosial terpadu, dan literasi-numerasi terapan.`;
+  } else {
+    phasePedagogyRules = `PANDUAN BAHASA & DAYA NALAR FASE E/F (SMA/SMK):
+- Bahasa akademis baku yang lugas, penalaran saintifik/sosial tingkat tinggi, analisis data, evaluasi komparatif, dan pemecahan masalah kompleks.`;
+  }
+
+  // 2. Fokus Kognitif (HOTS / MOTS / LOTS)
+  const cognitiveFocus = params.cognitiveFocus || 'balanced';
+  let cognitiveInstruction = '';
+  if (cognitiveFocus === 'hots') {
+    cognitiveInstruction = `FOKUS KOGNITIF: 100% SOAL HOTS (Higher Order Thinking Skills - Level Kognitif C4 Menganalisis, C5 Mengevaluasi, C6 Mengkreasi/Merancang Solusi).
+- WAJIB diawali stimulus nyata (skenario kasus mini, pengamatan fenomena, atau data konkret sederhana).
+- DILARANG membuat soal hafalan kamus kering (seperti "Apa pengertian dari...", "Sebutkan 3 macam...").
+- Siswa harus menalar, membandingkan informasi pada stimulus, dan mengambil kesimpulan untuk menemukan jawaban yang tepat.`;
+  } else if (cognitiveFocus === 'lots') {
+    cognitiveInstruction = `FOKUS KOGNITIF: PENGUATAN FONDASI & PEMAHAMAN KONSEP DASAR (Level Kognitif C1 Mengingat Fakta Esensial, C2 Memahami Konsep, C3 Aplikasi Langsung).
+- Fokuskan pada kejelasan konsep inti materi agar siswa yang baru belajar atau sedang remedial memahaminya secara kokoh.
+- Bahasa bersahabat, membimbing nalar anak secara bertahap tanpa jebakan yang membingungkan.`;
+  } else {
+    cognitiveInstruction = `FOKUS KOGNITIF: KOMBINASI BERIMBANG STANDAR ASESMEN NASIONAL (40% MOTS C2-C3 Pemahaman/Aplikasi Konsep + 60% HOTS C4-C5 Penalaran Analitis & Studi Kasus).
+- Padukan antara pengujian pemahaman konsep inti materi dengan soal bernalar berbasis stimulus yang menantang rasa ingin tahu siswa.`;
+  }
+
+  // 3. Konteks Stimulus Kurikulum Merdeka
+  const kurmerContext = params.kurmerContext || 'daily_life';
+  let contextInstruction = '';
+  if (kurmerContext === 'daily_life') {
+    contextInstruction = `TEMA STIMULUS: Keseharian & Budaya Nusantara (Kurikulum Merdeka).
+- Integrasikan latar nyata kehidupan anak Indonesia (rumah bersama keluarga, pertemanan di sekolah, pasar tradisional, permainan tradisional, atau kerja bakti warga) dengan karakter akrab (Siti, Edo, Dayu, Budi, Lani, Beni).`;
+  } else if (kurmerContext === 'science_nature') {
+    contextInstruction = `TEMA STIMULUS: Eksplorasi Sains, Alam Sekitar & Kepedulian Lingkungan.
+- Awali butir soal dengan fenomena alam konkret (pengamatan tumbuhan di halaman sekolah, hewan peliharaan, perubahan cuaca, siklus air, daur ulang sampah, atau hemat energi).`;
+  } else if (kurmerContext === 'literacy_numeracy') {
+    contextInstruction = `TEMA STIMULUS: Penguatan Literasi Informasi & Numerasi Terapan (AKM).
+- Hadirkan data konkret mini (daftar belanjaan di kantin, catatan berat barang, perbandingan waktu kegiatan, atau petunjuk langkah praktis) yang harus dicermati peserta didik.`;
+  } else {
+    contextInstruction = `TEMA STIMULUS: Kontekstual & Relevan dengan Kehidupan Nyata.
+- Tautkan materi pelajaran dengan situasi nyata yang masuk akal dan relevan bagi peserta didik.`;
+  }
 
   // Buat contoh dinamis HANYA untuk tipe soal yang aktif (mencegah model AI bodoh bingung atau salah tiru)
   const sampleItems: string[] = [];
@@ -351,32 +424,32 @@ export const generateAiPrompt = (params: GeneratePromptParams): string => {
 
     sampleItems.push(`  {
     "type": "multiple_choice",
-    "text": "Pertanyaan materi dengan stimulus penalaran yang jelas?",
+    "text": "Siti membawa sepotong martabak dan membaginya sama besar untuk dirinya dan Dayu. Berapakah bagian martabak yang diterima masing-masing anak?",
     "options": ${sampleOptions},
     "correctIndex": 0,
-    "explanation": "Penjelasan konsep mengapa jawaban pertama benar (1-3 kalimat edukatif).",
-    "points": 10${params.includeImages ? ',\n    "imageCaption": "🌱 Label Ilustrasi Materi",\n    "imagePrompt": "Educational clean illustration of the topic"' : ''}
+    "explanation": "Satu benda utuh dibagi menjadi dua bagian sama besar, sehingga masing-masing anak mendapatkan 1/2 bagian.",
+    "points": 10${params.includeImages ? ',\n    "imageCaption": "🌱 Ilustrasi Martabak Terbagi Dua",\n    "imagePrompt": "A clean educational illustration of a round pancake sliced equally into two halves"' : ''}
   }`);
   }
 
   if (activeTypes.includes('true_false')) {
     sampleItems.push(`  {
     "type": "true_false",
-    "text": "Pernyataan materi faktual atau konseptual yang diuji kebenarannya?",
+    "text": "Pernyataan berbasis stimulus kasus: Edo menyiram tanaman setiap sore agar tanah tetap lembap. Tindakan Edo sudah tepat untuk menjaga kesuburan tanaman.",
     "options": ${tfOptions},
     "correctIndex": 0,
-    "explanation": "Penjelasan konsep pendukung mengapa pernyataan ini bernilai benar/salah.",
-    "points": 10${params.includeImages ? ',\n    "imageCaption": "🔬 Label Ilustrasi Materi",\n    "imagePrompt": "A scientific diagram illustrating the fact"' : ''}
+    "explanation": "Penyiraman secara teratur di sore hari membantu menjaga kelembapan tanah tanpa mengalami penguapan ekstrem akibat terik matahari.",
+    "points": 10${params.includeImages ? ',\n    "imageCaption": "🔬 Ilustrasi Merawat Tanaman",\n    "imagePrompt": "Illustration of a student watering green potted plants in school garden"' : ''}
   }`);
   }
 
   if (activeTypes.includes('short_answer')) {
     sampleItems.push(`  {
     "type": "short_answer",
-    "text": "Pertanyaan isian singkat terarah yang membutuhkan jawaban presisi?",
-    "acceptableAnswers": ["Kunci Utama", "variasi sinonim", "ejaan lain", "angka"],
-    "explanation": "Penjelasan konsep materi yang melatarbelakangi jawaban yang tepat.",
-    "points": 10${params.includeImages ? ',\n    "imageCaption": "📝 Label Ilustrasi",\n    "imagePrompt": "A clear graphic representing the answer"' : ''}
+    "text": "Budi mengamati hewan yang bernapas menggunakan insang dan berenang menggunakan sirip. Hewan apakah yang diamati Budi?",
+    "acceptableAnswers": ["Ikan", "ikan air tawar", "ikan laut"],
+    "explanation": "Hewan yang memiliki insang untuk bernapas di air dan sirip untuk berenang adalah kelompok ikan.",
+    "points": 10${params.includeImages ? ',\n    "imageCaption": "📝 Ilustrasi Organ Gerak Ikan",\n    "imagePrompt": "A clear graphic showing fish anatomy with gills and fins"' : ''}
   }`);
   }
 
@@ -387,12 +460,12 @@ export const generateAiPrompt = (params: GeneratePromptParams): string => {
 
     sampleItems.push(`  {
     "type": "matching_pairs",
-    "text": "Jodohkan konsep di sebelah kiri dengan pasangan definisinya di sebelah kanan!",
+    "text": "Jodohkan nama pecahan atau konsep di sebelah kiri dengan gambar/artinya di sebelah kanan!",
     "matchingPairs": [
 ${samplePairs}
     ],
-    "explanation": "Penjelasan keterkaitan antarkonsep yang dijodohkan.",
-    "points": 15${params.includeImages ? ',\n    "imageCaption": "🧩 Label Ilustrasi Menjodohkan",\n    "imagePrompt": "Diagram showing the related concepts connected together"' : ''}
+    "explanation": "Setiap pecahan memiliki nilai representasi yang sesuai antara pembilang dan penyebutnya.",
+    "points": 15${params.includeImages ? ',\n    "imageCaption": "🧩 Ilustrasi Menjodohkan Pecahan",\n    "imagePrompt": "Educational diagram showing matching fraction concepts"' : ''}
   }`);
   }
 
@@ -405,12 +478,12 @@ ${samplePairs}
 
     sampleItems.push(`  {
     "type": "image_guess",
-    "text": "Perhatikan petunjuk visual berikut! Apakah nama objek/organ ini?",
+    "text": "Perhatikan petunjuk visual organ tubuh berikut! Apakah nama organ yang berfungsi memompa darah ke seluruh tubuh?",
     "options": ${sampleOptions},
     "correctIndex": 0,
-    "imageCaption": "🫁 Organ Paru-paru",
-    "explanation": "Penjelasan identitas dan fungsi objek tersebut.",
-    "points": 10${params.includeImages ? ',\n    "imagePrompt": "Clean 3D medical style render of human lungs on plain background"' : ''}
+    "imageCaption": "🫁 Organ Jantung",
+    "explanation": "Jantung adalah organ berotot yang memompa darah berisi oksigen ke seluruh tubuh manusia.",
+    "points": 10${params.includeImages ? ',\n    "imagePrompt": "Clean 3D medical style render of human heart on plain background"' : ''}
   }`);
   }
 
@@ -418,7 +491,7 @@ ${samplePairs}
 
   return `[SISTEM INSTRUKSI: GENERATOR DATA SOAL / HEADLESS JSON COMPILER]
 PERAN ANDA:
-Anda bertindak murni sebagai ENGINE GENERATOR DATA SOAL berstandar Kurikulum Merdeka Indonesia.
+Anda bertindak murni sebagai ENGINE GENERATOR DATA SOAL berstandar resmi Kurikulum Merdeka (Panduan Pembelajaran & Asesmen BSKAP Kemendikdasmen RI).
 ⚠️ PERHATIAN PENTING: Anda BUKAN pemandu kuis interaktif, BUKAN asisten obrolan (chat assistant), dan BUKAN lawan bermain kuis!
 
 PERINGATAN KERAS & ATURAN MUTLAK (WAJIB DIPATUHI 100%):
@@ -428,25 +501,35 @@ PERINGATAN KERAS & ATURAN MUTLAK (WAJIB DIPATUHI 100%):
 4. DILARANG menyisipkan teks pengantar atau penutup apapun di luar blok kode JSON!
 5. Keluaran WAJIB diawali dengan karakter '[' dan diakhiri dengan karakter ']' (HANYA SATU BLOK KODE JSON MURNI).
 
-SPESIFIKASI SOAL:
+SPESIFIKASI KURIKULUM MERDEKA & SASARAN BELAJAR:
 - Mata Pelajaran: ${params.subject}
-- Tingkat / Jenjang: ${levelText}
+- Tingkat / Jenjang: ${levelText} (${faseLabel})
 - Topik Pembahasan: "${params.topic}"
-- Jumlah Target: TEPAT ${params.count} butir soal lengkap
-- Tingkat Kesulitan: ${params.difficulty || 'sedang'} (berbobot edukatif, menstimulasi penalaran, kontekstual)
-${contextBlock}${imageBlock}- Aturan Tipe Soal:
+- Target Jumlah: TEPAT ${params.count} butir soal lengkap
+- ${cognitiveInstruction}
+- ${contextInstruction}
+- Profil Pelajar Pancasila: Integrasikan secara alami nilai-nilai karakter (Bernalar Kritis, Mandiri, Gotong Royong, Kreatif) ke dalam konteks soal.
+${contextBlock}${imageBlock}- Format Tipe Soal:
   ${typeInstruction}
+
+${phasePedagogyRules}
+
+STANDAR KUALITAS BUTIR SOAL (ANTI-AI SLOP & HIGH-PEDAGOGY):
+1. Stimulus Nyata & Kontekstual: Setiap soal wajib memiliki konteks atau skenario pemantik (misal: "Di perpustakaan sekolah...", "Ibu membeli buah...", "Saat mengamati daun..."). DILARANG membuat pertanyaan hafalan kamus kering ("Apa pengertian...", "Sebutkan definisi...").
+2. Pengecoh Masuk Akal (Plausible Distractors): Pilihan salah pada 'options' WAJIB berasal dari miskonsepsi umum peserta didik, BUKAN jawaban konyol yang terlalu mudah ditebak.
+3. Kesetaraan Panjang Opsi: Panjang teks pilihan jawaban (A, B, C, D) harus proporsional dan seimbang. DILARANG membuat kunci jawaban selalu menjadi pilihan paling panjang!
+4. Pembahasan Edukatif Berbobot (Explanation): Properti "explanation" WAJIB menjelaskan konsep mengapa jawaban benar dan mengapa opsi lain keliru dengan bahasa santun dan menumbuhkan rasa percaya diri anak (1-3 kalimat).
 
 PANDUAN STRUKTUR JSON (ANTI-KESALAHAN FORMAT):
 1. Properti "type": Wajib bernilai salah satu dari: ${activeTypes.map((t) => `"${t}"`).join(', ')}.
-2. Properti "text": Teks pertanyaan yang jelas, berbobot, dan tidak ambigu.
+2. Properti "text": Teks pertanyaan yang diawali stimulus kontekstual yang jelas dan tidak ambigu.
 3. Properti "options": Array string berisi teks jawaban MURNI.
    ⚠️ DILARANG MENYERTAKAN AWALAN HURUF SEPERTI "A. ", "B. ", "1. " DI DALAM ARRAY OPTIONS!
    - Contoh BENAR: ["Jakarta", "Surabaya", "Bandung", "Medan"]
    - Contoh SALAH: ["A. Jakarta", "B. Surabaya", "C. Bandung", "D. Medan"]
 4. Properti "correctIndex": WAJIB ANGKA BULAT INTEGER 0-BASED (0 untuk opsi pertama, 1 untuk opsi kedua, dst).
    ⚠️ DILARANG MENGGUNAKAN HURUF ("A", "B") DAN DILARANG MENGGUNAKAN STRING ("0").
-5. Properti "explanation": Penjelasan konsep mengapa kunci tersebut benar (1-3 kalimat edukatif).
+5. Properti "explanation": Penjelasan konsep mendalam (1-3 kalimat edukatif).
 6. Properti "points": Nilai poin standar (10 untuk pilihan ganda/isian/benar-salah, 15 untuk menjodohkan).
 7. Validitas JSON: Wajib mematuhi RFC 8259. DILARANG menggunakan trailing comma (koma gantung sebelum '}' atau ']') dan DILARANG menyisipkan komentar (seperti // atau /* */).
 

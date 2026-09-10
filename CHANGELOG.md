@@ -1,6 +1,36 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.95] - 2026-09-11
+### Integrasi Standar Asesmen Kurikulum Merdeka (BSKAP RI), Selektor HOTS & Generator Soal Berkualitas Tinggi
+
+#### 1. Selektor Tingkat Penalaran & Karakter Soal (HOTS) di Tahap 3
+- **Tiga Pilihan Tingkat Kognitif Terstandar**:
+  - **Seimbang (MOTS + HOTS) [Rekomendasi]**: Mengalokasikan 40% pemahaman/aplikasi konsep dasar dan 60% penalaran analitis kritis berbasis stimulus nyata.
+  - **Fokus Penuh HOTS (Level C4-C6 AKM)**: 100% soal berorientasi analisis, evaluasi, dan pemecahan masalah non-algoritmik untuk persiapan Asesmen Nasional / AKM.
+  - **Penguatan Fondasi (Level C1-C3)**: Fokus pemahaman esensial dan penguasaan fakta inti tanpa jebakan membingungkan (cocok untuk apersepsi atau remedial).
+- **Desain Kartu Sentuh Responsif (Touch-First)**: Masing-masing opsi menggunakan tata letak kartu grid 1-kolom di ponsel dan 3-kolom di layar besar dengan target sentuh lega (`min-h-[108px]`) dan ring fokus aktif yang tegas.
+
+#### 2. Pilihan Latar Cerita & Konteks Stimulus Kurikulum Merdeka
+- Menyediakan 4 mode konteks stimulus cerita nyata Indonesia:
+  - *🏠 Keseharian & Budaya Nusantara* (kehidupan keluarga, sekolah, pasar tradisional, gotong royong warga, karakter akrab Siti, Edo, Dayu, Budi).
+  - *🌿 Sains & Alam Sekitar* (pengamatan tumbuhan sekolah, hewan, cuaca, energi, daur ulang).
+  - *📊 Literasi & Numerasi Terapan* (data konkret, tabel mini, jadwal piket/ronda, hitungan belanjaan nyata).
+  - *🎯 Sesuai Topik Materi* (kontekstual alami mengalir sesuai mapel).
+
+#### 3. Adaptasi Pedagogi Berbasis Fase Kurikulum Merdeka (Fase A, B, C, D, E/F)
+- Menyematkan kartu panduan karakteristik fase aktif di antarmuka pendidik.
+- **Fase A (Kelas 1–2 SD, Usia 6–8 Tahun)**: Bahasa konkret, kalimat pendek 1–2 baris, tanpa kosakata asing/abstrak. Soal HOTS diarahkan pada pengelompokan benda, pola, dan prediksi langsung.
+- **Fase B (Kelas 3–4 SD, Usia 8–10 Tahun)**: Stimulus narasi mini 2–3 kalimat, penalaran hubungan sebab-akibat sederhana, penafsiran tabel/data mini, dan kesimpulan logis.
+- **Fase C (Kelas 5–6 SD, Usia 10–12 Tahun)**: Studi kasus multi-faktor, analisis alternatif terbaik, deteksi kekeliruan argumen, dan pemecahan masalah (*problem-solving*).
+- **Fase D (SMP) & Fase E/F (SMA)**: Analisis komparatif saintifik/sosial dan terminologi baku.
+
+#### 4. Standar Mutu Butir Soal Anti-AI Slop (High-Pedagogy Directives)
+- **Eliminasi Soal Hafalan Kamus Kering**: Melarang pembuatan soal bertipe kamus mati (*"Apa pengertian..."*, *"Sebutkan definisi..."*).
+- **Pengecoh Masuk Akal (*Plausible Distractors*)**: Pilihan salah wajib merefleksikan miskonsepsi umum siswa, bukan opsi konyol atau asal-asalan.
+- **Kesetaraan Panjang Opsi**: Menjamin panjang teks pilihan A, B, C, D seimbang agar jawaban tidak mudah ditebak dari opsi terpanjang.
+- **Pembahasan Edukatif Mendalam**: Properti `explanation` wajib menjelaskan konsep inti kebenaran kunci serta meluruskan kekeliruan opsi pengecoh secara santun (1–3 kalimat membangun rasa percaya diri).
+
 ## [2.2.94] - 2026-09-11
 ### Peningkatan Presisi Responsivitas, Estetika & Standar Aksesibilitas Notifikasi Toast
 
