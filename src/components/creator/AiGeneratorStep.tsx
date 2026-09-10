@@ -55,7 +55,8 @@ import {
   Search,
   X,
   Key,
-  ExternalLink
+  ExternalLink,
+  RefreshCw
 } from 'lucide-react';
 
 export type CreationStage = 1 | 2 | 3 | 4;
@@ -2748,6 +2749,28 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                   <span className="text-[11px] text-blue-500 font-bold flex items-center gap-1.5 bg-blue-50 dark:bg-blue-950/50 px-2.5 py-1 rounded-lg">
                     <Loader2 className="w-3.5 h-3.5 animate-spin" /> Memeriksa Status Cloud...
                   </span>
+                )}
+
+                {/* Refresh Status Button */}
+                {!isCheckingCloudAi && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setIsCheckingCloudAi(true);
+                      checkSupabaseAiStatus(true)
+                        .then((status) => {
+                          setSupabaseAi(status);
+                        })
+                        .catch(() => {})
+                        .finally(() => setIsCheckingCloudAi(false));
+                    }}
+                    className="px-2.5 py-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 transition-all btn-press min-h-[40px]"
+                    title="Periksa ulang status ketersediaan semua mesin AI"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Refresh</span>
+                  </button>
                 )}
 
                 <button

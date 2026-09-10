@@ -39,55 +39,69 @@ serve(async (req) => {
       let geminiError: string | null = null;
       let deepseekError: string | null = null;
 
-      if (deepseekApiKey) {
-        try {
-          const res = await fetch("https://api.deepseek.com/models", {
-            headers: { Authorization: `Bearer ${deepseekApiKey}` },
-          });
-          if (res.ok) {
-            const data = await res.json();
-            deepseekModels = (data.data || []).map((m: any) => m.id);
-          } else {
-            deepseekError = await res.text();
-          }
-        } catch (e: any) {
-          deepseekError = e?.message || String(e);
-        }
-      }
+      // Helper: fetch dengan timeout 8 detik agar tidak blocking lama
+      const fetchWithTimeout = (url: string, opts: RequestInit, timeoutMs = 8000) => {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), timeoutMs);
+        return fetch(url, { ...opts, signal: controller.signal })
+          .finally(() => clearTimeout(timer));
+      };
 
-      if (groqApiKey) {
-        try {
-          const res = await fetch("https://api.groq.com/openai/v1/models", {
-            headers: { Authorization: `Bearer ${groqApiKey}` },
-          });
-          if (res.ok) {
-            const data = await res.json();
-            groqModels = (data.data || []).map((m: any) => m.id);
-          } else {
-            groqError = await res.text();
-          }
-        } catch (e: any) {
-          groqError = e?.message || String(e);
-        }
-      }
+      // Cek semua provider secara paralel
+      await Promise.allSettled([
+        // DeepSeek
+        deepseekApiKey
+          ? fetchWithTimeout("https://api.deepseek.com/models", {
+              headers: { Authorization: `Bearer ${deepseekApiKey}` },
+            }).then(async (res) => {
+              if (res.ok) {
+                const data = await res.json();
+                deepseekModels = (data.data || []).map((m: any) => m.id);
+              } else {
+                const txt = await res.text();
+                deepseekError = `HTTP ${res.status}: ${txt.slice(0, 200)}`;
+              }
+            }).catch((e: any) => {
+              deepseekError = e?.name === "AbortError" ? "Koneksi timeout (>8s)" : (e?.message || String(e));
+            })
+          : Promise.resolve(),
 
-      if (geminiApiKey) {
-        try {
-          const res = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models?key=${geminiApiKey}`
-          );
-          if (res.ok) {
-            const data = await res.json();
-            geminiModels = (data.models || [])
-              .filter((m: any) => m.supportedGenerationMethods?.includes("generateContent"))
-              .map((m: any) => m.name.replace("models/", ""));
-          } else {
-            geminiError = await res.text();
-          }
-        } catch (e: any) {
-          geminiError = e?.message || String(e);
-        }
-      }
+        // Groq
+        groqApiKey
+          ? fetchWithTimeout("https://api.groq.com/openai/v1/models", {
+              headers: { Authorization: `Bearer ${groqApiKey}` },
+            }).then(async (res) => {
+              if (res.ok) {
+                const data = await res.json();
+                groqModels = (data.data || []).map((m: any) => m.id);
+              } else {
+                const txt = await res.text();
+                groqError = `HTTP ${res.status}: ${txt.slice(0, 200)}`;
+              }
+            }).catch((e: any) => {
+              groqError = e?.name === "AbortError" ? "Koneksi timeout (>8s)" : (e?.message || String(e));
+            })
+          : Promise.resolve(),
+
+        // Gemini
+        geminiApiKey
+          ? fetchWithTimeout(
+              `https://generativelanguage.googleapis.com/v1beta/models?key=${geminiApiKey}`
+            ).then(async (res) => {
+              if (res.ok) {
+                const data = await res.json();
+                geminiModels = (data.models || [])
+                  .filter((m: any) => m.supportedGenerationMethods?.includes("generateContent"))
+                  .map((m: any) => m.name.replace("models/", ""));
+              } else {
+                const txt = await res.text();
+                geminiError = `HTTP ${res.status}: ${txt.slice(0, 200)}`;
+              }
+            }).catch((e: any) => {
+              geminiError = e?.name === "AbortError" ? "Koneksi timeout (>8s)" : (e?.message || String(e));
+            })
+          : Promise.resolve(),
+      ]);
 
       return new Response(
         JSON.stringify({
@@ -101,6 +115,12 @@ serve(async (req) => {
           groqError,
           geminiError,
           deepseekError,
+          // Info diagnostik: nama secret yang terbaca (tidak ekspos value-nya)
+          secretsPresent: [
+            geminiApiKey ? "GEMINI_API_KEY" : null,
+            groqApiKey ? "GROQ_API_KEY" : null,
+            deepseekApiKey ? "DEEPSEEK_API_KEY" : null,
+          ].filter(Boolean),
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
       );
