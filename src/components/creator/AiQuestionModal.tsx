@@ -38,12 +38,18 @@ import {
   hasGroqApiKey,
   getStoredGroqModel,
   saveStoredGroqModel,
+  getStoredDeepSeekApiKey,
+  saveStoredDeepSeekApiKey,
+  hasDeepSeekApiKey,
+  getStoredDeepSeekModel,
+  saveStoredDeepSeekModel,
   generateHybridQuizQuestions,
   checkSupabaseAiStatus,
   getSupabaseAiStatusSync,
   type AiProvider,
   type GeminiModel,
   type GroqModel,
+  type DeepSeekModel,
   type SupabaseAiStatus
 } from '../../lib/geminiApi';
 
@@ -94,6 +100,8 @@ export const AiQuestionModal: React.FC<AiQuestionModalProps> = ({
   const [geminiModel, setGeminiModel] = useState<GeminiModel>(() => getStoredGeminiModel());
   const [groqKeyInput, setGroqKeyInput] = useState<string>(() => getStoredGroqApiKey());
   const [groqModel, setGroqModel] = useState<GroqModel>(() => getStoredGroqModel());
+  const [deepseekKeyInput, setDeepseekKeyInput] = useState<string>(() => getStoredDeepSeekApiKey());
+  const [deepseekModel, setDeepseekModel] = useState<DeepSeekModel>(() => getStoredDeepSeekModel());
   const [showKeySettings, setShowKeySettings] = useState<boolean>(false);
   const [supabaseAi, setSupabaseAi] = useState<SupabaseAiStatus>(() => getSupabaseAiStatusSync());
   const [showKeyText, setShowKeyText] = useState<boolean>(false);
@@ -101,9 +109,9 @@ export const AiQuestionModal: React.FC<AiQuestionModalProps> = ({
   const [hasConfiguredKey, setHasConfiguredKey] = useState<boolean>(() => {
     const prov = getStoredAiProvider();
     const status = getSupabaseAiStatusSync();
-    return prov === 'groq' 
-      ? (hasGroqApiKey() || status.hasGroq) 
-      : (hasGeminiApiKey() || status.hasGemini);
+    if (prov === 'deepseek') return Boolean(hasDeepSeekApiKey() || status.hasDeepSeek);
+    if (prov === 'groq') return Boolean(hasGroqApiKey() || status.hasGroq);
+    return Boolean(hasGeminiApiKey() || status.hasGemini);
   });
   const [includeAiImages, setIncludeAiImages] = useState<boolean>(false);
 
@@ -120,13 +128,17 @@ export const AiQuestionModal: React.FC<AiQuestionModalProps> = ({
       setGeminiModel(getStoredGeminiModel());
       setGroqKeyInput(getStoredGroqApiKey());
       setGroqModel(getStoredGroqModel());
+      setDeepseekKeyInput(getStoredDeepSeekApiKey());
+      setDeepseekModel(getStoredDeepSeekModel());
 
       // Cek status Cloud Secrets dari Supabase
       checkSupabaseAiStatus().then((status) => {
         setSupabaseAi(status);
-        const configured = prov === 'groq' 
-          ? (hasGroqApiKey() || status.hasGroq) 
-          : (hasGeminiApiKey() || status.hasGemini);
+        const configured = prov === 'deepseek'
+          ? Boolean(hasDeepSeekApiKey() || status.hasDeepSeek)
+          : prov === 'groq' 
+            ? Boolean(hasGroqApiKey() || status.hasGroq) 
+            : Boolean(hasGeminiApiKey() || status.hasGemini);
         setHasConfiguredKey(configured);
       });
     }
@@ -139,20 +151,28 @@ export const AiQuestionModal: React.FC<AiQuestionModalProps> = ({
     saveStoredGeminiModel(geminiModel);
     saveStoredGroqApiKey(groqKeyInput.trim());
     saveStoredGroqModel(groqModel);
-    const keyOk = activeProvider === 'groq' 
-      ? Boolean(groqKeyInput.trim().length > 5) 
-      : Boolean(geminiKeyInput.trim().length > 10);
+    saveStoredDeepSeekApiKey(deepseekKeyInput.trim());
+    saveStoredDeepSeekModel(deepseekModel);
+    const keyOk = activeProvider === 'deepseek'
+      ? Boolean(deepseekKeyInput.trim().length > 5)
+      : activeProvider === 'groq' 
+        ? Boolean(groqKeyInput.trim().length > 5) 
+        : Boolean(geminiKeyInput.trim().length > 10);
     setHasConfiguredKey(keyOk);
     setShowKeySettings(false);
+    const providerName = activeProvider === 'deepseek' ? 'DeepSeek' : activeProvider === 'groq' ? 'Groq' : 'Gemini';
     showToast(keyOk 
-      ? `✓ Kunci API ${activeProvider === 'groq' ? 'Groq' : 'Gemini'} berhasil disimpan!` 
+      ? `✓ Kunci API ${providerName} berhasil disimpan!` 
       : 'Kunci API dihapus. Menggunakan generator kurikulum internal.'
     );
   };
 
   const handleRemoveApiKey = () => {
     playClick();
-    if (activeProvider === 'groq') {
+    if (activeProvider === 'deepseek') {
+      saveStoredDeepSeekApiKey('');
+      setDeepseekKeyInput('');
+    } else if (activeProvider === 'groq') {
       saveStoredGroqApiKey('');
       setGroqKeyInput('');
     } else {
@@ -161,7 +181,8 @@ export const AiQuestionModal: React.FC<AiQuestionModalProps> = ({
     }
     setHasConfiguredKey(false);
     setShowKeySettings(false);
-    showToast(`Kunci API ${activeProvider === 'groq' ? 'Groq' : 'Gemini'} telah dihapus. Menggunakan generator kurikulum internal.`);
+    const providerName = activeProvider === 'deepseek' ? 'DeepSeek' : activeProvider === 'groq' ? 'Groq' : 'Gemini';
+    showToast(`Kunci API ${providerName} telah dihapus. Menggunakan generator kurikulum internal.`);
   };
 
   // Real-time parser saat teks di tab impor berubah
@@ -213,7 +234,8 @@ export const AiQuestionModal: React.FC<AiQuestionModalProps> = ({
         provider: activeProvider,
         geminiModel,
         groqModel,
-        apiKey: (activeProvider === 'groq' ? groqKeyInput.trim() : geminiKeyInput.trim()) || undefined,
+        deepseekModel,
+        apiKey: (activeProvider === 'deepseek' ? deepseekKeyInput.trim() : activeProvider === 'groq' ? groqKeyInput.trim() : geminiKeyInput.trim()) || undefined,
         includeAiImages,
       });
 
@@ -501,12 +523,17 @@ Pembahasan: Insang menyaring oksigen yang terlarut di dalam air.`;
                 </div>
               </div>
 
-              {/* Banner Status Engine AI Hybrid & Konfigurasi BYOK (Gemini & Groq) */}
+              {/* Banner Status Engine AI Hybrid & Konfigurasi BYOK (DeepSeek, Groq, Gemini) */}
               <div className="bg-slate-50 dark:bg-slate-800/60 rounded-2xl p-3.5 border border-slate-200 dark:border-slate-700/80 space-y-3">
                 <div className="flex items-center justify-between gap-2 flex-wrap">
                   <div className="flex items-center gap-2">
                     {hasConfiguredKey ? (
-                      activeProvider === 'groq' ? (
+                      activeProvider === 'deepseek' ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-sky-100 dark:bg-sky-950/60 text-sky-800 dark:text-sky-300">
+                          <span>🐋</span>
+                          DeepSeek Cloud Aktif ({deepseekModel})
+                        </span>
+                      ) : activeProvider === 'groq' ? (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300">
                           <Zap className="w-3 h-3 text-amber-500 fill-amber-500" />
                           Groq Cloud Aktif ({groqModel})
@@ -534,11 +561,11 @@ Pembahasan: Insang menyaring oksigen yang terlarut di dalam air.`;
                     className="text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 transition-all min-h-[36px]"
                   >
                     <Key className="w-3.5 h-3.5 text-amber-500" />
-                    <span>{showKeySettings ? 'Tutup Pengaturan' : (hasConfiguredKey ? 'Ganti Kunci API' : 'Pasang Kunci API (Gemini / Groq)')}</span>
+                    <span>{showKeySettings ? 'Tutup Pengaturan' : (hasConfiguredKey ? 'Ganti Kunci API' : 'Pasang Kunci API (DeepSeek / Groq / Gemini)')}</span>
                   </button>
                 </div>
 
-                {/* Form Drawer Pengaturan Multi-Provider AI (Gemini / Groq) */}
+                {/* Form Drawer Pengaturan Multi-Provider AI (DeepSeek / Groq / Gemini) */}
                 {showKeySettings && (
                   <div className="pt-2 border-t border-slate-200 dark:border-slate-700 space-y-3 animate-fade-in">
                     {/* Pemilih Provider AI */}
@@ -546,13 +573,47 @@ Pembahasan: Insang menyaring oksigen yang terlarut di dalam air.`;
                       <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1.5">
                         Pilih Penyedia AI (Provider):
                       </label>
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            playClick();
+                            setActiveProvider('deepseek');
+                            setHasConfiguredKey(Boolean(deepseekKeyInput.trim().length > 5 || supabaseAi.hasDeepSeek));
+                          }}
+                          className={`p-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+                            activeProvider === 'deepseek'
+                              ? 'border-sky-500 bg-sky-50 dark:bg-sky-950/50 text-sky-800 dark:text-sky-300 shadow-sm'
+                              : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400'
+                          }`}
+                        >
+                          <span>🐋</span>
+                          <span>DeepSeek AI</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            playClick();
+                            setActiveProvider('groq');
+                            setHasConfiguredKey(Boolean(groqKeyInput.trim().length > 5 || supabaseAi.hasGroq));
+                          }}
+                          className={`p-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+                            activeProvider === 'groq'
+                              ? 'border-amber-500 bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 shadow-sm'
+                              : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400'
+                          }`}
+                        >
+                          <Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                          <span>Groq LPU (⚡ Cepat)</span>
+                        </button>
+
                         <button
                           type="button"
                           onClick={() => {
                             playClick();
                             setActiveProvider('gemini');
-                            setHasConfiguredKey(Boolean(geminiKeyInput.trim().length > 10));
+                            setHasConfiguredKey(Boolean(geminiKeyInput.trim().length > 10 || supabaseAi.hasGemini));
                           }}
                           className={`p-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
                             activeProvider === 'gemini'
@@ -563,28 +624,91 @@ Pembahasan: Insang menyaring oksigen yang terlarut di dalam air.`;
                           <Sparkles className="w-3.5 h-3.5 text-blue-500" />
                           <span>Google Gemini AI</span>
                         </button>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            playClick();
-                            setActiveProvider('groq');
-                            setHasConfiguredKey(Boolean(groqKeyInput.trim().length > 5));
-                          }}
-                          className={`p-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
-                            activeProvider === 'groq'
-                              ? 'border-amber-500 bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 shadow-sm'
-                              : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400'
-                          }`}
-                        >
-                          <Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-                          <span>Groq LPU (Super Cepat ⚡)</span>
-                        </button>
                       </div>
                     </div>
 
                     {/* Input untuk Provider Terpilih */}
-                    {activeProvider === 'gemini' ? (
+                    {activeProvider === 'deepseek' ? (
+                      <div className="space-y-3">
+                        {supabaseAi.hasDeepSeek && (
+                          <div className="p-2.5 rounded-xl bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800 text-xs text-sky-800 dark:text-sky-300 flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-sky-500 animate-pulse flex-shrink-0" />
+                            <span><strong>Terhubung via Supabase Secrets:</strong> Kunci API DeepSeek telah aktif di server cloud. Pengisian form di bawah ini opsional (hanya bila ingin menimpa dengan kunci pribadi).</span>
+                          </div>
+                        )}
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+                              <span>🐋</span> Kunci API DeepSeek (Opsional jika sudah ada di Secrets):
+                            </label>
+                            <a
+                              href="https://platform.deepseek.com/api_keys"
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-[11px] font-semibold text-sky-600 dark:text-sky-400 hover:underline flex items-center gap-1"
+                            >
+                              Dapatkan di platform.deepseek.com <ExternalLink className="w-3 h-3" />
+                            </a>
+                          </div>
+
+                          <div className="relative">
+                            <input
+                              type={showKeyText ? 'text' : 'password'}
+                              value={deepseekKeyInput}
+                              onChange={(e) => setDeepseekKeyInput(e.target.value)}
+                              placeholder={supabaseAi.hasDeepSeek ? "Sudah terisi via Supabase Secrets (atau tempel sk-... baru)" : "Tempelkan sk-..."}
+                              className="w-full pl-3 pr-10 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:border-sky-500 min-h-[42px]"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowKeyText(!showKeyText)}
+                              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                            >
+                              {showKeyText ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <div>
+                            <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">
+                              Model DeepSeek:
+                            </label>
+                            <select
+                              value={deepseekModel}
+                              onChange={(e) => setDeepseekModel(e.target.value as DeepSeekModel)}
+                              className="w-full px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-xs font-semibold focus:outline-none min-h-[38px]"
+                            >
+                              <option value="deepseek-chat">DeepSeek-V3 (deepseek-chat - Cerdas & Cepat)</option>
+                              <option value="deepseek-reasoner">DeepSeek-R1 (deepseek-reasoner - Penalaran Mendalam)</option>
+                            </select>
+                          </div>
+
+                          <div className="flex items-end gap-2">
+                            <button
+                              type="button"
+                              onClick={handleSaveApiSettings}
+                              className="flex-1 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 min-h-[38px] transition-all"
+                            >
+                              <Check className="w-3.5 h-3.5" /> Simpan Kunci DeepSeek
+                            </button>
+                            {hasDeepSeekApiKey() && (
+                              <button
+                                type="button"
+                                onClick={handleRemoveApiKey}
+                                className="text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 py-2 px-3 rounded-xl border border-rose-200 dark:border-rose-900/60 min-h-[38px] transition-all"
+                              >
+                                Hapus
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                          🐋 <strong>DeepSeek AI:</strong> Model bahasa canggih dengan kapabilitas bernalar mendalam (DeepSeek-R1) dan kecepatan generasi tinggi (DeepSeek-V3). Kunci API dapat dibuat langsung di <strong>platform.deepseek.com</strong>.
+                        </p>
+                      </div>
+                    ) : activeProvider === 'gemini' ? (
                       <div className="space-y-3">
                         {supabaseAi.hasGemini && (
                           <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-800 dark:text-emerald-300 flex items-center gap-2">

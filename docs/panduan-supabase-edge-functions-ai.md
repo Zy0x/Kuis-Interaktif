@@ -1,4 +1,4 @@
-﻿# Panduan Integrasi Supabase Edge Functions & Secrets untuk Fitur AI
+# Panduan Integrasi Supabase Edge Functions & Secrets untuk Fitur AI
 
 Dokumen ini menjelaskan arsitektur keamanan, manajemen rahasia (*secrets*), deployment fungsi serverless (*Edge Functions*), serta alur kerja generator AI kuis interaktif sesuai dengan **Standar Keamanan Sistem & Backend Supabase (Rule 9 & 10)**.
 
@@ -29,6 +29,7 @@ supabase/
    - Mendeteksi ketersediaan kunci API di Supabase Secrets tanpa pernah membocorkan string kuncinya ke client.
    - Memberikan sinyal aktif kepada antarmuka pengguna agar tombol mesin AI otomatis terbuka (*unlocked*).
 2. **Peracikan Soal Multi-Model AI:**
+   - **DeepSeek AI:** Mendukung model `deepseek-chat` (DeepSeek-V3) dan `deepseek-reasoner` (DeepSeek-R1).
    - **Groq Cloud (LPU Inference):** Prioritas model `qwen/qwen3.8-27b`, `openai/gpt-oss-20b`, dan `openai/gpt-oss-120b`.
    - **Google Gemini AI:** Prioritas model generasi terbaru `gemini-3.8-flash`, `gemini-3.6-flash`, dan `gemini-3.1-flash-lite`.
 3. **Multi-Model Cascade Failover:**
@@ -43,6 +44,9 @@ supabase/
 ### Metode A: Melalui Supabase CLI (Rekomendasi)
 Jalankan perintah berikut di terminal:
 ```bash
+# Menyetel kunci API DeepSeek AI
+npx supabase secrets set DEEPSEEK_API_KEY="sk-..." --project-ref <PROJECT_ID>
+
 # Menyetel kunci API Google Gemini
 npx supabase secrets set GEMINI_API_KEY="AIzaSy..." --project-ref <PROJECT_ID>
 
@@ -54,6 +58,7 @@ npx supabase secrets set GROQ_API_KEY="gsk_..." --project-ref <PROJECT_ID>
 1. Buka dashboard proyek Supabase Anda di `https://supabase.com/dashboard/project/<PROJECT_ID>/settings/functions`.
 2. Masuk ke tab **Edge Functions Secrets**.
 3. Tambahkan secret baru:
+   - Name: `DEEPSEEK_API_KEY`, Value: Kunci dari DeepSeek Platform (`sk-...`).
    - Name: `GEMINI_API_KEY`, Value: Kunci dari Google AI Studio.
    - Name: `GROQ_API_KEY`, Value: Kunci dari Groq Cloud Console.
 4. Klik **Save**.

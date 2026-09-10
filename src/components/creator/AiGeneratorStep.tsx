@@ -8,8 +8,26 @@ import {
   generateAiTopicIdeas,
   generateAiCapaianPembelajaran,
   isAnyAiAvailable,
+  getStoredDeepSeekApiKey,
+  saveStoredDeepSeekApiKey,
+  hasDeepSeekApiKey,
+  getStoredDeepSeekModel,
+  saveStoredDeepSeekModel,
+  getStoredGroqApiKey,
+  saveStoredGroqApiKey,
+  hasGroqApiKey,
+  getStoredGroqModel,
+  saveStoredGroqModel,
+  getStoredGeminiApiKey,
+  saveStoredGeminiApiKey,
+  hasGeminiApiKey,
+  getStoredGeminiModel,
+  saveStoredGeminiModel,
   type AiProvider, 
-  type SupabaseAiStatus 
+  type SupabaseAiStatus,
+  type DeepSeekModel,
+  type GroqModel,
+  type GeminiModel
 } from '../../lib/geminiApi';
 import { 
   parseRawQuestionsText, 
@@ -31,8 +49,11 @@ import {
   Shuffle, 
   Info, 
   Eye,
+  EyeOff,
   Search,
-  X
+  X,
+  Key,
+  ExternalLink
 } from 'lucide-react';
 
 export type CreationStage = 1 | 2 | 3 | 4;
@@ -746,7 +767,19 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
   const [includeAiImages, setIncludeAiImages] = useState(false);
 
   // Pilihan Mesin AI
-  const [selectedEngine, setSelectedEngine] = useState<'local' | 'groq' | 'gemini' | 'prompt'>('groq');
+  const [selectedEngine, setSelectedEngine] = useState<'local' | 'deepseek' | 'groq' | 'gemini' | 'prompt'>('deepseek');
+
+  // Modal Pengaturan Kunci API Mandiri (BYOK)
+  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
+  const [apiKeyTab, setApiKeyTab] = useState<'deepseek' | 'groq' | 'gemini'>('deepseek');
+  const [deepseekKeyInput, setDeepseekKeyInput] = useState(() => getStoredDeepSeekApiKey());
+  const [deepseekModelChoice, setDeepseekModelChoice] = useState<DeepSeekModel>(() => getStoredDeepSeekModel());
+  const [groqKeyInput, setGroqKeyInput] = useState(() => getStoredGroqApiKey());
+  const [groqModelChoice, setGroqModelChoice] = useState<GroqModel>(() => getStoredGroqModel());
+  const [geminiKeyInput, setGeminiKeyInput] = useState(() => getStoredGeminiApiKey());
+  const [geminiModelChoice, setGeminiModelChoice] = useState<GeminiModel>(() => getStoredGeminiModel());
+  const [showKeySecret, setShowKeySecret] = useState(false);
+  const [keySaveMessage, setKeySaveMessage] = useState<string | null>(null);
 
   // Input Teks Salin Prompt / Dokumen
   const [rawInputText, setRawInputText] = useState('');
@@ -765,9 +798,11 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
     checkSupabaseAiStatus()
       .then((status) => {
         setSupabaseAi(status);
-        if (status.hasGroq) {
+        if (status.hasDeepSeek || hasDeepSeekApiKey()) {
+          setSelectedEngine('deepseek');
+        } else if (status.hasGroq || hasGroqApiKey()) {
           setSelectedEngine('groq');
-        } else if (status.hasGemini) {
+        } else if (status.hasGemini || hasGeminiApiKey()) {
           setSelectedEngine('gemini');
         } else {
           setSelectedEngine('local');
@@ -891,7 +926,29 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
     reader.readAsText(file);
   };
 
-  // Eksekusi AI Direct (Lokal / Groq / Gemini) -> Langsung Buka Studio Bank Soal
+  // Simpan Pengaturan Kunci API (BYOK)
+  const handleSaveApiKeySettings = () => {
+    playClick();
+    if (apiKeyTab === 'deepseek') {
+      saveStoredDeepSeekApiKey(deepseekKeyInput.trim());
+      saveStoredDeepSeekModel(deepseekModelChoice);
+      setKeySaveMessage(deepseekKeyInput.trim() ? '✓ Kunci DeepSeek berhasil disimpan di peramban!' : 'Kunci DeepSeek dikosongkan.');
+    } else if (apiKeyTab === 'groq') {
+      saveStoredGroqApiKey(groqKeyInput.trim());
+      saveStoredGroqModel(groqModelChoice);
+      setKeySaveMessage(groqKeyInput.trim() ? '✓ Kunci Groq berhasil disimpan di peramban!' : 'Kunci Groq dikosongkan.');
+    } else if (apiKeyTab === 'gemini') {
+      saveStoredGeminiApiKey(geminiKeyInput.trim());
+      saveStoredGeminiModel(geminiModelChoice);
+      setKeySaveMessage(geminiKeyInput.trim() ? '✓ Kunci Gemini berhasil disimpan di peramban!' : 'Kunci Gemini dikosongkan.');
+    }
+    setTimeout(() => {
+      setKeySaveMessage(null);
+      setIsApiKeyModalOpen(false);
+    }, 1000);
+  };
+
+  // Eksekusi AI Direct (Lokal / DeepSeek / Groq / Gemini) -> Langsung Buka Studio Bank Soal
   const handleExecuteAiDirect = async () => {
     playClick();
     setErrorMessage(null);
@@ -905,14 +962,18 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
     setIsLoading(true);
 
     try {
-      const providerToUse: AiProvider = (selectedEngine === 'local' || selectedEngine === 'prompt') ? 'gemini' : selectedEngine;
+      let providerToUse: AiProvider | undefined = undefined;
+      if (selectedEngine === 'deepseek') providerToUse = 'deepseek';
+      else if (selectedEngine === 'groq') providerToUse = 'groq';
+      else if (selectedEngine === 'gemini') providerToUse = 'gemini';
+
       const result = await generateHybridQuizQuestions({
         topic: topic.trim(),
         subject,
         grade,
         count: currentTotalQuestions,
         questionType: 'campuran',
-        provider: selectedEngine === 'local' ? undefined : providerToUse,
+        provider: providerToUse,
         includeAiImages,
       });
 
@@ -1808,7 +1869,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
 
           {/* Pilihan Mesin Pembuat Soal */}
           <div className="space-y-4">
-            <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center justify-between flex-wrap gap-3">
               <div>
                 <label className="block text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white">
                   Pilih Mesin Pembuat Soal
@@ -1818,14 +1879,32 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                 </p>
               </div>
 
-              {isCheckingCloudAi && (
-                <span className="text-[11px] text-blue-500 font-bold flex items-center gap-1.5 bg-blue-50 dark:bg-blue-950/50 px-2.5 py-1 rounded-lg">
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" /> Memeriksa Status Cloud...
-                </span>
-              )}
+              <div className="flex items-center gap-2 flex-wrap">
+                {isCheckingCloudAi && (
+                  <span className="text-[11px] text-blue-500 font-bold flex items-center gap-1.5 bg-blue-50 dark:bg-blue-950/50 px-2.5 py-1 rounded-lg">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" /> Memeriksa Status Cloud...
+                  </span>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    setIsApiKeyModalOpen(true);
+                  }}
+                  className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 transition-all btn-press min-h-[40px]"
+                  title="Atur Kunci API mandiri (BYOK) untuk DeepSeek, Groq, atau Gemini"
+                >
+                  <Key className="w-3.5 h-3.5 text-blue-500" />
+                  <span>Kunci API Pribadi 🔑</span>
+                  {(hasDeepSeekApiKey() || hasGroqApiKey() || hasGeminiApiKey()) && (
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  )}
+                </button>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5 sm:gap-4">
               
               {/* Option 1: Kurikulum SD Lokal */}
               <button
@@ -1834,7 +1913,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                   playClick();
                   setSelectedEngine('local');
                 }}
-                className={`p-5 rounded-2xl border text-left transition-all min-h-[140px] flex flex-col justify-between btn-press ${
+                className={`p-4 sm:p-5 rounded-2xl border text-left transition-all min-h-[140px] flex flex-col justify-between btn-press ${
                   selectedEngine === 'local'
                     ? 'border-blue-600 bg-blue-50/70 dark:bg-blue-950/40 text-blue-900 dark:text-blue-100 ring-2 ring-blue-500/25 shadow-sm'
                     : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700'
@@ -1859,14 +1938,56 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                 </div>
               </button>
 
-              {/* Option 2: Groq Cloud LPU */}
+              {/* Option 2: DeepSeek AI (V3 & R1) */}
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setSelectedEngine('deepseek');
+                }}
+                className={`p-4 sm:p-5 rounded-2xl border text-left transition-all min-h-[140px] flex flex-col justify-between btn-press ${
+                  selectedEngine === 'deepseek'
+                    ? 'border-sky-600 bg-sky-50/70 dark:bg-sky-950/40 text-sky-950 dark:text-sky-100 ring-2 ring-sky-500/25 shadow-sm'
+                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700'
+                }`}
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-2.5">
+                    <div className="w-10 h-10 rounded-xl bg-sky-100 dark:bg-sky-900/60 text-sky-600 flex items-center justify-center text-xl font-bold">
+                      🐋
+                    </div>
+                    {supabaseAi.hasDeepSeek ? (
+                      <span className="text-[10px] px-2 py-0.5 rounded-md font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 flex items-center gap-1">
+                        <Cloud className="w-3 h-3" /> Cloud Aktif
+                      </span>
+                    ) : hasDeepSeekApiKey() ? (
+                      <span className="text-[10px] px-2 py-0.5 rounded-md font-bold bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-300">
+                        Kunci Lokal Aktif
+                      </span>
+                    ) : (
+                      <span className="text-[10px] px-2 py-0.5 rounded-md font-bold bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-300">
+                        Penalaran R1/V3
+                      </span>
+                    )}
+                  </div>
+                  <span className="font-black text-sm sm:text-base block">DeepSeek AI</span>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-snug">
+                    Penalaran mendalam DeepSeek V3 & R1 dengan efisiensi tinggi dan logika analitis kuat.
+                  </p>
+                </div>
+                <div className="pt-2 text-[11px] font-bold text-sky-600 dark:text-sky-400 flex items-center gap-1">
+                  {selectedEngine === 'deepseek' ? '✓ Sedang Dipilih' : 'Klik untuk Memilih'}
+                </div>
+              </button>
+
+              {/* Option 3: Groq Cloud LPU */}
               <button
                 type="button"
                 onClick={() => {
                   playClick();
                   setSelectedEngine('groq');
                 }}
-                className={`p-5 rounded-2xl border text-left transition-all min-h-[140px] flex flex-col justify-between btn-press ${
+                className={`p-4 sm:p-5 rounded-2xl border text-left transition-all min-h-[140px] flex flex-col justify-between btn-press ${
                   selectedEngine === 'groq'
                     ? 'border-amber-600 bg-amber-50/70 dark:bg-amber-950/40 text-amber-950 dark:text-amber-100 ring-2 ring-amber-500/25 shadow-sm'
                     : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700'
@@ -1880,6 +2001,10 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                     {supabaseAi.hasGroq ? (
                       <span className="text-[10px] px-2 py-0.5 rounded-md font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 flex items-center gap-1">
                         <Cloud className="w-3 h-3" /> Cloud Aktif
+                      </span>
+                    ) : hasGroqApiKey() ? (
+                      <span className="text-[10px] px-2 py-0.5 rounded-md font-bold bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300">
+                        Kunci Lokal Aktif
                       </span>
                     ) : (
                       <span className="text-[10px] px-2 py-0.5 rounded-md font-bold bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300">
@@ -1897,14 +2022,14 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                 </div>
               </button>
 
-              {/* Option 3: Google Gemini AI */}
+              {/* Option 4: Google Gemini AI */}
               <button
                 type="button"
                 onClick={() => {
                   playClick();
                   setSelectedEngine('gemini');
                 }}
-                className={`p-5 rounded-2xl border text-left transition-all min-h-[140px] flex flex-col justify-between btn-press ${
+                className={`p-4 sm:p-5 rounded-2xl border text-left transition-all min-h-[140px] flex flex-col justify-between btn-press ${
                   selectedEngine === 'gemini'
                     ? 'border-purple-600 bg-purple-50/70 dark:bg-purple-950/40 text-purple-950 dark:text-purple-100 ring-2 ring-purple-500/25 shadow-sm'
                     : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700'
@@ -1918,6 +2043,10 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                     {supabaseAi.hasGemini ? (
                       <span className="text-[10px] px-2 py-0.5 rounded-md font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 flex items-center gap-1">
                         <Cloud className="w-3 h-3" /> Cloud Aktif
+                      </span>
+                    ) : hasGeminiApiKey() ? (
+                      <span className="text-[10px] px-2 py-0.5 rounded-md font-bold bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300">
+                        Kunci Lokal Aktif
                       </span>
                     ) : (
                       <span className="text-[10px] px-2 py-0.5 rounded-md font-bold bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300">
@@ -1935,14 +2064,14 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                 </div>
               </button>
 
-              {/* Option 4: Salin Prompt / Berkas Dokumen */}
+              {/* Option 5: Salin Prompt / Berkas Dokumen */}
               <button
                 type="button"
                 onClick={() => {
                   playClick();
                   setSelectedEngine('prompt');
                 }}
-                className={`p-5 rounded-2xl border text-left transition-all min-h-[140px] flex flex-col justify-between btn-press ${
+                className={`p-4 sm:p-5 rounded-2xl border text-left transition-all min-h-[140px] flex flex-col justify-between btn-press ${
                   selectedEngine === 'prompt'
                     ? 'border-indigo-600 bg-indigo-50/70 dark:bg-indigo-950/40 text-indigo-900 dark:text-indigo-100 ring-2 ring-indigo-500/25 shadow-sm'
                     : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700'
@@ -1968,6 +2097,30 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
               </button>
 
             </div>
+
+            {/* Banner info bantuan jika DeepSeek dipilih dan belum ada kunci */}
+            {selectedEngine === 'deepseek' && !hasDeepSeekApiKey() && !supabaseAi.hasDeepSeek && (
+              <div className="p-3.5 sm:p-4 rounded-2xl bg-sky-50 dark:bg-sky-950/40 border border-sky-200/80 dark:border-sky-900/60 text-xs text-sky-900 dark:text-sky-200 flex items-center justify-between gap-3 flex-wrap animate-fade-in">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">🐋</span>
+                  <span>
+                    <strong>Gunakan DeepSeek Pribadi:</strong> Masukkan API Key gratis Anda dari <em>platform.deepseek.com</em> untuk merasakan kecerdasan DeepSeek V3 / R1 secara langsung.
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    setApiKeyTab('deepseek');
+                    setIsApiKeyModalOpen(true);
+                  }}
+                  className="px-3.5 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs btn-press shrink-0 min-h-[36px]"
+                >
+                  <Key className="w-3.5 h-3.5" />
+                  <span>Masukkan Kunci DeepSeek</span>
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Area Interaktif Khusus jika Salin Prompt / Berkas Dipilih */}
@@ -2286,6 +2439,342 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                 Tutup
               </button>
             </div>
+          </div>
+        </div>,
+        document.body
+      )}
+      {/* ========================================================================= */}
+      {/* MODAL OVERLAY: PENGATURAN KUNCI API PRIBADI / BYOK (PORTAL KE BODY Z-[100]) */}
+      {/* ========================================================================= */}
+      {isApiKeyModalOpen && typeof document !== 'undefined' && createPortal(
+        <div 
+          className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 bg-slate-950/75 backdrop-blur-sm animate-fade-in"
+          onClick={() => setIsApiKeyModalOpen(false)}
+        >
+          <div 
+            className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden animate-zoom-in my-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header Modal */}
+            <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-10 h-10 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xl font-black shrink-0">
+                  🔑
+                </div>
+                <div className="min-w-0">
+                  <h3 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white truncate">
+                    Pengaturan Kunci API Mandiri (BYOK)
+                  </h3>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                    Tersimpan aman di peramban Anda (Keamanan Tingkat Tinggi)
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsApiKeyModalOpen(false)}
+                className="w-10 h-10 rounded-2xl flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors btn-press shrink-0"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Provider Switcher Tabs */}
+            <div className="p-3 sm:p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-850/40">
+              <div className="grid grid-cols-3 gap-1.5 p-1 rounded-2xl bg-slate-200/70 dark:bg-slate-800 border border-slate-300/40 dark:border-slate-700/60">
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    setApiKeyTab('deepseek');
+                  }}
+                  className={`py-2 px-2.5 rounded-xl font-extrabold text-xs transition-all flex items-center justify-center gap-1.5 min-h-[38px] ${
+                    apiKeyTab === 'deepseek'
+                      ? 'bg-white dark:bg-slate-900 text-sky-600 dark:text-sky-400 shadow-xs'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  <span>🐋 DeepSeek</span>
+                  {hasDeepSeekApiKey() && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    setApiKeyTab('groq');
+                  }}
+                  className={`py-2 px-2.5 rounded-xl font-extrabold text-xs transition-all flex items-center justify-center gap-1.5 min-h-[38px] ${
+                    apiKeyTab === 'groq'
+                      ? 'bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 shadow-xs'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  <span>⚡ Groq LPU</span>
+                  {hasGroqApiKey() && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    setApiKeyTab('gemini');
+                  }}
+                  className={`py-2 px-2.5 rounded-xl font-extrabold text-xs transition-all flex items-center justify-center gap-1.5 min-h-[38px] ${
+                    apiKeyTab === 'gemini'
+                      ? 'bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 shadow-xs'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  <span>✨ Gemini AI</span>
+                  {hasGeminiApiKey() && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>}
+                </button>
+              </div>
+            </div>
+
+            {/* Tab Contents */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+              {keySaveMessage && (
+                <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-800 dark:text-emerald-200 font-bold flex items-center gap-2 animate-fade-in">
+                  <Check className="w-4 h-4 text-emerald-500" />
+                  <span>{keySaveMessage}</span>
+                </div>
+              )}
+
+              {/* TAB 1: DEEPSEEK AI */}
+              {apiKeyTab === 'deepseek' && (
+                <div className="space-y-4 animate-fade-in">
+                  {supabaseAi.hasDeepSeek && (
+                    <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+                      <span><strong>Cloud Aktif:</strong> DeepSeek API Key telah disetel di server Supabase Secrets. Form ini opsional jika ingin menimpa dengan kunci pribadi.</span>
+                    </div>
+                  )}
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-xs font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-1">
+                        <span>🐋 Kunci API DeepSeek (sk-...):</span>
+                      </label>
+                      <a
+                        href="https://platform.deepseek.com/"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[11px] font-bold text-sky-600 dark:text-sky-400 hover:underline flex items-center gap-1"
+                      >
+                        Dapatkan di platform.deepseek.com <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
+                    <div className="relative">
+                      <input
+                        type={showKeySecret ? 'text' : 'password'}
+                        value={deepseekKeyInput}
+                        onChange={(e) => setDeepseekKeyInput(e.target.value)}
+                        placeholder="sk-..."
+                        className="w-full pl-3.5 pr-10 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:border-sky-500 min-h-[44px]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowKeySecret(!showKeySecret)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 min-h-[36px] flex items-center"
+                      >
+                        {showKeySecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-extrabold text-slate-800 dark:text-slate-200 block mb-1.5">
+                      Pilihan Model DeepSeek:
+                    </label>
+                    <select
+                      value={deepseekModelChoice}
+                      onChange={(e) => setDeepseekModelChoice(e.target.value as DeepSeekModel)}
+                      className="w-full px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-semibold focus:outline-none min-h-[44px]"
+                    >
+                      <option value="deepseek-chat">deepseek-chat (DeepSeek-V3 - Cepat, Responsif, Format JSON Stabil)</option>
+                      <option value="deepseek-reasoner">deepseek-reasoner (DeepSeek-R1 - Penalaran Logika & Matematika Mendalam)</option>
+                    </select>
+                  </div>
+
+                  <div className="p-3.5 rounded-xl bg-sky-50 dark:bg-sky-950/40 text-[11px] text-sky-900 dark:text-sky-300 space-y-1 leading-relaxed border border-sky-200/80 dark:border-sky-900/60">
+                    <p className="font-bold">💡 Keunggulan DeepSeek AI:</p>
+                    <p>DeepSeek-V3 dan DeepSeek-R1 menawarkan efisiensi komputasi tinggi dan pemahaman bahasa Indonesia yang alami untuk perumusan soal Kurikulum Merdeka SD.</p>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 2: GROQ CLOUD */}
+              {apiKeyTab === 'groq' && (
+                <div className="space-y-4 animate-fade-in">
+                  {supabaseAi.hasGroq && (
+                    <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+                      <span><strong>Cloud Aktif:</strong> Kunci Groq aktif di server Supabase Secrets.</span>
+                    </div>
+                  )}
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-xs font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-1">
+                        <span>⚡ Kunci API Groq (gsk_...):</span>
+                      </label>
+                      <a
+                        href="https://console.groq.com/"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[11px] font-bold text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1"
+                      >
+                        Dapatkan di console.groq.com <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
+                    <div className="relative">
+                      <input
+                        type={showKeySecret ? 'text' : 'password'}
+                        value={groqKeyInput}
+                        onChange={(e) => setGroqKeyInput(e.target.value)}
+                        placeholder="gsk_..."
+                        className="w-full pl-3.5 pr-10 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:border-amber-500 min-h-[44px]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowKeySecret(!showKeySecret)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 min-h-[36px] flex items-center"
+                      >
+                        {showKeySecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-extrabold text-slate-800 dark:text-slate-200 block mb-1.5">
+                      Pilihan Model Groq LPU:
+                    </label>
+                    <select
+                      value={groqModelChoice}
+                      onChange={(e) => setGroqModelChoice(e.target.value as GroqModel)}
+                      className="w-full px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-semibold focus:outline-none min-h-[44px]"
+                    >
+                      <option value="llama-3.3-70b-versatile">Llama 3.3 70B (Sangat Cerdas & Presisi)</option>
+                      <option value="llama-3.1-8b-instant">Llama 3.1 8B Instant (Super Kilat)</option>
+                      <option value="deepseek-r1-distill-llama-70b">DeepSeek R1 Distill Llama 70B (Penalaran MTK)</option>
+                      <option value="qwen/qwen3.8-27b">Qwen 3.8 27B</option>
+                      <option value="gemma2-9b-it">Google Gemma 2 9B</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 3: GEMINI AI */}
+              {apiKeyTab === 'gemini' && (
+                <div className="space-y-4 animate-fade-in">
+                  {supabaseAi.hasGemini && (
+                    <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+                      <span><strong>Cloud Aktif:</strong> Kunci Gemini aktif di server Supabase Secrets.</span>
+                    </div>
+                  )}
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-xs font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-1">
+                        <span>✨ Kunci API Gemini (AIzaSy...):</span>
+                      </label>
+                      <a
+                        href="https://aistudio.google.com/"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[11px] font-bold text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-1"
+                      >
+                        Dapatkan di aistudio.google.com <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
+                    <div className="relative">
+                      <input
+                        type={showKeySecret ? 'text' : 'password'}
+                        value={geminiKeyInput}
+                        onChange={(e) => setGeminiKeyInput(e.target.value)}
+                        placeholder="AIzaSy..."
+                        className="w-full pl-3.5 pr-10 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:border-purple-500 min-h-[44px]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowKeySecret(!showKeySecret)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 min-h-[36px] flex items-center"
+                      >
+                        {showKeySecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-extrabold text-slate-800 dark:text-slate-200 block mb-1.5">
+                      Pilihan Model Gemini:
+                    </label>
+                    <select
+                      value={geminiModelChoice}
+                      onChange={(e) => setGeminiModelChoice(e.target.value as GeminiModel)}
+                      className="w-full px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-semibold focus:outline-none min-h-[44px]"
+                    >
+                      <option value="gemini-2.0-flash">Gemini 2.0 Flash (Default Tercepat)</option>
+                      <option value="gemini-1.5-pro">Gemini 1.5 Pro (Penalaran PRO Tingkat Lanjut)</option>
+                      <option value="gemini-3.8-flash">Gemini 3.8 Flash</option>
+                      <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash Lite</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer Modal */}
+            <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-850/60 flex items-center justify-between gap-2.5">
+              <div>
+                {((apiKeyTab === 'deepseek' && hasDeepSeekApiKey()) ||
+                  (apiKeyTab === 'groq' && hasGroqApiKey()) ||
+                  (apiKeyTab === 'gemini' && hasGeminiApiKey())) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      if (apiKeyTab === 'deepseek') {
+                        saveStoredDeepSeekApiKey('');
+                        setDeepseekKeyInput('');
+                      } else if (apiKeyTab === 'groq') {
+                        saveStoredGroqApiKey('');
+                        setGroqKeyInput('');
+                      } else if (apiKeyTab === 'gemini') {
+                        saveStoredGeminiApiKey('');
+                        setGeminiKeyInput('');
+                      }
+                      setKeySaveMessage('Kunci dihapus.');
+                      setTimeout(() => setKeySaveMessage(null), 1000);
+                    }}
+                    className="text-xs font-bold text-rose-600 hover:text-rose-700 dark:text-rose-400 hover:underline px-2 py-1.5 min-h-[36px]"
+                  >
+                    Hapus Kunci
+                  </button>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsApiKeyModalOpen(false)}
+                  className="px-4 py-2 rounded-xl font-bold text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-750 transition-colors btn-press min-h-[40px]"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveApiKeySettings}
+                  className="px-5 py-2 rounded-xl font-black text-xs text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-500/20 flex items-center gap-1.5 btn-press transition-all min-h-[40px]"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  <span>Simpan Kunci</span>
+                </button>
+              </div>
+            </div>
+
           </div>
         </div>,
         document.body

@@ -2,7 +2,7 @@ import type { QuestionType, QuizQuestion, Subject } from '../types/quiz';
 import { generateCurriculumSeedQuestions } from './aiQuestionParser';
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 
-export type AiProvider = 'gemini' | 'groq';
+export type AiProvider = 'gemini' | 'groq' | 'deepseek';
 
 export type GeminiModel = 
   | 'gemini-3.8-flash'
@@ -26,19 +26,27 @@ export type GroqModel =
   | 'gemma2-9b-it' 
   | 'mixtral-8x7b-32768';
 
+export type DeepSeekModel = 
+  | 'deepseek-chat' 
+  | 'deepseek-reasoner';
+
 const STORAGE_KEY_AI_PROVIDER = 'kuis_sd_ai_provider';
 const STORAGE_KEY_GEMINI_API_KEY = 'kuis_sd_gemini_api_key';
 const STORAGE_KEY_GEMINI_MODEL = 'kuis_sd_gemini_model';
 const STORAGE_KEY_GROQ_API_KEY = 'kuis_sd_groq_api_key';
 const STORAGE_KEY_GROQ_MODEL = 'kuis_sd_groq_model';
+const STORAGE_KEY_DEEPSEEK_API_KEY = 'kuis_sd_deepseek_api_key';
+const STORAGE_KEY_DEEPSEEK_MODEL = 'kuis_sd_deepseek_model';
 
 export interface SupabaseAiStatus {
   checked: boolean;
   available: boolean;
   hasGemini: boolean;
   hasGroq: boolean;
+  hasDeepSeek?: boolean;
   groqModels: string[];
   geminiModels: string[];
+  deepseekModels?: string[];
   error?: string | null;
 }
 
@@ -51,6 +59,7 @@ export interface GenerateAiQuestionsParams {
   provider?: AiProvider;
   geminiModel?: GeminiModel;
   groqModel?: GroqModel;
+  deepseekModel?: DeepSeekModel;
   model?: string; // generic fallback
   apiKey?: string;
   includeAiImages?: boolean; // Otomatis lampirkan ilustrasi AI untuk soal tebak gambar / bergambar
@@ -58,7 +67,7 @@ export interface GenerateAiQuestionsParams {
 
 export interface HybridGenerateResult {
   questions: QuizQuestion[];
-  source: 'gemini_api' | 'groq_api' | 'curriculum_seed';
+  source: 'gemini_api' | 'groq_api' | 'deepseek_api' | 'curriculum_seed';
   message: string;
 }
 
@@ -70,6 +79,7 @@ export function getStoredAiProvider(): AiProvider {
   try {
     const saved = localStorage.getItem(STORAGE_KEY_AI_PROVIDER) as AiProvider;
     if (saved === 'groq') return 'groq';
+    if (saved === 'deepseek') return 'deepseek';
     return 'gemini';
   } catch {
     return 'gemini';
@@ -188,8 +198,51 @@ export function saveStoredGroqModel(model: GroqModel): void {
   }
 }
 
+export function getStoredDeepSeekApiKey(): string {
+  try {
+    return localStorage.getItem(STORAGE_KEY_DEEPSEEK_API_KEY) || '';
+  } catch {
+    return '';
+  }
+}
+
+export function saveStoredDeepSeekApiKey(apiKey: string): void {
+  try {
+    const trimmed = apiKey.trim();
+    if (!trimmed) {
+      localStorage.removeItem(STORAGE_KEY_DEEPSEEK_API_KEY);
+    } else {
+      localStorage.setItem(STORAGE_KEY_DEEPSEEK_API_KEY, trimmed);
+    }
+  } catch {
+    // noop
+  }
+}
+
+export function hasDeepSeekApiKey(): boolean {
+  return Boolean(getStoredDeepSeekApiKey().length > 10);
+}
+
+export function getStoredDeepSeekModel(): DeepSeekModel {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY_DEEPSEEK_MODEL) as DeepSeekModel;
+    if (saved === 'deepseek-reasoner') return 'deepseek-reasoner';
+    return 'deepseek-chat';
+  } catch {
+    return 'deepseek-chat';
+  }
+}
+
+export function saveStoredDeepSeekModel(model: DeepSeekModel): void {
+  try {
+    localStorage.setItem(STORAGE_KEY_DEEPSEEK_MODEL, model);
+  } catch {
+    // noop
+  }
+}
+
 export function hasAnyAiApiKey(): boolean {
-  return hasGeminiApiKey() || hasGroqApiKey();
+  return hasGeminiApiKey() || hasGroqApiKey() || hasDeepSeekApiKey();
 }
 
 /* =========================================================
@@ -201,8 +254,10 @@ let cachedSupabaseAiStatus: SupabaseAiStatus = {
   available: false,
   hasGemini: false,
   hasGroq: false,
+  hasDeepSeek: false,
   groqModels: [],
   geminiModels: [],
+  deepseekModels: [],
   error: null,
 };
 
@@ -221,8 +276,10 @@ export async function checkSupabaseAiStatus(forceRefresh = false): Promise<Supab
       available: false,
       hasGemini: false,
       hasGroq: false,
+      hasDeepSeek: false,
       groqModels: [],
       geminiModels: [],
+      deepseekModels: [],
       error: 'Supabase client belum dikonfigurasi.',
     };
     return cachedSupabaseAiStatus;
@@ -239,8 +296,10 @@ export async function checkSupabaseAiStatus(forceRefresh = false): Promise<Supab
         available: false,
         hasGemini: false,
         hasGroq: false,
+        hasDeepSeek: false,
         groqModels: [],
         geminiModels: [],
+        deepseekModels: [],
         error: error?.message || 'Gagal memeriksa status Edge Function Supabase.',
       };
       return cachedSupabaseAiStatus;
@@ -248,11 +307,13 @@ export async function checkSupabaseAiStatus(forceRefresh = false): Promise<Supab
 
     cachedSupabaseAiStatus = {
       checked: true,
-      available: Boolean(data.hasGemini || data.hasGroq),
+      available: Boolean(data.hasGemini || data.hasGroq || data.hasDeepSeek),
       hasGemini: Boolean(data.hasGemini),
       hasGroq: Boolean(data.hasGroq),
+      hasDeepSeek: Boolean(data.hasDeepSeek),
       groqModels: Array.isArray(data.groqModels) ? data.groqModels : [],
       geminiModels: Array.isArray(data.geminiModels) ? data.geminiModels : [],
+      deepseekModels: Array.isArray(data.deepseekModels) ? data.deepseekModels : [],
       error: null,
     };
     return cachedSupabaseAiStatus;
@@ -263,8 +324,10 @@ export async function checkSupabaseAiStatus(forceRefresh = false): Promise<Supab
       available: false,
       hasGemini: false,
       hasGroq: false,
+      hasDeepSeek: false,
       groqModels: [],
       geminiModels: [],
+      deepseekModels: [],
       error: msg,
     };
     return cachedSupabaseAiStatus;
@@ -272,15 +335,19 @@ export async function checkSupabaseAiStatus(forceRefresh = false): Promise<Supab
 }
 
 export function isGeminiAvailable(): boolean {
-  return hasGeminiApiKey() || cachedSupabaseAiStatus.hasGemini;
+  return hasGeminiApiKey() || Boolean(cachedSupabaseAiStatus.hasGemini);
 }
 
 export function isGroqAvailable(): boolean {
-  return hasGroqApiKey() || cachedSupabaseAiStatus.hasGroq;
+  return hasGroqApiKey() || Boolean(cachedSupabaseAiStatus.hasGroq);
+}
+
+export function isDeepSeekAvailable(): boolean {
+  return hasDeepSeekApiKey() || Boolean(cachedSupabaseAiStatus.hasDeepSeek);
 }
 
 export function isAnyAiAvailable(): boolean {
-  return isGeminiAvailable() || isGroqAvailable();
+  return isGeminiAvailable() || isGroqAvailable() || isDeepSeekAvailable();
 }
 
 /**
@@ -289,12 +356,20 @@ export function isAnyAiAvailable(): boolean {
  */
 export async function callSupabaseAiEdgeFunction(params: GenerateAiQuestionsParams): Promise<{
   questions: QuizQuestion[];
-  provider: 'gemini' | 'groq';
+  provider: 'gemini' | 'groq' | 'deepseek';
   model?: string;
 }> {
   if (!supabase) {
     throw new Error('Supabase client tidak tersedia.');
   }
+
+  const defaultProvider: AiProvider = cachedSupabaseAiStatus.hasDeepSeek 
+    ? 'deepseek' 
+    : (cachedSupabaseAiStatus.hasGroq ? 'groq' : 'gemini');
+
+  const defaultModel = params.provider === 'deepseek'
+    ? params.deepseekModel
+    : (params.provider === 'groq' ? params.groqModel : params.geminiModel);
 
   const payload = {
     subject: params.subject,
@@ -302,8 +377,8 @@ export async function callSupabaseAiEdgeFunction(params: GenerateAiQuestionsPara
     topic: params.topic,
     count: params.count,
     questionType: params.questionType,
-    provider: params.provider || (cachedSupabaseAiStatus.hasGroq ? 'groq' : 'gemini'),
-    model: params.model || (params.provider === 'groq' ? params.groqModel : params.geminiModel),
+    provider: params.provider || defaultProvider,
+    model: params.model || defaultModel,
   };
 
   const { data, error } = await supabase.functions.invoke('generate-quiz-ai', {
@@ -337,7 +412,7 @@ export interface AiTopicRecommendation {
 }
 
 /**
- * Brainstorming rekomendasi topik cerdas dan dinamis menggunakan AI (Groq / Gemini)
+ * Brainstorming rekomendasi topik cerdas dan dinamis menggunakan AI (DeepSeek / Groq / Gemini)
  * dengan fallback mulus ke bank kurikulum lokal jika offline (Rule 9 & Rule 10).
  */
 export async function generateAiTopicIdeas(params: {
@@ -351,8 +426,10 @@ export async function generateAiTopicIdeas(params: {
   if (supabase) {
     try {
       const status = await checkSupabaseAiStatus();
-      if (status.hasGroq || status.hasGemini) {
-        const preferredProvider = params.provider || (status.hasGroq ? 'groq' : 'gemini');
+      if (status.hasDeepSeek || status.hasGroq || status.hasGemini) {
+        const preferredProvider = params.provider || (
+          status.hasDeepSeek ? 'deepseek' : (status.hasGroq ? 'groq' : 'gemini')
+        );
         const { data, error } = await supabase.functions.invoke('generate-quiz-ai', {
           body: {
             action: 'generate_topics',
@@ -373,7 +450,45 @@ export async function generateAiTopicIdeas(params: {
     }
   }
 
-  // 2. Coba via Groq API lokal jika key tersedia di browser
+  // 2. Coba via DeepSeek API lokal jika key tersedia di browser
+  if (hasDeepSeekApiKey()) {
+    try {
+      const apiKey = getStoredDeepSeekApiKey();
+      const prompt = `Anda adalah Pakar Kurikulum Merdeka SD. Rekomendasikan 4 topik materi kuis untuk mata pelajaran ${subject} Kelas ${grade} SD beserta fokus materinya (1 kalimat). Kembalikan JSON: { "recommendations": [{ "topic": "...", "context": "..." }] }`;
+      const res = await fetch('https://api.deepseek.com/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: 'deepseek-chat',
+          messages: [{ role: 'user', content: prompt }],
+          response_format: { type: 'json_object' },
+          temperature: 0.7,
+          max_tokens: 800,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const content = data?.choices?.[0]?.message?.content;
+        if (content) {
+          const parsed = JSON.parse(content);
+          const list = Array.isArray(parsed) ? parsed : (parsed.recommendations || parsed.topics || []);
+          if (Array.isArray(list) && list.length > 0) {
+            return list.map((r: any) => ({
+              topic: String(r.topic || '').trim(),
+              context: String(r.context || '').trim(),
+            })).filter((r: AiTopicRecommendation) => r.topic.length > 0);
+          }
+        }
+      }
+    } catch (deepseekErr) {
+      console.warn('generateAiTopicIdeas DeepSeek lokal error:', deepseekErr);
+    }
+  }
+
+  // 3. Coba via Groq API lokal jika key tersedia di browser
   if (hasGroqApiKey()) {
     try {
       const apiKey = getStoredGroqApiKey();
@@ -411,7 +526,7 @@ export async function generateAiTopicIdeas(params: {
     }
   }
 
-  // 3. Coba via Gemini API lokal jika key tersedia di browser
+  // 4. Coba via Gemini API lokal jika key tersedia di browser
   if (hasGeminiApiKey()) {
     try {
       const apiKey = getStoredGeminiApiKey();
@@ -448,19 +563,19 @@ export async function generateAiTopicIdeas(params: {
     }
   }
 
-  // 4. Jika tidak ada AI / offline, kembalikan array kosong agar pemanggil dapat menggunakan preset lokal yang diacak
+  // 5. Jika tidak ada AI / offline, kembalikan array kosong agar pemanggil dapat menggunakan preset lokal yang diacak
   return [];
 }
 
 export interface AiCapaianPembelajaranResult {
   cp: string;
   goals?: string[];
-  source?: 'edge_function' | 'groq_local' | 'gemini_local' | 'fallback';
+  source?: 'edge_function' | 'deepseek_local' | 'groq_local' | 'gemini_local' | 'fallback';
 }
 
 /**
  * Merumuskan Capaian Pembelajaran (CP) dan Sasaran Kompetensi Spesifik Per Jenjang Kelas SD
- * menggunakan AI (Groq / Gemini) secara kontekstual berbasis Kurikulum Merdeka.
+ * menggunakan AI (DeepSeek / Groq / Gemini) secara kontekstual berbasis Kurikulum Merdeka.
  */
 export async function generateAiCapaianPembelajaran(params: {
   subject: Subject;
@@ -473,8 +588,10 @@ export async function generateAiCapaianPembelajaran(params: {
   if (supabase) {
     try {
       const status = await checkSupabaseAiStatus();
-      if (status.hasGroq || status.hasGemini) {
-        const preferredProvider = params.provider || (status.hasGroq ? 'groq' : 'gemini');
+      if (status.hasDeepSeek || status.hasGroq || status.hasGemini) {
+        const preferredProvider = params.provider || (
+          status.hasDeepSeek ? 'deepseek' : (status.hasGroq ? 'groq' : 'gemini')
+        );
         const { data, error } = await supabase.functions.invoke('generate-quiz-ai', {
           body: {
             action: 'generate_cp',
@@ -496,7 +613,47 @@ export async function generateAiCapaianPembelajaran(params: {
     }
   }
 
-  // 2. Coba via Groq API lokal jika key tersedia di browser
+  // 2. Coba via DeepSeek API lokal jika key tersedia di browser
+  if (hasDeepSeekApiKey()) {
+    try {
+      const apiKey = getStoredDeepSeekApiKey();
+      const prompt = `Anda adalah Pakar Kurikulum Merdeka Kemendikbudristek RI untuk Sekolah Dasar (SD).
+Tuliskan rumusan Capaian Pembelajaran (CP) yang SPESIFIK untuk KELAS ${grade} SD (bukan fase umum, melainkan capaian kompetensi khusus Kelas ${grade} SD) pada mata pelajaran: ${subject}.
+Kembalikan JSON murni: { "cp": "Pernyataan CP komprehensif 2-3 kalimat padat untuk Kelas ${grade} SD...", "goals": ["Tujuan 1", "Tujuan 2"] }`;
+      const res = await fetch('https://api.deepseek.com/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: 'deepseek-chat',
+          messages: [{ role: 'user', content: prompt }],
+          response_format: { type: 'json_object' },
+          temperature: 0.7,
+          max_tokens: 800,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const content = data?.choices?.[0]?.message?.content;
+        if (content) {
+          const parsed = JSON.parse(content);
+          if (parsed?.cp && typeof parsed.cp === 'string' && parsed.cp.trim()) {
+            return {
+              cp: parsed.cp.trim(),
+              goals: Array.isArray(parsed.goals) ? parsed.goals.map(String) : [],
+              source: 'deepseek_local',
+            };
+          }
+        }
+      }
+    } catch (deepseekErr) {
+      console.warn('generateAiCapaianPembelajaran DeepSeek lokal error:', deepseekErr);
+    }
+  }
+
+  // 3. Coba via Groq API lokal jika key tersedia di browser
   if (hasGroqApiKey()) {
     try {
       const apiKey = getStoredGroqApiKey();
@@ -536,7 +693,7 @@ Kembalikan JSON murni: { "cp": "Pernyataan CP komprehensif 2-3 kalimat padat unt
     }
   }
 
-  // 3. Coba via Gemini API lokal jika key tersedia di browser
+  // 4. Coba via Gemini API lokal jika key tersedia di browser
   if (hasGeminiApiKey()) {
     try {
       const apiKey = getStoredGeminiApiKey();
@@ -887,6 +1044,120 @@ Kembalikan objek JSON dengan format:
 }
 
 /* =========================================================
+   CALL DEEPSEEK API (DeepSeek-V3 & DeepSeek-R1)
+========================================================= */
+
+export async function callDeepSeekApi(params: GenerateAiQuestionsParams): Promise<QuizQuestion[]> {
+  const apiKey = params.apiKey || getStoredDeepSeekApiKey();
+  if (!apiKey) {
+    throw new Error('Kunci API DeepSeek belum diatur. Silakan masukkan API Key DeepSeek Anda.');
+  }
+
+  const model = params.deepseekModel || (params.model as DeepSeekModel) || getStoredDeepSeekModel();
+  const endpoint = 'https://api.deepseek.com/chat/completions';
+
+  const systemInstruction = buildInstructionText(params) + `
+Kembalikan objek JSON dengan format:
+{
+  "questions": [ { ... }, { ... } ]
+}`;
+
+  const isReasoner = model === 'deepseek-reasoner';
+
+  const requestBody: Record<string, any> = {
+    model,
+    messages: [
+      {
+        role: isReasoner ? 'user' : 'system',
+        content: systemInstruction,
+      },
+      {
+        role: 'user',
+        content: `Tolong buatkan ${params.count} butir soal ${params.subject} Kelas ${params.grade} SD tentang materi "${params.topic}" dalam format JSON yang telah ditentukan. Pastikan bahasa ramah anak SD.`,
+      },
+    ],
+    max_tokens: 3500,
+  };
+
+  // deepseek-chat supports response_format and temperature; deepseek-reasoner restricts them in some versions
+  if (!isReasoner) {
+    requestBody.response_format = { type: 'json_object' };
+    requestBody.temperature = 0.6;
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 25000);
+
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify(requestBody),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const errorJson = await response.json().catch(() => ({}));
+      const errorMsg = errorJson?.error?.message || '';
+
+      if (response.status === 401) {
+        throw new Error('API Key DeepSeek tidak valid. Periksa kembali kunci API Anda di platform.deepseek.com.');
+      } else if (response.status === 429) {
+        throw new Error('Batas kuota DeepSeek terlampaui. Mengalihkan ke cadangan...');
+      } else {
+        throw new Error(`Kendala DeepSeek (${response.status}): ${errorMsg || 'Coba sesaat lagi.'}`);
+      }
+    }
+
+    const data = await response.json();
+    const rawContent = data?.choices?.[0]?.message?.content;
+    if (!rawContent) {
+      throw new Error('Tidak ada respon teks dari DeepSeek AI.');
+    }
+
+    const cleaned = cleanJsonResponse(rawContent);
+    let parsed: any = null;
+    try {
+      parsed = JSON.parse(cleaned);
+    } catch {
+      const firstBracket = cleaned.indexOf('[');
+      const lastBracket = cleaned.lastIndexOf(']');
+      if (firstBracket !== -1 && lastBracket > firstBracket) {
+        parsed = JSON.parse(cleaned.substring(firstBracket, lastBracket + 1));
+      } else {
+        const firstBrace = cleaned.indexOf('{');
+        const lastBrace = cleaned.lastIndexOf('}');
+        if (firstBrace !== -1 && lastBrace > firstBrace) {
+          parsed = JSON.parse(cleaned.substring(firstBrace, lastBrace + 1));
+        }
+      }
+    }
+
+    const list = Array.isArray(parsed) ? parsed : (parsed?.questions || parsed?.data || []);
+
+    if (!Array.isArray(list) || list.length === 0) {
+      throw new Error('Format balasan DeepSeek tidak memuat daftar soal yang valid.');
+    }
+
+    return normalizeQuestions(list, 'deepseek', params.includeAiImages);
+  } catch (err: unknown) {
+    clearTimeout(timeoutId);
+    if (err instanceof Error) {
+      if (err.name === 'AbortError') {
+        throw new Error('Permintaan ke DeepSeek AI melampaui batas waktu (25 detik).');
+      }
+      throw err;
+    }
+    throw new Error('Terjadi kendala saat menghubungi DeepSeek AI.');
+  }
+}
+
+/* =========================================================
    MESIN HYBRID MULTI-PROVIDER
 ========================================================= */
 
@@ -903,10 +1174,22 @@ export async function generateHybridQuizQuestions(
     console.warn('Cek status Supabase AI notice:', statusErr);
   }
 
+  const isCloudDeepSeek = Boolean(cloudStatus?.hasDeepSeek);
   const isCloudGroq = Boolean(cloudStatus?.hasGroq);
   const isCloudGemini = Boolean(cloudStatus?.hasGemini);
 
-  if (provider === 'groq' && isCloudGroq) {
+  if (provider === 'deepseek' && isCloudDeepSeek) {
+    try {
+      const result = await callSupabaseAiEdgeFunction({ ...params, provider: 'deepseek' });
+      return {
+        questions: result.questions,
+        source: 'deepseek_api',
+        message: `🐋 Berhasil meracik ${result.questions.length} butir soal materi "${params.topic}" via DeepSeek Cloud (${result.model || 'V3/R1'})!`,
+      };
+    } catch (cloudDeepSeekErr: unknown) {
+      console.warn('Panggilan DeepSeek via Supabase Edge Function gagal, mencoba cadangan:', cloudDeepSeekErr);
+    }
+  } else if (provider === 'groq' && isCloudGroq) {
     try {
       const result = await callSupabaseAiEdgeFunction({ ...params, provider: 'groq' });
       return {
@@ -931,7 +1214,18 @@ export async function generateHybridQuizQuestions(
   }
 
   // 2. Coba provider utama dengan API Key lokal jika tersedia di browser
-  if (provider === 'groq' && hasGroqApiKey()) {
+  if (provider === 'deepseek' && hasDeepSeekApiKey()) {
+    try {
+      const questions = await callDeepSeekApi(params);
+      return {
+        questions,
+        source: 'deepseek_api',
+        message: `🐋 Berhasil membuat ${questions.length} butir soal materi "${params.topic}" via DeepSeek AI Lokal (${params.deepseekModel || getStoredDeepSeekModel()})!`,
+      };
+    } catch (deepseekErr: unknown) {
+      console.warn('Panggilan DeepSeek lokal gagal, mencoba cadangan:', deepseekErr);
+    }
+  } else if (provider === 'groq' && hasGroqApiKey()) {
     try {
       const questions = await callGroqApi(params);
       return {
@@ -956,7 +1250,19 @@ export async function generateHybridQuizQuestions(
   }
 
   // 3. Coba provider alternatif via Cloud atau Kunci Lokal jika provider utama belum siap/gagal
-  if (provider === 'groq') {
+  if (provider === 'deepseek') {
+    if (isCloudGroq) {
+      try {
+        const result = await callSupabaseAiEdgeFunction({ ...params, provider: 'groq' });
+        return {
+          questions: result.questions,
+          source: 'groq_api',
+          message: `Beralih ke Groq Cloud: ${result.questions.length} butir soal materi "${params.topic}" berhasil dibuat.`,
+        };
+      } catch {
+        // lanjut
+      }
+    }
     if (isCloudGemini) {
       try {
         const result = await callSupabaseAiEdgeFunction({ ...params, provider: 'gemini' });
@@ -964,6 +1270,67 @@ export async function generateHybridQuizQuestions(
           questions: result.questions,
           source: 'gemini_api',
           message: `Beralih ke Google Gemini Cloud: ${result.questions.length} butir soal materi "${params.topic}" berhasil dibuat.`,
+        };
+      } catch {
+        // lanjut
+      }
+    }
+    if (hasGroqApiKey()) {
+      try {
+        const questions = await callGroqApi(params);
+        return {
+          questions,
+          source: 'groq_api',
+          message: `Beralih ke Groq: ${questions.length} butir soal materi "${params.topic}" berhasil dibuat.`,
+        };
+      } catch {
+        // lanjut
+      }
+    }
+    if (hasGeminiApiKey()) {
+      try {
+        const questions = await callGeminiApi(params);
+        return {
+          questions,
+          source: 'gemini_api',
+          message: `Beralih ke Google Gemini: ${questions.length} butir soal materi "${params.topic}" berhasil dibuat.`,
+        };
+      } catch {
+        // lanjut
+      }
+    }
+  } else if (provider === 'groq') {
+    if (isCloudDeepSeek) {
+      try {
+        const result = await callSupabaseAiEdgeFunction({ ...params, provider: 'deepseek' });
+        return {
+          questions: result.questions,
+          source: 'deepseek_api',
+          message: `Beralih ke DeepSeek Cloud: ${result.questions.length} butir soal materi "${params.topic}" berhasil dibuat.`,
+        };
+      } catch {
+        // lanjut
+      }
+    }
+    if (isCloudGemini) {
+      try {
+        const result = await callSupabaseAiEdgeFunction({ ...params, provider: 'gemini' });
+        return {
+          questions: result.questions,
+          source: 'gemini_api',
+          message: `Beralih ke Google Gemini Cloud: ${result.questions.length} butir soal materi "${params.topic}" berhasil dibuat.`,
+        };
+      } catch {
+        // lanjut
+      }
+    }
+    if (hasDeepSeekApiKey()) {
+      try {
+        const questions = await callDeepSeekApi(params);
+        return {
+          questions,
+          source: 'deepseek_api',
+          message: `Beralih ke DeepSeek: ${questions.length} butir soal materi "${params.topic}" berhasil dibuat.`,
         };
       } catch {
         // lanjut
@@ -982,6 +1349,18 @@ export async function generateHybridQuizQuestions(
       }
     }
   } else if (provider === 'gemini') {
+    if (isCloudDeepSeek) {
+      try {
+        const result = await callSupabaseAiEdgeFunction({ ...params, provider: 'deepseek' });
+        return {
+          questions: result.questions,
+          source: 'deepseek_api',
+          message: `Beralih ke DeepSeek Cloud: ${result.questions.length} butir soal materi "${params.topic}" berhasil dibuat.`,
+        };
+      } catch {
+        // lanjut
+      }
+    }
     if (isCloudGroq) {
       try {
         const result = await callSupabaseAiEdgeFunction({ ...params, provider: 'groq' });
@@ -989,6 +1368,18 @@ export async function generateHybridQuizQuestions(
           questions: result.questions,
           source: 'groq_api',
           message: `Beralih ke Groq Cloud: ${result.questions.length} butir soal materi "${params.topic}" berhasil dibuat.`,
+        };
+      } catch {
+        // lanjut
+      }
+    }
+    if (hasDeepSeekApiKey()) {
+      try {
+        const questions = await callDeepSeekApi(params);
+        return {
+          questions,
+          source: 'deepseek_api',
+          message: `Beralih ke DeepSeek: ${questions.length} butir soal materi "${params.topic}" berhasil dibuat.`,
         };
       } catch {
         // lanjut

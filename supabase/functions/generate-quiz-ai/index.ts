@@ -19,6 +19,7 @@ serve(async (req) => {
   try {
     const geminiApiKey = Deno.env.get("GEMINI_API_KEY");
     const groqApiKey = Deno.env.get("GROQ_API_KEY");
+    const deepseekApiKey = Deno.env.get("DEEPSEEK_API_KEY");
 
     let body: any = {};
     try {
@@ -33,8 +34,26 @@ serve(async (req) => {
     if (action === "check_status") {
       let groqModels: string[] = [];
       let geminiModels: string[] = [];
+      let deepseekModels: string[] = [];
       let groqError: string | null = null;
       let geminiError: string | null = null;
+      let deepseekError: string | null = null;
+
+      if (deepseekApiKey) {
+        try {
+          const res = await fetch("https://api.deepseek.com/models", {
+            headers: { Authorization: `Bearer ${deepseekApiKey}` },
+          });
+          if (res.ok) {
+            const data = await res.json();
+            deepseekModels = (data.data || []).map((m: any) => m.id);
+          } else {
+            deepseekError = await res.text();
+          }
+        } catch (e: any) {
+          deepseekError = e?.message || String(e);
+        }
+      }
 
       if (groqApiKey) {
         try {
@@ -75,19 +94,22 @@ serve(async (req) => {
           status: "ready",
           hasGemini: Boolean(geminiApiKey),
           hasGroq: Boolean(groqApiKey),
+          hasDeepSeek: Boolean(deepseekApiKey),
           groqModels,
           geminiModels,
+          deepseekModels,
           groqError,
           geminiError,
+          deepseekError,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
       );
     }
 
-    if (!geminiApiKey && !groqApiKey) {
+    if (!geminiApiKey && !groqApiKey && !deepseekApiKey) {
       return new Response(
         JSON.stringify({
-          error: "Kunci API (GEMINI_API_KEY atau GROQ_API_KEY) belum disetel di Supabase Secrets.",
+          error: "Kunci API (GEMINI_API_KEY, GROQ_API_KEY, atau DEEPSEEK_API_KEY) belum disetel di Supabase Secrets.",
         }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -101,7 +123,7 @@ serve(async (req) => {
       const { 
         subject = "IPA", 
         grade = 4, 
-        provider = groqApiKey ? "groq" : "gemini" 
+        provider = deepseekApiKey ? "deepseek" : (groqApiKey ? "groq" : "gemini") 
       } = body;
 
       const topicsPrompt = `Anda adalah Pakar Kurikulum Merdeka Sekolah Dasar (SD) Indonesia.
@@ -121,7 +143,35 @@ KEMBALIKAN HANYA ARRAY JSON MURNI DENGAN FORMAT:
       let topicProvider = provider;
       let topicModel = "";
 
-      if (provider === "groq" && groqApiKey) {
+      if (provider === "deepseek" && deepseekApiKey) {
+        try {
+          const res = await fetch("https://api.deepseek.com/chat/completions", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${deepseekApiKey}`,
+            },
+            body: JSON.stringify({
+              model: "deepseek-chat",
+              messages: [
+                { role: "system", content: topicsPrompt },
+                { role: "user", content: `Berikan 4 ide topik materi untuk ${subject} Kelas ${grade} SD.` },
+              ],
+              response_format: { type: "json_object" },
+              temperature: 0.7,
+              max_tokens: 1000,
+            }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            topicJson = data?.choices?.[0]?.message?.content || "";
+            topicModel = "deepseek-chat";
+            topicProvider = "deepseek";
+          }
+        } catch (_) {}
+      }
+
+      if (!topicJson && (provider === "groq" || !deepseekApiKey) && groqApiKey) {
         try {
           const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
             method: "POST",
@@ -207,7 +257,7 @@ KEMBALIKAN HANYA ARRAY JSON MURNI DENGAN FORMAT:
       const { 
         subject = "IPA", 
         grade = 4, 
-        provider = groqApiKey ? "groq" : "gemini" 
+        provider = deepseekApiKey ? "deepseek" : (groqApiKey ? "groq" : "gemini") 
       } = body;
 
       const cpPrompt = `Anda adalah Pakar Kurikulum Merdeka Kemendikbudristek RI untuk jenjang Sekolah Dasar (SD).
@@ -228,7 +278,35 @@ KEMBALIKAN HANYA OBJEK JSON MURNI DENGAN FORMAT:
       let cpProvider = provider;
       let cpModel = "";
 
-      if (provider === "groq" && groqApiKey) {
+      if (provider === "deepseek" && deepseekApiKey) {
+        try {
+          const res = await fetch("https://api.deepseek.com/chat/completions", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${deepseekApiKey}`,
+            },
+            body: JSON.stringify({
+              model: "deepseek-chat",
+              messages: [
+                { role: "system", content: cpPrompt },
+                { role: "user", content: `Rumuskan Capaian Pembelajaran spesifik untuk ${subject} Kelas ${grade} SD.` },
+              ],
+              response_format: { type: "json_object" },
+              temperature: 0.7,
+              max_tokens: 800,
+            }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            cpJson = data?.choices?.[0]?.message?.content || "";
+            cpModel = "deepseek-chat";
+            cpProvider = "deepseek";
+          }
+        } catch (_) {}
+      }
+
+      if (!cpJson && (provider === "groq" || !deepseekApiKey) && groqApiKey) {
         try {
           const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
             method: "POST",
@@ -250,6 +328,7 @@ KEMBALIKAN HANYA OBJEK JSON MURNI DENGAN FORMAT:
             const data = await res.json();
             cpJson = data?.choices?.[0]?.message?.content || "";
             cpModel = "llama-3.1-8b-instant";
+            cpProvider = "groq";
           }
         } catch (_) {}
       }
@@ -310,7 +389,7 @@ KEMBALIKAN HANYA OBJEK JSON MURNI DENGAN FORMAT:
       topic, 
       count = 5, 
       questionType = "campuran", 
-      provider = groqApiKey ? "groq" : "gemini",
+      provider = deepseekApiKey ? "deepseek" : (groqApiKey ? "groq" : "gemini"),
       model 
     } = body;
 
@@ -360,6 +439,40 @@ KEMBALIKAN HANYA ARRAY JSON MURNI TANPA PEMBUKA/PENUTUP MARKDOWN ATAU PENJELASAN
     let cleanedJson = "";
     let effectiveProvider = provider;
     let usedModel = "";
+
+    // Helper panggil DeepSeek dengan model tertentu
+    async function tryDeepSeek(modelName: string): Promise<string> {
+      const isReasoner = modelName === "deepseek-reasoner";
+      const dsPayload: Record<string, any> = {
+        model: modelName,
+        messages: [
+          { role: isReasoner ? "user" : "system", content: systemPrompt },
+          { role: "user", content: `Buatkan ${count} butir soal tentang materi "${topic}". Kembalikan array JSON valid.` },
+        ],
+        max_tokens: 3500,
+      };
+
+      if (!isReasoner) {
+        dsPayload.response_format = { type: "json_object" };
+        dsPayload.temperature = 0.6;
+      }
+
+      const dsRes = await fetch("https://api.deepseek.com/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${deepseekApiKey}`,
+        },
+        body: JSON.stringify(dsPayload),
+      });
+
+      if (!dsRes.ok) {
+        throw new Error(`DeepSeek (${modelName}) error: ${await dsRes.text()}`);
+      }
+
+      const dsData = await dsRes.json();
+      return (dsData?.choices?.[0]?.message?.content || "").trim();
+    }
 
     // Helper panggil Groq dengan model tertentu
     async function tryGroq(modelName: string): Promise<string> {
@@ -413,7 +526,39 @@ KEMBALIKAN HANYA ARRAY JSON MURNI TANPA PEMBUKA/PENUTUP MARKDOWN ATAU PENJELASAN
     }
 
     // Eksekusi Pilihan Provider dengan Fallback Cascade
-    if (provider === "groq" && groqApiKey) {
+    if (provider === "deepseek" && deepseekApiKey) {
+      const dsCandidates = model ? [model, "deepseek-chat", "deepseek-reasoner"] : ["deepseek-chat", "deepseek-reasoner"];
+      let lastErr: any = null;
+      for (const m of dsCandidates) {
+        try {
+          cleanedJson = await tryDeepSeek(m);
+          usedModel = m;
+          effectiveProvider = "deepseek";
+          break;
+        } catch (e: any) {
+          lastErr = e;
+        }
+      }
+
+      // Jika DeepSeek gagal, cadangkan ke Groq lalu Gemini
+      if (!cleanedJson && groqApiKey) {
+        try {
+          cleanedJson = await tryGroq("llama-3.3-70b-versatile");
+          usedModel = "llama-3.3-70b-versatile";
+          effectiveProvider = "groq";
+        } catch (_) {}
+      }
+
+      if (!cleanedJson && geminiApiKey) {
+        try {
+          cleanedJson = await tryGemini("gemini-2.0-flash");
+          usedModel = "gemini-2.0-flash";
+          effectiveProvider = "gemini";
+        } catch (_) {}
+      }
+
+      if (!cleanedJson && lastErr) throw lastErr;
+    } else if (provider === "groq" && groqApiKey) {
       const groqCandidates = model 
         ? [model, "qwen/qwen3.8-27b", "openai/gpt-oss-20b", "openai/gpt-oss-120b"]
         : ["qwen/qwen3.8-27b", "openai/gpt-oss-20b", "openai/gpt-oss-120b"];
@@ -430,7 +575,15 @@ KEMBALIKAN HANYA ARRAY JSON MURNI TANPA PEMBUKA/PENUTUP MARKDOWN ATAU PENJELASAN
         }
       }
 
-      // Jika Groq gagal tapi ada Gemini API Key, gunakan Gemini sebagai backup otomatis
+      // Jika Groq gagal, coba cadangkan ke DeepSeek lalu Gemini
+      if (!cleanedJson && deepseekApiKey) {
+        try {
+          cleanedJson = await tryDeepSeek("deepseek-chat");
+          usedModel = "deepseek-chat";
+          effectiveProvider = "deepseek";
+        } catch (_) {}
+      }
+
       if (!cleanedJson && geminiApiKey) {
         const geminiCandidates = ["gemini-3.1-flash-lite", "gemini-3.8-flash", "gemini-3.5-flash-lite"];
         for (const m of geminiCandidates) {
@@ -463,7 +616,15 @@ KEMBALIKAN HANYA ARRAY JSON MURNI TANPA PEMBUKA/PENUTUP MARKDOWN ATAU PENJELASAN
         }
       }
 
-      // Jika Gemini gagal tapi ada Groq API Key, gunakan Groq sebagai backup otomatis
+      // Jika Gemini gagal, coba cadangkan ke DeepSeek lalu Groq
+      if (!cleanedJson && deepseekApiKey) {
+        try {
+          cleanedJson = await tryDeepSeek("deepseek-chat");
+          usedModel = "deepseek-chat";
+          effectiveProvider = "deepseek";
+        } catch (_) {}
+      }
+
       if (!cleanedJson && groqApiKey) {
         const groqCandidates = ["qwen/qwen3.8-27b", "openai/gpt-oss-20b"];
         for (const m of groqCandidates) {

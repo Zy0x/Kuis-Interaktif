@@ -1,6 +1,32 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.57] - 2026-09-10
+### Integrasi Mesin Kecerdasan Buatan DeepSeek AI (DeepSeek-V3 & DeepSeek-R1), Modal Manajemen Kunci API Mandiri (BYOK) & Server-Side Cloud Secrets
+
+#### 1. Integrasi Mesin AI DeepSeek (DeepSeek-V3 & DeepSeek-R1)
+- Menambahkan DeepSeek AI sebagai penyedia kecerdasan buatan terpadu sejajar dengan Google Gemini AI dan Groq LPU.
+- Mendukung dua model unggulan DeepSeek:
+  - **DeepSeek-V3 (`deepseek-chat`)**: Model komputasi efisien dengan kecepatan generasi tinggi, tata bahasa Indonesia yang kaya konteks, dan output terstruktur format JSON instan.
+  - **DeepSeek-R1 (`deepseek-reasoner`)**: Model penalaran logika mendalam (*reasoning model*) yang sangat akurat untuk pembuatan soal berpikir tingkat tinggi (HOTS), pemecahan matematika terstruktur, dan analisis konsep sains IPA.
+- Terintegrasi penuh pada alur perumusan Capaian Pembelajaran (CP), rekomendasi ide topik pembelajaran dinamis, dan peracikan butir soal kuis multi-format.
+
+#### 2. Modal Manajemen Kunci API Mandiri (Bring Your Own Key - BYOK) di Tahap 4 & Studio Kuis
+- Menghadirkan modal interaktif pengaturan kunci API mandiri di Tahap 4 Wizard Pembuatan Kuis dan laci pengaturan Asisten AI Bank Soal.
+- Mendukung konfigurasi terpisah dengan penyimpanan aman client-side (`localStorage`) untuk:
+  - DeepSeek AI (`deepseek-chat`, `deepseek-reasoner`).
+  - Groq Cloud LPU (`qwen/qwen3.8-27b`, `openai/gpt-oss-20b`, `llama-3.3-70b`, `llama-3.1-8b`, dll).
+  - Google Gemini AI (`gemini-3.8-flash`, `gemini-3.6-flash`, `gemini-3.1-flash-lite`, `gemini-1.5-pro`, dll).
+- Dilengkapi tombol pratinjau visibilitas kunci (*show/hide password*), panduan pintas tautan platform resmi, dan indikator status aktif real-time.
+
+#### 3. Dukungan Cloud Server-Side & Cascade Failover Berlapis
+- Mengembangkan dukungan server-side pada fungsi komputasi awan (`generate-quiz-ai`) untuk mendeteksi rahasia terenkripsi tanpa mengekspos kredensial ke publik.
+- Mengimplementasikan mekanisme ketahanan bertingkat (*failover cascade*): jika salah satu mesin AI mengalami lonjakan kuota atau kendala jaringan, sistem secara otomatis beralih ke penyedia pendukung berikutnya hingga generator kurikulum internal SD (100% luring bebas gagal).
+
+#### 4. Dokumentasi Teknis & Panduan Integrasi
+- Menambahkan panduan teknis komprehensif `docs/panduan-integrasi-deepseek-ai.md` yang merinci langkah pendaftaran akun, pembuatan kunci API, perbandingan karakteristik model, dan arsitektur hybrid kuis.
+- Memperbarui panduan fungsi komputasi awan untuk konfigurasi rahasia server.
+
 ## [2.2.56] - 2026-09-10
 ### Perbaikan Tampilan Modal Katalog Mapel (Stacking Portal), Capaian Pembelajaran (CP) Spesifik Kelas 1–6 & Integrasi Elaborasi AI
 
