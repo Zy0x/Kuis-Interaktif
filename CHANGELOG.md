@@ -1,6 +1,22 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.50] - 2026-09-10
+### Studio Kuis AI Clean Wizard (7 Langkah Terstruktur Tanpa Panel Samping)
+
+#### 1. Perombakan Total Antarmuka Tab Generator AI Menjadi Clean Wizard
+- Menghilangkan panel samping (*Spesifikasi Target Kuis* & *Format Butir Soal*) dari Tab Generator AI untuk menghadirkan alur kerja terpusat (*single-focus wizard*) yang lega, modern, dan bebas dari distorsi layar.
+- Mengimplementasikan **Stepper Indikator 7 Sub-Langkah** dengan indikator nomor, label tahapan, dan bilah progres visual dinamis yang responsif di seluruh ukuran layar (*mobile-first* dan desktop).
+
+#### 2. Alur Kerja 7 Langkah Terstruktur & Presisi Tinggi
+- **Step 1 (Mata Pelajaran & Kelas SD)**: Pemilihan kartu interaktif 5 mata pelajaran Kurikulum Merdeka dan tombol jenjang kelas 1–6 dengan target sentuh minimal 48px.
+- **Step 2 (Topik, Konteks AI & Saran Cerdas)**: Kolom topik kuis, area bahan pertimbangan khusus AI, serta chip rekomendasi topik cerdas yang dinamis berdasarkan kombinasi Mapel + Kelas SD dilengkapi tombol *Acak Ide Lain*.
+- **Step 3 (Jumlah, Proporsi Format & Gambar)**: Pemilihan kuota butir soal (5, 10, 15, kustom 1–50) dengan dua mode format: *Otomatis Seimbang* atau *Kustom Proporsi* per jenis format (Pilihan Ganda, Benar/Salah, Isian Singkat, Menjodohkan) dengan validasi real-time, serta opsi kotak centang ilustrasi edukasi AI.
+- **Step 4 (Mesin Pembuat Soal & Percabangan Alur)**: Pilihan kartu mesin (Kurikulum SD Lokal, Groq Cloud LPU, Google Gemini AI, dan Generate Prompt/Unggah Berkas). Tiga mesin langsung mengeksekusi peracikan dan langsung menuju Step 7, sementara Generate Prompt mengalir ke Step 5.
+- **Step 5 (Salin Prompt & Unggah Berkas)**: Menyediakan teks prompt terstruktur presisi tinggi (100% patuh JSON murni tanpa AI slop) dengan tombol salin instan, area tempel teks cerdas multi-format, serta dropzone berkas (.xlsx, .xls, .csv, .json, .txt) dilengkapi unduhan template resmi CSV.
+- **Step 6 (Inspektor Verifikasi Visual Read-Only)**: Verifikasi kelengkapan butir soal hasil parsing (pertanyaan, opsi, kunci jawaban hijau, pembahasan, dan gambar) tanpa redundansi editing, dengan tombol kembali ke Step 5 jika ingin merevisi teks input.
+- **Step 7 (Konfirmasi Spesifikasi Target Kuis)**: Kartu ringkasan spesifikasi menyeluruh sebelum tombol aksi utama memindahkan soal secara otomatis ke **Tab 2 (Bank Soal)**.
+
 ## [2.2.49] - 2026-09-10
 ### Sinkronisasi Penuh Autentikasi Cloud Supabase (Guru & Siswa) & Auto-Confirm Email
 

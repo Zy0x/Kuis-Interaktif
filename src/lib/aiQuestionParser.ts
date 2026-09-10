@@ -7,6 +7,14 @@ export interface GeneratePromptParams {
   count: number;
   questionType?: QuestionType | 'campuran';
   difficulty?: 'mudah' | 'sedang' | 'menantang';
+  contextNotes?: string;
+  typeProportions?: {
+    multiple_choice?: number;
+    true_false?: number;
+    short_answer?: number;
+    matching_pairs?: number;
+  };
+  includeImages?: boolean;
 }
 
 export interface ParsedQuestionItem {
@@ -18,12 +26,23 @@ export interface ParsedQuestionItem {
 
 /**
  * Menghasilkan teks instruksi prompt terstruktur presisi tinggi untuk ditempel
- * pada AI eksternal (ChatGPT, Google Gemini, Claude, dll).
- * Mendukung seluruh 5 format tipe soal Kurikulum Merdeka SD.
+ * pada AI eksternal (ChatGPT, Google Gemini, Claude, DeepSeek, dll).
+ * Menjamin 100% kepatuhan format JSON dan bebas AI slop.
  */
 export const generateAiPrompt = (params: GeneratePromptParams): string => {
   let typeInstruction = 'Gunakan tipe Pilihan Ganda (4 opsi A, B, C, D).';
-  if (params.questionType === 'true_false') {
+
+  if (params.typeProportions) {
+    const p = params.typeProportions;
+    const parts: string[] = [];
+    if (p.multiple_choice && p.multiple_choice > 0) parts.push(`${p.multiple_choice} butir Pilihan Ganda (type: "multiple_choice", 4 opsi)`);
+    if (p.true_false && p.true_false > 0) parts.push(`${p.true_false} butir Benar/Salah (type: "true_false")`);
+    if (p.short_answer && p.short_answer > 0) parts.push(`${p.short_answer} butir Isian Singkat (type: "short_answer")`);
+    if (p.matching_pairs && p.matching_pairs > 0) parts.push(`${p.matching_pairs} butir Menjodohkan (type: "matching_pairs")`);
+    if (parts.length > 0) {
+      typeInstruction = `Wajib ikuti pembagian proporsi tipe soal berikut: ${parts.join(', ')}.`;
+    }
+  } else if (params.questionType === 'true_false') {
     typeInstruction = 'Gunakan tipe Benar / Salah (options: ["Benar", "Salah"]).';
   } else if (params.questionType === 'short_answer') {
     typeInstruction = 'Gunakan tipe Isian Singkat (siswa mengetikkan 1-2 kata kunci jawaban).';
@@ -35,16 +54,24 @@ export const generateAiPrompt = (params: GeneratePromptParams): string => {
     typeInstruction = 'Campurkan secara seimbang format: Pilihan Ganda (multiple_choice), Benar/Salah (true_false), Isian Singkat (short_answer), dan Menjodohkan (matching_pairs).';
   }
 
-  return `Kamu adalah ahli penyusun materi dan soal ujian interaktif Sekolah Dasar (SD) berstandar Kurikulum Merdeka Indonesia.
+  const contextBlock = params.contextNotes && params.contextNotes.trim()
+    ? `- Bahan Pertimbangan / Konteks Khusus: "${params.contextNotes.trim()}"\n`
+    : '';
+
+  const imageBlock = params.includeImages
+    ? `- Kebutuhan Gambar: Karena pengguna mengaktifkan opsi ilustrasi, pada SETIAP butir soal sertakan properti "imageCaption" (label singkat bahasa Indonesia) dan "imagePrompt" (deskripsi visual 1 kalimat bahasa Inggris untuk menghasilkan gambar edukatif).\n`
+    : '';
+
+  return `Kamu adalah ahli penyusun materi dan soal kuis interaktif Sekolah Dasar (SD) berstandar Kurikulum Merdeka Indonesia.
 Buatkan ${params.count} butir soal kuis interaktif yang mendidik, menyenangkan, dan komunikatif untuk:
 - Mata Pelajaran: ${params.subject}
 - Tingkat: Kelas ${params.grade} SD
 - Topik Pembahasan: "${params.topic}"
 - Tingkat Kesulitan: ${params.difficulty || 'sedang'}
-- Bentuk Soal: ${typeInstruction}
+${contextBlock}${imageBlock}- Bentuk Soal: ${typeInstruction}
 
-ATURAN PENTING KELUARAN (WAJIB DIIKUTI):
-Keluarkan HANYA blok JSON murni tanpa pembuka/penutup basa-basi, menggunakan array objek dengan format berikut:
+ATURAN PENTING KELUARAN (WAJIB DIIKUTI TANPA KECUALI):
+Keluarkan HANYA satu blok kode JSON murni tanpa pembuka/penutup basa-basi, menggunakan array objek dengan struktur persis seperti contoh berikut:
 [
   {
     "type": "multiple_choice",
@@ -312,10 +339,18 @@ export const parseRawQuestionsText = (rawText: string): ParsedQuestionItem[] => 
       });
     }
   } catch {
-    // Jika bukan JSON murni, lanjutkan ke parser teks bebas di bawah
+    // Jika bukan JSON murni, lanjutkan ke parser di bawah
   }
 
-  // 2. Parser Teks Bebas Berbahasa Indonesia (Format 1. ... A. ... B. ... Kunci: ...)
+  // 2. Cek apakah teks berformat CSV (tabel baris berkoma atau bertitik-koma)
+  if (isCsvFormat(trimmed)) {
+    const csvParsed = parseCsvQuestions(trimmed);
+    if (csvParsed.length > 0) {
+      return csvParsed;
+    }
+  }
+
+  // 3. Parser Teks Bebas Berbahasa Indonesia (Format 1. ... A. ... B. ... Kunci: ...)
   return parseNaturalTextFormat(trimmed);
 };
 
@@ -772,3 +807,192 @@ export const generateCurriculumSeedQuestions = (
 
   return questions;
 };
+
+/**
+ * Memeriksa apakah teks memiliki karakteristik tabel CSV
+ */
+export const isCsvFormat = (text: string): boolean => {
+  const firstLine = text.trim().split(/\r?\n/)[0].toLowerCase();
+  return (
+    (firstLine.includes(',') || firstLine.includes(';')) &&
+    (firstLine.includes('soal') || firstLine.includes('pertanyaan') || firstLine.includes('opsi') || firstLine.includes('kunci') || firstLine.includes('nomor'))
+  );
+};
+
+/**
+ * Mengurai baris CSV dengan dukungan pemisah koma atau titik-koma serta teks bertanda kutip
+ */
+const parseCsvLine = (line: string, delimiter: string): string[] => {
+  const result: string[] = [];
+  let current = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    if (char === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        current += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (char === delimiter && !inQuotes) {
+      result.push(current.trim());
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  result.push(current.trim());
+  return result;
+};
+
+/**
+ * Mengurai teks tabel CSV menjadi daftar butir soal kuis
+ */
+export const parseCsvQuestions = (csvText: string): ParsedQuestionItem[] => {
+  const lines = csvText.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  if (lines.length < 2) return [];
+
+  const delimiter = lines[0].includes(';') ? ';' : ',';
+  const header = parseCsvLine(lines[0].toLowerCase(), delimiter);
+
+  // Cari posisi indeks kolom
+  const colQuestion = header.findIndex((h) => h.includes('pertanyaan') || h.includes('soal') || h.includes('question'));
+  const colType = header.findIndex((h) => h.includes('tipe') || h.includes('type'));
+  const colOptA = header.findIndex((h) => h.includes('opsi a') || h.includes('pilihan a') || h === 'a');
+  const colOptB = header.findIndex((h) => h.includes('opsi b') || h.includes('pilihan b') || h === 'b');
+  const colOptC = header.findIndex((h) => h.includes('opsi c') || h.includes('pilihan c') || h === 'c');
+  const colOptD = header.findIndex((h) => h.includes('opsi d') || h.includes('pilihan d') || h === 'd');
+  const colKey = header.findIndex((h) => h.includes('kunci') || h.includes('jawaban') || h.includes('answer'));
+  const colExpl = header.findIndex((h) => h.includes('penjelasan') || h.includes('pembahasan') || h.includes('explanation'));
+  const colCaption = header.findIndex((h) => h.includes('gambar') || h.includes('caption') || h.includes('ilustrasi'));
+
+  const items: ParsedQuestionItem[] = [];
+
+  for (let i = 1; i < lines.length; i++) {
+    const cols = parseCsvLine(lines[i], delimiter);
+    if (cols.length === 0 || cols.every((c) => !c)) continue;
+
+    const id = 'q_csv_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6) + '_' + i;
+    const text = colQuestion >= 0 ? cols[colQuestion] : cols[2] || cols[0];
+    if (!text) continue;
+
+    const rawType = (colType >= 0 ? cols[colType] : '').toLowerCase();
+    let type: QuestionType = 'multiple_choice';
+    if (rawType.includes('benar') || rawType.includes('salah') || rawType.includes('true')) {
+      type = 'true_false';
+    } else if (rawType.includes('isian') || rawType.includes('singkat') || rawType.includes('short')) {
+      type = 'short_answer';
+    } else if (rawType.includes('jodoh') || rawType.includes('matching')) {
+      type = 'matching_pairs';
+    }
+
+    const keyRaw = colKey >= 0 ? cols[colKey] : cols[7] || 'A';
+    const explanation = colExpl >= 0 ? cols[colExpl] : cols[8] || 'Jawaban benar sesuai materi pembelajaran.';
+    const imageCaption = colCaption >= 0 ? cols[colCaption] : cols[9] || undefined;
+
+    if (type === 'true_false') {
+      const isBenar = keyRaw.toLowerCase().includes('benar') || keyRaw.toUpperCase() === 'A' || keyRaw.toLowerCase() === 'true';
+      items.push({
+        id,
+        valid: true,
+        question: {
+          id,
+          text,
+          type: 'true_false',
+          options: ['Benar', 'Salah'],
+          correctIndex: isBenar ? 0 : 1,
+          explanation,
+          imageCaption,
+          points: 10,
+        },
+      });
+    } else if (type === 'short_answer') {
+      items.push({
+        id,
+        valid: true,
+        question: {
+          id,
+          text,
+          type: 'short_answer',
+          options: [keyRaw],
+          correctIndex: 0,
+          acceptableAnswers: [keyRaw],
+          explanation,
+          imageCaption,
+          points: 10,
+        },
+      });
+    } else if (type === 'matching_pairs') {
+      const pairsRaw = [cols[colOptA], cols[colOptB], cols[colOptC], cols[colOptD]].filter(Boolean);
+      const matchingPairs = pairsRaw.map((p) => {
+        const parts = p.includes('=') ? p.split('=') : p.split(':');
+        return {
+          left: (parts[0] || 'Konsep').trim(),
+          right: (parts[1] || 'Pasangan').trim(),
+        };
+      });
+      items.push({
+        id,
+        valid: matchingPairs.length >= 2,
+        question: {
+          id,
+          text,
+          type: 'matching_pairs',
+          options: matchingPairs.map((p) => `${p.left} - ${p.right}`),
+          correctIndex: 0,
+          matchingPairs: matchingPairs.length >= 2 ? matchingPairs : [
+            { left: 'Konsep A', right: 'Pasangan A' },
+            { left: 'Konsep B', right: 'Pasangan B' },
+          ],
+          explanation,
+          imageCaption,
+          points: 15,
+        },
+      });
+    } else {
+      const opts = [
+        colOptA >= 0 ? cols[colOptA] : cols[3],
+        colOptB >= 0 ? cols[colOptB] : cols[4],
+        colOptC >= 0 ? cols[colOptC] : cols[5],
+        colOptD >= 0 ? cols[colOptD] : cols[6],
+      ].filter(Boolean);
+
+      let correctIndex = 0;
+      const cleanKey = keyRaw.trim().toUpperCase();
+      if (cleanKey === 'B' || cleanKey === '1') correctIndex = 1;
+      else if (cleanKey === 'C' || cleanKey === '2') correctIndex = 2;
+      else if (cleanKey === 'D' || cleanKey === '3') correctIndex = 3;
+
+      items.push({
+        id,
+        valid: opts.length >= 2,
+        question: {
+          id,
+          text,
+          type: 'multiple_choice',
+          options: opts.length >= 2 ? opts : ['Pilihan A', 'Pilihan B', 'Pilihan C', 'Pilihan D'],
+          correctIndex,
+          explanation,
+          imageCaption,
+          points: 10,
+        },
+      });
+    }
+  }
+
+  return items;
+};
+
+/**
+ * Menghasilkan string template CSV berstandar kuis Kurikulum Merdeka
+ */
+export const getQuestionCsvTemplate = (): string => {
+  return `Nomor,Tipe Soal,Pertanyaan,Opsi A,Opsi B,Opsi C,Opsi D,Kunci Jawaban,Penjelasan,Keterangan Gambar
+1,Pilihan Ganda,Bagian tumbuhan yang bertugas menyerap air dari dalam tanah adalah...,Akar,Batang,Daun,Bunga,A,Akar menyerap air dan mineral dari dalam tanah untuk disalurkan ke seluruh bagian tumbuhan.,Akar Tumbuhan
+2,Benar Salah,Matahari adalah bintang yang paling dekat dengan bumi.,Benar,Salah,,,A,Matahari merupakan sebuah bintang berukuran sedang yang menjadi pusat tata surya kita.,Matahari
+3,Isian Singkat,Alat pernapasan utama pada ikan adalah...,,,,,insang,Ikan bernapas menyerap oksigen terlarut dalam air menggunakan insang.,Insang Ikan
+4,Menjodohkan,Jodohkan bagian tubuh tumbuhan dengan fungsinya!,Akar=Menyerap air,Batang=Menopang tumbuhan,Daun=Tempat fotosintesis,,Akar=Menyerap air;Batang=Menopang tumbuhan;Daun=Tempat fotosintesis,Setiap bagian organ tumbuhan memiliki peran vital dalam kelangsungan hidupnya.,Organ Tumbuhan`;
+};
+
