@@ -44,7 +44,7 @@ const DRAFT_STORAGE_KEY = 'kuis_creator_draft_v1';
 interface CreatorDraft {
   currentStep: number;
   aiFunnelActive?: boolean;
-  aiFunnelStage?: 1 | 2;
+  aiFunnelStage?: 1 | 2 | 3 | 4;
   funnelTopic?: string;
   title: string;
   description: string;
@@ -97,8 +97,8 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     return false;
   });
 
-  // Funnel Sub-Stage (1: Materi & Sasaran, 2: Pengaturan Soal & Mesin AI)
-  const [aiFunnelStage, setAiFunnelStage] = useState<1 | 2>(draft?.aiFunnelStage || 1);
+  // Funnel Sub-Stage (1: Mapel & Kelas, 2: Topik Materi, 3: Format Soal, 4: Mesin AI)
+  const [aiFunnelStage, setAiFunnelStage] = useState<1 | 2 | 3 | 4>(draft?.aiFunnelStage || 1);
   const [funnelTopic, setFunnelTopic] = useState<string>(draft?.funnelTopic || '');
 
   const [currentStep, setCurrentStep] = useState<number>(() => {
@@ -261,6 +261,22 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     }
     return false;
   }, !aiFunnelActive && currentStep === 1);
+
+  useBackHandler('creator-ai-funnel-stage4', 56, () => {
+    if (aiFunnelActive && aiFunnelStage === 4) {
+      setAiFunnelStage(3);
+      return true;
+    }
+    return false;
+  }, aiFunnelActive && aiFunnelStage === 4);
+
+  useBackHandler('creator-ai-funnel-stage3', 57, () => {
+    if (aiFunnelActive && aiFunnelStage === 3) {
+      setAiFunnelStage(2);
+      return true;
+    }
+    return false;
+  }, aiFunnelActive && aiFunnelStage === 3);
 
   useBackHandler('creator-ai-funnel-stage2', 58, () => {
     if (aiFunnelActive && aiFunnelStage === 2) {
@@ -582,6 +598,14 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   const handleHeaderBack = () => {
     playClick();
     if (aiFunnelActive) {
+      if (aiFunnelStage === 4) {
+        setAiFunnelStage(3);
+        return;
+      }
+      if (aiFunnelStage === 3) {
+        setAiFunnelStage(2);
+        return;
+      }
       if (aiFunnelStage === 2) {
         setAiFunnelStage(1);
         return;
@@ -615,7 +639,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 font-semibold text-xs sm:text-sm min-h-[44px] min-w-[44px] justify-center btn-press transition-colors flex-shrink-0"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span className="hidden xs:inline">{aiFunnelActive ? 'Ganti Metode' : 'Kembali'}</span>
+            <span className="hidden xs:inline">{aiFunnelActive ? (aiFunnelStage === 1 ? 'Ganti Metode' : 'Sebelumnya') : 'Kembali'}</span>
           </button>
 
           <div className="text-center min-w-0 flex-1 px-1">
@@ -631,8 +655,12 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
             <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium truncate hidden xs:block">
               {aiFunnelActive 
                 ? (aiFunnelStage === 1 
-                    ? 'Tahap 1 dari 2: Materi & Sasaran Pembelajaran' 
-                    : 'Tahap 2 dari 2: Pengaturan Soal & Pilihan Mesin AI')
+                    ? 'Tahap 1 dari 4: Mata Pelajaran & Tingkat Kelas SD' 
+                    : aiFunnelStage === 2 
+                    ? 'Tahap 2 dari 4: Topik & Sasaran Pembelajaran' 
+                    : aiFunnelStage === 3 
+                    ? 'Tahap 3 dari 4: Format & Konfigurasi Soal' 
+                    : 'Tahap 4 dari 4: Pilihan Mesin AI & Eksekusi')
                 : `Langkah ${currentStep} dari ${totalSteps}: ${
                     isAiMode
                       ? currentStep === 1
@@ -674,17 +702,17 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
           </div>
         </div>
 
-        {/* 2-Stage Funnel Tabs in Sticky Header (SELALU MENEMPEL DI HEADER SAAT SCROLL) */}
+        {/* 4-Stage Funnel Tabs in Sticky Header (SELALU MENEMPEL DI HEADER SAAT SCROLL) */}
         {aiFunnelActive ? (
           <div className="w-full max-w-[2000px] mx-auto mt-2.5 space-y-2 transition-all">
-            <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
+            <div className="grid grid-cols-4 gap-1 sm:gap-2">
               <button
                 type="button"
                 onClick={() => {
                   playClick();
                   setAiFunnelStage(1);
                 }}
-                className={`py-2 px-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all min-h-[44px] flex items-center justify-center gap-2 truncate btn-press ${
+                className={`py-2 px-1 sm:px-2 rounded-xl font-bold text-xs sm:text-sm transition-all min-h-[44px] flex items-center justify-center gap-1 sm:gap-2 truncate btn-press ${
                   aiFunnelStage === 1
                     ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-400/30 font-black'
                     : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
@@ -695,20 +723,19 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                 }`}>
                   1
                 </span>
-                <span className="truncate">1. Materi & Sasaran</span>
+                <span className="truncate">
+                  <span className="hidden md:inline">1. Mapel & Kelas</span>
+                  <span className="md:hidden">1. Mapel</span>
+                </span>
               </button>
 
               <button
                 type="button"
                 onClick={() => {
                   playClick();
-                  if (!funnelTopic.trim()) {
-                    showToast('Mohon tentukan topik kuis terlebih dahulu pada Tahap 1.');
-                    return;
-                  }
                   setAiFunnelStage(2);
                 }}
-                className={`py-2 px-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all min-h-[44px] flex items-center justify-center gap-2 truncate btn-press ${
+                className={`py-2 px-1 sm:px-2 rounded-xl font-bold text-xs sm:text-sm transition-all min-h-[44px] flex items-center justify-center gap-1 sm:gap-2 truncate btn-press ${
                   aiFunnelStage === 2
                     ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-400/30 font-black'
                     : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
@@ -719,12 +746,69 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                 }`}>
                   2
                 </span>
-                <span className="truncate">2. Pengaturan Soal & AI</span>
+                <span className="truncate">
+                  <span className="hidden md:inline">2. Topik Materi</span>
+                  <span className="md:hidden">2. Topik</span>
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  if (!funnelTopic.trim()) {
+                    showToast('Mohon tentukan topik kuis terlebih dahulu pada Tahap 2.');
+                    return;
+                  }
+                  setAiFunnelStage(3);
+                }}
+                className={`py-2 px-1 sm:px-2 rounded-xl font-bold text-xs sm:text-sm transition-all min-h-[44px] flex items-center justify-center gap-1 sm:gap-2 truncate btn-press ${
+                  aiFunnelStage === 3
+                    ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-400/30 font-black'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                <span className={`w-5 h-5 rounded-full text-[10px] sm:text-xs font-black flex items-center justify-center shrink-0 ${
+                  aiFunnelStage === 3 ? 'bg-white text-blue-600' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
+                }`}>
+                  3
+                </span>
+                <span className="truncate">
+                  <span className="hidden md:inline">3. Format Soal</span>
+                  <span className="md:hidden">3. Soal</span>
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  if (!funnelTopic.trim()) {
+                    showToast('Mohon tentukan topik kuis terlebih dahulu pada Tahap 2.');
+                    return;
+                  }
+                  setAiFunnelStage(4);
+                }}
+                className={`py-2 px-1 sm:px-2 rounded-xl font-bold text-xs sm:text-sm transition-all min-h-[44px] flex items-center justify-center gap-1 sm:gap-2 truncate btn-press ${
+                  aiFunnelStage === 4
+                    ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-400/30 font-black'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                <span className={`w-5 h-5 rounded-full text-[10px] sm:text-xs font-black flex items-center justify-center shrink-0 ${
+                  aiFunnelStage === 4 ? 'bg-white text-blue-600' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
+                }`}>
+                  4
+                </span>
+                <span className="truncate">
+                  <span className="hidden md:inline">4. Mesin AI</span>
+                  <span className="md:hidden">4. AI</span>
+                </span>
               </button>
             </div>
 
-            {/* 2-Segment Interactive Progress Track */}
-            <div className="grid grid-cols-2 gap-2">
+            {/* 4-Segment Interactive Progress Track */}
+            <div className="grid grid-cols-4 gap-1 sm:gap-2">
               <div
                 className={`h-1.5 rounded-full transition-all duration-300 ${
                   aiFunnelStage >= 1 ? 'bg-blue-600' : 'bg-slate-200 dark:bg-slate-800'
@@ -733,6 +817,16 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
               <div
                 className={`h-1.5 rounded-full transition-all duration-300 ${
                   aiFunnelStage >= 2 ? 'bg-blue-600' : 'bg-slate-200 dark:bg-slate-800'
+                }`}
+              />
+              <div
+                className={`h-1.5 rounded-full transition-all duration-300 ${
+                  aiFunnelStage >= 3 ? 'bg-blue-600' : 'bg-slate-200 dark:bg-slate-800'
+                }`}
+              />
+              <div
+                className={`h-1.5 rounded-full transition-all duration-300 ${
+                  aiFunnelStage >= 4 ? 'bg-blue-600' : 'bg-slate-200 dark:bg-slate-800'
                 }`}
               />
             </div>

@@ -29,7 +29,7 @@ import {
   Eye
 } from 'lucide-react';
 
-export type CreationStage = 1 | 2;
+export type CreationStage = 1 | 2 | 3 | 4;
 
 interface AiGeneratorStepProps {
   onGenerated: (data: {
@@ -148,67 +148,67 @@ const SMART_TOPICS_BY_SUBJECT_AND_GRADE: Record<Subject, Record<number, TopicRec
     ],
     4: [
       { topic: 'Teks Petunjuk Pembuatan dan Penggunaan Alat', context: 'Urutan langkah-langkah kerja sistematis dengan kata kerja imperatif.' },
-      { topic: 'Wawancara Sederhana dengan Narasumber', context: 'Merancang daftar pertanyaan apa, siapa, di mana, kapan, mengapa, dan bagaimana.' }
+      { topic: 'Majas Personifikasi dan Perumpamaan Sederhana', context: 'Gaya bahasa benda mati seolah bernyawa dalam puisi anak.' }
     ],
     5: [
-      { topic: 'Teks Eksplanasi Fenomena Alam dan Sosial', context: 'Struktur pernyataan umum, deretan penjelas kausalitas, dan kesimpulan.' },
-      { topic: 'Iklan Media Cetak dan Elektronik', context: 'Kata kunci persuasif, sasaran konsumen, dan keunggulan produk edukatif.' }
+      { topic: 'Surat Undangan Resmi dan Tidak Resmi', context: 'Unsur kepala surat, tanggal, isi, penutup, dan tata bahasa baku.' },
+      { topic: 'Iklan Media Cetak dan Kata Kunci Persuasif', context: 'Menganalisis pesan persuasif pada poster lingkungan dan kesehatan.' }
     ],
     6: [
-      { topic: 'Teks Pidato Persuasif dan Kerangkanya', context: 'Salam pembuka, pendahuluan, isi imbauan, penutup, dan pesan ajakan positif.' },
-      { topic: 'Unsur Intrinsik Cerita Pendek dan Novel Anak', context: 'Tema, alur maju-mundur, sudut pandang pengarang, dan latar suasana.' }
+      { topic: 'Pidato Persuasif dan Kerangka Naskah', context: 'Struktur salam pembuka, pendahuluan, inti ajakan, dan penutup pidato perpisahan.' },
+      { topic: 'Teks Formulir Pendaftaran dan Daftar Riwayat Hidup', context: 'Mengisi identitas, pendidikan, dan ekstrakurikuler secara teliti.' }
     ]
   },
   'Pendidikan Pancasila': {
     1: [
-      { topic: 'Simbol Sila-Sila Pancasila dalam Burung Garuda', context: 'Bintang, rantai, pohon beringin, kepala banteng, serta padi dan kapas.' },
-      { topic: 'Aturan di Rumah dan di Sekolah', context: 'Merapikan tempat tidur, tertib belajar di kelas, dan rukun bersama teman.' }
+      { topic: 'Simbol-Simbol Garuda Pancasila', context: 'Mengenal Bintang, Rantai, Pohon Beringin, Kepala Banteng, serta Padi dan Kapas.' },
+      { topic: 'Aturan di Rumah dan di Sekolah', context: 'Tertib bangun pagi, merapikan mainan, dan mendengarkan penjelasan guru.' }
     ],
     2: [
-      { topic: 'Pengamalan Sila Pertama dan Kedua Pancasila', context: 'Toleransi beribadah dan sikap tolong-menolong tanpa membeda-bedakan.' },
-      { topic: 'Keberagaman Suku dan Budaya Indonesia', context: 'Bhinneka Tunggal Ika dengan contoh makanan dan pakaian adat nusantara.' }
+      { topic: 'Perilaku Sesuai Sila-Sila Pancasila di Rumah', context: 'Berdoa sebelum makan (Sila 1) dan tolong-menolong sesama saudara (Sila 2).' },
+      { topic: 'Menghargai Keberagaman Teman Sekelas', context: 'Perbedaan suku, warna kulit, dan kegemaran permainan tradisional.' }
     ],
     3: [
-      { topic: 'Musyawarah untuk Mufakat di Lingkungan Sekolah', context: 'Pemilihan ketua kelas dan menghargai pendapat saat diskusi kelompok.' },
-      { topic: 'Hak dan Kewajiban Anak di Rumah dan Sekolah', context: 'Mendapat kasih sayang, kewajiban belajar giat, dan menjaga kebersihan fasilitas.' }
+      { topic: 'Musyawarah untuk Mufakat di Lingkungan Sekolah', context: 'Pemilihan ketua kelas dan pembagian jadwal piket kebersihan kelas.' },
+      { topic: 'Kewajiban dan Hak Siswa di Sekolah', context: 'Hak mendapatkan ilmu dan kewajiban menjaga fasilitas perpustakaan.' }
     ],
     4: [
-      { topic: 'Makna Simbol Garuda Pancasila dan Nilai-Nilainya', context: 'Arti jumlah bulu pada leher, sayap, ekor, serta semboyan Bhinneka Tunggal Ika.' },
-      { topic: 'Norma dan Aturan dalam Kehidupan Bermasyarakat', context: 'Norma agama, kesusilaan, kesopanan, dan hukum di lingkungan sekitar.' }
+      { topic: 'Makna Bhinneka Tunggal Ika dalam Kehidupan Bermasyarakat', context: 'Saling menghormati hari raya keagamaan dan gotong royong warga RT.' },
+      { topic: 'Desa, Kelurahan, dan Kecamatan Tempat Tinggalku', context: 'Struktur pemerintahan desa dan pelayanan administrasi masyarakat.' }
     ],
     5: [
-      { topic: 'Gotong Royong sebagai Ciri Khas Bangsa Indonesia', context: 'Tradisi kerja bakti, sambatan, dan manfaat persatuan bagi keutuhan NKRI.' },
-      { topic: 'Keragaman Budaya Nusantara dan Cara Melestarikannya', context: 'Rumah adat, tarian tradisional, alat musik daerah, dan bangga memakai batik.' }
+      { topic: 'Nilai Juang Para Pahlawan Perumus Pancasila', context: 'Semangat persatuan tokoh BPUPKI dan PPKI mengutamakan kepentingan bangsa.' },
+      { topic: 'Norma Agama, Kesusilaan, Kesopanan, dan Hukum', context: 'Sanksi sosial, etika berbicara sopan, dan mematuhi rambu lalu lintas.' }
     ],
     6: [
-      { topic: 'Penerapan Nilai-Nilai Pancasila dalam Kehidupan Sehari-Hari', context: 'Studi kasus integrasi sila 1 sampai 5 dalam tantangan era modern.' },
-      { topic: 'Menjaga Persatuan dan Kesatuan Bangsa di Era Digital', context: 'Menghindari hoaks, saling menghormati di media sosial, dan toleransi beragama.' }
+      { topic: 'Keutuhan Negara Kesatuan Republik Indonesia (NKRI)', context: 'Batas wilayah maritim dan pulau-pulau terluar Indonesia.' },
+      { topic: 'Hak Asasi Manusia dan Perlindungan Anak Indonesia', context: 'Hak atas pendidikan layak, perlindungan dari perundungan (bullying).' }
     ]
   },
   'Pengetahuan Umum': {
     1: [
-      { topic: 'Profesi dan Cita-Cita Mulia', context: 'Dokter, guru, polisi, petani, masinis, dan peran mereka membantu masyarakat.' },
-      { topic: 'Rambu Lalu Lintas dan Keselamatan di Jalan', context: 'Lampu merah-kuning-hijau, zebra cross, dan keselamatan trotoar.' }
+      { topic: 'Mengenal Rambu Lalu Lintas dan Keselamatan Jalan', context: 'Lampu merah, zebra cross, dan keselamatan menyeberang jalan raya.' },
+      { topic: 'Profesi dan Pekerjaan di Sekitar Kita', context: 'Dokter, polisi, pemadam kebakaran, petani, dan guru.' }
     ],
     2: [
-      { topic: 'Peta Sederhana dan Arah Mata Angin', context: 'Utara, timur, selatan, barat serta denah rumah menuju sekolah.' },
-      { topic: 'Pahlawan Nasional Indonesia', context: 'Ki Hajar Dewantara, R.A. Kartini, Pangeran Diponegoro, dan jasa mereka.' }
+      { topic: 'Alat Transportasi Tradisional dan Modern', context: 'Delman, becak, perahu klotok vs kereta cepat, pesawat komersial.' },
+      { topic: 'Pahlawan Nasional dan Monumen Bersejarah', context: 'Pangeran Diponegoro, R.A. Kartini, Monas, dan Candi Borobudur.' }
     ],
     3: [
-      { topic: 'Kenampakan Alam dan Kenampakan Buatan', context: 'Gunung, sungai, dan danau vs waduk, jembatan, dan jalan raya.' },
-      { topic: 'Kegiatan Ekonomi: Produksi, Distribusi, Konsumsi', context: 'Petani menanam padi, pedagang menjual, dan pembeli mengonsumsi.' }
+      { topic: 'Rumah Adat dan Pakaian Tradisional Indonesia', context: 'Rumah Gadang, Tongkonan, Joglo, Ulos, Kebaya, dan Baju Bodo.' },
+      { topic: 'Keajaiban Flora dan Fauna Khas Indonesia', context: 'Komodo, Orangutan, Burung Cenderawasih, Bunga Rafflesia Arnoldii.' }
     ],
     4: [
-      { topic: 'Kekayaan Alam Hayati dan Tambang Indonesia', context: 'Rempah-rempah, kayu hutan tropis, minyak bumi, dan batubara nusantara.' },
-      { topic: 'Peninggalan Sejarah Candi Hindu dan Buddha', context: 'Candi Borobudur, Prambanan, Muara Takus, dan sejarah kerajaannya.' }
+      { topic: 'Nama Provinsi dan Ibu Kota di Kepulauan Indonesia', context: 'Pulau Sumatra, Jawa, Kalimantan, Sulawesi, Maluku, dan Papua.' },
+      { topic: 'Lagu Wajib Nasional dan Makna Perjuangannya', context: 'Indonesia Raya, Halo-Halo Bandung, Bagimu Negeri, Satu Nusa Satu Bangsa.' }
     ],
     5: [
-      { topic: 'Letak Geografis dan Astronomis Indonesia', context: 'Posisi silang dua benua dan dua samudra serta iklim tropis khatulistiwa.' },
-      { topic: 'Peristiwa Menjelang Proklamasi Kemerdekaan', context: 'Peristiwa Rengasdengklok, penyusunan naskah di rumah Tadashi Maeda, dan 17 Agustus 1945.' }
+      { topic: 'Organisasi ASEAN dan Negara Tetangga Asia Tenggara', context: 'Negara pendiri ASEAN, ibu kota, mata uang, dan lambang negara anggota.' },
+      { topic: 'Sumber Energi Terbarukan dan Pelestarian Bumi', context: 'Pembangkit listrik tenaga surya, bayu/angin, air, dan bahaya polusi mikroplastik.' }
     ],
     6: [
-      { topic: 'Organisasi ASEAN dan Peran Indonesia', context: 'Negara pendiri ASEAN, Deklarasi Bangkok, dan kerja sama pendidikan/sosial budaya.' },
-      { topic: 'Globalisasi dan Dampaknya bagi Generasi Muda', context: 'Kemajuan teknologi komunikasi, transportasi, dan menjaga jati diri bangsa.' }
+      { topic: 'Benua dan Samudra di Dunia Beserta Ciri Khasnya', context: 'Benua Asia, Afrika, Amerika, Eropa, Australia, Antartika.' },
+      { topic: 'Perkembangan Teknologi Komunikasi dari Masa ke Masa', context: 'Dari telegraf, surat merpati, telepon kabel hingga era internet dan AI.' }
     ]
   }
 };
@@ -217,98 +217,80 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
   onGenerated,
   onBack,
   playClick,
-  initialSubject = 'IPA',
-  initialGrade = 4,
+  initialSubject = 'Matematika',
+  initialGrade = 3,
   stage,
   onStageChange,
   topic,
   onTopicChange,
 }) => {
-  // Tahap 1: Materi & Sasaran
   const [subject, setSubject] = useState<Subject>(initialSubject);
   const [grade, setGrade] = useState<number>(initialGrade);
   const [contextNotes, setContextNotes] = useState('');
   const [randomSeed, setRandomSeed] = useState(0);
 
-  // Tahap 2: Pengaturan Soal & Mesin AI
+  // Soal & Proporsi
   const [questionCount, setQuestionCount] = useState<number>(5);
   const [customCountStr, setCustomCountStr] = useState<string>('5');
   const [proportionMode, setProportionMode] = useState<'balanced' | 'custom'>('balanced');
-  const [proportions, setProportions] = useState<{
-    multiple_choice: number;
-    true_false: number;
-    short_answer: number;
-    matching_pairs: number;
-  }>({
+  const [proportions, setProportions] = useState({
     multiple_choice: 3,
     true_false: 1,
     short_answer: 1,
     matching_pairs: 0,
   });
-  const [includeAiImages, setIncludeAiImages] = useState<boolean>(false);
+  const [includeAiImages, setIncludeAiImages] = useState(false);
 
-  // Mesin Pembuat Soal
-  const [selectedEngine, setSelectedEngine] = useState<AiProvider | 'local' | 'prompt'>('local');
+  // Pilihan Mesin AI
+  const [selectedEngine, setSelectedEngine] = useState<'local' | 'groq' | 'gemini' | 'prompt'>('groq');
 
-  // Input Berkas / Prompt Eksternal (jika selectedEngine === 'prompt')
+  // Input Teks Salin Prompt / Dokumen
   const [rawInputText, setRawInputText] = useState('');
-  const [copiedPrompt, setCopiedPrompt] = useState(false);
   const [inputMethodTab, setInputMethodTab] = useState<'paste' | 'file'>('paste');
+  const [copiedPrompt, setCopiedPrompt] = useState(false);
 
-  // Loading & Error States
+  // Status & Indikator
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  // Supabase Cloud AI Status
   const [supabaseAi, setSupabaseAi] = useState<SupabaseAiStatus>(() => getSupabaseAiStatusSync());
-  const [isCheckingCloudAi, setIsCheckingCloudAi] = useState<boolean>(true);
+  const [isCheckingCloudAi, setIsCheckingCloudAi] = useState(false);
 
+  // Periksa kesiapan Supabase AI saat pertama kali dimuat
   useEffect(() => {
-    let isMounted = true;
+    setIsCheckingCloudAi(true);
     checkSupabaseAiStatus()
       .then((status) => {
-        if (!isMounted) return;
         setSupabaseAi(status);
         if (status.hasGroq) {
           setSelectedEngine('groq');
         } else if (status.hasGemini) {
           setSelectedEngine('gemini');
+        } else {
+          setSelectedEngine('local');
         }
       })
-      .catch((err) => {
-        console.warn('Cek status Cloud AI notice:', err);
+      .catch(() => {
+        setSelectedEngine('local');
       })
       .finally(() => {
-        if (isMounted) setIsCheckingCloudAi(false);
+        setIsCheckingCloudAi(false);
       });
-
-    return () => {
-      isMounted = false;
-    };
   }, []);
 
-  // Saran Topik Cerdas Kurikulum Merdeka
-  const topicRecommendations = useMemo(() => {
-    const bySubject = SMART_TOPICS_BY_SUBJECT_AND_GRADE[subject] || SMART_TOPICS_BY_SUBJECT_AND_GRADE['IPA'];
-    const list = bySubject[grade] || bySubject[3] || [];
-    if (randomSeed === 0) return list;
-    return [...list].reverse();
-  }, [subject, grade, randomSeed]);
+  // Hitung total butir soal aktual
+  const currentTotalQuestions = useMemo(() => {
+    const parsed = parseInt(customCountStr);
+    if (!isNaN(parsed) && parsed >= 1 && parsed <= 50) return parsed;
+    return questionCount;
+  }, [customCountStr, questionCount]);
 
-  // Total Soal Terkalkulasi
-  const currentTotalQuestions = parseInt(customCountStr) || questionCount || 5;
-  const sumCustomProportions = 
-    proportions.multiple_choice + 
-    proportions.true_false + 
-    proportions.short_answer + 
-    proportions.matching_pairs;
-
-  // Auto-distribute helper
-  const handleAutoDistributeProportions = (targetTotal: number) => {
-    const mc = Math.max(1, Math.round(targetTotal * 0.5));
-    const tf = Math.max(0, Math.round(targetTotal * 0.2));
-    const sa = Math.max(0, Math.round(targetTotal * 0.2));
-    const mp = Math.max(0, targetTotal - (mc + tf + sa));
+  // Proporsi Kustom Auto-Distribute saat jumlah soal berubah
+  const handleAutoDistributeProportions = (total: number) => {
+    if (total <= 0) return;
+    const mc = Math.max(1, Math.round(total * 0.5));
+    const tf = Math.max(0, Math.round(total * 0.2));
+    const sa = Math.max(0, Math.round(total * 0.2));
+    const mp = Math.max(0, total - (mc + tf + sa));
     setProportions({
       multiple_choice: mc,
       true_false: tf,
@@ -316,6 +298,17 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
       matching_pairs: mp,
     });
   };
+
+  const sumCustomProportions = proportions.multiple_choice + proportions.true_false + proportions.short_answer + proportions.matching_pairs;
+
+  // Rekomendasi Topik Cerdas Berdasarkan Mapel & Kelas
+  const topicRecommendations = useMemo(() => {
+    const list = SMART_TOPICS_BY_SUBJECT_AND_GRADE[subject]?.[grade] || [];
+    if (list.length === 0) return [];
+    const shifted = [...list];
+    const offset = randomSeed % shifted.length;
+    return shifted.slice(offset).concat(shifted.slice(0, offset)).slice(0, 3);
+  }, [subject, grade, randomSeed]);
 
   // Prompt Teks Siap Pakai
   const generatedPromptText = useMemo(() => {
@@ -389,7 +382,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
 
     if (!topic.trim()) {
       setErrorMessage('Mohon lengkapi judul atau topik kuis terlebih dahulu.');
-      onStageChange(1);
+      onStageChange(2);
       return;
     }
 
@@ -483,10 +476,10 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
       )}
 
       {/* ========================================================================= */}
-      {/* TAHAP 1: MATERI, SASARAN, & REKOMENDASI TOPIK CERDAS */}
+      {/* TAHAP 1: MATA PELAJARAN & TINGKAT KELAS SD */}
       {/* ========================================================================= */}
       {stage === 1 && (
-        <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-8 lg:p-10 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6 sm:space-y-8">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-8 lg:p-10 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6 sm:space-y-8 animate-fade-in">
           
           {/* Pilihan Mata Pelajaran (1 Baris di Desktop) */}
           <div>
@@ -559,8 +552,71 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
             </div>
           </div>
 
+          {/* Banner Petunjuk Singkat */}
+          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-850/60 border border-slate-200/80 dark:border-slate-800 flex items-center gap-3 text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+            <Info className="w-5 h-5 text-blue-500 shrink-0" />
+            <span>Pilihan mata pelajaran dan tingkat kelas akan memfilter rekomendasi topik dan menyesuaikan gaya bahasa AI dengan pemahaman siswa.</span>
+          </div>
+
+          {/* Navigasi Tahap 1 */}
+          <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                onBack();
+              }}
+              className="px-6 py-3.5 rounded-2xl font-bold text-xs sm:text-sm text-slate-600 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 min-h-[48px] flex items-center gap-2 btn-press transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Ganti Metode</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                setErrorMessage(null);
+                onStageChange(2);
+              }}
+              className="px-8 py-3.5 rounded-2xl font-black text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-md flex items-center gap-2 min-h-[48px] btn-press transition-all"
+            >
+              <span>Lanjut ke Topik Materi</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAHAP 2: TOPIK & SASARAN PEMBELAJARAN */}
+      {/* ========================================================================= */}
+      {stage === 2 && (
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-8 lg:p-10 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6 sm:space-y-8 animate-fade-in">
+          
+          {/* Pill Ringkasan Mapel & Kelas */}
+          <div className="flex items-center justify-between gap-2.5 flex-wrap p-3.5 sm:p-4 rounded-2xl bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900/60">
+            <div className="flex items-center gap-2 text-blue-900 dark:text-blue-200 text-xs sm:text-sm font-black flex-wrap min-w-0 flex-1">
+              <span className="text-xl sm:text-2xl shrink-0">{EMOJI_BY_SUBJECT[subject]}</span>
+              <span className="shrink-0">{subject}</span>
+              <span className="text-blue-400 shrink-0">•</span>
+              <span className="shrink-0">Kelas {grade} SD</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                onStageChange(1);
+              }}
+              className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline px-2.5 py-1 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/50 shrink-0"
+            >
+              Ubah Mapel & Kelas ✏️
+            </button>
+          </div>
+
           {/* 2-Kolom: Topik & Saran Cerdas (Kiri) vs Catatan & Tips (Kanan) */}
-          <div className="pt-5 border-t border-slate-100 dark:border-slate-800 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
             
             {/* Kolom Kiri: Input Topik & Rekomendasi Cerdas */}
             <div className="lg:col-span-6 space-y-5">
@@ -641,27 +697,27 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                   <span>Tips Instruksional untuk Guru SD:</span>
                 </div>
                 <ul className="text-[11px] sm:text-xs text-indigo-800 dark:text-indigo-300/90 space-y-1 pl-6 list-disc leading-relaxed">
-                  <li>Tentukan fokus sub-materi tertentu agar kuis lebih padat dan tepat sasaran.</li>
+                  <li>Tentukan fokus sub-materi tertentu agar butir soal kuis padat dan terarah.</li>
                   <li>Konteks akan membantu AI menyesuaikan gaya kalimat dengan psikologi siswa Kelas {grade} SD.</li>
-                  <li>Anda tetap dapat mengedit, menambah, atau merevisi butir soal secara leluasa di Studio Bank Soal.</li>
+                  <li>Anda tetap dapat mengedit atau merevisi butir soal secara leluasa di Studio Bank Soal.</li>
                 </ul>
               </div>
             </div>
 
           </div>
 
-          {/* Navigasi Tahap 1 */}
+          {/* Navigasi Tahap 2 */}
           <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
             <button
               type="button"
               onClick={() => {
                 playClick();
-                onBack();
+                onStageChange(1);
               }}
               className="px-6 py-3.5 rounded-2xl font-bold text-xs sm:text-sm text-slate-600 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 min-h-[48px] flex items-center gap-2 btn-press transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span>Ganti Metode</span>
+              <span>Kembali ke Mapel & Kelas</span>
             </button>
 
             <button
@@ -673,11 +729,11 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                   return;
                 }
                 setErrorMessage(null);
-                onStageChange(2);
+                onStageChange(3);
               }}
               className="px-8 py-3.5 rounded-2xl font-black text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-md flex items-center gap-2 min-h-[48px] btn-press transition-all"
             >
-              <span>Lanjut ke Pengaturan Soal & AI</span>
+              <span>Lanjut ke Format & Jumlah Soal</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
@@ -686,12 +742,12 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
       )}
 
       {/* ========================================================================= */}
-      {/* TAHAP 2: PENGATURAN SOAL & PILIHAN MESIN AI */}
+      {/* TAHAP 3: FORMAT & KONFIGURASI BUTIR SOAL */}
       {/* ========================================================================= */}
-      {stage === 2 && (
-        <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-8 lg:p-10 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6 sm:space-y-8">
+      {stage === 3 && (
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-8 lg:p-10 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6 sm:space-y-8 animate-fade-in">
           
-          {/* Pill Ringkasan Materi */}
+          {/* Pill Ringkasan Materi & Topik */}
           <div className="flex items-center justify-between gap-2.5 flex-wrap p-3.5 sm:p-4 rounded-2xl bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900/60">
             <div className="flex items-center gap-2 text-blue-900 dark:text-blue-200 text-xs sm:text-sm font-black flex-wrap min-w-0 flex-1">
               <span className="text-xl sm:text-2xl shrink-0">{EMOJI_BY_SUBJECT[subject]}</span>
@@ -705,11 +761,11 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
               type="button"
               onClick={() => {
                 playClick();
-                onStageChange(1);
+                onStageChange(2);
               }}
               className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline px-2.5 py-1 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/50 shrink-0"
             >
-              Ubah Materi ✏️
+              Ubah Topik ✏️
             </button>
           </div>
 
@@ -777,7 +833,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                   Format Tipe Soal & Proporsi
                 </label>
                 <p className="text-xs text-slate-400 dark:text-slate-500">
-                  Tentukan bagaimana AI membagi variasi tipe soal.
+                  Tentukan bagaimana variasi tipe soal akan dibagikan.
                 </p>
               </div>
 
@@ -988,8 +1044,78 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
             </label>
           </div>
 
+          {/* Navigasi Tahap 3 */}
+          <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                onStageChange(2);
+              }}
+              className="px-6 py-3.5 rounded-2xl font-bold text-xs sm:text-sm text-slate-600 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 min-h-[48px] flex items-center gap-2 btn-press transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Kembali ke Topik Materi</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                if (proportionMode === 'custom' && sumCustomProportions !== currentTotalQuestions) {
+                  setErrorMessage(`Total butir soal (${sumCustomProportions}) belum sama dengan target kuis (${currentTotalQuestions}).`);
+                  return;
+                }
+                setErrorMessage(null);
+                onStageChange(4);
+              }}
+              className="px-8 py-3.5 rounded-2xl font-black text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-md flex items-center gap-2 min-h-[48px] btn-press transition-all"
+            >
+              <span>Lanjut ke Pilihan Mesin AI</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAHAP 4: PILIHAN MESIN AI & EKSEKUSI PEMBUATAN SOAL */}
+      {/* ========================================================================= */}
+      {stage === 4 && (
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-8 lg:p-10 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6 sm:space-y-8 animate-fade-in">
+          
+          {/* Pill Ringkasan Konfigurasi Lengkap */}
+          <div className="flex items-center justify-between gap-2.5 flex-wrap p-3.5 sm:p-4 rounded-2xl bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900/60">
+            <div className="flex items-center gap-2 text-blue-900 dark:text-blue-200 text-xs sm:text-sm font-black flex-wrap min-w-0 flex-1">
+              <span className="text-xl sm:text-2xl shrink-0">{EMOJI_BY_SUBJECT[subject]}</span>
+              <span className="shrink-0">{subject}</span>
+              <span className="text-blue-400 shrink-0">•</span>
+              <span className="shrink-0">Kelas {grade} SD</span>
+              <span className="text-blue-400 shrink-0">•</span>
+              <span className="truncate max-w-[140px] xs:max-w-[200px] sm:max-w-xs font-semibold">"{topic}"</span>
+              <span className="text-blue-400 shrink-0">•</span>
+              <span className="shrink-0 font-bold">{currentTotalQuestions} Soal</span>
+              {includeAiImages && (
+                <span className="text-[10px] bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-md font-bold">
+                  + Gambar AI
+                </span>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                onStageChange(3);
+              }}
+              className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline px-2.5 py-1 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/50 shrink-0"
+            >
+              Ubah Pengaturan ✏️
+            </button>
+          </div>
+
           {/* Pilihan Mesin Pembuat Soal */}
-          <div className="pt-6 border-t border-slate-100 dark:border-slate-800 space-y-4">
+          <div className="space-y-4">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div>
                 <label className="block text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white">
@@ -1292,19 +1418,19 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
             </div>
           )}
 
-          {/* Action Footer Tahap 2 */}
+          {/* Action Footer Tahap 4 */}
           <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
             <button
               type="button"
               disabled={isLoading}
               onClick={() => {
                 playClick();
-                onStageChange(1);
+                onStageChange(3);
               }}
               className="px-6 py-3.5 rounded-2xl font-bold text-xs sm:text-sm text-slate-600 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 min-h-[48px] flex items-center gap-2 btn-press transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span>Kembali ke Materi</span>
+              <span>Kembali ke Format Soal</span>
             </button>
 
             {selectedEngine === 'prompt' ? (

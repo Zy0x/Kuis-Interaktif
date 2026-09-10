@@ -1,6 +1,26 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.54] - 2026-09-10
+### Restrukturisasi Modular Asisten Racik Kuis AI Menjadi 4 Tahap Terfokus
+
+#### 1. Pemecahan Alur Funnel Menjadi 4 Tahap Terstruktur & Ergonomis
+- Menjawab kebutuhan pengguna agar konten tidak menumpuk terlalu banyak dalam satu layar (*cognitive overload*), alur pembuatan kuis AI kini dipecah menjadi **4 Tahap Mandiri**:
+  - **Tahap 1 (Mata Pelajaran & Kelas SD)**: Fokus tunggal pada pemilihan 5 mata pelajaran Kurikulum Merdeka dan jenjang kelas 1–6 SD tanpa terganggu isian topik.
+  - **Tahap 2 (Topik & Sasaran Pembelajaran)**: Ruang lapang untuk penentuan topik kuis, eksplorasi ide dengan rekomendasi topik cerdas (*Acak Ide* 🔀), catatan khusus AI, dan tips instruksional guru SD.
+  - **Tahap 3 (Format & Konfigurasi Butir Soal)**: Pengaturan kuantitas soal (preset 5–25 dan kustom 1–50), mode proporsi tipe soal (Otomatis Seimbang vs Kustom Mandiri 4 format), serta opsi ilustrasi gambar edukasi AI.
+  - **Tahap 4 (Pilihan Mesin AI & Eksekusi)**: Ringkasan lengkap konfigurasi kuis, seleksi 4 mesin AI (Lokal, Groq LPU, Gemini AI, Salin Prompt/Berkas), laci kerja interaktif berkas, dan tombol eksekusi langsung ke Studio Bank Soal.
+
+#### 2. Sticky Header 4 Tab & Bilah Progres 4 Segmen (Mobile-First)
+- Mengadaptasi bilah navigasi sticky header menjadi 4 tab simetris:
+  - **Desktop / Tablet**: `[ 1. Mapel & Kelas ]` | `[ 2. Topik Materi ]` | `[ 3. Format Soal ]` | `[ 4. Mesin AI ]`.
+  - **Mobile Portrait**: Label ringkas responsif `[ 1. Mapel ]` | `[ 2. Topik ]` | `[ 3. Soal ]` | `[ 4. AI ]` dengan target sentuh $\ge 44\text{px}$ tanpa tumpang tindih.
+- Bilah progres kini memiliki 4 segmen visual yang menyala halus (25%, 50%, 75%, 100%) seiring kemajuan pengisian kuis guru.
+
+#### 3. Navigasi & Back Handler Presisi Bertingkat
+- Tombol *Sebelumnya* di header maupun tombol fisik *Back* browser kini melangkah mundur secara bertahap (Tahap 4 ➔ 3 ➔ 2 ➔ 1 ➔ Konfirmasi Ganti Metode).
+- Validasi prasyarat tetap terjaga (misalnya pencegahan melompat ke Tahap 3/4 sebelum topik terisi dengan notifikasi *toast* ramah).
+
 ## [2.2.53] - 2026-09-10
 ### Integrasi Indikator Tahap & Navigasi Funnel ke Sticky Header (Mobile-First & Anti Hilang Saat Scroll)
 
