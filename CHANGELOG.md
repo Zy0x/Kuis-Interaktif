@@ -1,6 +1,20 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.70] - 2026-09-10
+### Penegasan Hierarki Visual Input Utama & Eliminasi Truncate pada Saran Ide Topik
+
+#### 1. Penegasan Kolom Input Utama & Catatan Tambahan
+- Meningkatkan ketegasan visual (*visual dominance*) kolom **Topik Pembahasan Kuis** dan **Catatan Tambahan** dengan batas tebal (`border-2 border-slate-300 dark:border-slate-700`), ring fokus yang kontras, serta latar belakang kartu yang tegas.
+- Memastikan kolom input utama tetap menjadi pusat perhatian (*primary focus*) yang jelas, tidak teredam atau tersaingi oleh elemen pembantu di sekitarnya.
+
+#### 2. Kartu Saran Topik Ringan & Tanpa Truncate (Zero Truncate)
+- Mengeliminasi pemotongan elipsis (*no truncate / no line-clamp*) pada kartu saran ide topik, sehingga seluruh frasa materi kurikulum panjang terbungkus rapi ke bawah (*natural soft-wrapping / break-words*) dan terbaca 100% utuh.
+- Mengubah gaya visual kartu saran topik menjadi chip pembantu sekunder yang ringan (*lightweight secondary helper*):
+  - Latar belakang transparan halus dengan border tipis teratur.
+  - Ikon aksen `+` / `✓` yang anggun dan minimalis.
+  - Mencegah kesan kartu saran menyerupai kolom input ganda yang membingungkan pengguna.
+
 ## [2.2.69] - 2026-09-10
 ### Penyempurnaan Saran Topik Cepat: Bento Grid 2-Kolom Maksimal 2 Baris di Layar Lebar
 

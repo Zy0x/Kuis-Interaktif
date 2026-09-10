@@ -2069,17 +2069,17 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                     }
                   }}
                   placeholder="Ketik topik kuis atau pilih saran di bawah..."
-                  className="w-full px-4 py-2.5 sm:py-3 rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 font-semibold text-xs sm:text-sm focus:border-blue-500 focus:outline-none min-h-[46px] shadow-xs resize-none overflow-hidden leading-relaxed transition-[height] duration-75"
+                  className="w-full px-4 py-3 rounded-2xl border-2 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 font-bold text-xs sm:text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none min-h-[48px] shadow-xs resize-none overflow-hidden leading-relaxed transition-[height] duration-75"
                 />
               </div>
 
-              {/* Rekomendasi Topik: Mobile 1-Baris Swipeable & Layar Lebar Bento Grid Max 2 Baris */}
+              {/* Rekomendasi Topik Ringan: Helper Sekunder Tanpa Truncate & Bento Grid Max 2 Baris */}
               {activeTopicRecommendations.list.length > 0 && (
                 <div className="space-y-1.5 pt-0.5">
                   <div className="flex items-center justify-between gap-2 text-xs">
-                    <span className="text-[11px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                    <span className="text-[11px] sm:text-xs font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
                       <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                      <span>Saran topik cepat:</span>
+                      <span>Saran ide topik:</span>
                       {activeTopicRecommendations.isAi && (
                         <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-md bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300">
                           AI
@@ -2107,8 +2107,8 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                     </button>
                   </div>
 
-                  {/* Bento Grid: Ponsel 1 baris swipeable (bebas scrollbar), Layar Lebar Grid 2-Kolom (Maksimal 2 Baris) */}
-                  <div className="flex sm:grid sm:grid-cols-2 items-center sm:items-stretch gap-1.5 sm:gap-2 overflow-x-auto sm:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] py-1 sm:py-0 -mx-0.5 sm:mx-0 px-0.5 sm:px-0 touch-pan-x">
+                  {/* Bento Grid: Ponsel 1 baris swipeable (bebas scrollbar), Layar Lebar Grid 2-Kolom (Maksimal 2 Baris, Zero Truncate) */}
+                  <div className="flex sm:grid sm:grid-cols-2 items-stretch gap-1.5 sm:gap-2 overflow-x-auto sm:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] py-1 sm:py-0 -mx-0.5 sm:mx-0 px-0.5 sm:px-0 touch-pan-x">
                     {activeTopicRecommendations.list.slice(0, 4).map((rec) => {
                       const isSelected = topic === rec.topic;
                       return (
@@ -2120,18 +2120,18 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                             onTopicChange(rec.topic);
                             if (rec.context) setContextNotes(rec.context);
                           }}
-                          className={`text-xs px-2.5 sm:px-3 py-1.5 sm:py-2.5 rounded-xl sm:rounded-2xl border text-left transition-all btn-press min-h-[36px] sm:min-h-[44px] flex items-center gap-2 group whitespace-nowrap sm:whitespace-normal shrink-0 sm:shrink max-w-[260px] sm:max-w-none shadow-2xs ${
+                          className={`text-[11px] sm:text-xs px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl border text-left transition-all btn-press flex items-start gap-1.5 group whitespace-normal break-words shrink-0 sm:shrink max-w-[280px] sm:max-w-none shadow-2xs ${
                             isSelected
-                              ? 'bg-blue-600 sm:bg-blue-50 dark:sm:bg-blue-950/60 text-white sm:text-blue-950 dark:sm:text-blue-100 border-blue-600 sm:border-blue-500 font-bold shadow-xs sm:ring-1 sm:ring-blue-500/20'
-                              : 'bg-slate-100/90 sm:bg-slate-50/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700/80 hover:bg-slate-200 sm:hover:bg-white dark:hover:bg-slate-750 hover:border-slate-300 dark:hover:border-slate-600'
+                              ? 'bg-blue-50/70 dark:bg-blue-950/40 border-blue-400/80 dark:border-blue-600/80 text-blue-700 dark:text-blue-300 font-bold'
+                              : 'bg-slate-100/50 dark:bg-slate-900/40 hover:bg-white dark:hover:bg-slate-850 border-slate-200/80 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-300 hover:border-blue-300 dark:hover:border-blue-700'
                           }`}
                         >
-                          <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full shrink-0 transition-colors ${
-                            isSelected 
-                              ? 'bg-white sm:bg-blue-600' 
-                              : 'bg-slate-300 dark:bg-slate-600 group-hover:bg-blue-500'
-                          }`} />
-                          <span className="truncate sm:line-clamp-2 leading-snug flex-1 font-medium sm:font-semibold">
+                          <span className={`text-[11px] shrink-0 mt-0.5 font-bold transition-colors ${
+                            isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 group-hover:text-blue-500'
+                          }`}>
+                            {isSelected ? '✓' : '+'}
+                          </span>
+                          <span className="leading-snug break-words whitespace-normal flex-1">
                             {rec.topic}
                           </span>
                         </button>
@@ -2154,7 +2154,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                   value={contextNotes}
                   onChange={(e) => setContextNotes(e.target.value)}
                   placeholder="Contoh: Fokuskan pada organ tertentu, gunakan bahasa santai dan ramah anak..."
-                  className="w-full px-4 py-2.5 sm:py-3 rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800/90 text-slate-900 dark:text-white placeholder:text-slate-400 font-medium text-xs sm:text-sm focus:border-blue-500 focus:outline-none shadow-xs resize-none leading-relaxed"
+                  className="w-full px-4 py-3 rounded-2xl border-2 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 font-medium text-xs sm:text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none shadow-xs resize-none leading-relaxed"
                 />
               </div>
               <p className="text-[11px] text-slate-400 dark:text-slate-500 leading-relaxed">
