@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import type { Quiz, StudentSubmission, TeacherProfile } from '../../types/quiz';
 import { DataManager, generateRandomPin } from '../../lib/supabaseClient';
 import { useBackHandler } from '../../lib/navigationHistory';
+import { copyTextToClipboard } from '../../lib/aiQuestionParser';
 import { ConfirmDeleteModal } from '../common/ConfirmDeleteModal';
 import { 
   ArrowLeft, 
@@ -127,21 +128,21 @@ export const QuizDetail: React.FC<QuizDetailProps> = ({
     return { totalStudents, avgScore, highestScore, avgTime, passRate };
   }, [submissions]);
 
-  const handleCopyPin = () => {
+  const handleCopyPin = async () => {
     playClick();
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(currentPin);
+    const success = await copyTextToClipboard(currentPin);
+    if (success) {
       setCopiedPin(true);
       showToast('✓ 4 Digit PIN berhasil disalin!');
       setTimeout(() => setCopiedPin(false), 2000);
     }
   };
 
-  const handleCopyLink = () => {
+  const handleCopyLink = async () => {
     playClick();
     const url = `${window.location.origin}${window.location.pathname}?pin=${currentPin}`;
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(url);
+    const success = await copyTextToClipboard(url);
+    if (success) {
       setCopiedLink(true);
       showToast('✓ Tautan kuis berhasil disalin!');
       setTimeout(() => setCopiedLink(false), 2000);

@@ -3,6 +3,7 @@ import type { Quiz, TeacherProfile, Subject } from '../../types/quiz';
 import { MASTER_TEACHER_EMAIL } from '../../types/quiz';
 import { DataManager } from '../../lib/supabaseClient';
 import { useBackHandler } from '../../lib/navigationHistory';
+import { copyTextToClipboard } from '../../lib/aiQuestionParser';
 import { ThemeToggle } from '../common/ThemeToggle';
 import { ConfirmDeleteModal } from '../common/ConfirmDeleteModal';
 import { QuizSettingsModal } from '../common/QuizSettingsModal';
@@ -149,20 +150,20 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
     }
   };
 
-  const handleCopyPin = (pin: string) => {
+  const handleCopyPin = async (pin: string) => {
     playClick();
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(pin);
+    const success = await copyTextToClipboard(pin);
+    if (success) {
       setCopiedPin(pin);
       setTimeout(() => setCopiedPin(null), 2000);
     }
   };
 
-  const handleCopyLink = (quiz: Quiz) => {
+  const handleCopyLink = async (quiz: Quiz) => {
     playClick();
     const url = `${window.location.origin}${window.location.pathname}?pin=${quiz.pinCode || '1001'}`;
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(url);
+    const success = await copyTextToClipboard(url);
+    if (success) {
       setCopiedLink(quiz.id);
       setTimeout(() => setCopiedLink(null), 2000);
     }

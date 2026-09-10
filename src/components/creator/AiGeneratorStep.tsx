@@ -34,7 +34,8 @@ import {
 import { 
   parseRawQuestionsText, 
   generateAiPrompt, 
-  getQuestionCsvTemplate 
+  getQuestionCsvTemplate,
+  copyTextToClipboard
 } from '../../lib/aiQuestionParser';
 import { 
   Sparkles, 
@@ -1013,6 +1014,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const topicTextareaRef = useRef<HTMLTextAreaElement>(null);
   const contextNotesTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const promptTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Otomatis sesuaikan tinggi textarea topik agar teks panjang selalu wrap ke bawah dan terbaca utuh
   useEffect(() => {
@@ -1472,16 +1474,25 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
     });
   }, [subject, grade, educationLevel, topic, currentTotalQuestions, selectedQuestionTypes, proportions, contextNotes, includeAiImages, mcOptionCount, trueFalseStyle, matchingPairCount]);
 
-  // Handler Salin Prompt
+  // Handler Salin Prompt (Kompatibel dengan segala browser, mobile, & non-HTTPS)
   const handleCopyPrompt = async () => {
     playClick();
-    try {
-      await navigator.clipboard.writeText(generatedPromptText);
+    if (!generatedPromptText) {
+      showToast('Teks prompt masih kosong.', 'error');
+      return;
+    }
+    const success = await copyTextToClipboard(generatedPromptText, promptTextareaRef.current);
+    if (success) {
       setCopiedPrompt(true);
       showToast('Prompt kuis berhasil disalin ke clipboard!', 'success');
       setTimeout(() => setCopiedPrompt(false), 2500);
-    } catch {
-      showToast('Gagal menyalin teks prompt ke clipboard.', 'error');
+    } else {
+      // Jika browser memblokir clipboard otomatis, seleksi teks di textarea agar pengguna mudah menekan Salin / Ctrl+C
+      if (promptTextareaRef.current) {
+        promptTextareaRef.current.focus();
+        promptTextareaRef.current.select();
+      }
+      showToast('Teks prompt telah ditandai. Tekan Salin atau Ctrl+C.', 'warning');
     }
   };
 
@@ -3475,6 +3486,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                   {/* Area Konten Fleksibel */}
                   <div className="flex-1 flex flex-col min-h-0 space-y-1.5">
                     <ResizableTextarea
+                      ref={promptTextareaRef}
                       readOnly
                       rows={5}
                       value={generatedPromptText}

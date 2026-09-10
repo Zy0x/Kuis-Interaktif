@@ -3,6 +3,7 @@ import type { Quiz } from '../../types/quiz';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 import { useBackHandler } from '../../lib/navigationHistory';
 import { generateRandomPin } from '../../lib/supabaseClient';
+import { copyTextToClipboard } from '../../lib/aiQuestionParser';
 import { 
   X, 
   Globe, 
@@ -158,11 +159,11 @@ export const QuizSettingsModal: React.FC<QuizSettingsModalProps> = ({
   };
 
   // 5. Konfig PIN: Salin
-  const handleCopyPin = (e: React.MouseEvent) => {
+  const handleCopyPin = async (e: React.MouseEvent) => {
     e.stopPropagation();
     playClick();
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(pin);
+    const success = await copyTextToClipboard(pin);
+    if (success) {
       setIsCopiedPin(true);
       showToast('PIN tersalin!');
       setTimeout(() => setIsCopiedPin(false), 2000);

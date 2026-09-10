@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import confetti from 'canvas-confetti';
 import type { Quiz, QuizAttemptAnswer, LeaderboardEntry } from '../../types/quiz';
 import { DataManager } from '../../lib/supabaseClient';
+import { copyTextToClipboard } from '../../lib/aiQuestionParser';
 import { ThemeToggle } from '../common/ThemeToggle';
 import { 
   Trophy, 
@@ -94,11 +95,11 @@ export const QuizResult: React.FC<QuizResultProps> = ({
     });
   }, [quiz, score, stars, correctCount, totalCount, totalTimeSpent, answers, playCelebration]);
 
-  const handleShare = () => {
+  const handleShare = async () => {
     playClick();
     const shareText = `Aku baru saja meraih nilai ${score} (${earnedPoints}/${maxPoints} Poin, ${stars} Bintang ⭐) di Kuis Interaktif: "${quiz.title}"!`;
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(shareText);
+    const success = await copyTextToClipboard(shareText);
+    if (success) {
       setCopiedShare(true);
       setTimeout(() => setCopiedShare(false), 2000);
     }

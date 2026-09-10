@@ -29,6 +29,97 @@ export interface ParsedQuestionItem {
 }
 
 /**
+ * Utilitas penyalin teks ke clipboard yang tangguh dan universal:
+ * 1. Mendukung Clipboard API modern (navigator.clipboard.writeText)
+ * 2. Fallback otomatis ke targetElement jika disediakan (langsung select & copy)
+ * 3. Fallback ke document.execCommand('copy') via textarea tersembunyi
+ * 4. Bekerja sempurna pada lingkungan non-HTTPS (HTTP LAN), WebView, iOS Safari, dan Android
+ */
+export async function copyTextToClipboard(
+  text: string,
+  targetElement?: HTMLTextAreaElement | HTMLInputElement | null
+): Promise<boolean> {
+  if (!text) return false;
+
+  // 1. Coba Clipboard API modern terlebih dahulu (jika tersedia dan diizinkan browser)
+  if (typeof navigator !== 'undefined' && navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch (apiErr) {
+      console.warn('navigator.clipboard.writeText tidak dapat diakses, mencoba fallback:', apiErr);
+    }
+  }
+
+  // 2. Jika elemen target (textarea yang sudah terpasang di DOM) tersedia, salin langsung
+  if (targetElement && typeof document !== 'undefined') {
+    try {
+      targetElement.focus({ preventScroll: true });
+      targetElement.select();
+      if (typeof targetElement.setSelectionRange === 'function') {
+        targetElement.setSelectionRange(0, text.length);
+      }
+      const success = document.execCommand('copy');
+      if (success) {
+        return true;
+      }
+    } catch (targetErr) {
+      console.warn('Penyalinan via targetElement gagal:', targetErr);
+    }
+  }
+
+  // 3. Fallback umum: buat elemen textarea tersembunyi
+  if (typeof document !== 'undefined') {
+    let textArea: HTMLTextAreaElement | null = null;
+    try {
+      textArea = document.createElement('textarea');
+      textArea.value = text;
+
+      // Pengaturan gaya agar tidak memicu layout shift atau terlihat di layar
+      textArea.style.fontSize = '12pt';
+      textArea.style.position = 'fixed';
+      textArea.style.top = '0';
+      textArea.style.left = '-9999px';
+      textArea.style.width = '2em';
+      textArea.style.height = '2em';
+      textArea.style.padding = '0';
+      textArea.style.border = 'none';
+      textArea.style.outline = 'none';
+      textArea.style.boxShadow = 'none';
+      textArea.style.background = 'transparent';
+      textArea.style.opacity = '0';
+      textArea.style.zIndex = '-9999';
+      textArea.setAttribute('readonly', '');
+
+      document.body.appendChild(textArea);
+
+      textArea.focus({ preventScroll: true });
+      textArea.select();
+      if (typeof textArea.setSelectionRange === 'function') {
+        textArea.setSelectionRange(0, text.length);
+      }
+
+      const success = document.execCommand('copy');
+      if (textArea.parentNode) {
+        document.body.removeChild(textArea);
+      }
+      textArea = null;
+
+      if (success) {
+        return true;
+      }
+    } catch (fallbackErr) {
+      console.warn('Fallback document.execCommand gagal:', fallbackErr);
+      if (textArea && textArea.parentNode) {
+        document.body.removeChild(textArea);
+      }
+    }
+  }
+
+  return false;
+}
+
+/**
  * Membersihkan awalan label huruf atau angka pada teks opsi pilihan ganda
  * Contoh: "A. Harimau" -> "Harimau", "(B) Kelinci" -> "Kelinci", "1. Kucing" -> "Kucing"
  */

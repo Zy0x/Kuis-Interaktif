@@ -3,6 +3,7 @@ import type { QuizQuestion, QuestionType, Subject } from '../../types/quiz';
 import { 
   generateAiPrompt, 
   parseRawQuestionsText, 
+  copyTextToClipboard,
   type ParsedQuestionItem 
 } from '../../lib/aiQuestionParser';
 import { 
@@ -214,7 +215,7 @@ export const AiQuestionModal: React.FC<AiQuestionModalProps> = ({
     setTimeout(() => setNotification(null), 3500);
   };
 
-  const handleCopyPrompt = () => {
+  const handleCopyPrompt = async () => {
     playClick();
     const promptText = generateAiPrompt({
       subject,
@@ -224,10 +225,14 @@ export const AiQuestionModal: React.FC<AiQuestionModalProps> = ({
       questionType,
     });
 
-    navigator.clipboard.writeText(promptText);
-    setCopiedPrompt(true);
-    showToast('Prompt berhasil disalin! Silakan tempel di ChatGPT, Gemini, atau Claude.');
-    setTimeout(() => setCopiedPrompt(false), 3000);
+    const success = await copyTextToClipboard(promptText);
+    if (success) {
+      setCopiedPrompt(true);
+      showToast('Prompt berhasil disalin! Silakan tempel di ChatGPT, Gemini, atau Claude.');
+      setTimeout(() => setCopiedPrompt(false), 3000);
+    } else {
+      showToast('Gagal menyalin otomatis. Silakan salin teks prompt secara manual.');
+    }
   };
 
   const handleDirectGenerate = async () => {

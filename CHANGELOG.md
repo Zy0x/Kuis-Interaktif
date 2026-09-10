@@ -1,6 +1,22 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.93] - 2026-09-11
+### Perbaikan Penanganan Penyalinan Prompt AI & Sistem Clipboard Multi-Tier Universal
+
+#### 1. Implementasi Utilitas Clipboard Universal & Tangguh (`copyTextToClipboard`)
+- Mengatasi kendala kegagalan penyalinan prompt (*"Gagal menyalin teks prompt ke clipboard"*) yang terjadi saat peramban berada di lingkungan non-HTTPS (seperti akses jaringan lokal HTTP / IP), peramban mobile/WebView, atau ketika peramban membatasi akses `navigator.clipboard.writeText`.
+- Menyediakan mekanisme fallback berlapis (*multi-tier fallback*):
+  - **Tier 1 (Modern Async API)**: Menggunakan `navigator.clipboard.writeText` jika didukung dan diizinkan peramban.
+  - **Tier 2 (In-DOM Direct Selection)**: Jika elemen target (seperti textarea prompt) tersedia, langsung memfokuskan dan mengeksekusi `document.execCommand('copy')` dari elemen yang sudah ada di DOM.
+  - **Tier 3 (Off-Screen Buffer)**: Membuat elemen textarea tersembunyi dengan konfigurasi kompatibilitas penuh untuk iOS Safari, Android, dan iframe.
+  - **Tier 4 (Visual Selection Fallback)**: Jika seluruh API clipboard ditolak oleh kebijakan keamanan peramban, sistem secara otomatis menandai (*select all*) teks prompt dan memunculkan toast edukatif agar pengguna dapat menekan tombol Salin atau pintasan keyboard (Ctrl+C / ⌘+C).
+
+#### 2. Integrasi Menyeluruh di Seluruh Modul Aplikasi
+- Memperbarui tombol **Salin Prompt** pada *Funnel AI Creator* (`AiGeneratorStep.tsx`) dengan menghubungkan referensi `promptTextareaRef` ke komponen `ResizableTextarea`.
+- Memperbarui modal generator soal AI (`AiQuestionModal.tsx`) agar menggunakan `copyTextToClipboard` tanpa risiko kesalahan *unhandled exception*.
+- Menyelaraskan seluruh aksi salin PIN dan tautan kuis pada Dasbor Guru (`TeacherDashboard.tsx`), Detail Kuis (`QuizDetail.tsx`), Pengaturan Kuis (`QuizSettingsModal.tsx`), serta pembagian skor hasil kuis (`QuizResult.tsx`) sehingga bekerja andal di semua perangkat.
+
 ## [2.2.92] - 2026-09-11
 ### Overhaul Acuan Template Prompt AI Anti-Chat & Parser Ekstra Tangguh Multi-Lapis
 
