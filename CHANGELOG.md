@@ -1,6 +1,18 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.69] - 2026-09-10
+### Penyempurnaan Saran Topik Cepat: Bento Grid 2-Kolom Maksimal 2 Baris di Layar Lebar
+
+#### 1. Transformasi Bento Grid Adaptif di Layar Lebar (*Desktop & Tablet*)
+- Menghadirkan tata letak **Bento Grid 2-Kolom (`sm:grid-cols-2`)** untuk seksi saran topik cepat di layar lebar (tablet/desktop), membatasi susunan rekomendasi menjadi **maksimal 2 baris** (2 × 2 card).
+- Mengeliminasi bilah geser horisontal (*horizontal scrollbar*) dan panah geser yang sebelumnya mengganggu estetika desktop, sehingga area rekomendasi menyatu secara elegan dengan lebar form input di atasnya.
+- Setiap kartu Bento dilengkapi indikator titik aksen modern, perataan vertikal yang seimbang, *hover effect* lembut, dan pembungkusan judul hingga 2 baris (`line-clamp-2`) tanpa merusak keseragaman grid.
+
+#### 2. Optimasi Jalur Geser Bersih Tanpa Scrollbar di Layar Ponsel (*Mobile Track*)
+- Mempertahankan format 1 baris geser (*single swipeable track*) di layar ponsel untuk menghemat ruang vertikal.
+- Menghilangkan tampilan bilah geser bawaan peramban menggunakan kelas utilitas `[&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]`, menghasilkan interaksi sentuh geser jempol yang mulus dan bersih.
+
 ## [2.2.68] - 2026-09-10
 ### Bidang Input Judul & Topik Fleksibel dengan Pembungkusan Teks Otomatis (Auto-Wrap & Auto-Resize)
 

@@ -2073,15 +2073,15 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                 />
               </div>
 
-              {/* Rekomendasi Topik Ringkas: 1 Baris Horizontal Swipeable (Ultra-Compact) */}
+              {/* Rekomendasi Topik: Mobile 1-Baris Swipeable & Layar Lebar Bento Grid Max 2 Baris */}
               {activeTopicRecommendations.list.length > 0 && (
-                <div className="space-y-1 pt-0.5">
+                <div className="space-y-1.5 pt-0.5">
                   <div className="flex items-center justify-between gap-2 text-xs">
-                    <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                    <span className="text-[11px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
                       <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                       <span>Saran topik cepat:</span>
                       {activeTopicRecommendations.isAi && (
-                        <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded-md bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300">
+                        <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-md bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300">
                           AI
                         </span>
                       )}
@@ -2090,7 +2090,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                       type="button"
                       disabled={isBrainstormingAi}
                       onClick={handleBrainstormTopics}
-                      className="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1 hover:underline btn-press disabled:opacity-60"
+                      className="text-[11px] sm:text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1 hover:underline btn-press disabled:opacity-60"
                       title="Acak atau segarkan ide topik"
                     >
                       {isBrainstormingAi ? (
@@ -2107,9 +2107,9 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                     </button>
                   </div>
 
-                  {/* 1 Baris Swipeable Chips (Tidak Meluber ke Bawah) */}
-                  <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hover py-1 -mx-0.5 px-0.5 touch-pan-x">
-                    {activeTopicRecommendations.list.map((rec) => {
+                  {/* Bento Grid: Ponsel 1 baris swipeable (bebas scrollbar), Layar Lebar Grid 2-Kolom (Maksimal 2 Baris) */}
+                  <div className="flex sm:grid sm:grid-cols-2 items-center sm:items-stretch gap-1.5 sm:gap-2 overflow-x-auto sm:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] py-1 sm:py-0 -mx-0.5 sm:mx-0 px-0.5 sm:px-0 touch-pan-x">
+                    {activeTopicRecommendations.list.slice(0, 4).map((rec) => {
                       const isSelected = topic === rec.topic;
                       return (
                         <button
@@ -2120,13 +2120,20 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                             onTopicChange(rec.topic);
                             if (rec.context) setContextNotes(rec.context);
                           }}
-                          className={`text-xs px-2.5 py-1.5 rounded-xl border font-medium transition-all text-left whitespace-nowrap shrink-0 max-w-[260px] truncate btn-press min-h-[34px] flex items-center gap-1 ${
+                          className={`text-xs px-2.5 sm:px-3 py-1.5 sm:py-2.5 rounded-xl sm:rounded-2xl border text-left transition-all btn-press min-h-[36px] sm:min-h-[44px] flex items-center gap-2 group whitespace-nowrap sm:whitespace-normal shrink-0 sm:shrink max-w-[260px] sm:max-w-none shadow-2xs ${
                             isSelected
-                              ? 'bg-blue-600 text-white border-blue-600 font-bold shadow-xs'
-                              : 'bg-slate-100/90 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 hover:border-slate-300'
+                              ? 'bg-blue-600 sm:bg-blue-50 dark:sm:bg-blue-950/60 text-white sm:text-blue-950 dark:sm:text-blue-100 border-blue-600 sm:border-blue-500 font-bold shadow-xs sm:ring-1 sm:ring-blue-500/20'
+                              : 'bg-slate-100/90 sm:bg-slate-50/90 dark:bg-slate-800/90 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700/80 hover:bg-slate-200 sm:hover:bg-white dark:hover:bg-slate-750 hover:border-slate-300 dark:hover:border-slate-600'
                           }`}
                         >
-                          <span>{rec.topic}</span>
+                          <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full shrink-0 transition-colors ${
+                            isSelected 
+                              ? 'bg-white sm:bg-blue-600' 
+                              : 'bg-slate-300 dark:bg-slate-600 group-hover:bg-blue-500'
+                          }`} />
+                          <span className="truncate sm:line-clamp-2 leading-snug flex-1 font-medium sm:font-semibold">
+                            {rec.topic}
+                          </span>
                         </button>
                       );
                     })}
