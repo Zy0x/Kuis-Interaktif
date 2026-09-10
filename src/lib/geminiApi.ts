@@ -38,6 +38,18 @@ const STORAGE_KEY_GROQ_MODEL = 'kuis_sd_groq_model';
 const STORAGE_KEY_DEEPSEEK_API_KEY = 'kuis_sd_deepseek_api_key';
 const STORAGE_KEY_DEEPSEEK_MODEL = 'kuis_sd_deepseek_model';
 
+export type EngineHealthStatus = 'ready' | 'busy' | 'quota_exhausted' | 'error' | 'unconfigured';
+
+export interface EngineHealthDetail {
+  status: EngineHealthStatus;
+  message: string;
+  label: string;
+  description: string;
+  color: string;
+  isCloud: boolean;
+  isCustomKey: boolean;
+}
+
 export interface SupabaseAiStatus {
   checked: boolean;
   available: boolean;
@@ -48,6 +60,9 @@ export interface SupabaseAiStatus {
   groqModels: string[];
   deepseekModels: string[];
   error?: string | null;
+  geminiError?: string | null;
+  groqError?: string | null;
+  deepseekError?: string | null;
 }
 
 export interface GenerateAiQuestionsParams {
@@ -64,6 +79,12 @@ export interface GenerateAiQuestionsParams {
   model?: string; // generic fallback
   apiKey?: string;
   includeAiImages?: boolean; // Otomatis lampirkan ilustrasi AI untuk soal tebak gambar / bergambar
+  typeProportions?: {
+    multiple_choice?: number;
+    true_false?: number;
+    short_answer?: number;
+    matching_pairs?: number;
+  };
 }
 
 export interface HybridGenerateResult {
@@ -315,6 +336,9 @@ export async function checkSupabaseAiStatus(forceRefresh = false): Promise<Supab
       groqModels: Array.isArray(data.groqModels) ? data.groqModels : [],
       geminiModels: Array.isArray(data.geminiModels) ? data.geminiModels : [],
       deepseekModels: Array.isArray(data.deepseekModels) ? data.deepseekModels : [],
+      geminiError: data.geminiError || null,
+      groqError: data.groqError || null,
+      deepseekError: data.deepseekError || null,
       error: null,
     };
     return cachedSupabaseAiStatus;
@@ -333,6 +357,125 @@ export async function checkSupabaseAiStatus(forceRefresh = false): Promise<Supab
     };
     return cachedSupabaseAiStatus;
   }
+}
+
+/**
+ * Mendeteksi kesehatan dan ketersediaan mesin pembuat soal secara cerdas & informatif
+ * Mengetahui apakah mesin Siap, Sedang Sibuk, Batas Kuota Tercapai, atau Gangguan
+ */
+export function getEngineHealthDetail(
+  provider: 'local' | 'deepseek' | 'groq' | 'gemini',
+  status?: SupabaseAiStatus
+): EngineHealthDetail {
+  const aiStatus = status || cachedSupabaseAiStatus;
+
+  const formatHealth = (
+    st: EngineHealthStatus,
+    msg: string,
+    isCloud: boolean,
+    isCustomKey: boolean
+  ): EngineHealthDetail => {
+    const meta = {
+      ready: {
+        label: 'Siap Digunakan',
+        color: '#10b981',
+        description: 'Layanan AI dalam kondisi prima dan siap memproses pembuatan kuis.',
+      },
+      busy: {
+        label: 'Sedang Sibuk',
+        color: '#f59e0b',
+        description: 'Server sedang memproses antrean tinggi. Pembuatan kuis mungkin membutuhkan waktu lebih lama.',
+      },
+      quota_exhausted: {
+        label: 'Limit Kuota Habis',
+        color: '#f43f5e',
+        description: 'Batas laju permintaan kuota API harian telah tercapai.',
+      },
+      error: {
+        label: 'Gangguan Mesin',
+        color: '#ef4444',
+        description: 'Layanan AI mengalami kendala sambungan atau kegagalan respon server.',
+      },
+      unconfigured: {
+        label: 'Belum Disetel',
+        color: '#64748b',
+        description: 'Kunci API mandiri (BYOK) atau kredensial cloud belum dikonfigurasi.',
+      },
+    }[st];
+
+    return {
+      status: st,
+      message: msg,
+      label: meta.label,
+      description: meta.description,
+      color: meta.color,
+      isCloud,
+      isCustomKey,
+    };
+  };
+
+  if (provider === 'local') {
+    return formatHealth('ready', 'Siap Digunakan', false, false);
+  }
+
+  if (provider === 'deepseek') {
+    const hasCustom = hasDeepSeekApiKey();
+    const hasCloud = Boolean(aiStatus.hasDeepSeek);
+    if (!hasCustom && !hasCloud) {
+      return formatHealth('unconfigured', 'Kunci API belum disetel', false, false);
+    }
+    const err = (aiStatus.deepseekError || '').toLowerCase();
+    if (err.includes('429') || err.includes('insufficient_quota') || err.includes('quota') || err.includes('balance') || err.includes('rate_limit')) {
+      return formatHealth('quota_exhausted', 'Limit Kuota Tercapai', hasCloud, hasCustom);
+    }
+    if (err.includes('503') || err.includes('504') || err.includes('overload') || err.includes('busy')) {
+      return formatHealth('busy', 'Sedang Sibuk', hasCloud, hasCustom);
+    }
+    if (aiStatus.deepseekError && !hasCustom) {
+      return formatHealth('error', 'Gangguan Koneksi', hasCloud, hasCustom);
+    }
+    return formatHealth('ready', 'Siap Digunakan', hasCloud, hasCustom);
+  }
+
+  if (provider === 'groq') {
+    const hasCustom = hasGroqApiKey();
+    const hasCloud = Boolean(aiStatus.hasGroq);
+    if (!hasCustom && !hasCloud) {
+      return formatHealth('unconfigured', 'Kunci API belum disetel', false, false);
+    }
+    const err = (aiStatus.groqError || '').toLowerCase();
+    if (err.includes('429') || err.includes('rate_limit') || err.includes('quota') || err.includes('tokens per minute')) {
+      return formatHealth('quota_exhausted', 'Batas Kuota Tercapai', hasCloud, hasCustom);
+    }
+    if (err.includes('503') || err.includes('504') || err.includes('overload') || err.includes('busy')) {
+      return formatHealth('busy', 'Sedang Sibuk', hasCloud, hasCustom);
+    }
+    if (aiStatus.groqError && !hasCustom) {
+      return formatHealth('error', 'Gangguan Jaringan', hasCloud, hasCustom);
+    }
+    return formatHealth('ready', 'Siap Digunakan', hasCloud, hasCustom);
+  }
+
+  if (provider === 'gemini') {
+    const hasCustom = hasGeminiApiKey();
+    const hasCloud = Boolean(aiStatus.hasGemini);
+    if (!hasCustom && !hasCloud) {
+      return formatHealth('unconfigured', 'Kunci API belum disetel', false, false);
+    }
+    const err = (aiStatus.geminiError || '').toLowerCase();
+    if (err.includes('429') || err.includes('resource_exhausted') || err.includes('quota')) {
+      return formatHealth('quota_exhausted', 'Batas Kuota Tercapai', hasCloud, hasCustom);
+    }
+    if (err.includes('503') || err.includes('504') || err.includes('busy') || err.includes('overload')) {
+      return formatHealth('busy', 'Sedang Sibuk', hasCloud, hasCustom);
+    }
+    if (aiStatus.geminiError && !hasCustom) {
+      return formatHealth('error', 'Koneksi Bermasalah', hasCloud, hasCustom);
+    }
+    return formatHealth('ready', 'Siap Digunakan', hasCloud, hasCustom);
+  }
+
+  return formatHealth('ready', 'Siap Digunakan', false, false);
 }
 
 export function isGeminiAvailable(): boolean {
@@ -746,14 +889,27 @@ function buildInstructionText(params: GenerateAiQuestionsParams): string {
   const { subject, grade, topic, count, questionType } = params;
 
   let formatInstruction = '';
-  if (questionType === 'campuran') {
-    formatInstruction = `Variasikan tipe soal secara seimbang antara:
+  if (params.typeProportions) {
+    const p = params.typeProportions;
+    const parts: string[] = [];
+    if (p.multiple_choice && p.multiple_choice > 0) parts.push(`- ${p.multiple_choice} butir 'multiple_choice' (Pilihan ganda dengan 4 opsi A, B, C, D)`);
+    if (p.true_false && p.true_false > 0) parts.push(`- ${p.true_false} butir 'true_false' (Benar atau Salah dengan opsi ["Benar", "Salah"])`);
+    if (p.short_answer && p.short_answer > 0) parts.push(`- ${p.short_answer} butir 'short_answer' (Isian singkat dengan acceptableAnswers)`);
+    if (p.matching_pairs && p.matching_pairs > 0) parts.push(`- ${p.matching_pairs} butir 'matching_pairs' (Menjodohkan konsep dengan matchingPairs)`);
+    if (parts.length > 0) {
+      formatInstruction = `Wajib ikuti proporsi jumlah tipe soal berikut secara tepat:\n${parts.join('\n')}`;
+    }
+  }
+  
+  if (!formatInstruction) {
+    if (questionType === 'campuran') {
+      formatInstruction = `Variasikan tipe soal secara seimbang antara:
 - 'multiple_choice' (Pilihan ganda dengan 4 opsi A, B, C, D)
 - 'true_false' (Benar atau Salah dengan 2 opsi ["Benar", "Salah"])
 - 'short_answer' (Isian singkat dengan acceptableAnswers berisi sinonim/kunci)
 - 'matching_pairs' (Menjodohkan konsep dengan matchingPairs: [{left, right}])
 - 'image_guess' (Tebak gambar misteri dengan imageCaption)`;
-  } else if (questionType === 'matching_pairs') {
+    } else if (questionType === 'matching_pairs') {
     formatInstruction = `Gunakan tipe 'matching_pairs'. Setiap soal wajib memiliki properti 'matchingPairs' berisi 3-4 pasang objek { "left": "...", "right": "..." } yang saling berpasangan secara tepat.`;
   } else if (questionType === 'short_answer') {
     formatInstruction = `Gunakan tipe 'short_answer'. 'options' berisi 1 kunci utama, dan 'acceptableAnswers' berisi 1-4 variasi ejaan atau sinonim yang dianggap benar.`;
@@ -761,8 +917,9 @@ function buildInstructionText(params: GenerateAiQuestionsParams): string {
     formatInstruction = `Gunakan tipe 'true_false'. 'options' wajib tepat ["Benar", "Salah"], dan correctIndex bernilai 0 jika Benar atau 1 jika Salah.`;
   } else if (questionType === 'image_guess') {
     formatInstruction = `Gunakan tipe 'image_guess'. Sertakan 'imageCaption' berupa nama objek/konsep yang harus ditebak, serta 4 pilihan 'options'.`;
-  } else {
-    formatInstruction = `Gunakan tipe 'multiple_choice'. Sertakan 4 pilihan jawaban yang mendidik pada array 'options'.`;
+    } else {
+      formatInstruction = `Gunakan tipe 'multiple_choice'. Sertakan 4 pilihan jawaban yang mendidik pada array 'options'.`;
+    }
   }
 
   const level = params.educationLevel || (grade >= 10 ? 'SMA' : grade >= 7 ? 'SMP' : 'SD');
@@ -1196,6 +1353,19 @@ export async function generateHybridQuizQuestions(
   const isCloudGroq = Boolean(cloudStatus?.hasGroq);
   const isCloudGemini = Boolean(cloudStatus?.hasGemini);
 
+  const recordEngineError = (prov: 'deepseek' | 'groq' | 'gemini', err: unknown) => {
+    const str = (err instanceof Error ? err.message : String(err)).toLowerCase();
+    if (str.includes('429') || str.includes('quota') || str.includes('rate_limit') || str.includes('insufficient_quota') || str.includes('resource_exhausted')) {
+      if (prov === 'deepseek') cachedSupabaseAiStatus.deepseekError = '429 Quota exhausted';
+      if (prov === 'groq') cachedSupabaseAiStatus.groqError = '429 Quota exhausted';
+      if (prov === 'gemini') cachedSupabaseAiStatus.geminiError = '429 Quota exhausted';
+    } else if (str.includes('503') || str.includes('504') || str.includes('overload') || str.includes('busy')) {
+      if (prov === 'deepseek') cachedSupabaseAiStatus.deepseekError = '503 Busy';
+      if (prov === 'groq') cachedSupabaseAiStatus.groqError = '503 Busy';
+      if (prov === 'gemini') cachedSupabaseAiStatus.geminiError = '503 Busy';
+    }
+  };
+
   if (provider === 'deepseek' && isCloudDeepSeek) {
     try {
       const result = await callSupabaseAiEdgeFunction({ ...params, provider: 'deepseek' });
@@ -1205,6 +1375,7 @@ export async function generateHybridQuizQuestions(
         message: `🐋 Berhasil meracik ${result.questions.length} butir soal materi "${params.topic}" via DeepSeek Cloud (${result.model || 'V3/R1'})!`,
       };
     } catch (cloudDeepSeekErr: unknown) {
+      recordEngineError('deepseek', cloudDeepSeekErr);
       console.warn('Panggilan DeepSeek via Supabase Edge Function gagal, mencoba cadangan:', cloudDeepSeekErr);
     }
   } else if (provider === 'groq' && isCloudGroq) {
@@ -1216,6 +1387,7 @@ export async function generateHybridQuizQuestions(
         message: `⚡ Berhasil meracik ${result.questions.length} butir soal materi "${params.topic}" via Groq Cloud (${result.model || 'LPU Engine'})!`,
       };
     } catch (cloudGroqErr: unknown) {
+      recordEngineError('groq', cloudGroqErr);
       console.warn('Panggilan Groq via Supabase Edge Function gagal, mencoba cadangan:', cloudGroqErr);
     }
   } else if (provider === 'gemini' && isCloudGemini) {
@@ -1227,6 +1399,7 @@ export async function generateHybridQuizQuestions(
         message: `✨ Berhasil meracik ${result.questions.length} butir soal materi "${params.topic}" via Google Gemini AI (${result.model || 'PRO'})!`,
       };
     } catch (cloudGeminiErr: unknown) {
+      recordEngineError('gemini', cloudGeminiErr);
       console.warn('Panggilan Gemini via Supabase Edge Function gagal, mencoba cadangan:', cloudGeminiErr);
     }
   }
@@ -1241,6 +1414,7 @@ export async function generateHybridQuizQuestions(
         message: `🐋 Berhasil membuat ${questions.length} butir soal materi "${params.topic}" via DeepSeek AI Lokal (${params.deepseekModel || getStoredDeepSeekModel()})!`,
       };
     } catch (deepseekErr: unknown) {
+      recordEngineError('deepseek', deepseekErr);
       console.warn('Panggilan DeepSeek lokal gagal, mencoba cadangan:', deepseekErr);
     }
   } else if (provider === 'groq' && hasGroqApiKey()) {
@@ -1252,6 +1426,7 @@ export async function generateHybridQuizQuestions(
         message: `⚡ Berhasil membuat ${questions.length} butir soal materi "${params.topic}" via Groq Cloud Lokal (${params.groqModel || getStoredGroqModel()})!`,
       };
     } catch (groqErr: unknown) {
+      recordEngineError('groq', groqErr);
       console.warn('Panggilan Groq lokal gagal, mencoba cadangan:', groqErr);
     }
   } else if (provider === 'gemini' && hasGeminiApiKey()) {
@@ -1263,6 +1438,7 @@ export async function generateHybridQuizQuestions(
         message: `✨ Berhasil membuat ${questions.length} butir soal materi "${params.topic}" via Google Gemini AI Lokal!`,
       };
     } catch (geminiErr: unknown) {
+      recordEngineError('gemini', geminiErr);
       console.warn('Panggilan Gemini lokal gagal, mencoba cadangan:', geminiErr);
     }
   }
@@ -1434,9 +1610,12 @@ export async function generateHybridQuizQuestions(
     });
   }
 
+  const isFallback = Boolean(params.provider);
   return {
     questions: localQuestions,
     source: 'curriculum_seed',
-    message: `Berhasil membuat ${localQuestions.length} butir soal materi "${params.topic}" via Generator Kurikulum SD!`,
+    message: isFallback
+      ? `⚠️ Mesin ${provider.toUpperCase()} sedang sibuk atau mencapai limit. Otomatis dialihkan ke Generator Lokal (${localQuestions.length} butir soal siap)!`
+      : `Berhasil membuat ${localQuestions.length} butir soal materi "${params.topic}" via Generator Lokal!`,
   };
 }

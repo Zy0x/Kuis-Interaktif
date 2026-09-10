@@ -23,10 +23,12 @@ import {
   hasGeminiApiKey,
   getStoredGeminiModel,
   saveStoredGeminiModel,
+  getEngineHealthDetail,
   type DeepSeekModel,
   type GroqModel,
   type GeminiModel,
   type SupabaseAiStatus,
+  type EngineHealthDetail,
   type AiProvider
 } from '../../lib/geminiApi';
 import { 
@@ -41,7 +43,8 @@ import {
   ArrowRight, 
   Loader2, 
   AlertCircle, 
-  Cloud, 
+  AlertTriangle,
+  CheckCircle2,
   Download, 
   UploadCloud, 
   Copy, 
@@ -57,6 +60,7 @@ import {
 } from 'lucide-react';
 
 export type CreationStage = 1 | 2 | 3 | 4;
+export type SupportedFormat = 'multiple_choice' | 'true_false' | 'short_answer' | 'matching_pairs';
 
 interface AiGeneratorStepProps {
   onGenerated: (data: {
@@ -243,6 +247,32 @@ const SMART_TOPICS_BY_SUBJECT_AND_GRADE: Partial<Record<Subject, Record<number, 
     6: [
       { topic: 'Keutuhan Negara Kesatuan Republik Indonesia (NKRI)', context: 'Batas wilayah maritim dan pulau-pulau terluar Indonesia.' },
       { topic: 'Hak Asasi Manusia dan Perlindungan Anak Indonesia', context: 'Hak atas pendidikan layak, perlindungan dari perundungan (bullying).' }
+    ]
+  },
+  'IPS': {
+    1: [
+      { topic: 'Mengenal Rambu Lalu Lintas dan Keselamatan Jalan', context: 'Lampu merah, zebra cross, dan keselamatan menyeberang jalan raya.' },
+      { topic: 'Profesi dan Pekerjaan di Sekitar Kita', context: 'Dokter, polisi, pemadam kebakaran, petani, dan guru.' }
+    ],
+    2: [
+      { topic: 'Alat Transportasi Tradisional dan Modern', context: 'Delman, becak, perahu klotok vs kereta cepat, pesawat komersial.' },
+      { topic: 'Pahlawan Nasional dan Monumen Bersejarah', context: 'Pangeran Diponegoro, R.A. Kartini, Monas, dan Candi Borobudur.' }
+    ],
+    3: [
+      { topic: 'Rumah Adat dan Pakaian Tradisional Indonesia', context: 'Rumah Gadang, Tongkonan, Joglo, Ulos, Kebaya, dan Baju Bodo.' },
+      { topic: 'Keajaiban Flora dan Fauna Khas Indonesia', context: 'Komodo, Orangutan, Burung Cenderawasih, Bunga Rafflesia Arnoldii.' }
+    ],
+    4: [
+      { topic: 'Nama Provinsi dan Ibu Kota di Kepulauan Indonesia', context: 'Pulau Sumatra, Jawa, Kalimantan, Sulawesi, Maluku, dan Papua.' },
+      { topic: 'Lagu Wajib Nasional dan Makna Perjuangannya', context: 'Indonesia Raya, Halo-Halo Bandung, Bagimu Negeri, Satu Nusa Satu Bangsa.' }
+    ],
+    5: [
+      { topic: 'Organisasi ASEAN dan Negara Tetangga Asia Tenggara', context: 'Negara pendiri ASEAN, ibu kota, mata uang, dan lambang negara anggota.' },
+      { topic: 'Sumber Daya Alam dan Keragaman Geografis Indonesia', context: 'Dataran tinggi, dataran rendah, kawasan pesisir, dan pemanfaatan berkelanjutan.' }
+    ],
+    6: [
+      { topic: 'Benua dan Samudra di Dunia Beserta Ciri Khasnya', context: 'Benua Asia, Afrika, Amerika, Eropa, Australia, Antartika.' },
+      { topic: 'Perkembangan Teknologi Komunikasi dari Masa ke Masa', context: 'Dari telegraf, surat merpati, telepon kabel hingga era internet dan AI.' }
     ]
   },
   'Pengetahuan Umum': {
@@ -462,7 +492,7 @@ const SMART_TOPICS_BY_SUBJECT_AND_GRADE: Partial<Record<Subject, Record<number, 
 };
 
 const CORE_SUBJECTS_BY_LEVEL: Record<EducationLevel, Subject[]> = {
-  SD: ['IPA', 'Matematika', 'Bahasa Indonesia', 'Pendidikan Pancasila', 'Pengetahuan Umum'],
+  SD: ['IPA', 'Matematika', 'Bahasa Indonesia', 'Pendidikan Pancasila', 'IPS'],
   SMP: ['IPA Terpadu', 'Matematika', 'Bahasa Indonesia', 'Bahasa Inggris', 'IPS Terpadu'],
   SMA: ['Matematika', 'Fisika', 'Kimia', 'Biologi', 'Bahasa Indonesia'],
 };
@@ -602,6 +632,20 @@ const GRADE_SPECIFIC_CP: Partial<Record<Subject, Record<number, string>>> = {
     10: 'Peserta didik mendalami nilai-nilai Pancasila dalam kerangka praktik penyelenggaraan ketatanegaraan, substansi hak dan kewajiban asasi manusia, serta integrasi nasional dalam Bhinneka Tunggal Ika.',
     11: 'Peserta didik menganalisis sistem hukum dan peradilan di Indonesia, dinamika demokrasi Pancasila, peran diplomasi Indonesia dalam perdamaian dunia, serta memperkokoh persatuan NKRI.',
     12: 'Peserta didik mengevaluasi penanganan pelanggaran hak dan pengingkaran kewajiban warga negara, pengaruh kemajuan IPTEK terhadap keutuhan NKRI, dan etika geopolitik global.',
+  },
+  'IPS': {
+    1: 'Peserta didik mengenal aneka profesi di lingkungan sekitar, rambu keselamatan dasar di jalan raya, serta mengenal jenis alat transportasi tradisional dan modern ramah anak.',
+    2: 'Peserta didik mengenal peta pulau-pulau besar di Indonesia, ragam pakaian adat nusantara, serta tata krama berkunjung ke tempat umum dan fasilitas bersama.',
+    3: 'Peserta didik mengenal keragaman suku bangsa di 38 provinsi Indonesia, rumah adat dan senjata tradisional, serta kisah perjuangan pahlawan perintis kemerdekaan.',
+    4: 'Peserta didik memahami bentang alam Indonesia (pegunungan, danau, selat, laut), flora dan fauna endemik garis Wallace-Weber, serta peristiwa bersejarah Sumpah Pemuda.',
+    5: 'Peserta didik memahami letak geografis benua dan samudra dunia, organisasi negara-negara sahabat ASEAN, pemanfaatan sumber daya alam berkelanjutan, dan interaksi ekonomi.',
+    6: 'Peserta didik memahami sejarah diplomasi kemerdekaan RI, peran Indonesia di PBB dan kancah internasional, serta perkembangan teknologi komunikasi dan etika era digital global.',
+    7: 'Peserta didik memahami profil negara-negara anggota ASEAN, wawasan nusantara kedaulatan maritim, pahlawan nasional, serta perkembangan sains dan teknologi abad 21.',
+    8: 'Peserta didik menganalisis peran diplomasi Indonesia di kawasan Asia-Pasifik, peristiwa sejarah dunia penentu peradaban modern, serta literasi mitigasi bencana geologis nusantara.',
+    9: 'Peserta didik mengevaluasi peran Indonesia di G20 dan PBB, perkembangan kecerdasan buatan, energi hijau masa depan, serta tantangan geopolitik global kontemporer.',
+    10: 'Peserta didik mengkaji wawasan kebangsaan integratif, literasi sains internasional, sejarah diplomasi Konferensi Asia Afrika (KAA), serta perkembangan arsitektur ekonomi dunia.',
+    11: 'Peserta didik menganalisis isu-isu SDGs global (perubahan iklim, transisi energi), hubungan internasional multilateral, serta geopolitik maritim Indo-Pasifik.',
+    12: 'Peserta didik mengevaluasi literasi penalaran skolastik tingkat tinggi, wawasan hukum tata negara, tren disrupsi teknologi digital dan AI, serta kesiapan kepemimpinan global masa depan.',
   },
   'Pengetahuan Umum': {
     1: 'Peserta didik mengenal aneka profesi di lingkungan sekitar, rambu keselamatan dasar di jalan raya, serta mengenal jenis alat transportasi tradisional dan modern ramah anak.',
@@ -744,11 +788,12 @@ const getFallbackGradeCp = (subj: Subject, grd: number, level?: EducationLevel):
 };
 
 const getSubjectCp = (subj: Subject, grd: number, level?: EducationLevel): string => {
-  const gradeEntry = GRADE_SPECIFIC_CP[subj];
+  const effectiveSubj = (subj === 'Pengetahuan Umum' ? 'IPS' : subj) as Subject;
+  const gradeEntry = GRADE_SPECIFIC_CP[effectiveSubj] || GRADE_SPECIFIC_CP[subj];
   if (gradeEntry && gradeEntry[grd]) {
     return gradeEntry[grd];
   }
-  return getFallbackGradeCp(subj, grd, level);
+  return getFallbackGradeCp(effectiveSubj, grd, level);
 };
 
 const getGradeCpVariant = (subj: Subject, grd: number, variant: number, level?: EducationLevel): string => {
@@ -902,9 +947,10 @@ const getSubjectCatalogGroups = (level: EducationLevel): SubjectCategoryGroup[] 
       items: [
         { id: 'Matematika', name: 'Matematika', emoji: '📐', desc: 'Aritmetika, Geometri, Pecahan & Logika' },
         { id: 'IPA', name: 'IPA (Sains)', emoji: '🌱', desc: 'Alam, Makhluk Hidup, Energi & Wujud Zat' },
+        { id: 'IPAS', name: 'IPAS (Fase B & C)', emoji: '🌿', desc: 'Integrasi Sains dan Ilmu Sosial Tematik SD' },
+        { id: 'IPS', name: 'IPS (Ilmu Pengetahuan Sosial)', emoji: '🌍', desc: 'Geografi Lingkungan, Sejarah Lokal, Sosial & Budaya' },
         { id: 'Bahasa Indonesia', name: 'Bahasa Indonesia', emoji: '📚', desc: 'Literasi, Teks, Membaca & Kosakata' },
         { id: 'Pendidikan Pancasila', name: 'Pendidikan Pancasila', emoji: '🇮🇩', desc: 'Karakter, Norma, Toleransi & NKRI' },
-        { id: 'Pengetahuan Umum', name: 'Pengetahuan Umum', emoji: '💡', desc: 'Wawasan Dunia, Budaya & Sosial' },
       ],
     },
     {
@@ -1098,9 +1144,15 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
     setRandomSeed((prev) => prev + 1);
   };
 
-  // Soal & Proporsi
+  // Soal & Format Tipe Soal
   const [questionCount, setQuestionCount] = useState<number>(5);
   const [customCountStr, setCustomCountStr] = useState<string>('5');
+  const [selectedQuestionTypes, setSelectedQuestionTypes] = useState<SupportedFormat[]>([
+    'multiple_choice',
+    'true_false',
+    'short_answer',
+    'matching_pairs',
+  ]);
   const [proportionMode, setProportionMode] = useState<'balanced' | 'custom'>('balanced');
   const [proportions, setProportions] = useState({
     multiple_choice: 3,
@@ -1167,22 +1219,77 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
     return questionCount;
   }, [customCountStr, questionCount]);
 
-  // Proporsi Kustom Auto-Distribute saat jumlah soal berubah
-  const handleAutoDistributeProportions = (total: number) => {
+  // Proporsi Auto-Distribute cerdas dinamis sesuai tipe yang dipilih
+  const handleAutoDistributeProportions = (total: number, typesToDistribute?: SupportedFormat[]) => {
     if (total <= 0) return;
-    const mc = Math.max(1, Math.round(total * 0.5));
-    const tf = Math.max(0, Math.round(total * 0.2));
-    const sa = Math.max(0, Math.round(total * 0.2));
-    const mp = Math.max(0, total - (mc + tf + sa));
-    setProportions({
-      multiple_choice: mc,
-      true_false: tf,
-      short_answer: sa,
-      matching_pairs: mp,
+    const activeTypes = typesToDistribute || selectedQuestionTypes;
+    if (activeTypes.length === 0) return;
+
+    if (activeTypes.length === 1) {
+      const single = activeTypes[0];
+      setProportions({
+        multiple_choice: single === 'multiple_choice' ? total : 0,
+        true_false: single === 'true_false' ? total : 0,
+        short_answer: single === 'short_answer' ? total : 0,
+        matching_pairs: single === 'matching_pairs' ? total : 0,
+      });
+      return;
+    }
+
+    const base = Math.floor(total / activeTypes.length);
+    let rem = total % activeTypes.length;
+
+    // Prioritaskan multiple_choice jika ada
+    const sorted = [...activeTypes].sort((a, b) => (a === 'multiple_choice' ? -1 : b === 'multiple_choice' ? 1 : 0));
+    const newProps = {
+      multiple_choice: 0,
+      true_false: 0,
+      short_answer: 0,
+      matching_pairs: 0,
+    };
+
+    sorted.forEach((t) => {
+      const add = base + (rem > 0 ? 1 : 0);
+      if (rem > 0) rem--;
+      newProps[t] = add;
+    });
+
+    setProportions(newProps);
+  };
+
+  const handleToggleQuestionType = (type: SupportedFormat) => {
+    playClick();
+    setSelectedQuestionTypes((prev) => {
+      const isSelected = prev.includes(type);
+      if (isSelected) {
+        if (prev.length <= 1) {
+          return prev; // Minimal harus ada 1 tipe terpilih
+        }
+        return prev.filter((t) => t !== type);
+      } else {
+        return [...prev, type];
+      }
     });
   };
 
-  const sumCustomProportions = proportions.multiple_choice + proportions.true_false + proportions.short_answer + proportions.matching_pairs;
+  // Sinkronisasi otomatis proporsi saat tipe atau jumlah soal berubah
+  useEffect(() => {
+    if (selectedQuestionTypes.length === 1) {
+      const single = selectedQuestionTypes[0];
+      setProportions({
+        multiple_choice: single === 'multiple_choice' ? currentTotalQuestions : 0,
+        true_false: single === 'true_false' ? currentTotalQuestions : 0,
+        short_answer: single === 'short_answer' ? currentTotalQuestions : 0,
+        matching_pairs: single === 'matching_pairs' ? currentTotalQuestions : 0,
+      });
+    } else if (proportionMode === 'balanced') {
+      handleAutoDistributeProportions(currentTotalQuestions, selectedQuestionTypes);
+    }
+  }, [selectedQuestionTypes, currentTotalQuestions, proportionMode]);
+
+  const sumCustomProportions = useMemo(() => {
+    return selectedQuestionTypes.reduce((acc, t) => acc + (proportions[t] || 0), 0);
+  }, [selectedQuestionTypes, proportions]);
 
   // Rekomendasi Topik Cerdas Berdasarkan Mapel, Kelas & Jenjang
   const activeTopicRecommendations = useMemo(() => {
@@ -1205,20 +1312,40 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
   const coreSubjects = CORE_SUBJECTS_BY_LEVEL[educationLevel] || CORE_SUBJECTS_BY_LEVEL.SD;
   const isCoreSubject = coreSubjects.includes(subject);
 
+  // Helper render status mesin AI informatif
+  const renderEngineStatusBadge = (health: EngineHealthDetail) => {
+    let badgeClasses = 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300';
+    if (health.status === 'busy') {
+      badgeClasses = 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 animate-pulse';
+    } else if (health.status === 'quota_exhausted' || health.status === 'error') {
+      badgeClasses = 'bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300';
+    } else if (health.status === 'unconfigured') {
+      badgeClasses = 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400';
+    }
+
+    return (
+      <span className={`text-[10px] px-2 py-0.5 rounded-md font-bold flex items-center gap-1.5 shrink-0 ${badgeClasses}`}>
+        <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: health.color }} />
+        <span className="truncate max-w-[95px]">{health.label}</span>
+      </span>
+    );
+  };
+
   // Prompt Teks Siap Pakai
   const generatedPromptText = useMemo(() => {
+    const isSingle = selectedQuestionTypes.length === 1;
     return generateAiPrompt({
       subject,
       grade,
       educationLevel,
       topic: topic.trim() || 'Materi Pelajaran Tematik',
       count: currentTotalQuestions,
-      questionType: proportionMode === 'balanced' ? 'campuran' : undefined,
-      typeProportions: proportionMode === 'custom' ? proportions : undefined,
+      questionType: isSingle ? selectedQuestionTypes[0] : 'campuran',
+      typeProportions: !isSingle ? proportions : undefined,
       contextNotes: contextNotes.trim() || undefined,
       includeImages: includeAiImages,
     });
-  }, [subject, grade, educationLevel, topic, currentTotalQuestions, proportionMode, proportions, contextNotes, includeAiImages]);
+  }, [subject, grade, educationLevel, topic, currentTotalQuestions, selectedQuestionTypes, proportions, contextNotes, includeAiImages]);
 
   // Handler Salin Prompt
   const handleCopyPrompt = async () => {
@@ -1312,13 +1439,15 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
       else if (selectedEngine === 'groq') providerToUse = 'groq';
       else if (selectedEngine === 'gemini') providerToUse = 'gemini';
 
+      const isSingle = selectedQuestionTypes.length === 1;
       const result = await generateHybridQuizQuestions({
         topic: topic.trim(),
         subject,
         grade,
         educationLevel,
         count: currentTotalQuestions,
-        questionType: 'campuran',
+        questionType: isSingle ? selectedQuestionTypes[0] : 'campuran',
+        typeProportions: !isSingle ? proportions : undefined,
         provider: providerToUse,
         includeAiImages,
       });
@@ -2126,200 +2255,275 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
             </div>
           </div>
 
-          {/* Mode Format Tipe Soal & Proporsi */}
-          <div className="pt-6 border-t border-slate-100 dark:border-slate-800 space-y-4">
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <div>
+          {/* Format Tipe Soal & Proporsi (Cerdas Dinamis) */}
+          <div className="pt-6 border-t border-slate-100 dark:border-slate-800 space-y-5">
+            <div>
+              <div className="flex items-center justify-between flex-wrap gap-2 mb-1">
                 <label className="block text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white">
-                  Format Tipe Soal & Proporsi
+                  Pilih Format Tipe Soal <span className="text-rose-500">*</span>
                 </label>
-                <p className="text-xs text-slate-400 dark:text-slate-500">
-                  Tentukan bagaimana variasi tipe soal akan dibagikan.
-                </p>
+                <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">
+                  Pilih minimal 1 format (dapat kombinasi beberapa tipe)
+                </span>
               </div>
-
-              {/* Mode Switcher */}
-              <div className="flex p-1.5 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60">
-                <button
-                  type="button"
-                  onClick={() => {
-                    playClick();
-                    setProportionMode('balanced');
-                  }}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all min-h-[40px] flex items-center gap-1.5 ${
-                    proportionMode === 'balanced'
-                      ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm font-extrabold'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                  }`}
-                >
-                  <span>⚖️ Otomatis Seimbang</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    playClick();
-                    setProportionMode('custom');
-                    handleAutoDistributeProportions(currentTotalQuestions);
-                  }}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all min-h-[40px] flex items-center gap-1.5 ${
-                    proportionMode === 'custom'
-                      ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm font-extrabold'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                  }`}
-                >
-                  <span>🎛️ Kustom Mandiri</span>
-                </button>
-              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Tentukan variasi format soal yang ingin diikutsertakan dalam peracikan kuis.
+              </p>
             </div>
 
-            {proportionMode === 'balanced' ? (
-              <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 dark:bg-slate-850/60 border border-slate-200/80 dark:border-slate-700/60 text-xs sm:text-sm text-slate-600 dark:text-slate-300 flex items-start gap-3">
-                <Info className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
-                <div className="space-y-1 leading-relaxed">
-                  <span className="font-bold text-slate-800 dark:text-slate-200 block">
-                    Distribusi Otomatis Berimbang:
-                  </span>
-                  <span>
-                    AI secara proporsional meracik <strong>Pilihan Ganda (~50%)</strong>, <strong>Benar/Salah (~20%)</strong>, <strong>Isian Singkat (~20%)</strong>, dan <strong>Menjodohkan (~10%)</strong> sesuai kebutuhan kompetensi dasar siswa Kelas {grade} {educationLevel === 'SMA' ? 'SMA / SMK' : educationLevel === 'SMP' ? 'SMP' : 'SD'}.
-                  </span>
+            {/* Kartu Pemilihan Tipe Soal */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
+              {[
+                {
+                  type: 'multiple_choice' as const,
+                  label: 'Pilihan Ganda',
+                  icon: '🔘',
+                  badge: 'Opsi A, B, C, D',
+                  desc: 'Pertanyaan objektif dengan 4 opsi dan 1 kunci jawaban tepat.',
+                },
+                {
+                  type: 'true_false' as const,
+                  label: 'Benar / Salah',
+                  icon: '⚖️',
+                  badge: 'Validasi Konsep',
+                  desc: 'Menganalisis kebenaran pernyataan konsep materi pelajaran.',
+                },
+                {
+                  type: 'short_answer' as const,
+                  label: 'Isian Singkat',
+                  icon: '✍️',
+                  badge: 'Ketik Kata Kunci',
+                  desc: 'Siswa mengetik jawaban eksak berupa kata kunci atau angka.',
+                },
+                {
+                  type: 'matching_pairs' as const,
+                  label: 'Menjodohkan',
+                  icon: '🧩',
+                  badge: 'Pasangan Konsep',
+                  desc: 'Menghubungkan kartu konsep kiri dengan padanan di kanan.',
+                },
+              ].map((fmt) => {
+                const isSelected = selectedQuestionTypes.includes(fmt.type);
+                return (
+                  <button
+                    key={fmt.type}
+                    type="button"
+                    onClick={() => handleToggleQuestionType(fmt.type)}
+                    className={`p-4 sm:p-5 rounded-2xl border text-left transition-all min-h-[120px] flex flex-col justify-between btn-press ${
+                      isSelected
+                        ? 'border-blue-500 bg-blue-50/70 dark:bg-blue-950/40 text-blue-950 dark:text-blue-100 ring-2 ring-blue-500/20 shadow-xs'
+                        : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700 opacity-75'
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-2xl">{fmt.icon}</span>
+                        <span
+                          className={`text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1 ${
+                            isSelected
+                              ? 'bg-blue-200 dark:bg-blue-900/80 text-blue-800 dark:text-blue-200'
+                              : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
+                          }`}
+                        >
+                          {isSelected ? (
+                            <>
+                              <CheckCircle2 className="w-3 h-3 text-blue-600 dark:text-blue-400" />
+                              <span>Terpilih</span>
+                            </>
+                          ) : (
+                            <span>Nonaktif</span>
+                          )}
+                        </span>
+                      </div>
+                      <span className="font-black text-sm sm:text-base block">
+                        {fmt.label}
+                      </span>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-snug">
+                        {fmt.desc}
+                      </p>
+                    </div>
+                    <div className="pt-2 text-[11px] font-bold text-blue-600 dark:text-blue-400">
+                      {isSelected ? '✓ Aktif dalam Kuis' : '+ Klik untuk Memilih'}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Pengaturan Proporsi Cerdas Dinamis di Bawah Kartu Format */}
+            {selectedQuestionTypes.length === 1 ? (
+              <div className="p-4 sm:p-5 rounded-2xl bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900/60 flex items-start gap-3.5 animate-fade-in">
+                <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 text-xl font-bold">
+                  🎯
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-black text-xs sm:text-sm text-blue-950 dark:text-blue-100">
+                      Format Tunggal Aktif: {
+                        selectedQuestionTypes[0] === 'multiple_choice' ? 'Pilihan Ganda' :
+                        selectedQuestionTypes[0] === 'true_false' ? 'Benar / Salah' :
+                        selectedQuestionTypes[0] === 'short_answer' ? 'Isian Singkat' : 'Menjodohkan'
+                      }
+                    </span>
+                    <span className="text-[10px] px-2.5 py-0.5 rounded-full font-extrabold bg-blue-200 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
+                      100% Terkunci ({currentTotalQuestions} Butir)
+                    </span>
+                  </div>
+                  <p className="text-xs text-blue-800/80 dark:text-blue-300/80 leading-relaxed">
+                    Seluruh <strong>{currentTotalQuestions} butir soal</strong> akan dibuat penuh dalam format ini tanpa perlu pembagian manual. Klik kartu format lain di atas jika ingin meracik kuis multi-tipe.
+                  </p>
                 </div>
               </div>
             ) : (
-              <div className="space-y-4 p-5 rounded-2xl bg-slate-50 dark:bg-slate-850/60 border border-slate-200 dark:border-slate-700">
-                <div className="flex items-center justify-between text-xs pb-3 border-b border-slate-200/60 dark:border-slate-700/60">
-                  <span className="font-bold text-slate-600 dark:text-slate-300">Tentukan Jumlah Butir Tiap Format:</span>
-                  <span className={`font-black px-3 py-1 rounded-full text-xs ${
-                    sumCustomProportions === currentTotalQuestions
-                      ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300'
-                      : 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300'
-                  }`}>
-                    Total Dialokasikan: {sumCustomProportions} / {currentTotalQuestions} Butir
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {/* Multiple Choice */}
-                  <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between space-y-3 shadow-xs">
-                    <div>
-                      <div className="flex items-center justify-between">
-                        <span className="font-black text-xs sm:text-sm text-slate-900 dark:text-white">Pilihan Ganda</span>
-                        <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-300">
-                          {Math.round((proportions.multiple_choice / Math.max(1, currentTotalQuestions)) * 100)}%
-                        </span>
-                      </div>
-                      <span className="text-[11px] text-slate-400 mt-0.5 block">4 opsi pilihan (A, B, C, D)</span>
-                    </div>
-                    <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
-                      <span className="text-xs font-bold text-slate-400">Butir:</span>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setProportions((p) => ({ ...p, multiple_choice: Math.max(0, p.multiple_choice - 1) }))}
-                          className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 font-black text-sm flex items-center justify-center hover:bg-slate-200 btn-press"
-                        >-</button>
-                        <span className="w-7 text-center font-black text-sm text-slate-900 dark:text-white">{proportions.multiple_choice}</span>
-                        <button
-                          type="button"
-                          onClick={() => setProportions((p) => ({ ...p, multiple_choice: p.multiple_choice + 1 }))}
-                          className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 font-black text-sm flex items-center justify-center hover:bg-slate-200 btn-press"
-                        >+</button>
-                      </div>
-                    </div>
+              <div className="space-y-4 pt-2">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div>
+                    <span className="block text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white">
+                      Pembagian Proporsi Soal ({selectedQuestionTypes.length} Format Terpilih)
+                    </span>
+                    <p className="text-xs text-slate-400 dark:text-slate-500">
+                      Pilih pembagian seimbang otomatis atau sesuaikan jumlah butir tiap format secara mandiri.
+                    </p>
                   </div>
 
-                  {/* True / False */}
-                  <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between space-y-3 shadow-xs">
-                    <div>
-                      <div className="flex items-center justify-between">
-                        <span className="font-black text-xs sm:text-sm text-slate-900 dark:text-white">Benar / Salah</span>
-                        <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-300">
-                          {Math.round((proportions.true_false / Math.max(1, currentTotalQuestions)) * 100)}%
-                        </span>
-                      </div>
-                      <span className="text-[11px] text-slate-400 mt-0.5 block">Analisis pernyataan materi</span>
-                    </div>
-                    <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
-                      <span className="text-xs font-bold text-slate-400">Butir:</span>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setProportions((p) => ({ ...p, true_false: Math.max(0, p.true_false - 1) }))}
-                          className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 font-black text-sm flex items-center justify-center hover:bg-slate-200 btn-press"
-                        >-</button>
-                        <span className="w-7 text-center font-black text-sm text-slate-900 dark:text-white">{proportions.true_false}</span>
-                        <button
-                          type="button"
-                          onClick={() => setProportions((p) => ({ ...p, true_false: p.true_false + 1 }))}
-                          className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 font-black text-sm flex items-center justify-center hover:bg-slate-200 btn-press"
-                        >+</button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Short Answer */}
-                  <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between space-y-3 shadow-xs">
-                    <div>
-                      <div className="flex items-center justify-between">
-                        <span className="font-black text-xs sm:text-sm text-slate-900 dark:text-white">Isian Singkat</span>
-                        <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-300">
-                          {Math.round((proportions.short_answer / Math.max(1, currentTotalQuestions)) * 100)}%
-                        </span>
-                      </div>
-                      <span className="text-[11px] text-slate-400 mt-0.5 block">Mengetik kata kunci jawaban</span>
-                    </div>
-                    <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
-                      <span className="text-xs font-bold text-slate-400">Butir:</span>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setProportions((p) => ({ ...p, short_answer: Math.max(0, p.short_answer - 1) }))}
-                          className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 font-black text-sm flex items-center justify-center hover:bg-slate-200 btn-press"
-                        >-</button>
-                        <span className="w-7 text-center font-black text-sm text-slate-900 dark:text-white">{proportions.short_answer}</span>
-                        <button
-                          type="button"
-                          onClick={() => setProportions((p) => ({ ...p, short_answer: p.short_answer + 1 }))}
-                          className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 font-black text-sm flex items-center justify-center hover:bg-slate-200 btn-press"
-                        >+</button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Matching Pairs */}
-                  <div className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between space-y-3 shadow-xs">
-                    <div>
-                      <div className="flex items-center justify-between">
-                        <span className="font-black text-xs sm:text-sm text-slate-900 dark:text-white">Menjodohkan</span>
-                        <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-300">
-                          {Math.round((proportions.matching_pairs / Math.max(1, currentTotalQuestions)) * 100)}%
-                        </span>
-                      </div>
-                      <span className="text-[11px] text-slate-400 mt-0.5 block">Pasangan konsep kiri & kanan</span>
-                    </div>
-                    <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
-                      <span className="text-xs font-bold text-slate-400">Butir:</span>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setProportions((p) => ({ ...p, matching_pairs: Math.max(0, p.matching_pairs - 1) }))}
-                          className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 font-black text-sm flex items-center justify-center hover:bg-slate-200 btn-press"
-                        >-</button>
-                        <span className="w-7 text-center font-black text-sm text-slate-900 dark:text-white">{proportions.matching_pairs}</span>
-                        <button
-                          type="button"
-                          onClick={() => setProportions((p) => ({ ...p, matching_pairs: p.matching_pairs + 1 }))}
-                          className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 font-black text-sm flex items-center justify-center hover:bg-slate-200 btn-press"
-                        >+</button>
-                      </div>
-                    </div>
+                  {/* Mode Switcher */}
+                  <div className="flex p-1.5 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        setProportionMode('balanced');
+                      }}
+                      className={`px-4 py-2 rounded-xl text-xs font-bold transition-all min-h-[40px] flex items-center gap-1.5 ${
+                        proportionMode === 'balanced'
+                          ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm font-extrabold'
+                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      <span>⚖️ Otomatis Seimbang</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        setProportionMode('custom');
+                        handleAutoDistributeProportions(currentTotalQuestions, selectedQuestionTypes);
+                      }}
+                      className={`px-4 py-2 rounded-xl text-xs font-bold transition-all min-h-[40px] flex items-center gap-1.5 ${
+                        proportionMode === 'custom'
+                          ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm font-extrabold'
+                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      <span>🎛️ Kustom Mandiri</span>
+                    </button>
                   </div>
                 </div>
 
-                {sumCustomProportions !== currentTotalQuestions && (
-                  <p className="text-[11px] sm:text-xs font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1.5 pt-1">
-                    <span>⚠️</span>
-                    <span>Total alokasi ({sumCustomProportions}) harus sama dengan total butir kuis ({currentTotalQuestions}).</span>
-                  </p>
+                {proportionMode === 'balanced' ? (
+                  <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 dark:bg-slate-850/60 border border-slate-200/80 dark:border-slate-700/60 text-xs sm:text-sm text-slate-600 dark:text-slate-300 flex items-start gap-3 animate-fade-in">
+                    <Info className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
+                    <div className="space-y-1.5 leading-relaxed">
+                      <span className="font-bold text-slate-800 dark:text-slate-200 block">
+                        Distribusi Berimbang Otomatis ({currentTotalQuestions} Butir):
+                      </span>
+                      <div className="flex flex-wrap gap-2 pt-0.5">
+                        {selectedQuestionTypes.map((t) => (
+                          <span
+                            key={t}
+                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-800 dark:text-slate-200 shadow-2xs"
+                          >
+                            <span>
+                              {t === 'multiple_choice' ? '🔘 Pilihan Ganda' :
+                               t === 'true_false' ? '⚖️ Benar/Salah' :
+                               t === 'short_answer' ? '✍️ Isian Singkat' : '🧩 Menjodohkan'}
+                            </span>
+                            <span className="text-blue-600 dark:text-blue-400 font-black">
+                              {proportions[t]} butir ({Math.round(((proportions[t] || 0) / Math.max(1, currentTotalQuestions)) * 100)}%)
+                            </span>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4 p-5 rounded-2xl bg-slate-50 dark:bg-slate-850/60 border border-slate-200 dark:border-slate-700 animate-fade-in">
+                    <div className="flex items-center justify-between text-xs pb-3 border-b border-slate-200/60 dark:border-slate-700/60 flex-wrap gap-2">
+                      <span className="font-bold text-slate-600 dark:text-slate-300">
+                        Atur Alokasi Jumlah Soal Tiap Format Terpilih:
+                      </span>
+                      <span className={`font-black px-3 py-1 rounded-full text-xs ${
+                        sumCustomProportions === currentTotalQuestions
+                          ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300'
+                          : 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300'
+                      }`}>
+                        Total Dialokasikan: {sumCustomProportions} / {currentTotalQuestions} Butir
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                      {selectedQuestionTypes.map((t) => {
+                        const info = {
+                          multiple_choice: { label: 'Pilihan Ganda', sub: '4 opsi (A, B, C, D)', badgeBg: 'bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-300' },
+                          true_false: { label: 'Benar / Salah', sub: 'Pernyataan materi', badgeBg: 'bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-300' },
+                          short_answer: { label: 'Isian Singkat', sub: 'Ketik kata kunci', badgeBg: 'bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-300' },
+                          matching_pairs: { label: 'Menjodohkan', sub: 'Pasangan konsep', badgeBg: 'bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-300' },
+                        }[t];
+                        const val = proportions[t] || 0;
+                        const pct = Math.round((val / Math.max(1, currentTotalQuestions)) * 100);
+
+                        return (
+                          <div
+                            key={t}
+                            className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between space-y-3 shadow-xs"
+                          >
+                            <div>
+                              <div className="flex items-center justify-between">
+                                <span className="font-black text-xs sm:text-sm text-slate-900 dark:text-white">
+                                  {info.label}
+                                </span>
+                                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${info.badgeBg}`}>
+                                  {pct}%
+                                </span>
+                              </div>
+                              <span className="text-[11px] text-slate-400 mt-0.5 block">{info.sub}</span>
+                            </div>
+                            <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
+                              <span className="text-xs font-bold text-slate-400">Butir:</span>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    playClick();
+                                    setProportions((p) => ({ ...p, [t]: Math.max(0, (p[t] || 0) - 1) }));
+                                  }}
+                                  className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 font-black text-sm flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 btn-press text-slate-800 dark:text-slate-200"
+                                >-</button>
+                                <span className="w-7 text-center font-black text-sm text-slate-900 dark:text-white">
+                                  {val}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    playClick();
+                                    setProportions((p) => ({ ...p, [t]: (p[t] || 0) + 1 }));
+                                  }}
+                                  className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 font-black text-sm flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 btn-press text-slate-800 dark:text-slate-200"
+                                >+</button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {sumCustomProportions !== currentTotalQuestions && (
+                      <p className="text-[11px] sm:text-xs font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1.5 pt-1">
+                        <span>⚠️</span>
+                        <span>Total alokasi ({sumCustomProportions}) harus sama dengan total butir kuis ({currentTotalQuestions}).</span>
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
             )}
@@ -2363,7 +2567,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
               type="button"
               onClick={() => {
                 playClick();
-                if (proportionMode === 'custom' && sumCustomProportions !== currentTotalQuestions) {
+                if (selectedQuestionTypes.length > 1 && proportionMode === 'custom' && sumCustomProportions !== currentTotalQuestions) {
                   setErrorMessage(`Total butir soal (${sumCustomProportions}) belum sama dengan target kuis (${currentTotalQuestions}).`);
                   return;
                 }
@@ -2399,6 +2603,14 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
               <span className="truncate max-w-[140px] xs:max-w-[200px] sm:max-w-xs font-semibold">"{topic}"</span>
               <span className="text-blue-400 shrink-0">•</span>
               <span className="shrink-0 font-bold">{currentTotalQuestions} Soal</span>
+              <span className="text-blue-400 shrink-0">•</span>
+              <span className="shrink-0 font-semibold text-blue-700 dark:text-blue-300">
+                {selectedQuestionTypes.length === 1
+                  ? (selectedQuestionTypes[0] === 'multiple_choice' ? 'Pilihan Ganda' :
+                     selectedQuestionTypes[0] === 'true_false' ? 'Benar/Salah' :
+                     selectedQuestionTypes[0] === 'short_answer' ? 'Isian' : 'Menjodohkan')
+                  : `${selectedQuestionTypes.length} Tipe Format`}
+              </span>
               {includeAiImages && (
                 <span className="text-[10px] bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-md font-bold">
                   + Gambar AI
@@ -2456,7 +2668,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5 sm:gap-4">
               
-              {/* Option 1: Kurikulum SD Lokal */}
+              {/* Option 1: Lokal */}
               <button
                 type="button"
                 onClick={() => {
@@ -2474,12 +2686,13 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                     <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/60 text-blue-600 flex items-center justify-center text-xl font-bold">
                       🤖
                     </div>
-                    <span className="text-[10px] px-2 py-0.5 rounded-md font-bold bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
-                      Mandiri / Cepat
+                    <span className="text-[10px] px-2 py-0.5 rounded-md font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                      Selalu Siap
                     </span>
                   </div>
                   <span className="font-black text-sm sm:text-base block">
-                    Kurikulum {educationLevel === 'SMA' ? 'SMA' : educationLevel === 'SMP' ? 'SMP' : 'SD'} Lokal
+                    Lokal
                   </span>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-snug">
                     Pembuat soal cepat materi Kurikulum Merdeka tanpa ketergantungan kuota API.
@@ -2508,19 +2721,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                     <div className="w-10 h-10 rounded-xl bg-sky-100 dark:bg-sky-900/60 text-sky-600 flex items-center justify-center text-xl font-bold">
                       🐋
                     </div>
-                    {supabaseAi.hasDeepSeek ? (
-                      <span className="text-[10px] px-2 py-0.5 rounded-md font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 flex items-center gap-1">
-                        <Cloud className="w-3 h-3" /> Cloud Aktif
-                      </span>
-                    ) : hasDeepSeekApiKey() ? (
-                      <span className="text-[10px] px-2 py-0.5 rounded-md font-bold bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-300">
-                        Kunci Lokal Aktif
-                      </span>
-                    ) : (
-                      <span className="text-[10px] px-2 py-0.5 rounded-md font-bold bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-300">
-                        Penalaran R1/V3
-                      </span>
-                    )}
+                    {renderEngineStatusBadge(getEngineHealthDetail('deepseek', supabaseAi))}
                   </div>
                   <span className="font-black text-sm sm:text-base block">DeepSeek AI</span>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-snug">
@@ -2550,19 +2751,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                     <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/60 text-amber-600 flex items-center justify-center text-xl font-bold">
                       ⚡
                     </div>
-                    {supabaseAi.hasGroq ? (
-                      <span className="text-[10px] px-2 py-0.5 rounded-md font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 flex items-center gap-1">
-                        <Cloud className="w-3 h-3" /> Cloud Aktif
-                      </span>
-                    ) : hasGroqApiKey() ? (
-                      <span className="text-[10px] px-2 py-0.5 rounded-md font-bold bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300">
-                        Kunci Lokal Aktif
-                      </span>
-                    ) : (
-                      <span className="text-[10px] px-2 py-0.5 rounded-md font-bold bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300">
-                        Super Kilat
-                      </span>
-                    )}
+                    {renderEngineStatusBadge(getEngineHealthDetail('groq', supabaseAi))}
                   </div>
                   <span className="font-black text-sm sm:text-base block">Groq Cloud LPU</span>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-snug">
@@ -2592,19 +2781,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                     <div className="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-900/60 text-purple-600 flex items-center justify-center text-xl font-bold">
                       ✨
                     </div>
-                    {supabaseAi.hasGemini ? (
-                      <span className="text-[10px] px-2 py-0.5 rounded-md font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 flex items-center gap-1">
-                        <Cloud className="w-3 h-3" /> Cloud Aktif
-                      </span>
-                    ) : hasGeminiApiKey() ? (
-                      <span className="text-[10px] px-2 py-0.5 rounded-md font-bold bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300">
-                        Kunci Lokal Aktif
-                      </span>
-                    ) : (
-                      <span className="text-[10px] px-2 py-0.5 rounded-md font-bold bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300">
-                        Cerdas & Kontekstual
-                      </span>
-                    )}
+                    {renderEngineStatusBadge(getEngineHealthDetail('gemini', supabaseAi))}
                   </div>
                   <span className="font-black text-sm sm:text-base block">Google Gemini AI</span>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-snug">
@@ -2649,6 +2826,57 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
               </button>
 
             </div>
+
+            {/* Indikator Status & Rekomendasi Mesin Terpilih (Informatif Sederhana) */}
+            {selectedEngine !== 'local' && selectedEngine !== 'prompt' && (() => {
+              const health = getEngineHealthDetail(selectedEngine, supabaseAi);
+              if (health.status === 'quota_exhausted') {
+                return (
+                  <div className="p-3.5 sm:p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-xs text-rose-900 dark:text-rose-200 flex items-start gap-3 animate-fade-in">
+                    <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                    <div className="space-y-1">
+                      <span className="font-extrabold block">
+                        Pemberitahuan Kuota {selectedEngine === 'deepseek' ? 'DeepSeek' : selectedEngine === 'groq' ? 'Groq' : 'Gemini'}:
+                      </span>
+                      <p className="leading-relaxed">
+                        {health.description} Sistem akan otomatis mengalihkan ke mesin cadangan saat peracikan kuis, atau Anda dapat beralih ke mesin <strong>Lokal</strong>.
+                      </p>
+                    </div>
+                  </div>
+                );
+              }
+              if (health.status === 'busy') {
+                return (
+                  <div className="p-3.5 sm:p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-3 animate-fade-in">
+                    <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                    <div className="space-y-1">
+                      <span className="font-extrabold block">
+                        Layanan Sedang Sibuk ({selectedEngine.toUpperCase()}):
+                      </span>
+                      <p className="leading-relaxed">
+                        {health.description} Server sedang memproses antrean tinggi. Anda dapat tetap melanjutkan, atau memilih opsi <strong>Lokal</strong> untuk pembuatan instan tanpa jeda.
+                      </p>
+                    </div>
+                  </div>
+                );
+              }
+              if (health.status === 'error') {
+                return (
+                  <div className="p-3.5 sm:p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-xs text-rose-900 dark:text-rose-200 flex items-start gap-3 animate-fade-in">
+                    <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                    <div className="space-y-1">
+                      <span className="font-extrabold block">
+                        Gangguan Sambungan AI ({selectedEngine.toUpperCase()}):
+                      </span>
+                      <p className="leading-relaxed">
+                        {health.description} Silakan beralih ke mesin <strong>Lokal</strong> untuk meracik kuis tanpa kendala koneksi API.
+                      </p>
+                    </div>
+                  </div>
+                );
+              }
+              return null;
+            })()}
 
             {/* Banner info bantuan jika DeepSeek dipilih dan belum ada kunci */}
             {selectedEngine === 'deepseek' && !hasDeepSeekApiKey() && !supabaseAi.hasDeepSeek && (

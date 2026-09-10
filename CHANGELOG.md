@@ -1,6 +1,36 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.59] - 2026-09-10
+### Standarisasi Mata Pelajaran IPS SD, Kartu Pemilihan Format Tipe Soal Cerdas Dinamis, Deteksi Status Kesehatan Mesin AI & Penyeragaman Nama Mesin Lokal
+
+#### 1. Standarisasi Mata Pelajaran SD: Pengetahuan Umum Diubah Menjadi IPS
+- Mengubah nama mata pelajaran **Pengetahuan Umum** menjadi **IPS** (Ilmu Pengetahuan Sosial) pada jenjang SD di seluruh katalog kurikulum, topik tematik, kamus emoji, dan pemetaan Capaian Pembelajaran (CP).
+- Menghadirkan silabus topik tematik dan materi esensial IPS lengkap untuk Kelas 1 sampai Kelas 6 SD (Lingkungan Rumah, Denah & Peta, Sejarah Daerah, Keragaman Budaya, Aktivitas Ekonomi, dan Pelestarian Alam).
+- Menyediakan mekanisme alias cerdas dari istilah lama ke IPS untuk menjaga kompatibilitas data kuis terdahulu.
+
+#### 2. Kartu Pemilihan Format Tipe Soal & Alokasi Proporsi Cerdas Dinamis
+- **Tahap Pemilihan Kartu Format (Pre-Selection)**:
+  - Menyediakan 4 kartu format tipe soal interaktif: **Pilihan Ganda**, **Benar / Salah**, **Isian Singkat**, dan **Menjodohkan**.
+  - Pendidik dapat memilih 1 format tunggal maupun mengombinasikan beberapa format secara fleksibel dengan target sentuh ramah sentuhan (≥ 44×44 px).
+- **Alokasi Proporsi Cerdas Dinamis**:
+  - **Format Tunggal**: Jika hanya 1 format yang dipilih, sistem mengunci alokasi 100% secara otomatis tanpa memerlukan penyetelan slider/stepper manual.
+  - **Multi-Format Terpilih**:
+    - **Mode Otomatis Berimbang**: Menghitung dan membagikan butir soal secara seimbang ke format-format yang aktif dengan rincian butir transparan.
+    - **Mode Kustom Mandiri**: Hanya menampilkan kartu pengatur butir untuk format yang telah dipilih sebelumnya, lengkap dengan verifikasi kecocokan total butir kuis.
+
+#### 3. Deteksi Status Kesehatan Mesin AI (Informatif & Sederhana)
+- Menghadirkan indikator status kesehatan (*health status*) pada setiap mesin pembuat soal (DeepSeek AI, Groq Cloud LPU, Google Gemini AI):
+  - 🟢 **Siap Digunakan**: Layanan aktif dan siap memproses prompt kuis.
+  - 🟡 **Sedang Sibuk**: Server eksternal mendeteksi lonjakan antrean/beban trafik tinggi.
+  - 🔴 **Limit Kuota Habis**: Limit laju permintaan harian (HTTP 429) tercapai.
+  - 🔴 **Gangguan Mesin**: Kendala koneksi jaringan atau respon timeout.
+  - 🔑 **Kunci Belum Disetel**: Belum terhubung ke kredensial pengguna.
+- Kotak notifikasi rekomendasi ramah pengguna yang menginformasikan status mesin terpilih dan menawarkan failover instan atau pengalihan ke mesin lokal.
+
+#### 4. Penyeragaman Nama Mesin Pembuat Soal "Lokal"
+- Memperbarui label kartu mesin mandiri menjadi **"Lokal"** dengan lencana "Selalu Siap", menegaskan pemrosesan cepat instan langsung di peramban tanpa ketergantungan kuota API maupun jaringan internet.
+
 ## [2.2.58] - 2026-09-10
 ### Dukungan Penuh Multi-Jenjang Pendidikan Kurikulum Merdeka (SD / MI, SMP / MTs, dan SMA / SMK)
 
