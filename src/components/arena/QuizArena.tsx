@@ -27,7 +27,8 @@ import {
   RotateCcw,
   Send,
   Lightbulb,
-  Puzzle
+  Puzzle,
+  Star
 } from 'lucide-react';
 
 interface QuizArenaProps {
@@ -115,7 +116,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
         if (typeof parsed.timeLeft === 'number' && parsed.timeLeft > 0) return parsed.timeLeft;
       }
     } catch {}
-    return quiz.durationPerQuestionSec;
+    return activeQuestions[0]?.customDurationSec || quiz.durationPerQuestionSec;
   });
   const [totalTimeSpent, setTotalTimeSpent] = useState<number>(() => {
     try {
@@ -382,7 +383,8 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
       }
     }
 
-    const timeSpent = gameMode === 'untimed' ? 5 : (quiz.durationPerQuestionSec - timeLeft);
+    const currentDuration = question.customDurationSec || quiz.durationPerQuestionSec;
+    const timeSpent = gameMode === 'untimed' ? 5 : (currentDuration - timeLeft);
     const recordedAnswer: QuizAttemptAnswer = {
       questionId: question.id,
       selectedIndex: optionIndex,
@@ -417,7 +419,8 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     setHearts(3);
     setCurrentIndex(0);
     setAnswersList([]);
-    setTimeLeft(quiz.durationPerQuestionSec);
+    const firstDuration = activeQuestions[0]?.customDurationSec || quiz.durationPerQuestionSec;
+    setTimeLeft(firstDuration);
     setTotalTimeSpent(0);
     setStreak(0);
     setSelectedOption(null);
@@ -443,10 +446,13 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
       onFinishQuiz(answersList, totalTimeSpent);
     } else {
       setDucked(false);
-      setCurrentIndex((prev) => prev + 1);
+      const nextIdx = currentIndex + 1;
+      const nextQuestion = activeQuestions[nextIdx];
+      const nextDuration = nextQuestion?.customDurationSec || quiz.durationPerQuestionSec;
+      setCurrentIndex(nextIdx);
       setSelectedOption(null);
       setIsAnswerConfirmed(false);
-      setTimeLeft(quiz.durationPerQuestionSec);
+      setTimeLeft(nextDuration);
       setIsPaused(false);
       setPollVotes({ 0: 0, 1: 0, 2: 0, 3: 0 });
       setShortAnswerInput('');
@@ -545,9 +551,14 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
             </button>
 
             <div className="min-w-0 flex flex-col justify-center">
-              <span className="text-[11px] sm:text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/50 px-2 py-0.5 rounded-md inline-block whitespace-nowrap self-start">
-                Soal {currentIndex + 1}/{quiz.questions.length}
-              </span>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-[11px] sm:text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/50 px-2 py-0.5 rounded-md inline-block whitespace-nowrap self-start">
+                  Soal {currentIndex + 1}/{activeQuestions.length}
+                </span>
+                <span className="text-[10px] sm:text-[11px] font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/50 border border-amber-200/60 dark:border-amber-800/60 px-1.5 py-0.5 rounded-md inline-flex items-center gap-0.5">
+                  <Star className="w-3 h-3 text-amber-500 fill-amber-500" /> {question.points || 10} Poin
+                </span>
+              </div>
               <h2 className="text-[11px] sm:text-xs font-semibold text-slate-600 dark:text-slate-400 truncate max-w-[85px] xs:max-w-[130px] sm:max-w-[200px] md:max-w-[280px] hidden xs:block">
                 {quiz.title}
               </h2>

@@ -1,6 +1,38 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.40] - 2026-09-10
+### Generator Soal Instan Kurikulum SD, Asisten Multi-Format 5 Tipe Soal, Bobot Poin & Durasi Khusus Per Butir Soal
+
+#### 1. Generator Cepat Soal Kurikulum SD Langsung (Instant In-App Generator)
+- **Pembuatan Soal 1-Klik Tanpa Keluar Aplikasi:**
+  - Menghadirkan fitur *Buat Langsung Sekarang* di dalam Asisten Pembuat Soal yang langsung memproduksi paket soal tematik Kurikulum Merdeka SD siap pakai secara instan.
+  - Mendukung paket materi tematik sains, matematika, organ pernapasan & pencernaan, hingga pendidikan Pancasila.
+  - Menyediakan opsi pemilihan tipe format spesifik maupun variasi kombinasi (*Campuran*) yang secara otomatis memadukan berbagai tipe soal dalam satu paket kuis.
+
+#### 2. Generator Prompt AI & Parser Cerdas Multi-Format (5 Jenis Soal)
+- **Generator Prompt AI Berstandar Desain:**
+  - Menghasilkan instruksi terstruktur untuk AI eksternal (seperti ChatGPT, Gemini, atau Claude) dengan skema format yang presisi untuk 5 tipe soal: Pilihan Ganda, Benar/Salah, Isian Singkat, Tebak Gambar, dan Menjodohkan Kartu.
+  - Menyertakan instruksi otomatis untuk menghasilkan variasi kunci jawaban isian (*acceptableAnswers*), pasangan konsep kartu (*matchingPairs*), petunjuk visual gambar (*imageCaption*), serta estimasi bobot nilai poin.
+- **Parser Deteksi Otomatis Format JSON & Teks Alami:**
+  - Menganalisis masukan teks guru baik dalam format terstruktur maupun format ketikan bebas/catatan guru.
+  - Mendeteksi simbol penanda pasangan kartu (seperti tanda `↔` atau `->`), baris kunci isian, dan penanda poin secara otomatis tanpa menuntut guru menghafal sintaks teknis.
+  - Pratinjau interaktif kartu soal sebelum diimpor ke bank soal dengan lencana tipe, bobot poin, durasi waktu khusus, dan status validasi isi.
+
+#### 3. Kustomisasi Bobot Nilai Poin & Durasi Waktu Khusus Per Butir Soal
+- **Pengaturan Bobot Poin Fleksibel (QuizCreator):**
+  - Guru dapat menentukan bobot nilai untuk masing-masing butir soal (preset cepat: 5, 10, 15, 20 poin, atau input angka kustom).
+  - Soal dengan tingkat kesulitan lebih tinggi (seperti menjodohkan atau tebak gambar bertingkat) dapat diberikan bobot poin yang lebih besar secara proporsional.
+- **Pengaturan Durasi Waktu Khusus (Custom Duration Override):**
+  - Guru dapat memberikan waktu tambahan (misalnya 45 atau 60 detik) khusus untuk butir soal yang membutuhkan penalaran lebih panjang, tanpa mengubah durasi standar soal lainnya.
+- **Integrasi Arena Gameplay & Layar Hasil (Scoring Engine):**
+  - Arena kuis secara otomatis mengadaptasi penghitung waktu mundur sesuai durasi khusus masing-masing soal yang sedang aktif.
+  - Layar hasil akhir menghitung skor akhir secara proporsional berdasarkan akumulasi total poin perolehan terhadap total poin maksimal kuis, dilengkapi lencana bintang perolehan poin di setiap nomor soal.
+
+#### 4. Sinkronisasi Data Database Cloud Supabase Menyeluruh
+- Skema tabel database `quizzes` dan `quiz_questions` telah disinkronkan secara menyeluruh untuk mendukung penyimpanan mode permainan bawaan, opsi pengacakan, variasi kunci isian, pasangan kartu menjodohkan, bobot poin, dan durasi waktu khusus per butir soal.
+- Deployment skema database telah diverifikasi aktif dengan integritas data dan keamanan akses RLS yang terjamin.
+
 ## [2.2.39] - 2026-09-10
 ### Arena Gameplay Multi-Format (5 Jenis Soal), 3 Mode Permainan Edukatif & Asisten AI Studio Kuis
 

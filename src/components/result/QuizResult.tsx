@@ -44,7 +44,13 @@ export const QuizResult: React.FC<QuizResultProps> = ({
 
   const correctCount = answers.filter((a) => a.isCorrect).length;
   const totalCount = quiz.questions.length;
-  const score = Math.round((correctCount / totalCount) * 100);
+  const maxPoints = quiz.questions.reduce((sum, q) => sum + (q.points || 10), 0);
+  const earnedPoints = answers.reduce((sum, a) => {
+    if (!a.isCorrect) return sum;
+    const q = quiz.questions.find((item) => item.id === a.questionId);
+    return sum + (q?.points || 10);
+  }, 0);
+  const score = maxPoints > 0 ? Math.round((earnedPoints / maxPoints) * 100) : 0;
 
   let stars = 1;
   let praise = 'Bagus Sekali! Ayo Terus Berlatih!';
@@ -90,7 +96,7 @@ export const QuizResult: React.FC<QuizResultProps> = ({
 
   const handleShare = () => {
     playClick();
-    const shareText = `Aku baru saja meraih nilai ${score} (${stars} Bintang ⭐) di Kuis Interaktif: "${quiz.title}"!`;
+    const shareText = `Aku baru saja meraih nilai ${score} (${earnedPoints}/${maxPoints} Poin, ${stars} Bintang ⭐) di Kuis Interaktif: "${quiz.title}"!`;
     if (navigator.clipboard) {
       navigator.clipboard.writeText(shareText);
       setCopiedShare(true);
@@ -126,19 +132,25 @@ export const QuizResult: React.FC<QuizResultProps> = ({
             Kuis: {quiz.title} (Kelas {quiz.grade})
           </p>
 
-          {/* 3 Stats Grid */}
-          <div className="grid grid-cols-3 gap-2 bg-slate-50 dark:bg-slate-850 p-4 rounded-xl border border-slate-200/80 dark:border-slate-700">
+          {/* 4 Stats Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-slate-50 dark:bg-slate-850 p-4 rounded-xl border border-slate-200/80 dark:border-slate-700">
             <div className="text-center">
               <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block">Nilai Akhir</span>
               <p className="text-2xl sm:text-3xl font-extrabold text-blue-600 dark:text-blue-400 mt-0.5">{score}</p>
             </div>
-            <div className="text-center border-x border-slate-200 dark:border-slate-700">
+            <div className="text-center sm:border-l border-slate-200 dark:border-slate-700">
+              <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block">Total Poin</span>
+              <p className="text-2xl sm:text-3xl font-extrabold text-amber-600 dark:text-amber-400 mt-0.5">
+                {earnedPoints} <span className="text-xs font-bold text-slate-400">/ {maxPoints}</span>
+              </p>
+            </div>
+            <div className="text-center border-t sm:border-t-0 sm:border-l border-slate-200 dark:border-slate-700 pt-2 sm:pt-0">
               <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block">Jawaban Benar</span>
               <p className="text-2xl sm:text-3xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-0.5">
                 {correctCount} / {totalCount}
               </p>
             </div>
-            <div className="text-center">
+            <div className="text-center border-t sm:border-t-0 sm:border-l border-slate-200 dark:border-slate-700 pt-2 sm:pt-0">
               <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block">Durasi Waktu</span>
               <p className="text-2xl sm:text-3xl font-extrabold text-slate-800 dark:text-slate-200 mt-0.5">{totalTimeSpent}s</p>
             </div>
@@ -198,7 +210,12 @@ export const QuizResult: React.FC<QuizResultProps> = ({
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <span className="text-xs text-slate-400 dark:text-slate-500 font-semibold">Soal {idx + 1}</span>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-xs text-slate-400 dark:text-slate-500 font-semibold">Soal {idx + 1}</span>
+                      <span className="text-[10px] font-bold bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/60 px-1.5 py-0.5 rounded inline-flex items-center gap-0.5">
+                        <Star className="w-2.5 h-2.5 text-amber-500 fill-amber-500" /> {q.points || 10} Poin
+                      </span>
+                    </div>
                     <span
                       className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold ${
                         isCorrect

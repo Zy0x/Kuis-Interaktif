@@ -1,6 +1,6 @@
 -- ==========================================================
 -- SKRIP DATABASE SUPABASE RESMI: KUIS SD SERU
--- Versi Skema: 2.2.33
+-- Versi Skema: 2.2.40
 -- Tanggal: 2026-09-10
 -- ==========================================================
 -- Jalankan skrip ini langsung di Supabase SQL Editor milik Anda:
@@ -67,6 +67,9 @@ CREATE TABLE IF NOT EXISTS public.quizzes (
     theme_color VARCHAR(64) DEFAULT 'from-blue-500 to-indigo-600',
     badge_title VARCHAR(64) DEFAULT 'Bintang Juara',
     visibility VARCHAR(16) NOT NULL DEFAULT 'public' CHECK (visibility IN ('public', 'private')),
+    default_game_mode VARCHAR(32) DEFAULT 'standard',
+    shuffle_questions BOOLEAN DEFAULT FALSE,
+    shuffle_options BOOLEAN DEFAULT FALSE,
     is_published BOOLEAN NOT NULL DEFAULT TRUE,
     is_archived BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -93,10 +96,24 @@ CREATE TABLE IF NOT EXISTS public.quiz_questions (
     correct_index SMALLINT NOT NULL CHECK (correct_index >= 0),
     explanation TEXT NOT NULL,
     order_number SMALLINT NOT NULL DEFAULT 1,
+    acceptable_answers JSONB,
+    matching_pairs JSONB,
+    custom_duration_sec SMALLINT,
+    points SMALLINT DEFAULT 10,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_quiz_questions_quiz_id ON public.quiz_questions(quiz_id);
+
+-- Migrasi Kolom Baru (v2.2.40) untuk Database Eksisting:
+ALTER TABLE public.quizzes ADD COLUMN IF NOT EXISTS default_game_mode VARCHAR(32) DEFAULT 'standard';
+ALTER TABLE public.quizzes ADD COLUMN IF NOT EXISTS shuffle_questions BOOLEAN DEFAULT FALSE;
+ALTER TABLE public.quizzes ADD COLUMN IF NOT EXISTS shuffle_options BOOLEAN DEFAULT FALSE;
+
+ALTER TABLE public.quiz_questions ADD COLUMN IF NOT EXISTS acceptable_answers JSONB;
+ALTER TABLE public.quiz_questions ADD COLUMN IF NOT EXISTS matching_pairs JSONB;
+ALTER TABLE public.quiz_questions ADD COLUMN IF NOT EXISTS custom_duration_sec SMALLINT;
+ALTER TABLE public.quiz_questions ADD COLUMN IF NOT EXISTS points SMALLINT DEFAULT 10;
 
 -- ==========================================================
 -- 6. TABEL PERCOBAAN KUIS & SKOR (QUIZ_ATTEMPTS)

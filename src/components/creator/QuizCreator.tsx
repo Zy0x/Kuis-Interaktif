@@ -24,7 +24,9 @@ import {
   Check,
   X,
   Sparkles,
-  Shuffle
+  Shuffle,
+  Star,
+  Clock
 } from 'lucide-react';
 import { AiQuestionModal } from './AiQuestionModal';
 
@@ -201,6 +203,8 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     { left: '', right: '' },
     { left: '', right: '' },
   ]);
+  const [qPoints, setQPoints] = useState<number>(10);
+  const [qCustomDurationSec, setQCustomDurationSec] = useState<number | ''>('');
 
   // 1. Level 2 (Prioritas 50): Mundur dari Langkah 3 (Pratinjau) ke Langkah 2 (Soal)
   useBackHandler('creator-step-3', 50, () => {
@@ -239,6 +243,8 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
       { left: '', right: '' },
       { left: '', right: '' },
     ]);
+    setQPoints(10);
+    setQCustomDurationSec('');
     if (targetType === 'true_false') {
       setQOptions(['Benar', 'Salah']);
     } else if (targetType === 'short_answer') {
@@ -320,6 +326,8 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     setQCorrectIndex(q.correctIndex || 0);
     setQExplanation(q.explanation || '');
     setQAcceptableAnswers((q.acceptableAnswers || []).join(', '));
+    setQPoints(q.points ?? 10);
+    setQCustomDurationSec(q.customDurationSec ?? '');
     if (q.matchingPairs && q.matchingPairs.length > 0) {
       setQMatchingPairs([...q.matchingPairs]);
     } else {
@@ -361,6 +369,8 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
       options: source.options ? [...source.options] : [],
       matchingPairs: source.matchingPairs ? [...source.matchingPairs] : undefined,
       acceptableAnswers: source.acceptableAnswers ? [...source.acceptableAnswers] : undefined,
+      points: source.points ?? 10,
+      customDurationSec: source.customDurationSec,
     };
 
     const next = [...questions];
@@ -424,6 +434,9 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
       }
     }
 
+    const calculatedPoints = Number(qPoints) > 0 ? Number(qPoints) : 10;
+    const customDuration = typeof qCustomDurationSec === 'number' && qCustomDurationSec > 0 ? qCustomDurationSec : undefined;
+
     if (editingQuestionId) {
       const updatedQuestions = questions.map((q) => {
         if (q.id === editingQuestionId) {
@@ -438,6 +451,8 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
             explanation: qExplanation.trim() || 'Jawaban ini benar sesuai dengan konsep materi terkait.',
             acceptableAnswers,
             matchingPairs,
+            points: calculatedPoints,
+            customDurationSec: customDuration,
           };
         }
         return q;
@@ -464,6 +479,8 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
       explanation: qExplanation.trim() || 'Jawaban ini benar sesuai dengan konsep materi terkait.',
       acceptableAnswers,
       matchingPairs,
+      points: calculatedPoints,
+      customDurationSec: customDuration,
     };
 
     setQuestions([...questions, newQuestion]);
@@ -1063,6 +1080,14 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                                   ? 'Benar/Salah'
                                   : 'Pilgan'}
                               </span>
+                              <span className="text-[10px] font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 px-1.5 py-0.5 rounded flex items-center gap-0.5 flex-shrink-0">
+                                <Star className="w-2.5 h-2.5 text-amber-500" /> {q.points || 10}p
+                              </span>
+                              {q.customDurationSec && (
+                                <span className="text-[10px] font-semibold bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded flex items-center gap-0.5 flex-shrink-0">
+                                  <Clock className="w-2.5 h-2.5 text-blue-500" /> {q.customDurationSec}s
+                                </span>
+                              )}
                               {isBeingEdited && (
                                 <span className="text-[10px] font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 px-1.5 py-0.5 rounded">
                                   Diedit
@@ -1470,6 +1495,72 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                       </div>
                     )}
 
+                    {/* Pengaturan Bobot Poin & Waktu Khusus Soal */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50 dark:bg-slate-850/60 p-3.5 rounded-xl border border-slate-200/80 dark:border-slate-700">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
+                          <Star className="w-3.5 h-3.5 text-amber-500" /> Bobot Nilai Poin
+                        </label>
+                        <div className="flex items-center gap-1.5">
+                          {[5, 10, 15, 20].map((pts) => (
+                            <button
+                              key={pts}
+                              type="button"
+                              onClick={() => {
+                                playClick();
+                                setQPoints(pts);
+                              }}
+                              className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all min-h-[38px] ${
+                                qPoints === pts
+                                  ? 'bg-amber-500 text-white shadow-xs'
+                                  : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-amber-50 dark:hover:bg-slate-700'
+                              }`}
+                            >
+                              {pts}
+                            </button>
+                          ))}
+                          <input
+                            type="number"
+                            min={1}
+                            max={100}
+                            value={qPoints}
+                            onChange={(e) => setQPoints(Math.max(1, Number(e.target.value) || 1))}
+                            className="w-14 px-1.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-bold text-xs text-center min-h-[38px]"
+                            title="Kustom bobot poin"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5 text-blue-500" /> Waktu Khusus Soal Ini (Detik)
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="number"
+                            min={5}
+                            max={300}
+                            placeholder={`Standar Kuis (${durationPerQuestionSec} dtk)`}
+                            value={qCustomDurationSec}
+                            onChange={(e) => setQCustomDurationSec(e.target.value ? Math.max(5, Number(e.target.value)) : '')}
+                            className="flex-1 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium text-xs min-h-[38px]"
+                          />
+                          {qCustomDurationSec !== '' && (
+                            <button
+                              type="button"
+                              onClick={() => setQCustomDurationSec('')}
+                              className="text-xs text-slate-500 hover:text-rose-500 font-bold px-2 py-1 min-h-[38px]"
+                            >
+                              Reset
+                            </button>
+                          )}
+                        </div>
+                        <span className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 block">
+                          Kosongkan bila ingin mengikuti durasi kuis umum ({durationPerQuestionSec} detik).
+                        </span>
+                      </div>
+                    </div>
+
                     {/* Catatan Penjelasan */}
                     <div>
                       <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
@@ -1658,6 +1749,14 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                       </span>
                     </div>
                     <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <span className="text-[10px] font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                        <Star className="w-2.5 h-2.5 text-amber-500" /> {q.points || 10}p
+                      </span>
+                      {q.customDurationSec && (
+                        <span className="text-[10px] font-semibold bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                          <Clock className="w-2.5 h-2.5 text-blue-500" /> {q.customDurationSec}s
+                        </span>
+                      )}
                       <span className="font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded text-[11px]">
                         {q.type === 'short_answer'
                           ? (q.acceptableAnswers?.[0] || q.options[0] || '-')

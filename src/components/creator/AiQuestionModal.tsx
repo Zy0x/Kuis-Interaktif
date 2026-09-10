@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import type { QuizQuestion, Subject } from '../../types/quiz';
+import type { QuizQuestion, QuestionType, Subject } from '../../types/quiz';
 import { 
   generateAiPrompt, 
   parseRawQuestionsText, 
@@ -16,7 +16,9 @@ import {
   CheckCircle2, 
   HelpCircle,
   BookOpen,
-  ArrowRight
+  ArrowRight,
+  Star,
+  Clock
 } from 'lucide-react';
 
 interface AiQuestionModalProps {
@@ -52,7 +54,7 @@ export const AiQuestionModal: React.FC<AiQuestionModalProps> = ({
   const [subject, setSubject] = useState<Subject>(currentSubject);
   const [grade, setGrade] = useState<number>(currentGrade);
   const [count, setCount] = useState<number>(5);
-  const [questionType, setQuestionType] = useState<'multiple_choice' | 'true_false' | 'campuran'>('multiple_choice');
+  const [questionType, setQuestionType] = useState<QuestionType | 'campuran'>('campuran');
   const [copiedPrompt, setCopiedPrompt] = useState(false);
 
   // Import State
@@ -110,7 +112,8 @@ export const AiQuestionModal: React.FC<AiQuestionModalProps> = ({
       topic.trim() || 'Pernapasan dan Tubuh Manusia',
       subject,
       grade,
-      count
+      count,
+      questionType
     );
 
     setParsedResults(
@@ -347,11 +350,14 @@ Pembahasan: Insang menyaring oksigen yang terlarut di dalam air.`;
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                   Format Jenis Soal:
                 </label>
-                <div className="grid grid-cols-3 gap-1.5 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-xl">
                   {[
+                    { id: 'campuran', label: 'Campuran' },
                     { id: 'multiple_choice', label: 'Pilihan Ganda' },
                     { id: 'true_false', label: 'Benar / Salah' },
-                    { id: 'campuran', label: 'Campuran' }
+                    { id: 'short_answer', label: 'Isian Singkat' },
+                    { id: 'matching_pairs', label: 'Menjodohkan' },
+                    { id: 'image_guess', label: 'Tebak Gambar' },
                   ].map((t) => (
                     <button
                       key={t.id}
@@ -360,7 +366,7 @@ Pembahasan: Insang menyaring oksigen yang terlarut di dalam air.`;
                         playClick();
                         setQuestionType(t.id as any);
                       }}
-                      className={`py-2 px-2 rounded-lg text-xs font-bold transition-all min-h-[36px] flex items-center justify-center ${
+                      className={`py-2 px-2.5 rounded-lg text-xs font-bold transition-all min-h-[38px] flex items-center justify-center text-center ${
                         questionType === t.id
                           ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm'
                           : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -453,6 +459,17 @@ Pembahasan: Insang menyaring oksigen yang terlarut di dalam air.`;
               <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
                 {parsedResults.map((item, idx) => {
                   const { question, valid, errorReason } = item;
+                  const typeLabel = 
+                    question.type === 'short_answer'
+                      ? 'Isian Singkat'
+                      : question.type === 'matching_pairs'
+                      ? 'Menjodohkan'
+                      : question.type === 'image_guess'
+                      ? 'Tebak Gambar'
+                      : question.type === 'true_false'
+                      ? 'Benar / Salah'
+                      : 'Pilihan Ganda';
+
                   return (
                     <div
                       key={item.id}
@@ -463,21 +480,34 @@ Pembahasan: Insang menyaring oksigen yang terlarut di dalam air.`;
                       }`}
                     >
                       <div className="flex items-center justify-between gap-2 pb-2 mb-2 border-b border-slate-200/50 dark:border-slate-750">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <span className="w-5 h-5 rounded-md bg-slate-900 dark:bg-slate-700 text-white text-[11px] font-bold flex items-center justify-center flex-shrink-0">
                             {idx + 1}
                           </span>
-                          <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">
-                            {question.type === 'multiple_choice' ? 'Pilihan Ganda' : 'Benar / Salah'}
+                          <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase bg-slate-200/70 dark:bg-slate-700 px-2 py-0.5 rounded-md">
+                            {typeLabel}
                           </span>
+                          <span className="text-[10px] font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-md flex items-center gap-1">
+                            <Star className="w-3 h-3 text-amber-500" /> {question.points || 10} Poin
+                          </span>
+                          {question.customDurationSec && (
+                            <span className="text-[10px] font-bold bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-md flex items-center gap-1">
+                              <Clock className="w-3 h-3 text-blue-500" /> {question.customDurationSec}d
+                            </span>
+                          )}
+                          {question.imageCaption && (
+                            <span className="text-[10px] font-semibold text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-950/60 px-2 py-0.5 rounded-md">
+                              {question.imageCaption}
+                            </span>
+                          )}
                         </div>
 
                         {valid ? (
-                          <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-1">
+                          <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-1 flex-shrink-0">
                             <Check className="w-3.5 h-3.5" /> Valid
                           </span>
                         ) : (
-                          <span className="text-[10px] font-bold text-rose-700 dark:text-rose-300 flex items-center gap-1">
+                          <span className="text-[10px] font-bold text-rose-700 dark:text-rose-300 flex items-center gap-1 flex-shrink-0">
                             <AlertCircle className="w-3.5 h-3.5" /> {errorReason || 'Format belum lengkap'}
                           </span>
                         )}
@@ -487,26 +517,62 @@ Pembahasan: Insang menyaring oksigen yang terlarut di dalam air.`;
                         {question.text}
                       </p>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-2">
-                        {question.options.map((opt, optIdx) => {
-                          const isKey = question.correctIndex === optIdx;
-                          return (
-                            <div
-                              key={optIdx}
-                              className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 ${
-                                isKey
-                                  ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-900 dark:text-emerald-100 border border-emerald-300 dark:border-emerald-700'
-                                  : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
-                              }`}
-                            >
-                              <span className="w-4 h-4 rounded text-[10px] font-bold flex items-center justify-center bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 flex-shrink-0">
-                                {question.type === 'true_false' ? (optIdx === 0 ? '✓' : '✗') : String.fromCharCode(65 + optIdx)}
-                              </span>
-                              <span className="truncate">{opt}</span>
+                      {/* Tampilan Isian Singkat */}
+                      {question.type === 'short_answer' && (
+                        <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 mt-2">
+                          <div className="text-xs font-bold text-emerald-800 dark:text-emerald-200 flex items-center gap-1.5 flex-wrap">
+                            <span>Kunci Jawaban:</span>
+                            <span className="bg-white dark:bg-slate-800 px-2 py-0.5 rounded border border-emerald-300 dark:border-emerald-700 font-mono text-xs">
+                              {question.acceptableAnswers?.[0] || question.options[0]}
+                            </span>
+                          </div>
+                          {question.acceptableAnswers && question.acceptableAnswers.length > 1 && (
+                            <div className="text-[11px] text-emerald-700 dark:text-emerald-300 mt-1">
+                              Variasi diterima: {question.acceptableAnswers.slice(1).join(', ')}
                             </div>
-                          );
-                        })}
-                      </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Tampilan Menjodohkan */}
+                      {question.type === 'matching_pairs' && (
+                        <div className="space-y-1.5 mt-2">
+                          <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400">Pasangan Kartu:</span>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                            {(question.matchingPairs || []).map((pair, pIdx) => (
+                              <div key={pIdx} className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                                <span className="font-bold text-blue-600 dark:text-blue-400">{pair.left}</span>
+                                <span className="text-slate-400 font-bold">↔</span>
+                                <span className="text-slate-700 dark:text-slate-300">{pair.right}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Tampilan Opsi Pilihan Ganda, Benar/Salah, atau Tebak Gambar */}
+                      {(question.type === 'multiple_choice' || question.type === 'true_false' || question.type === 'image_guess') && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-2">
+                          {question.options.map((opt, optIdx) => {
+                            const isKey = question.correctIndex === optIdx;
+                            return (
+                              <div
+                                key={optIdx}
+                                className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-2 ${
+                                  isKey
+                                    ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-900 dark:text-emerald-100 border border-emerald-300 dark:border-emerald-700'
+                                    : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
+                                }`}
+                              >
+                                <span className="w-4 h-4 rounded text-[10px] font-bold flex items-center justify-center bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 flex-shrink-0">
+                                  {question.type === 'true_false' ? (optIdx === 0 ? '✓' : '✗') : String.fromCharCode(65 + optIdx)}
+                                </span>
+                                <span className="truncate">{opt}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
 
                       {question.explanation && (
                         <p className="text-[11px] text-slate-500 dark:text-slate-400 pt-2 flex items-start gap-1">

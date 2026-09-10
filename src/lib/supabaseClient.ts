@@ -6,7 +6,8 @@ import type {
   QuizQuestion,
   TeacherProfile, 
   StudentSubmission,
-  PlayerProfile 
+  PlayerProfile,
+  GameMode 
 } from '../types/quiz';
 import { MASTER_TEACHER_EMAIL } from '../types/quiz';
 import { INITIAL_QUIZZES } from '../data/seedQuizzes';
@@ -205,6 +206,9 @@ export const DataManager = {
           creator_name,
           visibility,
           is_published,
+          default_game_mode,
+          shuffle_questions,
+          shuffle_options,
           created_at,
           quiz_questions (
             id,
@@ -215,7 +219,11 @@ export const DataManager = {
             options,
             correct_index,
             explanation,
-            order_number
+            order_number,
+            acceptable_answers,
+            matching_pairs,
+            custom_duration_sec,
+            points
           )
         `);
 
@@ -245,6 +253,10 @@ export const DataManager = {
             correct_index: number;
             explanation: string;
             order_number: number;
+            acceptable_answers?: string[];
+            matching_pairs?: { left: string; right: string }[];
+            custom_duration_sec?: number;
+            points?: number;
           }>) || [];
 
           rawQuestions.sort((a, b) => (a.order_number || 0) - (b.order_number || 0));
@@ -263,6 +275,9 @@ export const DataManager = {
             creatorId: row.creator_id || undefined,
             creatorName: row.creator_name || 'Guru SD',
             visibility: (row.visibility as 'public' | 'private') || 'public',
+            defaultGameMode: (row.default_game_mode as GameMode) || 'standard',
+            shuffleQuestions: Boolean(row.shuffle_questions),
+            shuffleOptions: Boolean(row.shuffle_options),
             createdAt: row.created_at,
             questions: rawQuestions.map((q) => ({
               id: q.id,
@@ -273,6 +288,10 @@ export const DataManager = {
               options: Array.isArray(q.options) ? q.options : (typeof q.options === 'string' ? JSON.parse(q.options || '[]') : []),
               correctIndex: q.correct_index,
               explanation: q.explanation || '',
+              acceptableAnswers: q.acceptable_answers || undefined,
+              matchingPairs: q.matching_pairs || undefined,
+              customDurationSec: q.custom_duration_sec || undefined,
+              points: q.points ?? 10,
             })),
           };
         });
@@ -334,6 +353,9 @@ export const DataManager = {
             pin_code,
             creator_name,
             visibility,
+            default_game_mode,
+            shuffle_questions,
+            shuffle_options,
             quiz_questions (
               id,
               question_text,
@@ -343,7 +365,11 @@ export const DataManager = {
               options,
               correct_index,
               explanation,
-              order_number
+              order_number,
+              acceptable_answers,
+              matching_pairs,
+              custom_duration_sec,
+              points
             )
           `)
           .eq('pin_code', cleanPin)
@@ -361,6 +387,10 @@ export const DataManager = {
             correct_index: number;
             explanation: string;
             order_number: number;
+            acceptable_answers?: string[];
+            matching_pairs?: { left: string; right: string }[];
+            custom_duration_sec?: number;
+            points?: number;
           }>) || [];
 
           // Sort questions by order_number
@@ -379,6 +409,9 @@ export const DataManager = {
             pinCode: data.pin_code,
             creatorName: data.creator_name || 'Guru SD',
             visibility: (data.visibility as 'public' | 'private') || 'public',
+            defaultGameMode: (data.default_game_mode as GameMode) || 'standard',
+            shuffleQuestions: Boolean(data.shuffle_questions),
+            shuffleOptions: Boolean(data.shuffle_options),
             questions: rawQuestions.map((q) => ({
               id: q.id,
               text: q.question_text,
@@ -388,6 +421,10 @@ export const DataManager = {
               options: Array.isArray(q.options) ? q.options : JSON.parse(q.options || '[]'),
               correctIndex: q.correct_index,
               explanation: q.explanation || '',
+              acceptableAnswers: q.acceptable_answers || undefined,
+              matchingPairs: q.matching_pairs || undefined,
+              customDurationSec: q.custom_duration_sec || undefined,
+              points: q.points ?? 10,
             })),
           };
 
@@ -429,6 +466,9 @@ export const DataManager = {
             pin_code,
             creator_name,
             visibility,
+            default_game_mode,
+            shuffle_questions,
+            shuffle_options,
             quiz_questions (
               id,
               question_text,
@@ -438,7 +478,11 @@ export const DataManager = {
               options,
               correct_index,
               explanation,
-              order_number
+              order_number,
+              acceptable_answers,
+              matching_pairs,
+              custom_duration_sec,
+              points
             )
           `)
           .eq('id', id)
@@ -456,6 +500,10 @@ export const DataManager = {
             correct_index: number;
             explanation: string;
             order_number: number;
+            acceptable_answers?: string[];
+            matching_pairs?: { left: string; right: string }[];
+            custom_duration_sec?: number;
+            points?: number;
           }>) || [];
 
           rawQuestions.sort((a, b) => a.order_number - b.order_number);
@@ -473,6 +521,9 @@ export const DataManager = {
             pinCode: data.pin_code,
             creatorName: data.creator_name || 'Guru SD',
             visibility: (data.visibility as 'public' | 'private') || 'public',
+            defaultGameMode: (data.default_game_mode as GameMode) || 'standard',
+            shuffleQuestions: Boolean(data.shuffle_questions),
+            shuffleOptions: Boolean(data.shuffle_options),
             questions: rawQuestions.map((q) => ({
               id: q.id,
               text: q.question_text,
@@ -482,6 +533,10 @@ export const DataManager = {
               options: Array.isArray(q.options) ? q.options : JSON.parse(q.options || '[]'),
               correctIndex: q.correct_index,
               explanation: q.explanation || '',
+              acceptableAnswers: q.acceptable_answers || undefined,
+              matchingPairs: q.matching_pairs || undefined,
+              customDurationSec: q.custom_duration_sec || undefined,
+              points: q.points ?? 10,
             })),
           };
         }
@@ -544,6 +599,9 @@ export const DataManager = {
           creator_name: quiz.creatorName || null,
           visibility: quiz.visibility || 'public',
           is_published: true,
+          default_game_mode: quiz.defaultGameMode || 'standard',
+          shuffle_questions: quiz.shuffleQuestions ?? false,
+          shuffle_options: quiz.shuffleOptions ?? false,
         });
 
         // Insert questions
@@ -557,6 +615,10 @@ export const DataManager = {
           correct_index: q.correctIndex,
           explanation: q.explanation,
           order_number: idx + 1,
+          acceptable_answers: q.acceptableAnswers || null,
+          matching_pairs: q.matchingPairs || null,
+          custom_duration_sec: q.customDurationSec || null,
+          points: q.points ?? 10,
         }));
         await supabase.from('quiz_questions').delete().eq('quiz_id', quiz.id);
         await supabase.from('quiz_questions').insert(formattedQuestions);
@@ -665,6 +727,9 @@ export const DataManager = {
         if (updates.pinCode !== undefined) dbUpdates.pin_code = updates.pinCode;
         if (updates.title !== undefined) dbUpdates.title = updates.title;
         if (updates.description !== undefined) dbUpdates.description = updates.description;
+        if (updates.defaultGameMode !== undefined) dbUpdates.default_game_mode = updates.defaultGameMode;
+        if (updates.shuffleQuestions !== undefined) dbUpdates.shuffle_questions = updates.shuffleQuestions;
+        if (updates.shuffleOptions !== undefined) dbUpdates.shuffle_options = updates.shuffleOptions;
 
         if (Object.keys(dbUpdates).length > 0) {
           await supabase
