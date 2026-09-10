@@ -1,6 +1,30 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.75] - 2026-09-10
+### Audit Menyeluruh Tahap Mesin AI: Eliminasi AI Slop, Layout Mobile Ramping & Peningkatan Keterbacaan
+
+#### 1. Eliminasi Total AI Slop & Repetisi Teks Kaku
+- Menghapus teks footer kaku dan repetitif (`"✓ Sedang Dipilih"` dan `"Klik untuk Memilih"`) pada seluruh kartu mesin AI, menggantikannya dengan indikator radio checkmark lingkaran modern yang bersih dan intuitif.
+- Memperbaiki kalimat copywriting kartu dari jargon teknis yang kaku menjadi manfaat nyata yang ramah dan manusiawi (menghapus istilah robotik seperti *"Komputasi LPU Llama 3.3 70B"* dan klaim klise).
+- Memperbaiki inkonsistensi teks hardcoded *"ramah anak SD"* pada Gemini menjadi deskripsi universal dan adaptif terhadap seluruh jenjang pendidikan (SD, SMP, dan SMA/SMK).
+- Memperbaiki teks status peracikan tombol eksekusi (`"Sedang Meracik Butir Soal SD..."` menjadi `"Sedang Meracik Butir Soal..."`) agar akurat dan konsisten untuk semua tingkatan kuis.
+
+#### 2. Desain Kartu Mobile-First Kompak & Proporsional
+- Menerapkan layout kartu horizontal yang sangat ergonomis di layar ponsel (`min-h-[58px]` dengan target sentuh $\ge 48$px), memangkas lebih dari 400px tinggi vertikal halaman sehingga 5 kartu mesin dapat langsung terlihat tanpa perlu scroll berulang kali.
+- Menyediakan badge status mini adaptif di mobile (`Siap`, `Sibuk`, `Habis`, `Kendala`, `Belum`) dan badge lengkap di layar desktop (`Selalu Siap`, `Siap Digunakan`, `Belum Disetel`, dll).
+- Di layar tablet dan desktop, kartu tetap tersusun dalam bento grid 5-kolom yang luas, elegan, dan berimbang.
+
+#### 3. Optimalisasi Sub-antarmuka Salin Prompt & Berkas (Opsi 5)
+- Menyeimbangkan ketinggian textarea prompt sistem dan textarea tempel teks dari yang sebelumnya raksasa `rows={10}` menjadi proporsional `rows={5}`, menjaga fokus pengisian dan menghemat ruang layar ponsel.
+- Memperbaiki petunjuk tata letak teks agar sesuai dengan orientasi responsif (*"samping/bawah"*).
+- Merampingkan kotak seret-dan-lepas berkas (*file upload*) dengan tautan unduh template CSV kuis yang bersih.
+
+#### 4. Navigasi & Tindakan Cepat (One-Tap Action)
+- Menyematkan tombol *"Gunakan Mesin Lokal Saja"* langsung di dalam kotak alert kuota dan error, memungkinkan pengguna beralih dalam 1 ketukan tanpa perlu mencari tombol secara manual.
+- Menyematkan tombol navigasi *"Kembali ke Format"* di sisi kiri tombol eksekusi kuis untuk pengalaman alur kerja yang mudah dan intuitif di mobile maupun desktop.
+- Mengintegrasikan kolom *Catatan Tambahan* ke dalam parameter instruksi pembuatan kuis AI.
+
 ## [2.2.74] - 2026-09-10
 ### Pembersihan Gaya Bahasa (Copywriting) Kartu Ilustrasi Soal
 

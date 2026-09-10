@@ -85,6 +85,7 @@ export interface GenerateAiQuestionsParams {
     short_answer?: number;
     matching_pairs?: number;
   };
+  contextNotes?: string;
 }
 
 export interface HybridGenerateResult {
@@ -945,12 +946,16 @@ Karena opsi ilustrasi diaktifkan, sertakan pada butir soal konsep gambar visual 
 - 'imagePrompt': Deskripsi visual 1 kalimat dalam Bahasa Inggris yang spesifik dan realistis untuk mesin AI image (contoh: "clear educational scientific diagram of human heart anatomy, textbook style").\n`
     : '';
 
+  const contextBlock = params.contextNotes && params.contextNotes.trim()
+    ? `\n- Catatan / Konteks Khusus: "${params.contextNotes.trim()}"`
+    : '';
+
   return `${roleText}
 
 SPESIFIKASI SOAL:
 - Mata Pelajaran: ${subject}
 - Tingkat: ${levelText}
-- Topik / Materi: ${topic}
+- Topik / Materi: ${topic}${contextBlock}
 - Jumlah Soal: ${count} butir soal
 - Format: ${formatInstruction}${imageInstruction}
 
