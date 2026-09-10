@@ -86,6 +86,9 @@ export interface GenerateAiQuestionsParams {
     matching_pairs?: number;
   };
   contextNotes?: string;
+  mcOptionCount?: number; // 3, 4, atau 5 opsi pilihan ganda
+  trueFalseStyle?: 'benar_salah' | 'sesuai_tidak' | 'ya_tidak';
+  matchingPairCount?: number; // 3, 4, atau 5 pasang menjodohkan
 }
 
 export interface HybridGenerateResult {
@@ -543,7 +546,7 @@ export async function callSupabaseAiEdgeFunction(params: GenerateAiQuestionsPara
     throw new Error('Supabase AI tidak mengembalikan daftar butir soal yang valid.');
   }
 
-  const normalized = normalizeQuestions(rawList, data.provider || 'supabase', params.includeAiImages);
+  const normalized = normalizeQuestions(rawList, data.provider || 'supabase', params.includeAiImages, params.mcOptionCount);
   return {
     questions: normalized,
     provider: data.provider || 'gemini',
@@ -889,14 +892,24 @@ Kembalikan JSON murni: { "cp": "Pernyataan CP komprehensif 2-3 kalimat padat unt
 function buildInstructionText(params: GenerateAiQuestionsParams): string {
   const { subject, grade, topic, count, questionType } = params;
 
+  const level = params.educationLevel || (grade >= 10 ? 'SMA' : grade >= 7 ? 'SMP' : 'SD');
+  const mcCount = params.mcOptionCount || (level === 'SMA' ? 5 : (level === 'SD' && grade <= 2 ? 3 : 4));
+  const mcLetters = ['A', 'B', 'C', 'D', 'E'].slice(0, mcCount).join(', ');
+  const matchingCount = params.matchingPairCount || (level === 'SD' ? 3 : 4);
+  const tfLabel = params.trueFalseStyle === 'sesuai_tidak'
+    ? '["Sesuai", "Tidak Sesuai"]'
+    : params.trueFalseStyle === 'ya_tidak'
+    ? '["Ya", "Tidak"]'
+    : '["Benar", "Salah"]';
+
   let formatInstruction = '';
   if (params.typeProportions) {
     const p = params.typeProportions;
     const parts: string[] = [];
-    if (p.multiple_choice && p.multiple_choice > 0) parts.push(`- ${p.multiple_choice} butir 'multiple_choice' (Pilihan ganda dengan 4 opsi A, B, C, D)`);
-    if (p.true_false && p.true_false > 0) parts.push(`- ${p.true_false} butir 'true_false' (Benar atau Salah dengan opsi ["Benar", "Salah"])`);
+    if (p.multiple_choice && p.multiple_choice > 0) parts.push(`- ${p.multiple_choice} butir 'multiple_choice' (Pilihan ganda dengan ${mcCount} opsi: ${mcLetters})`);
+    if (p.true_false && p.true_false > 0) parts.push(`- ${p.true_false} butir 'true_false' (Benar atau Salah dengan opsi ${tfLabel})`);
     if (p.short_answer && p.short_answer > 0) parts.push(`- ${p.short_answer} butir 'short_answer' (Isian singkat dengan acceptableAnswers)`);
-    if (p.matching_pairs && p.matching_pairs > 0) parts.push(`- ${p.matching_pairs} butir 'matching_pairs' (Menjodohkan konsep dengan matchingPairs)`);
+    if (p.matching_pairs && p.matching_pairs > 0) parts.push(`- ${p.matching_pairs} butir 'matching_pairs' (Menjodohkan konsep dengan ${matchingCount} pasang matchingPairs)`);
     if (parts.length > 0) {
       formatInstruction = `Wajib ikuti proporsi jumlah tipe soal berikut secara tepat:\n${parts.join('\n')}`;
     }
@@ -905,25 +918,23 @@ function buildInstructionText(params: GenerateAiQuestionsParams): string {
   if (!formatInstruction) {
     if (questionType === 'campuran') {
       formatInstruction = `Variasikan tipe soal secara seimbang antara:
-- 'multiple_choice' (Pilihan ganda dengan 4 opsi A, B, C, D)
-- 'true_false' (Benar atau Salah dengan 2 opsi ["Benar", "Salah"])
+- 'multiple_choice' (Pilihan ganda dengan ${mcCount} opsi: ${mcLetters})
+- 'true_false' (Benar atau Salah dengan 2 opsi ${tfLabel})
 - 'short_answer' (Isian singkat dengan acceptableAnswers berisi sinonim/kunci)
-- 'matching_pairs' (Menjodohkan konsep dengan matchingPairs: [{left, right}])
+- 'matching_pairs' (Menjodohkan konsep dengan ${matchingCount} pasang matchingPairs: [{left, right}])
 - 'image_guess' (Tebak gambar misteri dengan imageCaption)`;
     } else if (questionType === 'matching_pairs') {
-    formatInstruction = `Gunakan tipe 'matching_pairs'. Setiap soal wajib memiliki properti 'matchingPairs' berisi 3-4 pasang objek { "left": "...", "right": "..." } yang saling berpasangan secara tepat.`;
+    formatInstruction = `Gunakan tipe 'matching_pairs'. Setiap soal wajib memiliki properti 'matchingPairs' berisi tepat ${matchingCount} pasang objek { "left": "...", "right": "..." } yang saling berpasangan secara tepat.`;
   } else if (questionType === 'short_answer') {
     formatInstruction = `Gunakan tipe 'short_answer'. 'options' berisi 1 kunci utama, dan 'acceptableAnswers' berisi 1-4 variasi ejaan atau sinonim yang dianggap benar.`;
   } else if (questionType === 'true_false') {
-    formatInstruction = `Gunakan tipe 'true_false'. 'options' wajib tepat ["Benar", "Salah"], dan correctIndex bernilai 0 jika Benar atau 1 jika Salah.`;
+    formatInstruction = `Gunakan tipe 'true_false'. 'options' wajib tepat ${tfLabel}, dan correctIndex bernilai 0 jika pilihan pertama benar atau 1 jika pilihan kedua benar.`;
   } else if (questionType === 'image_guess') {
-    formatInstruction = `Gunakan tipe 'image_guess'. Sertakan 'imageCaption' berupa nama objek/konsep yang harus ditebak, serta 4 pilihan 'options'.`;
+    formatInstruction = `Gunakan tipe 'image_guess'. Sertakan 'imageCaption' berupa nama objek/konsep yang harus ditebak, serta ${mcCount} pilihan 'options' (${mcLetters}).`;
     } else {
-      formatInstruction = `Gunakan tipe 'multiple_choice'. Sertakan 4 pilihan jawaban yang mendidik pada array 'options'.`;
+      formatInstruction = `Gunakan tipe 'multiple_choice'. Sertakan tepat ${mcCount} pilihan jawaban yang mendidik pada array 'options' (${mcLetters}).`;
     }
   }
-
-  const level = params.educationLevel || (grade >= 10 ? 'SMA' : grade >= 7 ? 'SMP' : 'SD');
   const levelText = level === 'SMA'
     ? `Kelas ${grade} SMA / SMK (Fase ${grade === 10 ? 'E' : 'F'})`
     : level === 'SMP'
@@ -1012,7 +1023,7 @@ function cleanJsonResponse(rawResponse: string): string {
   return cleaned.trim();
 }
 
-function normalizeQuestions(rawList: any[], providerPrefix: string, autoGenerateImages = false): QuizQuestion[] {
+function normalizeQuestions(rawList: any[], providerPrefix: string, autoGenerateImages = false, mcOptionCount = 4): QuizQuestion[] {
   return rawList.map((item, idx) => {
     const qType: QuestionType = (
       ['multiple_choice', 'true_false', 'short_answer', 'image_guess', 'matching_pairs'].includes(item.type)
@@ -1020,9 +1031,11 @@ function normalizeQuestions(rawList: any[], providerPrefix: string, autoGenerate
         : 'multiple_choice'
     ) as QuestionType;
 
+    const fallbackOptions = Array.from({ length: mcOptionCount }, (_, i) => `Opsi ${String.fromCharCode(65 + i)}`);
     let options: string[] = Array.isArray(item.options) && item.options.length > 0 
       ? item.options.map(String)
-      : ['Opsi A', 'Opsi B', 'Opsi C', 'Opsi D'];
+      : fallbackOptions;
+
 
     let correctIndex = typeof item.correctIndex === 'number' ? item.correctIndex : 0;
     if (correctIndex < 0 || correctIndex >= options.length) {
@@ -1130,7 +1143,7 @@ export async function callGeminiApi(params: GenerateAiQuestionsParams): Promise<
       throw new Error('Format balasan Gemini tidak memuat daftar soal.');
     }
 
-    return normalizeQuestions(list, 'gemini', params.includeAiImages);
+    return normalizeQuestions(list, 'gemini', params.includeAiImages, params.mcOptionCount);
   } catch (err: unknown) {
     clearTimeout(timeoutId);
     if (err instanceof Error) {
@@ -1222,7 +1235,7 @@ Kembalikan objek JSON dengan format:
       throw new Error('Format balasan Groq tidak memuat daftar soal yang valid.');
     }
 
-    return normalizeQuestions(list, 'groq', params.includeAiImages);
+    return normalizeQuestions(list, 'groq', params.includeAiImages, params.mcOptionCount);
   } catch (err: unknown) {
     clearTimeout(timeoutId);
     if (err instanceof Error) {
@@ -1336,7 +1349,7 @@ Kembalikan objek JSON dengan format:
       throw new Error('Format balasan DeepSeek tidak memuat daftar soal yang valid.');
     }
 
-    return normalizeQuestions(list, 'deepseek', params.includeAiImages);
+    return normalizeQuestions(list, 'deepseek', params.includeAiImages, params.mcOptionCount);
   } catch (err: unknown) {
     clearTimeout(timeoutId);
     if (err instanceof Error) {

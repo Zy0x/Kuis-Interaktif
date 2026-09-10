@@ -18,7 +18,7 @@ export const WorksheetPrintView: React.FC<WorksheetPrintViewProps> = ({
     window.print();
   };
 
-  const letters = ['A', 'B', 'C', 'D'];
+  const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
 
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900 flex flex-col items-center">
@@ -128,7 +128,7 @@ export const WorksheetPrintView: React.FC<WorksheetPrintViewProps> = ({
                 {q.options.map((opt, optIndex) => (
                   <div key={optIndex} className="flex items-center gap-2">
                     <span className="w-5 h-5 rounded-full border border-slate-400 flex items-center justify-center font-bold text-[10px] text-slate-700 flex-shrink-0">
-                      {letters[optIndex]}
+                      {letters[optIndex] || String.fromCharCode(65 + optIndex)}
                     </span>
                     <span>{opt}</span>
                   </div>

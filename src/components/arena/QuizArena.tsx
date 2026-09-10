@@ -1008,7 +1008,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                 }
               }
 
-              const letters = ['A', 'B', 'C', 'D'];
+              const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
 
               return (
                 <button
@@ -1027,7 +1027,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                           : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200'
                       }`}
                     >
-                      {question.type === 'true_false' ? (idx === 0 ? '✓' : '✗') : letters[idx]}
+                      {question.type === 'true_false' ? (idx === 0 ? '✓' : '✗') : (letters[idx] || String.fromCharCode(65 + idx))}
                     </span>
                     <span className="text-xs sm:text-sm md:text-base xl:text-lg 3xl:text-xl font-bold break-words leading-snug">{optText}</span>
                   </div>

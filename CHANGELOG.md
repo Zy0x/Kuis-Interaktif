@@ -1,6 +1,27 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.76] - 2026-09-10
+### Fleksibilitas Format Soal: Opsi Pilihan Ganda 3/4/5, Gaya Benar/Salah, dan Jumlah Pasang Menjodohkan
+
+#### 1. Kontrol Jumlah Opsi Pilihan Ganda (3, 4, atau 5)
+- Guru kini dapat memilih jumlah opsi jawaban pilihan ganda: **3 opsi (A, B, C)**, **4 opsi (A, B, C, D)**, atau **5 opsi (A, B, C, D, E)** sesuai kebutuhan soal dan usia siswa.
+- Panel pengaturan lanjutan tampil otomatis di bawah kartu format saat tipe terkait dipilih.
+- Deskripsi kartu format diperbarui secara dinamis mengikuti pilihan yang aktif.
+
+#### 2. Gaya Label Benar / Salah
+- Tiga gaya pasangan opsi kini tersedia: **Benar / Salah** (default), **Sesuai / Tidak Sesuai**, dan **Ya / Tidak**, dapat dipilih langsung di pengaturan format soal.
+- Deskripsi kartu Benar/Salah diperbarui secara real-time sesuai gaya aktif.
+
+#### 3. Jumlah Pasangan Kartu Menjodohkan (3, 4, atau 5 pasang)
+- Guru dapat menentukan jumlah pasang kartu per soal menjodohkan: **3**, **4**, atau **5 pasang**, dengan stepper tombol yang intuitif.
+
+#### 4. Sinkronisasi Pipeline AI End-to-End
+- `buildInstructionText` di pipeline AI langsung (`geminiApi.ts`) kini sepenuhnya dinamis mengikuti pilihan `mcOptionCount`, `trueFalseStyle`, dan `matchingPairCount` — tidak ada lagi instruksi hardcoded "4 opsi A, B, C, D".
+- `generateAiPrompt` untuk fitur Salin Prompt juga disinkronkan dengan parameter yang sama.
+- `normalizeQuestions` diperbarui untuk menggunakan fallback opsi yang sesuai `mcOptionCount`.
+- Parser teks bebas (`aiQuestionParser.ts`) diperluas mendukung opsi **E** pada pilihan ganda: regex deteksi opsi, kunci jawaban, dan `letterIdx` semuanya diperbarui ke `[A-E]`.
+
 ## [2.2.75] - 2026-09-10
 ### Audit Menyeluruh Tahap Mesin AI: Eliminasi AI Slop, Layout Mobile Ramping & Peningkatan Keterbacaan
 

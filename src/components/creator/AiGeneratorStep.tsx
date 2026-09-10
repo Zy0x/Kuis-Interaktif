@@ -1187,6 +1187,9 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
     matching_pairs: 0,
   });
   const [includeAiImages, setIncludeAiImages] = useState(false);
+  const [mcOptionCount, setMcOptionCount] = useState<3 | 4 | 5>(4);
+  const [trueFalseStyle, setTrueFalseStyle] = useState<'benar_salah' | 'sesuai_tidak' | 'ya_tidak'>('benar_salah');
+  const [matchingPairCount, setMatchingPairCount] = useState<3 | 4 | 5>(4);
 
   // Pilihan Mesin AI
   const [selectedEngine, setSelectedEngine] = useState<'local' | 'deepseek' | 'groq' | 'gemini' | 'prompt'>('deepseek');
@@ -1376,8 +1379,11 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
       typeProportions: !isSingle ? proportions : undefined,
       contextNotes: contextNotes.trim() || undefined,
       includeImages: includeAiImages,
+      mcOptionCount,
+      trueFalseStyle,
+      matchingPairCount,
     });
-  }, [subject, grade, educationLevel, topic, currentTotalQuestions, selectedQuestionTypes, proportions, contextNotes, includeAiImages]);
+  }, [subject, grade, educationLevel, topic, currentTotalQuestions, selectedQuestionTypes, proportions, contextNotes, includeAiImages, mcOptionCount, trueFalseStyle, matchingPairCount]);
 
   // Handler Salin Prompt
   const handleCopyPrompt = async () => {
@@ -1483,6 +1489,9 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
         provider: providerToUse,
         includeAiImages,
         contextNotes: contextNotes.trim() || undefined,
+        mcOptionCount,
+        trueFalseStyle,
+        matchingPairCount,
       });
 
       if (!result.questions || result.questions.length === 0) {
@@ -2340,13 +2349,13 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                   type: 'multiple_choice' as const,
                   label: 'Pilihan Ganda',
                   icon: '🔘',
-                  desc: '4 opsi jawaban (A, B, C, D)',
+                  desc: `${mcOptionCount} opsi jawaban (${['A','B','C','D','E'].slice(0,mcOptionCount).join(', ')})`,
                 },
                 {
                   type: 'true_false' as const,
                   label: 'Benar / Salah',
                   icon: '⚖️',
-                  desc: 'Pernyataan benar atau salah',
+                  desc: trueFalseStyle === 'sesuai_tidak' ? 'Sesuai atau Tidak Sesuai' : trueFalseStyle === 'ya_tidak' ? 'Ya atau Tidak' : 'Benar atau Salah',
                 },
                 {
                   type: 'short_answer' as const,
@@ -2358,7 +2367,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                   type: 'matching_pairs' as const,
                   label: 'Menjodohkan',
                   icon: '🧩',
-                  desc: 'Pasangkan kartu konsep',
+                  desc: `${matchingPairCount} pasang kartu konsep`,
                 },
               ].map((fmt) => {
                 const isSelected = selectedQuestionTypes.includes(fmt.type);
@@ -2395,6 +2404,93 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                 );
               })}
             </div>
+
+            {/* Panel Pengaturan Lanjutan — tampil jika tipe terkait dipilih */}
+            {(selectedQuestionTypes.includes('multiple_choice') || selectedQuestionTypes.includes('true_false') || selectedQuestionTypes.includes('matching_pairs')) && (
+              <div className="space-y-2.5 pt-1 animate-fade-in">
+                {/* Pilihan Ganda: jumlah opsi */}
+                {selectedQuestionTypes.includes('multiple_choice') && (
+                  <div className="flex items-center justify-between gap-3 p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-850/50">
+                    <div className="min-w-0">
+                      <span className="block text-xs font-bold text-slate-800 dark:text-slate-200 leading-snug">Jumlah Opsi Pilihan Ganda</span>
+                      <span className="text-[11px] text-slate-400 dark:text-slate-500">A, B, C — atau hingga A, B, C, D, E</span>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0 p-1 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+                      {([3, 4, 5] as const).map((n) => (
+                        <button
+                          key={n}
+                          type="button"
+                          onClick={() => { playClick(); setMcOptionCount(n); }}
+                          className={`w-9 h-8 rounded-lg text-xs font-extrabold transition-all btn-press ${
+                            mcOptionCount === n
+                              ? 'bg-blue-600 text-white shadow-xs'
+                              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                          }`}
+                        >
+                          {n}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Benar / Salah: gaya label */}
+                {selectedQuestionTypes.includes('true_false') && (
+                  <div className="flex items-start justify-between gap-3 p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-850/50">
+                    <div className="min-w-0">
+                      <span className="block text-xs font-bold text-slate-800 dark:text-slate-200 leading-snug">Gaya Label Benar / Salah</span>
+                      <span className="text-[11px] text-slate-400 dark:text-slate-500">Sesuaikan pasangan opsi jawaban</span>
+                    </div>
+                    <div className="flex flex-col gap-1 shrink-0">
+                      {([
+                        { val: 'benar_salah', label: 'Benar / Salah' },
+                        { val: 'sesuai_tidak', label: 'Sesuai / Tidak' },
+                        { val: 'ya_tidak', label: 'Ya / Tidak' },
+                      ] as const).map(({ val, label }) => (
+                        <button
+                          key={val}
+                          type="button"
+                          onClick={() => { playClick(); setTrueFalseStyle(val); }}
+                          className={`px-3 h-7 rounded-lg text-[11px] font-bold transition-all btn-press text-left whitespace-nowrap ${
+                            trueFalseStyle === val
+                              ? 'bg-emerald-600 text-white shadow-xs'
+                              : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600'
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Menjodohkan: jumlah pasang */}
+                {selectedQuestionTypes.includes('matching_pairs') && (
+                  <div className="flex items-center justify-between gap-3 p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-850/50">
+                    <div className="min-w-0">
+                      <span className="block text-xs font-bold text-slate-800 dark:text-slate-200 leading-snug">Jumlah Pasangan Kartu</span>
+                      <span className="text-[11px] text-slate-400 dark:text-slate-500">Berapa pasang kiri-kanan per soal</span>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0 p-1 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+                      {([3, 4, 5] as const).map((n) => (
+                        <button
+                          key={n}
+                          type="button"
+                          onClick={() => { playClick(); setMatchingPairCount(n); }}
+                          className={`w-9 h-8 rounded-lg text-xs font-extrabold transition-all btn-press ${
+                            matchingPairCount === n
+                              ? 'bg-purple-600 text-white shadow-xs'
+                              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                          }`}
+                        >
+                          {n}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Pengaturan Proporsi: Hanya tampil jika pengguna memilih >= 2 format */}
             {selectedQuestionTypes.length > 1 && (

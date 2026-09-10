@@ -16,6 +16,9 @@ export interface GeneratePromptParams {
     matching_pairs?: number;
   };
   includeImages?: boolean;
+  mcOptionCount?: number; // 3, 4, atau 5 pilihan
+  trueFalseStyle?: 'benar_salah' | 'sesuai_tidak' | 'ya_tidak';
+  matchingPairCount?: number; // 3, 4, atau 5 pasang
 }
 
 export interface ParsedQuestionItem {
@@ -31,28 +34,38 @@ export interface ParsedQuestionItem {
  * Menjamin 100% kepatuhan format JSON dan bebas AI slop.
  */
 export const generateAiPrompt = (params: GeneratePromptParams): string => {
-  let typeInstruction = 'Gunakan tipe Pilihan Ganda (4 opsi A, B, C, D).';
+  const level = params.educationLevel || (params.grade >= 10 ? 'SMA' : params.grade >= 7 ? 'SMP' : 'SD');
+  const mcCount = params.mcOptionCount || (level === 'SMA' ? 5 : (level === 'SD' && params.grade <= 2 ? 3 : 4));
+  const mcLetters = ['A', 'B', 'C', 'D', 'E'].slice(0, mcCount).join(', ');
+  const tfOptions = params.trueFalseStyle === 'sesuai_tidak' 
+    ? '["Sesuai", "Tidak Sesuai"]' 
+    : params.trueFalseStyle === 'ya_tidak' 
+    ? '["Ya", "Tidak"]' 
+    : '["Benar", "Salah"]';
+  const matchingCount = params.matchingPairCount || (level === 'SD' ? 3 : 4);
+
+  let typeInstruction = `Gunakan tipe Pilihan Ganda dengan tepat ${mcCount} opsi (${mcLetters}).`;
 
   if (params.typeProportions) {
     const p = params.typeProportions;
     const parts: string[] = [];
-    if (p.multiple_choice && p.multiple_choice > 0) parts.push(`${p.multiple_choice} butir Pilihan Ganda (type: "multiple_choice", 4 opsi)`);
-    if (p.true_false && p.true_false > 0) parts.push(`${p.true_false} butir Benar/Salah (type: "true_false")`);
-    if (p.short_answer && p.short_answer > 0) parts.push(`${p.short_answer} butir Isian Singkat (type: "short_answer")`);
-    if (p.matching_pairs && p.matching_pairs > 0) parts.push(`${p.matching_pairs} butir Menjodohkan (type: "matching_pairs")`);
+    if (p.multiple_choice && p.multiple_choice > 0) parts.push(`${p.multiple_choice} butir Pilihan Ganda (type: "multiple_choice", ${mcCount} opsi: ${mcLetters})`);
+    if (p.true_false && p.true_false > 0) parts.push(`${p.true_false} butir Benar/Salah (type: "true_false", opsi: ${tfOptions})`);
+    if (p.short_answer && p.short_answer > 0) parts.push(`${p.short_answer} butir Isian Singkat (type: "short_answer", sertakan sinonim pada acceptableAnswers)`);
+    if (p.matching_pairs && p.matching_pairs > 0) parts.push(`${p.matching_pairs} butir Menjodohkan (type: "matching_pairs", ${matchingCount} pasang kartu)`);
     if (parts.length > 0) {
-      typeInstruction = `Wajib ikuti pembagian proporsi tipe soal berikut: ${parts.join(', ')}.`;
+      typeInstruction = `Wajib ikuti pembagian proporsi tipe soal berikut secara tepat:\n- ${parts.join('\n- ')}.`;
     }
   } else if (params.questionType === 'true_false') {
-    typeInstruction = 'Gunakan tipe Benar / Salah (options: ["Benar", "Salah"]).';
+    typeInstruction = `Gunakan tipe Benar / Salah dengan 2 opsi tepat: ${tfOptions}.`;
   } else if (params.questionType === 'short_answer') {
-    typeInstruction = 'Gunakan tipe Isian Singkat (siswa mengetikkan 1-2 kata kunci jawaban).';
+    typeInstruction = 'Gunakan tipe Isian Singkat (siswa mengetikkan 1-2 kata kunci atau angka, wajib sertakan 2-4 sinonim/variasi pada acceptableAnswers).';
   } else if (params.questionType === 'image_guess') {
-    typeInstruction = 'Gunakan tipe Tebak Gambar Misteri (pilihan ganda dengan emoji/stiker visual pengenal).';
+    typeInstruction = `Gunakan tipe Tebak Gambar Misteri (${mcCount} opsi pilihan ${mcLetters} dengan imageCaption nama objek).`;
   } else if (params.questionType === 'matching_pairs') {
-    typeInstruction = 'Gunakan tipe Menjodohkan (pasangan kartu konsep kiri dan kanan).';
+    typeInstruction = `Gunakan tipe Menjodohkan dengan tepat ${matchingCount} pasang kartu konsep kiri (left) dan kanan (right).`;
   } else if (params.questionType === 'campuran') {
-    typeInstruction = 'Campurkan secara seimbang format: Pilihan Ganda (multiple_choice), Benar/Salah (true_false), Isian Singkat (short_answer), dan Menjodohkan (matching_pairs).';
+    typeInstruction = `Campurkan secara seimbang format: Pilihan Ganda (${mcCount} opsi: ${mcLetters}), Benar/Salah (${tfOptions}), Isian Singkat (dengan acceptableAnswers), dan Menjodohkan (${matchingCount} pasang).`;
   }
 
   const contextBlock = params.contextNotes && params.contextNotes.trim()
@@ -63,7 +76,6 @@ export const generateAiPrompt = (params: GeneratePromptParams): string => {
     ? `- Kebutuhan Gambar: Karena pengguna mengaktifkan opsi ilustrasi, pada SETIAP butir soal sertakan properti "imageCaption" (label singkat bahasa Indonesia) dan "imagePrompt" (deskripsi visual 1 kalimat bahasa Inggris untuk menghasilkan gambar edukatif).\n`
     : '';
 
-  const level = params.educationLevel || (params.grade >= 10 ? 'SMA' : params.grade >= 7 ? 'SMP' : 'SD');
   const levelText = level === 'SMA'
     ? `Kelas ${params.grade} SMA / SMK (Fase ${params.grade === 10 ? 'E' : 'F'})`
     : level === 'SMP'
@@ -75,6 +87,8 @@ export const generateAiPrompt = (params: GeneratePromptParams): string => {
     : level === 'SMP'
       ? 'ahli penyusun materi dan soal kuis interaktif Sekolah Menengah Pertama (SMP) berstandar Kurikulum Merdeka Indonesia. Karakteristik soal: komunikatif ramah remaja, merangsang daya nalar terapan, studi kasus kontekstual, dan literasi-numerasi terpadu.'
       : 'ahli penyusun materi dan soal kuis interaktif Sekolah Dasar (SD) berstandar Kurikulum Merdeka Indonesia. Karakteristik soal: mendidik, menyenangkan, ramah anak, dan berbasis visual/situasi konkret.';
+
+  const mcOptionsExample = JSON.stringify(Array.from({ length: mcCount }, (_, i) => `Opsi ${String.fromCharCode(65 + i)}`));
 
   return `Kamu adalah ${roleText}
 Buatkan ${params.count} butir soal kuis interaktif yang mendidik dan komunikatif untuk:
@@ -89,8 +103,8 @@ Keluarkan HANYA satu blok kode JSON murni tanpa pembuka/penutup basa-basi, mengg
 [
   {
     "type": "multiple_choice",
-    "text": "Teks pertanyaan pilihan ganda yang jelas untuk anak SD?",
-    "options": ["Opsi A", "Opsi B", "Opsi C", "Opsi D"],
+    "text": "Pertanyaan pilihan ganda dengan materi yang jelas dan mendidik?",
+    "options": ${mcOptionsExample},
     "correctIndex": 0,
     "explanation": "Penjelasan konsep mengapa jawaban ini benar.",
     "imageCaption": "🌱 Ilustrasi materi",
@@ -98,16 +112,16 @@ Keluarkan HANYA satu blok kode JSON murni tanpa pembuka/penutup basa-basi, mengg
   },
   {
     "type": "true_false",
-    "text": "Pernyataan yang perlu dianalisis kebenarannya?",
-    "options": ["Benar", "Salah"],
+    "text": "Pernyataan konseptual yang diuji kebenarannya?",
+    "options": ${tfOptions},
     "correctIndex": 0,
     "explanation": "Penjelasan konsep kebenaran materi.",
     "points": 10
   },
   {
     "type": "short_answer",
-    "text": "Pertanyaan isian singkat ramah anak?",
-    "acceptableAnswers": ["Kunci Utama", "variasi sinonim", "ejaan lain"],
+    "text": "Pertanyaan isian singkat yang jelas dan terarah?",
+    "acceptableAnswers": ["Kunci Utama", "variasi sinonim", "ejaan lain", "angka"],
     "explanation": "Penjelasan konsep materi yang tepat.",
     "points": 10
   },
@@ -115,17 +129,15 @@ Keluarkan HANYA satu blok kode JSON murni tanpa pembuka/penutup basa-basi, mengg
     "type": "matching_pairs",
     "text": "Jodohkan konsep di sebelah kiri dengan pasangannya di sebelah kanan!",
     "matchingPairs": [
-      {"left": "Konsep 1", "right": "Pasangan 1"},
-      {"left": "Konsep 2", "right": "Pasangan 2"},
-      {"left": "Konsep 3", "right": "Pasangan 3"}
+${Array.from({ length: matchingCount }, (_, i) => `      {"left": "Konsep ${i + 1}", "right": "Pasangan ${i + 1}"}`).join(',\n')}
     ],
-    "explanation": "Penjelasan kecocokan seluruh pasangan.",
+    "explanation": "Penjelasan keterkaitan konsep yang dijodohkan.",
     "points": 15
   },
   {
     "type": "image_guess",
     "text": "Perhatikan petunjuk visual berikut! Apakah nama objek/organ ini?",
-    "options": ["Pilihan A", "Pilihan B", "Pilihan C", "Pilihan D"],
+    "options": ${mcOptionsExample},
     "correctIndex": 0,
     "imageCaption": "🫁 Organ Tubuh",
     "explanation": "Penjelasan objek materi terkait.",
@@ -136,7 +148,7 @@ Keluarkan HANYA satu blok kode JSON murni tanpa pembuka/penutup basa-basi, mengg
 Panduan Teknis:
 1. Pastikan setiap butir soal menyertakan "type" sesuai format di atas.
 2. Untuk "short_answer", sertakan array "acceptableAnswers" berisi kata kunci benar dan variasinya.
-3. Untuk "matching_pairs", sertakan array "matchingPairs" minimal 3 pasang objek { "left": "...", "right": "..." }.
+3. Untuk "matching_pairs", sertakan array "matchingPairs" minimal ${matchingCount} pasang objek { "left": "...", "right": "..." }.
 4. Untuk "multiple_choice" dan "image_guess", "correctIndex" adalah nomor indeks (0 untuk opsi pertama, dst).
 5. Bobot "points" standar adalah 10 (atau 15 untuk menjodohkan).`;
 };
@@ -319,7 +331,7 @@ export const parseRawQuestionsText = (rawText: string): ParsedQuestionItem[] => 
           correctIndex = item.kunci;
         } else if (typeof item.correctIndex === 'string' || typeof item.kunci === 'string') {
           const letter = String(item.correctIndex || item.kunci).trim().toUpperCase();
-          const letterIdx = ['A', 'B', 'C', 'D'].indexOf(letter);
+          const letterIdx = ['A', 'B', 'C', 'D', 'E'].indexOf(letter);
           if (letterIdx >= 0) correctIndex = letterIdx;
         }
 
@@ -413,7 +425,7 @@ const parseNaturalTextFormat = (text: string): ParsedQuestionItem[] => {
       }
 
       // Deteksi kunci jawaban umum: "Kunci: A", "Kunci Jawaban: B", "Jawaban: Benar"
-      const keyMatch = line.match(/(?:Kunci(?:\s*Jawaban)?|Jawaban)\s*:\s*([A-D]|Benar|Salah)/i);
+      const keyMatch = line.match(/(?:Kunci(?:\s*Jawaban)?|Jawaban)\s*:\s*([A-E]|Benar|Salah)/i);
       if (keyMatch) {
         detectedKeyLetter = keyMatch[1].toUpperCase();
         return;
@@ -427,10 +439,10 @@ const parseNaturalTextFormat = (text: string): ParsedQuestionItem[] => {
       }
 
       // Deteksi opsi: "A. ...", "B) ...", "*A. ..."
-      const optMatch = line.match(/^(\*?\s*[A-D][\.\)]\s*)(.+)/i);
+      const optMatch = line.match(/^(\*?\s*[A-E][\.\)]\s*)(.+)/i);
       if (optMatch) {
         if (optMatch[1].includes('*')) {
-          const letter = optMatch[1].replace(/[^A-D]/gi, '').toUpperCase();
+          const letter = optMatch[1].replace(/[^A-E]/gi, '').toUpperCase();
           if (letter) detectedKeyLetter = letter;
         }
         optionLines.push(optMatch[2].trim());
@@ -521,7 +533,7 @@ const parseNaturalTextFormat = (text: string): ParsedQuestionItem[] => {
     // Kasus Pilihan Ganda
     let correctIdx = 0;
     if (detectedKeyLetter) {
-      const letterIdx = ['A', 'B', 'C', 'D'].indexOf(detectedKeyLetter);
+      const letterIdx = ['A', 'B', 'C', 'D', 'E'].indexOf(detectedKeyLetter);
       if (letterIdx >= 0) correctIdx = letterIdx;
     }
 
