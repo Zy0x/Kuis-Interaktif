@@ -1,6 +1,16 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.82] - 2026-09-11
+### Pemisahan Terstruktur Mesin Cloud AI dan Opsi Alternatif/Offline
+
+#### 1. Pengelompokan Kategori Mesin yang Jelas & Terpisah
+- Memisahkan secara tegas antara pilihan **Model Cloud AI (Online)** dan **Pilihan Alternatif & Offline**:
+  - **Tingkat 1 (Opsi Utama)**: Kartu **Mode Otomatis (Direkomendasikan)** dengan deteksi model aktif dan rantai *fallback* otomatis.
+  - **Tingkat 2 (Model Cloud AI)**: Grid 3 kartu terfokus untuk model cloud online (**DeepSeek AI**, **Groq Cloud**, dan **Google Gemini**) lengkap dengan ikon asli, badge status koneksi, dan deskripsi ringkas.
+  - **Tingkat 3 (Alternatif & Tanpa Internet)**: Grid 2 kartu khusus untuk pembuatan kuis tanpa API (**Tanpa Internet / Lokal** & **Salin / Berkas / Impor Manual**).
+- Mengeliminasi pencampuran visual antara mesin cloud berbasis server dan mesin lokal/manual, menciptakan hierarki informasi yang teratur, rapi, dan mudah dipahami guru.
+
 ## [2.2.81] - 2026-09-11
 ### Pembersihan Deskripsi Mesin AI (Bebas AI Slop & Bahasa Natural)
 
