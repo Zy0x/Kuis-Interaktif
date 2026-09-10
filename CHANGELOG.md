@@ -1,6 +1,37 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.55] - 2026-09-10
+### Katalog Mata Pelajaran Lengkap Kurikulum Merdeka, Pengelompokan Fase Kelas & Brainstorming Topik AI Dinamis
+
+#### 1. Kotak ke-6 "Lainnya" & Modal Overlay Katalog Mata Pelajaran Terkurasi
+- Menghadirkan kotak ke-6 (*Lainnya 📚*) pada kisi pilihan mata pelajaran Tahap 1. Saat diklik, membuka dialog modal overlay katalog komprehensif mata pelajaran Kurikulum Merdeka SD.
+- Katalog dikelompokkan secara terstruktur berdasarkan rumpun pembelajaran:
+  - **Mata Pelajaran Wajib Utama**: IPA, Matematika, Bahasa Indonesia, Pendidikan Pancasila, Pengetahuan Umum.
+  - **Bahasa & Literasi**: Bahasa Inggris, Bahasa Daerah / Muatan Lokal.
+  - **Jasmani & Olahraga**: PJOK (Pendidikan Jasmani, Olahraga, dan Kesehatan).
+  - **Seni & Kebudayaan**: Seni Rupa, Seni Musik, Seni Tari, Seni Teater.
+  - **Pendidikan Agama & Budi Pekerti**: PAI, Kristen, Katolik, Hindu, Buddha, Konghucu.
+  - **Teknologi & Literasi Digital**: Informatika / Literasi Digital SD.
+- Dilengkapi fitur pencarian instan (*real-time filter*) untuk kemudahan penemuan mata pelajaran.
+- Menjaga kebersihan sistem dengan membatasi pilihan hanya pada mata pelajaran resmi terstandar (tanpa input acak/bebas).
+
+#### 2. Visual Pengelompokan Fase Kurikulum Merdeka (Fase A, B, dan C)
+- Pilihan tingkat kelas 1 hingga 6 kini dikelompokkan secara visual sesuai fase pedagogis Kurikulum Merdeka:
+  - **Fase A (Kelas 1 & 2 SD)**: Fondasi Awal literasi, sensori, dan berhitung konkret.
+  - **Fase B (Kelas 3 & 4 SD)**: Penguatan Konsep, logika dasar, dan eksplorasi lingkungan.
+  - **Fase C (Kelas 5 & 6 SD)**: Penalaran Lanjut, analisis masalah, dan sintesis data.
+- Setiap fase ditandai dengan badge indikator warna tematik, target sentuh tombol $\ge 48\text{px}$, dan sorotan visual aktif saat kelas dipilih.
+
+#### 3. Banner Pratinjau Capaian Pembelajaran (CP) Interaktif
+- Menambahkan kartu pratinjau Capaian Pembelajaran (CP) dinamis pada Tahap 1 yang secara otomatis menyesuaikan kutipan capaian resmi berdasarkan kombinasi mata pelajaran dan fase/kelas terpilih.
+- Memberikan panduan instruksional langsung bagi guru sebelum meracik butir soal kuis.
+
+#### 4. Brainstorming Topik Cerdas Berbasis AI Dinamis (Anti Monoton & Statis)
+- Tombol *Acak Ide AI* pada Tahap 2 kini terhubung langsung dengan mesin AI untuk menghasilkan 4 ide materi kontekstual baru beserta fokus instruksional ramah anak SD secara dinamis.
+- Mengimplementasikan mekanisme *cascade fallback* mulus: jika koneksi AI tidak aktif, sistem otomatis memutar dan mengacak bank topik terkurasi kurikulum tanpa pernah gagal (*zero failure*).
+- Menghilangkan redundansi tombol *Ganti Metode* pada bagian bawah Tahap 1 agar alur navigasi lebih bersih dan fokus pada tombol aksi primer.
+
 ## [2.2.54] - 2026-09-10
 ### Restrukturisasi Modular Asisten Racik Kuis AI Menjadi 4 Tahap Terfokus
 

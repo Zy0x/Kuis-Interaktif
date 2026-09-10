@@ -5,7 +5,21 @@ export type Subject =
   | 'IPA' 
   | 'Bahasa Indonesia' 
   | 'Pendidikan Pancasila' 
-  | 'Pengetahuan Umum';
+  | 'Pengetahuan Umum'
+  | 'Bahasa Inggris'
+  | 'PJOK'
+  | 'Seni Musik'
+  | 'Seni Rupa'
+  | 'Seni Tari'
+  | 'Seni Teater'
+  | 'Pendidikan Agama Islam'
+  | 'Pendidikan Agama Kristen'
+  | 'Pendidikan Agama Katolik'
+  | 'Pendidikan Agama Hindu'
+  | 'Pendidikan Agama Buddha'
+  | 'Pendidikan Agama Konghucu'
+  | 'Bahasa Daerah'
+  | 'Informatika';
 
 export type QuestionType = 
   | 'multiple_choice' 

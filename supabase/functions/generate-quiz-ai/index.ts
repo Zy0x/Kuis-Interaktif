@@ -96,6 +96,112 @@ serve(async (req) => {
       );
     }
 
+    // 2. Action: Brainstorming Ide Topik Kurikulum Merdeka
+    if (action === "generate_topics") {
+      const { 
+        subject = "IPA", 
+        grade = 4, 
+        provider = groqApiKey ? "groq" : "gemini" 
+      } = body;
+
+      const topicsPrompt = `Anda adalah Pakar Kurikulum Merdeka Sekolah Dasar (SD) Indonesia.
+Rekomendasikan 4 ide topik materi kuis yang kreatif, relevan, menarik, dan ramah anak untuk:
+- Mata Pelajaran: ${subject}
+- Tingkat: Kelas ${grade} SD
+
+KEMBALIKAN HANYA ARRAY JSON MURNI DENGAN FORMAT:
+[
+  {
+    "topic": "Judul Topik yang Menarik dan Spesifik",
+    "context": "Fokus materi dan arahan ramah anak SD (1-2 kalimat)..."
+  }
+]`;
+
+      let topicJson = "";
+      let topicProvider = provider;
+      let topicModel = "";
+
+      if (provider === "groq" && groqApiKey) {
+        try {
+          const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${groqApiKey}`,
+            },
+            body: JSON.stringify({
+              model: "llama-3.1-8b-instant",
+              messages: [
+                { role: "system", content: topicsPrompt },
+                { role: "user", content: `Berikan 4 ide topik materi untuk ${subject} Kelas ${grade} SD.` },
+              ],
+              temperature: 0.7,
+              max_tokens: 1000,
+            }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            topicJson = data?.choices?.[0]?.message?.content || "";
+            topicModel = "llama-3.1-8b-instant";
+            topicProvider = "groq";
+          }
+        } catch (_) {}
+      }
+
+      if (!topicJson && geminiApiKey) {
+        try {
+          const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`;
+          const res = await fetch(geminiEndpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: topicsPrompt }] }],
+              generationConfig: {
+                temperature: 0.8,
+                maxOutputTokens: 1000,
+                responseMimeType: "application/json",
+              },
+            }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            topicJson = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+            topicModel = "gemini-2.0-flash";
+            topicProvider = "gemini";
+          }
+        } catch (_) {}
+      }
+
+      if (topicJson.startsWith("```json")) topicJson = topicJson.replace(/^```json\s*/i, "");
+      if (topicJson.startsWith("```")) topicJson = topicJson.replace(/^```\s*/i, "");
+      if (topicJson.endsWith("```")) topicJson = topicJson.replace(/\s*```$/i, "");
+      topicJson = topicJson.trim();
+
+      let recommendations: any[] = [];
+      try {
+        const parsed = JSON.parse(topicJson);
+        recommendations = Array.isArray(parsed) ? parsed : (parsed.recommendations || parsed.topics || []);
+      } catch (_) {
+        const firstBracket = topicJson.indexOf("[");
+        const lastBracket = topicJson.lastIndexOf("]");
+        if (firstBracket !== -1 && lastBracket > firstBracket) {
+          try {
+            recommendations = JSON.parse(topicJson.substring(firstBracket, lastBracket + 1));
+          } catch (_) {}
+        }
+      }
+
+      return new Response(
+        JSON.stringify({
+          recommendations,
+          provider: topicProvider,
+          model: topicModel,
+          success: Array.isArray(recommendations) && recommendations.length > 0,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+      );
+    }
+
     const { 
       subject = "IPA", 
       grade = 4, 

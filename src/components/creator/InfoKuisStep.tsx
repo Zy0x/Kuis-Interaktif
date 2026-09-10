@@ -171,6 +171,20 @@ export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
                 <option value="Bahasa Indonesia">Bahasa Indonesia</option>
                 <option value="Pendidikan Pancasila">Pendidikan Pancasila</option>
                 <option value="Pengetahuan Umum">Pengetahuan Umum</option>
+                <option value="Bahasa Inggris">Bahasa Inggris</option>
+                <option value="PJOK">PJOK (Olahraga & Kesehatan)</option>
+                <option value="Seni Rupa">Seni Rupa</option>
+                <option value="Seni Musik">Seni Musik</option>
+                <option value="Seni Tari">Seni Tari</option>
+                <option value="Seni Teater">Seni Teater</option>
+                <option value="Pendidikan Agama Islam">Pendidikan Agama Islam (PAI)</option>
+                <option value="Pendidikan Agama Kristen">Pendidikan Agama Kristen</option>
+                <option value="Pendidikan Agama Katolik">Pendidikan Agama Katolik</option>
+                <option value="Pendidikan Agama Hindu">Pendidikan Agama Hindu</option>
+                <option value="Pendidikan Agama Buddha">Pendidikan Agama Buddha</option>
+                <option value="Pendidikan Agama Konghucu">Pendidikan Agama Konghucu</option>
+                <option value="Bahasa Daerah">Bahasa Daerah / Mulok</option>
+                <option value="Informatika">Informatika / Literasi Digital</option>
               </select>
             </div>
 

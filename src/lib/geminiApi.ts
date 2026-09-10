@@ -331,6 +331,127 @@ export async function callSupabaseAiEdgeFunction(params: GenerateAiQuestionsPara
   };
 }
 
+export interface AiTopicRecommendation {
+  topic: string;
+  context: string;
+}
+
+/**
+ * Brainstorming rekomendasi topik cerdas dan dinamis menggunakan AI (Groq / Gemini)
+ * dengan fallback mulus ke bank kurikulum lokal jika offline (Rule 9 & Rule 10).
+ */
+export async function generateAiTopicIdeas(params: {
+  subject: Subject;
+  grade: number;
+  provider?: AiProvider;
+}): Promise<AiTopicRecommendation[]> {
+  const { subject, grade } = params;
+
+  // 1. Coba via Supabase Cloud Edge Function (Server-Side Secrets)
+  if (supabase) {
+    try {
+      const status = await checkSupabaseAiStatus();
+      if (status.hasGroq || status.hasGemini) {
+        const preferredProvider = params.provider || (status.hasGroq ? 'groq' : 'gemini');
+        const { data, error } = await supabase.functions.invoke('generate-quiz-ai', {
+          body: {
+            action: 'generate_topics',
+            subject,
+            grade,
+            provider: preferredProvider,
+          },
+        });
+        if (!error && data?.success && Array.isArray(data?.recommendations) && data.recommendations.length > 0) {
+          return data.recommendations.map((r: any) => ({
+            topic: String(r.topic || '').trim(),
+            context: String(r.context || '').trim(),
+          })).filter((r: AiTopicRecommendation) => r.topic.length > 0);
+        }
+      }
+    } catch (edgeErr) {
+      console.warn('generateAiTopicIdeas via Edge Function warning:', edgeErr);
+    }
+  }
+
+  // 2. Coba via Groq API lokal jika key tersedia di browser
+  if (hasGroqApiKey()) {
+    try {
+      const apiKey = getStoredGroqApiKey();
+      const prompt = `Anda adalah Pakar Kurikulum Merdeka SD. Rekomendasikan 4 topik materi kuis untuk mata pelajaran ${subject} Kelas ${grade} SD beserta fokus materinya (1 kalimat). Kembalikan JSON: { "recommendations": [{ "topic": "...", "context": "..." }] }`;
+      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: 'llama-3.1-8b-instant',
+          messages: [{ role: 'user', content: prompt }],
+          response_format: { type: 'json_object' },
+          temperature: 0.7,
+          max_tokens: 800,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const content = data?.choices?.[0]?.message?.content;
+        if (content) {
+          const parsed = JSON.parse(content);
+          const list = Array.isArray(parsed) ? parsed : (parsed.recommendations || parsed.topics || []);
+          if (Array.isArray(list) && list.length > 0) {
+            return list.map((r: any) => ({
+              topic: String(r.topic || '').trim(),
+              context: String(r.context || '').trim(),
+            })).filter((r: AiTopicRecommendation) => r.topic.length > 0);
+          }
+        }
+      }
+    } catch (groqErr) {
+      console.warn('generateAiTopicIdeas Groq lokal error:', groqErr);
+    }
+  }
+
+  // 3. Coba via Gemini API lokal jika key tersedia di browser
+  if (hasGeminiApiKey()) {
+    try {
+      const apiKey = getStoredGeminiApiKey();
+      const prompt = `Anda adalah Pakar Kurikulum Merdeka SD. Rekomendasikan 4 topik materi kuis untuk mata pelajaran ${subject} Kelas ${grade} SD beserta fokus materinya (1 kalimat). Kembalikan JSON array: [{ "topic": "...", "context": "..." }]`;
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.8,
+            maxOutputTokens: 800,
+            responseMimeType: 'application/json',
+          },
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (rawText) {
+          const parsed = JSON.parse(cleanJsonResponse(rawText));
+          const list = Array.isArray(parsed) ? parsed : (parsed.recommendations || parsed.topics || []);
+          if (Array.isArray(list) && list.length > 0) {
+            return list.map((r: any) => ({
+              topic: String(r.topic || '').trim(),
+              context: String(r.context || '').trim(),
+            })).filter((r: AiTopicRecommendation) => r.topic.length > 0);
+          }
+        }
+      }
+    } catch (geminiErr) {
+      console.warn('generateAiTopicIdeas Gemini lokal error:', geminiErr);
+    }
+  }
+
+  // 4. Jika tidak ada AI / offline, kembalikan array kosong agar pemanggil dapat menggunakan preset lokal yang diacak
+  return [];
+}
+
 /* =========================================================
    PROMPT & CLEANING HELPERS
 ========================================================= */
