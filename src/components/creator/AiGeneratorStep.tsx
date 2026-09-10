@@ -39,7 +39,6 @@ import {
 import { 
   Sparkles, 
   Zap, 
-  ArrowLeft, 
   ArrowRight, 
   Loader2, 
   AlertCircle, 
@@ -2023,14 +2022,17 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
         <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-8 lg:p-10 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6 sm:space-y-8 animate-fade-in">
           
           {/* Pill Ringkasan Mapel & Kelas */}
-          <div className="flex items-center justify-between gap-2.5 flex-wrap p-3.5 sm:p-4 rounded-2xl bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900/60">
-            <div className="flex items-center gap-2 text-blue-900 dark:text-blue-200 text-xs sm:text-sm font-black flex-wrap min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-3 p-3.5 sm:p-4 rounded-2xl bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900/60">
+            <div className="flex items-center gap-2.5 min-w-0 flex-1">
               <span className="text-xl sm:text-2xl shrink-0">{EMOJI_BY_SUBJECT[subject]}</span>
-              <span className="shrink-0">{subject}</span>
-              <span className="text-blue-400 shrink-0">•</span>
-              <span className="shrink-0">
-                Kelas {grade} {educationLevel === 'SMA' ? 'SMA / SMK' : educationLevel === 'SMP' ? 'SMP' : 'SD'}
-              </span>
+              <div className="min-w-0">
+                <div className="text-xs sm:text-sm font-black text-blue-950 dark:text-blue-100 truncate">
+                  {subject}
+                </div>
+                <div className="text-[11px] sm:text-xs font-semibold text-blue-700 dark:text-blue-300">
+                  Kelas {grade} {educationLevel === 'SMA' ? 'SMA / SMK' : educationLevel === 'SMP' ? 'SMP' : 'SD'}
+                </div>
+              </div>
             </div>
             <button
               type="button"
@@ -2038,9 +2040,9 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                 playClick();
                 onStageChange(1);
               }}
-              className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline px-2.5 py-1 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/50 shrink-0"
+              className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline px-2.5 py-1.5 rounded-xl hover:bg-blue-100 dark:hover:bg-blue-900/50 shrink-0 btn-press"
             >
-              Ubah Mapel & Kelas ✏️
+              Ubah ✏️
             </button>
           </div>
 
@@ -2132,6 +2134,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                 </label>
                 <textarea
                   rows={3}
+                  spellCheck={false}
                   value={contextNotes}
                   onChange={(e) => setContextNotes(e.target.value)}
                   placeholder="Contoh: Fokuskan pada organ tertentu, gunakan bahasa santai dan ramah anak..."
@@ -2146,19 +2149,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
           </div>
 
           {/* Navigasi Tahap 2 */}
-          <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
-            <button
-              type="button"
-              onClick={() => {
-                playClick();
-                onStageChange(1);
-              }}
-              className="px-6 py-3.5 rounded-2xl font-bold text-xs sm:text-sm text-slate-600 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 min-h-[48px] flex items-center gap-2 btn-press transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Kembali ke Mapel & Kelas</span>
-            </button>
-
+          <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end">
             <button
               type="button"
               onClick={() => {
@@ -2170,9 +2161,9 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                 setErrorMessage(null);
                 onStageChange(3);
               }}
-              className="px-8 py-3.5 rounded-2xl font-black text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-md flex items-center gap-2 min-h-[48px] btn-press transition-all"
+              className="w-full sm:w-auto px-8 py-3.5 rounded-2xl font-black text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 min-h-[48px] btn-press transition-all"
             >
-              <span>Lanjut ke Format & Jumlah Soal</span>
+              <span>Lanjut ke Format Soal</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
@@ -2561,19 +2552,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
           </div>
 
           {/* Navigasi Tahap 3 */}
-          <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
-            <button
-              type="button"
-              onClick={() => {
-                playClick();
-                onStageChange(2);
-              }}
-              className="px-6 py-3.5 rounded-2xl font-bold text-xs sm:text-sm text-slate-600 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 min-h-[48px] flex items-center gap-2 btn-press transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Kembali ke Topik Materi</span>
-            </button>
-
+          <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end">
             <button
               type="button"
               onClick={() => {
@@ -2585,7 +2564,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                 setErrorMessage(null);
                 onStageChange(4);
               }}
-              className="px-8 py-3.5 rounded-2xl font-black text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-md flex items-center gap-2 min-h-[48px] btn-press transition-all"
+              className="w-full sm:w-auto px-8 py-3.5 rounded-2xl font-black text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 min-h-[48px] btn-press transition-all"
             >
               <span>Lanjut ke Pilihan Mesin AI</span>
               <ArrowRight className="w-4 h-4" />
@@ -3055,25 +3034,12 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
           )}
 
           {/* Action Footer Tahap 4 */}
-          <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
-            <button
-              type="button"
-              disabled={isLoading}
-              onClick={() => {
-                playClick();
-                onStageChange(3);
-              }}
-              className="px-6 py-3.5 rounded-2xl font-bold text-xs sm:text-sm text-slate-600 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 min-h-[48px] flex items-center gap-2 btn-press transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Kembali ke Format Soal</span>
-            </button>
-
+          <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end">
             {selectedEngine === 'prompt' ? (
               <button
                 type="button"
                 onClick={handleParseAndOpenStudio}
-                className="px-8 py-3.5 rounded-2xl font-black text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-md flex items-center gap-2 min-h-[48px] btn-press transition-all"
+                className="w-full sm:w-auto px-8 py-3.5 rounded-2xl font-black text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 min-h-[48px] btn-press transition-all"
               >
                 <Eye className="w-4 h-4" />
                 <span>Periksa & Buka Bank Soal</span>
@@ -3084,7 +3050,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                 type="button"
                 disabled={isLoading || (proportionMode === 'custom' && sumCustomProportions !== currentTotalQuestions)}
                 onClick={handleExecuteAiDirect}
-                className="px-8 py-3.5 rounded-2xl font-black text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/25 flex items-center gap-2 min-h-[48px] btn-press transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full sm:w-auto px-8 py-3.5 rounded-2xl font-black text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2 min-h-[48px] btn-press transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? (
                   <>

@@ -1,6 +1,22 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.66] - 2026-09-10
+### Eliminasi Redundansi Tombol Kembali Bawah & Penyempurnaan Ergonomi Tombol Lanjut (Mobile-First)
+
+#### 1. Penghapusan Tombol Kembali Redundan pada Area Bawah
+- Menghapus tombol *"Kembali"* di samping tombol *"Lanjut"* pada seluruh tahapan pembuat kuis AI (Tahap 2, Tahap 3, dan Tahap 4) karena telah terakomodasi secara permanen oleh tombol panah kembali (`←`) di sticky header atas serta bilah tab nomor tahapan.
+- Mengeliminasi distorsi tata letak di mana tombol kembali bawah sebelumnya menghimpit tombol aksi utama (*Call-to-Action*) dan menyebabkan teks terpotong atau patah menjadi 3 baris di perangkat ponsel.
+
+#### 2. Tombol Aksi Utama Lega (*Full-Width* Mobile & Rapi di Kanan Desktop)
+- Mengubah tombol navigasi maju menjadi elemen tunggal penuh (*full-width*) di perangkat ponsel dan rata kanan rapi di layar desktop (`w-full sm:w-auto`).
+- Teks label tombol diperjelas menjadi 1 baris ringkas: **Lanjut ke Format Soal →**, **Lanjut ke Pilihan Mesin AI →**, dan **Buat Kuis Sekarang & Buka Bank Soal ⚡**, memberikan area tap jempol yang nyaman ($\ge 48$ px).
+
+#### 3. Perapian Banner Mapel & Kelas Serta Tab Progres
+- Merapikan tata letak kartu ringkasan kelas & mata pelajaran di Tahap 2 agar teks jenjang dan mapel tidak terpecah dengan titik pemisah terisolasi di layar sempit.
+- Mengoptimalkan *padding* dan ukuran teks pada 4 tab navigasi di perangkat mobile (`px-0.5 xs:px-1.5`) sehingga label tahapan (seperti "Format") tidak terpotong menjadi elipsis.
+- Menambahkan atribut `spellCheck={false}` pada kolom catatan tambahan untuk mencegah garis merah pemeriksa ejaan yang mengganggu estetika.
+
 ## [2.2.65] - 2026-09-10
 ### Optimalisasi Tampilan Saran Topik Menjadi 1 Baris Horisontal Swipeable & Penegasan Kotak Catatan Khusus
 

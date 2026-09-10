@@ -745,7 +745,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                   playClick();
                   setAiFunnelStage(1);
                 }}
-                className={`py-2 px-1 sm:px-2 rounded-xl font-bold text-xs sm:text-sm transition-all min-h-[44px] flex items-center justify-center gap-1 sm:gap-2 truncate btn-press ${
+                className={`py-2 px-0.5 xs:px-1.5 sm:px-2 rounded-xl font-bold text-[11px] sm:text-xs md:text-sm transition-all min-h-[44px] flex items-center justify-center gap-1 sm:gap-1.5 truncate btn-press ${
                   aiFunnelStage === 1
                     ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-400/30 font-black'
                     : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
@@ -768,7 +768,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                   playClick();
                   setAiFunnelStage(2);
                 }}
-                className={`py-2 px-1 sm:px-2 rounded-xl font-bold text-xs sm:text-sm transition-all min-h-[44px] flex items-center justify-center gap-1 sm:gap-2 truncate btn-press ${
+                className={`py-2 px-0.5 xs:px-1.5 sm:px-2 rounded-xl font-bold text-[11px] sm:text-xs md:text-sm transition-all min-h-[44px] flex items-center justify-center gap-1 sm:gap-1.5 truncate btn-press ${
                   aiFunnelStage === 2
                     ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-400/30 font-black'
                     : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
@@ -795,7 +795,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                   }
                   setAiFunnelStage(3);
                 }}
-                className={`py-2 px-1 sm:px-2 rounded-xl font-bold text-xs sm:text-sm transition-all min-h-[44px] flex items-center justify-center gap-1 sm:gap-2 truncate btn-press ${
+                className={`py-2 px-0.5 xs:px-1.5 sm:px-2 rounded-xl font-bold text-[11px] sm:text-xs md:text-sm transition-all min-h-[44px] flex items-center justify-center gap-1 sm:gap-1.5 truncate btn-press ${
                   aiFunnelStage === 3
                     ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-400/30 font-black'
                     : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
@@ -822,7 +822,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                   }
                   setAiFunnelStage(4);
                 }}
-                className={`py-2 px-1 sm:px-2 rounded-xl font-bold text-xs sm:text-sm transition-all min-h-[44px] flex items-center justify-center gap-1 sm:gap-2 truncate btn-press ${
+                className={`py-2 px-0.5 xs:px-1.5 sm:px-2 rounded-xl font-bold text-[11px] sm:text-xs md:text-sm transition-all min-h-[44px] flex items-center justify-center gap-1 sm:gap-1.5 truncate btn-press ${
                   aiFunnelStage === 4
                     ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-400/30 font-black'
                     : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
