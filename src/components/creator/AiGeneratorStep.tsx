@@ -56,7 +56,8 @@ import {
   X,
   Key,
   ExternalLink,
-  RefreshCw
+  RefreshCw,
+  ShieldCheck
 } from 'lucide-react';
 
 export type CreationStage = 1 | 2 | 3 | 4;
@@ -2857,7 +2858,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                     )}
                   </div>
                   <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5 sm:mt-1 leading-snug">
-                    Aplikasi memilih AI terbaik yang tersedia, dengan peralihan otomatis ke cadangan jika kuota limit.
+                    Pilih model terbaik otomatis. Beralih ke cadangan jika batas tercapai.
                   </p>
                 </div>
               </div>
@@ -2916,7 +2917,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                       </span>
                     </div>
                     <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5 sm:mt-1 leading-snug line-clamp-2 sm:line-clamp-none">
-                      Pembuat soal cepat tanpa internet atau kuota API. Selalu siap sedia.
+                      Buat soal langsung di peramban tanpa internet atau kuota API.
                     </p>
                   </div>
                 </div>
@@ -2963,7 +2964,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                       </div>
                     </div>
                     <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5 sm:mt-1 leading-snug line-clamp-2 sm:line-clamp-none">
-                      Kecerdasan analitis mendalam untuk penalaran kritis (HOTS) dan materi kontekstual.
+                      Fokus pada soal penalaran logis dan berpikir kritis (HOTS).
                     </p>
                   </div>
                 </div>
@@ -3010,7 +3011,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                       </div>
                     </div>
                     <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5 sm:mt-1 leading-snug line-clamp-2 sm:line-clamp-none">
-                      Generasi kuis secepat kilat dengan akurasi tinggi dan format terstruktur rapi.
+                      Generasi butir soal paling cepat dengan pemrosesan efisien.
                     </p>
                   </div>
                 </div>
@@ -3057,7 +3058,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                       </div>
                     </div>
                     <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5 sm:mt-1 leading-snug line-clamp-2 sm:line-clamp-none">
-                      Pertanyaan kontekstual, variatif, dan komunikatif sesuai tingkat kuis.
+                      Gaya bahasa luwes dengan variasi pertanyaan yang luas.
                     </p>
                   </div>
                 </div>
@@ -3104,7 +3105,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                       </span>
                     </div>
                     <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5 sm:mt-1 leading-snug line-clamp-2 sm:line-clamp-none">
-                      Salin teks prompt ke ChatGPT/Claude, atau impor berkas dokumen kuis.
+                      Gunakan hasil prompt AI eksternal atau impor berkas dokumen.
                     </p>
                   </div>
                 </div>
@@ -3696,26 +3697,26 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                     </div>
                   </div>
 
-                  <div>
-                    <label className="text-xs font-extrabold text-slate-800 dark:text-slate-200 block mb-1.5">
-                      Pilihan Model DeepSeek:
-                    </label>
-                    <select
-                      value={deepseekModelChoice}
-                      onChange={(e) => setDeepseekModelChoice(e.target.value as DeepSeekModel)}
-                      className="w-full px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-semibold focus:outline-none min-h-[44px]"
-                    >
-                      <option value="deepseek-chat">deepseek-chat (DeepSeek-V3 - Cepat, Responsif, Format JSON Stabil)</option>
-                      <option value="deepseek-reasoner">deepseek-reasoner (DeepSeek-R1 - Penalaran Logika & Matematika Mendalam)</option>
-                    </select>
-                  </div>
+                    <div>
+                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200 block mb-1.5">
+                        Pilihan Model DeepSeek:
+                      </label>
+                      <select
+                        value={deepseekModelChoice}
+                        onChange={(e) => setDeepseekModelChoice(e.target.value as DeepSeekModel)}
+                        className="w-full px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-semibold focus:outline-none min-h-[44px]"
+                      >
+                        <option value="deepseek-chat">DeepSeek-V3 (deepseek-chat)</option>
+                        <option value="deepseek-reasoner">DeepSeek-R1 (deepseek-reasoner)</option>
+                      </select>
+                    </div>
 
-                  <div className="p-3.5 rounded-xl bg-sky-50 dark:bg-sky-950/40 text-[11px] text-sky-900 dark:text-sky-300 space-y-1 leading-relaxed border border-sky-200/80 dark:border-sky-900/60">
-                    <p className="font-bold">💡 Keunggulan DeepSeek AI:</p>
-                    <p>DeepSeek-V3 dan DeepSeek-R1 menawarkan efisiensi komputasi tinggi dan pemahaman bahasa Indonesia yang alami untuk perumusan soal Kurikulum Merdeka (SD, SMP, dan SMA).</p>
+                    <div className="flex items-center gap-2 text-[11px] text-slate-400 dark:text-slate-500 pt-1">
+                      <ShieldCheck className="w-4 h-4 shrink-0 text-slate-400" />
+                      <span>Kunci API tersimpan di peramban lokal dan hanya digunakan untuk memanggil API secara langsung.</span>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
               {/* TAB 2: GROQ CLOUD */}
               {apiKeyTab === 'groq' && (
@@ -3760,20 +3761,25 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                   </div>
 
                   <div>
-                    <label className="text-xs font-extrabold text-slate-800 dark:text-slate-200 block mb-1.5">
-                      Pilihan Model Groq LPU:
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 block mb-1.5">
+                      Pilihan Model Groq:
                     </label>
                     <select
                       value={groqModelChoice}
                       onChange={(e) => setGroqModelChoice(e.target.value as GroqModel)}
                       className="w-full px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-semibold focus:outline-none min-h-[44px]"
                     >
-                      <option value="llama-3.3-70b-versatile">Llama 3.3 70B (Sangat Cerdas & Presisi)</option>
-                      <option value="llama-3.1-8b-instant">Llama 3.1 8B Instant (Super Kilat)</option>
-                      <option value="deepseek-r1-distill-llama-70b">DeepSeek R1 Distill Llama 70B (Penalaran MTK)</option>
-                      <option value="qwen/qwen3.8-27b">Qwen 3.8 27B</option>
-                      <option value="gemma2-9b-it">Google Gemma 2 9B</option>
+                      <option value="llama-3.3-70b-versatile">Llama 3.3 70B (llama-3.3-70b-versatile)</option>
+                      <option value="llama-3.1-8b-instant">Llama 3.1 8B (llama-3.1-8b-instant)</option>
+                      <option value="deepseek-r1-distill-llama-70b">DeepSeek R1 Distill (deepseek-r1-distill-llama-70b)</option>
+                      <option value="qwen/qwen3.8-27b">Qwen 3.8 27B (qwen/qwen3.8-27b)</option>
+                      <option value="gemma2-9b-it">Gemma 2 9B (gemma2-9b-it)</option>
                     </select>
+                  </div>
+
+                  <div className="flex items-center gap-2 text-[11px] text-slate-400 dark:text-slate-500 pt-1">
+                    <ShieldCheck className="w-4 h-4 shrink-0 text-slate-400" />
+                    <span>Kunci API tersimpan di peramban lokal dan hanya digunakan untuk memanggil API secara langsung.</span>
                   </div>
                 </div>
               )}
@@ -3790,7 +3796,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
 
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-xs font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-1">
+                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1">
                         <span>✨ Kunci API Gemini (AIzaSy...):</span>
                       </label>
                       <a
@@ -3821,7 +3827,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                   </div>
 
                   <div>
-                    <label className="text-xs font-extrabold text-slate-800 dark:text-slate-200 block mb-1.5">
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 block mb-1.5">
                       Pilihan Model Gemini:
                     </label>
                     <select
@@ -3829,11 +3835,16 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                       onChange={(e) => setGeminiModelChoice(e.target.value as GeminiModel)}
                       className="w-full px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-semibold focus:outline-none min-h-[44px]"
                     >
-                      <option value="gemini-2.0-flash">Gemini 2.0 Flash (Default Tercepat)</option>
-                      <option value="gemini-1.5-pro">Gemini 1.5 Pro (Penalaran PRO Tingkat Lanjut)</option>
-                      <option value="gemini-3.8-flash">Gemini 3.8 Flash</option>
-                      <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash Lite</option>
+                      <option value="gemini-2.0-flash">Gemini 2.0 Flash (gemini-2.0-flash)</option>
+                      <option value="gemini-1.5-pro">Gemini 1.5 Pro (gemini-1.5-pro)</option>
+                      <option value="gemini-3.8-flash">Gemini 3.8 Flash (gemini-3.8-flash)</option>
+                      <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash Lite (gemini-3.1-flash-lite)</option>
                     </select>
+                  </div>
+
+                  <div className="flex items-center gap-2 text-[11px] text-slate-400 dark:text-slate-500 pt-1">
+                    <ShieldCheck className="w-4 h-4 shrink-0 text-slate-400" />
+                    <span>Kunci API tersimpan di peramban lokal dan hanya digunakan untuk memanggil API secara langsung.</span>
                   </div>
                 </div>
               )}

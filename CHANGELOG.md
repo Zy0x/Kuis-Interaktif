@@ -1,6 +1,22 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.81] - 2026-09-11
+### Pembersihan Deskripsi Mesin AI (Bebas AI Slop & Bahasa Natural)
+
+#### 1. Deskripsi Pilihan Mesin AI Ringkas & Bersih
+- Menulis ulang seluruh deskripsi mesin AI pada kartu generator agar lebih komunikatif, natural, dan bebas dari istilah promosi berlebih (*AI slop*):
+  - **Otomatis**: *"Pilih model terbaik otomatis. Beralih ke cadangan jika batas tercapai."*
+  - **Lokal**: *"Buat soal langsung di peramban tanpa internet atau kuota API."*
+  - **DeepSeek AI**: *"Fokus pada soal penalaran logis dan berpikir kritis (HOTS)."*
+  - **Groq Cloud**: *"Generasi butir soal paling cepat dengan pemrosesan efisien."*
+  - **Google Gemini**: *"Gaya bahasa luwes dengan variasi pertanyaan yang luas."*
+  - **Salin / Berkas**: *"Gunakan hasil prompt AI eksternal atau impor berkas dokumen."*
+
+#### 2. Penyeragaman Modal Pengaturan Kunci API Pribadi
+- Menghapus kotak promosi berlebih pada tab DeepSeek dan menggantinya dengan catatan privasi penyimpanan lokal yang konsisten dan informatif.
+- Merapikan label opsi pilihan model (*dropdown*) di seluruh tab penyedia API (DeepSeek, Groq, Gemini) agar menggunakan penamaan teknis yang ringkas tanpa klaim berlebihan.
+
 ## [2.2.80] - 2026-09-11
 ### Integrasi Sempurna Mode Otomatis dengan Restorasi Ikon Ikonik Mesin AI
 
