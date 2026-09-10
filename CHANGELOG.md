@@ -1,6 +1,16 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.72] - 2026-09-10
+### Optimalisasi Tinggi Kolom Catatan Tambahan & Interaktivitas Drag Resize di Mobile
+
+#### 1. Peningkatan Tinggi Awal (*Comfortable Base Height*)
+- Meningkatkan tinggi dasar kolom **Catatan Tambahan** pada Tahap Topik dari yang sebelumnya hanya 3 baris (~70px) menjadi lebih luas dan lega (`min-h-[115px] sm:min-h-[125px]`, `rows={4}`), sehingga pengguna di perangkat mobile dapat mengetik instruksi khusus tanpa merasa sempit.
+
+#### 2. Kontrol Tarik Ujung Interaktif (*Custom Drag Resize Handle*)
+- Mengaktifkan fitur perbesaran vertikal mandiri (`resize-y`) dengan batasan proporsional.
+- Menyematkan indikator grip 6-titik universal di sudut kanan bawah yang mendukung sentuhan langsung jari pada layar ponsel (*touch drag via PointerEvent*) maupun mouse/trackpad di desktop, memungkinkan pengguna memperbesar tinggi kolom secara bebas sesuai kebutuhan instruksi mereka.
+
 ## [2.2.71] - 2026-09-10
 ### Refaktor Tahap Format Soal: Eliminasi AI Slop, Layout Ringkas, dan Konsistensi Konteks
 
