@@ -1,6 +1,18 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.47] - 2026-09-10
+### Ekspansi Lebar Penuh Studio Kuis (Ultra-Wide max-w-[2000px]) Selaras dengan Dashboard Guru
+
+#### 1. Perluasan Maksimal Antarmuka Studio Kuis ke Layar Lebar
+- Menghilangkan batas sempit `max-w-6xl 2xl:max-w-7xl` (1280px) pada Studio Kuis yang sebelumnya masih menyisakan ruang kosong besar di sisi kiri dan kanan monitor resolusi 1080p, 2K, maupun 4K.
+- Menyesuaikan batas kontainer kerja Studio Kuis menjadi `max-w-[2000px] px-3 xs:px-4 sm:px-8 lg:px-12` persis selaras dengan tata letak Dashboard Guru (`TeacherDashboard`).
+- Seluruh elemen antarmuka (Navbar Studio, Bilah Tab Langkah 1–4, Formulir Konfigurasi, dan Panel Pratinjau Real-Time) kini membentang secara elegan, proporsional, dan seimbang memenuhi ruang layar lebar tanpa celah kosong berlebih.
+
+#### 2. Keseimbangan Tata Letak 2 Kolom pada Layar Monitor
+- **Kolom Kiri (Utama):** Mendapatkan ruang kerja yang lega untuk pengisian judul, opsi jawaban, butir soal, dan pengaturan kuis.
+- **Kolom Kanan (Pratinjau & Status):** Memanfaatkan ruang layar sisi kanan secara produktif untuk *Live Preview* kartu katalog siswa dan spesifikasi butir soal.
+
 ## [2.2.46] - 2026-09-10
 ### Eliminasi Total "AI Slop" & Pengisian Celah Kosong Layar Lebar dengan Panel Pratinjau Fungsional
 

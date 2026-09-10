@@ -81,7 +81,7 @@ export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
   };
 
   return (
-    <div className="w-full max-w-6xl 2xl:max-w-7xl mx-auto px-3 xs:px-4 sm:px-6 lg:px-8 py-4 sm:py-6 animate-fade-in">
+    <div className="w-full max-w-[2000px] mx-auto px-3 xs:px-4 sm:px-8 lg:px-12 py-4 sm:py-6 animate-fade-in">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
         {/* Kolom Kiri: Formulir Utama (8 kolom di layar besar) */}

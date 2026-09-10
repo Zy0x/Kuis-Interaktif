@@ -568,8 +568,8 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col pb-16">
       
       {/* Top Header */}
-      <header className="w-full sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-3 sm:px-6 lg:px-8 pt-[max(env(safe-area-inset-top),0.625rem)] pb-2.5 sm:pb-3 shadow-xs">
-        <div className="w-full max-w-6xl 2xl:max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-3 transition-all">
+      <header className="w-full sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-3 xs:px-4 sm:px-8 lg:px-12 pt-[max(env(safe-area-inset-top),0.625rem)] pb-2.5 sm:pb-3 shadow-xs">
+        <div className="w-full max-w-[2000px] mx-auto flex items-center justify-between gap-2 sm:gap-3 transition-all">
           <button
             onClick={handleHeaderBack}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 font-semibold text-xs sm:text-sm min-h-[44px] min-w-[44px] justify-center btn-press transition-colors flex-shrink-0"
@@ -625,7 +625,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
         </div>
 
         {/* Step Navigation Tabs */}
-        <div className={`w-full max-w-6xl 2xl:max-w-7xl mx-auto mt-2.5 grid gap-1.5 sm:gap-2 transition-all ${
+        <div className={`w-full max-w-[2000px] mx-auto mt-2.5 grid gap-1.5 sm:gap-2 transition-all ${
           isAiMode ? 'grid-cols-4' : 'grid-cols-3'
         }`}>
           {isAiMode ? (
@@ -1359,7 +1359,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
 
         {/* ================= STEP PREVIEW & PUBLISH (Step 4 in AI, Step 3 in Manual) ================= */}
         {((isAiMode && currentStep === 4) || (!isAiMode && currentStep === 3)) && (
-          <div className="w-full max-w-6xl 2xl:max-w-7xl mx-auto px-3 xs:px-4 sm:px-6 lg:px-8 py-4 sm:py-6 animate-fade-in space-y-6">
+          <div className="w-full max-w-[2000px] mx-auto px-3 xs:px-4 sm:px-8 lg:px-12 py-4 sm:py-6 animate-fade-in space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
               
               {/* Kolom Kiri: Pratinjau Soal (8 kolom di desktop) */}
