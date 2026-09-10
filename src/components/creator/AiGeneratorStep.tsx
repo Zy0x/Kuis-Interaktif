@@ -1583,49 +1583,39 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
         <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-8 lg:p-10 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6 sm:space-y-8 animate-fade-in">
           
           {/* Selector Jenjang Pendidikan (SD, SMP, SMA/SMK) */}
-          <div className="bg-slate-100/90 dark:bg-slate-800/80 p-2.5 sm:p-3 rounded-2xl border border-slate-200/80 dark:border-slate-700 flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs">
-            <div className="flex items-center gap-2.5 px-1">
-              <div className="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center text-xl shadow-xs shrink-0">
-                {educationLevel === 'SMA' ? '🎓' : educationLevel === 'SMP' ? '🏫' : '🎒'}
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-white">Jenjang Pendidikan</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300">
+                  Kurikulum Merdeka
+                </span>
               </div>
-              <div>
-                <h3 className="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-white leading-tight flex items-center gap-1.5">
-                  <span>Jenjang Pendidikan</span>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300">
-                    Kurikulum Merdeka
-                  </span>
-                </h3>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                  Pilih jenjang untuk memfilter mapel, pembagian fase, dan capaian pembelajaran
-                </p>
-              </div>
+              <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
+                Memfilter mapel, fase, dan capaian pembelajaran
+              </p>
             </div>
 
-            <div className="grid grid-cols-3 gap-2">
-              {[
-                { id: 'SD' as EducationLevel, label: 'SD / MI', icon: '🎒', phase: 'Fase A – C (Kls 1–6)' },
-                { id: 'SMP' as EducationLevel, label: 'SMP / MTs', icon: '🏫', phase: 'Fase D (Kls 7–9)' },
-                { id: 'SMA' as EducationLevel, label: 'SMA / SMK', icon: '🎓', phase: 'Fase E – F (Kls 10–12)' },
-              ].map((lvl) => {
+            <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shrink-0">
+              {([
+                { id: 'SD' as EducationLevel, label: 'SD / MI', icon: '🎒' },
+                { id: 'SMP' as EducationLevel, label: 'SMP / MTs', icon: '🏫' },
+                { id: 'SMA' as EducationLevel, label: 'SMA / SMK', icon: '🎓' },
+              ]).map((lvl) => {
                 const isSelected = educationLevel === lvl.id;
                 return (
                   <button
                     key={lvl.id}
                     type="button"
                     onClick={() => handleEducationLevelChange(lvl.id)}
-                    className={`min-h-[48px] px-3 py-2 rounded-xl flex items-center justify-center gap-2 transition-all font-black text-xs sm:text-sm btn-press ${
+                    className={`min-h-[44px] px-3 sm:px-4 py-2 rounded-xl flex items-center gap-1.5 transition-all font-bold text-xs sm:text-sm btn-press ${
                       isSelected
-                        ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 ring-2 ring-blue-400/40'
-                        : 'bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-650 border border-slate-200 dark:border-slate-600'
+                        ? 'bg-blue-600 text-white shadow-sm'
+                        : 'text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-700'
                     }`}
                   >
-                    <span className="text-base sm:text-lg shrink-0">{lvl.icon}</span>
-                    <div className="text-left">
-                      <div className="leading-tight font-extrabold">{lvl.label}</div>
-                      <div className={`text-[9px] font-normal leading-tight hidden lg:block ${isSelected ? 'text-blue-100' : 'text-slate-400 dark:text-slate-400'}`}>
-                        {lvl.phase}
-                      </div>
-                    </div>
+                    <span className="text-base shrink-0">{lvl.icon}</span>
+                    <span className="font-extrabold">{lvl.label}</span>
                   </button>
                 );
               })}
