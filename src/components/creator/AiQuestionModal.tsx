@@ -25,6 +25,7 @@ import {
   ExternalLink,
   Zap
 } from 'lucide-react';
+import { ResizableTextarea } from '../common/ResizableTextarea';
 import {
   getStoredAiProvider,
   saveStoredAiProvider,
@@ -1007,13 +1008,18 @@ Pembahasan: Insang menyaring oksigen yang terlarut di dalam air.`;
                 </button>
               </div>
 
-              <textarea
+              <ResizableTextarea
                 value={rawText}
                 onChange={(e) => setRawText(e.target.value)}
                 placeholder="Tempelkan hasil teks dari ChatGPT, Gemini, Word, atau dokumen berformat nomor di sini... (Mendukung format JSON maupun teks bernomor umum)"
                 rows={6}
-                className="w-full p-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:border-blue-500"
+                minHeight={120}
+                maxHeight={600}
+                className="font-mono text-xs min-h-[140px]"
               />
+              <div className="flex justify-end pt-1">
+                <span className="hidden sm:inline text-[10px] text-slate-400/80">Tarik sudut kanan bawah untuk perbesar</span>
+              </div>
             </div>
           )}
 

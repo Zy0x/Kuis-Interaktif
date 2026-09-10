@@ -1,6 +1,28 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.87] - 2026-09-11
+### Standarisasi Input Field Teks Panjang & Eliminasi Handle Resize Ganda
+
+#### 1. Standarisasi Komponen ResizableTextarea
+- Menghadirkan komponen `ResizableTextarea` terpadu untuk seluruh kolom input teks panjang:
+  - Gaya visual konsisten: sudut membulat `rounded-2xl`, bingkai presisi `border-2 border-slate-300 dark:border-slate-700`, latar belakang adaptif `bg-white dark:bg-slate-800`, serta cincin fokus interaktif.
+  - Dilengkapi *grip* penarik kustom 6-titik yang ergonomis dan mendukung interaksi geser vertikal mulus baik menggunakan *mouse* di desktop maupun sentuhan jari di ponsel (*mobile touch-friendly*).
+  - Teks petunjuk pembantu seragam di bawah kolom: *"Tarik sudut kanan bawah untuk perbesar"*.
+
+#### 2. Eliminasi Penarik Resize Terluar Bawaan Browser
+- Menghilangkan gagang penarik ganda (*duplicate resize handle*) pada sudut kanan bawah kolom teks:
+  - Menerapkan `resize-none` pada elemen textarea serta aturan CSS global `textarea::-webkit-resizer { display: none; }` untuk menghapus garis segitiga bawaan browser di ujung terluar garis bingkai.
+  - Memastikan hanya satu penarik kustom 6-titik yang elegan, bersih, dan fungsional yang tampil di dalam kolom.
+
+#### 3. Penerapan Menyeluruh pada Alur Pembuatan Kuis
+- Mengintegrasikan standarisasi ini pada:
+  - **Catatan Tambahan (Opsional)** pada Tahap 2 Topik & Sasaran Pembelajaran.
+  - **Salin Prompt AI** dan **Tempel Teks Respons AI** pada Tahap 4 Mesin AI.
+  - **Deskripsi / Petunjuk untuk Siswa** pada Informasi Kuis.
+  - **Teks Pertanyaan Soal** dan **Pembahasan Edukatif** pada Studio Pembuat Kuis.
+  - **Tempel Teks Soal AI** pada Modal Generator Cepat.
+
 ## [2.2.86] - 2026-09-11
 ### Optimalisasi Responsivitas & Eliminasi Celah Kosong Tab Unggah Berkas
 

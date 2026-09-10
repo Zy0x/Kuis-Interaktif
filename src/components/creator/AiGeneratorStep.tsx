@@ -59,6 +59,7 @@ import {
   RefreshCw,
   ShieldCheck
 } from 'lucide-react';
+import { ResizableTextarea } from '../common/ResizableTextarea';
 
 export type CreationStage = 1 | 2 | 3 | 4;
 export type SupportedFormat = 'multiple_choice' | 'true_false' | 'short_answer' | 'matching_pairs';
@@ -2180,54 +2181,17 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                 <label className="block text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white mb-1.5">
                   Catatan Tambahan <span className="text-slate-400 font-normal text-xs">(Opsional)</span>
                 </label>
-                <div className="relative group">
-                  <textarea
-                    ref={contextNotesTextareaRef}
-                    rows={4}
-                    spellCheck={false}
-                    value={contextNotes}
-                    onChange={(e) => setContextNotes(e.target.value)}
-                    placeholder="Contoh: Fokuskan pada organ tertentu, gunakan bahasa santai dan ramah anak..."
-                    className="w-full px-4 py-3 rounded-2xl border-2 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 font-medium text-xs sm:text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none shadow-xs resize-y min-h-[115px] sm:min-h-[125px] leading-relaxed pb-7"
-                  />
-                  {/* Grip penarik ujung untuk layar sentuh ponsel & mouse */}
-                  <div
-                    title="Tarik sudut ini untuk memperbesar tinggi kolom"
-                    onPointerDown={(e) => {
-                      e.preventDefault();
-                      const startY = e.clientY;
-                      const startHeight = contextNotesTextareaRef.current?.offsetHeight || 115;
-                      
-                      const onPointerMove = (moveEvent: PointerEvent) => {
-                        const delta = moveEvent.clientY - startY;
-                        const newHeight = Math.max(90, Math.min(500, startHeight + delta));
-                        if (contextNotesTextareaRef.current) {
-                          contextNotesTextareaRef.current.style.height = `${newHeight}px`;
-                        }
-                      };
-                      
-                      const onPointerUp = () => {
-                        window.removeEventListener('pointermove', onPointerMove);
-                        window.removeEventListener('pointerup', onPointerUp);
-                        window.removeEventListener('pointercancel', onPointerUp);
-                      };
-                      
-                      window.addEventListener('pointermove', onPointerMove);
-                      window.addEventListener('pointerup', onPointerUp);
-                      window.addEventListener('pointercancel', onPointerUp);
-                    }}
-                    className="absolute right-2 bottom-3 p-1.5 cursor-ns-resize text-slate-400 hover:text-blue-500 dark:text-slate-500 dark:hover:text-blue-400 select-none touch-none flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors active:scale-95"
-                  >
-                    <svg className="w-3.5 h-3.5 opacity-60 hover:opacity-100" viewBox="0 0 16 16" fill="currentColor">
-                      <circle cx="13" cy="13" r="1.5" />
-                      <circle cx="8" cy="13" r="1.5" />
-                      <circle cx="13" cy="8" r="1.5" />
-                      <circle cx="3" cy="13" r="1.5" />
-                      <circle cx="8" cy="8" r="1.5" />
-                      <circle cx="13" cy="3" r="1.5" />
-                    </svg>
-                  </div>
-                </div>
+                <ResizableTextarea
+                  ref={contextNotesTextareaRef}
+                  rows={4}
+                  spellCheck={false}
+                  value={contextNotes}
+                  onChange={(e) => setContextNotes(e.target.value)}
+                  placeholder="Contoh: Fokuskan pada organ tertentu, gunakan bahasa santai dan ramah anak..."
+                  minHeight={90}
+                  maxHeight={500}
+                  className="min-h-[115px] sm:min-h-[125px]"
+                />
               </div>
               <p className="text-[11px] text-slate-400 dark:text-slate-500 leading-relaxed flex items-center justify-between">
                 <span>Tambahkan panduan fokus materi atau gaya bahasa khusus untuk ditaati AI.</span>
@@ -3267,14 +3231,20 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                   </div>
 
                   {/* Area Konten Fleksibel */}
-                  <div className="flex-1 flex flex-col min-h-0">
-                    <div className="relative group flex-1 flex flex-col min-h-0">
-                      <textarea
-                        readOnly
-                        rows={5}
-                        value={generatedPromptText}
-                        className="w-full flex-1 px-4 py-3 rounded-2xl border-2 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 font-mono text-xs sm:text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none select-all leading-relaxed shadow-xs min-h-[135px] resize-y"
-                      />
+                  <div className="flex-1 flex flex-col min-h-0 space-y-1.5">
+                    <ResizableTextarea
+                      readOnly
+                      rows={5}
+                      value={generatedPromptText}
+                      placeholder="Prompt AI akan dimuat di sini..."
+                      containerClassName="flex-1 flex flex-col min-h-0"
+                      className="flex-1 font-mono text-xs sm:text-sm select-all min-h-[135px]"
+                      minHeight={135}
+                      maxHeight={750}
+                    />
+                    <div className="flex items-center justify-between text-[11px] text-slate-400 px-0.5 shrink-0">
+                      <span>Klik kolom untuk pilih semua teks prompt.</span>
+                      <span className="hidden sm:inline text-[10px] text-slate-400/80">Tarik sudut kanan bawah untuk perbesar</span>
                     </div>
                   </div>
 
@@ -3330,20 +3300,19 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                   <div className="flex-1 flex flex-col min-h-0">
                     {inputMethodTab === 'paste' ? (
                       <div className="flex-1 flex flex-col justify-between space-y-1.5 min-h-0">
-                        <div className="relative group flex-1 flex flex-col min-h-0">
-                          <textarea
-                            rows={5}
-                            value={rawInputText}
-                            onChange={(e) => setRawInputText(e.target.value)}
-                            placeholder="Tempelkan hasil respons AI (format JSON array atau teks bernomor: 1. Pertanyaan... A. Opsi... Kunci: ...) di sini..."
-                            className="w-full flex-1 px-4 py-3 rounded-2xl border-2 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 font-mono text-xs sm:text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none leading-relaxed shadow-xs min-h-[135px] resize-y"
-                          />
-                        </div>
+                        <ResizableTextarea
+                          rows={5}
+                          value={rawInputText}
+                          onChange={(e) => setRawInputText(e.target.value)}
+                          placeholder="Tempelkan hasil respons AI (format JSON array atau teks bernomor: 1. Pertanyaan... A. Opsi... Kunci: ...) di sini..."
+                          containerClassName="flex-1 flex flex-col min-h-0"
+                          className="flex-1 font-mono text-xs sm:text-sm min-h-[135px]"
+                          minHeight={135}
+                          maxHeight={750}
+                        />
                         <div className="flex items-center justify-between text-[11px] text-slate-400 px-0.5 shrink-0">
                           <span>Mendukung format JSON atau teks kuis bernomor.</span>
-                          {rawInputText.length > 0 && (
-                            <span className="font-bold text-blue-600 dark:text-blue-400">{rawInputText.length} karakter</span>
-                          )}
+                          <span className="hidden sm:inline text-[10px] text-slate-400/80">Tarik sudut kanan bawah untuk perbesar</span>
                         </div>
                       </div>
                     ) : (

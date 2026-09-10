@@ -180,3 +180,8 @@ body.modal-open {
   animation: horizon-glow 5s ease-in-out infinite;
 }
 
+/* Hilangkan penarik resize bawaan browser agar tidak ganda */
+textarea::-webkit-resizer {
+  display: none;
+}
+

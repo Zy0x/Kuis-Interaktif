@@ -27,6 +27,7 @@ import { AiQuestionModal } from './AiQuestionModal';
 import { generateAiIllustrationUrl } from '../../lib/geminiApi';
 import { AiGeneratorStep } from './AiGeneratorStep';
 import { InfoKuisStep } from './InfoKuisStep';
+import { ResizableTextarea } from '../common/ResizableTextarea';
 
 interface QuizCreatorProps {
   onBack: () => void;
@@ -1331,17 +1332,22 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                 </div>
 
                 {/* Pertanyaan */}
-                <div>
+                <div className="space-y-1.5">
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                     Teks Pertanyaan Soal <span className="text-rose-500">*</span>
                   </label>
-                  <textarea
+                  <ResizableTextarea
                     rows={3}
                     value={qText}
                     onChange={(e) => setQText(e.target.value)}
                     placeholder="Tuliskan butir pertanyaan kuis secara jelas dan ramah anak..."
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 text-xs sm:text-sm font-medium focus:border-blue-500 focus:outline-none"
+                    minHeight={75}
+                    maxHeight={350}
+                    className="min-h-[85px]"
                   />
+                  <div className="flex justify-end">
+                    <span className="hidden sm:inline text-[10px] text-slate-400/80">Tarik sudut kanan bawah untuk perbesar</span>
+                  </div>
                 </div>
 
                 {/* Gambar Ilustrasi */}
@@ -1540,17 +1546,22 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                 )}
 
                 {/* Pembahasan */}
-                <div>
+                <div className="space-y-1.5">
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
                     Pembahasan Edukatif (Muncul saat siswa selesai menjawab)
                   </label>
-                  <textarea
+                  <ResizableTextarea
                     value={qExplanation}
                     onChange={(e) => setQExplanation(e.target.value)}
                     rows={2}
                     placeholder="Jelaskan alasan mengapa jawaban tersebut benar untuk menambah wawasan siswa..."
-                    className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium focus:border-blue-500 focus:outline-none"
+                    minHeight={65}
+                    maxHeight={300}
+                    className="min-h-[75px]"
                   />
+                  <div className="flex justify-end">
+                    <span className="hidden sm:inline text-[10px] text-slate-400/80">Tarik sudut kanan bawah untuk perbesar</span>
+                  </div>
                 </div>
 
                 {/* Tombol Simpan Butir Soal */}

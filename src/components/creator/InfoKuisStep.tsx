@@ -11,6 +11,7 @@ import {
   Award,
   Sliders
 } from 'lucide-react';
+import { ResizableTextarea } from '../common/ResizableTextarea';
 
 const EMOJI_OPTIONS = ['🍎', '📐', '🐸', '🌱', '🫀', '🦅', '🚀', '📚', '🎨', '🔬', '⚽', '🦁', '🐯', '🐼', '💡', '🧩'];
 
@@ -145,17 +146,23 @@ export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
             </div>
 
             {/* Deskripsi */}
-            <div className="sm:col-span-2">
+            <div className="sm:col-span-2 space-y-1.5">
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                Deskripsi / Petunjuk untuk Siswa
+                Deskripsi / Petunjuk untuk Siswa <span className="text-slate-400 font-normal text-xs">(Opsional)</span>
               </label>
-              <textarea
+              <ResizableTextarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={2}
                 placeholder="Berikan arahan singkat kepada siswa sebelum mereka memulai kuis..."
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs sm:text-sm font-medium focus:border-blue-500 focus:outline-none"
+                minHeight={72}
+                maxHeight={280}
+                className="min-h-[72px]"
               />
+              <div className="flex items-center justify-between text-[11px] text-slate-400 dark:text-slate-500 px-0.5">
+                <span>Instruksi awal yang akan dibaca siswa saat membuka kuis.</span>
+                <span className="hidden sm:inline text-[10px] text-slate-400/80">Tarik sudut kanan bawah untuk perbesar</span>
+              </div>
             </div>
 
             {/* Target Kelas */}
