@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import type { Quiz, GradeLevel, Subject, TeacherProfile, GameMode } from '../../types/quiz';
+import React, { useState, useEffect, useMemo } from 'react';
+import type { Quiz, GradeLevel, Subject, TeacherProfile, GameMode, EducationLevel } from '../../types/quiz';
 import { MASTER_TEACHER_EMAIL } from '../../types/quiz';
 import { AVATAR_LIST } from '../../data/seedQuizzes';
 import { DataManager } from '../../lib/supabaseClient';
@@ -66,6 +66,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
   playClick,
 }) => {
   const [quizzes, setQuizzes] = useState<Quiz[]>(() => DataManager.getAllQuizzes({ publicOnly: true }));
+  const [selectedLevel, setSelectedLevel] = useState<EducationLevel | 'Semua'>('Semua');
   const [selectedGrade, setSelectedGrade] = useState<GradeLevel>('Semua');
   const [selectedSubject, setSelectedSubject] = useState<string>('Semua');
   const [profile, setProfile] = useState(() => DataManager.getPlayerProfile());
@@ -147,9 +148,10 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
   }, isTeacherProfileModalOpen);
 
   // 3. Level 4 (Prioritas 10): Reset Filter Kategori Aktif
-  const hasActiveFilter = selectedGrade !== 'Semua' || selectedSubject !== 'Semua';
+  const hasActiveFilter = selectedLevel !== 'Semua' || selectedGrade !== 'Semua' || selectedSubject !== 'Semua';
   useBackHandler('home-filter-reset', 10, () => {
     if (hasActiveFilter) {
+      setSelectedLevel('Semua');
       setSelectedGrade('Semua');
       setSelectedSubject('Semua');
       return true;
@@ -161,19 +163,42 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
     setQuizzes(DataManager.getAllQuizzes({ publicOnly: true }));
   }, []);
 
-  const grades: GradeLevel[] = ['Semua', 1, 2, 3, 4, 5, 6];
+  const handleLevelChange = (lvl: EducationLevel | 'Semua') => {
+    playClick();
+    setSelectedLevel(lvl);
+    if (lvl === 'SD' && typeof selectedGrade === 'number' && (selectedGrade < 1 || selectedGrade > 6)) {
+      setSelectedGrade('Semua');
+    } else if (lvl === 'SMP' && typeof selectedGrade === 'number' && (selectedGrade < 7 || selectedGrade > 9)) {
+      setSelectedGrade('Semua');
+    } else if (lvl === 'SMA' && typeof selectedGrade === 'number' && (selectedGrade < 10 || selectedGrade > 12)) {
+      setSelectedGrade('Semua');
+    }
+  };
+
+  const grades: GradeLevel[] = useMemo(() => {
+    if (selectedLevel === 'SD') return ['Semua', 1, 2, 3, 4, 5, 6];
+    if (selectedLevel === 'SMP') return ['Semua', 7, 8, 9];
+    if (selectedLevel === 'SMA') return ['Semua', 10, 11, 12];
+    return ['Semua', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+  }, [selectedLevel]);
+
   const subjects: (Subject | 'Semua')[] = [
     'Semua',
     'Matematika',
     'IPA',
+    'IPAS',
+    'IPS',
     'Bahasa Indonesia',
+    'Bahasa Inggris',
     'Pendidikan Pancasila'
   ];
 
   const filteredQuizzes = quizzes.filter((quiz) => {
+    const quizLvl = quiz.educationLevel || (quiz.grade >= 10 ? 'SMA' : quiz.grade >= 7 ? 'SMP' : 'SD');
+    const matchLevel = selectedLevel === 'Semua' || quizLvl === selectedLevel;
     const matchGrade = selectedGrade === 'Semua' || quiz.grade === selectedGrade;
     const matchSubject = selectedSubject === 'Semua' || quiz.subject === selectedSubject;
-    return matchGrade && matchSubject;
+    return matchLevel && matchGrade && matchSubject;
   });
 
   const handleSaveProfile = (e: React.FormEvent) => {
@@ -645,16 +670,46 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
           </div>
         )}
 
-        {/* Filter Section: Kelas & Mata Pelajaran */}
-        <div className="space-y-3">
+        {/* Filter Section: Jenjang, Kelas & Mata Pelajaran */}
+        <div className="space-y-3.5">
           
+          {/* Row 0: Segmented Switcher Jenjang Pendidikan (SD, SMP, SMA) */}
+          <div className="flex items-center gap-1.5 p-1.5 rounded-2xl bg-slate-100/90 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/60 overflow-x-auto scrollbar-none">
+            {[
+              { id: 'Semua', label: 'Semua Jenjang', icon: '🌐' },
+              { id: 'SD', label: 'SD / MI', icon: '🎒' },
+              { id: 'SMP', label: 'SMP / MTs', icon: '🏫' },
+              { id: 'SMA', label: 'SMA / SMK', icon: '🎓' },
+            ].map((lvl) => {
+              const isActive = selectedLevel === lvl.id;
+              return (
+                <button
+                  key={lvl.id}
+                  type="button"
+                  onClick={() => handleLevelChange(lvl.id as EducationLevel | 'Semua')}
+                  className={`flex-1 min-w-[110px] sm:min-w-[130px] py-2 px-3 rounded-xl font-extrabold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all min-h-[44px] btn-press ${
+                    isActive
+                      ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm border border-blue-200/80 dark:border-blue-900/60'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  <span className="text-sm sm:text-base">{lvl.icon}</span>
+                  <span>{lvl.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
           {/* Row 1: Filter Kelas */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-              <BookOpen className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" /> Jenjang Kelas
+              <BookOpen className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+              <span>Tingkat Kelas {selectedLevel !== 'Semua' ? `(${selectedLevel})` : ''}</span>
             </h3>
             <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">
-              {selectedGrade === 'Semua' ? 'Menampilkan Semua Jenjang' : `Khusus Kelas ${selectedGrade}`}
+              {selectedGrade === 'Semua' 
+                ? (selectedLevel === 'SD' ? 'Semua Kelas SD (1 - 6)' : selectedLevel === 'SMP' ? 'Semua Kelas SMP (7 - 9)' : selectedLevel === 'SMA' ? 'Semua Kelas SMA (10 - 12)' : 'Semua Jenjang & Kelas') 
+                : `Khusus Kelas ${selectedGrade} ${selectedLevel !== 'Semua' ? selectedLevel : (Number(selectedGrade) >= 10 ? 'SMA' : Number(selectedGrade) >= 7 ? 'SMP' : 'SD')}`}
             </span>
           </div>
 
@@ -674,7 +729,9 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                       : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700'
                   }`}
                 >
-                  {grade === 'Semua' ? 'Semua Kelas' : `Kelas ${grade}`}
+                  {grade === 'Semua' 
+                    ? (selectedLevel === 'SD' ? 'Semua SD' : selectedLevel === 'SMP' ? 'Semua SMP' : selectedLevel === 'SMA' ? 'Semua SMA' : 'Semua Kelas')
+                    : `Kelas ${grade}`}
                 </button>
               );
             })}
@@ -751,7 +808,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                           </span>
                         )}
                         <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700 font-bold text-xs tracking-tight whitespace-nowrap">
-                          Kelas {quiz.grade}
+                          Kelas {quiz.grade} {quiz.educationLevel || (quiz.grade >= 10 ? 'SMA' : quiz.grade >= 7 ? 'SMP' : 'SD')}
                         </span>
                       </div>
                     </div>
@@ -1258,11 +1315,27 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                           onChange={(e) => setStudentGrade(Number(e.target.value))}
                           className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none font-bold text-xs sm:text-sm text-slate-900 dark:text-white min-h-[44px]"
                         >
-                          {[1, 2, 3, 4, 5, 6].map((g) => (
-                            <option key={g} value={g}>
-                              Kelas {g}
-                            </option>
-                          ))}
+                          <optgroup label="Sekolah Dasar (SD / MI)">
+                            {[1, 2, 3, 4, 5, 6].map((g) => (
+                              <option key={g} value={g}>
+                                Kelas {g} SD
+                              </option>
+                            ))}
+                          </optgroup>
+                          <optgroup label="Sekolah Menengah Pertama (SMP / MTs)">
+                            {[7, 8, 9].map((g) => (
+                              <option key={g} value={g}>
+                                Kelas {g} SMP
+                              </option>
+                            ))}
+                          </optgroup>
+                          <optgroup label="Sekolah Menengah Atas / Kejuruan (SMA / SMK)">
+                            {[10, 11, 12].map((g) => (
+                              <option key={g} value={g}>
+                                Kelas {g} SMA / SMK
+                              </option>
+                            ))}
+                          </optgroup>
                         </select>
                       </div>
                     )}

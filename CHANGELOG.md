@@ -1,6 +1,38 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.58] - 2026-09-10
+### Dukungan Penuh Multi-Jenjang Pendidikan Kurikulum Merdeka (SD / MI, SMP / MTs, dan SMA / SMK)
+
+#### 1. Arsitektur Multi-Jenjang Pendidikan (Progressive Disclosure)
+- Menghadirkan alur pemilihan jenjang pendidikan bertahap (*progressive disclosure*) yang intuitif:
+  - **🎒 SD / MI**: Kelas 1–6 (Fase A: Kelas 1–2, Fase B: Kelas 3–4, Fase C: Kelas 5–6).
+  - **🏫 SMP / MTs**: Kelas 7–9 (Fase D: Kelas 7, 8, 9) dengan fokus penalaran ilmiah, eksplorasi kontekstual, dan logika terpadu.
+  - **🎓 SMA / SMK**: Kelas 10–12 (Fase E: Kelas 10 Fondasi Peminatan; Fase F: Kelas 11 & 12 Pendalaman Spesialisasi & HOTS).
+- Komponen Segmented Level Switcher dengan target sentuh ramah sentuhan (≥ 44×44 px) di Tahap 1 Asisten AI dan Beranda Aplikasi.
+- Penyimpanan preferensi jenjang lokal (`localStorage`) agar pendidik langsung kembali ke jenjang pilihannya tanpa pengaturan berulang.
+
+#### 2. Katalog Mata Pelajaran & Peminatan Komprehensif
+- Mendukung mata pelajaran khusus untuk setiap jenjang:
+  - **SD**: Matematika, IPA, IPAS, Bahasa Indonesia, Pendidikan Pancasila, Pengetahuan Umum, Bahasa Inggris, PJOK, Seni Musik, Seni Rupa, Seni Tari, Seni Teater, Pendidikan Agama (PAI, Kristen, Katolik, Hindu, Buddha, Konghucu), Bahasa Daerah, Informatika.
+  - **SMP**: Penambahan mata pelajaran terpadu: IPA Terpadu, IPS Terpadu, Informatika, Prakarya & Kewirausahaan.
+  - **SMA / SMK**: Penambahan mata pelajaran peminatan MIPA (Fisika, Kimia, Biologi, Matematika Tingkat Lanjut) serta peminatan IPS & Humaniora (Ekonomi, Sosiologi, Geografi, Sejarah, Antropologi).
+- Modal katalog mata pelajaran terstruktur dengan pencarian instan dan klasifikasi kategori dinamis sesuai jenjang yang aktif.
+
+#### 3. Capaian Pembelajaran (CP) & Asisten AI Spesifik Jenjang & Kelas
+- Rumusan Capaian Pembelajaran (CP) spesifik kelas untuk seluruh mata pelajaran dari Kelas 1 hingga Kelas 12.
+- Penyesuaian instruksi psikologis dan tingkat kognitif AI:
+  - SD: Pemahaman konkret ramah anak, C1–C3 Bloom, bahasa hangat dan suportif.
+  - SMP: Pembuktian ilmiah sebab-akibat, C3–C4 Bloom, logika terpadu.
+  - SMA: Soal berpikir tingkat tinggi (*Higher Order Thinking Skills* - HOTS), C4–C6 Bloom, studi kasus dan penalaran analitis.
+- Fitur Elaborasi CP & Brainstorm Topik Pintar otomatis beradaptasi dengan jenjang dan kelas yang dipilih.
+
+#### 4. Pembaruan Antarmuka Beranda (Home), Filter Kuis & Studio Pembuatan Manual
+- **Beranda Kuis**: Tab switcher jenjang pendidikan di atas chip kelas dinamis, menyaring kuis berdasarkan jenjang (SD, SMP, SMA) dan tingkatan kelas secara real-time.
+- **Kartu Kuis**: Lencana kelas kini menampilkan jenjang yang akurat (`Kelas 7 SMP`, `Kelas 10 SMA`, dll).
+- **Studio Kuis Manual**: Formulir informasi kuis mendukung pemilihan target kelas 1–12 dan mata pelajaran terkelompok rapi berdasarkan jenjang.
+- **Kuis Bawaan (Seed)**: Menambahkan kuis contoh untuk jenjang SMP (Interaksi Makhluk Hidup & Lingkungan) dan SMA (Kinematika Gerak Lurus & Vektor).
+
 ## [2.2.57] - 2026-09-10
 ### Integrasi Mesin Kecerdasan Buatan DeepSeek AI (DeepSeek-V3 & DeepSeek-R1), Modal Manajemen Kunci API Mandiri (BYOK) & Server-Side Cloud Secrets
 

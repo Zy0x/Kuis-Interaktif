@@ -1,4 +1,4 @@
-import type { QuestionType, QuizQuestion, Subject } from '../types/quiz';
+import type { QuestionType, QuizQuestion, Subject, EducationLevel } from '../types/quiz';
 import { generateCurriculumSeedQuestions } from './aiQuestionParser';
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 
@@ -43,10 +43,10 @@ export interface SupabaseAiStatus {
   available: boolean;
   hasGemini: boolean;
   hasGroq: boolean;
-  hasDeepSeek?: boolean;
-  groqModels: string[];
+  hasDeepSeek: boolean;
   geminiModels: string[];
-  deepseekModels?: string[];
+  groqModels: string[];
+  deepseekModels: string[];
   error?: string | null;
 }
 
@@ -55,6 +55,7 @@ export interface GenerateAiQuestionsParams {
   grade: number;
   topic: string;
   count: number;
+  educationLevel?: EducationLevel;
   questionType: QuestionType | 'campuran';
   provider?: AiProvider;
   geminiModel?: GeminiModel;
@@ -418,9 +419,12 @@ export interface AiTopicRecommendation {
 export async function generateAiTopicIdeas(params: {
   subject: Subject;
   grade: number;
+  educationLevel?: EducationLevel;
   provider?: AiProvider;
 }): Promise<AiTopicRecommendation[]> {
   const { subject, grade } = params;
+  const level = params.educationLevel || (grade >= 10 ? 'SMA' : grade >= 7 ? 'SMP' : 'SD');
+  const levelText = level === 'SMA' ? `Kelas ${grade} SMA / SMK` : level === 'SMP' ? `Kelas ${grade} SMP` : `Kelas ${grade} SD`;
 
   // 1. Coba via Supabase Cloud Edge Function (Server-Side Secrets)
   if (supabase) {
@@ -435,6 +439,7 @@ export async function generateAiTopicIdeas(params: {
             action: 'generate_topics',
             subject,
             grade,
+            educationLevel: level,
             provider: preferredProvider,
           },
         });
@@ -450,11 +455,12 @@ export async function generateAiTopicIdeas(params: {
     }
   }
 
+  const topicPrompt = `Anda adalah Pakar Kurikulum Merdeka Kemendikbudristek RI untuk ${levelText}. Rekomendasikan 4 topik materi kuis untuk mata pelajaran ${subject} ${levelText} beserta fokus materinya (1 kalimat padat). Kembalikan JSON: { "recommendations": [{ "topic": "...", "context": "..." }] }`;
+
   // 2. Coba via DeepSeek API lokal jika key tersedia di browser
   if (hasDeepSeekApiKey()) {
     try {
       const apiKey = getStoredDeepSeekApiKey();
-      const prompt = `Anda adalah Pakar Kurikulum Merdeka SD. Rekomendasikan 4 topik materi kuis untuk mata pelajaran ${subject} Kelas ${grade} SD beserta fokus materinya (1 kalimat). Kembalikan JSON: { "recommendations": [{ "topic": "...", "context": "..." }] }`;
       const res = await fetch('https://api.deepseek.com/chat/completions', {
         method: 'POST',
         headers: {
@@ -463,7 +469,7 @@ export async function generateAiTopicIdeas(params: {
         },
         body: JSON.stringify({
           model: 'deepseek-chat',
-          messages: [{ role: 'user', content: prompt }],
+          messages: [{ role: 'user', content: topicPrompt }],
           response_format: { type: 'json_object' },
           temperature: 0.7,
           max_tokens: 800,
@@ -492,7 +498,6 @@ export async function generateAiTopicIdeas(params: {
   if (hasGroqApiKey()) {
     try {
       const apiKey = getStoredGroqApiKey();
-      const prompt = `Anda adalah Pakar Kurikulum Merdeka SD. Rekomendasikan 4 topik materi kuis untuk mata pelajaran ${subject} Kelas ${grade} SD beserta fokus materinya (1 kalimat). Kembalikan JSON: { "recommendations": [{ "topic": "...", "context": "..." }] }`;
       const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -501,7 +506,7 @@ export async function generateAiTopicIdeas(params: {
         },
         body: JSON.stringify({
           model: 'llama-3.1-8b-instant',
-          messages: [{ role: 'user', content: prompt }],
+          messages: [{ role: 'user', content: topicPrompt }],
           response_format: { type: 'json_object' },
           temperature: 0.7,
           max_tokens: 800,
@@ -530,13 +535,12 @@ export async function generateAiTopicIdeas(params: {
   if (hasGeminiApiKey()) {
     try {
       const apiKey = getStoredGeminiApiKey();
-      const prompt = `Anda adalah Pakar Kurikulum Merdeka SD. Rekomendasikan 4 topik materi kuis untuk mata pelajaran ${subject} Kelas ${grade} SD beserta fokus materinya (1 kalimat). Kembalikan JSON array: [{ "topic": "...", "context": "..." }]`;
       const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
       const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
+          contents: [{ parts: [{ text: topicPrompt }] }],
           generationConfig: {
             temperature: 0.8,
             maxOutputTokens: 800,
@@ -574,15 +578,18 @@ export interface AiCapaianPembelajaranResult {
 }
 
 /**
- * Merumuskan Capaian Pembelajaran (CP) dan Sasaran Kompetensi Spesifik Per Jenjang Kelas SD
+ * Merumuskan Capaian Pembelajaran (CP) dan Sasaran Kompetensi Spesifik Per Jenjang Kelas
  * menggunakan AI (DeepSeek / Groq / Gemini) secara kontekstual berbasis Kurikulum Merdeka.
  */
 export async function generateAiCapaianPembelajaran(params: {
   subject: Subject;
   grade: number;
+  educationLevel?: EducationLevel;
   provider?: AiProvider;
 }): Promise<AiCapaianPembelajaranResult | null> {
   const { subject, grade } = params;
+  const level = params.educationLevel || (grade >= 10 ? 'SMA' : grade >= 7 ? 'SMP' : 'SD');
+  const levelText = level === 'SMA' ? `Kelas ${grade} SMA / SMK` : level === 'SMP' ? `Kelas ${grade} SMP` : `Kelas ${grade} SD`;
 
   // 1. Coba via Supabase Cloud Edge Function (Server-Side Secrets)
   if (supabase) {
@@ -597,6 +604,7 @@ export async function generateAiCapaianPembelajaran(params: {
             action: 'generate_cp',
             subject,
             grade,
+            educationLevel: level,
             provider: preferredProvider,
           },
         });
@@ -613,13 +621,14 @@ export async function generateAiCapaianPembelajaran(params: {
     }
   }
 
+  const cpPrompt = `Anda adalah Pakar Kurikulum Merdeka Kemendikbudristek RI untuk ${levelText}.
+Tuliskan rumusan Capaian Pembelajaran (CP) yang SPESIFIK untuk ${levelText} (bukan fase umum, melainkan capaian kompetensi khusus ${levelText}) pada mata pelajaran: ${subject}.
+Kembalikan JSON murni: { "cp": "Pernyataan CP komprehensif 2-3 kalimat padat untuk ${levelText}...", "goals": ["Tujuan 1", "Tujuan 2"] }`;
+
   // 2. Coba via DeepSeek API lokal jika key tersedia di browser
   if (hasDeepSeekApiKey()) {
     try {
       const apiKey = getStoredDeepSeekApiKey();
-      const prompt = `Anda adalah Pakar Kurikulum Merdeka Kemendikbudristek RI untuk Sekolah Dasar (SD).
-Tuliskan rumusan Capaian Pembelajaran (CP) yang SPESIFIK untuk KELAS ${grade} SD (bukan fase umum, melainkan capaian kompetensi khusus Kelas ${grade} SD) pada mata pelajaran: ${subject}.
-Kembalikan JSON murni: { "cp": "Pernyataan CP komprehensif 2-3 kalimat padat untuk Kelas ${grade} SD...", "goals": ["Tujuan 1", "Tujuan 2"] }`;
       const res = await fetch('https://api.deepseek.com/chat/completions', {
         method: 'POST',
         headers: {
@@ -628,7 +637,7 @@ Kembalikan JSON murni: { "cp": "Pernyataan CP komprehensif 2-3 kalimat padat unt
         },
         body: JSON.stringify({
           model: 'deepseek-chat',
-          messages: [{ role: 'user', content: prompt }],
+          messages: [{ role: 'user', content: cpPrompt }],
           response_format: { type: 'json_object' },
           temperature: 0.7,
           max_tokens: 800,
@@ -657,9 +666,6 @@ Kembalikan JSON murni: { "cp": "Pernyataan CP komprehensif 2-3 kalimat padat unt
   if (hasGroqApiKey()) {
     try {
       const apiKey = getStoredGroqApiKey();
-      const prompt = `Anda adalah Pakar Kurikulum Merdeka Kemendikbudristek RI untuk Sekolah Dasar (SD).
-Tuliskan rumusan Capaian Pembelajaran (CP) yang SPESIFIK untuk KELAS ${grade} SD (bukan fase umum, melainkan capaian kompetensi khusus Kelas ${grade} SD) pada mata pelajaran: ${subject}.
-Kembalikan JSON murni: { "cp": "Pernyataan CP komprehensif 2-3 kalimat padat untuk Kelas ${grade} SD...", "goals": ["Tujuan 1", "Tujuan 2"] }`;
       const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -668,7 +674,7 @@ Kembalikan JSON murni: { "cp": "Pernyataan CP komprehensif 2-3 kalimat padat unt
         },
         body: JSON.stringify({
           model: 'llama-3.1-8b-instant',
-          messages: [{ role: 'user', content: prompt }],
+          messages: [{ role: 'user', content: cpPrompt }],
           response_format: { type: 'json_object' },
           temperature: 0.7,
           max_tokens: 800,
@@ -697,15 +703,12 @@ Kembalikan JSON murni: { "cp": "Pernyataan CP komprehensif 2-3 kalimat padat unt
   if (hasGeminiApiKey()) {
     try {
       const apiKey = getStoredGeminiApiKey();
-      const prompt = `Anda adalah Pakar Kurikulum Merdeka Kemendikbudristek RI untuk Sekolah Dasar (SD).
-Tuliskan rumusan Capaian Pembelajaran (CP) yang SPESIFIK untuk KELAS ${grade} SD (bukan fase umum, melainkan capaian kompetensi khusus Kelas ${grade} SD) pada mata pelajaran: ${subject}.
-Kembalikan JSON murni: { "cp": "Pernyataan CP komprehensif 2-3 kalimat padat untuk Kelas ${grade} SD...", "goals": ["Tujuan 1", "Tujuan 2"] }`;
       const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
       const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
+          contents: [{ parts: [{ text: cpPrompt }] }],
           generationConfig: {
             temperature: 0.7,
             maxOutputTokens: 800,
@@ -762,12 +765,27 @@ function buildInstructionText(params: GenerateAiQuestionsParams): string {
     formatInstruction = `Gunakan tipe 'multiple_choice'. Sertakan 4 pilihan jawaban yang mendidik pada array 'options'.`;
   }
 
-  return `Anda adalah Asisten Pakar Kurikulum Merdeka Sekolah Dasar (SD) Indonesia.
-Tugas Anda adalah merancang soal kuis interaktif yang mendidik, seru, menggunakan bahasa Indonesia yang baik, komunikatif, dan sesuai dengan daya tangkap siswa SD.
+  const level = params.educationLevel || (grade >= 10 ? 'SMA' : grade >= 7 ? 'SMP' : 'SD');
+  const levelText = level === 'SMA'
+    ? `Kelas ${grade} SMA / SMK (Fase ${grade === 10 ? 'E' : 'F'})`
+    : level === 'SMP'
+      ? `Kelas ${grade} SMP (Fase D)`
+      : `Kelas ${grade} SD (Fase ${grade <= 2 ? 'A' : grade <= 4 ? 'B' : 'C'})`;
+
+  const roleText = level === 'SMA'
+    ? `Anda adalah Asisten Pakar Kurikulum Merdeka SMA / SMK Indonesia.
+Tugas Anda adalah merancang butir soal kuis interaktif berorientasi penalaran analitis kritis tingkat tinggi (HOTS), pengujian konsep mendalam, studi kasus saintifik/sosial kontekstual, dan bahasa Indonesia akademis yang lugas sesuai daya nalar siswa SMA/SMK.`
+    : level === 'SMP'
+      ? `Anda adalah Asisten Pakar Kurikulum Merdeka Sekolah Menengah Pertama (SMP) Indonesia.
+Tugas Anda adalah merancang butir soal kuis interaktif yang komunikatif ramah remaja, merangsang daya nalar terapan, studi kasus kontekstual, dan literasi-numerasi terpadu sesuai fase kognitif siswa SMP.`
+      : `Anda adalah Asisten Pakar Kurikulum Merdeka Sekolah Dasar (SD) Indonesia.
+Tugas Anda adalah merancang butir soal kuis interaktif yang mendidik, seru, menggunakan bahasa Indonesia yang baik, komunikatif, dan sesuai dengan daya tangkap siswa SD.`;
+
+  return `${roleText}
 
 SPESIFIKASI SOAL:
 - Mata Pelajaran: ${subject}
-- Tingkat: Kelas ${grade} SD
+- Tingkat: ${levelText}
 - Topik / Materi: ${topic}
 - Jumlah Soal: ${count} butir soal
 - Format: ${formatInstruction}

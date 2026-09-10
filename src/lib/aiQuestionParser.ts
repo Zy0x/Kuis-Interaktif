@@ -1,10 +1,11 @@
-import type { QuizQuestion, QuestionType, Subject } from '../types/quiz';
+import type { QuizQuestion, QuestionType, Subject, EducationLevel } from '../types/quiz';
 
 export interface GeneratePromptParams {
   subject: Subject;
   grade: number;
   topic: string;
   count: number;
+  educationLevel?: EducationLevel;
   questionType?: QuestionType | 'campuran';
   difficulty?: 'mudah' | 'sedang' | 'menantang';
   contextNotes?: string;
@@ -62,10 +63,23 @@ export const generateAiPrompt = (params: GeneratePromptParams): string => {
     ? `- Kebutuhan Gambar: Karena pengguna mengaktifkan opsi ilustrasi, pada SETIAP butir soal sertakan properti "imageCaption" (label singkat bahasa Indonesia) dan "imagePrompt" (deskripsi visual 1 kalimat bahasa Inggris untuk menghasilkan gambar edukatif).\n`
     : '';
 
-  return `Kamu adalah ahli penyusun materi dan soal kuis interaktif Sekolah Dasar (SD) berstandar Kurikulum Merdeka Indonesia.
-Buatkan ${params.count} butir soal kuis interaktif yang mendidik, menyenangkan, dan komunikatif untuk:
+  const level = params.educationLevel || (params.grade >= 10 ? 'SMA' : params.grade >= 7 ? 'SMP' : 'SD');
+  const levelText = level === 'SMA'
+    ? `Kelas ${params.grade} SMA / SMK (Fase ${params.grade === 10 ? 'E' : 'F'})`
+    : level === 'SMP'
+      ? `Kelas ${params.grade} SMP (Fase D)`
+      : `Kelas ${params.grade} SD (Fase ${params.grade <= 2 ? 'A' : params.grade <= 4 ? 'B' : 'C'})`;
+
+  const roleText = level === 'SMA'
+    ? 'ahli penyusun materi dan soal kuis interaktif SMA / SMK berstandar Kurikulum Merdeka Indonesia. Karakteristik soal: berorientasi penalaran kritis tingkat tinggi (HOTS), pengujian konsep mendalam, studi kasus saintifik/sosial terapan, dan bahasa akademis yang lugas.'
+    : level === 'SMP'
+      ? 'ahli penyusun materi dan soal kuis interaktif Sekolah Menengah Pertama (SMP) berstandar Kurikulum Merdeka Indonesia. Karakteristik soal: komunikatif ramah remaja, merangsang daya nalar terapan, studi kasus kontekstual, dan literasi-numerasi terpadu.'
+      : 'ahli penyusun materi dan soal kuis interaktif Sekolah Dasar (SD) berstandar Kurikulum Merdeka Indonesia. Karakteristik soal: mendidik, menyenangkan, ramah anak, dan berbasis visual/situasi konkret.';
+
+  return `Kamu adalah ${roleText}
+Buatkan ${params.count} butir soal kuis interaktif yang mendidik dan komunikatif untuk:
 - Mata Pelajaran: ${params.subject}
-- Tingkat: Kelas ${params.grade} SD
+- Tingkat: ${levelText}
 - Topik Pembahasan: "${params.topic}"
 - Tingkat Kesulitan: ${params.difficulty || 'sedang'}
 ${contextBlock}${imageBlock}- Bentuk Soal: ${typeInstruction}

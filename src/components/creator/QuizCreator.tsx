@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import type { Quiz, QuizQuestion, Subject, QuestionType, GameMode } from '../../types/quiz';
+import type { Quiz, QuizQuestion, Subject, QuestionType, GameMode, EducationLevel } from '../../types/quiz';
 import { useBackHandler } from '../../lib/navigationHistory';
 import { ThemeToggle } from '../common/ThemeToggle';
 import { 
@@ -50,6 +50,7 @@ interface CreatorDraft {
   description: string;
   subject: Subject;
   grade: number;
+  educationLevel?: EducationLevel;
   durationPerQuestionSec: number;
   coverEmoji: string;
   badgeTitle: string;
@@ -113,6 +114,14 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   const [description, setDescription] = useState(editingQuiz?.description || draft?.description || '');
   const [subject, setSubject] = useState<Subject>(editingQuiz?.subject || draft?.subject || 'Matematika');
   const [grade, setGrade] = useState<number>(editingQuiz?.grade ?? draft?.grade ?? 3);
+  const [educationLevel, setEducationLevel] = useState<EducationLevel>(() => {
+    if (editingQuiz?.educationLevel) return editingQuiz.educationLevel;
+    if (draft?.educationLevel) return draft.educationLevel;
+    const initialG = editingQuiz?.grade ?? draft?.grade ?? 3;
+    if (initialG >= 10) return 'SMA';
+    if (initialG >= 7) return 'SMP';
+    return 'SD';
+  });
   const [durationPerQuestionSec, setDurationPerQuestionSec] = useState<number>(editingQuiz?.durationPerQuestionSec ?? draft?.durationPerQuestionSec ?? 30);
   const [coverEmoji, setCoverEmoji] = useState(editingQuiz?.coverEmoji || draft?.coverEmoji || '🍎');
   const [badgeTitle, setBadgeTitle] = useState(editingQuiz?.badgeTitle || draft?.badgeTitle || 'Bintang Pintar');
@@ -159,6 +168,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
         description,
         subject,
         grade,
+        educationLevel,
         durationPerQuestionSec,
         coverEmoji,
         badgeTitle,
@@ -174,7 +184,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
         // quota fallback
       }
     }
-  }, [currentStep, aiFunnelActive, aiFunnelStage, funnelTopic, title, description, subject, grade, durationPerQuestionSec, coverEmoji, badgeTitle, visibility, defaultGameMode, shuffleQuestions, shuffleOptions, questions, editingQuiz]);
+  }, [currentStep, aiFunnelActive, aiFunnelStage, funnelTopic, title, description, subject, grade, educationLevel, durationPerQuestionSec, coverEmoji, badgeTitle, visibility, defaultGameMode, shuffleQuestions, shuffleOptions, questions, editingQuiz]);
 
   const handleResetDraft = () => {
     try {
@@ -188,6 +198,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     setAiFunnelStage(1);
     setSubject('Matematika');
     setGrade(3);
+    setEducationLevel('SD');
     setDurationPerQuestionSec(30);
     setCoverEmoji('🍎');
     setBadgeTitle('Bintang Pintar');
@@ -570,6 +581,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
       description: description.trim(),
       subject,
       grade,
+      educationLevel: educationLevel || (grade >= 10 ? 'SMA' : grade >= 7 ? 'SMP' : 'SD'),
       durationPerQuestionSec,
       coverEmoji,
       badgeTitle: badgeTitle.trim() || 'Bintang Pintar',
@@ -598,69 +610,65 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   const handleHeaderBack = () => {
     playClick();
     if (aiFunnelActive) {
-      if (aiFunnelStage === 4) {
-        setAiFunnelStage(3);
-        return;
+      if (aiFunnelStage > 1) {
+        setAiFunnelStage((prev) => (prev - 1) as 1 | 2 | 3 | 4);
+      } else {
+        if (onBackToMethodSelection) {
+          onBackToMethodSelection();
+        } else {
+          onBack();
+        }
       }
-      if (aiFunnelStage === 3) {
-        setAiFunnelStage(2);
-        return;
-      }
-      if (aiFunnelStage === 2) {
-        setAiFunnelStage(1);
-        return;
-      }
+      return;
+    }
+
+    if (currentStep > 1) {
+      setCurrentStep((prev) => prev - 1);
+    } else {
       if (onBackToMethodSelection) {
         onBackToMethodSelection();
       } else {
         onBack();
       }
-      return;
     }
-    if (isAiMode && currentStep === 1) {
-      setAiFunnelActive(true);
-      return;
-    }
-    if (currentStep > 1) {
-      setCurrentStep((prev) => prev - 1);
-      return;
-    }
-    onBack();
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col pb-16">
-      
-      {/* Top Sticky Header */}
-      <header className="w-full sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-3 xs:px-4 sm:px-8 lg:px-12 pt-[max(env(safe-area-inset-top),0.625rem)] pb-2.5 sm:pb-3 shadow-xs">
-        <div className="w-full max-w-[2000px] mx-auto flex items-center justify-between gap-2 sm:gap-3 transition-all">
-          <button
-            onClick={handleHeaderBack}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 font-semibold text-xs sm:text-sm min-h-[44px] min-w-[44px] justify-center btn-press transition-colors flex-shrink-0"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span className="hidden xs:inline">{aiFunnelActive ? (aiFunnelStage === 1 ? 'Ganti Metode' : 'Sebelumnya') : 'Kembali'}</span>
-          </button>
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col transition-colors duration-200">
+      {/* App Header */}
+      <header className="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-xs">
+        <div className="max-w-[2000px] mx-auto px-3 xs:px-4 sm:px-8 lg:px-12 h-14 sm:h-16 flex items-center justify-between gap-3">
+          
+          {/* Header Left: Back Button + Title */}
+          <div className="flex items-center gap-2.5 sm:gap-4 min-w-0">
+            <button
+              type="button"
+              onClick={handleHeaderBack}
+              className="p-2 sm:p-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors btn-press"
+              aria-label="Kembali"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
 
-          <div className="text-center min-w-0 flex-1 px-1">
-            <h1 className="text-xs xs:text-sm sm:text-lg font-extrabold text-slate-900 dark:text-white leading-tight truncate">
-              {aiFunnelActive 
-                ? 'Asisten Racik Kuis AI ⚡' 
-                : editingQuiz 
-                  ? 'Edit Kuis ✏️' 
-                  : isAiMode 
-                    ? 'Studio Kuis AI ⚡' 
-                    : 'Studio Kuis Guru 🧑‍🏫'}
-            </h1>
-            <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium truncate hidden xs:block">
-              {aiFunnelActive 
-                ? (aiFunnelStage === 1 
-                    ? 'Tahap 1 dari 4: Mata Pelajaran & Tingkat Kelas SD' 
-                    : aiFunnelStage === 2 
-                    ? 'Tahap 2 dari 4: Topik & Sasaran Pembelajaran' 
-                    : aiFunnelStage === 3 
-                    ? 'Tahap 3 dari 4: Format & Konfigurasi Soal' 
-                    : 'Tahap 4 dari 4: Pilihan Mesin AI & Eksekusi')
+            <div className="min-w-0">
+              <h1 className="text-sm sm:text-base font-black text-slate-900 dark:text-white truncate">
+                {aiFunnelActive
+                  ? 'Asisten Racik Kuis AI ⚡'
+                  : editingQuiz 
+                    ? 'Edit Kuis ✏️' 
+                    : isAiMode 
+                      ? 'Studio Kuis AI ⚡' 
+                      : 'Studio Kuis Guru 🧑‍🏫'}
+              </h1>
+              <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium truncate hidden xs:block">
+                {aiFunnelActive 
+                  ? (aiFunnelStage === 1 
+                      ? 'Tahap 1 dari 4: Jenjang, Mapel & Tingkat Kelas' 
+                      : aiFunnelStage === 2 
+                      ? 'Tahap 2 dari 4: Topik & Sasaran Pembelajaran'
+                      : aiFunnelStage === 3 
+                      ? 'Tahap 3 dari 4: Format & Konfigurasi Soal' 
+                      : 'Tahap 4 dari 4: Pilihan Mesin AI & Eksekusi')
                 : `Langkah ${currentStep} dari ${totalSteps}: ${
                     isAiMode
                       ? currentStep === 1
@@ -676,8 +684,9 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                   }`}
             </p>
           </div>
+        </div>
 
-          <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
             {!aiFunnelActive && (title.trim() || questions.length > 0) && (
               <button
                 type="button"
@@ -981,11 +990,14 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
             topic={funnelTopic}
             onTopicChange={setFunnelTopic}
             onGenerated={(data) => {
+              const lvl = data.educationLevel || (data.grade >= 10 ? 'SMA' : data.grade >= 7 ? 'SMP' : 'SD');
+              const lvlLabel = lvl === 'SMA' ? 'SMA / SMK' : lvl === 'SMP' ? 'SMP' : 'SD';
               setQuestions(data.questions);
               setTitle(`Kuis ${data.subject}: ${data.topic.length > 40 ? data.topic.slice(0, 40) + '...' : data.topic}`);
-              setDescription(`Latihan kuis interaktif Kurikulum Merdeka mata pelajaran ${data.subject} Kelas ${data.grade} SD topik ${data.topic}.`);
+              setDescription(`Latihan kuis interaktif Kurikulum Merdeka mata pelajaran ${data.subject} Kelas ${data.grade} ${lvlLabel} topik ${data.topic}.`);
               setSubject(data.subject);
               setGrade(data.grade);
+              setEducationLevel(lvl);
               setCoverEmoji(data.coverEmoji);
               setBadgeTitle(data.badgeTitle);
               setAiFunnelActive(false);
@@ -1002,6 +1014,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
             playClick={playClick}
             initialSubject={subject}
             initialGrade={grade}
+            initialEducationLevel={educationLevel}
           />
         ) : isAiMode ? (
           /* ================= 2. STUDIO KUIS AI (3 TABS) ================= */
@@ -1018,6 +1031,8 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                 setDescription={setDescription}
                 grade={grade}
                 setGrade={setGrade}
+                educationLevel={educationLevel}
+                setEducationLevel={setEducationLevel}
                 subject={subject}
                 setSubject={setSubject}
                 durationPerQuestionSec={durationPerQuestionSec}
@@ -1057,6 +1072,8 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                 setDescription={setDescription}
                 grade={grade}
                 setGrade={setGrade}
+                educationLevel={educationLevel}
+                setEducationLevel={setEducationLevel}
                 subject={subject}
                 setSubject={setSubject}
                 durationPerQuestionSec={durationPerQuestionSec}
@@ -1690,7 +1707,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5 mb-1 flex-wrap">
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                        Kelas {grade} SD
+                        Kelas {grade} {educationLevel === 'SMA' ? 'SMA / SMK' : educationLevel === 'SMP' ? 'SMP' : 'SD'}
                       </span>
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 border border-blue-200 dark:border-blue-900">
                         {subject}

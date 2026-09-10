@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import type { Subject, QuizQuestion } from '../../types/quiz';
+import type { Subject, QuizQuestion, EducationLevel } from '../../types/quiz';
 import { 
   generateHybridQuizQuestions, 
   checkSupabaseAiStatus, 
@@ -23,11 +23,11 @@ import {
   hasGeminiApiKey,
   getStoredGeminiModel,
   saveStoredGeminiModel,
-  type AiProvider, 
-  type SupabaseAiStatus,
   type DeepSeekModel,
   type GroqModel,
-  type GeminiModel
+  type GeminiModel,
+  type SupabaseAiStatus,
+  type AiProvider
 } from '../../lib/geminiApi';
 import { 
   parseRawQuestionsText, 
@@ -64,6 +64,7 @@ interface AiGeneratorStepProps {
     topic: string;
     subject: Subject;
     grade: number;
+    educationLevel?: EducationLevel;
     questionCount: number;
     coverEmoji: string;
     badgeTitle: string;
@@ -72,6 +73,7 @@ interface AiGeneratorStepProps {
   playClick: () => void;
   initialSubject?: Subject;
   initialGrade?: number;
+  initialEducationLevel?: EducationLevel;
   stage: CreationStage;
   onStageChange: (stage: CreationStage) => void;
   topic: string;
@@ -79,8 +81,11 @@ interface AiGeneratorStepProps {
 }
 
 const EMOJI_BY_SUBJECT: Record<Subject, string> = {
+  // SD & Umum
   'Matematika': '📐',
   'IPA': '🌱',
+  'IPAS': '🌿',
+  'IPS': '🌐',
   'Bahasa Indonesia': '📚',
   'Pendidikan Pancasila': '🇮🇩',
   'Pengetahuan Umum': '💡',
@@ -98,6 +103,20 @@ const EMOJI_BY_SUBJECT: Record<Subject, string> = {
   'Pendidikan Agama Konghucu': '⛩️',
   'Bahasa Daerah': '🗣️',
   'Informatika': '💻',
+  // Khas SMP (Fase D)
+  'IPA Terpadu': '🔬',
+  'IPS Terpadu': '🌍',
+  'Prakarya': '✂️',
+  // Khas SMA / SMK (Fase E & F)
+  'Fisika': '⚛️',
+  'Kimia': '🧪',
+  'Biologi': '🧬',
+  'Ekonomi': '📈',
+  'Sosiologi': '👥',
+  'Geografi': '🗺️',
+  'Sejarah': '🏛️',
+  'Matematika Tingkat Lanjut': '♾️',
+  'Antropologi': '🏺',
 };
 
 interface TopicRecommendation {
@@ -442,15 +461,33 @@ const SMART_TOPICS_BY_SUBJECT_AND_GRADE: Partial<Record<Subject, Record<number, 
   }
 };
 
-export const getCuratedTopics = (subj: Subject, grd: number): TopicRecommendation[] => {
+const CORE_SUBJECTS_BY_LEVEL: Record<EducationLevel, Subject[]> = {
+  SD: ['IPA', 'Matematika', 'Bahasa Indonesia', 'Pendidikan Pancasila', 'Pengetahuan Umum'],
+  SMP: ['IPA Terpadu', 'Matematika', 'Bahasa Indonesia', 'Bahasa Inggris', 'IPS Terpadu'],
+  SMA: ['Matematika', 'Fisika', 'Kimia', 'Biologi', 'Bahasa Indonesia'],
+};
+
+const isSubjectAllowedInLevel = (subj: Subject, lvl: EducationLevel): boolean => {
+  if (lvl === 'SD') {
+    return !['IPA Terpadu', 'IPS Terpadu', 'Prakarya', 'Fisika', 'Kimia', 'Biologi', 'Ekonomi', 'Sosiologi', 'Geografi', 'Sejarah', 'Matematika Tingkat Lanjut', 'Antropologi'].includes(subj);
+  }
+  if (lvl === 'SMP') {
+    return !['Fisika', 'Kimia', 'Biologi', 'Ekonomi', 'Sosiologi', 'Geografi', 'Sejarah', 'Matematika Tingkat Lanjut', 'Antropologi'].includes(subj);
+  }
+  return true; // SMA allows all
+};
+
+const getCuratedTopics = (subj: Subject, grd: number, level?: EducationLevel): TopicRecommendation[] => {
   const map = SMART_TOPICS_BY_SUBJECT_AND_GRADE as Record<string, Record<number, TopicRecommendation[]>>;
   if (map[subj]?.[grd] && map[subj][grd].length > 0) {
     return map[subj][grd];
   }
+  const effectiveLevel = level || (grd >= 10 ? 'SMA' : grd >= 7 ? 'SMP' : 'SD');
+  const levelLabel = effectiveLevel === 'SMA' ? 'SMA / SMK' : effectiveLevel === 'SMP' ? 'SMP' : 'SD';
   return [
-    { topic: `Konsep Inti ${subj} Kelas ${grd}`, context: `Eksplorasi konsep terpenting yang wajib dikuasai siswa Kelas ${grd} SD sesuai Kurikulum Merdeka.` },
-    { topic: `Penerapan ${subj} dalam Kehidupan Sehari-hari`, context: `Contoh konkret dan kontekstual yang dekat dengan pengalaman anak di rumah dan sekolah.` },
-    { topic: `Uji Pemahaman & Logika Penalaran ${subj}`, context: `Soal-soal pemantik berpikir kritis dan solutif yang menyenangkan dan ramah anak.` },
+    { topic: `Konsep Inti ${subj} Kelas ${grd}`, context: `Eksplorasi konsep esensial yang wajib dikuasai siswa Kelas ${grd} ${levelLabel} sesuai Kurikulum Merdeka.` },
+    { topic: `Penerapan ${subj} dalam Konteks Nyata`, context: `Studi kasus konkret dan kontekstual yang dekat dengan pengalaman siswa Kelas ${grd} ${levelLabel}.` },
+    { topic: `Analisis & Penalaran Masalah ${subj}`, context: `Soal-soal pemantik nalar kritis (HOTS) dan solutif yang menantang pemahaman komprehensif.` },
   ];
 };
 
@@ -462,6 +499,12 @@ const GRADE_SPECIFIC_CP: Partial<Record<Subject, Record<number, string>>> = {
     4: 'Peserta didik menguasai pecahan senilai, konsep FPB dan KPK, operasi hitung campuran bilangan cacah s.d. 10.000, serta menghitung luas persegi, persegi panjang, dan segitiga.',
     5: 'Peserta didik menguasai operasi hitung pecahan biasa, campuran, dan desimal, memahami perbandingan dan rasio kecepatan-jarak-waktu, serta menghitung volume bangun ruang kubus dan balok.',
     6: 'Peserta didik memahami operasi hitung campuran bilangan bulat positif dan negatif, menghitung unsur-unsur serta luas keliling lingkaran, volume bangun ruang prisma dan tabung, serta mengolah data mean, median, modus.',
+    7: 'Peserta didik mengoperasikan bilangan bulat dan pecahan rasional, memahami bentuk aljabar, persamaan dan pertidaksamaan linear satu variabel, serta menyelesaikan masalah rasio dan proporsi.',
+    8: 'Peserta didik membuktikan dan menerapkan teorema Pythagoras, menyelesaikan sistem persamaan linear dua variabel (SPLDV), relasi dan fungsi, pola bilangan, serta luas permukaan dan volume bangun ruang sisi datar.',
+    9: 'Peserta didik menguasai persamaan dan fungsi kuadrat, transformasi geometri (translasi, refleksi, rotasi, dilatasi), kekongruenan dan kesebangunan bangun geometri, serta statistika dan peluang teoretis.',
+    10: 'Peserta didik menggeneralisasi sifat-sifat eksponen dan logaritma, barisan dan deret aritmetika/geometri, vektor pada bidang, serta perbandingan trigonometri pada segitiga siku-siku.',
+    11: 'Peserta didik menguasai fungsi komposisi dan invers, geometri analitik lingkaran dan garis singgung, transformasi fungsi, serta logika matematika dan penalaran analitis.',
+    12: 'Peserta didik menganalisis geometri ruang dimensi tiga (jarak titik ke garis/bidang), statistika inferensial dan distribusi normal, serta konsep limit fungsi dan dasar-dasar kalkulus.',
   },
   'IPA': {
     1: 'Peserta didik mengamati lingkungan sekitar, mengenali fungsi panca indra dan bagian tubuh luar, serta membedakan benda hidup dan benda mati dalam kehidupan sehari-hari.',
@@ -471,6 +514,67 @@ const GRADE_SPECIFIC_CP: Partial<Record<Subject, Record<number, string>>> = {
     5: 'Peserta didik menganalisis sistem pernapasan dan pencernaan manusia, hubungan rantai makanan dan jaring-jaring kehidupan pada ekosistem, sifat perpindahan kalor (konduksi, konveksi, radiasi), serta siklus air.',
     6: 'Peserta didik menganalisis cara perkembangbiakan vegetatif dan generatif tumbuhan/hewan, adaptasi makhluk hidup terhadap habitatnya, sifat rangkaian listrik seri-paralel, serta sistem tata surya dan gerhana.',
   },
+  'IPA Terpadu': {
+    7: 'Peserta didik memahami hakikat sains, metode ilmiah dan pengukuran, zat dan karakteristik perubahannya, suhu, kalor, pemuaian, serta interaksi makhluk hidup dalam ekosistem.',
+    8: 'Peserta didik menganalisis struktur dan fungsi sel, sistem organ manusia (pencernaan, peredaran darah, pernapasan, ekskresi), gerak lurus dan Hukum Newton, serta usaha dan pesawat sederhana.',
+    9: 'Peserta didik memahami materi genetik dan pewarisan sifat Mendel, listrik statis dan dinamis rangkaian rumah tangga, kemagnetan dan induksi elektromagnetik, bioteknologi, serta tanah dan keberlangsungan hidup.',
+  },
+  'IPS Terpadu': {
+    7: 'Peserta didik memahami konektivitas antarruang dan pengaruh letak geografis Indonesia, dinamika kependudukan, interaksi sosial dan pembentukan lembaga sosial, serta motif dan tindakan ekonomi kelangkaan.',
+    8: 'Peserta didik menganalisis keragaman geografis dan sosial budaya kawasan ASEAN, pengaruh interaksi antarruang terhadap mobilitas sosial dan pluralitas, dinamika konflik integrasi sosial, serta peran pelaku ekonomi.',
+    9: 'Peserta didik menganalisis interaksi keruangan benua Asia dan benua lainnya, dampak globalisasi sosial budaya dan IPTEK, ketergantungan antarruang dan ekonomi kreatif, serta perjuangan mempertahankan kedaulatan NKRI.',
+  },
+  'Fisika': {
+    10: 'Peserta didik menguasai hakikat fisika dan metode ilmiah, besaran vektor gaya, kinematika gerak lurus (GLB dan GLBB), dinamika gerak dan Hukum Newton tentang gerak dan gravitasi.',
+    11: 'Peserta didik menganalisis konsep fluida statis dan dinamis, termodinamika dan kalor, gelombang mekanik dan gelombang bunyi, gelombang cahaya, serta alat-alat optik.',
+    12: 'Peserta didik menganalisis gejala listrik statis dan dinamis arus searah/bolak-balik, induksi elektromagnetik, relativitas khusus, radiasi benda hitam, dualisme gelombang partikel, dan teknologi fisika inti.',
+  },
+  'Kimia': {
+    10: 'Peserta didik memahami struktur atom dan mekanika kuantum dasar, sistem periodik unsur, konfigurasi elektron, ikatan kimia, serta tata nama senyawa dan penyetaraan persamaan reaksi kimia sederhana.',
+    11: 'Peserta didik menganalisis stoikiometri dan hukum dasar kimia, konsep mol, termokimia (entalpi), laju reaksi dan faktor yang mempengaruhinya, kesetimbangan kimia, teori asam-basa, pH, titrasi, serta larutan penyangga.',
+    12: 'Peserta didik mengevaluasi sifat koligatif larutan, reaksi redoks dan elektrokimia (sel Volta & sel elektrolisis), kimia unsur periode 3 dan transisi, senyawa hidrokarbon, gugus fungsi karbon, dan makromolekul.',
+  },
+  'Biologi': {
+    10: 'Peserta didik memahami keanekaragaman hayati tingkat gen, spesies, ekosistem, virologi dan pencegahan virus, bakteri, protista, jamur, serta peranan komponen ekosistem dan konservasi lingkungan.',
+    11: 'Peserta didik menganalisis struktur mikroskopis dan fungsi sel, jaringan tumbuhan dan hewan, serta sistem organ manusia: sirkulasi darah, pencernaan, respirasi, ekskresi, sistem saraf koordinasi, dan sistem reproduksi.',
+    12: 'Peserta didik menganalisis metabolisme sel (enzim, katabolisme respirasi aerob/anaerob, anabolisme fotosintesis), substansi genetika (DNA, RNA, sintesis protein), pola-pola hereditas Mendel, bioteknologi modern, serta teori dan bukti evolusi.',
+  },
+  'Ekonomi': {
+    10: 'Peserta didik memahami konsep kelangkaan dan skala prioritas biaya peluang, masalah pokok ekonomi modern, sistem ekonomi komparatif, circular flow diagram pelaku ekonomi, serta terbentuknya harga keseimbangan pasar.',
+    11: 'Peserta didik menganalisis perhitungan pendapatan nasional, pertumbuhan dan pembangunan ekonomi, ketenagakerjaan dan pengangguran, indeks harga dan inflasi, kebijakan moneter dan fiskal, serta APBN/APBD.',
+    12: 'Peserta didik menguasai siklus akuntansi perusahaan jasa dan dagang (jurnal, buku besar, kertas kerja, laporan keuangan), manajemen badan usaha, koperasi, perdagangan internasional, neraca pembayaran, dan devisa.',
+  },
+  'Sosiologi': {
+    10: 'Peserta didik memahami sosiologi sebagai ilmu pengkaji masyarakat, proses sosialisasi dan pembentukan kepribadian, interaksi sosial asosiatif/disosiatif, serta nilai, norma sosial, dan penanganan perilaku menyimpang.',
+    11: 'Peserta didik menganalisis ragam kelompok sosial di masyarakat, partikularisme kelompok, permasalahan sosial (kemiskinan, kriminalitas), dinamika konflik sosial, kekerasan, serta resolusi konflik dan integrasi sosial.',
+    12: 'Peserta didik mengevaluasi perubahan sosial di era globalisasi dan masyarakat digital, ketimpangan sosial modern, kearifan lokal nusantara, serta merancang proyek riset mini pemberdayaan komunitas lokal.',
+  },
+  'Geografi': {
+    10: 'Peserta didik memahami ruang lingkup geografi, objek formal/material, prinsip dan pendekatan geografi, pemetaan digital dan SIG, penginderaan jauh, serta dinamika litosfer, pedosfer, dan dampaknya.',
+    11: 'Peserta didik menganalisis letak strategis maritim Indonesia, biosfer dan persebaran flora fauna dunia, potensi dan pengelolaan sumber daya alam berkelanjutan, ketahanan pangan, industri, dan energi baru terbarukan.',
+    12: 'Peserta didik menganalisis struktur keruangan desa dan kota, interaksi spasial wilayah, pemerataan pembangunan pusat pertumbuhan, mitigasi kebencanaan nasional, serta kerja sama geopolitik regional dan global.',
+  },
+  'Sejarah': {
+    10: 'Peserta didik memahami konsep berpikir diakronik dan sinkronik dalam sejarah, sumber sejarah dan historiografi, masa praaksara nusantara, teori asal-usul nenek moyang bangsa Indonesia, dan jalur rempah nusantara.',
+    11: 'Peserta didik menganalisis perkembangan kerajaan Hindu-Buddha dan Islam di nusantara, kolonialisme dan imperialisme bangsa Eropa, pergerakan nasional (Budi Utomo, Sumpah Pemuda), hingga momentum Proklamasi Kemerdekaan 1945.',
+    12: 'Peserta didik menganalisis perjuangan mempertahankan kemerdekaan fisik dan diplomasi (1945-1950), masa Demokrasi Liberal dan Terpimpin, era Orde Baru, lahirnya Gerakan Reformasi 1998, serta peran diplomasi internasional Indonesia.',
+  },
+  'Matematika Tingkat Lanjut': {
+    11: 'Peserta didik menguasai operasi fungsi polinomial dan teorema sisa, matriks dan operasi aljabar matriks, transformasi geometri dengan matriks, fungsi trigonometri analitik, serta lingkaran.',
+    12: 'Peserta didik menganalisis limit fungsi trigonometri, limit di ketakhinggaan, turunan fungsi trigonometri dan aplikasinya, integral substitusi dan parsial, serta distribusi peluang binomial dan normal.',
+  },
+  'Antropologi': {
+    11: 'Peserta didik memahami ruang lingkup antropologi ragawi dan budaya, konsep etnisitas dan kebudayaan, sistem kekerabatan masyarakat adat, serta dinamika folklor dan kearifan lokal nusantara.',
+    12: 'Peserta didik menganalisis dinamika perubahan budaya akibat modernisasi dan digitalisasi, antropologi terapan dalam pembangunan sosial, serta kerukunan multikulturalisme di Indonesia.',
+  },
+  'Prakarya': {
+    7: 'Peserta didik mengeksplorasi bahan serat alami dan tekstil, membuat produk kerajinan bernilai fungsi, serta merancang olahan pangan buah dan sayur lokal bernilai gizi.',
+    8: 'Peserta didik memodifikasi bahan lunak dan limbah anorganik menjadi produk kriya bernilai jual, serta mengolah bahan pangan setengah jadi serealia dan umbi khas nusantara.',
+    9: 'Peserta didik merancang produk rekayasa elektronika sederhana, kriya bahan keras alami/buatan (kayu, logam), budi daya ternak unggul, dan strategi wirausaha kemasan higienis modern.',
+    10: 'Peserta didik merancang proposal wirausaha produk kriya/pangan lokal, analisis SWOT dan BEP sederhana, serta pemasaran produk berbasis platform digital kreatif.',
+    11: 'Peserta didik memproduksi karya kriya inovatif bernilai ekspor, teknik pengawetan pangan nabati/hewani, serta segmentasi pasar dan manajemen keuangan usaha rintisan.',
+    12: 'Peserta didik mendesain prototipe produk teknologi terapan fungsional, kemasan ramah lingkungan (ecopackaging), dan pameran inkubasi bisnis kewirausahaan mandiri.',
+  },
   'Bahasa Indonesia': {
     1: 'Peserta didik menyimak instruksi lisan sederhana, membaca kata dan suku kata berpola terbuka/tertutup, serta menulis huruf tegak bersambung dan kalimat sederhana berakhiran tanda titik.',
     2: 'Peserta didik membaca nyaring teks pendek dengan intonasi tepat, menggunakan huruf kapital pada nama orang dan hari, menyusun kalimat tanya sederhana, serta menyampaikan pendapat lisan secara santun.',
@@ -478,6 +582,12 @@ const GRADE_SPECIFIC_CP: Partial<Record<Subject, Record<number, string>>> = {
     4: 'Peserta didik menganalisis ide pokok teks narasi dan petunjuk bertahap, membedakan kalimat fakta dan opini, menulis teks deskripsi pengalaman pribadi, serta menyimak wawancara sederhana.',
     5: 'Peserta didik menganalisis informasi tersurat dan tersirat dari teks eksplanasi ilmiah populer, menyampaikan pidato persuasif di depan kelas, serta menulis ringkasan laporan hasil pengamatan.',
     6: 'Peserta didik mengevaluasi teks argumentasi dan berita kritis, menyusun karya fiksi/nonfiksi pendek yang padu, menguasai pengisian formulir resmi, serta mengapresiasi majas personifikasi dan metafora.',
+    7: 'Peserta didik menyimak, membaca, dan menganalisis teks deskripsi, cerita fantasi imajinatif, teks prosedur langkah berurutan, serta teks laporan hasil observasi (LHO) dengan bahasa runtut dan baku.',
+    8: 'Peserta didik menganalisis struktur dan kaidah kebahasaan teks berita faktual, poster dan iklan persuasif, artikel ilmiah populer bertema sosial, serta mengapresiasi karya fiksi cerpen dan puisi kontemporer.',
+    9: 'Peserta didik mengevaluasi teks laporan percobaan ilmiah, pidato persuasif di ruang publik, teks cerpen sarat nilai humaniora, serta teks tanggapan kritis terhadap isu sosial kemasyarakatan.',
+    10: 'Peserta didik merekonstruksi teks laporan hasil observasi objektif, teks anekdot kritik sosial, komparasi teks hikayat sastra klasik dan cerpen, serta teks negosiasi dalam transaksi kesepakatan sosial.',
+    11: 'Peserta didik menyusun karya ilmiah berbasis data faktual, menganalisis struktur teks eksplanasi kompleks, teks drama realis berlatar sosial, serta teks resensi buku fiksi dan nonfiksi argumentatif.',
+    12: 'Peserta didik menyusun surat lamaran pekerjaan formal, menganalisis teks editorial/opini media massa, novel sastra Indonesia modern, serta menulis artikel ilmiah populer dan esai reflektif kritis.',
   },
   'Pendidikan Pancasila': {
     1: 'Peserta didik mengenal lambang Garuda Pancasila dan sila-silanya, menyebutkan contoh aturan di rumah dan sekolah, serta menghargai perbedaan fisik dan kegemaran teman di kelas.',
@@ -486,6 +596,12 @@ const GRADE_SPECIFIC_CP: Partial<Record<Subject, Record<number, string>>> = {
     4: 'Peserta didik meneladani makna sila Pancasila dalam toleransi beragama dan suku bangsa, memahami norma hukum tertulis dan norma kesopanan, serta bangga terhadap identitas budaya daerah.',
     5: 'Peserta didik mendalami nilai sejarah perumusan Pancasila sebagai dasar negara, membedakan hak-kewajiban-tanggung jawab warga negara, serta aktif dalam pelestarian warisan budaya nusantara.',
     6: 'Peserta didik memahami Pancasila sebagai pandangan hidup bangsa, peran lembaga negara, menjaga keutuhan NKRI, serta menerapkan etika bermedia sosial dan toleransi global.',
+    7: 'Peserta didik memahami sejarah kelahiran Pancasila oleh BPUPKI, menaati norma hukum dan kepatuhan sosial, serta merawat persatuan dalam keragaman suku, agama, dan antargolongan (SARA).',
+    8: 'Peserta didik memahami kedudukan Pancasila sebagai dasar negara dan ideologi terbuka, tata urutan peraturan perundang-undangan nasional, serta mempraktikkan budaya musyawarah mufakat.',
+    9: 'Peserta didik menganalisis dinamika penerapan Pancasila dari masa ke masa, pokok pikiran Pembukaan UUD NRI 1945, kedaulatan rakyat dan sistem demokrasi Indonesia, serta bela negara.',
+    10: 'Peserta didik mendalami nilai-nilai Pancasila dalam kerangka praktik penyelenggaraan ketatanegaraan, substansi hak dan kewajiban asasi manusia, serta integrasi nasional dalam Bhinneka Tunggal Ika.',
+    11: 'Peserta didik menganalisis sistem hukum dan peradilan di Indonesia, dinamika demokrasi Pancasila, peran diplomasi Indonesia dalam perdamaian dunia, serta memperkokoh persatuan NKRI.',
+    12: 'Peserta didik mengevaluasi penanganan pelanggaran hak dan pengingkaran kewajiban warga negara, pengaruh kemajuan IPTEK terhadap keutuhan NKRI, dan etika geopolitik global.',
   },
   'Pengetahuan Umum': {
     1: 'Peserta didik mengenal aneka profesi di lingkungan sekitar, rambu keselamatan dasar di jalan raya, serta mengenal jenis alat transportasi tradisional dan modern ramah anak.',
@@ -494,6 +610,12 @@ const GRADE_SPECIFIC_CP: Partial<Record<Subject, Record<number, string>>> = {
     4: 'Peserta didik memahami bentang alam Indonesia (pegunungan, danau, selat, laut), flora dan fauna endemik garis Wallace-Weber, serta peristiwa bersejarah Sumpah Pemuda.',
     5: 'Peserta didik memahami letak geografis benua dan samudra dunia, organisasi negara-negara sahabat ASEAN, pemanfaatan sumber daya alam berkelanjutan, dan energi baru terbarukan.',
     6: 'Peserta didik memahami sejarah diplomasi kemerdekaan RI, peran Indonesia di PBB dan kancah internasional, serta perkembangan teknologi komunikasi dan etika era digital global.',
+    7: 'Peserta didik memahami profil negara-negara anggota ASEAN, wawasan nusantara kedaulatan maritim, pahlawan nasional, serta perkembangan sains dan teknologi abad 21.',
+    8: 'Peserta didik menganalisis peran diplomasi Indonesia di kawasan Asia-Pasifik, peristiwa sejarah dunia penentu peradaban modern, serta literasi mitigasi bencana geologis nusantara.',
+    9: 'Peserta didik mengevaluasi peran Indonesia di G20 dan PBB, perkembangan kecerdasan buatan, energi hijau masa depan, serta tantangan geopolitik global kontemporer.',
+    10: 'Peserta didik mengkaji wawasan kebangsaan integratif, literasi sains internasional, sejarah diplomasi Konferensi Asia Afrika (KAA), serta perkembangan arsitektur ekonomi dunia.',
+    11: 'Peserta didik menganalisis isu-isu SDGs global (perubahan iklim, transisi energi), hubungan internasional multilateral, serta geopolitik maritim Indo-Pasifik.',
+    12: 'Peserta didik mengevaluasi literasi penalaran skolastik tingkat tinggi, wawasan hukum tata negara, tren disrupsi teknologi digital dan AI, serta kesiapan kepemimpinan global masa depan.',
   },
   'Bahasa Inggris': {
     1: 'Learners recognize and pronounce basic greetings, numbers 1-10, primary colors, and classroom objects through engaging songs, flashcards, and interactive games.',
@@ -502,6 +624,12 @@ const GRADE_SPECIFIC_CP: Partial<Record<Subject, Record<number, string>>> = {
     4: 'Learners describe people’s physical appearance, clothes, and favorite hobbies, comprehend short illustrated paragraphs, and talk about weather conditions.',
     5: 'Learners engage in dialogues asking for directions, ordering food at a canteen, talk about past experiences using simple past tense, and write short descriptive sentences.',
     6: 'Learners read short narrative stories and informational texts, express future plans using "going to", write friendly messages, and explain basic comparisons (bigger, smaller).',
+    7: 'Learners introduce themselves and others in formal and informal registers, describe hobbies, daily routines, school subjects, and ask for and give personal information.',
+    8: 'Learners comprehend and compose recount texts of memorable past experiences, sequential notice/imperative procedures, and express compliments and constructive opinions.',
+    9: 'Learners critically evaluate narrative folk tales and legends, scientific procedure manuals, factual report texts on nature, and express future wishes, hopes, and congratulations.',
+    10: 'Learners comprehend and write descriptive texts of world monuments and tourist spots, recount historical milestones, and express future intentions with precision.',
+    11: 'Learners analyze and produce analytical exposition essays on environmental and societal challenges, cause-effect academic arguments, and active-passive voice transformations.',
+    12: 'Learners critically evaluate news items and editorial discourses, formal job application letters with curriculum vitae, balanced discussion texts, and conduct structured debates.',
   },
   'PJOK': {
     1: 'Peserta didik mempraktikkan pola gerak dasar lokomotor (berjalan, berlari, melompat) dan non-lokomotor, serta membiasakan mencuci tangan dan postur berdiri tegak.',
@@ -510,6 +638,12 @@ const GRADE_SPECIFIC_CP: Partial<Record<Subject, Record<number, string>>> = {
     4: 'Peserta didik mengombinasikan pola gerak dasar dalam permainan bola kecil (kasti) dan bola besar (sepak bola mini/voli mini), serta memahami pertolongan pertama luka lecet.',
     5: 'Peserta didik menerapkan taktik gerak olahraga beregu, senam irama ritmik berpasangan, teknik dasar renang gaya dada, serta memahami bahaya merokok dan zat adiktif.',
     6: 'Peserta didik menganalisis dan mempraktikkan keterampilan kebugaran jasmani (daya tahan, kekuatan, kelincahan), keselamatan aktivitas di air, serta pencegahan cedera olahraga dan perundungan.',
+    7: 'Peserta didik menganalisis keterampilan gerak spesifik permainan bola besar (sepak bola, bola basket, voli) dan atletik lari jarak pendek, serta prinsip gizi seimbang remaja.',
+    8: 'Peserta didik menganalisis variasi gerak spesifik beladiri pencak silat, senam lantai guling lenting, dan menjaga pola hidup sehat dari bahaya penyakit menular.',
+    9: 'Peserta didik merancang program latihan kebugaran jasmani terukur (daya tahan aerobik dan kelincahan), keselamatan aktivitas di alam terbuka, dan pencegahan pergaulan bebas.',
+    10: 'Peserta didik menganalisis taktik dan strategi penyerangan/pertahanan permainan olahraga beregu, senam aerobik artistik, dan pemahaman pencegahan zat psikotropika narkoba.',
+    11: 'Peserta didik merancang dan mempraktikkan program latihan kebugaran jasmani berbasis komponen fisik spesifik, teknik penyelamatan diri di air, dan manajemen stres positif.',
+    12: 'Peserta didik mengevaluasi konsep gaya hidup sehat berkelanjutan, pertolongan pertama pada kedaruratan fisik (P3K lanjutan), dan pembiasaan aktivitas fisik seumur hidup.',
   },
   'Seni Rupa': {
     1: 'Peserta didik bereksplorasi dengan unsur rupa garis tebal/tipis, bentuk geometris sederhana, dan warna primer melalui kegiatan menggambar ekspresi bebas.',
@@ -518,6 +652,12 @@ const GRADE_SPECIFIC_CP: Partial<Record<Subject, Record<number, string>>> = {
     4: 'Peserta didik menerapkan prinsip proporsi dan simetri dalam menggambar rumah adat, merancang motif ragam hias batik nusantara, serta membuat karya topeng kertas tiga dimensi.',
     5: 'Peserta didik merancang karya gambar perspektif satu titik hilang, membuat desain poster edukatif peduli lingkungan hidup, dan mengolah limbah plastik menjadi kriya kreatif.',
     6: 'Peserta didik merancang komposisi visual bermakna dengan prinsip keseimbangan dan kontras, membuat instalasi seni terapan, serta mengapresiasi karya seni rupa maestro Indonesia.',
+    7: 'Peserta didik menerapkan unsur dan prinsip seni rupa dalam menggambar alam benda dan ragam hias fauna, serta membuat produk kriya bahan lunak berbasis kearifan lokal.',
+    8: 'Peserta didik menggambar model manusia dengan proporsi tepat, membuat ilustrasi komik pendek edukatif, dan merancang desain poster digital persuasif.',
+    9: 'Peserta didik melukis ekspresif berbagai media cat, membuat karya patung tiga dimensi dari tanah liat/semen, serta menyelenggarakan pameran karya seni kelas.',
+    10: 'Peserta didik menganalisis konsep dan teknik berkarya seni rupa dua dimensi dan tiga dimensi, serta mengapresiasi nilai estetis karya seni lukis mancanegara.',
+    11: 'Peserta didik merancang karya seni rupa kontemporer eksperimental, teknik cetak tinggi/sablon grafis, dan menyusun ulasan kritik seni rupa komparatif.',
+    12: 'Peserta didik merancang kurasi dan tata pameran seni rupa modern, mengapresiasi seni instalasi, serta mengkaji keterkaitan seni rupa dengan industri kreatif visual.',
   },
   'Seni Musik': {
     1: 'Peserta didik mengenali pola irama konstan, membedakan bunyi tinggi-rendah dan panjang-pendek, serta menyanyikan lagu anak-anak bertempo santai dengan gembira.',
@@ -526,6 +666,12 @@ const GRADE_SPECIFIC_CP: Partial<Record<Subject, Record<number, string>>> = {
     4: 'Peserta didik memainkan alat musik melodis sederhana (pianika/rekorder) dengan teknik penjarian dasar, serta bernyanyi secara serempak dan kanon dalam kelompok kecil.',
     5: 'Peserta didik memainkan ansambel musik campuran sederhana, mengapresiasi kekayaan alat musik tradisional nusantara (angklung, kolintang, gamelan), dan menyanyikan lagu daerah dua suara.',
     6: 'Peserta didik mengaransemen pola irama lagu sederhana, menampilkan pagelaran musik ansambel tematik kelas, serta mengapresiasi tokoh komponis nasional Indonesia.',
+    7: 'Peserta didik bernyanyi secara unisono dan vokal grup lagu daerah dengan artikulasi tepat, serta memainkan instrumen musik tradisional nusantara secara harmonis.',
+    8: 'Peserta didik mengidentifikasi tangga nada dan akord dasar musik populer nusantara, membaca notasi balok birama sederhana, serta menyajikan ansambel musik campuran.',
+    9: 'Peserta didik mengaransemen lagu populer ke dalam paduan suara dua-tiga suara, memainkan karya musik ansambel kontemporer, dan mengapresiasi karya musisi legendaris.',
+    10: 'Peserta didik menganalisis harmoni tangga nada diatonis dan pentatonis, teknik vokal solo/duet, serta mengapresiasi nilai estetis karya musik nusantara dan barat.',
+    11: 'Peserta didik mengaransemen lagu tradisional ke format musik modern, memainkan instrumen akor pengiring, serta menganalisis genre musik jazz, klasik, dan pop.',
+    12: 'Peserta didik merancang manajemen pagelaran konser musik sekolah, teknik rekaman audio digital sederhana, serta mengapresiasi etika hak cipta industri musik.',
   },
   'Informatika': {
     1: 'Peserta didik mengenali berbagai piranti teknologi informasi di sekitar (komputer, ponsel, tablet), membiasakan jarak pandang layar yang aman, dan memahami aturan penggunaan gawai.',
@@ -534,6 +680,12 @@ const GRADE_SPECIFIC_CP: Partial<Record<Subject, Record<number, string>>> = {
     4: 'Peserta didik mengoperasikan perangkat lunak pengolah kata sederhana (mengetik teks dan mengganti warna/ukuran huruf), serta memahami etika kesopanan saat berkomunikasi digital.',
     5: 'Peserta didik mengolah data angka dan grafik sederhana menggunakan aplikasi lembar kerja (spreadsheet), mencari informasi edukatif aman di internet, dan mengenali bahaya hoaks.',
     6: 'Peserta didik memahami logika pemrograman visual berbasis blok (Scratch/Blockly), merancang animasi atau kuis interaktif sederhana, serta memahami pentingnya perlindungan privasi dan kata sandi.',
+    7: 'Peserta didik memahami computational thinking (algoritma sekuensial), arsitektur perangkat keras dan lunak, topologi jaringan internet dasar, serta analisis data spreadsheet.',
+    8: 'Peserta didik menerapkan algoritma searching dan sorting visual, representasi data bilangan biner, keamanan sandi dan etika berinternet, serta pemrograman visual interaktif modular.',
+    9: 'Peserta didik merancang algoritma modular bercabang dan berulang, integrasi aplikasi perkantoran, analisis big data dasar, serta pengantar sintaks pemrograman tekstual (Python).',
+    10: 'Peserta didik menerapkan berpikir komputasional dengan bahasa Python (variabel, percabangan, perulangan, fungsi), analisis data digital, dan etika privasi kecerdasan buatan (AI).',
+    11: 'Peserta didik menguasai konsep pemrograman berorientasi objek (OOP), basis data relasional dan query SQL, arsitektur jaringan TCP/IP, serta pertahanan keamanan siber.',
+    12: 'Peserta didik merancang proyek pengembangan aplikasi (web atau aplikasi bergerak), konsep machine learning dasar, serta analisis dampak sosial transformasi digital masyarakat 5.0.',
   },
   'Pendidikan Agama Islam': {
     1: 'Peserta didik mengenal rukun iman dan rukun Islam, huruf hijaiyah berharakat tunggal (fathah, kasrah, dammah), melafalkan Surah Al-Fatihah, dan adab berdoa sebelum/sesudah makan.',
@@ -542,6 +694,12 @@ const GRADE_SPECIFIC_CP: Partial<Record<Subject, Record<number, string>>> = {
     4: 'Peserta didik memahami makna asmaul husna Al-Basir dan Al-Adl, ketentuan bersuci dari hadas kecil, membaca Surah At-Tin dengan tartil, dan menghargai keragaman teman sebaya.',
     5: 'Peserta didik mendalami makna ibadah puasa Ramadan dan salat tarawih, melafalkan Surah Al-Ma\'un dengan tajwid, dan meneladani keteguhan Nabi Ibrahim AS dan Nabi Ismail AS.',
     6: 'Peserta didik memahami makna zakat fitrah, infak, sedekah, mendalami Surah Al-Kafirun tentang toleransi beragama, serta meneladani sifat kepemimpinan Khulafaur Rasyidin.',
+    7: 'Peserta didik membaca Al-Qur\'an dengan hukum tajwid alif lam syamsiyah/qamariyah, meneladani sifat amanah dan istikamah, serta memahami tata cara salat berjemaah dan sujud syukur.',
+    8: 'Peserta didik mengkaji hukum bacaan mad dan waqaf, mendalami sifat tawakal dan ikhtiar, fikih sujud sahwi dan sujud tilawah, serta sejarah keemasan Daulah Abbasiyah.',
+    9: 'Peserta didik mendalami hukum tajwid qalqalah dan ghunnah, aqidah hari akhir, fikih penyembelihan kurban dan akikah, serta sejarah masuknya Islam ke Indonesia via Wali Songo.',
+    10: 'Peserta didik mengkaji tafsir Surah Al-Hujurat tentang ukhuwah dan toleransi, asmaul husna Al-Karim dan Al-Mu\'min, fikih muamalah perbankan syariah, serta sejarah peradaban Islam.',
+    11: 'Peserta didik menganalisis hukum tajwid ra dan lam jalalah, iman kepada kitab-kitab Allah, fikih jenazah, khotbah, dan dakwah, serta peran tokoh pembaruan Islam modern.',
+    12: 'Peserta didik mengevaluasi konsep qadha dan qadar, adab berfikir kritis dan musyawarah (Surah Ali Imran 190-191), fikih pernikahan dalam Islam, mawaris/waris, dan etika kepemimpinan adil.',
   },
   'Bahasa Daerah': {
     1: 'Peserta didik menyimak sapaan santun daerah, mengenal nama anggota tubuh dan panggilan keluarga dalam bahasa daerah, serta melantunkan tembang dolanan anak bersama teman.',
@@ -550,10 +708,23 @@ const GRADE_SPECIFIC_CP: Partial<Record<Subject, Record<number, string>>> = {
     4: 'Peserta didik memahami unggah-ungguh basa saat berbicara di sekolah, mengartikan paribasan/peribahasa daerah bertema budi pekerti, dan membaca teks cerita rakyat daerah.',
     5: 'Peserta didik menganalisis watak tokoh dalam teks wayang/cerita kepahlawanan lokal, menulis karangan narasi pengalaman pribadi dalam bahasa daerah, dan melantunkan parikan/pantun daerah.',
     6: 'Peserta didik mengenal lambang aksara tradisional daerah dasar (legena/sandhangan), membaca teks bertuliskan aksara daerah pendek, dan mengapresiasi seni pidato/sesorah adat daerah.',
+    7: 'Peserta didik menganalisis teks cerita legenda nusantara berbahasa daerah, menerapkan unggah-ungguh basa kepada orang lebih tua, dan menulis tembang macapat/pantun daerah sederhana.',
+    8: 'Peserta didik menelaah teks pawarta/berita berbahasa daerah, mengapresiasi dialog drama komedi tradisional, dan menulis kalimat beraksara daerah dengan pasangan/sandhangan.',
+    9: 'Peserta didik mengevaluasi naskah pidato/pratama sesorah adat berbahasa daerah, menganalisis nilai filosofis karya sastra klasik daerah, dan menulis teks narasi budaya.',
+    10: 'Peserta didik mengkaji teks adat istiadat kearifan lokal (upacara adat), tata krama komunikasi bahasa krama/tinggi, serta transliterasi teks aksara tradisional kuno.',
+    11: 'Peserta didik menganalisis karya sastra sandiwara/ketoprak/lenong berbahasa daerah, menulis artikel opini budaya daerah, dan mengkaji falsafah tembang adiluhung.',
+    12: 'Peserta didik menyusun naskah pranatacara (pembawa acara) resmi adat berbahasa daerah, mengapresiasi puisi/geguritan modern, serta pelestarian warisan linguistik daerah.',
   }
 };
 
-const getFallbackGradeCp = (subj: Subject, grd: number): string => {
+const getFallbackGradeCp = (subj: Subject, grd: number, level?: EducationLevel): string => {
+  const effectiveLevel = level || (grd >= 10 ? 'SMA' : grd >= 7 ? 'SMP' : 'SD');
+  if (effectiveLevel === 'SMA' || grd >= 10) {
+    return `Peserta didik menganalisis dan mengevaluasi konsep esensial ${subj} Kelas ${grd} SMA / SMK secara kritis, mandiri, serta menerapkan penalaran tingkat tinggi (HOTS) dalam memecahkan masalah kontekstual.`;
+  }
+  if (effectiveLevel === 'SMP' || grd >= 7) {
+    return `Peserta didik mendalami konsep inti, menghubungkan prinsip ilmiah dan relasi sebab-akibat, serta mengomunikasikan pemahaman materi ${subj} Kelas ${grd} SMP secara runtut dan terpadu.`;
+  }
   if (grd === 1) {
     return `Peserta didik mengenal konsep dasar, simbol konkret, dan pembiasaan eksplorasi rasa ingin tahu ramah anak dalam materi ${subj} Kelas 1 SD.`;
   }
@@ -572,29 +743,44 @@ const getFallbackGradeCp = (subj: Subject, grd: number): string => {
   return `Peserta didik mengevaluasi konsep materi ${subj} secara terpadu, menarik kesimpulan logis, serta menyajikan solusi kreatif dalam materi ${subj} Kelas 6 SD.`;
 };
 
-export const getSubjectCp = (subj: Subject, grd: number): string => {
+const getSubjectCp = (subj: Subject, grd: number, level?: EducationLevel): string => {
   const gradeEntry = GRADE_SPECIFIC_CP[subj];
   if (gradeEntry && gradeEntry[grd]) {
     return gradeEntry[grd];
   }
-  return getFallbackGradeCp(subj, grd);
+  return getFallbackGradeCp(subj, grd, level);
 };
 
-export const getGradeCpVariant = (subj: Subject, grd: number, variant: number): string => {
-  const base = getSubjectCp(subj, grd);
+const getGradeCpVariant = (subj: Subject, grd: number, variant: number, level?: EducationLevel): string => {
+  const base = getSubjectCp(subj, grd, level);
+  const effectiveLevel = level || (grd >= 10 ? 'SMA' : grd >= 7 ? 'SMP' : 'SD');
+  const levelLabel = effectiveLevel === 'SMA' ? 'SMA / SMK' : effectiveLevel === 'SMP' ? 'SMP' : 'SD';
   if (variant === 1) {
-    return `${base} Peserta didik didorong untuk mengaplikasikan pemahaman ini dalam proyek eksplorasi sederhana berbasis pengalaman kontekstual sehari-hari.`;
+    return `${base} Peserta didik didorong untuk mengaplikasikan pemahaman ini dalam proyek eksplorasi terapan dan pemecahan masalah kontekstual sehari-hari.`;
   }
   if (variant === 2) {
-    return `${base} Fokus pembelajaran ditekankan pada penguatan nalar kritis, kemampuan berkolaborasi, dan rasa percaya diri siswa Kelas ${grd} SD.`;
+    return `${base} Fokus pembelajaran ditekankan pada penguatan nalar kritis, kemampuan berkolaborasi, dan kemandirian belajar siswa Kelas ${grd} ${levelLabel}.`;
   }
   return base;
 };
 
-const getPhaseInfo = (grd: number): { phase: 'Fase A' | 'Fase B' | 'Fase C'; title: string; desc: string } => {
+const getPhaseInfo = (
+  grd: number,
+  level?: EducationLevel
+): { phase: string; title: string; desc: string } => {
+  const effectiveLevel = level || (grd >= 10 ? 'SMA' : grd >= 7 ? 'SMP' : 'SD');
+  if (effectiveLevel === 'SMA' || grd >= 10) {
+    if (grd === 10) {
+      return { phase: 'Fase E', title: 'Fondasi Peminatan', desc: 'Kelas 10 SMA / SMK' };
+    }
+    return { phase: 'Fase F', title: 'Pendalaman & HOTS', desc: `Kelas ${grd} SMA / SMK` };
+  }
+  if (effectiveLevel === 'SMP' || grd >= 7) {
+    return { phase: 'Fase D', title: 'Eksplorasi & Logika Kritis', desc: `Kelas ${grd} SMP` };
+  }
   if (grd <= 2) return { phase: 'Fase A', title: 'Fondasi Awal', desc: 'Kelas 1 & 2 SD' };
   if (grd <= 4) return { phase: 'Fase B', title: 'Penguatan Konsep', desc: 'Kelas 3 & 4 SD' };
-  return { phase: 'Fase C', title: 'Analisis & Penalaran', desc: 'Kelas 5 & 6 SD' };
+  return { phase: 'Fase C', title: 'Penalaran Lanjut', desc: 'Kelas 5 & 6 SD' };
 };
 
 interface SubjectCatalogItem {
@@ -609,57 +795,159 @@ interface SubjectCategoryGroup {
   items: SubjectCatalogItem[];
 }
 
-const SUBJECT_CATALOG_GROUPS: SubjectCategoryGroup[] = [
-  {
-    name: 'Mata Pelajaran Wajib Utama',
-    items: [
-      { id: 'Matematika', name: 'Matematika', emoji: '📐', desc: 'Aritmetika, Geometri, Pecahan & Logika' },
-      { id: 'IPA', name: 'IPA (Sains)', emoji: '🌱', desc: 'Alam, Makhluk Hidup, Energi & Wujud Zat' },
-      { id: 'Bahasa Indonesia', name: 'Bahasa Indonesia', emoji: '📚', desc: 'Literasi, Teks, Membaca & Kosakata' },
-      { id: 'Pendidikan Pancasila', name: 'Pendidikan Pancasila', emoji: '🇮🇩', desc: 'Karakter, Norma, Toleransi & NKRI' },
-      { id: 'Pengetahuan Umum', name: 'Pengetahuan Umum', emoji: '💡', desc: 'Wawasan Dunia, Budaya & Sosial' },
-    ],
-  },
-  {
-    name: 'Bahasa & Literasi',
-    items: [
-      { id: 'Bahasa Inggris', name: 'Bahasa Inggris', emoji: '🇬🇧', desc: 'Vocabulary, Grammar & Reading Comprehension' },
-      { id: 'Bahasa Daerah', name: 'Bahasa Daerah / Mulok', emoji: '🗣️', desc: 'Aksara, Unggah-Ungguh & Sastra Lokal' },
-    ],
-  },
-  {
-    name: 'Jasmani & Olahraga',
-    items: [
-      { id: 'PJOK', name: 'PJOK', emoji: '⚽', desc: 'Pendidikan Jasmani, Olahraga & Pola Hidup Sehat' },
-    ],
-  },
-  {
-    name: 'Seni & Kebudayaan',
-    items: [
-      { id: 'Seni Rupa', name: 'Seni Rupa', emoji: '🎨', desc: 'Menggambar, Warna, Ragam Hias & Patung' },
-      { id: 'Seni Musik', name: 'Seni Musik', emoji: '🎵', desc: 'Irama, Notasi Angka, Lagu Wajib & Ansambel' },
-      { id: 'Seni Tari', name: 'Seni Tari', emoji: '💃', desc: 'Pola Lantai, Gerak Ritmik & Tari Daerah' },
-      { id: 'Seni Teater', name: 'Seni Teater', emoji: '🎭', desc: 'Ekspresi Emosi, Pantomim & Seni Peran' },
-    ],
-  },
-  {
-    name: 'Pendidikan Agama & Budi Pekerti',
-    items: [
-      { id: 'Pendidikan Agama Islam', name: 'Pendidikan Agama Islam (PAI)', emoji: '🕌', desc: 'Akidah, Akhlak, Fikih, Al-Qur\'an & Sejarah' },
-      { id: 'Pendidikan Agama Kristen', name: 'Pendidikan Agama Kristen', emoji: '✝️', desc: 'Ajaran Kasih, Alkitab & Keteladanan Kristiani' },
-      { id: 'Pendidikan Agama Katolik', name: 'Pendidikan Agama Katolik', emoji: '⛪', desc: 'Sakramen, Liturgi & Nilai Kehidupan Kristiani' },
-      { id: 'Pendidikan Agama Hindu', name: 'Pendidikan Agama Hindu', emoji: '🕉️', desc: 'Panca Sradha, Tri Kaya Parisudha & Kitab Weda' },
-      { id: 'Pendidikan Agama Buddha', name: 'Pendidikan Agama Buddha', emoji: '☸️', desc: 'Triratna, Empat Kebenaran Mulia & Karma' },
-      { id: 'Pendidikan Agama Konghucu', name: 'Pendidikan Agama Konghucu', emoji: '⛩️', desc: 'Ajaran Bakhti, Kebajikan (Ren) & Kitab Suci' },
-    ],
-  },
-  {
-    name: 'Teknologi & Literasi Digital',
-    items: [
-      { id: 'Informatika', name: 'Informatika / Literasi Digital', emoji: '💻', desc: 'Perangkat Digital, Etika Internet & Logika Koding' },
-    ],
-  },
-];
+const getSubjectCatalogGroups = (level: EducationLevel): SubjectCategoryGroup[] => {
+  if (level === 'SMP') {
+    return [
+      {
+        name: 'Mata Pelajaran Inti SMP',
+        items: [
+          { id: 'IPA Terpadu', name: 'IPA Terpadu', emoji: '🔬', desc: 'Fisika, Biologi, Kimia Terpadu SMP' },
+          { id: 'Matematika', name: 'Matematika', emoji: '📐', desc: 'Aljabar, Geometri, Teorema Pythagoras & Statistika' },
+          { id: 'Bahasa Indonesia', name: 'Bahasa Indonesia', emoji: '📚', desc: 'Teks Prosedur, LHO, Berita, Resensi & Cerpen' },
+          { id: 'Bahasa Inggris', name: 'Bahasa Inggris', emoji: '🇬🇧', desc: 'Recount, Narrative, Procedure & Daily Dialogues' },
+          { id: 'IPS Terpadu', name: 'IPS Terpadu', emoji: '🌍', desc: 'Geografi, Sejarah, Sosiologi & Ekonomi Terpadu' },
+        ],
+      },
+      {
+        name: 'Teknologi, Terapan & Keterampilan',
+        items: [
+          { id: 'Informatika', name: 'Informatika', emoji: '💻', desc: 'Computational Thinking, Algoritma, Data & Koding' },
+          { id: 'Prakarya', name: 'Prakarya & Kewirausahaan', emoji: '✂️', desc: 'Kerajinan, Rekayasa, Budi Daya & Pengolahan' },
+        ],
+      },
+      {
+        name: 'Pendidikan Karakter, Jasmani & Agama',
+        items: [
+          { id: 'Pendidikan Pancasila', name: 'Pendidikan Pancasila', emoji: '🇮🇩', desc: 'Konstitusi, Demokrasi, Norma & Nilai Kebangsaan' },
+          { id: 'PJOK', name: 'PJOK', emoji: '⚽', desc: 'Kebugaran, Atletik, Olahraga Beregu & Kesehatan Remaja' },
+          { id: 'Pendidikan Agama Islam', name: 'Pendidikan Agama Islam (PAI)', emoji: '🕌', desc: 'Akidah Akhlak, Fikih, Sejarah Kebudayaan Islam' },
+          { id: 'Pendidikan Agama Kristen', name: 'Pendidikan Agama Kristen', emoji: '✝️', desc: 'Nilai Kristiani, Iman & Keteladanan Remaja' },
+          { id: 'Pendidikan Agama Katolik', name: 'Pendidikan Agama Katolik', emoji: '⛪', desc: 'Gereja, Moralitas & Liturgi' },
+          { id: 'Pendidikan Agama Hindu', name: 'Pendidikan Agama Hindu', emoji: '🕉️', desc: 'Dharma, Tattwa & Etika Hindu' },
+          { id: 'Pendidikan Agama Buddha', name: 'Pendidikan Agama Buddha', emoji: '☸️', desc: 'Dharma, Sila & Meditasi' },
+          { id: 'Pendidikan Agama Konghucu', name: 'Pendidikan Agama Konghucu', emoji: '⛩️', desc: 'Kitab Sishu & Kebajikan Remaja' },
+        ],
+      },
+      {
+        name: 'Seni, Bahasa & Wawasan',
+        items: [
+          { id: 'Seni Rupa', name: 'Seni Rupa', emoji: '🎨', desc: 'Gambar Bentuk, Ilustrasi & Kriya Kreatif' },
+          { id: 'Seni Musik', name: 'Seni Musik', emoji: '🎵', desc: 'Vokal Grup, Akord & Musik Tradisional' },
+          { id: 'Seni Tari', name: 'Seni Tari', emoji: '💃', desc: 'Koreografi Tari Kreasi & Tradisi' },
+          { id: 'Seni Teater', name: 'Seni Teater', emoji: '🎭', desc: 'Tata Panggung, Pantomim & Naskah Drama' },
+          { id: 'Bahasa Daerah', name: 'Bahasa Daerah / Mulok', emoji: '🗣️', desc: 'Sastra, Unggah-Ungguh & Budaya Lokal' },
+          { id: 'Pengetahuan Umum', name: 'Pengetahuan Umum', emoji: '💡', desc: 'Wawasan Nusantara & Isu Global' },
+        ],
+      },
+    ];
+  }
+
+  if (level === 'SMA') {
+    return [
+      {
+        name: 'Peminatan MIPA (Sains & Matematika)',
+        items: [
+          { id: 'Matematika', name: 'Matematika Umum', emoji: '📐', desc: 'Eksponen, Barisan, Vektor & Trigonometri' },
+          { id: 'Matematika Tingkat Lanjut', name: 'Matematika Tingkat Lanjut', emoji: '♾️', desc: 'Kalkulus, Polinomial, Matriks & Vektor Lanjut' },
+          { id: 'Fisika', name: 'Fisika', emoji: '⚛️', desc: 'Mekanika, Termodinamika, Gelombang & Optik' },
+          { id: 'Kimia', name: 'Kimia', emoji: '🧪', desc: 'Stoikiometri, Ikatan Kimia, Asam-Basa & Redoks' },
+          { id: 'Biologi', name: 'Biologi', emoji: '🧬', desc: 'Sel, Genetika, Metabolisme & Bioteknologi' },
+          { id: 'Informatika', name: 'Informatika Lanjut', emoji: '💻', desc: 'OOP, Basis Data SQL, Algoritma & AI Ethics' },
+        ],
+      },
+      {
+        name: 'Peminatan IPS & Humaniora',
+        items: [
+          { id: 'Ekonomi', name: 'Ekonomi & Akuntansi', emoji: '📈', desc: 'Pasar, Moneter-Fiskal, Siklus Akuntansi & Bisnis' },
+          { id: 'Sosiologi', name: 'Sosiologi', emoji: '👥', desc: 'Struktur Sosial, Konflik, Perubahan Sosial & Riset' },
+          { id: 'Geografi', name: 'Geografi', emoji: '🗺️', desc: 'SIG, Litosfer, Tata Ruang & Geopolitik Dunia' },
+          { id: 'Sejarah', name: 'Sejarah', emoji: '🏛️', desc: 'Pergerakan Nasional, Kemerdekaan & Sejarah Dunia' },
+          { id: 'Antropologi', name: 'Antropologi', emoji: '🏺', desc: 'Etnografi, Budaya Nusantara & Dinamika Sosial' },
+        ],
+      },
+      {
+        name: 'Mata Pelajaran Wajib Umum',
+        items: [
+          { id: 'Bahasa Indonesia', name: 'Bahasa Indonesia', emoji: '📚', desc: 'Artikel Ilmiah, Esai Kritis, Teks Editorial & Novel' },
+          { id: 'Bahasa Inggris', name: 'Bahasa Inggris', emoji: '🇬🇧', desc: 'Analytical Exposition, Discussion & Argumentation' },
+          { id: 'Pendidikan Pancasila', name: 'Pendidikan Pancasila', emoji: '🇮🇩', desc: 'Hukum Positif, HAM, Ideologi & Geopolitik' },
+          { id: 'PJOK', name: 'PJOK', emoji: '⚽', desc: 'Manajemen Kebugaran, Taktik Olahraga & Gaya Hidup' },
+          { id: 'Pengetahuan Umum', name: 'Pengetahuan Umum & HOTS', emoji: '💡', desc: 'Wawasan Kebangsaan, Literasi Sains & Skolastik' },
+        ],
+      },
+      {
+        name: 'Seni, Terapan, Bahasa & Agama',
+        items: [
+          { id: 'Seni Rupa', name: 'Seni Rupa', emoji: '🎨', desc: 'Kritik Seni, Desain Komunikasi Visual & Pameran' },
+          { id: 'Seni Musik', name: 'Seni Musik', emoji: '🎵', desc: 'Harmoni Musik Barat/Tradisional & Komposisi' },
+          { id: 'Seni Tari', name: 'Seni Tari', emoji: '💃', desc: 'Koreografi Kontemporer & Analisis Tari' },
+          { id: 'Seni Teater', name: 'Seni Teater', emoji: '🎭', desc: 'Dramaturgi, Directing & Pementasan' },
+          { id: 'Prakarya', name: 'Prakarya & Kewirausahaan', emoji: '✂️', desc: 'Business Plan, Desain Produk & Inkubasi Usaha' },
+          { id: 'Bahasa Daerah', name: 'Bahasa Daerah / Sastra', emoji: '🗣️', desc: 'Filologi, Aksara Kuno & Sastra Klasik Daerah' },
+          { id: 'Pendidikan Agama Islam', name: 'Pendidikan Agama Islam (PAI)', emoji: '🕌', desc: 'Kajian Tafsir Hadis, Ushul Fikih & Peradaban' },
+          { id: 'Pendidikan Agama Kristen', name: 'Pendidikan Agama Kristen', emoji: '✝️', desc: 'Etika Kristen, Teologi Praktis & Pelayanan' },
+          { id: 'Pendidikan Agama Katolik', name: 'Pendidikan Agama Katolik', emoji: '⛪', desc: 'Ajaran Sosial Gereja & Moralitas Kristiani' },
+          { id: 'Pendidikan Agama Hindu', name: 'Pendidikan Agama Hindu', emoji: '🕉️', desc: 'Filsafat Hindu & Yoga Asanas' },
+          { id: 'Pendidikan Agama Buddha', name: 'Pendidikan Agama Buddha', emoji: '☸️', desc: 'Tripitaka & Kebajikan Bodhisattva' },
+          { id: 'Pendidikan Agama Konghucu', name: 'Pendidikan Agama Konghucu', emoji: '⛩️', desc: 'Etika Ru Jiao & Harmoni Semesta' },
+        ],
+      },
+    ];
+  }
+
+  // Default SD
+  return [
+    {
+      name: 'Mata Pelajaran Wajib Utama',
+      items: [
+        { id: 'Matematika', name: 'Matematika', emoji: '📐', desc: 'Aritmetika, Geometri, Pecahan & Logika' },
+        { id: 'IPA', name: 'IPA (Sains)', emoji: '🌱', desc: 'Alam, Makhluk Hidup, Energi & Wujud Zat' },
+        { id: 'Bahasa Indonesia', name: 'Bahasa Indonesia', emoji: '📚', desc: 'Literasi, Teks, Membaca & Kosakata' },
+        { id: 'Pendidikan Pancasila', name: 'Pendidikan Pancasila', emoji: '🇮🇩', desc: 'Karakter, Norma, Toleransi & NKRI' },
+        { id: 'Pengetahuan Umum', name: 'Pengetahuan Umum', emoji: '💡', desc: 'Wawasan Dunia, Budaya & Sosial' },
+      ],
+    },
+    {
+      name: 'Bahasa & Literasi',
+      items: [
+        { id: 'Bahasa Inggris', name: 'Bahasa Inggris', emoji: '🇬🇧', desc: 'Vocabulary, Grammar & Reading Comprehension' },
+        { id: 'Bahasa Daerah', name: 'Bahasa Daerah / Mulok', emoji: '🗣️', desc: 'Aksara, Unggah-Ungguh & Sastra Lokal' },
+      ],
+    },
+    {
+      name: 'Jasmani & Olahraga',
+      items: [
+        { id: 'PJOK', name: 'PJOK', emoji: '⚽', desc: 'Pendidikan Jasmani, Olahraga & Pola Hidup Sehat' },
+      ],
+    },
+    {
+      name: 'Seni & Kebudayaan',
+      items: [
+        { id: 'Seni Rupa', name: 'Seni Rupa', emoji: '🎨', desc: 'Menggambar, Warna, Ragam Hias & Patung' },
+        { id: 'Seni Musik', name: 'Seni Musik', emoji: '🎵', desc: 'Irama, Notasi Angka, Lagu Wajib & Ansambel' },
+        { id: 'Seni Tari', name: 'Seni Tari', emoji: '💃', desc: 'Pola Lantai, Gerak Ritmik & Tari Daerah' },
+        { id: 'Seni Teater', name: 'Seni Teater', emoji: '🎭', desc: 'Ekspresi Emosi, Pantomim & Seni Peran' },
+      ],
+    },
+    {
+      name: 'Pendidikan Agama & Budi Pekerti',
+      items: [
+        { id: 'Pendidikan Agama Islam', name: 'Pendidikan Agama Islam (PAI)', emoji: '🕌', desc: 'Akidah, Akhlak, Fikih, Al-Qur\'an & Sejarah' },
+        { id: 'Pendidikan Agama Kristen', name: 'Pendidikan Agama Kristen', emoji: '✝️', desc: 'Ajaran Kasih, Alkitab & Keteladanan Kristiani' },
+        { id: 'Pendidikan Agama Katolik', name: 'Pendidikan Agama Katolik', emoji: '⛪', desc: 'Sakramen, Liturgi & Nilai Kehidupan Kristiani' },
+        { id: 'Pendidikan Agama Hindu', name: 'Pendidikan Agama Hindu', emoji: '🕉️', desc: 'Panca Sradha, Tri Kaya Parisudha & Kitab Weda' },
+        { id: 'Pendidikan Agama Buddha', name: 'Pendidikan Agama Buddha', emoji: '☸️', desc: 'Triratna, Empat Kebenaran Mulia & Karma' },
+        { id: 'Pendidikan Agama Konghucu', name: 'Pendidikan Agama Konghucu', emoji: '⛩️', desc: 'Ajaran Bakhti, Kebajikan (Ren) & Kitab Suci' },
+      ],
+    },
+    {
+      name: 'Teknologi & Literasi Digital',
+      items: [
+        { id: 'Informatika', name: 'Informatika / Literasi Digital', emoji: '💻', desc: 'Perangkat Digital, Etika Internet & Logika Koding' },
+      ],
+    },
+  ];
+};
 
 export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
   onGenerated,
@@ -667,15 +955,69 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
   playClick,
   initialSubject = 'Matematika',
   initialGrade = 3,
+  initialEducationLevel,
   stage,
   onStageChange,
   topic,
   onTopicChange,
 }) => {
-  const [subject, setSubject] = useState<Subject>(initialSubject);
-  const [grade, setGrade] = useState<number>(initialGrade);
+  const [educationLevel, setEducationLevel] = useState<EducationLevel>(() => {
+    if (initialEducationLevel) return initialEducationLevel;
+    if (initialGrade) {
+      if (initialGrade >= 10) return 'SMA';
+      if (initialGrade >= 7) return 'SMP';
+      return 'SD';
+    }
+    try {
+      const saved = localStorage.getItem('kuis_last_education_level') as EducationLevel;
+      if (saved === 'SD' || saved === 'SMP' || saved === 'SMA') return saved;
+    } catch {
+      // noop
+    }
+    return 'SD';
+  });
+
+  const [subject, setSubject] = useState<Subject>(() => {
+    if (initialSubject && isSubjectAllowedInLevel(initialSubject, educationLevel)) {
+      return initialSubject;
+    }
+    return CORE_SUBJECTS_BY_LEVEL[educationLevel][0];
+  });
+
+  const [grade, setGrade] = useState<number>(() => {
+    if (initialGrade) {
+      if (educationLevel === 'SD' && initialGrade >= 1 && initialGrade <= 6) return initialGrade;
+      if (educationLevel === 'SMP' && initialGrade >= 7 && initialGrade <= 9) return initialGrade;
+      if (educationLevel === 'SMA' && initialGrade >= 10 && initialGrade <= 12) return initialGrade;
+    }
+    return educationLevel === 'SMA' ? 10 : educationLevel === 'SMP' ? 7 : 3;
+  });
+
   const [contextNotes, setContextNotes] = useState('');
   const [randomSeed, setRandomSeed] = useState(0);
+
+  // Switcher Jenjang Pendidikan (SD, SMP, SMA)
+  const handleEducationLevelChange = (lvl: EducationLevel) => {
+    playClick();
+    setEducationLevel(lvl);
+    try {
+      localStorage.setItem('kuis_last_education_level', lvl);
+    } catch {
+      // noop
+    }
+
+    // Sesuaikan kelas default untuk jenjang baru
+    let newGrade = grade;
+    if (lvl === 'SD' && (grade < 1 || grade > 6)) newGrade = 3;
+    if (lvl === 'SMP' && (grade < 7 || grade > 9)) newGrade = 7;
+    if (lvl === 'SMA' && (grade < 10 || grade > 12)) newGrade = 10;
+    if (newGrade !== grade) setGrade(newGrade);
+
+    // Sesuaikan mapel default jika mapel saat ini tidak tersedia di jenjang baru
+    if (!isSubjectAllowedInLevel(subject, lvl)) {
+      setSubject(CORE_SUBJECTS_BY_LEVEL[lvl][0]);
+    }
+  };
 
   // Modal Katalog Mapel Lengkap
   const [isSubjectModalOpen, setIsSubjectModalOpen] = useState(false);
@@ -686,16 +1028,18 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
   const [aiBrainstormedTopics, setAiBrainstormedTopics] = useState<TopicRecommendation[] | null>(null);
 
   // Filtered Subject Categories for Modal
+  const subjectCatalogGroups = useMemo(() => getSubjectCatalogGroups(educationLevel), [educationLevel]);
+
   const filteredSubjectCategories = useMemo(() => {
     const q = subjectSearchQuery.trim().toLowerCase();
-    if (!q) return SUBJECT_CATALOG_GROUPS;
-    return SUBJECT_CATALOG_GROUPS.map((grp) => ({
+    if (!q) return subjectCatalogGroups;
+    return subjectCatalogGroups.map((grp) => ({
       ...grp,
       items: grp.items.filter(
         (it) => it.name.toLowerCase().includes(q) || it.desc.toLowerCase().includes(q) || grp.name.toLowerCase().includes(q)
       ),
     })).filter((grp) => grp.items.length > 0);
-  }, [subjectSearchQuery]);
+  }, [subjectSearchQuery, subjectCatalogGroups]);
 
   // Capaian Pembelajaran (CP) AI
   const [aiGradeCp, setAiGradeCp] = useState<string | null>(null);
@@ -707,7 +1051,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
     setAiBrainstormedTopics(null);
     setAiGradeCp(null);
     setCpVariantIndex(0);
-  }, [subject, grade]);
+  }, [subject, grade, educationLevel]);
 
   // Handler Rumuskan / Elaborasi CP Spesifik Kelas via AI
   const handleGenerateAiCp = async () => {
@@ -715,7 +1059,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
     if (isAnyAiAvailable()) {
       setIsGeneratingAiCp(true);
       try {
-        const result = await generateAiCapaianPembelajaran({ subject, grade });
+        const result = await generateAiCapaianPembelajaran({ subject, grade, educationLevel });
         if (result?.cp) {
           setAiGradeCp(result.cp);
           return;
@@ -729,7 +1073,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
     // Rotasi varian pedagogis kontekstual jika AI offline atau belum tersambung
     const nextIdx = ((cpVariantIndex || 0) + 1) % 3;
     setCpVariantIndex(nextIdx);
-    const altCp = getGradeCpVariant(subject, grade, nextIdx);
+    const altCp = getGradeCpVariant(subject, grade, nextIdx, educationLevel);
     setAiGradeCp(altCp);
   };
 
@@ -739,7 +1083,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
     if (isAnyAiAvailable()) {
       setIsBrainstormingAi(true);
       try {
-        const ideas = await generateAiTopicIdeas({ subject, grade });
+        const ideas = await generateAiTopicIdeas({ subject, grade, educationLevel });
         if (ideas.length > 0) {
           setAiBrainstormedTopics(ideas);
           return;
@@ -840,12 +1184,12 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
 
   const sumCustomProportions = proportions.multiple_choice + proportions.true_false + proportions.short_answer + proportions.matching_pairs;
 
-  // Rekomendasi Topik Cerdas Berdasarkan Mapel & Kelas (AI Dinamis atau Presets Kurikulum)
+  // Rekomendasi Topik Cerdas Berdasarkan Mapel, Kelas & Jenjang
   const activeTopicRecommendations = useMemo(() => {
     if (aiBrainstormedTopics && aiBrainstormedTopics.length > 0) {
       return { list: aiBrainstormedTopics, isAi: true };
     }
-    const presetList = getCuratedTopics(subject, grade);
+    const presetList = getCuratedTopics(subject, grade, educationLevel);
     if (presetList.length === 0) return { list: [], isAi: false };
     const shifted = [...presetList];
     const offset = randomSeed % shifted.length;
@@ -853,19 +1197,20 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
       list: shifted.slice(offset).concat(shifted.slice(0, offset)).slice(0, 4),
       isAi: false,
     };
-  }, [aiBrainstormedTopics, subject, grade, randomSeed]);
+  }, [aiBrainstormedTopics, subject, grade, educationLevel, randomSeed]);
 
-  const currentPhaseInfo = useMemo(() => getPhaseInfo(grade), [grade]);
-  const currentCpStatement = useMemo(() => aiGradeCp || getSubjectCp(subject, grade), [aiGradeCp, subject, grade]);
+  const currentPhaseInfo = useMemo(() => getPhaseInfo(grade, educationLevel), [grade, educationLevel]);
+  const currentCpStatement = useMemo(() => aiGradeCp || getSubjectCp(subject, grade, educationLevel), [aiGradeCp, subject, grade, educationLevel]);
 
-  const CORE_SUBJECTS: Subject[] = ['IPA', 'Matematika', 'Bahasa Indonesia', 'Pendidikan Pancasila', 'Pengetahuan Umum'];
-  const isCoreSubject = CORE_SUBJECTS.includes(subject);
+  const coreSubjects = CORE_SUBJECTS_BY_LEVEL[educationLevel] || CORE_SUBJECTS_BY_LEVEL.SD;
+  const isCoreSubject = coreSubjects.includes(subject);
 
   // Prompt Teks Siap Pakai
   const generatedPromptText = useMemo(() => {
     return generateAiPrompt({
       subject,
       grade,
+      educationLevel,
       topic: topic.trim() || 'Materi Pelajaran Tematik',
       count: currentTotalQuestions,
       questionType: proportionMode === 'balanced' ? 'campuran' : undefined,
@@ -873,7 +1218,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
       contextNotes: contextNotes.trim() || undefined,
       includeImages: includeAiImages,
     });
-  }, [subject, grade, topic, currentTotalQuestions, proportionMode, proportions, contextNotes, includeAiImages]);
+  }, [subject, grade, educationLevel, topic, currentTotalQuestions, proportionMode, proportions, contextNotes, includeAiImages]);
 
   // Handler Salin Prompt
   const handleCopyPrompt = async () => {
@@ -895,7 +1240,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `Template_Bank_Soal_SD_${subject.replace(/\s+/g, '_')}.csv`);
+    link.setAttribute('download', `Template_Bank_Soal_${educationLevel}_${subject.replace(/\s+/g, '_')}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -971,6 +1316,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
         topic: topic.trim(),
         subject,
         grade,
+        educationLevel,
         count: currentTotalQuestions,
         questionType: 'campuran',
         provider: providerToUse,
@@ -981,15 +1327,18 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
         throw new Error('Tidak ada butir soal yang berhasil diracik. Silakan coba kembali.');
       }
 
+      const badge = educationLevel === 'SMA' ? 'Bintang Cendekia' : educationLevel === 'SMP' ? 'Bintang Mandiri' : 'Bintang Pintar';
+
       // Langsung buka Studio Bank Soal
       onGenerated({
         questions: result.questions,
         topic: topic.trim(),
         subject,
         grade,
+        educationLevel,
         questionCount: result.questions.length,
         coverEmoji: EMOJI_BY_SUBJECT[subject] || '🌟',
-        badgeTitle: 'Bintang Pintar',
+        badgeTitle: badge,
       });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Terjadi kendala saat meracik soal AI.';
@@ -1019,14 +1368,18 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
         return;
       }
 
+      const badge = educationLevel === 'SMA' ? 'Bintang Cendekia' : educationLevel === 'SMP' ? 'Bintang Mandiri' : 'Bintang Pintar';
+      const levelLabel = educationLevel === 'SMA' ? 'SMA' : educationLevel === 'SMP' ? 'SMP' : 'SD';
+
       onGenerated({
         questions: validQuestions,
-        topic: topic.trim() || `Kuis ${subject} Kelas ${grade}`,
+        topic: topic.trim() || `Kuis ${subject} Kelas ${grade} ${levelLabel}`,
         subject,
         grade,
+        educationLevel,
         questionCount: validQuestions.length,
         coverEmoji: EMOJI_BY_SUBJECT[subject] || '🌟',
-        badgeTitle: 'Bintang Pintar',
+        badgeTitle: badge,
       });
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Gagal mengurai teks soal.';
@@ -1053,28 +1406,75 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
       )}
 
       {/* ========================================================================= */}
-      {/* TAHAP 1: MATA PELAJARAN & TINGKAT KELAS SD */}
-      {/* ========================================================================= */}
-      {/* ========================================================================= */}
-      {/* TAHAP 1: MATA PELAJARAN & TINGKAT KELAS SD */}
+      {/* TAHAP 1: JENJANG PENDIDIKAN, MATA PELAJARAN & TINGKAT KELAS */}
       {/* ========================================================================= */}
       {stage === 1 && (
         <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-8 lg:p-10 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6 sm:space-y-8 animate-fade-in">
           
+          {/* Selector Jenjang Pendidikan (SD, SMP, SMA/SMK) */}
+          <div className="bg-slate-100/90 dark:bg-slate-800/80 p-2.5 sm:p-3 rounded-2xl border border-slate-200/80 dark:border-slate-700 flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs">
+            <div className="flex items-center gap-2.5 px-1">
+              <div className="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center text-xl shadow-xs shrink-0">
+                {educationLevel === 'SMA' ? '🎓' : educationLevel === 'SMP' ? '🏫' : '🎒'}
+              </div>
+              <div>
+                <h3 className="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-white leading-tight flex items-center gap-1.5">
+                  <span>Jenjang Pendidikan</span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300">
+                    Kurikulum Merdeka
+                  </span>
+                </h3>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                  Pilih jenjang untuk memfilter mapel, pembagian fase, dan capaian pembelajaran
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { id: 'SD' as EducationLevel, label: 'SD / MI', icon: '🎒', phase: 'Fase A – C (Kls 1–6)' },
+                { id: 'SMP' as EducationLevel, label: 'SMP / MTs', icon: '🏫', phase: 'Fase D (Kls 7–9)' },
+                { id: 'SMA' as EducationLevel, label: 'SMA / SMK', icon: '🎓', phase: 'Fase E – F (Kls 10–12)' },
+              ].map((lvl) => {
+                const isSelected = educationLevel === lvl.id;
+                return (
+                  <button
+                    key={lvl.id}
+                    type="button"
+                    onClick={() => handleEducationLevelChange(lvl.id)}
+                    className={`min-h-[48px] px-3 py-2 rounded-xl flex items-center justify-center gap-2 transition-all font-black text-xs sm:text-sm btn-press ${
+                      isSelected
+                        ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 ring-2 ring-blue-400/40'
+                        : 'bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-650 border border-slate-200 dark:border-slate-600'
+                    }`}
+                  >
+                    <span className="text-base sm:text-lg shrink-0">{lvl.icon}</span>
+                    <div className="text-left">
+                      <div className="leading-tight font-extrabold">{lvl.label}</div>
+                      <div className={`text-[9px] font-normal leading-tight hidden lg:block ${isSelected ? 'text-blue-100' : 'text-slate-400 dark:text-slate-400'}`}>
+                        {lvl.phase}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Pilihan Mata Pelajaran (6 Kotak: 5 Utama + 1 Lainnya dengan Modal) */}
           <div>
             <div className="flex items-center justify-between mb-3">
               <label className="block text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white">
-                Pilih Mata Pelajaran <span className="text-rose-500">*</span>
+                Pilih Mata Pelajaran {educationLevel === 'SMA' ? 'SMA / SMK' : educationLevel === 'SMP' ? 'SMP' : 'SD'} <span className="text-rose-500">*</span>
               </label>
               <span className="text-xs text-slate-400 dark:text-slate-500 hidden sm:inline">
-                Kurikulum Merdeka SD
+                {educationLevel === 'SMA' ? 'Fokus Peminatan MIPA, IPS, dan Wajib' : educationLevel === 'SMP' ? 'Fokus Mapel Terpadu Fase D' : 'Kurikulum Merdeka SD'}
               </span>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-3.5">
-              {/* 5 Mapel Inti Terpopuler */}
-              {CORE_SUBJECTS.map((subj) => {
+              {/* 5 Mapel Inti Terpopuler sesuai Jenjang */}
+              {coreSubjects.map((subj) => {
                 const isSelected = subject === subj;
                 return (
                   <button
@@ -1094,7 +1494,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                     <div className="min-w-0 flex-1">
                       <span className="font-black text-xs sm:text-sm leading-snug line-clamp-2">{subj}</span>
                       <span className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 block truncate mt-0.5">
-                        Kurikulum Merdeka
+                        {educationLevel === 'SMA' ? 'Peminatan / Wajib' : educationLevel === 'SMP' ? 'Kurikulum SMP' : 'Kurikulum Merdeka'}
                       </span>
                     </div>
                   </button>
@@ -1125,130 +1525,274 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                     <span className="text-[11px] text-blue-600 dark:text-blue-400 font-extrabold shrink-0">▾</span>
                   </div>
                   <span className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 block truncate mt-0.5">
-                    {!isCoreSubject ? 'Ganti mapel ▾' : 'PJOK, Seni, Agama...'}
+                    {!isCoreSubject ? 'Ganti mapel ▾' : educationLevel === 'SMA' ? 'MIPA, IPS, Bahasa...' : educationLevel === 'SMP' ? 'Informatika, Prakarya...' : 'PJOK, Seni, Agama...'}
                   </span>
                 </div>
               </button>
             </div>
           </div>
 
-          {/* Pilihan Tingkat Kelas SD (Pengelompokan Fase Kurikulum Merdeka) */}
+          {/* Pilihan Tingkat Kelas (Pengelompokan Fase Kurikulum Merdeka Dinamis) */}
           <div className="pt-5 border-t border-slate-100 dark:border-slate-800 space-y-3">
             <div className="flex items-center justify-between">
               <label className="block text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white">
-                Pilih Tingkat Kelas SD <span className="text-rose-500">*</span>
+                Pilih Tingkat Kelas {educationLevel === 'SMA' ? 'SMA / SMK' : educationLevel === 'SMP' ? 'SMP' : 'SD'} <span className="text-rose-500">*</span>
               </label>
               <span className="text-xs text-slate-400 dark:text-slate-500 hidden sm:inline">
-                Terstruktur menurut Fase Kurikulum Merdeka SD
+                Terstruktur menurut Fase Kurikulum Merdeka ({educationLevel === 'SMA' ? 'Fase E & F' : educationLevel === 'SMP' ? 'Fase D' : 'Fase A – C'})
               </span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
-              {/* Fase A: Kelas 1 & 2 */}
-              <div className={`p-3.5 rounded-2xl border transition-all ${
-                grade === 1 || grade === 2
-                  ? 'border-blue-500/80 bg-blue-50/40 dark:bg-blue-950/20 dark:border-blue-800 ring-1 ring-blue-500/20 shadow-xs'
-                  : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-850/40'
-              }`}>
-                <div className="flex items-center justify-between mb-2.5 px-1">
-                  <span className="text-[11px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-amber-500"></span>
-                    Fase A
-                  </span>
-                  <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold">Fondasi Awal</span>
+            {/* Layout Kelas SD: Fase A, B, C */}
+            {educationLevel === 'SD' && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
+                {/* Fase A: Kelas 1 & 2 */}
+                <div className={`p-3.5 rounded-2xl border transition-all ${
+                  grade === 1 || grade === 2
+                    ? 'border-blue-500/80 bg-blue-50/40 dark:bg-blue-950/20 dark:border-blue-800 ring-1 ring-blue-500/20 shadow-xs'
+                    : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-850/40'
+                }`}>
+                  <div className="flex items-center justify-between mb-2.5 px-1">
+                    <span className="text-[11px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                      Fase A
+                    </span>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold">Fondasi Awal</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[1, 2].map((g) => (
+                      <button
+                        key={g}
+                        type="button"
+                        onClick={() => {
+                          playClick();
+                          setGrade(g);
+                        }}
+                        className={`py-3 px-2 rounded-xl font-black text-xs sm:text-sm transition-all min-h-[48px] flex flex-col items-center justify-center btn-press ${
+                          grade === g
+                            ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 ring-2 ring-blue-400/40'
+                            : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-750 border border-slate-200/80 dark:border-slate-700/80'
+                        }`}
+                      >
+                        <span className="font-extrabold text-sm">Kelas {g}</span>
+                        <span className="text-[10px] font-normal opacity-85">Sekolah Dasar</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
-                  {[1, 2].map((g) => (
-                    <button
-                      key={g}
-                      type="button"
-                      onClick={() => {
-                        playClick();
-                        setGrade(g);
-                      }}
-                      className={`py-3 px-2 rounded-xl font-black text-xs sm:text-sm transition-all min-h-[48px] flex flex-col items-center justify-center btn-press ${
-                        grade === g
-                          ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 ring-2 ring-blue-400/40'
-                          : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-750 border border-slate-200/80 dark:border-slate-700/80'
-                      }`}
-                    >
-                      <span className="font-extrabold text-sm">Kelas {g}</span>
-                      <span className="text-[10px] font-normal opacity-85">Sekolah Dasar</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
 
-              {/* Fase B: Kelas 3 & 4 */}
-              <div className={`p-3.5 rounded-2xl border transition-all ${
-                grade === 3 || grade === 4
-                  ? 'border-blue-500/80 bg-blue-50/40 dark:bg-blue-950/20 dark:border-blue-800 ring-1 ring-blue-500/20 shadow-xs'
-                  : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-850/40'
-              }`}>
-                <div className="flex items-center justify-between mb-2.5 px-1">
-                  <span className="text-[11px] font-black uppercase tracking-wider text-blue-700 dark:text-blue-400 flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                    Fase B
-                  </span>
-                  <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold">Penguatan Konsep</span>
+                {/* Fase B: Kelas 3 & 4 */}
+                <div className={`p-3.5 rounded-2xl border transition-all ${
+                  grade === 3 || grade === 4
+                    ? 'border-blue-500/80 bg-blue-50/40 dark:bg-blue-950/20 dark:border-blue-800 ring-1 ring-blue-500/20 shadow-xs'
+                    : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-850/40'
+                }`}>
+                  <div className="flex items-center justify-between mb-2.5 px-1">
+                    <span className="text-[11px] font-black uppercase tracking-wider text-blue-700 dark:text-blue-400 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                      Fase B
+                    </span>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold">Penguatan Konsep</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[3, 4].map((g) => (
+                      <button
+                        key={g}
+                        type="button"
+                        onClick={() => {
+                          playClick();
+                          setGrade(g);
+                        }}
+                        className={`py-3 px-2 rounded-xl font-black text-xs sm:text-sm transition-all min-h-[48px] flex flex-col items-center justify-center btn-press ${
+                          grade === g
+                            ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 ring-2 ring-blue-400/40'
+                            : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-750 border border-slate-200/80 dark:border-slate-700/80'
+                        }`}
+                      >
+                        <span className="font-extrabold text-sm">Kelas {g}</span>
+                        <span className="text-[10px] font-normal opacity-85">Sekolah Dasar</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
-                  {[3, 4].map((g) => (
-                    <button
-                      key={g}
-                      type="button"
-                      onClick={() => {
-                        playClick();
-                        setGrade(g);
-                      }}
-                      className={`py-3 px-2 rounded-xl font-black text-xs sm:text-sm transition-all min-h-[48px] flex flex-col items-center justify-center btn-press ${
-                        grade === g
-                          ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 ring-2 ring-blue-400/40'
-                          : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-750 border border-slate-200/80 dark:border-slate-700/80'
-                      }`}
-                    >
-                      <span className="font-extrabold text-sm">Kelas {g}</span>
-                      <span className="text-[10px] font-normal opacity-85">Sekolah Dasar</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
 
-              {/* Fase C: Kelas 5 & 6 */}
-              <div className={`p-3.5 rounded-2xl border transition-all ${
-                grade === 5 || grade === 6
-                  ? 'border-blue-500/80 bg-blue-50/40 dark:bg-blue-950/20 dark:border-blue-800 ring-1 ring-blue-500/20 shadow-xs'
-                  : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-850/40'
-              }`}>
-                <div className="flex items-center justify-between mb-2.5 px-1">
-                  <span className="text-[11px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                    Fase C
-                  </span>
-                  <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold">Penalaran Lanjut</span>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  {[5, 6].map((g) => (
-                    <button
-                      key={g}
-                      type="button"
-                      onClick={() => {
-                        playClick();
-                        setGrade(g);
-                      }}
-                      className={`py-3 px-2 rounded-xl font-black text-xs sm:text-sm transition-all min-h-[48px] flex flex-col items-center justify-center btn-press ${
-                        grade === g
-                          ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 ring-2 ring-blue-400/40'
-                          : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-750 border border-slate-200/80 dark:border-slate-700/80'
-                      }`}
-                    >
-                      <span className="font-extrabold text-sm">Kelas {g}</span>
-                      <span className="text-[10px] font-normal opacity-85">Sekolah Dasar</span>
-                    </button>
-                  ))}
+                {/* Fase C: Kelas 5 & 6 */}
+                <div className={`p-3.5 rounded-2xl border transition-all ${
+                  grade === 5 || grade === 6
+                    ? 'border-blue-500/80 bg-blue-50/40 dark:bg-blue-950/20 dark:border-blue-800 ring-1 ring-blue-500/20 shadow-xs'
+                    : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-850/40'
+                }`}>
+                  <div className="flex items-center justify-between mb-2.5 px-1">
+                    <span className="text-[11px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                      Fase C
+                    </span>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold">Penalaran Lanjut</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[5, 6].map((g) => (
+                      <button
+                        key={g}
+                        type="button"
+                        onClick={() => {
+                          playClick();
+                          setGrade(g);
+                        }}
+                        className={`py-3 px-2 rounded-xl font-black text-xs sm:text-sm transition-all min-h-[48px] flex flex-col items-center justify-center btn-press ${
+                          grade === g
+                            ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 ring-2 ring-blue-400/40'
+                            : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-750 border border-slate-200/80 dark:border-slate-700/80'
+                        }`}
+                      >
+                        <span className="font-extrabold text-sm">Kelas {g}</span>
+                        <span className="text-[10px] font-normal opacity-85">Sekolah Dasar</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
+
+            {/* Layout Kelas SMP: Fase D (Kelas 7, 8, 9) */}
+            {educationLevel === 'SMP' && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
+                {[
+                  { g: 7, subTitle: 'Transisi & Adaptasi Awal', tag: 'Fase D (Kls 7)' },
+                  { g: 8, subTitle: 'Pendalaman Eksplorasi', tag: 'Fase D (Kls 8)' },
+                  { g: 9, subTitle: 'Pemantapan & Penalaran', tag: 'Fase D (Kls 9)' },
+                ].map((item) => {
+                  const isSelected = grade === item.g;
+                  return (
+                    <div
+                      key={item.g}
+                      className={`p-3.5 rounded-2xl border transition-all ${
+                        isSelected
+                          ? 'border-blue-500/80 bg-blue-50/40 dark:bg-blue-950/20 dark:border-blue-800 ring-1 ring-blue-500/20 shadow-xs'
+                          : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-850/40'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-2.5 px-1">
+                        <span className="text-[11px] font-black uppercase tracking-wider text-cyan-700 dark:text-cyan-400 flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-cyan-500"></span>
+                          {item.tag}
+                        </span>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold">{item.subTitle}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          playClick();
+                          setGrade(item.g);
+                        }}
+                        className={`w-full py-3.5 px-3 rounded-xl font-black text-xs sm:text-sm transition-all min-h-[50px] flex flex-col items-center justify-center btn-press ${
+                          isSelected
+                            ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 ring-2 ring-blue-400/40'
+                            : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-750 border border-slate-200/80 dark:border-slate-700/80'
+                        }`}
+                      >
+                        <span className="font-extrabold text-base">Kelas {item.g} SMP</span>
+                        <span className="text-[10px] font-normal opacity-85">Sekolah Menengah Pertama</span>
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Layout Kelas SMA: Fase E (Kelas 10) & Fase F (Kelas 11 & 12) */}
+            {educationLevel === 'SMA' && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
+                {/* Fase E: Kelas 10 */}
+                <div className={`p-3.5 rounded-2xl border transition-all ${
+                  grade === 10
+                    ? 'border-blue-500/80 bg-blue-50/40 dark:bg-blue-950/20 dark:border-blue-800 ring-1 ring-blue-500/20 shadow-xs'
+                    : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-850/40'
+                }`}>
+                  <div className="flex items-center justify-between mb-2.5 px-1">
+                    <span className="text-[11px] font-black uppercase tracking-wider text-violet-700 dark:text-violet-400 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-violet-500"></span>
+                      Fase E
+                    </span>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold">Fondasi Peminatan</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setGrade(10);
+                    }}
+                    className={`w-full py-3.5 px-3 rounded-xl font-black text-xs sm:text-sm transition-all min-h-[50px] flex flex-col items-center justify-center btn-press ${
+                      grade === 10
+                        ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 ring-2 ring-blue-400/40'
+                        : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-750 border border-slate-200/80 dark:border-slate-700/80'
+                    }`}
+                  >
+                    <span className="font-extrabold text-base">Kelas 10 SMA</span>
+                    <span className="text-[10px] font-normal opacity-85">Eksplorasi Minat & Bakat</span>
+                  </button>
+                </div>
+
+                {/* Fase F: Kelas 11 */}
+                <div className={`p-3.5 rounded-2xl border transition-all ${
+                  grade === 11
+                    ? 'border-blue-500/80 bg-blue-50/40 dark:bg-blue-950/20 dark:border-blue-800 ring-1 ring-blue-500/20 shadow-xs'
+                    : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-850/40'
+                }`}>
+                  <div className="flex items-center justify-between mb-2.5 px-1">
+                    <span className="text-[11px] font-black uppercase tracking-wider text-rose-700 dark:text-rose-400 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-rose-500"></span>
+                      Fase F (Kls 11)
+                    </span>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold">Pendalaman & HOTS</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setGrade(11);
+                    }}
+                    className={`w-full py-3.5 px-3 rounded-xl font-black text-xs sm:text-sm transition-all min-h-[50px] flex flex-col items-center justify-center btn-press ${
+                      grade === 11
+                        ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 ring-2 ring-blue-400/40'
+                        : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-750 border border-slate-200/80 dark:border-slate-700/80'
+                    }`}
+                  >
+                    <span className="font-extrabold text-base">Kelas 11 SMA</span>
+                    <span className="text-[10px] font-normal opacity-85">Pendalaman Peminatan</span>
+                  </button>
+                </div>
+
+                {/* Fase F: Kelas 12 */}
+                <div className={`p-3.5 rounded-2xl border transition-all ${
+                  grade === 12
+                    ? 'border-blue-500/80 bg-blue-50/40 dark:bg-blue-950/20 dark:border-blue-800 ring-1 ring-blue-500/20 shadow-xs'
+                    : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-850/40'
+                }`}>
+                  <div className="flex items-center justify-between mb-2.5 px-1">
+                    <span className="text-[11px] font-black uppercase tracking-wider text-rose-700 dark:text-rose-400 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-rose-500"></span>
+                      Fase F (Kls 12)
+                    </span>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold">Pemantapan & Seleksi</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setGrade(12);
+                    }}
+                    className={`w-full py-3.5 px-3 rounded-xl font-black text-xs sm:text-sm transition-all min-h-[50px] flex flex-col items-center justify-center btn-press ${
+                      grade === 12
+                        ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 ring-2 ring-blue-400/40'
+                        : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-750 border border-slate-200/80 dark:border-slate-700/80'
+                    }`}
+                  >
+                    <span className="font-extrabold text-base">Kelas 12 SMA</span>
+                    <span className="text-[10px] font-normal opacity-85">Kelulusan & SNBT/Kedinasan</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Interactive Capaian Pembelajaran (CP) Preview Banner */}
@@ -1260,7 +1804,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-xs font-black text-slate-900 dark:text-white">
-                    Capaian Pembelajaran (CP) Spesifik Kelas {grade} SD
+                    Capaian Pembelajaran (CP) Spesifik Kelas {grade} {educationLevel === 'SMA' ? 'SMA / SMK' : educationLevel === 'SMP' ? 'SMP' : 'SD'}
                   </span>
                   <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400">
                     • {currentPhaseInfo.phase} ({currentPhaseInfo.desc})
@@ -1335,7 +1879,9 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
               <span className="text-xl sm:text-2xl shrink-0">{EMOJI_BY_SUBJECT[subject]}</span>
               <span className="shrink-0">{subject}</span>
               <span className="text-blue-400 shrink-0">•</span>
-              <span className="shrink-0">Kelas {grade} SD</span>
+              <span className="shrink-0">
+                Kelas {grade} {educationLevel === 'SMA' ? 'SMA / SMK' : educationLevel === 'SMP' ? 'SMP' : 'SD'}
+              </span>
             </div>
             <button
               type="button"
@@ -1447,11 +1993,11 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
               <div className="p-4 rounded-2xl bg-indigo-50/60 dark:bg-indigo-950/30 border border-indigo-200/70 dark:border-indigo-900/50 space-y-2">
                 <div className="flex items-center gap-2 text-indigo-900 dark:text-indigo-200 font-bold text-xs">
                   <Info className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
-                  <span>Tips Instruksional untuk Guru SD:</span>
+                  <span>Tips Instruksional untuk Guru {educationLevel === 'SMA' ? 'SMA / SMK' : educationLevel === 'SMP' ? 'SMP' : 'SD'}:</span>
                 </div>
                 <ul className="text-[11px] sm:text-xs text-indigo-800 dark:text-indigo-300/90 space-y-1 pl-6 list-disc leading-relaxed">
                   <li>Tentukan fokus sub-materi tertentu agar butir soal kuis padat dan terarah.</li>
-                  <li>Konteks akan membantu AI menyesuaikan gaya kalimat dengan psikologi siswa Kelas {grade} SD.</li>
+                  <li>Konteks akan membantu AI menyesuaikan gaya kalimat dengan psikologi siswa Kelas {grade} {educationLevel === 'SMA' ? 'SMA / SMK' : educationLevel === 'SMP' ? 'SMP' : 'SD'}.</li>
                   <li>Anda tetap dapat mengedit atau merevisi butir soal secara leluasa di Studio Bank Soal.</li>
                 </ul>
               </div>
@@ -1506,7 +2052,9 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
               <span className="text-xl sm:text-2xl shrink-0">{EMOJI_BY_SUBJECT[subject]}</span>
               <span className="shrink-0">{subject}</span>
               <span className="text-blue-400 shrink-0">•</span>
-              <span className="shrink-0">Kelas {grade} SD</span>
+              <span className="shrink-0">
+                Kelas {grade} {educationLevel === 'SMA' ? 'SMA / SMK' : educationLevel === 'SMP' ? 'SMP' : 'SD'}
+              </span>
               <span className="text-blue-400 shrink-0">•</span>
               <span className="truncate max-w-[160px] xs:max-w-[220px] sm:max-w-md font-semibold">"{topic}"</span>
             </div>
@@ -1632,7 +2180,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                     Distribusi Otomatis Berimbang:
                   </span>
                   <span>
-                    AI secara proporsional meracik <strong>Pilihan Ganda (~50%)</strong>, <strong>Benar/Salah (~20%)</strong>, <strong>Isian Singkat (~20%)</strong>, dan <strong>Menjodohkan (~10%)</strong> sesuai kebutuhan kompetensi dasar siswa Kelas {grade} SD.
+                    AI secara proporsional meracik <strong>Pilihan Ganda (~50%)</strong>, <strong>Benar/Salah (~20%)</strong>, <strong>Isian Singkat (~20%)</strong>, dan <strong>Menjodohkan (~10%)</strong> sesuai kebutuhan kompetensi dasar siswa Kelas {grade} {educationLevel === 'SMA' ? 'SMA / SMK' : educationLevel === 'SMP' ? 'SMP' : 'SD'}.
                   </span>
                 </div>
               </div>
@@ -1844,7 +2392,9 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
               <span className="text-xl sm:text-2xl shrink-0">{EMOJI_BY_SUBJECT[subject]}</span>
               <span className="shrink-0">{subject}</span>
               <span className="text-blue-400 shrink-0">•</span>
-              <span className="shrink-0">Kelas {grade} SD</span>
+              <span className="shrink-0">
+                Kelas {grade} {educationLevel === 'SMA' ? 'SMA / SMK' : educationLevel === 'SMP' ? 'SMP' : 'SD'}
+              </span>
               <span className="text-blue-400 shrink-0">•</span>
               <span className="truncate max-w-[140px] xs:max-w-[200px] sm:max-w-xs font-semibold">"{topic}"</span>
               <span className="text-blue-400 shrink-0">•</span>
@@ -1928,7 +2478,9 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                       Mandiri / Cepat
                     </span>
                   </div>
-                  <span className="font-black text-sm sm:text-base block">Kurikulum SD Lokal</span>
+                  <span className="font-black text-sm sm:text-base block">
+                    Kurikulum {educationLevel === 'SMA' ? 'SMA' : educationLevel === 'SMP' ? 'SMP' : 'SD'} Lokal
+                  </span>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-snug">
                     Pembuat soal cepat materi Kurikulum Merdeka tanpa ketergantungan kuota API.
                   </p>
@@ -2337,7 +2889,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                     Katalog Mata Pelajaran Lengkap
                   </h3>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                    Kurikulum Merdeka SD (Standar & Terstruktur)
+                    Kurikulum Merdeka {educationLevel === 'SMA' ? 'SMA / SMK' : educationLevel === 'SMP' ? 'SMP / MTs' : 'SD / MI'} (Standar & Terstruktur)
                   </p>
                 </div>
               </div>
@@ -2430,7 +2982,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
 
             {/* Footer Modal */}
             <div className="p-3.5 sm:p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-850/60 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-              <span>Kurikulum Merdeka SD (Terstruktur)</span>
+              <span>Kurikulum Merdeka {educationLevel === 'SMA' ? 'SMA / SMK' : educationLevel === 'SMP' ? 'SMP / MTs' : 'SD / MI'} (Terstruktur)</span>
               <button
                 type="button"
                 onClick={() => setIsSubjectModalOpen(false)}
@@ -2599,7 +3151,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
 
                   <div className="p-3.5 rounded-xl bg-sky-50 dark:bg-sky-950/40 text-[11px] text-sky-900 dark:text-sky-300 space-y-1 leading-relaxed border border-sky-200/80 dark:border-sky-900/60">
                     <p className="font-bold">💡 Keunggulan DeepSeek AI:</p>
-                    <p>DeepSeek-V3 dan DeepSeek-R1 menawarkan efisiensi komputasi tinggi dan pemahaman bahasa Indonesia yang alami untuk perumusan soal Kurikulum Merdeka SD.</p>
+                    <p>DeepSeek-V3 dan DeepSeek-R1 menawarkan efisiensi komputasi tinggi dan pemahaman bahasa Indonesia yang alami untuk perumusan soal Kurikulum Merdeka (SD, SMP, dan SMA).</p>
                   </div>
                 </div>
               )}

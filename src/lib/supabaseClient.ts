@@ -7,7 +7,8 @@ import type {
   TeacherProfile, 
   StudentSubmission,
   PlayerProfile,
-  GameMode 
+  GameMode,
+  EducationLevel
 } from '../types/quiz';
 import { MASTER_TEACHER_EMAIL } from '../types/quiz';
 import { INITIAL_QUIZZES } from '../data/seedQuizzes';
@@ -274,6 +275,7 @@ export const DataManager = {
             pinCode: row.pin_code,
             creatorId: row.creator_id || undefined,
             creatorName: row.creator_name || 'Guru SD',
+            educationLevel: (row.education_level as EducationLevel) || (row.target_grade >= 10 ? 'SMA' : row.target_grade >= 7 ? 'SMP' : 'SD'),
             visibility: (row.visibility as 'public' | 'private') || 'public',
             defaultGameMode: (row.default_game_mode as GameMode) || 'standard',
             shuffleQuestions: Boolean(row.shuffle_questions),
@@ -296,7 +298,12 @@ export const DataManager = {
           };
         });
 
-      let finalQuizzes = cloudQuizzes;
+      // Ensure active seed quizzes not present in cloud are merged
+      const cloudIds = new Set(cloudQuizzes.map((q) => q.id));
+      const activeSeeds = INITIAL_QUIZZES.filter((q) => !deletedIds.has(q.id) && !cloudIds.has(q.id));
+      const allQuizzesCombined = [...cloudQuizzes, ...activeSeeds];
+
+      let finalQuizzes = allQuizzesCombined;
       if (options?.teacherEmail) {
         const isMaster = options.teacherEmail.trim().toLowerCase() === MASTER_TEACHER_EMAIL.toLowerCase();
         if (!isMaster && options.teacherId) {

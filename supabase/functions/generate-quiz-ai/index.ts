@@ -123,19 +123,22 @@ serve(async (req) => {
       const { 
         subject = "IPA", 
         grade = 4, 
+        educationLevel,
         provider = deepseekApiKey ? "deepseek" : (groqApiKey ? "groq" : "gemini") 
       } = body;
+      const level = educationLevel || (grade >= 10 ? "SMA" : grade >= 7 ? "SMP" : "SD");
+      const levelText = level === "SMA" ? `Kelas ${grade} SMA / SMK` : level === "SMP" ? `Kelas ${grade} SMP` : `Kelas ${grade} SD`;
 
-      const topicsPrompt = `Anda adalah Pakar Kurikulum Merdeka Sekolah Dasar (SD) Indonesia.
-Rekomendasikan 4 ide topik materi kuis yang kreatif, relevan, menarik, dan ramah anak untuk:
+      const topicsPrompt = `Anda adalah Pakar Kurikulum Merdeka Kemendikbudristek RI untuk ${levelText}.
+Rekomendasikan 4 ide topik materi kuis yang kreatif, relevan, menarik, dan berbobot edukatif untuk:
 - Mata Pelajaran: ${subject}
-- Tingkat: Kelas ${grade} SD
+- Tingkat: ${levelText}
 
 KEMBALIKAN HANYA ARRAY JSON MURNI DENGAN FORMAT:
 [
   {
     "topic": "Judul Topik yang Menarik dan Spesifik",
-    "context": "Fokus materi dan arahan ramah anak SD (1-2 kalimat)..."
+    "context": "Fokus materi dan arahan instruksional (1-2 kalimat)..."
   }
 ]`;
 
@@ -252,21 +255,24 @@ KEMBALIKAN HANYA ARRAY JSON MURNI DENGAN FORMAT:
       );
     }
 
-    // 3. Action: Generate Capaian Pembelajaran (CP) Spesifik Per Tingkat Kelas SD
+    // 3. Action: Generate Capaian Pembelajaran (CP) Spesifik Per Tingkat Kelas
     if (action === "generate_cp") {
       const { 
         subject = "IPA", 
         grade = 4, 
+        educationLevel,
         provider = deepseekApiKey ? "deepseek" : (groqApiKey ? "groq" : "gemini") 
       } = body;
+      const level = educationLevel || (grade >= 10 ? "SMA" : grade >= 7 ? "SMP" : "SD");
+      const levelText = level === "SMA" ? `Kelas ${grade} SMA / SMK` : level === "SMP" ? `Kelas ${grade} SMP` : `Kelas ${grade} SD`;
 
-      const cpPrompt = `Anda adalah Pakar Kurikulum Merdeka Kemendikbudristek RI untuk jenjang Sekolah Dasar (SD).
-Tuliskan rumusan Capaian Pembelajaran (CP) yang SPESIFIK untuk KELAS ${grade} SD (bukan fase umum, tetapi capaian kompetensi khusus untuk jenjang Kelas ${grade} SD) pada mata pelajaran: ${subject}.
-Gunakan bahasa resmi edukatif, kontekstual, ramah anak, dan mengacu pada standar Alur Tujuan Pembelajaran (ATP) Kurikulum Merdeka.
+      const cpPrompt = `Anda adalah Pakar Kurikulum Merdeka Kemendikbudristek RI untuk ${levelText}.
+Tuliskan rumusan Capaian Pembelajaran (CP) yang SPESIFIK untuk ${levelText} (bukan fase umum, melainkan capaian kompetensi khusus untuk jenjang ${levelText}) pada mata pelajaran: ${subject}.
+Gunakan bahasa resmi edukatif, kontekstual, terukur, dan mengacu pada standar Alur Tujuan Pembelajaran (ATP) Kurikulum Merdeka.
 
 KEMBALIKAN HANYA OBJEK JSON MURNI DENGAN FORMAT:
 {
-  "cp": "Rumusan Capaian Pembelajaran 2-3 kalimat padat, jelas, dan terukur khusus untuk peserta didik Kelas ${grade} SD...",
+  "cp": "Rumusan Capaian Pembelajaran 2-3 kalimat padat, jelas, dan terukur khusus untuk peserta didik ${levelText}...",
   "goals": [
     "Tujuan Pembelajaran 1...",
     "Tujuan Pembelajaran 2...",
@@ -386,12 +392,16 @@ KEMBALIKAN HANYA OBJEK JSON MURNI DENGAN FORMAT:
     const { 
       subject = "IPA", 
       grade = 4, 
+      educationLevel,
       topic, 
       count = 5, 
       questionType = "campuran", 
       provider = deepseekApiKey ? "deepseek" : (groqApiKey ? "groq" : "gemini"),
       model 
     } = body;
+
+    const level = educationLevel || (grade >= 10 ? "SMA" : grade >= 7 ? "SMP" : "SD");
+    const levelText = level === "SMA" ? `Kelas ${grade} SMA / SMK` : level === "SMP" ? `Kelas ${grade} SMP` : `Kelas ${grade} SD`;
 
     if (!topic) {
       return new Response(
@@ -413,12 +423,18 @@ KEMBALIKAN HANYA OBJEK JSON MURNI DENGAN FORMAT:
       formatInstruction = `Gunakan tipe 'multiple_choice' dengan 4 pilihan opsi A, B, C, D.`;
     }
 
-    const systemPrompt = `Anda adalah Asisten Pakar Kurikulum Merdeka Sekolah Dasar (SD) Indonesia.
-Rancanglah ${count} butir soal kuis interaktif yang mendidik dan ramah anak.
+    const roleText = level === "SMA"
+      ? "Anda adalah Asisten Pakar Kurikulum Merdeka SMA / SMK Indonesia. Tugas Anda adalah merancang soal kuis interaktif dengan penalaran analitis kritis tingkat tinggi (HOTS), pengujian konsep mendalam, studi kasus kontekstual, dan bahasa Indonesia akademis yang lugas."
+      : level === "SMP"
+        ? "Anda adalah Asisten Pakar Kurikulum Merdeka Sekolah Menengah Pertama (SMP) Indonesia. Tugas Anda adalah merancang soal kuis interaktif yang komunikatif ramah remaja, merangsang daya nalar terapan, studi kasus kontekstual, dan literasi-numerasi terpadu."
+        : "Anda adalah Asisten Pakar Kurikulum Merdeka Sekolah Dasar (SD) Indonesia. Rancanglah soal kuis interaktif yang mendidik, komunikatif, menyenangkan, dan ramah anak.";
+
+    const systemPrompt = `${roleText}
 Mata Pelajaran: ${subject}
-Tingkat: Kelas ${grade} SD
+Tingkat: ${levelText}
 Topik: ${topic}
 Format: ${formatInstruction}
+Jumlah Soal: ${count} butir soal
 
 KEMBALIKAN HANYA ARRAY JSON MURNI TANPA PEMBUKA/PENUTUP MARKDOWN ATAU PENJELASAN LAIN:
 [

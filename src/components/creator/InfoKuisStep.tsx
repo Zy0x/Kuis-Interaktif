@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Subject, GameMode } from '../../types/quiz';
+import type { Subject, GameMode, EducationLevel } from '../../types/quiz';
 import { 
   BookOpen, 
   ArrowLeft, 
@@ -21,6 +21,8 @@ interface InfoKuisStepProps {
   setDescription: (v: string) => void;
   grade: number;
   setGrade: (v: number) => void;
+  educationLevel?: EducationLevel;
+  setEducationLevel?: (v: EducationLevel) => void;
   subject: Subject;
   setSubject: (v: Subject) => void;
   durationPerQuestionSec: number;
@@ -51,6 +53,8 @@ export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
   setDescription,
   grade,
   setGrade,
+  educationLevel,
+  setEducationLevel,
   subject,
   setSubject,
   durationPerQuestionSec,
@@ -147,12 +151,32 @@ export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
               </label>
               <select
                 value={grade}
-                onChange={(e) => setGrade(Number(e.target.value))}
+                onChange={(e) => {
+                  const g = Number(e.target.value);
+                  setGrade(g);
+                  if (setEducationLevel) {
+                    if (g >= 10) setEducationLevel('SMA');
+                    else if (g >= 7) setEducationLevel('SMP');
+                    else setEducationLevel('SD');
+                  }
+                }}
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-semibold text-sm focus:border-blue-500 focus:outline-none min-h-[44px]"
               >
-                {[1, 2, 3, 4, 5, 6].map((g) => (
-                  <option key={g} value={g}>Kelas {g} SD</option>
-                ))}
+                <optgroup label="Sekolah Dasar (SD / MI)">
+                  {[1, 2, 3, 4, 5, 6].map((g) => (
+                    <option key={g} value={g}>Kelas {g} SD</option>
+                  ))}
+                </optgroup>
+                <optgroup label="Sekolah Menengah Pertama (SMP / MTs)">
+                  {[7, 8, 9].map((g) => (
+                    <option key={g} value={g}>Kelas {g} SMP</option>
+                  ))}
+                </optgroup>
+                <optgroup label="Sekolah Menengah Atas / Kejuruan (SMA / SMK)">
+                  {[10, 11, 12].map((g) => (
+                    <option key={g} value={g}>Kelas {g} SMA / SMK</option>
+                  ))}
+                </optgroup>
               </select>
             </div>
 
@@ -166,25 +190,51 @@ export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
                 onChange={(e) => setSubject(e.target.value as Subject)}
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-semibold text-sm focus:border-blue-500 focus:outline-none min-h-[44px]"
               >
-                <option value="Matematika">Matematika</option>
-                <option value="IPA">IPA (Sains)</option>
-                <option value="Bahasa Indonesia">Bahasa Indonesia</option>
-                <option value="Pendidikan Pancasila">Pendidikan Pancasila</option>
-                <option value="Pengetahuan Umum">Pengetahuan Umum</option>
-                <option value="Bahasa Inggris">Bahasa Inggris</option>
-                <option value="PJOK">PJOK (Olahraga & Kesehatan)</option>
-                <option value="Seni Rupa">Seni Rupa</option>
-                <option value="Seni Musik">Seni Musik</option>
-                <option value="Seni Tari">Seni Tari</option>
-                <option value="Seni Teater">Seni Teater</option>
-                <option value="Pendidikan Agama Islam">Pendidikan Agama Islam (PAI)</option>
-                <option value="Pendidikan Agama Kristen">Pendidikan Agama Kristen</option>
-                <option value="Pendidikan Agama Katolik">Pendidikan Agama Katolik</option>
-                <option value="Pendidikan Agama Hindu">Pendidikan Agama Hindu</option>
-                <option value="Pendidikan Agama Buddha">Pendidikan Agama Buddha</option>
-                <option value="Pendidikan Agama Konghucu">Pendidikan Agama Konghucu</option>
-                <option value="Bahasa Daerah">Bahasa Daerah / Mulok</option>
-                <option value="Informatika">Informatika / Literasi Digital</option>
+                <optgroup label="Mata Pelajaran Umum & SD">
+                  <option value="Matematika">Matematika</option>
+                  <option value="IPAS">IPAS (Ilmu Pengetahuan Alam dan Sosial)</option>
+                  <option value="IPA">IPA (Sains)</option>
+                  <option value="IPS">IPS (Sosial)</option>
+                  <option value="Bahasa Indonesia">Bahasa Indonesia</option>
+                  <option value="Pendidikan Pancasila">Pendidikan Pancasila</option>
+                  <option value="Bahasa Inggris">Bahasa Inggris</option>
+                  <option value="PJOK">PJOK (Olahraga & Kesehatan)</option>
+                  <option value="Pengetahuan Umum">Pengetahuan Umum</option>
+                </optgroup>
+                <optgroup label="Mata Pelajaran Terpadu (SMP)">
+                  <option value="IPA Terpadu">IPA Terpadu</option>
+                  <option value="IPS Terpadu">IPS Terpadu</option>
+                  <option value="Informatika">Informatika / Komputer</option>
+                  <option value="Prakarya">Prakarya & Kewirausahaan</option>
+                </optgroup>
+                <optgroup label="Peminatan MIPA (SMA / SMK)">
+                  <option value="Fisika">Fisika</option>
+                  <option value="Kimia">Kimia</option>
+                  <option value="Biologi">Biologi</option>
+                  <option value="Matematika Tingkat Lanjut">Matematika Tingkat Lanjut</option>
+                </optgroup>
+                <optgroup label="Peminatan IPS & Humaniora (SMA / SMK)">
+                  <option value="Ekonomi">Ekonomi</option>
+                  <option value="Sosiologi">Sosiologi</option>
+                  <option value="Geografi">Geografi</option>
+                  <option value="Sejarah">Sejarah</option>
+                  <option value="Antropologi">Antropologi</option>
+                </optgroup>
+                <optgroup label="Seni & Bahasa">
+                  <option value="Seni Rupa">Seni Rupa</option>
+                  <option value="Seni Musik">Seni Musik</option>
+                  <option value="Seni Tari">Seni Tari</option>
+                  <option value="Seni Teater">Seni Teater</option>
+                  <option value="Bahasa Daerah">Bahasa Daerah / Mulok</option>
+                </optgroup>
+                <optgroup label="Pendidikan Agama & Budi Pekerti">
+                  <option value="Pendidikan Agama Islam">Pendidikan Agama Islam (PAI)</option>
+                  <option value="Pendidikan Agama Kristen">Pendidikan Agama Kristen</option>
+                  <option value="Pendidikan Agama Katolik">Pendidikan Agama Katolik</option>
+                  <option value="Pendidikan Agama Hindu">Pendidikan Agama Hindu</option>
+                  <option value="Pendidikan Agama Buddha">Pendidikan Agama Buddha</option>
+                  <option value="Pendidikan Agama Konghucu">Pendidikan Agama Konghucu</option>
+                </optgroup>
               </select>
             </div>
 
@@ -465,7 +515,7 @@ export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5 mb-1 flex-wrap">
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                      Kelas {grade} SD
+                      Kelas {grade} {educationLevel ? (educationLevel === 'SMA' ? 'SMA / SMK' : educationLevel === 'SMP' ? 'SMP' : 'SD') : (grade >= 10 ? 'SMA / SMK' : grade >= 7 ? 'SMP' : 'SD')}
                     </span>
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 border border-blue-200 dark:border-blue-900">
                       {subject}
@@ -475,7 +525,7 @@ export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
                     {title || 'Judul Kuis Anda'}
                   </h4>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2 leading-relaxed">
-                    {description || 'Deskripsi kuis interaktif pembelajaran SD.'}
+                    {description || 'Deskripsi kuis interaktif pembelajaran Kurikulum Merdeka.'}
                   </p>
                 </div>
               </div>

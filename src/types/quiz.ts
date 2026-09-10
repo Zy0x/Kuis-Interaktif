@@ -1,8 +1,13 @@
-export type GradeLevel = 1 | 2 | 3 | 4 | 5 | 6 | 'Semua';
+export type EducationLevel = 'SD' | 'SMP' | 'SMA';
+
+export type GradeLevel = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 'Semua';
 
 export type Subject = 
+  // Jenjang SD & Umum
   | 'Matematika' 
   | 'IPA' 
+  | 'IPAS'
+  | 'IPS'
   | 'Bahasa Indonesia' 
   | 'Pendidikan Pancasila' 
   | 'Pengetahuan Umum'
@@ -19,7 +24,21 @@ export type Subject =
   | 'Pendidikan Agama Buddha'
   | 'Pendidikan Agama Konghucu'
   | 'Bahasa Daerah'
-  | 'Informatika';
+  | 'Informatika'
+  // Khas SMP (Fase D)
+  | 'IPA Terpadu'
+  | 'IPS Terpadu'
+  | 'Prakarya'
+  // Khas SMA / SMK (Fase E & F)
+  | 'Fisika'
+  | 'Kimia'
+  | 'Biologi'
+  | 'Ekonomi'
+  | 'Sosiologi'
+  | 'Geografi'
+  | 'Sejarah'
+  | 'Matematika Tingkat Lanjut'
+  | 'Antropologi';
 
 export type QuestionType = 
   | 'multiple_choice' 
@@ -59,7 +78,8 @@ export interface Quiz {
   title: string;
   description: string;
   subject: Subject;
-  grade: number; // 1 to 6
+  grade: number; // 1 to 12
+  educationLevel?: EducationLevel; // 'SD' | 'SMP' | 'SMA'
   durationPerQuestionSec: number;
   coverEmoji: string;
   themeColor: string;

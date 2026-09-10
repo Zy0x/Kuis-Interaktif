@@ -18,6 +18,7 @@ export const INITIAL_QUIZZES: Quiz[] = [
     description: 'Ayo berhitung buah-buahan dan benda di sekitar kita dengan riang gembira!',
     subject: 'Matematika',
     grade: 1,
+    educationLevel: 'SD',
     durationPerQuestionSec: 25,
     coverEmoji: '🍎',
     themeColor: 'from-amber-400 to-orange-500',
@@ -66,6 +67,7 @@ export const INITIAL_QUIZZES: Quiz[] = [
     description: 'Mari jelajahi dunia binatang yang seru, ada yang di darat, air, dan udara!',
     subject: 'IPA',
     grade: 2,
+    educationLevel: 'SD',
     durationPerQuestionSec: 25,
     coverEmoji: '🐸',
     themeColor: 'from-emerald-400 to-teal-600',
@@ -115,6 +117,7 @@ export const INITIAL_QUIZZES: Quiz[] = [
     description: 'Pelajari akar, batang, daun, dan bunga yang membantu pohon tumbuh subur!',
     subject: 'IPA',
     grade: 3,
+    educationLevel: 'SD',
     durationPerQuestionSec: 30,
     coverEmoji: '🌱',
     themeColor: 'from-green-500 to-emerald-700',
@@ -163,6 +166,7 @@ export const INITIAL_QUIZZES: Quiz[] = [
     description: 'Uji keahlianmu mengenai luas, keliling, dan pecahan sederhana yang asyik!',
     subject: 'Matematika',
     grade: 4,
+    educationLevel: 'SD',
     durationPerQuestionSec: 30,
     coverEmoji: '📐',
     themeColor: 'from-blue-500 to-indigo-600',
@@ -211,6 +215,7 @@ export const INITIAL_QUIZZES: Quiz[] = [
     description: 'Pelajari bagaimana jantung memompa darah dan paru-paru menghirup udara segar!',
     subject: 'IPA',
     grade: 5,
+    educationLevel: 'SD',
     durationPerQuestionSec: 30,
     coverEmoji: '🫀',
     themeColor: 'from-rose-500 to-red-600',
@@ -279,6 +284,7 @@ export const INITIAL_QUIZZES: Quiz[] = [
     description: 'Kenali lambang burung Garuda, sila Pancasila, dan keberagaman budaya Indonesia!',
     subject: 'Pendidikan Pancasila',
     grade: 6,
+    educationLevel: 'SD',
     durationPerQuestionSec: 30,
     coverEmoji: '🦅',
     themeColor: 'from-purple-500 to-indigo-700',
@@ -314,6 +320,89 @@ export const INITIAL_QUIZZES: Quiz[] = [
         options: ['Sila ke-2', 'Sila ke-3', 'Sila ke-4', 'Sila ke-5'],
         correctIndex: 2,
         explanation: 'Sila ke-4 (Kerakyatan yang Dipimpin oleh Hikmat Kebijaksanaan dalam Permusyawaratan/Perwakilan).'
+      }
+    ]
+  },
+  {
+    id: 'smp7-ipa-ekosistem',
+    title: 'Interaksi Makhluk Hidup dan Lingkungan',
+    description: 'Pendalaman materi rantai makanan, jaring-jaring kehidupan, dan dinamika biosfer Fase D SMP.',
+    subject: 'IPA Terpadu',
+    grade: 7,
+    educationLevel: 'SMP',
+    durationPerQuestionSec: 30,
+    coverEmoji: '🔬',
+    themeColor: 'from-teal-500 to-emerald-700',
+    badgeTitle: 'Cendekia Sains SMP',
+    questions: [
+      {
+        id: 'qsmp-1',
+        text: 'Dalam sebuah ekosistem sawah, jika populasi katak menurun drastis akibat perburuan liar, apakah dampak langsung yang paling mungkin terjadi?',
+        type: 'multiple_choice',
+        imageCaption: '🌾 Rantai Makanan Sawah',
+        options: [
+          'Populasi belalang hama meningkat drastis',
+          'Populasi ular sawah bertambah banyak',
+          'Hasil panen padi melonjak tinggi',
+          'Populasi burung elang meningkat'
+        ],
+        correctIndex: 0,
+        explanation: 'Katak adalah predator belalang. Penurunan katak menyebabkan ledakan populasi belalang hama yang merusak padi.'
+      },
+      {
+        id: 'qsmp-2',
+        text: 'Hubungan antara lebah madu dengan bunga yang saling menguntungkan merupakan contoh simbiosis...',
+        type: 'multiple_choice',
+        options: ['Mutualisme', 'Komensalisme', 'Parasitisme', 'Netralisme'],
+        correctIndex: 0,
+        explanation: 'Simbiosis mutualisme menguntungkan kedua pihak: lebah mendapat nektar dan bunga terbantu penyerbukannya.'
+      },
+      {
+        id: 'qsmp-3',
+        text: 'Komponen abiotik seperti sinar matahari, suhu udara, dan kadar air sangat memengaruhi kelangsungan hidup produsen.',
+        type: 'true_false',
+        options: ['Benar', 'Salah'],
+        correctIndex: 0,
+        explanation: 'Benar! Faktor abiotik adalah faktor fisik lingkungan yang menjadi penentu utama proses fotosintesis produsen.'
+      }
+    ]
+  },
+  {
+    id: 'sma10-fisika-gerak',
+    title: 'Kinematika Gerak Lurus & Analisis Vektor',
+    description: 'Uji pemahaman konsep GLB, GLBB, dan penalaran grafik kecepatan-waktu Fase E SMA.',
+    subject: 'Fisika',
+    grade: 10,
+    educationLevel: 'SMA',
+    durationPerQuestionSec: 35,
+    coverEmoji: '⚛️',
+    themeColor: 'from-blue-600 to-indigo-800',
+    badgeTitle: 'Pakar Fisika SMA',
+    questions: [
+      {
+        id: 'qsma-1',
+        text: 'Sebuah benda bergerak lurus dengan percepatan konstan 2 m/s² dari keadaan diam. Berapakah kecepatan benda tersebut setelah bergerak selama 5 detik?',
+        type: 'multiple_choice',
+        imageCaption: '📈 Grafik Kecepatan vs Waktu (GLBB)',
+        options: ['5 m/s', '10 m/s', '15 m/s', '20 m/s'],
+        correctIndex: 1,
+        explanation: 'Gunakan rumus GLBB: vt = v0 + a·t = 0 + (2 m/s² × 5 s) = 10 m/s.'
+      },
+      {
+        id: 'qsma-2',
+        text: 'Pada gerak jatuh bebas tanpa gesekan udara, massa benda yang jatuh memengaruhi besarnya percepatan jatuh benda.',
+        type: 'true_false',
+        options: ['Benar', 'Salah'],
+        correctIndex: 1,
+        explanation: 'Salah! Dalam medan gravitasi tanpa gesekan udara, semua benda mengalami percepatan gravitasi yang sama (g ≈ 9.8 m/s²) terlepas dari massanya.'
+      },
+      {
+        id: 'qsma-3',
+        text: 'Dua buah vektor gaya masing-masing 6 N dan 8 N bekerja pada satu titik tangkap saling tegak lurus (90°). Berapakah resultan kedua gaya tersebut?',
+        type: 'multiple_choice',
+        options: ['10 N', '12 N', '14 N', '2 N'],
+        correctIndex: 0,
+        explanation: 'Resultan vektor tegak lurus: R = √(6² + 8²) = √(36 + 64) = √100 = 10 N.'
       }
     ]
   }
