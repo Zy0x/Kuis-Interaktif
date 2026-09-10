@@ -29,6 +29,8 @@ import {
   Eye
 } from 'lucide-react';
 
+export type CreationStage = 1 | 2;
+
 interface AiGeneratorStepProps {
   onGenerated: (data: {
     questions: QuizQuestion[];
@@ -43,6 +45,10 @@ interface AiGeneratorStepProps {
   playClick: () => void;
   initialSubject?: Subject;
   initialGrade?: number;
+  stage: CreationStage;
+  onStageChange: (stage: CreationStage) => void;
+  topic: string;
+  onTopicChange: (topic: string) => void;
 }
 
 const EMOJI_BY_SUBJECT: Record<Subject, string> = {
@@ -207,22 +213,20 @@ const SMART_TOPICS_BY_SUBJECT_AND_GRADE: Record<Subject, Record<number, TopicRec
   }
 };
 
-type CreationStage = 1 | 2;
-
 export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
   onGenerated,
   onBack,
   playClick,
   initialSubject = 'IPA',
   initialGrade = 4,
+  stage,
+  onStageChange,
+  topic,
+  onTopicChange,
 }) => {
-  // 2-Stage Creation Funnel
-  const [stage, setStage] = useState<CreationStage>(1);
-
   // Tahap 1: Materi & Sasaran
   const [subject, setSubject] = useState<Subject>(initialSubject);
   const [grade, setGrade] = useState<number>(initialGrade);
-  const [topic, setTopic] = useState('');
   const [contextNotes, setContextNotes] = useState('');
   const [randomSeed, setRandomSeed] = useState(0);
 
@@ -385,7 +389,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
 
     if (!topic.trim()) {
       setErrorMessage('Mohon lengkapi judul atau topik kuis terlebih dahulu.');
-      setStage(1);
+      onStageChange(1);
       return;
     }
 
@@ -461,72 +465,8 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
   };
 
   return (
-    <div className="w-full max-w-[2000px] mx-auto px-3 xs:px-4 sm:px-8 lg:px-12 py-4 sm:py-6 animate-fade-in space-y-6">
+    <div className="w-full max-w-[2000px] mx-auto px-3 xs:px-4 sm:px-8 lg:px-12 py-3 sm:py-4 animate-fade-in space-y-6">
       
-      {/* Funnel Stage Header & Stepper */}
-      <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-7 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-        <div className="flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-black bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300">
-                Tahap {stage} dari 2
-              </span>
-              <span className="text-xs font-semibold text-slate-400 dark:text-slate-500">
-                {stage === 1 ? 'Materi & Sasaran Kuis' : 'Pengaturan Soal & Mesin AI'}
-              </span>
-            </div>
-            <h2 className="text-base sm:text-xl lg:text-2xl font-black text-slate-900 dark:text-white mt-1">
-              {stage === 1 ? 'Materi & Sasaran Pembelajaran' : 'Pengaturan Soal & Pilihan Mesin AI'}
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-              {stage === 1 
-                ? 'Pilih mata pelajaran, jenjang kelas SD, materi pembahasan, dan konteks pembelajaran yang dituju.'
-                : 'Atur jumlah butir, proporsi tipe soal, dan pilih mesin pembuat soal otomatis.'}
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => {
-              playClick();
-              onBack();
-            }}
-            className="px-4 sm:px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-750 font-bold text-xs sm:text-sm flex items-center gap-2 transition-colors shrink-0 min-h-[44px] btn-press"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Ganti Metode</span>
-          </button>
-        </div>
-
-        {/* 2-Stage Progress Bar */}
-        <div className="grid grid-cols-2 gap-2 pt-1">
-          <button
-            type="button"
-            onClick={() => {
-              playClick();
-              setStage(1);
-            }}
-            className={`h-2 rounded-full transition-all text-left ${
-              stage >= 1 ? 'bg-blue-600' : 'bg-slate-200 dark:bg-slate-800'
-            }`}
-            title="Tahap 1: Materi & Sasaran"
-          />
-          <button
-            type="button"
-            onClick={() => {
-              if (topic.trim()) {
-                playClick();
-                setStage(2);
-              }
-            }}
-            className={`h-2 rounded-full transition-all text-left ${
-              stage >= 2 ? 'bg-blue-600' : 'bg-slate-200 dark:bg-slate-800'
-            }`}
-            title="Tahap 2: Pengaturan Soal & AI"
-          />
-        </div>
-      </div>
-
       {/* Error Message Banner */}
       {errorMessage && (
         <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 flex items-start gap-3 text-xs sm:text-sm animate-shake">
@@ -631,7 +571,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                 <input
                   type="text"
                   value={topic}
-                  onChange={(e) => setTopic(e.target.value)}
+                  onChange={(e) => onTopicChange(e.target.value)}
                   placeholder="Contoh: Organ Pernapasan Manusia, Pecahan Senilai, Pengamalan Sila Pancasila..."
                   className="w-full px-4 py-3.5 rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 font-semibold text-sm focus:border-blue-500 focus:outline-none min-h-[50px] shadow-xs"
                 />
@@ -664,7 +604,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                       type="button"
                       onClick={() => {
                         playClick();
-                        setTopic(rec.topic);
+                        onTopicChange(rec.topic);
                         setContextNotes(rec.context);
                       }}
                       className={`text-xs px-3.5 py-2 rounded-xl border font-bold transition-all min-h-[40px] flex items-center gap-1.5 btn-press ${
@@ -733,7 +673,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                   return;
                 }
                 setErrorMessage(null);
-                setStage(2);
+                onStageChange(2);
               }}
               className="px-8 py-3.5 rounded-2xl font-black text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-md flex items-center gap-2 min-h-[48px] btn-press transition-all"
             >
@@ -765,7 +705,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
               type="button"
               onClick={() => {
                 playClick();
-                setStage(1);
+                onStageChange(1);
               }}
               className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline px-2.5 py-1 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/50 shrink-0"
             >
@@ -1359,7 +1299,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
               disabled={isLoading}
               onClick={() => {
                 playClick();
-                setStage(1);
+                onStageChange(1);
               }}
               className="px-6 py-3.5 rounded-2xl font-bold text-xs sm:text-sm text-slate-600 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 min-h-[48px] flex items-center gap-2 btn-press transition-colors"
             >

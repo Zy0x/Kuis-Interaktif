@@ -1,6 +1,24 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.53] - 2026-09-10
+### Integrasi Indikator Tahap & Navigasi Funnel ke Sticky Header (Mobile-First & Anti Hilang Saat Scroll)
+
+#### 1. Indikator Tahap Terintegrasi di Sticky Header Pinned
+- Memindahkan kartu indikator tahap (`Tahap 1 dari 2` & `Tahap 2 dari 2`) serta bilah progres 2 segmen dari badan halaman statis langsung ke dalam bilah **Sticky Header** (`header.sticky.top-0.z-30`).
+- Bilah navigasi tahap dan progres kini senantiasa terlihat (*pinned*), interaktif, dan mudah diakses bahkan saat pengguna menggulir (*scroll*) jauh ke bawah di formulir pertanyaan, pilihan mesin AI, maupun area unggah berkas.
+- Menghilangkan redundansi elemen judul ganda dan kartu statis di badan halaman, memaksimalkan area kerja formulir (*screen real estate*).
+
+#### 2. Tata Letak Fleksibel & Touch Target Mobile-First (Rule 1 & 2)
+- Mengadaptasi header secara responsif untuk seluruh ukuran layar:
+  - **Baris Atas**: Tombol navigasi kontekstual (`Ganti Metode` / `Kembali`), judul studio dinamis yang menampilkan topik kuis secara *real-time*, dan tombol pengganti tema.
+  - **Baris Bawah**: Tab tahapan 2 kolom interaktif (`[ 1. Materi & Sasaran ]` dan `[ 2. Pengaturan Soal & AI ]`) dengan target sentuh ramah jari $\ge 44\text{px}$, ikon check aktif saat selesai, dan garis indikator progres 2 segmen beranimasi halus.
+- Memastikan tata letak tetap stabil dan tidak bertumpukan pada smartphone Android portrait (360–412px), iPhone (390px), tablet, hingga layar resolusi tinggi (1080p s/d 4K).
+
+#### 3. Sinkronisasi Status Interaktif & Transisi Lancar
+- State tahap funnel (`aiFunnelStage`) dan judul topik kuis terhubung secara reaktif antara komponen induk `QuizCreator.tsx` dan formulir `AiGeneratorStep.tsx`.
+- Pengguna dapat langsung berpindah antar tahap melalui klik tab di header kapan saja tanpa kehilangan isian formulir.
+
 ## [2.2.52] - 2026-09-10
 ### Rekonstruksi Alur Pembuatan Kuis AI (Two-Stage Creation Flow & Eliminasi Redundansi UX)
 

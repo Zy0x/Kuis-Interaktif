@@ -44,6 +44,8 @@ const DRAFT_STORAGE_KEY = 'kuis_creator_draft_v1';
 interface CreatorDraft {
   currentStep: number;
   aiFunnelActive?: boolean;
+  aiFunnelStage?: 1 | 2;
+  funnelTopic?: string;
   title: string;
   description: string;
   subject: Subject;
@@ -84,19 +86,20 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   const [draft] = useState<CreatorDraft | null>(() => (editingQuiz ? null : loadDraft()));
 
   // AI Creation Funnel state:
-  // When active, hides Studio tabs and displays full creation assistant.
-  // Once generated, switches to Studio Kuis with 3 clean tabs.
   const [aiFunnelActive, setAiFunnelActive] = useState<boolean>(() => {
     if (editingQuiz) return false;
+    if (draft && typeof draft.aiFunnelActive === 'boolean') {
+      return draft.aiFunnelActive;
+    }
     if (initialMode === 'ai') {
-      const draftData = loadDraft();
-      if (draftData && draftData.questions && draftData.questions.length > 0) {
-        return false;
-      }
       return true;
     }
     return false;
   });
+
+  // Funnel Sub-Stage (1: Materi & Sasaran, 2: Pengaturan Soal & Mesin AI)
+  const [aiFunnelStage, setAiFunnelStage] = useState<1 | 2>(draft?.aiFunnelStage || 1);
+  const [funnelTopic, setFunnelTopic] = useState<string>(draft?.funnelTopic || '');
 
   const [currentStep, setCurrentStep] = useState<number>(() => {
     if (editingQuiz && editingQuiz.questions && editingQuiz.questions.length > 0) {
@@ -146,10 +149,12 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   // Persist draft automatically (only if creating new quiz)
   useEffect(() => {
     if (editingQuiz) return;
-    if (title.trim() || description.trim() || questions.length > 0) {
+    if (title.trim() || description.trim() || questions.length > 0 || funnelTopic.trim()) {
       const data: CreatorDraft = {
         currentStep,
         aiFunnelActive,
+        aiFunnelStage,
+        funnelTopic,
         title,
         description,
         subject,
@@ -169,7 +174,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
         // quota fallback
       }
     }
-  }, [currentStep, aiFunnelActive, title, description, subject, grade, durationPerQuestionSec, coverEmoji, badgeTitle, visibility, defaultGameMode, shuffleQuestions, shuffleOptions, questions, editingQuiz]);
+  }, [currentStep, aiFunnelActive, aiFunnelStage, funnelTopic, title, description, subject, grade, durationPerQuestionSec, coverEmoji, badgeTitle, visibility, defaultGameMode, shuffleQuestions, shuffleOptions, questions, editingQuiz]);
 
   const handleResetDraft = () => {
     try {
@@ -179,6 +184,8 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     }
     setTitle('');
     setDescription('');
+    setFunnelTopic('');
+    setAiFunnelStage(1);
     setSubject('Matematika');
     setGrade(3);
     setDurationPerQuestionSec(30);
@@ -255,8 +262,16 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     return false;
   }, !aiFunnelActive && currentStep === 1);
 
+  useBackHandler('creator-ai-funnel-stage2', 58, () => {
+    if (aiFunnelActive && aiFunnelStage === 2) {
+      setAiFunnelStage(1);
+      return true;
+    }
+    return false;
+  }, aiFunnelActive && aiFunnelStage === 2);
+
   useBackHandler('creator-ai-funnel', 60, () => {
-    if (aiFunnelActive) {
+    if (aiFunnelActive && aiFunnelStage === 1) {
       if (onBackToMethodSelection) {
         onBackToMethodSelection();
       } else {
@@ -265,7 +280,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
       return true;
     }
     return false;
-  }, aiFunnelActive);
+  }, aiFunnelActive && aiFunnelStage === 1);
 
   const resetFormFields = (targetType: QuestionType = qType) => {
     setQText('');
@@ -566,6 +581,18 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
 
   const handleHeaderBack = () => {
     playClick();
+    if (aiFunnelActive) {
+      if (aiFunnelStage === 2) {
+        setAiFunnelStage(1);
+        return;
+      }
+      if (onBackToMethodSelection) {
+        onBackToMethodSelection();
+      } else {
+        onBack();
+      }
+      return;
+    }
     if (isAiMode && currentStep === 1) {
       setAiFunnelActive(true);
       return;
@@ -580,33 +607,16 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col pb-16">
       
-      {/* Top Header */}
+      {/* Top Sticky Header */}
       <header className="w-full sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-3 xs:px-4 sm:px-8 lg:px-12 pt-[max(env(safe-area-inset-top),0.625rem)] pb-2.5 sm:pb-3 shadow-xs">
         <div className="w-full max-w-[2000px] mx-auto flex items-center justify-between gap-2 sm:gap-3 transition-all">
-          {aiFunnelActive ? (
-            <button
-              onClick={() => {
-                playClick();
-                if (onBackToMethodSelection) {
-                  onBackToMethodSelection();
-                } else {
-                  onBack();
-                }
-              }}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 font-semibold text-xs sm:text-sm min-h-[44px] min-w-[44px] justify-center btn-press transition-colors flex-shrink-0"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span className="hidden xs:inline">Ganti Metode</span>
-            </button>
-          ) : (
-            <button
-              onClick={handleHeaderBack}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 font-semibold text-xs sm:text-sm min-h-[44px] min-w-[44px] justify-center btn-press transition-colors flex-shrink-0"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span className="hidden xs:inline">Kembali</span>
-            </button>
-          )}
+          <button
+            onClick={handleHeaderBack}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 font-semibold text-xs sm:text-sm min-h-[44px] min-w-[44px] justify-center btn-press transition-colors flex-shrink-0"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span className="hidden xs:inline">{aiFunnelActive ? 'Ganti Metode' : 'Kembali'}</span>
+          </button>
 
           <div className="text-center min-w-0 flex-1 px-1">
             <h1 className="text-xs xs:text-sm sm:text-lg font-extrabold text-slate-900 dark:text-white leading-tight truncate">
@@ -620,7 +630,9 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
             </h1>
             <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium truncate hidden xs:block">
               {aiFunnelActive 
-                ? 'Racik bank soal interaktif otomatis berbasis Kurikulum Merdeka SD'
+                ? (aiFunnelStage === 1 
+                    ? 'Tahap 1 dari 2: Materi & Sasaran Pembelajaran' 
+                    : 'Tahap 2 dari 2: Pengaturan Soal & Pilihan Mesin AI')
                 : `Langkah ${currentStep} dari ${totalSteps}: ${
                     isAiMode
                       ? currentStep === 1
@@ -662,8 +674,71 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
           </div>
         </div>
 
-        {/* 3 Step Navigation Tabs (HANYA MUNCUL DI STUDIO KUIS UTAMA) */}
-        {!aiFunnelActive && (
+        {/* 2-Stage Funnel Tabs in Sticky Header (SELALU MENEMPEL DI HEADER SAAT SCROLL) */}
+        {aiFunnelActive ? (
+          <div className="w-full max-w-[2000px] mx-auto mt-2.5 space-y-2 transition-all">
+            <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setAiFunnelStage(1);
+                }}
+                className={`py-2 px-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all min-h-[44px] flex items-center justify-center gap-2 truncate btn-press ${
+                  aiFunnelStage === 1
+                    ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-400/30 font-black'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                <span className={`w-5 h-5 rounded-full text-[10px] sm:text-xs font-black flex items-center justify-center shrink-0 ${
+                  aiFunnelStage === 1 ? 'bg-white text-blue-600' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
+                }`}>
+                  1
+                </span>
+                <span className="truncate">1. Materi & Sasaran</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  if (!funnelTopic.trim()) {
+                    showToast('Mohon tentukan topik kuis terlebih dahulu pada Tahap 1.');
+                    return;
+                  }
+                  setAiFunnelStage(2);
+                }}
+                className={`py-2 px-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all min-h-[44px] flex items-center justify-center gap-2 truncate btn-press ${
+                  aiFunnelStage === 2
+                    ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-400/30 font-black'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                <span className={`w-5 h-5 rounded-full text-[10px] sm:text-xs font-black flex items-center justify-center shrink-0 ${
+                  aiFunnelStage === 2 ? 'bg-white text-blue-600' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
+                }`}>
+                  2
+                </span>
+                <span className="truncate">2. Pengaturan Soal & AI</span>
+              </button>
+            </div>
+
+            {/* 2-Segment Interactive Progress Track */}
+            <div className="grid grid-cols-2 gap-2">
+              <div
+                className={`h-1.5 rounded-full transition-all duration-300 ${
+                  aiFunnelStage >= 1 ? 'bg-blue-600' : 'bg-slate-200 dark:bg-slate-800'
+                }`}
+              />
+              <div
+                className={`h-1.5 rounded-full transition-all duration-300 ${
+                  aiFunnelStage >= 2 ? 'bg-blue-600' : 'bg-slate-200 dark:bg-slate-800'
+                }`}
+              />
+            </div>
+          </div>
+        ) : (
+          /* 3 Step Navigation Tabs (HANYA MUNCUL DI STUDIO KUIS UTAMA) */
           <div className="w-full max-w-[2000px] mx-auto mt-2.5 grid grid-cols-3 gap-1.5 sm:gap-2 transition-all">
             {isAiMode ? (
               <>
@@ -802,11 +877,15 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
       )}
 
       {/* Main Content View */}
-      <main className="flex-1 w-full mt-4">
+      <main className="flex-1 w-full mt-2 sm:mt-4">
         
         {/* ================= 1. ASISTEN RACIK KUIS AI (CREATION FUNNEL) ================= */}
         {aiFunnelActive ? (
           <AiGeneratorStep
+            stage={aiFunnelStage}
+            onStageChange={setAiFunnelStage}
+            topic={funnelTopic}
+            onTopicChange={setFunnelTopic}
             onGenerated={(data) => {
               setQuestions(data.questions);
               setTitle(`Kuis ${data.subject}: ${data.topic.length > 40 ? data.topic.slice(0, 40) + '...' : data.topic}`);
