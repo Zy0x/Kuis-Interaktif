@@ -1,0 +1,154 @@
+[
+  {
+    "title": "Infinix Note 50s",
+    "type": "unknown",
+    "user-agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Mobile Safari/537.36",
+    "capabilities": ["mobile", "touch"],
+    "screen": {
+      "device-pixel-ratio": 2.75,
+      "vertical": { "width": 392, "height": 778 },
+      "horizontal": { "width": 778, "height": 392 }
+    },
+    "modes": [
+      { "title": "", "orientation": "vertical", "insets": { "left": 0, "top": 0, "right": 0, "bottom": 0 } },
+      { "title": "", "orientation": "horizontal", "insets": { "left": 0, "top": 0, "right": 0, "bottom": 0 } }
+    ],
+    "show-by-default": true,
+    "dual-screen": false,
+    "foldable-screen": false,
+    "show": "Always"
+  },
+  {
+    "title": "Redmi Note 7",
+    "type": "unknown",
+    "user-agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, seperti Gecko) Chrome/149.0.0.0 Mobile Safari/537.36,gzip(gfe)",
+    "capabilities": ["mobile", "touch"],
+    "screen": {
+      "device-pixel-ratio": 2.51,
+      "vertical": { "width": 431, "height": 846 },
+      "horizontal": { "width": 846, "height": 431 }
+    },
+    "modes": [
+      { "title": "", "orientation": "vertical", "insets": { "left": 0, "top": 0, "right": 0, "bottom": 0 } },
+      { "title": "", "orientation": "horizontal", "insets": { "left": 0, "top": 0, "right": 0, "bottom": 0 } }
+    ],
+    "show-by-default": true,
+    "dual-screen": false,
+    "foldable-screen": false,
+    "show": "Always"
+  },
+  {
+    "title": "Infinix Note 11s",
+    "type": "unknown",
+    "user-agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, seperti Gecko) Chrome/149.0.0.0 Mobile Safari/537.36,gzip(gfe)",
+    "capabilities": ["mobile", "touch"],
+    "screen": {
+      "device-pixel-ratio": 2.6,
+      "vertical": { "width": 415, "height": 866 },
+      "horizontal": { "width": 866, "height": 415 }
+    },
+    "modes": [
+      { "title": "", "orientation": "vertical", "insets": { "left": 0, "top": 0, "right": 0, "bottom": 0 } },
+      { "title": "", "orientation": "horizontal", "insets": { "left": 0, "top": 0, "right": 0, "bottom": 0 } }
+    ],
+    "show-by-default": true,
+    "dual-screen": false,
+    "foldable-screen": false,
+    "show": "Always"
+  },
+  {
+    "title": "Desktop - Half Screen",
+    "type": "unknown",
+    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36 OPR/132.0.0.0",
+    "capabilities": ["touch"],
+    "screen": {
+      "device-pixel-ratio": 1.0,
+      "vertical": { "width": 723, "height": 704 },
+      "horizontal": { "width": 704, "height": 723 }
+    },
+    "modes": [
+      { "title": "", "orientation": "vertical", "insets": { "left": 0, "top": 0, "right": 0, "bottom": 0 } },
+      { "title": "", "orientation": "horizontal", "insets": { "left": 0, "top": 0, "right": 0, "bottom": 0 } }
+    ],
+    "show-by-default": true,
+    "dual-screen": false,
+    "foldable-screen": false,
+    "show": "Always"
+  },
+  {
+    "title": "Desktop - Quarter",
+    "type": "unknown",
+    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36 OPR/132.0.0.0",
+    "capabilities": ["mobile", "touch"],
+    "screen": {
+      "device-pixel-ratio": 1.0,
+      "vertical": { "width": 723, "height": 296 },
+      "horizontal": { "width": 296, "height": 723 }
+    },
+    "modes": [
+      { "title": "", "orientation": "vertical", "insets": { "left": 0, "top": 0, "right": 0, "bottom": 0 } },
+      { "title": "", "orientation": "horizontal", "insets": { "left": 0, "top": 0, "right": 0, "bottom": 0 } }
+    ],
+    "show-by-default": true,
+    "dual-screen": false,
+    "foldable-screen": false,
+    "show": "Default"
+  },
+  {
+    "title": "Infinix Note 50s - Landscape",
+    "type": "unknown",
+    "user-agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Mobile Safari/537.36",
+    "capabilities": ["mobile", "touch"],
+    "screen": {
+      "device-pixel-ratio": 2.75,
+      "vertical": { "width": 850, "height": 296 },
+      "horizontal": { "width": 296, "height": 850 }
+    },
+    "modes": [
+      { "title": "", "orientation": "vertical", "insets": { "left": 0, "top": 0, "right": 0, "bottom": 0 } },
+      { "title": "", "orientation": "horizontal", "insets": { "left": 0, "top": 0, "right": 0, "bottom": 0 } }
+    ],
+    "show-by-default": true,
+    "dual-screen": false,
+    "foldable-screen": false,
+    "show": "Default"
+  },
+  {
+    "title": "Infinix Note 11s - Landscape",
+    "type": "unknown",
+    "user-agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, seperti Gecko) Chrome/149.0.0.0 Mobile Safari/537.36,gzip(gfe)",
+    "capabilities": ["mobile", "touch"],
+    "screen": {
+      "device-pixel-ratio": 2.6,
+      "vertical": { "width": 946, "height": 335 },
+      "horizontal": { "width": 335, "height": 946 }
+    },
+    "modes": [
+      { "title": "", "orientation": "vertical", "insets": { "left": 0, "top": 0, "right": 0, "bottom": 0 } },
+      { "title": "", "orientation": "horizontal", "insets": { "left": 0, "top": 0, "right": 0, "bottom": 0 } }
+    ],
+    "show-by-default": true,
+    "dual-screen": false,
+    "foldable-screen": false,
+    "show": "Default"
+  },
+  {
+    "title": "Redmi Note 7 - Landscape",
+    "type": "unknown",
+    "user-agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, seperti Gecko) Chrome/149.0.0.0 Mobile Safari/537.36,gzip(gfe)",
+    "capabilities": ["mobile", "touch"],
+    "screen": {
+      "device-pixel-ratio": 2.51,
+      "vertical": { "width": 901, "height": 347 },
+      "horizontal": { "width": 347, "height": 901 }
+    },
+    "modes": [
+      { "title": "", "orientation": "vertical", "insets": { "left": 0, "top": 0, "right": 0, "bottom": 0 } },
+      { "title": "", "orientation": "horizontal", "insets": { "left": 0, "top": 0, "right": 0, "bottom": 0 } }
+    ],
+    "show-by-default": true,
+    "dual-screen": false,
+    "foldable-screen": false,
+    "show": "Default"
+  }
+]

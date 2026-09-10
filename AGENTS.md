@@ -70,8 +70,25 @@ Setiap perubahan tampilan atau tata letak antarmuka **WAJIB** melalui uji audit 
 | **Desktop Full HD / Wide** | 1920 × 1080 px | Grid 5 kolom, lebar tabs dan kartu konten selaras secara visual (*harmonized max-width*). |
 | **Ultrawide & IFP Smartboard 4K** | 2560 × 1080 s.d. 3840 × 2160 px | Zero dead-space di kiri-kanan, teks pertanyaan besar dan terbaca dari kejauhan. |
 
-### B. Checklist Verifikasi Responsivitas Sebelum Rilis
-- [ ] **Nol Luapan Horizontal:** `document.documentElement.scrollWidth === document.documentElement.clientWidth` bernilai `true`.
+### B. Matriks Perangkat Emulasi Kustom Nyata (Custom Emulated Device List)
+Daftar perangkat ini tersimpan di `docs/devices-emulation.json` dan dapat diuji melalui perintah `npm run audit:responsive`:
+| No | Perangkat | Mode | Viewport (L × T) | DPR | Karakteristik Layar & Fokus Uji |
+| :---: | :--- | :---: | :---: | :---: | :--- |
+| 1 | **Infinix Note 50s** | Potret | 392 × 778 px | 2.75 | Smartphone Android standar modern, target sentuh $\ge 44\text{ px}$. |
+| 2 | **Redmi Note 7** | Potret | 431 × 846 px | 2.51 | Rasio layar panjang Android menengah, padding kartu proporsional. |
+| 3 | **Infinix Note 11s** | Potret | 415 × 866 px | 2.60 | Layar tinggi, uji kestabilan modal dan posisi tombol navigasi bawah. |
+| 4 | **Desktop - Half Screen** | Jendela 1/2 | 723 × 704 px | 1.00 | Tampilan multitasking Windows/Mac belah layar, transisi breakpoint tablet. |
+| 5 | **Desktop - Quarter** | Jendela 1/4 | 723 × 296 px | 1.00 | Viewport sangat pendek (*low-height*), uji sticky header tidak menutupi konten. |
+| 6 | **Infinix Note 50s** | Lanskap | 850 × 296 px | 2.75 | Lanskap smartphone tinggi rendah, guliran konten lancar tanpa dead-space. |
+| 7 | **Infinix Note 11s** | Lanskap | 946 × 335 px | 2.60 | Mode horizontal Android lebar, uji baris tombol flex dan formulir 2 kolom. |
+| 8 | **Redmi Note 7** | Lanskap | 901 × 347 px | 2.51 | Lanskap Android resolusi khas, kestabilan grid soal dan pratinjau kuis. |
+
+> **Snippet Impor Chrome DevTools Console:**
+> Jalankan perintah berikut di Console DevTools peramban untuk mengaktifkan profil perangkat di atas secara permanen:
+> `InspectorFrontendHost.setPreference('custom-emulated-device-list', JSON.stringify(require('./docs/devices-emulation.json')));`
+
+### C. Checklist Verifikasi Responsivitas Sebelum Rilis
+- [ ] **Nol Luapan Horizontal:** `document.documentElement.scrollWidth === document.documentElement.clientWidth` bernilai `true` pada seluruh 8 profil perangkat kustom.
 - [ ] **Target Sentuh Ergonomis:** Seluruh elemen interaktif memiliki dimensi area sentuh $\ge 44 \times 44\text{ px}$.
 - [ ] **Harmonisasi Lebar Kontainer:** Elemen tab navigasi langkah dan kartu formulir memiliki batas lebar (*max-width*) yang seimbang dan tidak renggang ekstrem.
 - [ ] **Dukungan Dua Tema (Dark & Light):** Kontras teks terhadap latar belakang memenuhi standar WCAG pada mode gelap maupun terang.

@@ -1,14 +1,15 @@
 {
   "name": "kuis-sd-seru",
   "private": true,
-  "version": "2.2.62",
+  "version": "2.2.63",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "db:deploy": "node scripts/deploy-supabase.js"
+    "db:deploy": "node scripts/deploy-supabase.js",
+    "audit:responsive": "node scripts/audit-responsive.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",

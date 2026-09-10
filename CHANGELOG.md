@@ -1,6 +1,20 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.63] - 2026-09-10
+### Integrasi Matriks Profil Perangkat Emulasi Kustom untuk Quality Check Responsivitas
+
+#### 1. Konfigurasi Profil Perangkat Nyata (Android & Desktop Split)
+- Mengintegrasikan 8 profil perangkat kustom Chrome DevTools ke dalam sistem dokumentasi (`docs/devices-emulation.json`) dan panduan pengembang (`AGENTS.md`):
+  - **Infinix Note 50s**: Potret (392 × 778 px, DPR 2.75) dan Lanskap (850 × 296 px, DPR 2.75).
+  - **Redmi Note 7**: Potret (431 × 846 px, DPR 2.51) dan Lanskap (901 × 347 px, DPR 2.51).
+  - **Infinix Note 11s**: Potret (415 × 866 px, DPR 2.60) dan Lanskap (946 × 335 px, DPR 2.60).
+  - **Desktop Multi-Window**: Half Screen (723 × 704 px, DPR 1.00) dan Quarter Screen (723 × 296 px, DPR 1.00).
+
+#### 2. Skrip Otomasi Audit Responsivitas & Verifikasi Multi-Device
+- Menghadirkan skrip otomatisasi audit responsivitas `scripts/audit-responsive.js` yang dapat dijalankan melalui perintah `npm run audit:responsive`.
+- Melakukan verifikasi langsung menggunakan Playwright pada seluruh 8 profil perangkat, membuktikan `scrollWidth === clientWidth` (100% bebas luapan horizontal / *zero overflow*) dan tata letak tetap stabil bahkan pada rasio layar sempit dan ketinggian minimal (296 px).
+
 ## [2.2.62] - 2026-09-10
 ### Audit Kebersihan & Minimalisme Antarmuka Tahap 2 Pembuat Kuis (Eliminasi AI Slop)
 
