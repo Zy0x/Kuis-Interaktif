@@ -1,6 +1,29 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.77] - 2026-09-11
+### Redesign Tahap 4 — Mode Otomatis & Tampilan Mesin AI yang Lebih Cerdas
+
+#### 1. Mode Pilihan Otomatis (Auto) — Default
+- Ditambahkan opsi **Otomatis** sebagai pilihan baru yang menjadi default saat masuk ke Tahap 4.
+- Aplikasi secara cerdas memilih AI terbaik yang tersedia mengikuti urutan prioritas: DeepSeek → Groq → Gemini → Lokal.
+- Chip dinamis menampilkan AI yang akan digunakan secara real-time.
+- Jika eksekusi gagal, mode Auto secara diam-diam beralih ke AI cadangan berikutnya tanpa menampilkan error kepada pengguna.
+
+#### 2. Indikator Kecepatan & Kedalaman per Mesin AI
+- Setiap kartu cloud AI kini menampilkan dua indikator visual: **Cepat** (hijau) dan **Pintar** (biru) dalam skala 4 dot, membantu guru memilih sesuai kebutuhan.
+- Indikator dot meredup (abu-abu) jika mesin tidak tersedia, memberikan umpan balik visual yang jelas.
+
+#### 3. Pengelompokan Ulang Opsi
+- Opsi terbagi menjadi dua kelompok yang terpisah secara visual:
+  - **Kartu Auto** (full-width, di atas): pilihan utama yang direkomendasikan.
+  - **Grid 3 Cloud AI**: DeepSeek, Groq, Gemini dalam tata letak 3 kolom kompak.
+  - **Cara Lain** (ekspander collapse/expand): mengelompokkan "Tanpa Internet" dan "Salin / Berkas" agar tidak menghabiskan ruang layar.
+- "Lokal" diganti nama menjadi **"Tanpa Internet"** agar lebih komunikatif untuk pengguna non-teknis.
+
+#### 4. Status Warning yang Lebih Ramping
+- Banner peringatan saat mesin bermasalah (quota habis, sibuk, error) kini lebih ringkas dengan tombol **"Pakai Auto"** untuk beralih cepat ke mode otomatis.
+
 ## [2.2.76] - 2026-09-10
 ### Fleksibilitas Format Soal: Opsi Pilihan Ganda 3/4/5, Gaya Benar/Salah, dan Jumlah Pasang Menjodohkan
 

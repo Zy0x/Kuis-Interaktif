@@ -1192,8 +1192,9 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
   const [trueFalseStyle, setTrueFalseStyle] = useState<'benar_salah' | 'sesuai_tidak' | 'ya_tidak'>('benar_salah');
   const [matchingPairCount, setMatchingPairCount] = useState<3 | 4 | 5>(4);
 
-  // Pilihan Mesin AI
-  const [selectedEngine, setSelectedEngine] = useState<'local' | 'deepseek' | 'groq' | 'gemini' | 'prompt'>('deepseek');
+  // Pilihan Mesin AI — 'auto' = pilih terbaik yang tersedia secara otomatis
+  const [selectedEngine, setSelectedEngine] = useState<'auto' | 'local' | 'deepseek' | 'groq' | 'gemini' | 'prompt'>('auto');
+  const [showAlternatifEngines, setShowAlternatifEngines] = useState(false);
 
   // Modal Pengaturan Kunci API Mandiri (BYOK)
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
@@ -1222,25 +1223,21 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
   useEffect(() => {
     setIsCheckingCloudAi(true);
     checkSupabaseAiStatus()
-      .then((status) => {
-        setSupabaseAi(status);
-        if (status.hasDeepSeek || hasDeepSeekApiKey()) {
-          setSelectedEngine('deepseek');
-        } else if (status.hasGroq || hasGroqApiKey()) {
-          setSelectedEngine('groq');
-        } else if (status.hasGemini || hasGeminiApiKey()) {
-          setSelectedEngine('gemini');
-        } else {
-          setSelectedEngine('local');
-        }
-      })
-      .catch(() => {
-        setSelectedEngine('local');
-      })
-      .finally(() => {
-        setIsCheckingCloudAi(false);
-      });
+      .then((status) => { setSupabaseAi(status); })
+      .catch(() => {})
+      .finally(() => { setIsCheckingCloudAi(false); });
   }, []);
+
+  // Resolusi engine aktual dari mode Auto — prioritas: DeepSeek → Groq → Gemini → Lokal
+  const resolvedEngine = useMemo<'local' | 'deepseek' | 'groq' | 'gemini'>(() => {
+    if (selectedEngine !== 'auto') {
+      return (selectedEngine === 'prompt' ? 'local' : selectedEngine) as 'local' | 'deepseek' | 'groq' | 'gemini';
+    }
+    if (supabaseAi.hasDeepSeek || hasDeepSeekApiKey()) return 'deepseek';
+    if (supabaseAi.hasGroq || hasGroqApiKey()) return 'groq';
+    if (supabaseAi.hasGemini || hasGeminiApiKey()) return 'gemini';
+    return 'local';
+  }, [selectedEngine, supabaseAi]);
 
   // Hitung total butir soal aktual
   const currentTotalQuestions = useMemo(() => {
@@ -1459,7 +1456,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
     }, 1000);
   };
 
-  // Eksekusi AI Direct (Lokal / DeepSeek / Groq / Gemini) -> Langsung Buka Studio Bank Soal
+  // Eksekusi AI Direct (Auto / Lokal / DeepSeek / Groq / Gemini) -> Langsung Buka Studio Bank Soal
   const handleExecuteAiDirect = async () => {
     playClick();
     setErrorMessage(null);
@@ -1472,36 +1469,59 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
 
     setIsLoading(true);
 
+    const isSingle = selectedQuestionTypes.length === 1;
+    const baseParams = {
+      topic: topic.trim(),
+      subject,
+      grade,
+      educationLevel,
+      count: currentTotalQuestions,
+      questionType: isSingle ? selectedQuestionTypes[0] : 'campuran' as const,
+      typeProportions: !isSingle ? proportions : undefined,
+      includeAiImages,
+      contextNotes: contextNotes.trim() || undefined,
+      mcOptionCount,
+      trueFalseStyle,
+      matchingPairCount,
+    };
+
+    // Rantai fallback — mode Auto mencoba semua engine yang tersedia secara berurutan
+    const fallbackChain: Array<'deepseek' | 'groq' | 'gemini' | 'local'> = (() => {
+      if (selectedEngine === 'local') return ['local'];
+      if (selectedEngine !== 'auto') return [resolvedEngine as 'deepseek' | 'groq' | 'gemini' | 'local'];
+      const chain: Array<'deepseek' | 'groq' | 'gemini' | 'local'> = [];
+      if (supabaseAi.hasDeepSeek || hasDeepSeekApiKey()) chain.push('deepseek');
+      if (supabaseAi.hasGroq || hasGroqApiKey()) chain.push('groq');
+      if (supabaseAi.hasGemini || hasGeminiApiKey()) chain.push('gemini');
+      chain.push('local');
+      return chain;
+    })();
+
     try {
-      let providerToUse: AiProvider | undefined = undefined;
-      if (selectedEngine === 'deepseek') providerToUse = 'deepseek';
-      else if (selectedEngine === 'groq') providerToUse = 'groq';
-      else if (selectedEngine === 'gemini') providerToUse = 'gemini';
+      let lastError: Error | null = null;
+      let result: Awaited<ReturnType<typeof generateHybridQuizQuestions>> | null = null;
 
-      const isSingle = selectedQuestionTypes.length === 1;
-      const result = await generateHybridQuizQuestions({
-        topic: topic.trim(),
-        subject,
-        grade,
-        educationLevel,
-        count: currentTotalQuestions,
-        questionType: isSingle ? selectedQuestionTypes[0] : 'campuran',
-        typeProportions: !isSingle ? proportions : undefined,
-        provider: providerToUse,
-        includeAiImages,
-        contextNotes: contextNotes.trim() || undefined,
-        mcOptionCount,
-        trueFalseStyle,
-        matchingPairCount,
-      });
+      for (const engine of fallbackChain) {
+        try {
+          const provider: AiProvider | undefined =
+            engine === 'deepseek' ? 'deepseek' :
+            engine === 'groq' ? 'groq' :
+            engine === 'gemini' ? 'gemini' : undefined;
 
-      if (!result.questions || result.questions.length === 0) {
-        throw new Error('Tidak ada butir soal yang berhasil diracik. Silakan coba kembali.');
+          result = await generateHybridQuizQuestions({ ...baseParams, provider });
+          if (result.questions && result.questions.length > 0) break;
+        } catch (err: unknown) {
+          lastError = err instanceof Error ? err : new Error(String(err));
+          if (selectedEngine === 'auto' && fallbackChain.indexOf(engine) < fallbackChain.length - 1) continue;
+          throw lastError;
+        }
+      }
+
+      if (!result || !result.questions || result.questions.length === 0) {
+        throw lastError || new Error('Tidak ada butir soal yang berhasil diracik. Silakan coba kembali.');
       }
 
       const badge = educationLevel === 'SMA' ? 'Bintang Cendekia' : educationLevel === 'SMP' ? 'Bintang Mandiri' : 'Bintang Pintar';
-
-      // Langsung buka Studio Bank Soal
       onGenerated({
         questions: result.questions,
         topic: topic.trim(),
@@ -1519,6 +1539,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
       setIsLoading(false);
     }
   };
+
 
   // Eksekusi Verifikasi Prompt / Berkas -> Langsung Buka Studio Bank Soal
   const handleParseAndOpenStudio = () => {
@@ -2791,333 +2812,181 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
-              
-              {/* Option 1: Lokal */}
+            <div className="space-y-2">
+
+              {/* ── Kartu Auto (full-width, default) ── */}
               <button
                 type="button"
-                onClick={() => {
-                  playClick();
-                  setSelectedEngine('local');
-                }}
-                className={`p-3.5 sm:p-5 rounded-2xl border text-left transition-all flex items-center sm:items-stretch sm:flex-col justify-between gap-3 btn-press min-h-[58px] sm:min-h-[148px] ${
-                  selectedEngine === 'local'
-                    ? 'border-blue-600 bg-blue-50/80 dark:bg-blue-950/40 text-blue-950 dark:text-blue-50 ring-2 ring-blue-500/25 shadow-xs'
-                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700'
+                onClick={() => { playClick(); setSelectedEngine('auto'); }}
+                className={`w-full p-3.5 rounded-2xl border text-left transition-all flex items-center gap-3.5 btn-press ${
+                  selectedEngine === 'auto'
+                    ? 'border-blue-500 bg-blue-50/80 dark:bg-blue-950/40 ring-2 ring-blue-500/20'
+                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 hover:border-slate-300 dark:hover:border-slate-700'
                 }`}
               >
-                <div className="flex items-center sm:items-start gap-3 sm:block flex-1 min-w-0">
-                  <div className="flex items-center justify-between sm:mb-2.5 shrink-0">
-                    <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/60 text-blue-600 flex items-center justify-center text-xl font-bold shrink-0">
-                      🤖
-                    </div>
-                    <span className="hidden sm:inline-flex text-[10px] px-2 py-0.5 rounded-md font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                      Selalu Siap
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0 ${
+                  selectedEngine === 'auto' ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-800'
+                }`}>⚡</div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`font-extrabold text-sm ${selectedEngine === 'auto' ? 'text-blue-900 dark:text-blue-100' : 'text-slate-900 dark:text-white'}`}>
+                      Otomatis
                     </span>
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="font-extrabold text-xs sm:text-base text-slate-900 dark:text-white block truncate">
-                        Lokal
+                    {selectedEngine === 'auto' && (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-600 text-white whitespace-nowrap">Direkomendasikan</span>
+                    )}
+                    {isCheckingCloudAi ? (
+                      <span className="text-[10px] text-slate-400 dark:text-slate-500 flex items-center gap-1">
+                        <Loader2 className="w-3 h-3 animate-spin" /> Memeriksa...
                       </span>
-                      <span className="sm:hidden text-[9px] px-1.5 py-0.5 rounded font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 inline-flex items-center gap-1 shrink-0">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                        Siap
+                    ) : (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                        {resolvedEngine === 'deepseek' ? '🐋 DeepSeek' : resolvedEngine === 'groq' ? '⚡ Groq' : resolvedEngine === 'gemini' ? '✨ Gemini' : '🤖 Lokal'}
                       </span>
-                    </div>
-                    <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5 sm:mt-1 leading-snug line-clamp-2 sm:line-clamp-none">
-                      Pembuat soal cepat tanpa internet atau kuota API. Selalu siap sedia.
-                    </p>
+                    )}
                   </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">
+                    Pilih AI terbaik yang tersedia. Beralih otomatis ke cadangan jika gagal.
+                  </p>
                 </div>
-                <div className="shrink-0 flex items-center sm:mt-3 sm:self-end">
-                  <div className={`w-5 h-5 rounded-full flex items-center justify-center border transition-all ${
-                    selectedEngine === 'local'
-                      ? 'border-blue-600 bg-blue-600 text-white shadow-2xs'
-                      : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800'
-                  }`}>
-                    {selectedEngine === 'local' && <Check className="w-3 h-3 stroke-[3]" />}
-                  </div>
+                <div className={`w-5 h-5 rounded-full flex items-center justify-center border shrink-0 transition-all ${
+                  selectedEngine === 'auto' ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800'
+                }`}>
+                  {selectedEngine === 'auto' && <Check className="w-3 h-3 stroke-[3]" />}
                 </div>
               </button>
 
-              {/* Option 2: DeepSeek AI */}
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  setSelectedEngine('deepseek');
-                }}
-                className={`p-3.5 sm:p-5 rounded-2xl border text-left transition-all flex items-center sm:items-stretch sm:flex-col justify-between gap-3 btn-press min-h-[58px] sm:min-h-[148px] ${
-                  selectedEngine === 'deepseek'
-                    ? 'border-sky-600 bg-sky-50/80 dark:bg-sky-950/40 text-sky-950 dark:text-sky-50 ring-2 ring-sky-500/25 shadow-xs'
-                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700'
-                }`}
-              >
-                <div className="flex items-center sm:items-start gap-3 sm:block flex-1 min-w-0">
-                  <div className="flex items-center justify-between sm:mb-2.5 shrink-0">
-                    <div className="w-10 h-10 rounded-xl bg-sky-100 dark:bg-sky-900/60 text-sky-600 flex items-center justify-center text-xl font-bold shrink-0">
-                      🐋
-                    </div>
-                    <div className="hidden sm:block">
-                      {renderEngineStatusBadge(getEngineHealthDetail('deepseek', supabaseAi))}
-                    </div>
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="font-extrabold text-xs sm:text-base text-slate-900 dark:text-white block truncate">
-                        DeepSeek AI
-                      </span>
-                      <div className="sm:hidden">
-                        {renderEngineStatusBadge(getEngineHealthDetail('deepseek', supabaseAi), true)}
+              {/* ── Grid 3 Cloud AI ── */}
+              <div className="grid grid-cols-3 gap-2">
+                {([
+                  { id: 'deepseek' as const, icon: '🐋', label: 'DeepSeek', desc: 'Analitis, HOTS', speed: 3, quality: 4, sel: 'border-sky-500 bg-sky-50/80 dark:bg-sky-950/40 ring-2 ring-sky-500/20', dot: 'border-sky-600 bg-sky-600', iconBg: 'bg-sky-100 dark:bg-sky-900/60' },
+                  { id: 'groq' as const, icon: '⚡', label: 'Groq', desc: 'Tercepat', speed: 4, quality: 2, sel: 'border-amber-500 bg-amber-50/80 dark:bg-amber-950/40 ring-2 ring-amber-500/20', dot: 'border-amber-600 bg-amber-600', iconBg: 'bg-amber-100 dark:bg-amber-900/60' },
+                  { id: 'gemini' as const, icon: '✨', label: 'Gemini', desc: 'Variatif', speed: 3, quality: 3, sel: 'border-purple-500 bg-purple-50/80 dark:bg-purple-950/40 ring-2 ring-purple-500/20', dot: 'border-purple-600 bg-purple-600', iconBg: 'bg-purple-100 dark:bg-purple-900/60' },
+                ] as const).map((eng) => {
+                  const isSelected = selectedEngine === eng.id;
+                  const health = getEngineHealthDetail(eng.id, supabaseAi);
+                  const isReady = health.status === 'ready';
+                  return (
+                    <button
+                      key={eng.id}
+                      type="button"
+                      onClick={() => { playClick(); setSelectedEngine(eng.id); }}
+                      className={`p-3 rounded-2xl border text-left flex flex-col gap-2 transition-all btn-press ${isSelected ? eng.sel : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 hover:border-slate-300 dark:hover:border-slate-700'}`}
+                    >
+                      <div className="flex items-start justify-between gap-1">
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-lg shrink-0 ${eng.iconBg}`}>{eng.icon}</div>
+                        <div className={`w-4 h-4 rounded-full flex items-center justify-center border shrink-0 ${isSelected ? `${eng.dot} text-white` : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800'}`}>
+                          {isSelected && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                        </div>
                       </div>
-                    </div>
-                    <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5 sm:mt-1 leading-snug line-clamp-2 sm:line-clamp-none">
-                      Kecerdasan analitis mendalam untuk penalaran kritis (HOTS) dan materi kontekstual.
-                    </p>
-                  </div>
-                </div>
-                <div className="shrink-0 flex items-center sm:mt-3 sm:self-end">
-                  <div className={`w-5 h-5 rounded-full flex items-center justify-center border transition-all ${
-                    selectedEngine === 'deepseek'
-                      ? 'border-sky-600 bg-sky-600 text-white shadow-2xs'
-                      : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800'
-                  }`}>
-                    {selectedEngine === 'deepseek' && <Check className="w-3 h-3 stroke-[3]" />}
-                  </div>
-                </div>
-              </button>
-
-              {/* Option 3: Groq Cloud */}
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  setSelectedEngine('groq');
-                }}
-                className={`p-3.5 sm:p-5 rounded-2xl border text-left transition-all flex items-center sm:items-stretch sm:flex-col justify-between gap-3 btn-press min-h-[58px] sm:min-h-[148px] ${
-                  selectedEngine === 'groq'
-                    ? 'border-amber-600 bg-amber-50/80 dark:bg-amber-950/40 text-amber-950 dark:text-amber-50 ring-2 ring-amber-500/25 shadow-xs'
-                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700'
-                }`}
-              >
-                <div className="flex items-center sm:items-start gap-3 sm:block flex-1 min-w-0">
-                  <div className="flex items-center justify-between sm:mb-2.5 shrink-0">
-                    <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/60 text-amber-600 flex items-center justify-center text-xl font-bold shrink-0">
-                      ⚡
-                    </div>
-                    <div className="hidden sm:block">
-                      {renderEngineStatusBadge(getEngineHealthDetail('groq', supabaseAi))}
-                    </div>
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="font-extrabold text-xs sm:text-base text-slate-900 dark:text-white block truncate">
-                        Groq Cloud
-                      </span>
-                      <div className="sm:hidden">
-                        {renderEngineStatusBadge(getEngineHealthDetail('groq', supabaseAi), true)}
+                      <div>
+                        <div className="flex items-center gap-1 flex-wrap mb-0.5">
+                          <span className="font-extrabold text-xs text-slate-900 dark:text-white leading-tight">{eng.label}</span>
+                          {renderEngineStatusBadge(health, true)}
+                        </div>
+                        <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-snug">{eng.desc}</p>
                       </div>
-                    </div>
-                    <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5 sm:mt-1 leading-snug line-clamp-2 sm:line-clamp-none">
-                      Generasi kuis secepat kilat dengan akurasi tinggi dan format terstruktur rapi.
-                    </p>
-                  </div>
-                </div>
-                <div className="shrink-0 flex items-center sm:mt-3 sm:self-end">
-                  <div className={`w-5 h-5 rounded-full flex items-center justify-center border transition-all ${
-                    selectedEngine === 'groq'
-                      ? 'border-amber-600 bg-amber-600 text-white shadow-2xs'
-                      : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800'
-                  }`}>
-                    {selectedEngine === 'groq' && <Check className="w-3 h-3 stroke-[3]" />}
-                  </div>
-                </div>
-              </button>
-
-              {/* Option 4: Google Gemini */}
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  setSelectedEngine('gemini');
-                }}
-                className={`p-3.5 sm:p-5 rounded-2xl border text-left transition-all flex items-center sm:items-stretch sm:flex-col justify-between gap-3 btn-press min-h-[58px] sm:min-h-[148px] ${
-                  selectedEngine === 'gemini'
-                    ? 'border-purple-600 bg-purple-50/80 dark:bg-purple-950/40 text-purple-950 dark:text-purple-50 ring-2 ring-purple-500/25 shadow-xs'
-                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700'
-                }`}
-              >
-                <div className="flex items-center sm:items-start gap-3 sm:block flex-1 min-w-0">
-                  <div className="flex items-center justify-between sm:mb-2.5 shrink-0">
-                    <div className="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-900/60 text-purple-600 flex items-center justify-center text-xl font-bold shrink-0">
-                      ✨
-                    </div>
-                    <div className="hidden sm:block">
-                      {renderEngineStatusBadge(getEngineHealthDetail('gemini', supabaseAi))}
-                    </div>
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="font-extrabold text-xs sm:text-base text-slate-900 dark:text-white block truncate">
-                        Google Gemini
-                      </span>
-                      <div className="sm:hidden">
-                        {renderEngineStatusBadge(getEngineHealthDetail('gemini', supabaseAi), true)}
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-1">
+                          <span className="text-[9px] text-slate-400 w-9 shrink-0">Cepat</span>
+                          <div className="flex gap-0.5">{[1,2,3,4].map(i => <div key={i} className={`w-2 h-1.5 rounded-sm ${i <= eng.speed ? (isReady ? 'bg-emerald-400' : 'bg-slate-300 dark:bg-slate-600') : 'bg-slate-200 dark:bg-slate-700'}`} />)}</div>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className="text-[9px] text-slate-400 w-9 shrink-0">Pintar</span>
+                          <div className="flex gap-0.5">{[1,2,3,4].map(i => <div key={i} className={`w-2 h-1.5 rounded-sm ${i <= eng.quality ? (isReady ? 'bg-blue-400' : 'bg-slate-300 dark:bg-slate-600') : 'bg-slate-200 dark:bg-slate-700'}`} />)}</div>
+                        </div>
                       </div>
-                    </div>
-                    <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5 sm:mt-1 leading-snug line-clamp-2 sm:line-clamp-none">
-                      Pertanyaan kontekstual, variatif, dan komunikatif sesuai tingkat kuis.
-                    </p>
-                  </div>
-                </div>
-                <div className="shrink-0 flex items-center sm:mt-3 sm:self-end">
-                  <div className={`w-5 h-5 rounded-full flex items-center justify-center border transition-all ${
-                    selectedEngine === 'gemini'
-                      ? 'border-purple-600 bg-purple-600 text-white shadow-2xs'
-                      : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800'
-                  }`}>
-                    {selectedEngine === 'gemini' && <Check className="w-3 h-3 stroke-[3]" />}
-                  </div>
-                </div>
-              </button>
+                    </button>
+                  );
+                })}
+              </div>
 
-              {/* Option 5: Salin Prompt / Berkas */}
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  setSelectedEngine('prompt');
-                }}
-                className={`p-3.5 sm:p-5 rounded-2xl border text-left transition-all flex items-center sm:items-stretch sm:flex-col justify-between gap-3 btn-press min-h-[58px] sm:min-h-[148px] ${
-                  selectedEngine === 'prompt'
-                    ? 'border-indigo-600 bg-indigo-50/80 dark:bg-indigo-950/40 text-indigo-950 dark:text-indigo-50 ring-2 ring-indigo-500/25 shadow-xs'
-                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700'
-                }`}
-              >
-                <div className="flex items-center sm:items-start gap-3 sm:block flex-1 min-w-0">
-                  <div className="flex items-center justify-between sm:mb-2.5 shrink-0">
-                    <div className="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-900/60 text-indigo-600 flex items-center justify-center text-xl font-bold shrink-0">
-                      📝
+              {/* ── Cara Lain (collapse/expand) ── */}
+              <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => { playClick(); setShowAlternatifEngines(v => !v); }}
+                  className={`w-full flex items-center justify-between px-3.5 py-2.5 text-xs font-bold transition-colors ${
+                    selectedEngine === 'local' || selectedEngine === 'prompt'
+                      ? 'text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-800/60'
+                      : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/40'
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    Cara Lain
+                    {(selectedEngine === 'local' || selectedEngine === 'prompt') && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded font-bold bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300">Aktif</span>
+                    )}
+                  </span>
+                  <svg className={`w-4 h-4 transition-transform ${showAlternatifEngines ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {showAlternatifEngines && (
+                  <div className="border-t border-slate-100 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800 animate-fade-in">
+                    <button
+                      type="button"
+                      onClick={() => { playClick(); setSelectedEngine('local'); }}
+                      className={`w-full p-3.5 text-left flex items-center gap-3 transition-all btn-press ${selectedEngine === 'local' ? 'bg-slate-50 dark:bg-slate-800' : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'}`}
+                    >
+                      <div className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-base shrink-0">🤖</div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-extrabold text-xs text-slate-900 dark:text-white">Tanpa Internet</span>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 whitespace-nowrap">Selalu Siap</span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">Buat soal tanpa internet atau kuota API.</p>
+                      </div>
+                      <div className={`w-4 h-4 rounded-full flex items-center justify-center border shrink-0 ${selectedEngine === 'local' ? 'border-slate-600 bg-slate-600 text-white' : 'border-slate-300 dark:border-slate-600'}`}>
+                        {selectedEngine === 'local' && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => { playClick(); setSelectedEngine('prompt'); }}
+                      className={`w-full p-3.5 text-left flex items-center gap-3 transition-all btn-press ${selectedEngine === 'prompt' ? 'bg-slate-50 dark:bg-slate-800' : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'}`}
+                    >
+                      <div className="w-9 h-9 rounded-xl bg-indigo-100 dark:bg-indigo-900/60 flex items-center justify-center text-base shrink-0">📋</div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-extrabold text-xs text-slate-900 dark:text-white">Salin / Berkas</span>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded font-bold bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300">Manual</span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">Tempel hasil ChatGPT/Claude atau impor berkas.</p>
+                      </div>
+                      <div className={`w-4 h-4 rounded-full flex items-center justify-center border shrink-0 ${selectedEngine === 'prompt' ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-300 dark:border-slate-600'}`}>
+                        {selectedEngine === 'prompt' && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                      </div>
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Status warning untuk engine yang dipilih manual (bukan auto) */}
+              {selectedEngine !== 'auto' && selectedEngine !== 'local' && selectedEngine !== 'prompt' && (() => {
+                const health = getEngineHealthDetail(selectedEngine, supabaseAi);
+                if (health.status === 'quota_exhausted' || health.status === 'busy' || health.status === 'error') {
+                  return (
+                    <div className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 text-xs flex items-start justify-between gap-3 animate-fade-in">
+                      <div className="flex items-start gap-2">
+                        <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                        <p className="text-amber-900 dark:text-amber-200 leading-snug">{health.description}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => { playClick(); setSelectedEngine('auto'); }}
+                        className="px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300 font-bold text-[11px] hover:bg-amber-50 dark:hover:bg-amber-900/30 transition-colors shrink-0 btn-press"
+                      >Pakai Auto</button>
                     </div>
-                    <span className="hidden sm:inline-flex text-[10px] px-2 py-0.5 rounded-md font-bold bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300">
-                      Salin / Impor
-                    </span>
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="font-extrabold text-xs sm:text-base text-slate-900 dark:text-white block truncate">
-                        Salin / Berkas
-                      </span>
-                      <span className="sm:hidden text-[9px] px-1.5 py-0.5 rounded font-bold bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 shrink-0">
-                        Manual
-                      </span>
-                    </div>
-                    <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5 sm:mt-1 leading-snug line-clamp-2 sm:line-clamp-none">
-                      Salin teks prompt ke ChatGPT/Claude, atau impor berkas dokumen kuis.
-                    </p>
-                  </div>
-                </div>
-                <div className="shrink-0 flex items-center sm:mt-3 sm:self-end">
-                  <div className={`w-5 h-5 rounded-full flex items-center justify-center border transition-all ${
-                    selectedEngine === 'prompt'
-                      ? 'border-indigo-600 bg-indigo-600 text-white shadow-2xs'
-                      : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800'
-                  }`}>
-                    {selectedEngine === 'prompt' && <Check className="w-3 h-3 stroke-[3]" />}
-                  </div>
-                </div>
-              </button>
+                  );
+                }
+                return null;
+              })()}
 
             </div>
 
-            {/* Indikator Status & Rekomendasi Mesin Terpilih (Informatif & Solutif) */}
-            {selectedEngine !== 'local' && selectedEngine !== 'prompt' && (() => {
-              const health = getEngineHealthDetail(selectedEngine, supabaseAi);
-              if (health.status === 'quota_exhausted') {
-                return (
-                  <div className="p-3.5 sm:p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-xs text-rose-900 dark:text-rose-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in">
-                    <div className="flex items-start gap-2.5">
-                      <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
-                      <div className="space-y-0.5">
-                        <span className="font-extrabold block">
-                          Kuota {selectedEngine === 'deepseek' ? 'DeepSeek' : selectedEngine === 'groq' ? 'Groq' : 'Gemini'} Telah Habis:
-                        </span>
-                        <p className="leading-relaxed text-[11px] sm:text-xs text-rose-800 dark:text-rose-300">
-                          {health.description} Anda dapat langsung beralih ke mesin <strong>Lokal</strong> untuk meracik kuis instan tanpa kuota API.
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        playClick();
-                        setSelectedEngine('local');
-                      }}
-                      className="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300 font-bold text-xs hover:bg-rose-100 dark:hover:bg-rose-900/50 transition-colors inline-flex items-center justify-center gap-1.5 shadow-2xs shrink-0 self-start sm:self-center btn-press"
-                    >
-                      <span>Gunakan Mesin Lokal Saja</span>
-                    </button>
-                  </div>
-                );
-              }
-              if (health.status === 'busy') {
-                return (
-                  <div className="p-3.5 sm:p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 text-xs text-amber-900 dark:text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in">
-                    <div className="flex items-start gap-2.5">
-                      <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-                      <div className="space-y-0.5">
-                        <span className="font-extrabold block">
-                          Layanan {selectedEngine === 'deepseek' ? 'DeepSeek' : selectedEngine === 'groq' ? 'Groq' : 'Gemini'} Sedang Sibuk:
-                        </span>
-                        <p className="leading-relaxed text-[11px] sm:text-xs text-amber-800 dark:text-amber-300">
-                          Server sedang memproses antrean tinggi. Anda dapat tetap melanjutkan atau beralih ke mesin <strong>Lokal</strong> untuk peracikan tanpa jeda antrean.
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        playClick();
-                        setSelectedEngine('local');
-                      }}
-                      className="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-amber-300 dark:border-amber-800 text-amber-700 dark:text-amber-300 font-bold text-xs hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors inline-flex items-center justify-center gap-1.5 shadow-2xs shrink-0 self-start sm:self-center btn-press"
-                    >
-                      <span>Beralih ke Lokal</span>
-                    </button>
-                  </div>
-                );
-              }
-              if (health.status === 'error') {
-                return (
-                  <div className="p-3.5 sm:p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-xs text-rose-900 dark:text-rose-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in">
-                    <div className="flex items-start gap-2.5">
-                      <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
-                      <div className="space-y-0.5">
-                        <span className="font-extrabold block">
-                          Gangguan Sambungan AI ({selectedEngine.toUpperCase()}):
-                        </span>
-                        <p className="leading-relaxed text-[11px] sm:text-xs text-rose-800 dark:text-rose-300">
-                          {health.description} Silakan beralih ke mesin <strong>Lokal</strong> untuk meracik kuis tanpa kendala koneksi API.
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        playClick();
-                        setSelectedEngine('local');
-                      }}
-                      className="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300 font-bold text-xs hover:bg-rose-100 dark:hover:bg-rose-900/50 transition-colors inline-flex items-center justify-center gap-1.5 shadow-2xs shrink-0 self-start sm:self-center btn-press"
-                    >
-                      <span>Gunakan Mesin Lokal Saja</span>
-                    </button>
-                  </div>
-                );
-              }
-              return null;
-            })()}
 
             {/* Banner info bantuan jika DeepSeek dipilih dan belum ada kunci */}
             {selectedEngine === 'deepseek' && !hasDeepSeekApiKey() && !supabaseAi.hasDeepSeek && (
