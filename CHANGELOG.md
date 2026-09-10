@@ -1,6 +1,34 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.96] - 2026-09-11
+### Redesign Selektor Level Kognitif — Clean Minimal, Anti-AI-Slop
+
+#### 1. Preset Pills Level Kognitif
+- Tampilan diganti dari 3 kartu besar dengan banyak teks menjadi **5 pill compact** horizontal: Auto, Seimbang, HOTS, LOTS, Kustom.
+- Default baru: **Auto** — AI memilih distribusi level Bloom terbaik sesuai fase dan topik secara otomatis.
+- Deskripsi singkat tampil sebagai hint kecil di samping label (di layar lebar), tidak memenuhi kartu.
+
+#### 2. Mode Kustom: 6 Kartu C1–C6
+- Dipilih jika preset "Kustom" aktif, muncul grid **3 kolom × 2 baris** berisi kartu C1–C6 compact (multi-select).
+- Setiap kartu menampilkan kode level dan kata kerja Bloom singkat.
+- Minimal 1 level harus dipilih (tidak bisa deselect semua).
+- Tombol **"Atur proporsi (%)"** muncul di bawah kartu — tersembunyi secara default, hanya buka jika diperlukan.
+- Proporsi per level menggunakan stepper +/− dan progress bar mini horizontal.
+
+#### 3. Latar Cerita — Chip Row Horizontal
+- Diganti dari grid 2×4 berisi kartu dengan deskripsi menjadi **chip row single-line** kompak: Auto · Keseharian · Sains & Alam · Literasi & Data · Sesuai Materi.
+- Default: **Auto** (AI pilih konteks terbaik).
+
+#### 4. Tombol Info "i"
+- Penjelasan Taksonomi Bloom dipindahkan ke tombol **"i"** di sudut kanan header.
+- Tooltip muncul saat hover, tidak pernah memenuhi layar.
+
+#### 5. Perluasan Tipe & Prompt
+- `cognitiveFocus` diperluas: `'auto' | 'balanced' | 'hots' | 'lots' | 'custom'`.
+- `kurmerContext` diperluas: `'auto' | 'daily_life' | 'science_nature' | 'literacy_numeracy' | 'general'`.
+- Logika prompt di `aiQuestionParser.ts` dan `geminiApi.ts` diperbarui untuk mendukung mode `auto` (AI bebas memilih) dan `custom` (level + proporsi spesifik).
+
 ## [2.2.95] - 2026-09-11
 ### Integrasi Standar Asesmen Kurikulum Merdeka (BSKAP RI), Selektor HOTS & Generator Soal Berkualitas Tinggi
 

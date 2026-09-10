@@ -86,8 +86,10 @@ export interface GenerateAiQuestionsParams {
     matching_pairs?: number;
   };
   contextNotes?: string;
-  cognitiveFocus?: 'balanced' | 'hots' | 'lots';
-  kurmerContext?: 'daily_life' | 'science_nature' | 'literacy_numeracy' | 'general';
+  cognitiveFocus?: 'auto' | 'balanced' | 'hots' | 'lots' | 'custom';
+  cognitiveCustomLevels?: Array<'c1' | 'c2' | 'c3' | 'c4' | 'c5' | 'c6'>;
+  cognitiveProportions?: Partial<Record<'c1' | 'c2' | 'c3' | 'c4' | 'c5' | 'c6', number>>;
+  kurmerContext?: 'auto' | 'daily_life' | 'science_nature' | 'literacy_numeracy' | 'general';
   mcOptionCount?: number; // 3, 4, atau 5 opsi pilihan ganda
   trueFalseStyle?: 'benar_salah' | 'sesuai_tidak' | 'ya_tidak';
   matchingPairCount?: number; // 3, 4, atau 5 pasang menjodohkan
@@ -981,8 +983,8 @@ function buildInstructionText(params: GenerateAiQuestionsParams): string {
 - Bahasa akademis baku yang lugas, penalaran saintifik/sosial tingkat tinggi, analisis data, evaluasi komparatif, dan pemecahan masalah kompleks.`;
   }
 
-  // 2. Fokus Kognitif (HOTS / MOTS / LOTS)
-  const cognitiveFocus = params.cognitiveFocus || 'balanced';
+  // 2. Fokus Kognitif (HOTS / MOTS / LOTS / Custom)
+  const cognitiveFocus = params.cognitiveFocus || 'auto';
   let cognitiveInstruction = '';
   if (cognitiveFocus === 'hots') {
     cognitiveInstruction = `FOKUS KOGNITIF: 100% SOAL HOTS (Higher Order Thinking Skills - Level Kognitif C4 Menganalisis, C5 Mengevaluasi, C6 Mengkreasi/Merancang Solusi).
@@ -993,13 +995,32 @@ function buildInstructionText(params: GenerateAiQuestionsParams): string {
     cognitiveInstruction = `FOKUS KOGNITIF: PENGUATAN FONDASI & PEMAHAMAN KONSEP DASAR (Level Kognitif C1 Mengingat Fakta Esensial, C2 Memahami Konsep, C3 Aplikasi Langsung).
 - Fokuskan pada kejelasan konsep inti materi agar siswa yang baru belajar atau sedang remedial memahaminya secara kokoh.
 - Bahasa bersahabat, membimbing nalar anak secara bertahap tanpa jebakan yang membingungkan.`;
-  } else {
+  } else if (cognitiveFocus === 'custom' && params.cognitiveCustomLevels && params.cognitiveCustomLevels.length > 0) {
+    const levelNames: Record<string, string> = {
+      c1: 'C1 (Mengingat)', c2: 'C2 (Memahami)', c3: 'C3 (Mengaplikasikan)',
+      c4: 'C4 (Menganalisis)', c5: 'C5 (Mengevaluasi)', c6: 'C6 (Mengkreasi)',
+    };
+    const proportions = params.cognitiveProportions;
+    const levelList = params.cognitiveCustomLevels.map(l => {
+      const pct = proportions?.[l as keyof typeof proportions];
+      return pct !== undefined ? `${levelNames[l]} ${pct}%` : levelNames[l];
+    }).join(', ');
+    const hasProportions = proportions && Object.keys(proportions).length > 0;
+    cognitiveInstruction = `FOKUS KOGNITIF KUSTOM: Distribusikan soal sesuai level berikut — ${levelList}.
+${hasProportions ? '- Persentase di atas adalah target distribusi, usahakan sedekat mungkin.' : '- Distribusikan soal secara merata di antara level yang dipilih.'}
+- Setiap butir soal harus mencerminkan karakteristik level kognitif yang dituju secara akurat.`;
+  } else if (cognitiveFocus === 'balanced') {
     cognitiveInstruction = `FOKUS KOGNITIF: KOMBINASI BERIMBANG STANDAR ASESMEN NASIONAL (40% MOTS C2-C3 Pemahaman/Aplikasi Konsep + 60% HOTS C4-C5 Penalaran Analitis & Studi Kasus).
 - Padukan antara pengujian pemahaman konsep inti materi dengan soal bernalar berbasis stimulus yang menantang rasa ingin tahu siswa.`;
+  } else {
+    // 'auto'
+    cognitiveInstruction = `FOKUS KOGNITIF: OTOMATIS sesuai fase & jenjang (${faseLabel}).
+- Tentukan sendiri distribusi level kognitif Bloom (C1-C6) yang paling tepat untuk materi ini pada jenjang yang dimaksud.
+- Prioritaskan soal yang membangun nalar (bukan sekadar hafalan), dengan proporsi HOTS minimal 40%.`;
   }
 
   // 3. Konteks Stimulus Kurikulum Merdeka
-  const kurmerContext = params.kurmerContext || 'daily_life';
+  const kurmerContext = params.kurmerContext || 'auto';
   let contextInstruction = '';
   if (kurmerContext === 'daily_life') {
     contextInstruction = `TEMA STIMULUS: Keseharian & Budaya Nusantara (Kurikulum Merdeka).
@@ -1010,9 +1031,12 @@ function buildInstructionText(params: GenerateAiQuestionsParams): string {
   } else if (kurmerContext === 'literacy_numeracy') {
     contextInstruction = `TEMA STIMULUS: Penguatan Literasi Informasi & Numerasi Terapan (AKM).
 - Hadirkan data konkret mini (daftar belanjaan di kantin, catatan berat barang, perbandingan waktu kegiatan, atau petunjuk langkah praktis) yang harus dicermati peserta didik.`;
-  } else {
+  } else if (kurmerContext === 'general') {
     contextInstruction = `TEMA STIMULUS: Kontekstual & Relevan dengan Kehidupan Nyata.
 - Tautkan materi pelajaran dengan situasi nyata yang masuk akal dan relevan bagi peserta didik.`;
+  } else {
+    // 'auto'
+    contextInstruction = `TEMA STIMULUS: OTOMATIS — pilih sendiri konteks/latar cerita yang paling relevan, menarik, dan autentik untuk topik ini pada jenjang ${faseLabel}. Prioritaskan cerita berbasis kehidupan nyata peserta didik Indonesia.`;
   }
 
   const roleText = `Anda bertindak murni sebagai ENGINE GENERATOR DATA SOAL berstandar resmi Kurikulum Merdeka (Panduan Pembelajaran & Asesmen BSKAP Kemendikdasmen RI).
