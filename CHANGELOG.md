@@ -1,6 +1,19 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.62] - 2026-09-10
+### Audit Kebersihan & Minimalisme Antarmuka Tahap 2 Pembuat Kuis (Eliminasi AI Slop)
+
+#### 1. Transformasi Rekomendasi Topik Cerdas Menjadi Tag Ringkas
+- Mengganti kotak kartu rekomendasi topik yang tebal dan memakan ruang dengan deretan *quick suggestion chips* yang minimalis dan elegan langsung di bawah bidang input topik kuis.
+- Menempatkan aksi *"Acak Ide"* secara rapi dan kompak sejajar dengan label saran cepat tanpa wadah latar belakang yang berat.
+- Memberikan interaksi pemilihan topik instan: satu ketukan pada chip rekomendasi akan langsung mengisi topik kuis dan preferensi konteks terkait.
+
+#### 2. Penghapusan Kotak Tips Berulang & Penataan Ruang Napas Mobile
+- Menghapus kotak informasi instruksional (*callout box*) berisikan butir-butir teks panjang yang menimbulkan kesan *AI slop* dan memperpanjang guliran layar ponsel secara tidak perlu.
+- Menyederhanakan instruksi tambahan menjadi keterangan teks satu baris yang tenang dan informatif di bawah area *textarea* catatan khusus.
+- Menghasilkan tata letak yang proporsional, simetris di desktop (kolom kiri dan kanan seimbang), serta ringkas dalam satu pandangan layar utuh (*single-fold*) di perangkat ponsel cerdas.
+
 ## [2.2.61] - 2026-09-10
 ### Reset Otomatis Posisi Scroll & Fokus ke Bagian Atas Halaman saat Navigasi Langkah Pembuat Kuis
 

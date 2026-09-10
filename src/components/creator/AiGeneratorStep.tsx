@@ -2044,11 +2044,11 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
             </button>
           </div>
 
-          {/* 2-Kolom: Topik & Saran Cerdas (Kiri) vs Catatan & Tips (Kanan) */}
+          {/* 2-Kolom: Topik & Saran Cerdas (Kiri) vs Catatan Khusus (Kanan) */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
             
-            {/* Kolom Kiri: Input Topik & Rekomendasi Cerdas */}
-            <div className="lg:col-span-6 space-y-5">
+            {/* Kolom Kiri: Input Topik & Rekomendasi Ringkas */}
+            <div className="lg:col-span-6 space-y-3">
               <div>
                 <label className="block text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white mb-2">
                   Topik atau Materi Pembahasan Kuis <span className="text-rose-500">*</span>
@@ -2057,75 +2057,74 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                   type="text"
                   value={topic}
                   onChange={(e) => onTopicChange(e.target.value)}
-                  placeholder="Contoh: Organ Pernapasan Manusia, Pecahan Senilai, Pengamalan Sila Pancasila..."
-                  className="w-full px-4 py-3.5 rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 font-semibold text-sm focus:border-blue-500 focus:outline-none min-h-[50px] shadow-xs"
+                  placeholder="Contoh: Organ Pernapasan Manusia, Pecahan Senilai, Sila Pancasila..."
+                  className="w-full px-4 py-3 rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 font-semibold text-sm focus:border-blue-500 focus:outline-none min-h-[48px] shadow-xs"
                 />
               </div>
 
-              {/* Rekomendasi Topik Cerdas */}
-              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-850/60 border border-slate-200 dark:border-slate-800 space-y-3">
-                <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <span className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                    <Sparkles className="w-4 h-4 text-amber-500" />
-                    Rekomendasi Topik {subject} Kelas {grade}
-                    {activeTopicRecommendations.isAi && (
-                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 animate-fade-in">
-                        AI Brainstorm ✨
-                      </span>
-                    )}
-                  </span>
-                  <button
-                    type="button"
-                    disabled={isBrainstormingAi}
-                    onClick={handleBrainstormTopics}
-                    className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1.5 font-bold min-h-[32px] px-2.5 py-1 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-950/40 btn-press disabled:opacity-60 transition-all"
-                  >
-                    {isBrainstormingAi ? (
-                      <>
-                        <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />
-                        <span>Meracik Ide AI...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Shuffle className="w-3.5 h-3.5" />
-                        <span>Acak Ide AI</span>
-                      </>
-                    )}
-                  </button>
-                </div>
+              {/* Rekomendasi Topik Ringkas di Bawah Input (Clean, No Bloat) */}
+              {activeTopicRecommendations.list.length > 0 && (
+                <div className="space-y-1.5 pt-0.5">
+                  <div className="flex items-center justify-between gap-2 text-xs">
+                    <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                      <span>Saran topik cepat:</span>
+                      {activeTopicRecommendations.isAi && (
+                        <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded-md bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300">
+                          AI
+                        </span>
+                      )}
+                    </span>
+                    <button
+                      type="button"
+                      disabled={isBrainstormingAi}
+                      onClick={handleBrainstormTopics}
+                      className="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1 hover:underline btn-press disabled:opacity-60"
+                      title="Acak atau segarkan ide topik"
+                    >
+                      {isBrainstormingAi ? (
+                        <>
+                          <Loader2 className="w-3 h-3 animate-spin text-blue-600" />
+                          <span>Meracik...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Shuffle className="w-3 h-3" />
+                          <span>Acak Ide</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
 
-                {isBrainstormingAi ? (
-                  <div className="py-4 flex items-center justify-center gap-2 text-xs text-blue-600 dark:text-blue-400 font-bold animate-pulse">
-                    <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
-                    <span>Sedang mengeksplorasi ide topik kontekstual via AI...</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {activeTopicRecommendations.list.map((rec) => {
+                      const isSelected = topic === rec.topic;
+                      return (
+                        <button
+                          key={rec.topic}
+                          type="button"
+                          onClick={() => {
+                            playClick();
+                            onTopicChange(rec.topic);
+                            if (rec.context) setContextNotes(rec.context);
+                          }}
+                          className={`text-xs px-2.5 py-1.5 rounded-xl border font-medium transition-all text-left truncate max-w-full btn-press min-h-[36px] flex items-center gap-1 ${
+                            isSelected
+                              ? 'bg-blue-600 text-white border-blue-600 font-bold shadow-xs'
+                              : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-750 hover:border-slate-300'
+                          }`}
+                        >
+                          <span>{rec.topic}</span>
+                        </button>
+                      );
+                    })}
                   </div>
-                ) : (
-                  <div className="flex flex-wrap gap-2">
-                    {activeTopicRecommendations.list.map((rec) => (
-                      <button
-                        key={rec.topic}
-                        type="button"
-                        onClick={() => {
-                          playClick();
-                          onTopicChange(rec.topic);
-                          setContextNotes(rec.context);
-                        }}
-                        className={`text-xs px-3.5 py-2 rounded-xl border font-bold transition-all min-h-[40px] flex items-center gap-1.5 btn-press ${
-                          topic === rec.topic
-                            ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-                            : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-300'
-                        }`}
-                      >
-                        <span>+ {rec.topic}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
 
-            {/* Kolom Kanan: Catatan Khusus & Panduan Guru */}
-            <div className="lg:col-span-6 space-y-5">
+            {/* Kolom Kanan: Catatan Khusus */}
+            <div className="lg:col-span-6 space-y-2">
               <div>
                 <label className="block text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white mb-2">
                   Catatan / Bahan Pertimbangan Khusus <span className="text-slate-400 font-normal">(Opsional)</span>
@@ -2134,22 +2133,13 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                   rows={4}
                   value={contextNotes}
                   onChange={(e) => setContextNotes(e.target.value)}
-                  placeholder="Contoh: Fokuskan pada fungsi organ paru-paru dan cara menjaga kesehatannya. Gunakan bahasa santai dan menyenangkan ramah anak SD..."
-                  className="w-full px-4 py-3.5 rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 font-medium text-xs sm:text-sm focus:border-blue-500 focus:outline-none shadow-xs"
+                  placeholder="Contoh: Fokuskan pada organ pernapasan tertentu, gunakan bahasa santai dan kontekstual yang ramah anak..."
+                  className="w-full px-4 py-3 rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 font-medium text-xs sm:text-sm focus:border-blue-500 focus:outline-none shadow-xs resize-none"
                 />
               </div>
-
-              <div className="p-4 rounded-2xl bg-indigo-50/60 dark:bg-indigo-950/30 border border-indigo-200/70 dark:border-indigo-900/50 space-y-2">
-                <div className="flex items-center gap-2 text-indigo-900 dark:text-indigo-200 font-bold text-xs">
-                  <Info className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
-                  <span>Tips Instruksional untuk Guru {educationLevel === 'SMA' ? 'SMA / SMK' : educationLevel === 'SMP' ? 'SMP' : 'SD'}:</span>
-                </div>
-                <ul className="text-[11px] sm:text-xs text-indigo-800 dark:text-indigo-300/90 space-y-1 pl-6 list-disc leading-relaxed">
-                  <li>Tentukan fokus sub-materi tertentu agar butir soal kuis padat dan terarah.</li>
-                  <li>Konteks akan membantu AI menyesuaikan gaya kalimat dengan psikologi siswa Kelas {grade} {educationLevel === 'SMA' ? 'SMA / SMK' : educationLevel === 'SMP' ? 'SMP' : 'SD'}.</li>
-                  <li>Anda tetap dapat mengedit atau merevisi butir soal secara leluasa di Studio Bank Soal.</li>
-                </ul>
-              </div>
+              <p className="text-[11px] text-slate-400 dark:text-slate-500 leading-relaxed">
+                Opsional: Tambahkan batasan fokus sub-materi atau panduan gaya bahasa untuk AI.
+              </p>
             </div>
 
           </div>
