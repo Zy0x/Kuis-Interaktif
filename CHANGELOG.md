@@ -1,6 +1,18 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.73] - 2026-09-10
+### Pelabelan Status Beta Ilustrasi AI & Penegasan Relevansi Gambar Nyata
+
+#### 1. Pelabelan Status Beta pada Antarmuka (*Experimental Beta Badge*)
+- Menyematkan badge **BETA** warna aksen amber yang jelas pada kartu toggle *"Sertakan Gambar Ilustrasi AI"* di Tahap 3 dan ringkasan konfigurasi Tahap 4.
+- Memperbarui deskripsi fitur secara transparan: menjelaskan bahwa fitur ini berada pada tahap eksperimental (*Beta*) yang berupaya mencari/menghasilkan gambar ilustrasi nyata yang relevan dengan pertanyaan (bukan ikon generik/stiker acak), dan hasilnya bergantung pada ketersediaan generator AI.
+
+#### 2. Peningkatan Akurasi & Relevansi Generator Gambar
+- Mempertegas instruksi prompt sistem AI untuk mewajibkan properti `imagePrompt` berbahasa Inggris yang spesifik dan kontekstual terhadap materi kuis (menghindari ikon kartun abstrak).
+- Membersihkan emoji dan karakter non-standar dari input prompt gambar agar tidak merusak tautan URL generator Pollinations AI.
+- Mengutamakan `imagePrompt` kontekstual dalam `normalizeQuestions` untuk menghasilkan diagram atau ilustrasi edukasi nyata yang presisi.
+
 ## [2.2.72] - 2026-09-10
 ### Optimalisasi Tinggi Kolom Catatan Tambahan & Interaktivitas Drag Resize di Mobile
 

@@ -938,6 +938,13 @@ Tugas Anda adalah merancang butir soal kuis interaktif yang komunikatif ramah re
       : `Anda adalah Asisten Pakar Kurikulum Merdeka Sekolah Dasar (SD) Indonesia.
 Tugas Anda adalah merancang butir soal kuis interaktif yang mendidik, seru, menggunakan bahasa Indonesia yang baik, komunikatif, dan sesuai dengan daya tangkap siswa SD.`;
 
+  const imageInstruction = params.includeAiImages
+    ? `\nFITUR ILUSTRASI GAMBAR EDUKASI (BETA):
+Karena opsi ilustrasi diaktifkan, sertakan pada butir soal konsep gambar visual yang BENAR-BENAR RELEVAN dan berkaitan langsung dengan isi pertanyaan (bukan sekadar ikon generik/stiker acak):
+- 'imageCaption': Nama konsep/objek visual dalam Bahasa Indonesia (contoh: "Diagram Organ Jantung Manusia", "Peta Benua Asia", "Pecahan 1/4 Kue").
+- 'imagePrompt': Deskripsi visual 1 kalimat dalam Bahasa Inggris yang spesifik dan realistis untuk mesin AI image (contoh: "clear educational scientific diagram of human heart anatomy, textbook style").\n`
+    : '';
+
   return `${roleText}
 
 SPESIFIKASI SOAL:
@@ -945,7 +952,7 @@ SPESIFIKASI SOAL:
 - Tingkat: ${levelText}
 - Topik / Materi: ${topic}
 - Jumlah Soal: ${count} butir soal
-- Format: ${formatInstruction}
+- Format: ${formatInstruction}${imageInstruction}
 
 ATURAN WAJIB OUTPUT:
 1. Kembalikan HANYA format JSON valid tanpa pembuka/penutup obrolan teks.
@@ -960,7 +967,8 @@ ATURAN WAJIB OUTPUT:
   "customDurationSec": 30,
   "acceptableAnswers": ["Kunci", "Sinonim"],
   "matchingPairs": [{"left": "Konsep A", "right": "Definisi A"}],
-  "imageCaption": "Kata kunci gambar"
+  "imageCaption": "Kata kunci objek visual relevan",
+  "imagePrompt": "Detailed clear educational illustration of the concept in English"
 }`;
 }
 
@@ -973,13 +981,15 @@ export function generateAiIllustrationUrl(prompt: string, options?: { width?: nu
   const height = options?.height || 400;
   const seed = options?.seed ?? Math.floor(Math.random() * 1000000);
 
-  // Bersihkan teks prompt dan tambahkan penegasan gaya ilustrasi edukasi SD
+  // Bersihkan teks prompt, hilangkan emoji dan karakter tidak baku
   const cleanPrompt = prompt
+    .replace(/[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, ' ')
     .replace(/[^\w\s\u00C0-\u024F\u1E00-\u1EFF,-]/gi, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 
-  const educationalPrompt = `educational illustration for elementary school children, clean colorful 3d vector style, vibrant clear subject: ${cleanPrompt || 'science nature learning'}`;
+  // Minta diagram/ilustrasi edukasi visual nyata yang relevan, hindari ikon generik
+  const educationalPrompt = `clear educational diagram or accurate realistic visual illustration of ${cleanPrompt || 'science nature learning'}, high quality, informative, no generic cartoon icons, realistic clean background`;
 
   return `https://image.pollinations.ai/prompt/${encodeURIComponent(educationalPrompt)}?width=${width}&height=${height}&nologo=true&seed=${seed}`;
 }
@@ -1025,11 +1035,13 @@ function normalizeQuestions(rawList: any[], providerPrefix: string, autoGenerate
       : undefined;
 
     const rawCaption = item.imageCaption ? String(item.imageCaption) : undefined;
+    const rawImagePrompt = item.imagePrompt ? String(item.imagePrompt) : undefined;
     let imageUrl = item.imageUrl ? String(item.imageUrl) : undefined;
 
-    // Otomatis pasang ilustrasi gambar jika diminta atau bertipe tebak gambar
-    if (!imageUrl && (autoGenerateImages || qType === 'image_guess') && (rawCaption || item.text)) {
-      imageUrl = generateAiIllustrationUrl(rawCaption || String(item.text).slice(0, 80));
+    // Otomatis pasang ilustrasi gambar jika diminta atau bertipe tebak gambar (prioritaskan imagePrompt bahasa Inggris jika tersedia)
+    if (!imageUrl && (autoGenerateImages || qType === 'image_guess') && (rawImagePrompt || rawCaption || item.text)) {
+      const promptToUse = rawImagePrompt || rawCaption || String(item.text).slice(0, 80);
+      imageUrl = generateAiIllustrationUrl(promptToUse);
     }
 
     return {
