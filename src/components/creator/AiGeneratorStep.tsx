@@ -3025,11 +3025,11 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
               </div>
             </div>
 
-            {/* 3. Opsi Alternatif & Tanpa Internet */}
+            {/* 3. Opsi Alternatif & Lokal */}
             <div className="space-y-2 pt-1">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
-                  Alternatif & Tanpa Internet:
+                  Alternatif & Lokal:
                 </span>
               </div>
 
@@ -3054,7 +3054,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <span className="font-extrabold text-xs sm:text-base text-slate-900 dark:text-white block truncate">
-                          Tanpa Internet
+                          Lokal
                         </span>
                         <span className="text-[10px] px-2 py-0.5 rounded-md font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 inline-flex items-center gap-1 shrink-0">
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
@@ -3077,7 +3077,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                   </div>
                 </button>
 
-                {/* Option: Salin Prompt / Berkas */}
+                {/* Option: Prompt / Berkas */}
                 <button
                   type="button"
                   onClick={() => {
@@ -3097,7 +3097,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <span className="font-extrabold text-xs sm:text-base text-slate-900 dark:text-white block truncate">
-                          Salin / Berkas
+                          Prompt / Berkas
                         </span>
                         <span className="text-[10px] px-2 py-0.5 rounded-md font-bold bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 shrink-0">
                           Manual

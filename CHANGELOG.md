@@ -1,6 +1,14 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.83] - 2026-09-11
+### Penyesuaian Penamaan Kartu Mesin Alternatif: Lokal & Prompt / Berkas
+
+#### 1. Pembaruan Penamaan Kartu Pembuat Kuis
+- Mengubah nama kartu mesin peramban offline dari **"Tanpa Internet"** menjadi **"Lokal"** agar lebih tegas, profesional, dan ringkas.
+- Mengubah nama kartu impor manual dari **"Salin / Berkas"** menjadi **"Prompt / Berkas"** agar lebih deskriptif terhadap dukungan salin prompt AI eksternal maupun berkas dokumen.
+- Memperbarui sub-judul kategori kelompok menjadi **"Alternatif & Lokal:"** untuk menjaga konsistensi hierarki antarmuka.
+
 ## [2.2.82] - 2026-09-11
 ### Pemisahan Terstruktur Mesin Cloud AI dan Opsi Alternatif/Offline
 
