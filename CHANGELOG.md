@@ -1,6 +1,32 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.38] - 2026-09-10
+### Fitur Manajemen Butir Soal Lengkap: Edit Soal, Duplikasi, Pengaturan Urutan, dan Alur Simpan Cepat
+
+#### Fitur Interaktif Manajemen Butir Soal (QuizCreator Step 2)
+- **Fitur Edit Butir Soal Terintegrasi:**
+  - Guru kini dapat memilih butir soal mana pun dari daftar Bank Soal untuk dimuat kembali ke formulir editor secara instan.
+  - Kartu soal yang sedang diedit diberi penanda visual aktif (*ring border* dan badge *Diedit* berwarna emas).
+  - Formulir secara otomatis beralih ke mode pengeditan dengan judul dinamis `Edit Soal #X`, tombol `Perbarui Soal`, dan opsi `Batal Edit`.
+  - Pembaruan data soal dilakukan secara *in-place* dengan reaktivitas instan tanpa merusak susunan draf kuis.
+- **Fitur Duplikasi Butir Soal Kilat (One-Click Clone):**
+  - Menghadirkan tombol *Duplikat* di setiap kartu butir soal pada Bank Soal.
+  - Memungkinkan guru membuat variasi soal serupa secara cepat tanpa perlu mengetik ulang dari awal.
+- **Fitur Pengaturan Urutan Soal (Reorder Naik / Turun):**
+  - Menambahkan tombol panah navigasi *Geser ke Atas* dan *Geser ke Bawah* di setiap butir soal.
+  - Tombol secara cerdas menonaktifkan diri pada batas urutan (soal teratas tidak bisa digeser ke atas, soal terbawah tidak bisa digeser ke bawah).
+  - Perpindahan posisi nomor soal berlangsung halus dan reaktif.
+- **Alur Kerja Pembuatan Soal Berkelanjutan (*Simpan & Buat Baru* vs *Simpan & Selesai*):**
+  - Menyediakan tombol primer `Simpan & Buat Baru` yang menyimpan soal ke bank dan langsung menyiapkan formulir bersih untuk soal berikutnya tanpa bolak-balik klik tombol buka.
+  - Menyediakan tombol sekunder `Simpan & Selesai` yang menyimpan soal sekaligus menutup formulir untuk menampilkan daftar ringkasan.
+- **Pintasan Langsung Edit dari Layar Pratinjau (Step 3 Preview):**
+  - Setiap butir soal pada ringkasan pratinjau kuis kini dapat diklik langsung untuk melompat kembali ke Langkah 2 dengan soal tersebut telah termuat siap diedit.
+
+#### Optimasi Tata Letak & Responsivitas Mobile-First
+- Menyesuaikan bilah atas formulir soal dengan tata letak adaptif (*flex column* pada layar sempit $\le 360\text{ px}$ dan *flex row* pada layar tablet/desktop).
+- Memastikan seluruh tombol aksi di kartu soal dan formulir mempertahankan target sentuh yang nyaman ($\ge 44 \times 44\text{ px}$) serta bebas luapan horizontal di seluruh perangkat.
+
 ## [2.2.37] - 2026-09-10
 ### Standardisasi Baku AGENTS.md, Penyelarasan Studio Kuis & Protokol Audit Responsivitas
 

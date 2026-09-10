@@ -16,7 +16,13 @@ import {
   Globe,
   Lock,
   AlertCircle,
-  RotateCcw
+  RotateCcw,
+  Edit3,
+  Copy,
+  ChevronUp,
+  ChevronDown,
+  Check,
+  X
 } from 'lucide-react';
 
 interface QuizCreatorProps {
@@ -149,12 +155,14 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     setBadgeTitle('Bintang Pintar');
     setVisibility('public');
     setQuestions([]);
+    setEditingQuestionId(null);
     setCurrentStep(1);
     setShowResetConfirm(false);
     showToast('Draf pembuatan kuis telah direset.');
   };
 
   // Active Question Form State
+  const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
   const [qText, setQText] = useState('');
   const [qType, setQType] = useState<'multiple_choice' | 'true_false'>('multiple_choice');
   const [qImageCaption, setQImageCaption] = useState('');
@@ -173,9 +181,13 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     return false;
   }, currentStep === 3);
 
-  // 2. Level 2 (Prioritas 50): Mundur dari Langkah 2 ke Langkah 1, atau tutup form tambah soal
+  // 2. Level 2 (Prioritas 50): Mundur dari Langkah 2 ke Langkah 1, atau batalkan edit / tutup form
   useBackHandler('creator-step-2', 50, () => {
     if (currentStep === 2) {
+      if (editingQuestionId) {
+        handleCancelEdit();
+        return true;
+      }
       if (isAddingQuestion && questions.length > 0) {
         setIsAddingQuestion(false);
         return true;
@@ -185,6 +197,19 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     }
     return false;
   }, currentStep === 2);
+
+  const resetFormFields = (targetType: 'multiple_choice' | 'true_false' = qType) => {
+    setQText('');
+    setQImageCaption('');
+    setQImageUrl(undefined);
+    setQExplanation('');
+    if (targetType === 'true_false') {
+      setQOptions(['Benar', 'Salah']);
+    } else {
+      setQOptions(['', '', '', '']);
+    }
+    setQCorrectIndex(0);
+  };
 
   const handleOptionChange = (index: number, value: string) => {
     const updated = [...qOptions];
@@ -214,7 +239,69 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     }
   };
 
-  const handleSaveQuestion = (e: React.FormEvent) => {
+  const handleStartEditQuestion = (q: QuizQuestion) => {
+    playClick();
+    setEditingQuestionId(q.id);
+    setQText(q.text);
+    setQType(q.type === 'true_false' ? 'true_false' : 'multiple_choice');
+    setQImageCaption(q.imageCaption || '');
+    setQImageUrl(q.imageUrl);
+    setQOptions([...q.options]);
+    setQCorrectIndex(q.correctIndex);
+    setQExplanation(q.explanation || '');
+    setIsAddingQuestion(true);
+  };
+
+  const handleCancelEdit = () => {
+    playClick();
+    setEditingQuestionId(null);
+    resetFormFields();
+    if (questions.length > 0) {
+      setIsAddingQuestion(false);
+    }
+  };
+
+  const handleOpenNewQuestion = () => {
+    playClick();
+    setEditingQuestionId(null);
+    resetFormFields();
+    setIsAddingQuestion(true);
+  };
+
+  const handleDuplicateQuestion = (id: string) => {
+    playClick();
+    const index = questions.findIndex((q) => q.id === id);
+    if (index === -1) return;
+
+    const source = questions[index];
+    const duplicated: QuizQuestion = {
+      ...source,
+      id: 'q_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      text: `${source.text} (Salinan)`,
+      options: [...source.options],
+    };
+
+    const next = [...questions];
+    next.splice(index + 1, 0, duplicated);
+    setQuestions(next);
+    showToast(`Soal #${index + 1} berhasil disalin.`);
+  };
+
+  const handleMoveQuestion = (index: number, direction: 'up' | 'down') => {
+    playClick();
+    if (direction === 'up' && index === 0) return;
+    if (direction === 'down' && index === questions.length - 1) return;
+
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    const next = [...questions];
+    const temp = next[index];
+    next[index] = next[targetIndex];
+    next[targetIndex] = temp;
+    setQuestions(next);
+    showToast(`Urutan soal berhasil dipindahkan.`);
+  };
+
+  const handleSaveQuestion = (e: React.FormEvent, mode: 'finish' | 'continue' = 'finish') => {
     e.preventDefault();
     playClick();
 
@@ -226,6 +313,33 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     const validOptions = qOptions.filter((opt) => opt.trim() !== '');
     if (validOptions.length < 2) {
       showToast('Minimal harus ada 2 pilihan jawaban.');
+      return;
+    }
+
+    if (editingQuestionId) {
+      const updatedQuestions = questions.map((q) => {
+        if (q.id === editingQuestionId) {
+          return {
+            ...q,
+            text: qText.trim(),
+            type: qType,
+            imageCaption: qImageCaption.trim() || undefined,
+            imageUrl: qImageUrl,
+            options: validOptions,
+            correctIndex: Math.min(qCorrectIndex, validOptions.length - 1),
+            explanation: qExplanation.trim() || 'Jawaban ini benar sesuai dengan konsep materi terkait.',
+          };
+        }
+        return q;
+      });
+
+      setQuestions(updatedQuestions);
+      setEditingQuestionId(null);
+      resetFormFields();
+      if (mode === 'finish') {
+        setIsAddingQuestion(false);
+      }
+      showToast('Perubahan butir soal berhasil disimpan.');
       return;
     }
 
@@ -241,23 +355,24 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     };
 
     setQuestions([...questions, newQuestion]);
+    resetFormFields();
 
-    setQText('');
-    setQImageCaption('');
-    setQImageUrl(undefined);
-    setQExplanation('');
-    if (qType === 'true_false') {
-      setQOptions(['Benar', 'Salah']);
+    if (mode === 'continue') {
+      setIsAddingQuestion(true);
+      showToast('Soal disimpan. Silakan buat soal berikutnya!');
     } else {
-      setQOptions(['', '', '', '']);
+      setIsAddingQuestion(false);
+      showToast('Soal berhasil disimpan ke bank soal.');
     }
-    setQCorrectIndex(0);
-    setIsAddingQuestion(false);
   };
 
   const handleDeleteQuestion = (id: string) => {
     playClick();
-    setQuestions(questions.filter((q) => q.id !== id));
+    if (editingQuestionId === id) {
+      handleCancelEdit();
+    }
+    setQuestions((prev) => prev.filter((q) => q.id !== id));
+    showToast('Soal telah dihapus.');
   };
 
   const handleFinalPublish = () => {
@@ -656,13 +771,11 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                   <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                     <Layers className="w-4 h-4 text-blue-600 dark:text-blue-400" /> Bank Soal ({questions.length})
                   </h3>
-                  {!isAddingQuestion && (
+                  {(!isAddingQuestion || editingQuestionId) && (
                     <button
-                      onClick={() => {
-                        playClick();
-                        setIsAddingQuestion(true);
-                      }}
-                      className="px-3 py-1 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 font-bold text-xs flex items-center gap-1 min-h-[36px]"
+                      type="button"
+                      onClick={handleOpenNewQuestion}
+                      className="px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/50 font-bold text-xs flex items-center gap-1 min-h-[36px] transition-colors"
                     >
                       <Plus className="w-3.5 h-3.5" /> Tambah Soal
                     </button>
@@ -675,35 +788,135 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                   </div>
                 ) : (
                   <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
-                    {questions.map((q, idx) => (
-                      <div
-                        key={q.id}
-                        className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/60 flex items-start justify-between gap-2.5"
-                      >
-                        <div className="space-y-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="w-5 h-5 rounded-md bg-blue-600 text-white text-[11px] font-bold flex items-center justify-center flex-shrink-0">
-                              {idx + 1}
-                            </span>
-                            <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase">
-                              {q.type === 'multiple_choice' ? 'Pilgan' : 'Benar/Salah'}
-                            </span>
-                          </div>
-                          <p className="font-bold text-slate-800 dark:text-slate-200 text-xs line-clamp-2 break-words">{q.text}</p>
-                          <p className="text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold truncate">
-                            ✓ Kunci: {q.options[q.correctIndex]}
-                          </p>
-                        </div>
-
-                        <button
-                          onClick={() => handleDeleteQuestion(q.id)}
-                          className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg min-h-[36px] min-w-[36px] flex items-center justify-center flex-shrink-0"
-                          title="Hapus Soal"
+                    {questions.map((q, idx) => {
+                      const isBeingEdited = editingQuestionId === q.id;
+                      return (
+                        <div
+                          key={q.id}
+                          className={`p-3 rounded-xl border transition-all ${
+                            isBeingEdited
+                              ? 'border-blue-500 dark:border-blue-400 bg-blue-50/70 dark:bg-blue-950/40 ring-2 ring-blue-400/30 dark:ring-blue-500/30 shadow-sm'
+                              : 'border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/60 hover:border-slate-300 dark:hover:border-slate-700'
+                          }`}
                         >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))}
+                          {/* Top Row: Info & Actions Toolbar */}
+                          <div className="flex items-center justify-between gap-1.5 pb-2 mb-2 border-b border-slate-200/60 dark:border-slate-700/60">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <span
+                                className={`w-5 h-5 rounded-md text-[11px] font-bold flex items-center justify-center flex-shrink-0 transition-colors ${
+                                  isBeingEdited ? 'bg-amber-500 text-white' : 'bg-blue-600 text-white'
+                                }`}
+                              >
+                                {idx + 1}
+                              </span>
+                              <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase truncate">
+                                {q.type === 'multiple_choice' ? 'Pilgan' : 'Benar/Salah'}
+                              </span>
+                              {isBeingEdited && (
+                                <span className="text-[10px] font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 px-1.5 py-0.5 rounded">
+                                  Diedit
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Toolbar: Reorder, Edit, Duplicate, Delete */}
+                            <div className="flex items-center gap-0.5 flex-shrink-0">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleMoveQuestion(idx, 'up');
+                                }}
+                                disabled={idx === 0}
+                                className="p-1 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-200/70 dark:hover:bg-slate-700/60 disabled:opacity-25 disabled:hover:bg-transparent disabled:hover:text-slate-400 rounded-lg min-w-[32px] min-h-[32px] flex items-center justify-center transition-colors"
+                                title="Geser Urutan ke Atas"
+                                aria-label={`Geser Soal ${idx + 1} ke Atas`}
+                              >
+                                <ChevronUp className="w-4 h-4" />
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleMoveQuestion(idx, 'down');
+                                }}
+                                disabled={idx === questions.length - 1}
+                                className="p-1 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-200/70 dark:hover:bg-slate-700/60 disabled:opacity-25 disabled:hover:bg-transparent disabled:hover:text-slate-400 rounded-lg min-w-[32px] min-h-[32px] flex items-center justify-center transition-colors"
+                                title="Geser Urutan ke Bawah"
+                                aria-label={`Geser Soal ${idx + 1} ke Bawah`}
+                              >
+                                <ChevronDown className="w-4 h-4" />
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleStartEditQuestion(q);
+                                }}
+                                className={`p-1 rounded-lg min-w-[32px] min-h-[32px] flex items-center justify-center transition-colors ${
+                                  isBeingEdited
+                                    ? 'bg-blue-600 text-white'
+                                    : 'text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/40'
+                                }`}
+                                title="Edit Soal Ini"
+                                aria-label={`Edit Soal ${idx + 1}`}
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDuplicateQuestion(q.id);
+                                }}
+                                className="p-1 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded-lg min-w-[32px] min-h-[32px] flex items-center justify-center transition-colors"
+                                title="Duplikat Soal"
+                                aria-label={`Duplikat Soal ${idx + 1}`}
+                              >
+                                <Copy className="w-3.5 h-3.5" />
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteQuestion(q.id);
+                                }}
+                                className="p-1 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg min-w-[32px] min-h-[32px] flex items-center justify-center transition-colors"
+                                title="Hapus Soal"
+                                aria-label={`Hapus Soal ${idx + 1}`}
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Clickable Card Body for Quick Edit */}
+                          <div
+                            onClick={() => handleStartEditQuestion(q)}
+                            className="space-y-1 cursor-pointer group"
+                            title="Klik untuk mengedit soal ini"
+                          >
+                            <p className="font-bold text-slate-800 dark:text-slate-200 text-xs line-clamp-2 break-words group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                              {q.text}
+                            </p>
+                            <div className="flex items-center justify-between text-[11px] pt-0.5">
+                              <span className="text-emerald-700 dark:text-emerald-400 font-semibold truncate">
+                                ✓ Kunci: {q.options[q.correctIndex]}
+                              </span>
+                              {q.imageUrl && (
+                                <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium flex items-center gap-0.5 flex-shrink-0">
+                                  <ImageIcon className="w-3 h-3" /> Ada Gambar
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -712,20 +925,47 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
               <div className="lg:col-span-7 2xl:col-span-8">
                 {isAddingQuestion ? (
                   <form
-                    onSubmit={handleSaveQuestion}
+                    onSubmit={(e) => handleSaveQuestion(e, 'continue')}
                     className="bg-white dark:bg-slate-900 rounded-2xl p-5 sm:p-6 border border-slate-200 dark:border-slate-800 shadow-card space-y-4"
                   >
-                    <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-                      <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                        <Plus className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                        Tambah Soal #{questions.length + 1}
-                      </h3>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+                      <div className="flex items-center gap-2">
+                        {editingQuestionId ? (
+                          <>
+                            <div className="w-8 h-8 rounded-lg bg-amber-500 text-white flex items-center justify-center flex-shrink-0 shadow-xs">
+                              <Edit3 className="w-4 h-4" />
+                            </div>
+                            <div>
+                              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                                Edit Soal #{questions.findIndex((q) => q.id === editingQuestionId) + 1}
+                              </h3>
+                              <p className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">
+                                Mode pengeditan butir soal
+                              </p>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center flex-shrink-0 shadow-xs">
+                              <Plus className="w-4 h-4" />
+                            </div>
+                            <div>
+                              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                                Tambah Soal #{questions.length + 1}
+                              </h3>
+                              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                                Masukkan pertanyaan dan opsi jawaban
+                              </p>
+                            </div>
+                          </>
+                        )}
+                      </div>
 
-                      <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
+                      <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl w-full sm:w-auto">
                         <button
                           type="button"
                           onClick={() => handleTypeChange('multiple_choice')}
-                          className={`px-3 py-1 rounded-md text-xs font-semibold transition-all min-h-[34px] ${
+                          className={`flex-1 sm:flex-initial px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all min-h-[36px] flex items-center justify-center ${
                             qType === 'multiple_choice'
                               ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm font-bold'
                               : 'text-slate-600 dark:text-slate-400'
@@ -736,7 +976,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                         <button
                           type="button"
                           onClick={() => handleTypeChange('true_false')}
-                          className={`px-3 py-1 rounded-md text-xs font-semibold transition-all min-h-[34px] ${
+                          className={`flex-1 sm:flex-initial px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all min-h-[36px] flex items-center justify-center ${
                             qType === 'true_false'
                               ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm font-bold'
                               : 'text-slate-600 dark:text-slate-400'
@@ -877,34 +1117,73 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                       />
                     </div>
 
-                    <div className="pt-2 flex gap-2">
-                      {questions.length > 0 && (
-                        <button
-                          type="button"
-                          onClick={() => setIsAddingQuestion(false)}
-                          className="px-4 py-2.5 rounded-xl font-semibold text-xs text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 min-h-[42px]"
-                        >
-                          Tutup Form
-                        </button>
+                    <div className="pt-2 flex flex-wrap sm:flex-nowrap gap-2 items-center">
+                      {editingQuestionId ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={handleCancelEdit}
+                            className="w-full sm:w-auto px-4 py-2.5 rounded-xl font-semibold text-xs text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 min-h-[44px] flex items-center justify-center gap-1.5 transition-colors"
+                          >
+                            <X className="w-4 h-4" /> Batal Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => handleSaveQuestion(e, 'finish')}
+                            className="w-full sm:flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-xl shadow-sm flex items-center justify-center gap-1.5 min-h-[44px] btn-press text-xs sm:text-sm"
+                          >
+                            <Check className="w-4 h-4" />
+                            <span>Perbarui Soal</span>
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          {questions.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => setIsAddingQuestion(false)}
+                              className="w-full sm:w-auto px-4 py-2.5 rounded-xl font-semibold text-xs text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 min-h-[44px] flex items-center justify-center gap-1.5 transition-colors"
+                            >
+                              Tutup Form
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={(e) => handleSaveQuestion(e, 'continue')}
+                            className="w-full sm:flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-xl shadow-sm flex items-center justify-center gap-1.5 min-h-[44px] btn-press text-xs sm:text-sm"
+                            title="Simpan soal ini dan langsung siapkan formulir untuk soal berikutnya"
+                          >
+                            <Plus className="w-4 h-4" />
+                            <span>Simpan & Buat Baru</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => handleSaveQuestion(e, 'finish')}
+                            className="w-full sm:w-auto px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-slate-700 dark:text-slate-200 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 min-h-[44px] flex items-center justify-center gap-1.5 transition-colors border border-slate-200/80 dark:border-slate-700"
+                            title="Simpan soal ini dan tutup formulir"
+                          >
+                            <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                            <span>Simpan & Selesai</span>
+                          </button>
+                        </>
                       )}
-                      <button
-                        type="submit"
-                        className="flex-1 bg-slate-900 hover:bg-slate-800 dark:bg-blue-600 dark:hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-xl shadow-sm flex items-center justify-center gap-1.5 min-h-[42px] btn-press text-xs sm:text-sm"
-                      >
-                        <Plus className="w-4 h-4" />
-                        <span>Simpan Soal ke Bank Soal</span>
-                      </button>
                     </div>
                   </form>
                 ) : (
-                  <div className="text-center py-10 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 space-y-2.5">
-                    <p className="font-semibold text-slate-700 dark:text-slate-300 text-xs sm:text-sm">Formulir soal sedang ditutup.</p>
+                  <div className="text-center py-10 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 space-y-3">
+                    <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto">
+                      <Layers className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-slate-800 dark:text-slate-200 text-sm">Formulir Soal Sedang Ditutup</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                        Pilih butir soal di samping untuk mengedit, atau klik tombol di bawah untuk menambah soal baru.
+                      </p>
+                    </div>
                     <button
-                      onClick={() => {
-                        playClick();
-                        setIsAddingQuestion(true);
-                      }}
-                      className="px-4 py-2 rounded-xl bg-blue-600 text-white font-bold text-xs inline-flex items-center gap-1.5 min-h-[40px]"
+                      type="button"
+                      onClick={handleOpenNewQuestion}
+                      className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm inline-flex items-center gap-2 min-h-[44px] shadow-sm btn-press transition-colors"
                     >
                       <Plus className="w-4 h-4" /> Tambah Soal Baru
                     </button>
@@ -996,14 +1275,29 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
 
               <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1">
                 {questions.map((q, idx) => (
-                  <div key={q.id} className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 flex items-center justify-between text-xs">
-                    <div className="truncate mr-2">
-                      <span className="font-bold text-blue-600 dark:text-blue-400 mr-1.5">#{idx + 1}</span>
-                      <span className="font-medium text-slate-800 dark:text-slate-200">{q.text}</span>
+                  <div
+                    key={q.id}
+                    onClick={() => {
+                      handleStartEditQuestion(q);
+                      setCurrentStep(2);
+                    }}
+                    className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/90 hover:bg-blue-50/60 dark:hover:bg-blue-950/30 border border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-700 flex items-center justify-between text-xs cursor-pointer transition-all group"
+                    title="Klik untuk langsung mengedit soal ini di Langkah 2"
+                  >
+                    <div className="truncate mr-2 min-w-0">
+                      <span className="font-bold text-blue-600 dark:text-blue-400 mr-1.5 flex-shrink-0">#{idx + 1}</span>
+                      <span className="font-medium text-slate-800 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                        {q.text}
+                      </span>
                     </div>
-                    <span className="font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded text-[11px] flex-shrink-0">
-                      {q.options[q.correctIndex]}
-                    </span>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <span className="font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded text-[11px]">
+                        {q.options[q.correctIndex]}
+                      </span>
+                      <span className="p-1 text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 rounded">
+                        <Edit3 className="w-3.5 h-3.5" />
+                      </span>
+                    </div>
                   </div>
                 ))}
               </div>
