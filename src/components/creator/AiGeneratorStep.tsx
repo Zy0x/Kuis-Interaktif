@@ -2436,12 +2436,12 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
 
                 {/* Benar / Salah: gaya label */}
                 {selectedQuestionTypes.includes('true_false') && (
-                  <div className="flex items-start justify-between gap-3 p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-850/50">
-                    <div className="min-w-0">
+                  <div className="flex flex-col gap-2 p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-850/50">
+                    <div>
                       <span className="block text-xs font-bold text-slate-800 dark:text-slate-200 leading-snug">Gaya Label Benar / Salah</span>
-                      <span className="text-[11px] text-slate-400 dark:text-slate-500">Sesuaikan pasangan opsi jawaban</span>
+                      <span className="text-[11px] text-slate-400 dark:text-slate-500">Pilih pasangan opsi jawaban yang sesuai</span>
                     </div>
-                    <div className="flex flex-col gap-1 shrink-0">
+                    <div className="flex items-center gap-1.5 p-1 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
                       {([
                         { val: 'benar_salah', label: 'Benar / Salah' },
                         { val: 'sesuai_tidak', label: 'Sesuai / Tidak' },
@@ -2451,10 +2451,10 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                           key={val}
                           type="button"
                           onClick={() => { playClick(); setTrueFalseStyle(val); }}
-                          className={`px-3 h-7 rounded-lg text-[11px] font-bold transition-all btn-press text-left whitespace-nowrap ${
+                          className={`flex-1 h-8 rounded-lg text-[11px] font-bold transition-all btn-press whitespace-nowrap ${
                             trueFalseStyle === val
                               ? 'bg-emerald-600 text-white shadow-xs'
-                              : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600'
+                              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
                           }`}
                         >
                           {label}
