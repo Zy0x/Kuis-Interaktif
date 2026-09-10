@@ -96,7 +96,9 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
 }) => {
   const [draft] = useState<CreatorDraft | null>(() => (editingQuiz ? null : loadDraft()));
 
-  const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(draft?.currentStep || 1);
+  const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(
+    editingQuiz && editingQuiz.questions && editingQuiz.questions.length > 0 ? 2 : (draft?.currentStep || 1)
+  );
 
   // General Quiz State
   const [title, setTitle] = useState(editingQuiz?.title || draft?.title || '');

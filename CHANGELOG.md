@@ -1,6 +1,40 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.44] - 2026-09-10
+### Redesain Dashboard Guru Clean & Terfokus, Tampilan Terpadu Detail Kuis & Rekap Nilai Siswa, serta Akses Instan Generator Kilat AI
+
+#### 1. Tampilan Dashboard Guru Bersih & Terfokus (Tanpa 3 Tab)
+- **Struktur Antarmuka Lebih Ringkas dan Efisien:**
+  - Menghilangkan navigasi 3 tab (*Bank Kuis*, *Rekap Nilai Siswa*, *Generator Kilat Soal*) di halaman utama dashboard guru guna memberikan fokus maksimal pada manajemen kuis aktif.
+  - Menghadirkan bilah pencarian cerdas terintegrasi untuk mencari judul kuis, mata pelajaran, ataupun 4 digit PIN kelas.
+  - Dilengkapi filter multi-kriteria: Mata Pelajaran (Matematika, IPAS, Bahasa Indonesia, Pendidikan Pancasila, Seni & Bahasa Daerah), Tingkat Kelas (Kelas 1–6), serta Status Akses (Publik/Privat).
+  - Dilengkapi menu pengurutan (*sorting*): Kuis Terbaru, Terlama, Judul A-Z, Judul Z-A, dan Jumlah Soal Terbanyak.
+  - Indikator hasil filter dinamis dengan tombol satu-klik *"Reset Filter"*.
+
+#### 2. Tampilan Terpadu Detail Kuis (`QuizDetail`)
+- **Pusat Informasi & Rekap Nilai Spesifik Tiap Kuis:**
+  - Mengklik kartu kuis atau tombol *"Detail & Nilai"* akan membuka halaman detail khusus kuis tersebut.
+  - Ringkasan metadata kuis lengkap: Emoji sampul, lencana kelulusan, mata pelajaran, tingkat kelas, durasi per butir, dan tanggal rilis.
+  - Manajemen PIN Kelas praktis: Tombol salin PIN satu-klik, acak ulang PIN 4 digit baru, dan pengatur status visibilitas (Publik di Katalog Siswa / Khusus PIN Privat).
+  - Bilah Aksi Guru terpadu: Buka Mode IFP / Layar TV Smartboard Kelas, Cetak Lembar Kerja Siswa (LKS PDF), Salin Tautan Langsung, Duplikasi Kuis, dan Hapus Kuis.
+- **Tab 1: Rekap Nilai Siswa Terperinci:**
+  - 4 Kartu Metrik Utama: Jumlah Siswa Selesai, Rata-Rata Nilai, Skor Tertinggi, dan Rata-Rata Waktu Pengerjaan.
+  - Tombol Ekspor Nilai ke CSV / Excel untuk rekapitulasi nilai rapor guru.
+  - Tabel interaktif responsif menampilkan nama siswa, skor perolehan, akurasi persentase, durasi pengerjaan, dan tanggal waktu pengerjaan.
+- **Tab 2: Pratinjau Butir Soal & Kunci Jawaban:**
+  - Guru dapat membaca seluruh butir soal, gambar ilustrasi materi, opsi jawaban lengkap dengan penanda kunci yang benar, serta pembahasan edukatif.
+  - Tombol pintasan langsung *"Edit Kuis / Tambah Soal"* untuk membuka formulir editor kuis.
+
+#### 3. Generator Kilat AI Terintegrasi pada Tombol "Buat Kuis Baru"
+- **Modal Pemilihan Metode Pembuatan Kuis (`CreateQuizMethodModal`):**
+  - Mengklik tombol `+ Buat Kuis Baru` menampilkan modal pilihan metode yang modern:
+    1. **⚡ Generator Kilat AI (Otomatis):** Cukup tentukan topik materi, mata pelajaran, kelas, jumlah soal (5, 10, 15, atau kustom hingga 50), jenis soal, dan mesin AI yang diinginkan (Kurikulum SD Lokal, Gemini AI, Groq LPU, atau Tempel Teks Dokumen).
+    2. **✏️ Buat Kuis Manual (Dari Nol):** Membuka editor kuis kosong untuk perancangan manual langkah demi langkah.
+  - **Alur Kerja Instan Langsung ke Editor:**
+    - Soal hasil racikan Generator Kilat AI langsung membawa guru ke `QuizCreator` di **Langkah 2 (Bank Soal)** dengan butir-butir soal yang sudah terisi lengkap.
+    - Guru dapat langsung meninjau, mengoreksi teks, menambah opsi, mengganti gambar, atau menambah butir soal baru sebelum disimpan.
+
 ## [2.2.43] - 2026-09-10
 ### Ekspansi Model AI Generasi Baru (Gemini 2.0 Flash Thinking, Groq DeepSeek R1), Generator Gambar Edukasi AI 100% Gratis & Dokumentasi Komprehensif
 

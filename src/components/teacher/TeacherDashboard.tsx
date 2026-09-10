@@ -1,24 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import type { Quiz, TeacherProfile, StudentSubmission, Subject } from '../../types/quiz';
+import React, { useState, useEffect, useMemo } from 'react';
+import type { Quiz, TeacherProfile, Subject } from '../../types/quiz';
 import { MASTER_TEACHER_EMAIL } from '../../types/quiz';
 import { DataManager } from '../../lib/supabaseClient';
 import { useBackHandler } from '../../lib/navigationHistory';
 import { ThemeToggle } from '../common/ThemeToggle';
 import { ConfirmDeleteModal } from '../common/ConfirmDeleteModal';
 import { QuizSettingsModal } from '../common/QuizSettingsModal';
-import { saveNavigationState } from '../../lib/navigationState';
-import { generateAiPrompt } from '../../lib/aiQuestionParser';
-import { generateHybridQuizQuestions, hasGeminiApiKey } from '../../lib/geminiApi';
+import { QuizDetail } from './QuizDetail';
+import { CreateQuizMethodModal } from './CreateQuizMethodModal';
 import { 
   GraduationCap, 
   Plus, 
   Tv, 
   Copy, 
   Check, 
-  Download, 
-  Zap, 
-  BookOpen, 
-  Users, 
   LogOut, 
   ArrowLeft,
   Share2,
@@ -26,10 +21,12 @@ import {
   Globe,
   RotateCcw,
   MoreVertical,
-  Pencil,
   HelpCircle,
   Clock,
-  Sparkles
+  Search,
+  X,
+  BookOpen,
+  BarChart3
 } from 'lucide-react';
 
 const getSubjectBadge = (subject: string) => {
@@ -70,67 +67,45 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   isDark = false,
   onToggleTheme = () => {},
 }) => {
-  const [activeTab, setActiveTab] = useState<'quizzes' | 'submissions' | 'generator'>(() => {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const tabParam = params.get('tab') as 'quizzes' | 'submissions' | 'generator' | null;
-      if (tabParam && ['quizzes', 'submissions', 'generator'].includes(tabParam)) {
-        return tabParam;
-      }
-    } catch {}
-    return 'quizzes';
-  });
-
-  const handleTabChange = (tab: 'quizzes' | 'submissions' | 'generator') => {
-    playClick();
-    setActiveTab(tab);
-    saveNavigationState({
-      screen: 'teacher-dashboard',
-      teacherTab: tab,
-      replace: true,
-    });
-  };
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
-  const [submissions, setSubmissions] = useState<StudentSubmission[]>([]);
+  const [selectedQuizForDetail, setSelectedQuizForDetail] = useState<Quiz | null>(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+  // Search, Filter & Sort States
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterSubject, setFilterSubject] = useState<Subject | 'Semua'>('Semua');
+  const [filterGrade, setFilterGrade] = useState<number | 'Semua'>('Semua');
+  const [filterVisibility, setFilterVisibility] = useState<'all' | 'public' | 'private'>('all');
+  const [sortOption, setSortOption] = useState<'newest' | 'oldest' | 'title_asc' | 'title_desc' | 'questions_desc'>('newest');
+
+  // Copy & Action States
   const [copiedPin, setCopiedPin] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState<string | null>(null);
-
-  // Generator state
-  const [genGrade, setGenGrade] = useState<number>(4);
-  const [genCount, setGenCount] = useState<number>(5);
-  const [genSubject, setGenSubject] = useState<Subject>('IPA');
-  const [genTopic, setGenTopic] = useState<string>('Organ Pernapasan Manusia');
-  const [genLoading, setGenLoading] = useState(false);
-  const [copiedAiPrompt, setCopiedAiPrompt] = useState(false);
-
-  // Delete confirmation state (In-App Modal)
   const [quizToDelete, setQuizToDelete] = useState<Quiz | null>(null);
   const [isDeletingQuiz, setIsDeletingQuiz] = useState(false);
-  const [exportNotice, setExportNotice] = useState<string | null>(null);
-  const isMasterTeacher = teacher.email.trim().toLowerCase() === MASTER_TEACHER_EMAIL.toLowerCase();
-  const [deletedCount, setDeletedCount] = useState<number>(() => DataManager.getDeletedQuizIds().length);
   const [selectedQuizForSettings, setSelectedQuizForSettings] = useState<Quiz | null>(null);
+  const [deletedCount, setDeletedCount] = useState<number>(() => DataManager.getDeletedQuizIds().length);
+  const isMasterTeacher = teacher.email.trim().toLowerCase() === MASTER_TEACHER_EMAIL.toLowerCase();
 
-  // 1. Level 2 (Prioritas 50): Jika berada di tab Submissions / Generator, mundur ke Tab Kuis
-  useBackHandler('teacher-tab-back', 50, () => {
-    if (activeTab !== 'quizzes') {
-      setActiveTab('quizzes');
+  // Navigation back handler
+  useBackHandler('teacher-dashboard-main', 30, () => {
+    if (selectedQuizForDetail) {
+      setSelectedQuizForDetail(null);
       return true;
     }
-    return false;
-  }, activeTab !== 'quizzes');
+    onGoHome();
+    return true;
+  }, true);
 
   useEffect(() => {
     loadData();
   }, []);
 
   const loadData = async () => {
-    // 1. Load instant local cached data first
+    // 1. Instant local cached data
     const all = DataManager.getAllQuizzes({ teacherEmail: teacher.email, teacherId: teacher.id });
     setQuizzes(all);
     setDeletedCount(DataManager.getDeletedQuizIds().length);
-    const subs = await DataManager.getTeacherSubmissions();
-    setSubmissions(subs);
 
     // 2. Query Supabase health and fetch live cloud data
     try {
@@ -138,8 +113,6 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
       if (health.tablesReady) {
         const cloudQuizzes = await DataManager.fetchQuizzesFromCloud({ teacherEmail: teacher.email, teacherId: teacher.id });
         setQuizzes(cloudQuizzes);
-        const cloudSubs = await DataManager.getTeacherSubmissions();
-        setSubmissions(cloudSubs);
       }
     } catch (e) {
       console.warn('TeacherDashboard cloud sync notice:', e);
@@ -155,6 +128,9 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   const handleSaveQuizSettings = async (quizId: string, updates: Partial<Quiz>) => {
     const updated = await DataManager.updateQuizSettings(quizId, updates);
     await loadData();
+    if (selectedQuizForDetail && selectedQuizForDetail.id === quizId) {
+      setSelectedQuizForDetail(updated);
+    }
     setSelectedQuizForSettings(updated);
   };
 
@@ -163,10 +139,6 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
     if (dup) {
       await loadData();
     }
-  };
-
-  const handleViewSubmissionsFromQuiz = (_quiz: Quiz) => {
-    handleTabChange('submissions');
   };
 
   const handleCopyPin = (pin: string) => {
@@ -188,132 +160,131 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
     }
   };
 
-  const handlePromptDeleteQuiz = (quiz: Quiz) => {
-    playClick();
-    setQuizToDelete(quiz);
-  };
-
   const handleConfirmDeleteQuiz = async () => {
     if (!quizToDelete) return;
     setIsDeletingQuiz(true);
     try {
       await DataManager.deleteCustomQuiz(quizToDelete.id);
       await loadData();
+      if (selectedQuizForDetail && selectedQuizForDetail.id === quizToDelete.id) {
+        setSelectedQuizForDetail(null);
+      }
       setQuizToDelete(null);
     } finally {
       setIsDeletingQuiz(false);
     }
   };
 
-  const handleCopyAiPrompt = () => {
-    playClick();
-    const promptText = generateAiPrompt({
-      subject: genSubject,
-      grade: genGrade,
-      topic: genTopic.trim() || 'Kurikulum Merdeka SD',
-      count: genCount,
-      questionType: 'multiple_choice',
-    });
-    navigator.clipboard.writeText(promptText);
-    setCopiedAiPrompt(true);
-    setTimeout(() => setCopiedAiPrompt(false), 3000);
-  };
+  // Filtered & Sorted Quizzes Calculation
+  const filteredQuizzes = useMemo(() => {
+    return quizzes
+      .filter((q) => {
+        // Search query (matches title or pin)
+        if (searchQuery.trim()) {
+          const query = searchQuery.trim().toLowerCase();
+          const matchTitle = q.title.toLowerCase().includes(query);
+          const matchPin = (q.pinCode || '').includes(query);
+          const matchSubject = q.subject.toLowerCase().includes(query);
+          if (!matchTitle && !matchPin && !matchSubject) return false;
+        }
 
-  const handleRunGenerator = async () => {
-    playClick();
-    setGenLoading(true);
-    try {
-      const result = await generateHybridQuizQuestions({
-        topic: genTopic.trim() || 'Materi Pembelajaran',
-        subject: genSubject,
-        grade: genGrade,
-        count: genCount,
-        questionType: 'campuran',
+        // Subject filter
+        if (filterSubject !== 'Semua' && q.subject !== filterSubject) {
+          return false;
+        }
+
+        // Grade filter
+        if (filterGrade !== 'Semua' && q.grade !== filterGrade) {
+          return false;
+        }
+
+        // Visibility filter
+        if (filterVisibility !== 'all') {
+          const qVis = q.visibility || 'public';
+          if (filterVisibility !== qVis) return false;
+        }
+
+        return true;
+      })
+      .sort((a, b) => {
+        if (sortOption === 'title_asc') {
+          return a.title.localeCompare(b.title, 'id');
+        }
+        if (sortOption === 'title_desc') {
+          return b.title.localeCompare(a.title, 'id');
+        }
+        if (sortOption === 'questions_desc') {
+          return (b.questions?.length || 0) - (a.questions?.length || 0);
+        }
+        if (sortOption === 'oldest') {
+          const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          return dateA - dateB;
+        }
+        // Default 'newest'
+        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return dateB - dateA;
       });
-      const questions = result.questions;
+  }, [quizzes, searchQuery, filterSubject, filterGrade, filterVisibility, sortOption]);
 
-      const emojiMap: Record<string, string> = {
-        'Matematika': '📐',
-        'IPA': '🌱',
-        'Bahasa Indonesia': '📚',
-        'Pendidikan Pancasila': '🇮🇩',
-        'Pengetahuan Umum': '💡'
-      };
+  const isFilterActive = searchQuery.trim() !== '' || filterSubject !== 'Semua' || filterGrade !== 'Semua' || filterVisibility !== 'all';
 
-      const finalQuiz: Quiz = {
-        id: 'custom_ai_' + Date.now(),
-        title: `Kuis ${genSubject}: ${genTopic || 'Kurikulum SD'}`,
-        description: `Latihan kuis interaktif mata pelajaran ${genSubject} Kelas ${genGrade} SD tentang ${genTopic || 'materi terkait'}.`,
-        subject: genSubject,
-        grade: genGrade,
-        durationPerQuestionSec: 30,
-        coverEmoji: emojiMap[genSubject] || '🍎',
-        themeColor: 'from-blue-600 to-indigo-600',
-        badgeTitle: 'Bintang Prestasi',
-        questions,
-        visibility: 'public',
-        creatorName: teacher.fullName,
-        creatorId: teacher.id,
-        isPublished: true,
-      };
-
-      await DataManager.saveCustomQuiz(finalQuiz);
-      await loadData();
-      setActiveTab('quizzes');
-    } finally {
-      setGenLoading(false);
-    }
-  };
-
-  const handleExportCSV = () => {
+  const handleResetFilters = () => {
     playClick();
-    if (submissions.length === 0) {
-      setExportNotice('Belum ada data pengerjaan siswa untuk diekspor.');
-      setTimeout(() => setExportNotice(null), 3500);
-      return;
-    }
-
-    const headers = ['Nama Siswa', 'Kuis', 'Nilai', 'Bintang', 'Benar', 'Total Soal', 'Waktu (detik)', 'Waktu Selesai'];
-    const rows = submissions.map((s) => [
-      `"${s.studentName}"`,
-      `"${s.quizTitle}"`,
-      s.score,
-      s.stars,
-      s.correctCount,
-      s.totalCount,
-      s.timeSpentSec,
-      `"${s.submittedAt}"`,
-    ]);
-
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `Rekap_Nilai_KuisSD_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    setSearchQuery('');
+    setFilterSubject('Semua');
+    setFilterGrade('Semua');
+    setFilterVisibility('all');
+    setSortOption('newest');
   };
+
+  // If a quiz is selected for details, render the full-page QuizDetail view
+  if (selectedQuizForDetail) {
+    return (
+      <QuizDetail
+        quiz={selectedQuizForDetail}
+        teacher={teacher}
+        onBack={() => setSelectedQuizForDetail(null)}
+        onEditQuiz={(q) => {
+          setSelectedQuizForDetail(null);
+          onOpenCreator(q);
+        }}
+        onLaunchSmartboard={onLaunchSmartboard}
+        onPrintWorksheet={onPrintWorksheet}
+        onDuplicateQuiz={handleDuplicateQuiz}
+        onDeleteQuiz={async (q) => {
+          await DataManager.deleteCustomQuiz(q.id);
+          await loadData();
+          setSelectedQuizForDetail(null);
+        }}
+        onUpdateQuizSettings={handleSaveQuizSettings}
+        playClick={playClick}
+      />
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-16 flex flex-col">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-20 flex flex-col animate-fade-in">
       {/* Top Navbar */}
-      <header className="w-full bg-white dark:bg-slate-900 border-b border-slate-200/90 dark:border-slate-800 px-3 sm:px-8 lg:px-12 pt-[max(env(safe-area-inset-top),0.5rem)] pb-2 xs:pb-2.5 sm:pb-3 sticky top-0 z-30 shadow-sm transition-colors">
+      <header className="w-full bg-white dark:bg-slate-900 border-b border-slate-200/90 dark:border-slate-800 px-3 sm:px-8 lg:px-12 pt-[max(env(safe-area-inset-top),0.5rem)] pb-2 xs:pb-2.5 sm:pb-3 sticky top-0 z-30 shadow-xs transition-colors">
         <div className="w-full max-w-[2000px] mx-auto flex items-center justify-between gap-1.5 xs:gap-2 sm:gap-3">
           
           <div className="flex items-center gap-1.5 xs:gap-2 sm:gap-3 min-w-0">
             <button
+              type="button"
               onClick={() => {
                 playClick();
                 onGoHome();
               }}
               className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 min-h-[40px] min-w-[40px] flex items-center justify-center transition-colors flex-shrink-0"
               title="Kembali ke Beranda"
+              aria-label="Kembali ke Beranda"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
 
-            <div className="hidden xs:flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-blue-600 text-white font-bold text-base sm:text-xl shadow-sm flex-shrink-0">
+            <div className="hidden xs:flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-blue-600 text-white font-bold text-base sm:text-xl shadow-xs flex-shrink-0">
               <GraduationCap className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
 
@@ -337,19 +308,21 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
             <ThemeToggle isDark={isDark} onToggle={onToggleTheme} />
 
             <button
+              type="button"
               onClick={() => {
                 playClick();
-                onOpenCreator();
+                setIsCreateModalOpen(true);
               }}
-              className="p-2 sm:px-3 sm:py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm min-h-[40px] min-w-[40px] flex items-center justify-center shadow-sm transition-colors btn-press flex-shrink-0"
+              className="p-2 sm:px-3.5 sm:py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm min-h-[40px] min-w-[40px] flex items-center justify-center shadow-xs transition-all btn-press flex-shrink-0"
               title="Buat Kuis Baru"
               aria-label="Buat Kuis Baru"
             >
               <Plus className="w-4 h-4 flex-shrink-0" />
-              <span className="hidden sm:inline ml-1">Buat Kuis Baru</span>
+              <span className="hidden sm:inline ml-1.5">Buat Kuis Baru</span>
             </button>
 
             <button
+              type="button"
               onClick={() => {
                 playClick();
                 onLogout();
@@ -368,565 +341,404 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
       {/* Main Container */}
       <main className="w-full max-w-[2000px] mx-auto px-3 xs:px-4 sm:px-8 lg:px-12 pt-5 sm:pt-6 space-y-6 flex-1">
         
-        {/* Navigation Tabs */}
-        <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-2 overflow-x-auto scrollbar-hover">
-          <button
-            onClick={() => handleTabChange('quizzes')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all min-h-[44px] whitespace-nowrap flex-shrink-0 ${
-              activeTab === 'quizzes'
-                ? 'bg-slate-900 dark:bg-blue-600 text-white shadow-sm'
-                : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700'
-            }`}
-          >
-            <BookOpen className="w-4 h-4" />
-            <span>Bank Kuis & PIN Kelas ({quizzes.length})</span>
-          </button>
+        {/* Section Header & Subtitle */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <BookOpen className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              <span>Koleksi Kuis Saya ({quizzes.length})</span>
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Pilih kuis untuk melihat detail, memeriksa rekap nilai siswa, atau menyajikan di Smartboard.
+            </p>
+          </div>
 
-          <button
-            onClick={() => handleTabChange('submissions')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all min-h-[44px] whitespace-nowrap flex-shrink-0 ${
-              activeTab === 'submissions'
-                ? 'bg-slate-900 dark:bg-blue-600 text-white shadow-sm'
-                : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700'
-            }`}
-          >
-            <Users className="w-4 h-4" />
-            <span>Rekap Nilai Siswa ({submissions.length})</span>
-          </button>
-
-          <button
-            onClick={() => handleTabChange('generator')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all min-h-[44px] whitespace-nowrap ${
-              activeTab === 'generator'
-                ? 'bg-slate-900 dark:bg-blue-600 text-white shadow-sm'
-                : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700'
-            }`}
-          >
-            <Zap className="w-4 h-4 text-amber-400" />
-            <span>Generator Kilat Soal</span>
-          </button>
+          {isMasterTeacher && deletedCount > 0 && (
+            <button
+              type="button"
+              onClick={handleRestoreDefaultQuizzes}
+              className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 text-xs font-semibold flex items-center gap-1.5 min-h-[38px] self-start sm:self-auto"
+            >
+              <RotateCcw className="w-3.5 h-3.5 text-blue-500" />
+              <span>Pulihkan Kuis Default ({deletedCount})</span>
+            </button>
+          )}
         </div>
 
-        {/* TAB 1: BANK KUIS & PIN KELAS */}
-        {activeTab === 'quizzes' && (
-          <section className="space-y-4 animate-fade-in">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div>
-                <h2 className="text-base font-bold text-slate-900 dark:text-white">Koleksi Kuis Aktif</h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Bagikan 4 digit PIN kepada siswa atau buka di Smartboard / TV Interaktif ruang kelas.
-                </p>
-              </div>
-
-              {isMasterTeacher && deletedCount > 0 && (
-                <button
-                  onClick={handleRestoreDefaultQuizzes}
-                  className="self-start sm:self-center py-2 px-3 rounded-xl font-bold text-xs text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/50 flex items-center gap-1.5 min-h-[40px] transition-colors btn-press"
-                  title="Pulihkan kuis bawaan yang pernah dihapus saat pengujian"
-                >
-                  <RotateCcw className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                  <span>Pulihkan Kuis Bawaan ({deletedCount})</span>
-                </button>
-              )}
-            </div>
-
-            {quizzes.length === 0 ? (
-              <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 sm:p-12 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 space-y-4 max-w-lg mx-auto my-6">
-                <div className="w-16 h-16 mx-auto rounded-2xl bg-blue-50 dark:bg-blue-950/50 flex items-center justify-center text-3xl">
-                  📚
-                </div>
-                <div className="space-y-1">
-                  <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
-                    Koleksi Kuis Anda Masih Kosong
-                  </h3>
-                  <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-                    Mulai buat kuis interaktif buatan Anda sendiri atau gunakan Generator Kilat Soal untuk membuat kuis otomatis.
-                  </p>
-                </div>
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
-                  <button
-                    onClick={() => {
-                      playClick();
-                      onOpenCreator();
-                    }}
-                    className="w-full sm:w-auto px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-white bg-blue-600 hover:bg-blue-700 min-h-[44px] flex items-center justify-center gap-2 shadow-sm transition-all btn-press"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>Buat Kuis Baru</span>
-                  </button>
-                  {isMasterTeacher && deletedCount > 0 ? (
-                    <button
-                      onClick={handleRestoreDefaultQuizzes}
-                      className="w-full sm:w-auto px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 dark:hover:bg-amber-900/50 border border-amber-200 dark:border-amber-800 min-h-[44px] flex items-center justify-center gap-2 transition-colors btn-press"
-                    >
-                      <RotateCcw className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                      <span>Pulihkan Kuis Bawaan ({deletedCount})</span>
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => {
-                        playClick();
-                        setActiveTab('generator');
-                      }}
-                      className="w-full sm:w-auto px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 min-h-[44px] flex items-center justify-center gap-2 transition-colors btn-press"
-                    >
-                      <Zap className="w-4 h-4 text-amber-500" />
-                      <span>Generator Kilat</span>
-                    </button>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 3xl:grid-cols-6 gap-4 sm:gap-5">
-                {quizzes.map((quiz) => {
-                  return (
-                    <div
-                      key={quiz.id}
-                      className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-slate-200 dark:border-slate-800 shadow-card flex flex-col justify-between hover:border-blue-300 dark:hover:border-blue-500/50 transition-all space-y-3.5"
-                    >
-                      <div className="space-y-3">
-                        {/* Row 1: Header (PIN Left, Visibility & Three-Dots Right) */}
-                        <div className="flex items-center justify-between gap-2">
-                          {/* PIN Pill */}
-                          <div className="flex items-center gap-1.5 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-850 px-2.5 py-1 rounded-xl whitespace-nowrap flex-shrink-0">
-                            <span className="text-[10px] uppercase font-bold text-blue-700 dark:text-blue-300">PIN:</span>
-                            <span className="font-mono font-black text-xs sm:text-sm text-blue-900 dark:text-blue-100 tracking-wider">
-                              {quiz.pinCode || '1001'}
-                            </span>
-                            <button
-                              onClick={() => handleCopyPin(quiz.pinCode || '1001')}
-                              className="p-1 hover:text-blue-600 dark:hover:text-blue-300 rounded transition-colors flex-shrink-0"
-                              title="Salin PIN"
-                              aria-label={`Salin PIN ${quiz.pinCode || '1001'}`}
-                            >
-                              {copiedPin === (quiz.pinCode || '1001') ? (
-                                <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                              ) : (
-                                <Copy className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                              )}
-                            </button>
-                          </div>
-
-                          {/* Visibility Pill & Three-Dots Menu */}
-                          <div className="flex items-center gap-1.5 flex-shrink-0">
-                            <span
-                              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold border select-none whitespace-nowrap flex-shrink-0 ${
-                                quiz.visibility === 'private'
-                                  ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800'
-                                  : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
-                              }`}
-                            >
-                              {quiz.visibility === 'private' ? (
-                                <>
-                                  <Lock className="w-3 h-3 text-amber-600 dark:text-amber-400 flex-shrink-0" />
-                                  <span>Privat</span>
-                                </>
-                              ) : (
-                                <>
-                                  <Globe className="w-3 h-3 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
-                                  <span>Publik</span>
-                                </>
-                              )}
-                            </span>
-
-                            <button
-                              type="button"
-                              onClick={() => {
-                                playClick();
-                                setSelectedQuizForSettings(quiz);
-                              }}
-                              className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors flex-shrink-0"
-                              title="Pengaturan & Konfigurasi Kuis"
-                              aria-label={`Pengaturan kuis ${quiz.title}`}
-                            >
-                              <MoreVertical className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Row 2: Emoji & Details */}
-                        <div className="flex items-start gap-3 min-w-0">
-                          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-750 flex items-center justify-center text-2xl flex-shrink-0 shadow-xs border border-slate-200/60 dark:border-slate-700/60 select-none">
-                            {quiz.coverEmoji}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
-                              <span className="inline-flex items-center text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700 whitespace-nowrap flex-shrink-0">
-                                Kelas {quiz.grade}
-                              </span>
-                              <span className={`inline-flex items-center text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-lg border whitespace-nowrap truncate max-w-[140px] xs:max-w-[170px] ${getSubjectBadge(quiz.subject)}`}>
-                                {quiz.subject}
-                              </span>
-                            </div>
-                            <h3 className="font-bold text-slate-900 dark:text-white text-sm sm:text-base leading-snug line-clamp-2" title={quiz.title}>
-                              {quiz.title}
-                            </h3>
-                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2 leading-relaxed">
-                              {quiz.description || 'Kuis interaktif tematik'}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-3">
-                        {/* Row 3: Meta Info */}
-                        <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center justify-between border-t border-slate-100 dark:border-slate-800 pt-2.5">
-                          <span className="inline-flex items-center gap-1 font-medium whitespace-nowrap">
-                            <HelpCircle className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
-                            {quiz.questions.length} Soal
-                          </span>
-                          <span className="text-slate-300 dark:text-slate-700">•</span>
-                          <span className="inline-flex items-center gap-1 font-medium whitespace-nowrap">
-                            <Clock className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
-                            {quiz.durationPerQuestionSec}s / soal
-                          </span>
-                        </div>
-
-                        {/* Row 4: Action Buttons (1. Mode IFP, 2. Bagi Tautan, 3. Edit) */}
-                        <div className="space-y-2">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              playClick();
-                              onLaunchSmartboard(quiz);
-                            }}
-                            className="w-full py-2.5 px-3 rounded-xl font-bold text-xs sm:text-sm text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm flex items-center justify-center gap-2 min-h-[44px] btn-press transition-all"
-                            title="Buka Kuis di Smartboard / TV Interaktif (Mode IFP)"
-                          >
-                            <Tv className="w-4 h-4" />
-                            <span>Mode IFP</span>
-                          </button>
-
-                          <div className="grid grid-cols-2 gap-2">
-                            <button
-                              type="button"
-                              onClick={() => handleCopyLink(quiz)}
-                              className="py-2.5 px-2 rounded-xl font-semibold text-xs text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 flex items-center justify-center gap-1.5 min-h-[44px] transition-colors btn-press whitespace-nowrap"
-                              title="Salin Tautan Kuis"
-                            >
-                              {copiedLink === quiz.id ? (
-                                <>
-                                  <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
-                                  <span>Tersalin</span>
-                                </>
-                              ) : (
-                                <>
-                                  <Share2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
-                                  <span>Bagi Tautan</span>
-                                </>
-                              )}
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => {
-                                playClick();
-                                onOpenCreator(quiz);
-                              }}
-                              className="py-2.5 px-2 rounded-xl font-semibold text-xs text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 flex items-center justify-center gap-1.5 min-h-[44px] transition-colors btn-press whitespace-nowrap"
-                              title="Edit Kuis"
-                            >
-                              <Pencil className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
-                              <span>Edit</span>
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </section>
-        )}
-
-        {/* TAB 2: REKAP NILAI SISWA */}
-        {activeTab === 'submissions' && (
-          <section className="space-y-4 animate-fade-in">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
-              <div>
-                <h2 className="text-base font-bold text-slate-900 dark:text-white">Rekap Nilai Siswa Real-Time</h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Data rekap hasil pengerjaan kuis siswa tersimpan rapi secara otomatis.
-                </p>
-              </div>
-
+        {/* Search, Filters & Sorting Bar */}
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-3.5 sm:p-4 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
+          
+          {/* Row 1: Search Bar */}
+          <div className="relative">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Cari judul kuis, mata pelajaran, atau PIN kelas 4-digit..."
+              className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-slate-900 dark:text-white text-xs sm:text-sm font-medium focus:outline-none focus:border-blue-500 min-h-[42px]"
+            />
+            {searchQuery && (
               <button
-                onClick={handleExportCSV}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700 min-h-[44px] transition-colors btn-press self-start sm:self-auto"
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1"
               >
-                <Download className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                <span>Unduh Rekap (CSV/Excel)</span>
+                <X className="w-4 h-4" />
               </button>
+            )}
+          </div>
+
+          {/* Row 2: Filter Selectors & Sorting */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-2 pt-1">
+            {/* Filter Mapel */}
+            <div>
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                Mata Pelajaran:
+              </label>
+              <select
+                value={filterSubject}
+                onChange={(e) => setFilterSubject(e.target.value as any)}
+                className="w-full px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-semibold focus:outline-none min-h-[38px]"
+              >
+                <option value="Semua">Semua Mapel</option>
+                <option value="Matematika">Matematika</option>
+                <option value="IPA">IPA</option>
+                <option value="Bahasa Indonesia">Bahasa Indonesia</option>
+                <option value="Pendidikan Pancasila">Pancasila</option>
+                <option value="Pengetahuan Umum">Umum</option>
+              </select>
             </div>
 
-            {exportNotice && (
-              <div className="p-3.5 bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 text-xs font-semibold rounded-xl flex items-center gap-2 animate-fade-in">
-                <span>⚠️</span>
-                <span>{exportNotice}</span>
-              </div>
-            )}
-
-            {submissions.length === 0 ? (
-              <div className="bg-white dark:bg-slate-900 rounded-2xl p-12 text-center border border-dashed border-slate-200 dark:border-slate-800">
-                <div className="text-4xl mb-2">📋</div>
-                <h3 className="font-bold text-slate-800 dark:text-slate-200 text-base">Belum Ada Hasil Kuis Siswa</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">
-                  Bagikan PIN kuis kepada siswa di kelas. Saat siswa menyelesaikan kuis, nilainya akan otomatis muncul di sini.
-                </p>
-              </div>
-            ) : (
-              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-card">
-                <div className="overflow-x-auto scrollbar-hover">
-                  <table className="w-full text-left text-xs sm:text-sm">
-                    <thead className="bg-slate-50 dark:bg-slate-850 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 font-bold">
-                      <tr>
-                        <th className="p-3.5">Nama Siswa</th>
-                        <th className="p-3.5">Judul Kuis</th>
-                        <th className="p-3.5 text-center">Nilai</th>
-                        <th className="p-3.5 text-center">Bintang</th>
-                        <th className="p-3.5 text-center">Akurasi</th>
-                        <th className="p-3.5 text-center">Durasi</th>
-                        <th className="p-3.5">Waktu</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                      {submissions.map((sub) => (
-                        <tr key={sub.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
-                          <td className="p-3.5 font-bold text-slate-900 dark:text-white whitespace-nowrap">
-                            {sub.studentName}
-                          </td>
-                          <td className="p-3.5 text-slate-700 dark:text-slate-300 max-w-[200px] truncate">
-                            {sub.quizTitle}
-                          </td>
-                          <td className="p-3.5 text-center font-black text-blue-600 dark:text-blue-400 text-base">
-                            {sub.score}
-                          </td>
-                          <td className="p-3.5 text-center whitespace-nowrap">
-                            <span className="text-amber-500 font-bold">
-                              {'⭐'.repeat(sub.stars)}
-                            </span>
-                          </td>
-                          <td className="p-3.5 text-center text-slate-600 dark:text-slate-300 font-medium">
-                            {sub.correctCount} / {sub.totalCount}
-                          </td>
-                          <td className="p-3.5 text-center text-slate-500 dark:text-slate-400 font-medium">
-                            {sub.timeSpentSec}s
-                          </td>
-                          <td className="p-3.5 text-slate-400 dark:text-slate-500 text-xs whitespace-nowrap">
-                            {sub.submittedAt}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-          </section>
-        )}
-
-        {/* TAB 3: GENERATOR KUIS AI & KILAT */}
-        {activeTab === 'generator' && (
-          <section className="max-w-3xl 2xl:max-w-4xl mx-auto bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-card space-y-6 animate-fade-in">
-            <div className="space-y-2 text-center">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center mx-auto text-2xl shadow-sm">
-                <Sparkles className="w-6 h-6" />
-              </div>
-              <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
-                Generator Kuis AI & Kilat
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 max-w-md mx-auto">
-                Buat satu paket kuis interaktif lengkap dalam hitungan detik atau buat template prompt standar untuk ChatGPT & Gemini.
-              </p>
+            {/* Filter Kelas */}
+            <div>
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                Tingkat Kelas:
+              </label>
+              <select
+                value={filterGrade}
+                onChange={(e) => setFilterGrade(e.target.value === 'Semua' ? 'Semua' : Number(e.target.value))}
+                className="w-full px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-semibold focus:outline-none min-h-[38px]"
+              >
+                <option value="Semua">Semua Kelas</option>
+                <option value="1">Kelas 1 SD</option>
+                <option value="2">Kelas 2 SD</option>
+                <option value="3">Kelas 3 SD</option>
+                <option value="4">Kelas 4 SD</option>
+                <option value="5">Kelas 5 SD</option>
+                <option value="6">Kelas 6 SD</option>
+              </select>
             </div>
 
-            <div className="space-y-4 pt-2">
-              {/* Input Topik */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                  Topik atau Materi Pembelajaran:
-                </label>
-                <input
-                  type="text"
-                  value={genTopic}
-                  onChange={(e) => setGenTopic(e.target.value)}
-                  placeholder="Contoh: Organ Pernapasan Manusia, Bilangan Pecahan, Sila Pancasila..."
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium text-xs sm:text-sm focus:outline-none focus:border-blue-500 min-h-[44px]"
-                />
-              </div>
+            {/* Filter Visibilitas */}
+            <div>
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                Status Akses:
+              </label>
+              <select
+                value={filterVisibility}
+                onChange={(e) => setFilterVisibility(e.target.value as any)}
+                className="w-full px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-semibold focus:outline-none min-h-[38px]"
+              >
+                <option value="all">Semua Status</option>
+                <option value="public">🌐 Publik</option>
+                <option value="private">🔒 Privat</option>
+              </select>
+            </div>
 
-              {/* Saran Topik Populer */}
-              <div className="space-y-1.5">
-                <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
-                  Saran Topik Kurikulum SD:
-                </span>
-                <div className="flex flex-wrap gap-1.5">
-                  {[
-                    'Organ Pernapasan Manusia',
-                    'Sistem Pencernaan & Nutrisi',
-                    'Pecahan & Bilangan Cacah',
-                    'Pengamalan Sila Pancasila',
-                    'Siklus Air & Cuaca'
-                  ].map((st) => (
-                    <button
-                      key={st}
-                      type="button"
-                      onClick={() => {
-                        playClick();
-                        setGenTopic(st);
-                      }}
-                      className="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 transition-colors border border-slate-200/80 dark:border-slate-700 min-h-[32px]"
-                    >
-                      + {st}
-                    </button>
-                  ))}
-                </div>
-              </div>
+            {/* Sorting */}
+            <div className="col-span-2 sm:col-span-1 lg:col-span-2">
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                Urutkan Berdasarkan:
+              </label>
+              <div className="flex items-center gap-2">
+                <select
+                  value={sortOption}
+                  onChange={(e) => setSortOption(e.target.value as any)}
+                  className="w-full px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-semibold focus:outline-none min-h-[38px]"
+                >
+                  <option value="newest">🕒 Terbaru Dibuat</option>
+                  <option value="oldest">⏳ Terlama Dibuat</option>
+                  <option value="title_asc">🔤 Judul (A - Z)</option>
+                  <option value="title_desc">🔤 Judul (Z - A)</option>
+                  <option value="questions_desc">📊 Soal Terbanyak</option>
+                </select>
 
-              {/* Mapel & Kelas & Jumlah */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Mata Pelajaran:
-                  </label>
-                  <select
-                    value={genSubject}
-                    onChange={(e) => setGenSubject(e.target.value as Subject)}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-semibold text-xs sm:text-sm min-h-[42px]"
+                {isFilterActive && (
+                  <button
+                    type="button"
+                    onClick={handleResetFilters}
+                    className="p-2 rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-bold whitespace-nowrap min-h-[38px] flex items-center gap-1 border border-rose-200 dark:border-rose-900/60"
+                    title="Reset Filter"
                   >
-                    <option value="IPA">IPA (Sains)</option>
-                    <option value="Matematika">Matematika</option>
-                    <option value="Bahasa Indonesia">Bahasa Indonesia</option>
-                    <option value="Pendidikan Pancasila">Pendidikan Pancasila</option>
-                    <option value="Pengetahuan Umum">Pengetahuan Umum</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Tingkat Kelas:
-                  </label>
-                  <div className="grid grid-cols-6 gap-1">
-                    {[1, 2, 3, 4, 5, 6].map((g) => (
-                      <button
-                        key={g}
-                        type="button"
-                        onClick={() => {
-                          playClick();
-                          setGenGrade(g);
-                        }}
-                        className={`py-2 rounded-lg font-bold text-xs transition-all min-h-[40px] ${
-                          genGrade === g
-                            ? 'bg-blue-600 text-white shadow-sm'
-                            : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-                        }`}
-                      >
-                        {g}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Jumlah Soal:
-                  </label>
-                  <div className="grid grid-cols-3 gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
-                    {[3, 5, 10].map((cnt) => (
-                      <button
-                        key={cnt}
-                        type="button"
-                        onClick={() => {
-                          playClick();
-                          setGenCount(cnt);
-                        }}
-                        className={`py-1.5 rounded-lg text-xs font-bold transition-all min-h-[36px] ${
-                          genCount === cnt
-                            ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm'
-                            : 'text-slate-600 dark:text-slate-400'
-                        }`}
-                      >
-                        {cnt} Soal
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Action Buttons: Copy Prompt vs Direct Generate */}
-              <div className="pt-2 flex flex-col sm:flex-row gap-3">
-                <button
-                  type="button"
-                  onClick={handleCopyAiPrompt}
-                  className="flex-1 py-3 px-4 rounded-xl font-bold text-xs sm:text-sm text-slate-700 dark:text-slate-200 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 border border-slate-200/80 dark:border-slate-700 min-h-[48px] flex items-center justify-center gap-2 transition-colors btn-press"
-                  title="Salin prompt standar untuk digunakan di ChatGPT, Gemini, atau Claude"
-                >
-                  {copiedAiPrompt ? (
-                    <>
-                      <Check className="w-4 h-4 text-emerald-600" />
-                      <span className="text-emerald-700 dark:text-emerald-400">Prompt AI Tersalin!</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-4 h-4 text-slate-500" />
-                      <span>Salin Prompt untuk ChatGPT/Gemini</span>
-                    </>
-                  )}
-                </button>
-
-                <button
-                  type="button"
-                  disabled={genLoading}
-                  onClick={handleRunGenerator}
-                  className="flex-1 py-3 px-6 rounded-xl font-bold text-xs sm:text-sm text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-sm flex items-center justify-center gap-2 min-h-[48px] btn-press transition-all disabled:opacity-50"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  <span>{genLoading ? 'Membuat Paket Kuis...' : (hasGeminiApiKey() ? 'Buat via Gemini AI & Terbitkan' : 'Generate & Terbitkan Kuis')}</span>
-                </button>
+                    <X className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Reset</span>
+                  </button>
+                )}
               </div>
             </div>
-          </section>
-        )}
+          </div>
 
+          {/* Results Counter */}
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-800 text-[11px] font-medium text-slate-500 dark:text-slate-400 flex items-center justify-between">
+            <span>
+              Menampilkan <strong>{filteredQuizzes.length}</strong> dari <strong>{quizzes.length}</strong> kuis
+            </span>
+            {isFilterActive && (
+              <span className="text-blue-600 dark:text-blue-400 font-semibold">
+                Filter sedang diterapkan
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Quizzes List Cards Grid */}
+        {filteredQuizzes.length === 0 ? (
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-12 text-center border border-dashed border-slate-200 dark:border-slate-800 space-y-3">
+            <div className="text-4xl">🔍</div>
+            <h3 className="font-bold text-slate-800 dark:text-slate-200 text-base">
+              Tidak Ada Kuis yang Sesuai
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto leading-relaxed">
+              {isFilterActive
+                ? 'Coba ubah kata kunci pencarian atau reset filter untuk menampilkan kuis lainnya.'
+                : 'Belum ada kuis yang dibuat. Klik tombol Buat Kuis Baru untuk meracik kuis pertama Anda!'}
+            </p>
+            {isFilterActive ? (
+              <button
+                type="button"
+                onClick={handleResetFilters}
+                className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-bold text-xs"
+              >
+                Reset Filter Pencarian
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setIsCreateModalOpen(true);
+                }}
+                className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-sm"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Buat Kuis Baru Sekarang</span>
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-5">
+            {filteredQuizzes.map((quiz) => (
+              <div
+                key={quiz.id}
+                onClick={() => {
+                  playClick();
+                  setSelectedQuizForDetail(quiz);
+                }}
+                className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md hover:border-blue-400 dark:hover:border-blue-500/60 transition-all flex flex-col justify-between gap-4 group cursor-pointer"
+              >
+                <div className="space-y-3.5">
+                  {/* Row 1: PIN Box, Visibility & Three Dots */}
+                  <div className="flex items-center justify-between gap-2">
+                    
+                    {/* PIN Badge with Quick Copy */}
+                    <div className="flex items-center gap-1.5 bg-blue-50/90 dark:bg-blue-950/60 px-2.5 py-1 rounded-xl border border-blue-200/80 dark:border-blue-800/80">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">PIN:</span>
+                      <span className="font-mono font-black text-xs text-blue-700 dark:text-blue-300 tracking-wider">
+                        {quiz.pinCode || '1001'}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCopyPin(quiz.pinCode || '1001');
+                        }}
+                        className="p-1 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-lg text-slate-500 hover:text-blue-600 transition-colors"
+                        title="Salin PIN"
+                      >
+                        {copiedPin === (quiz.pinCode || '1001') ? (
+                          <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                        ) : (
+                          <Copy className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Visibility & Settings Button */}
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <span
+                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold border ${
+                          quiz.visibility === 'private'
+                            ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800'
+                            : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
+                        }`}
+                      >
+                        {quiz.visibility === 'private' ? (
+                          <>
+                            <Lock className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+                            <span>Privat</span>
+                          </>
+                        ) : (
+                          <>
+                            <Globe className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                            <span>Publik</span>
+                          </>
+                        )}
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          playClick();
+                          setSelectedQuizForSettings(quiz);
+                        }}
+                        className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl min-h-[40px] min-w-[40px] flex items-center justify-center transition-colors"
+                        title="Pengaturan Kuis"
+                      >
+                        <MoreVertical className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Row 2: Emoji & Details */}
+                  <div className="flex items-start gap-3 min-w-0">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-750 flex items-center justify-center text-2xl flex-shrink-0 shadow-xs border border-slate-200/60 dark:border-slate-700/60 select-none">
+                      {quiz.coverEmoji}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
+                        <span className="inline-flex items-center text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700 whitespace-nowrap">
+                          Kelas {quiz.grade}
+                        </span>
+                        <span className={`inline-flex items-center text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-lg border whitespace-nowrap truncate max-w-[140px] ${getSubjectBadge(quiz.subject)}`}>
+                          {quiz.subject}
+                        </span>
+                      </div>
+                      <h3 className="font-bold text-slate-900 dark:text-white text-sm sm:text-base leading-snug line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" title={quiz.title}>
+                        {quiz.title}
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2 leading-relaxed">
+                        {quiz.description || 'Kuis interaktif tematik'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800">
+                  {/* Meta Info */}
+                  <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center justify-between">
+                    <span className="inline-flex items-center gap-1 font-medium whitespace-nowrap">
+                      <HelpCircle className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
+                      {quiz.questions.length} Soal
+                    </span>
+                    <span className="text-slate-300 dark:text-slate-700">•</span>
+                    <span className="inline-flex items-center gap-1 font-medium whitespace-nowrap">
+                      <Clock className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+                      {quiz.durationPerQuestionSec}s / soal
+                    </span>
+                  </div>
+
+                  {/* Actions Grid */}
+                  <div className="space-y-2">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        playClick();
+                        onLaunchSmartboard(quiz);
+                      }}
+                      className="w-full py-2.5 px-3 rounded-xl font-bold text-xs sm:text-sm text-white bg-indigo-600 hover:bg-indigo-700 shadow-xs flex items-center justify-center gap-2 min-h-[44px] btn-press transition-all"
+                      title="Buka Kuis di Smartboard / TV Interaktif (Mode IFP)"
+                    >
+                      <Tv className="w-4 h-4" />
+                      <span>Mode IFP</span>
+                    </button>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCopyLink(quiz);
+                        }}
+                        className="py-2.5 px-2 rounded-xl font-semibold text-xs text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 flex items-center justify-center gap-1.5 min-h-[44px] transition-colors btn-press whitespace-nowrap"
+                        title="Salin Tautan Kuis"
+                      >
+                        {copiedLink === quiz.id ? (
+                          <>
+                            <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                            <span>Tersalin</span>
+                          </>
+                        ) : (
+                          <>
+                            <Share2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                            <span>Bagi Tautan</span>
+                          </>
+                        )}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          playClick();
+                          setSelectedQuizForDetail(quiz);
+                        }}
+                        className="py-2.5 px-2 rounded-xl font-semibold text-xs text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200/80 dark:border-blue-800/80 flex items-center justify-center gap-1.5 min-h-[44px] transition-colors btn-press whitespace-nowrap"
+                        title="Lihat Detail Kuis & Rekap Nilai"
+                      >
+                        <BarChart3 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                        <span>Detail & Nilai</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </main>
 
-      {/* Interactive Bottom Sheet for Quiz Settings & Reconfiguration */}
+      {/* Modal Pemilihan Metode Buat Kuis Baru */}
+      <CreateQuizMethodModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        teacher={teacher}
+        onSelectManual={() => onOpenCreator()}
+        onSelectGeneratedDraft={(draft) => onOpenCreator(draft)}
+        playClick={playClick}
+      />
+
+      {/* Modal Pengaturan Kuis Cepat (Titik Tiga) */}
       <QuizSettingsModal
         isOpen={Boolean(selectedQuizForSettings)}
+        onClose={() => setSelectedQuizForSettings(null)}
         quiz={selectedQuizForSettings}
-        onClose={() => {
-          playClick();
-          setSelectedQuizForSettings(null);
-        }}
         onDuplicate={handleDuplicateQuiz}
-        onViewSubmissions={handleViewSubmissionsFromQuiz}
+        onViewSubmissions={(q) => {
+          setSelectedQuizForSettings(null);
+          setSelectedQuizForDetail(q);
+        }}
         onPrintWorksheet={onPrintWorksheet}
         onSaveSettings={handleSaveQuizSettings}
         onRequestDelete={(q) => {
           setSelectedQuizForSettings(null);
-          handlePromptDeleteQuiz(q);
+          setQuizToDelete(q);
         }}
-        canDelete={Boolean(
-          selectedQuizForSettings && (
-            isMasterTeacher ||
-            selectedQuizForSettings.creatorId === teacher.id ||
-            selectedQuizForSettings.id.startsWith('custom_')
-          )
-        )}
+        canDelete={true}
         playClick={playClick}
       />
 
-      {/* In-App Custom Delete Confirmation Modal */}
+      {/* Modal Konfirmasi Hapus Kuis */}
       <ConfirmDeleteModal
         isOpen={Boolean(quizToDelete)}
+        title="Hapus Kuis Ini?"
         quizTitle={quizToDelete?.title}
+        description={`Apakah Anda yakin ingin menghapus kuis "${quizToDelete?.title}"? Seluruh butir soal dan data nilai siswa terkait akan dihapus secara permanen.`}
         isLoading={isDeletingQuiz}
         onConfirm={handleConfirmDeleteQuiz}
-        onCancel={() => {
-          playClick();
-          setQuizToDelete(null);
-        }}
+        onCancel={() => setQuizToDelete(null)}
       />
     </div>
   );
