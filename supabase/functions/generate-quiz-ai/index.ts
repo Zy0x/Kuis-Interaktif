@@ -202,6 +202,108 @@ KEMBALIKAN HANYA ARRAY JSON MURNI DENGAN FORMAT:
       );
     }
 
+    // 3. Action: Generate Capaian Pembelajaran (CP) Spesifik Per Tingkat Kelas SD
+    if (action === "generate_cp") {
+      const { 
+        subject = "IPA", 
+        grade = 4, 
+        provider = groqApiKey ? "groq" : "gemini" 
+      } = body;
+
+      const cpPrompt = `Anda adalah Pakar Kurikulum Merdeka Kemendikbudristek RI untuk jenjang Sekolah Dasar (SD).
+Tuliskan rumusan Capaian Pembelajaran (CP) yang SPESIFIK untuk KELAS ${grade} SD (bukan fase umum, tetapi capaian kompetensi khusus untuk jenjang Kelas ${grade} SD) pada mata pelajaran: ${subject}.
+Gunakan bahasa resmi edukatif, kontekstual, ramah anak, dan mengacu pada standar Alur Tujuan Pembelajaran (ATP) Kurikulum Merdeka.
+
+KEMBALIKAN HANYA OBJEK JSON MURNI DENGAN FORMAT:
+{
+  "cp": "Rumusan Capaian Pembelajaran 2-3 kalimat padat, jelas, dan terukur khusus untuk peserta didik Kelas ${grade} SD...",
+  "goals": [
+    "Tujuan Pembelajaran 1...",
+    "Tujuan Pembelajaran 2...",
+    "Tujuan Pembelajaran 3..."
+  ]
+}`;
+
+      let cpJson = "";
+      let cpProvider = provider;
+      let cpModel = "";
+
+      if (provider === "groq" && groqApiKey) {
+        try {
+          const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${groqApiKey}`,
+            },
+            body: JSON.stringify({
+              model: "llama-3.1-8b-instant",
+              messages: [
+                { role: "system", content: cpPrompt },
+                { role: "user", content: `Rumuskan Capaian Pembelajaran spesifik untuk ${subject} Kelas ${grade} SD.` },
+              ],
+              temperature: 0.7,
+              max_tokens: 800,
+            }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            cpJson = data?.choices?.[0]?.message?.content || "";
+            cpModel = "llama-3.1-8b-instant";
+          }
+        } catch (_) {}
+      }
+
+      if (!cpJson && geminiApiKey) {
+        try {
+          const res = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                contents: [{ parts: [{ text: `${cpPrompt}\n\nRumuskan Capaian Pembelajaran spesifik untuk ${subject} Kelas ${grade} SD.` }] }],
+                generationConfig: { temperature: 0.7, maxOutputTokens: 800 },
+              }),
+            }
+          );
+          if (res.ok) {
+            const data = await res.json();
+            cpJson = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+            cpProvider = "gemini";
+            cpModel = "gemini-2.0-flash";
+          }
+        } catch (_) {}
+      }
+
+      let parsedResult: { cp: string; goals?: string[] } = { cp: "" };
+      if (cpJson) {
+        try {
+          let cleaned = cpJson.trim();
+          if (cleaned.startsWith("```json")) {
+            cleaned = cleaned.replace(/^```json\s*/i, "").replace(/\s*```$/, "");
+          } else if (cleaned.startsWith("```")) {
+            cleaned = cleaned.replace(/^```\s*/i, "").replace(/\s*```$/, "");
+          }
+          const parsed = JSON.parse(cleaned);
+          if (parsed && typeof parsed.cp === "string" && parsed.cp.trim()) {
+            parsedResult = parsed;
+          }
+        } catch (_) {}
+      }
+
+      return new Response(
+        JSON.stringify({
+          cp: parsedResult.cp,
+          goals: parsedResult.goals || [],
+          provider: cpProvider,
+          model: cpModel,
+          success: Boolean(parsedResult.cp),
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+      );
+    }
+
     const { 
       subject = "IPA", 
       grade = 4, 

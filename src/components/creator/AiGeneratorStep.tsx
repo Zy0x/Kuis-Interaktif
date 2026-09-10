@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import type { Subject, QuizQuestion } from '../../types/quiz';
 import { 
   generateHybridQuizQuestions, 
   checkSupabaseAiStatus, 
   getSupabaseAiStatusSync, 
   generateAiTopicIdeas,
+  generateAiCapaianPembelajaran,
   isAnyAiAvailable,
   type AiProvider, 
   type SupabaseAiStatus 
@@ -431,82 +433,141 @@ export const getCuratedTopics = (subj: Subject, grd: number): TopicRecommendatio
   ];
 };
 
-const CAPAIAN_PEMBELAJARAN: Record<string, { faseA: string; faseB: string; faseC: string }> = {
+const GRADE_SPECIFIC_CP: Partial<Record<Subject, Record<number, string>>> = {
   'Matematika': {
-    faseA: 'Peserta didik memahami bilangan cacah hingga 100, operasi penjumlahan & pengurangan sederhana, pola bentuk bangun datar, serta estimasi panjang dan waktu.',
-    faseB: 'Peserta didik memahami pecahan senilai, perkalian & pembagian bilangan cacah s.d. 10.000, pengukuran keliling & luas bangun datar, serta membaca diagram data.',
-    faseC: 'Peserta didik menguasai operasi hitung pecahan, desimal, rasio, volume bangun ruang kubus & balok, serta pengolahan data statistik dasar (mean, median, modus).',
+    1: 'Peserta didik mengenali dan membilang bilangan cacah hingga 20, melakukan penjumlahan dan pengurangan konkret sampai 10, serta mengenal bangun datar sederhana (segitiga, segiempat, lingkaran).',
+    2: 'Peserta didik menguasai operasi penjumlahan dan pengurangan bersusun bilangan cacah hingga 100, memahami konsep perkalian sebagai penjumlahan berulang, serta mengenal pecahan 1/2 dan 1/4 menggunakan benda konkret.',
+    3: 'Peserta didik memahami operasi perkalian dan pembagian bilangan cacah s.d. 1.000, menentukan pecahan biasa pada garis bilangan, serta menghitung keliling bangun datar persegi dan persegi panjang.',
+    4: 'Peserta didik menguasai pecahan senilai, konsep FPB dan KPK, operasi hitung campuran bilangan cacah s.d. 10.000, serta menghitung luas persegi, persegi panjang, dan segitiga.',
+    5: 'Peserta didik menguasai operasi hitung pecahan biasa, campuran, dan desimal, memahami perbandingan dan rasio kecepatan-jarak-waktu, serta menghitung volume bangun ruang kubus dan balok.',
+    6: 'Peserta didik memahami operasi hitung campuran bilangan bulat positif dan negatif, menghitung unsur-unsur serta luas keliling lingkaran, volume bangun ruang prisma dan tabung, serta mengolah data mean, median, modus.',
   },
   'IPA': {
-    faseA: 'Peserta didik mengamati lingkungan sekitar, mengenali panca indra dan anggota tubuh, membedakan benda hidup & mati, serta membiasakan hidup bersih.',
-    faseB: 'Peserta didik mengidentifikasi wujud zat dan perubahannya, daur hidup hewan, bentuk energi di sekitar, serta hubungan gaya terhadap gerak benda.',
-    faseC: 'Peserta didik menganalisis organ pernapasan & pencernaan, perpindahan kalor, jaring-jaring ekosistem, sifat cahaya/bunyi, serta sistem tata surya.',
+    1: 'Peserta didik mengamati lingkungan sekitar, mengenali fungsi panca indra dan bagian tubuh luar, serta membedakan benda hidup dan benda mati dalam kehidupan sehari-hari.',
+    2: 'Peserta didik mengidentifikasi kebutuhan dasar makhluk hidup (air, makanan, udara), mengamati siklus pergantian siang-malam dan cuaca, serta mempraktikkan kebiasaan menjaga kebersihan lingkungan.',
+    3: 'Peserta didik mengidentifikasi wujud benda (padat, cair, gas) beserta perubahannya (mencair, membeku, menguap), memahami ciri-ciri pertumbuhan makhluk hidup, dan pengaruh gaya dorong/tarik terhadap gerak.',
+    4: 'Peserta didik menganalisis daur hidup hewan (metamorfosis sempurna dan tak sempurna), fungsi bagian tubuh tumbuhan (akar, batang, daun), sifat-sifat gaya (otot, magnet, gravitasi), serta perubahan wujud zat menyublim.',
+    5: 'Peserta didik menganalisis sistem pernapasan dan pencernaan manusia, hubungan rantai makanan dan jaring-jaring kehidupan pada ekosistem, sifat perpindahan kalor (konduksi, konveksi, radiasi), serta siklus air.',
+    6: 'Peserta didik menganalisis cara perkembangbiakan vegetatif dan generatif tumbuhan/hewan, adaptasi makhluk hidup terhadap habitatnya, sifat rangkaian listrik seri-paralel, serta sistem tata surya dan gerhana.',
   },
   'Bahasa Indonesia': {
-    faseA: 'Peserta didik menyimak instruksi lisan sederhana, membaca suku kata dengan lancar, dan menulis kalimat sederhana berhuruf kapital serta bertanda titik.',
-    faseB: 'Peserta didik memahami ide pokok teks deskripsi & narasi, memperkaya kosakata baku, menyusun teks petunjuk ringkas, dan menyimak dongeng fabel.',
-    faseC: 'Peserta didik menganalisis informasi tersirat teks eksplanasi, menyampaikan pidato persuasif, menulis karangan naratif, dan mengisi formulir resmi.',
+    1: 'Peserta didik menyimak instruksi lisan sederhana, membaca kata dan suku kata berpola terbuka/tertutup, serta menulis huruf tegak bersambung dan kalimat sederhana berakhiran tanda titik.',
+    2: 'Peserta didik membaca nyaring teks pendek dengan intonasi tepat, menggunakan huruf kapital pada nama orang dan hari, menyusun kalimat tanya sederhana, serta menyampaikan pendapat lisan secara santun.',
+    3: 'Peserta didik menemukan ide pokok teks deskripsi dan petunjuk sederhana, memperkaya kosakata baku, menulis paragraf pendek terstruktur, serta menceritakan kembali isi dongeng fabel secara runtut.',
+    4: 'Peserta didik menganalisis ide pokok teks narasi dan petunjuk bertahap, membedakan kalimat fakta dan opini, menulis teks deskripsi pengalaman pribadi, serta menyimak wawancara sederhana.',
+    5: 'Peserta didik menganalisis informasi tersurat dan tersirat dari teks eksplanasi ilmiah populer, menyampaikan pidato persuasif di depan kelas, serta menulis ringkasan laporan hasil pengamatan.',
+    6: 'Peserta didik mengevaluasi teks argumentasi dan berita kritis, menyusun karya fiksi/nonfiksi pendek yang padu, menguasai pengisian formulir resmi, serta mengapresiasi majas personifikasi dan metafora.',
   },
   'Pendidikan Pancasila': {
-    faseA: 'Peserta didik mengenal lambang Garuda Pancasila dan sila-silanya, menaati aturan di rumah dan sekolah, serta menghargai perbedaan fisik teman sebaya.',
-    faseB: 'Peserta didik menerapkan nilai Pancasila dalam gotong royong, memahami hak & kewajiban di sekolah, serta meneladani toleransi keberagaman suku bangsa.',
-    faseC: 'Peserta didik memahami sejarah perumusan Pancasila, norma-norma hukum masyarakat, pelestarian kebudayaan daerah, dan menjaga keutuhan NKRI.',
+    1: 'Peserta didik mengenal lambang Garuda Pancasila dan sila-silanya, menyebutkan contoh aturan di rumah dan sekolah, serta menghargai perbedaan fisik dan kegemaran teman di kelas.',
+    2: 'Peserta didik menceritakan arti simbol-simbol sila Pancasila, menaati aturan musyawarah di kelas, serta mempraktikkan sikap saling tolong-menolong tanpa membedakan teman sebaya.',
+    3: 'Peserta didik menerapkan nilai-nilai Pancasila dalam kegiatan gotong royong di lingkungan sekolah, memahami hak dan kewajiban siswa, serta menghargai keragaman tradisi lokal.',
+    4: 'Peserta didik meneladani makna sila Pancasila dalam toleransi beragama dan suku bangsa, memahami norma hukum tertulis dan norma kesopanan, serta bangga terhadap identitas budaya daerah.',
+    5: 'Peserta didik mendalami nilai sejarah perumusan Pancasila sebagai dasar negara, membedakan hak-kewajiban-tanggung jawab warga negara, serta aktif dalam pelestarian warisan budaya nusantara.',
+    6: 'Peserta didik memahami Pancasila sebagai pandangan hidup bangsa, peran lembaga negara, menjaga keutuhan NKRI, serta menerapkan etika bermedia sosial dan toleransi global.',
   },
   'Pengetahuan Umum': {
-    faseA: 'Peserta didik mengenal aneka profesi di sekitar, rambu keselamatan lalu lintas, serta alat transportasi tradisional dan modern ramah anak.',
-    faseB: 'Peserta didik mengenal keragaman budaya provinsi, rumah adat nusantara, fauna & flora endemik Indonesia, dan peristiwa penting pahlawan nasional.',
-    faseC: 'Peserta didik memahami letak benua & samudra dunia, organisasi negara sahabat ASEAN, pemanfaatan energi terbarukan, dan etika teknologi informasi.',
+    1: 'Peserta didik mengenal aneka profesi di lingkungan sekitar, rambu keselamatan dasar di jalan raya, serta mengenal jenis alat transportasi tradisional dan modern ramah anak.',
+    2: 'Peserta didik mengenal peta pulau-pulau besar di Indonesia, ragam pakaian adat nusantara, serta tata krama berkunjung ke tempat umum dan fasilitas bersama.',
+    3: 'Peserta didik mengenal keragaman suku bangsa di 38 provinsi Indonesia, rumah adat dan senjata tradisional, serta kisah perjuangan pahlawan perintis kemerdekaan.',
+    4: 'Peserta didik memahami bentang alam Indonesia (pegunungan, danau, selat, laut), flora dan fauna endemik garis Wallace-Weber, serta peristiwa bersejarah Sumpah Pemuda.',
+    5: 'Peserta didik memahami letak geografis benua dan samudra dunia, organisasi negara-negara sahabat ASEAN, pemanfaatan sumber daya alam berkelanjutan, dan energi baru terbarukan.',
+    6: 'Peserta didik memahami sejarah diplomasi kemerdekaan RI, peran Indonesia di PBB dan kancah internasional, serta perkembangan teknologi komunikasi dan etika era digital global.',
   },
   'Bahasa Inggris': {
-    faseA: 'Learners recognize basic greetings, colors, numbers 1-20, family members, and classroom items through fun chants and interactive listening.',
-    faseB: 'Learners understand simple classroom instructions, describe daily routines, hobbies, and express simple food preferences using basic sentences.',
-    faseC: 'Learners read short illustrated paragraphs, engage in simple dialogs about vacations and directions, and write short descriptive sentences.',
+    1: 'Learners recognize and pronounce basic greetings, numbers 1-10, primary colors, and classroom objects through engaging songs, flashcards, and interactive games.',
+    2: 'Learners express feelings and simple needs, count numbers 11-20, identify family members and animals, and follow simple two-step classroom commands.',
+    3: 'Learners describe daily routines and telling time on the clock, express likes and dislikes for food/drinks, and ask simple yes/no questions using basic present tense.',
+    4: 'Learners describe people’s physical appearance, clothes, and favorite hobbies, comprehend short illustrated paragraphs, and talk about weather conditions.',
+    5: 'Learners engage in dialogues asking for directions, ordering food at a canteen, talk about past experiences using simple past tense, and write short descriptive sentences.',
+    6: 'Learners read short narrative stories and informational texts, express future plans using "going to", write friendly messages, and explain basic comparisons (bigger, smaller).',
   },
   'PJOK': {
-    faseA: 'Peserta didik mempraktikkan gerak dasar lokomotor (jalan, lari, lompat), non-lokomotor, serta pembiasaan mencuci tangan dan hidup bersih.',
-    faseB: 'Peserta didik mengombinasikan gerak dasar manipulatif dalam permainan kasti/bola mini, senam ketangkasan, dan kebugaran jasmani.',
-    faseC: 'Peserta didik menerapkan taktik gerak olahraga beregu, senam berirama, penyelamatan di air, serta pencegahan cedera ringan dan perundungan.',
+    1: 'Peserta didik mempraktikkan pola gerak dasar lokomotor (berjalan, berlari, melompat) dan non-lokomotor, serta membiasakan mencuci tangan dan postur berdiri tegak.',
+    2: 'Peserta didik mengombinasikan gerak lokomotor dan non-lokomotor dalam permainan tradisional sederhana (kucing-tikus, gobak sodor) dan melatih kelenturan tubuh.',
+    3: 'Peserta didik mempraktikkan gerak manipulatif (melempar, menangkap, menendang bola), senam lantai ketangkasan sederhana, serta pembiasaan istirahat dan tidur sehat.',
+    4: 'Peserta didik mengombinasikan pola gerak dasar dalam permainan bola kecil (kasti) dan bola besar (sepak bola mini/voli mini), serta memahami pertolongan pertama luka lecet.',
+    5: 'Peserta didik menerapkan taktik gerak olahraga beregu, senam irama ritmik berpasangan, teknik dasar renang gaya dada, serta memahami bahaya merokok dan zat adiktif.',
+    6: 'Peserta didik menganalisis dan mempraktikkan keterampilan kebugaran jasmani (daya tahan, kekuatan, kelincahan), keselamatan aktivitas di air, serta pencegahan cedera olahraga dan perundungan.',
   },
   'Seni Rupa': {
-    faseA: 'Peserta didik bereksplorasi dengan garis, bentuk geometris, warna primer, dan tekstur untuk menuangkan ekspresi imajinatif visual ramah anak.',
-    faseB: 'Peserta didik menciptakan karya seni rupa dua dimensi dan tiga dimensi dengan prinsip proporsi, warna sekunder, dan motif tradisional batik.',
-    faseC: 'Peserta didik merancang komposisi visual bermakna, perspektif ruang, desain poster edukasi lingkungan, serta apresiasi lukisan maestro Indonesia.',
+    1: 'Peserta didik bereksplorasi dengan unsur rupa garis tebal/tipis, bentuk geometris sederhana, dan warna primer melalui kegiatan menggambar ekspresi bebas.',
+    2: 'Peserta didik mencampurkan warna primer menjadi sekunder, menciptakan pola cetak sederhana dari pelepah pisang/daun, dan membuat bentuk hewan/bunga dari plastisin.',
+    3: 'Peserta didik merancang komposisi ritme visual, menciptakan karya kolase dari bahan alam sekitar, dan membuat karya dekoratif dua dimensi bertema flora-fauna.',
+    4: 'Peserta didik menerapkan prinsip proporsi dan simetri dalam menggambar rumah adat, merancang motif ragam hias batik nusantara, serta membuat karya topeng kertas tiga dimensi.',
+    5: 'Peserta didik merancang karya gambar perspektif satu titik hilang, membuat desain poster edukatif peduli lingkungan hidup, dan mengolah limbah plastik menjadi kriya kreatif.',
+    6: 'Peserta didik merancang komposisi visual bermakna dengan prinsip keseimbangan dan kontras, membuat instalasi seni terapan, serta mengapresiasi karya seni rupa maestro Indonesia.',
   },
   'Seni Musik': {
-    faseA: 'Peserta didik mengenali pola irama konstan, perbedaan bunyi tinggi-rendah, serta menyanyikan lagu anak-anak nasional dengan riang gembira.',
-    faseB: 'Peserta didik memainkan alat musik ritmis dan melodis sederhana, membaca notasi angka dasar, dan bernyanyi secara serempak/kanon.',
-    faseC: 'Peserta didik mengapresiasi lagu dan alat musik tradisional nusantara, serta menyajikan ansambel musik sederhana secara harmonis dan kompak.',
+    1: 'Peserta didik mengenali pola irama konstan, membedakan bunyi tinggi-rendah dan panjang-pendek, serta menyanyikan lagu anak-anak bertempo santai dengan gembira.',
+    2: 'Peserta didik memainkan pola irama ritmis sederhana menggunakan tepukan tangan/alat musik perkusi botol, serta membaca birama 2/4 dan 3/4 dengan tepat.',
+    3: 'Peserta didik menyanyikan lagu wajib nasional dan lagu daerah dengan dinamika keras-lembut, serta membaca simbol notasi angka dasar 1 (do) hingga 5 (sol).',
+    4: 'Peserta didik memainkan alat musik melodis sederhana (pianika/rekorder) dengan teknik penjarian dasar, serta bernyanyi secara serempak dan kanon dalam kelompok kecil.',
+    5: 'Peserta didik memainkan ansambel musik campuran sederhana, mengapresiasi kekayaan alat musik tradisional nusantara (angklung, kolintang, gamelan), dan menyanyikan lagu daerah dua suara.',
+    6: 'Peserta didik mengaransemen pola irama lagu sederhana, menampilkan pagelaran musik ansambel tematik kelas, serta mengapresiasi tokoh komponis nasional Indonesia.',
   },
   'Informatika': {
-    faseA: 'Peserta didik mengenali piranti digital di sekitar, aturan batas waktu layar yang sehat, dan memahami logika instruksi berurutan (algoritma dasar).',
-    faseB: 'Peserta didik memahami perangkat keras input/output, etika digital ramah anak, dan pemecahan masalah sederhana (computational thinking).',
-    faseC: 'Peserta didik memanfaatkan mesin pencari edukatif secara aman & kritis, mengolah data tabel spreadsheet dasar, dan menjaga keamanan sandi akun.',
+    1: 'Peserta didik mengenali berbagai piranti teknologi informasi di sekitar (komputer, ponsel, tablet), membiasakan jarak pandang layar yang aman, dan memahami aturan penggunaan gawai.',
+    2: 'Peserta didik mengenal perangkat input sederhana (mouse dan papan tombol), mempraktikkan cara menyalakan/mematikan komputer dengan benar, dan menyusun urutan langkah instruksi logis (algoritma sehari-hari).',
+    3: 'Peserta didik memahami konsep computational thinking (dekomposisi masalah sederhana), mengenal antarmuka sistem operasi ramah anak, dan membedakan ikon aplikasi edukasi.',
+    4: 'Peserta didik mengoperasikan perangkat lunak pengolah kata sederhana (mengetik teks dan mengganti warna/ukuran huruf), serta memahami etika kesopanan saat berkomunikasi digital.',
+    5: 'Peserta didik mengolah data angka dan grafik sederhana menggunakan aplikasi lembar kerja (spreadsheet), mencari informasi edukatif aman di internet, dan mengenali bahaya hoaks.',
+    6: 'Peserta didik memahami logika pemrograman visual berbasis blok (Scratch/Blockly), merancang animasi atau kuis interaktif sederhana, serta memahami pentingnya perlindungan privasi dan kata sandi.',
   },
   'Pendidikan Agama Islam': {
-    faseA: 'Peserta didik mengenal rukun iman & Islam, huruf hijaiyah berharakat, adab berdoa makan/belajar, dan meneladani kasih sayang Nabi Muhammad SAW.',
-    faseB: 'Peserta didik memahami asmaul husna, tata cara wudu dan salat fardu lima waktu, serta meneladani keteguhan Nabi Ibrahim AS dan Nabi Ismail AS.',
-    faseC: 'Peserta didik mendalami makna puasa Ramadan, zakat, infak, dan sedekah, serta mempraktikkan toleransi beragama sesuai Surah Al-Kafirun.',
+    1: 'Peserta didik mengenal rukun iman dan rukun Islam, huruf hijaiyah berharakat tunggal (fathah, kasrah, dammah), melafalkan Surah Al-Fatihah, dan adab berdoa sebelum/sesudah makan.',
+    2: 'Peserta didik melafalkan Surah An-Nas dan Al-Falaq, memahami asmaul husna (Ar-Rahman, Ar-Rahim, Al-Malik), serta mempraktikkan tata cara wudu secara berurutan dan tertib.',
+    3: 'Peserta didik memahami makna salat fardu lima waktu beserta bacaannya, melafalkan Surah Al-Kausar dan Al-Ikhlas, serta meneladani sifat jujur dan amanah Nabi Muhammad SAW.',
+    4: 'Peserta didik memahami makna asmaul husna Al-Basir dan Al-Adl, ketentuan bersuci dari hadas kecil, membaca Surah At-Tin dengan tartil, dan menghargai keragaman teman sebaya.',
+    5: 'Peserta didik mendalami makna ibadah puasa Ramadan dan salat tarawih, melafalkan Surah Al-Ma\'un dengan tajwid, dan meneladani keteguhan Nabi Ibrahim AS dan Nabi Ismail AS.',
+    6: 'Peserta didik memahami makna zakat fitrah, infak, sedekah, mendalami Surah Al-Kafirun tentang toleransi beragama, serta meneladani sifat kepemimpinan Khulafaur Rasyidin.',
   },
   'Bahasa Daerah': {
-    faseA: 'Peserta didik menyimak sapaan santun daerah, mengenal nama anggota tubuh dan angka dalam bahasa daerah, serta tembang dolanan anak.',
-    faseB: 'Peserta didik memahami unggah-ungguh / tata krama berbicara, menyimak dongeng fabel daerah, serta parikan/pantun daerah bertema nasihat.',
-    faseC: 'Peserta didik mengenal aksara tradisional daerah dasar, membaca teks narasi cerita rakyat, dan melantunkan puisi/tembang tradisional daerah.',
+    1: 'Peserta didik menyimak sapaan santun daerah, mengenal nama anggota tubuh dan panggilan keluarga dalam bahasa daerah, serta melantunkan tembang dolanan anak bersama teman.',
+    2: 'Peserta didik membaca teks pendek bahasa daerah bertema kebersihan rumah, menggunakan tingkatan bahasa santun kepada orang tua, dan menyebutkan nama-nama anak hewan dalam bahasa daerah.',
+    3: 'Peserta didik memahami makna tembang macapat/lagu daerah sederhana, menceritakan kembali dongeng fabel daerah, serta melengkapi kalimat rumpang bahasa daerah.',
+    4: 'Peserta didik memahami unggah-ungguh basa saat berbicara di sekolah, mengartikan paribasan/peribahasa daerah bertema budi pekerti, dan membaca teks cerita rakyat daerah.',
+    5: 'Peserta didik menganalisis watak tokoh dalam teks wayang/cerita kepahlawanan lokal, menulis karangan narasi pengalaman pribadi dalam bahasa daerah, dan melantunkan parikan/pantun daerah.',
+    6: 'Peserta didik mengenal lambang aksara tradisional daerah dasar (legena/sandhangan), membaca teks bertuliskan aksara daerah pendek, dan mengapresiasi seni pidato/sesorah adat daerah.',
   }
 };
 
-const getSubjectCp = (subj: Subject, grd: number): string => {
-  const phaseKey = grd <= 2 ? 'faseA' : grd <= 4 ? 'faseB' : 'faseC';
-  const entry = CAPAIAN_PEMBELAJARAN[subj];
-  if (entry && entry[phaseKey]) {
-    return entry[phaseKey];
+const getFallbackGradeCp = (subj: Subject, grd: number): string => {
+  if (grd === 1) {
+    return `Peserta didik mengenal konsep dasar, simbol konkret, dan pembiasaan eksplorasi rasa ingin tahu ramah anak dalam materi ${subj} Kelas 1 SD.`;
   }
-  if (phaseKey === 'faseA') {
-    return `Peserta didik membangun pemahaman konsep dasar, mengenali pola konkret dalam materi ${subj}, serta membiasakan rasa ingin tahu dan literasi awal.`;
+  if (grd === 2) {
+    return `Peserta didik mempraktikkan keterampilan awal, merespons instruksi terarah, dan bekerja sama secara santun dalam aktivitas materi ${subj} Kelas 2 SD.`;
   }
-  if (phaseKey === 'faseB') {
-    return `Peserta didik mengamati keterkaitan antar konsep dalam materi ${subj}, menerapkan keterampilan berpikir kritis, dan berkolaborasi dalam pemecahan masalah sederhana.`;
+  if (grd === 3) {
+    return `Peserta didik memperkuat pemahaman konsep materi ${subj} Kelas 3 SD melalui observasi lingkungan, latihan terbimbing, dan penerapan logika dasar.`;
   }
-  return `Peserta didik menganalisis konsep materi ${subj} secara terpadu, menarik kesimpulan logis, serta menyajikan solusi kreatif terhadap fenomena sekitar.`;
+  if (grd === 4) {
+    return `Peserta didik mengembangkan kemampuan klasifikasi, analisis bertahap, dan pemecahan masalah kontekstual dalam materi ${subj} Kelas 4 SD.`;
+  }
+  if (grd === 5) {
+    return `Peserta didik mendalami konsep materi ${subj} Kelas 5 SD secara analitis, menghubungkan sebab-akibat, dan menyusun laporan terstruktur.`;
+  }
+  return `Peserta didik mengevaluasi konsep materi ${subj} secara terpadu, menarik kesimpulan logis, serta menyajikan solusi kreatif dalam materi ${subj} Kelas 6 SD.`;
+};
+
+export const getSubjectCp = (subj: Subject, grd: number): string => {
+  const gradeEntry = GRADE_SPECIFIC_CP[subj];
+  if (gradeEntry && gradeEntry[grd]) {
+    return gradeEntry[grd];
+  }
+  return getFallbackGradeCp(subj, grd);
+};
+
+export const getGradeCpVariant = (subj: Subject, grd: number, variant: number): string => {
+  const base = getSubjectCp(subj, grd);
+  if (variant === 1) {
+    return `${base} Peserta didik didorong untuk mengaplikasikan pemahaman ini dalam proyek eksplorasi sederhana berbasis pengalaman kontekstual sehari-hari.`;
+  }
+  if (variant === 2) {
+    return `${base} Fokus pembelajaran ditekankan pada penguatan nalar kritis, kemampuan berkolaborasi, dan rasa percaya diri siswa Kelas ${grd} SD.`;
+  }
+  return base;
 };
 
 const getPhaseInfo = (grd: number): { phase: 'Fase A' | 'Fase B' | 'Fase C'; title: string; desc: string } => {
@@ -615,10 +676,41 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
     })).filter((grp) => grp.items.length > 0);
   }, [subjectSearchQuery]);
 
-  // Reset topik AI saat ganti mata pelajaran atau jenjang kelas
+  // Capaian Pembelajaran (CP) AI
+  const [aiGradeCp, setAiGradeCp] = useState<string | null>(null);
+  const [isGeneratingAiCp, setIsGeneratingAiCp] = useState(false);
+  const [cpVariantIndex, setCpVariantIndex] = useState(0);
+
+  // Reset topik AI & CP AI saat ganti mata pelajaran atau jenjang kelas
   useEffect(() => {
     setAiBrainstormedTopics(null);
+    setAiGradeCp(null);
+    setCpVariantIndex(0);
   }, [subject, grade]);
+
+  // Handler Rumuskan / Elaborasi CP Spesifik Kelas via AI
+  const handleGenerateAiCp = async () => {
+    playClick();
+    if (isAnyAiAvailable()) {
+      setIsGeneratingAiCp(true);
+      try {
+        const result = await generateAiCapaianPembelajaran({ subject, grade });
+        if (result?.cp) {
+          setAiGradeCp(result.cp);
+          return;
+        }
+      } catch (err) {
+        console.warn('AI CP Generation note:', err);
+      } finally {
+        setIsGeneratingAiCp(false);
+      }
+    }
+    // Rotasi varian pedagogis kontekstual jika AI offline atau belum tersambung
+    const nextIdx = ((cpVariantIndex || 0) + 1) % 3;
+    setCpVariantIndex(nextIdx);
+    const altCp = getGradeCpVariant(subject, grade, nextIdx);
+    setAiGradeCp(altCp);
+  };
 
   // Handler Brainstorm AI / Acak Ide Dinamis
   const handleBrainstormTopics = async () => {
@@ -729,7 +821,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
   }, [aiBrainstormedTopics, subject, grade, randomSeed]);
 
   const currentPhaseInfo = useMemo(() => getPhaseInfo(grade), [grade]);
-  const currentCpStatement = useMemo(() => getSubjectCp(subject, grade), [subject, grade]);
+  const currentCpStatement = useMemo(() => aiGradeCp || getSubjectCp(subject, grade), [aiGradeCp, subject, grade]);
 
   const CORE_SUBJECTS: Subject[] = ['IPA', 'Matematika', 'Bahasa Indonesia', 'Pendidikan Pancasila', 'Pengetahuan Umum'];
   const isCoreSubject = CORE_SUBJECTS.includes(subject);
@@ -1099,7 +1191,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
           </div>
 
           {/* Interactive Capaian Pembelajaran (CP) Preview Banner */}
-          <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-blue-50/90 via-indigo-50/60 to-purple-50/70 dark:from-blue-950/40 dark:via-indigo-950/30 dark:to-purple-950/30 border border-blue-200/80 dark:border-blue-900/60 space-y-2">
+          <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-blue-50/90 via-indigo-50/60 to-purple-50/70 dark:from-blue-950/40 dark:via-indigo-950/30 dark:to-purple-950/30 border border-blue-200/80 dark:border-blue-900/60 space-y-2.5">
             <div className="flex items-center justify-between gap-2 flex-wrap">
               <div className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded-xl bg-blue-600 text-white flex items-center justify-center text-[11px] font-black shadow-xs shrink-0">
@@ -1107,16 +1199,44 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-xs font-black text-slate-900 dark:text-white">
-                    Capaian Pembelajaran (CP)
+                    Capaian Pembelajaran (CP) Spesifik Kelas {grade} SD
                   </span>
                   <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400">
                     • {currentPhaseInfo.phase} ({currentPhaseInfo.desc})
                   </span>
+                  {aiGradeCp && (
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 animate-fade-in flex items-center gap-1">
+                      <span>AI Generated</span>
+                      <span>✨</span>
+                    </span>
+                  )}
                 </div>
               </div>
-              <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300">
-                {EMOJI_BY_SUBJECT[subject]} {subject}
-              </span>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleGenerateAiCp}
+                  disabled={isGeneratingAiCp}
+                  className="text-[11px] font-bold px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/80 shadow-xs flex items-center gap-1.5 transition-all btn-press disabled:opacity-60 min-h-[34px]"
+                  title="Rumuskan / elaborasi Capaian Pembelajaran spesifik kelas ini via AI"
+                >
+                  {isGeneratingAiCp ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600 dark:text-blue-400" />
+                      <span>Merumuskan via AI...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                      <span>{aiGradeCp ? 'Acak Ulang via AI' : 'Elaborasi CP via AI'}</span>
+                    </>
+                  )}
+                </button>
+                <span className="text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 shrink-0">
+                  {EMOJI_BY_SUBJECT[subject]} {subject}
+                </span>
+              </div>
             </div>
             <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-medium sm:pl-9">
               &ldquo;{currentCpStatement}&rdquo;
@@ -2042,15 +2162,15 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
       )}
 
       {/* ========================================================================= */}
-      {/* MODAL OVERLAY: KATALOG MATA PELAJARAN LENGKAP */}
+      {/* MODAL OVERLAY: KATALOG MATA PELAJARAN LENGKAP (PORTAL KE BODY Z-[100]) */}
       {/* ========================================================================= */}
-      {isSubjectModalOpen && (
+      {isSubjectModalOpen && typeof document !== 'undefined' && createPortal(
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/60 backdrop-blur-sm animate-fade-in"
+          className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 bg-slate-950/75 backdrop-blur-sm animate-fade-in"
           onClick={() => setIsSubjectModalOpen(false)}
         >
           <div 
-            className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl w-full max-w-2xl max-h-[88vh] flex flex-col overflow-hidden animate-zoom-in"
+            className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden animate-zoom-in my-auto"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header Modal */}
@@ -2167,7 +2287,8 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
     </div>

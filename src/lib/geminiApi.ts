@@ -452,6 +452,132 @@ export async function generateAiTopicIdeas(params: {
   return [];
 }
 
+export interface AiCapaianPembelajaranResult {
+  cp: string;
+  goals?: string[];
+  source?: 'edge_function' | 'groq_local' | 'gemini_local' | 'fallback';
+}
+
+/**
+ * Merumuskan Capaian Pembelajaran (CP) dan Sasaran Kompetensi Spesifik Per Jenjang Kelas SD
+ * menggunakan AI (Groq / Gemini) secara kontekstual berbasis Kurikulum Merdeka.
+ */
+export async function generateAiCapaianPembelajaran(params: {
+  subject: Subject;
+  grade: number;
+  provider?: AiProvider;
+}): Promise<AiCapaianPembelajaranResult | null> {
+  const { subject, grade } = params;
+
+  // 1. Coba via Supabase Cloud Edge Function (Server-Side Secrets)
+  if (supabase) {
+    try {
+      const status = await checkSupabaseAiStatus();
+      if (status.hasGroq || status.hasGemini) {
+        const preferredProvider = params.provider || (status.hasGroq ? 'groq' : 'gemini');
+        const { data, error } = await supabase.functions.invoke('generate-quiz-ai', {
+          body: {
+            action: 'generate_cp',
+            subject,
+            grade,
+            provider: preferredProvider,
+          },
+        });
+        if (!error && data?.success && typeof data?.cp === 'string' && data.cp.trim()) {
+          return {
+            cp: data.cp.trim(),
+            goals: Array.isArray(data.goals) ? data.goals.map(String) : [],
+            source: 'edge_function',
+          };
+        }
+      }
+    } catch (edgeErr) {
+      console.warn('generateAiCapaianPembelajaran via Edge Function warning:', edgeErr);
+    }
+  }
+
+  // 2. Coba via Groq API lokal jika key tersedia di browser
+  if (hasGroqApiKey()) {
+    try {
+      const apiKey = getStoredGroqApiKey();
+      const prompt = `Anda adalah Pakar Kurikulum Merdeka Kemendikbudristek RI untuk Sekolah Dasar (SD).
+Tuliskan rumusan Capaian Pembelajaran (CP) yang SPESIFIK untuk KELAS ${grade} SD (bukan fase umum, melainkan capaian kompetensi khusus Kelas ${grade} SD) pada mata pelajaran: ${subject}.
+Kembalikan JSON murni: { "cp": "Pernyataan CP komprehensif 2-3 kalimat padat untuk Kelas ${grade} SD...", "goals": ["Tujuan 1", "Tujuan 2"] }`;
+      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: 'llama-3.1-8b-instant',
+          messages: [{ role: 'user', content: prompt }],
+          response_format: { type: 'json_object' },
+          temperature: 0.7,
+          max_tokens: 800,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const content = data?.choices?.[0]?.message?.content;
+        if (content) {
+          const parsed = JSON.parse(content);
+          if (parsed?.cp && typeof parsed.cp === 'string' && parsed.cp.trim()) {
+            return {
+              cp: parsed.cp.trim(),
+              goals: Array.isArray(parsed.goals) ? parsed.goals.map(String) : [],
+              source: 'groq_local',
+            };
+          }
+        }
+      }
+    } catch (groqErr) {
+      console.warn('generateAiCapaianPembelajaran Groq lokal error:', groqErr);
+    }
+  }
+
+  // 3. Coba via Gemini API lokal jika key tersedia di browser
+  if (hasGeminiApiKey()) {
+    try {
+      const apiKey = getStoredGeminiApiKey();
+      const prompt = `Anda adalah Pakar Kurikulum Merdeka Kemendikbudristek RI untuk Sekolah Dasar (SD).
+Tuliskan rumusan Capaian Pembelajaran (CP) yang SPESIFIK untuk KELAS ${grade} SD (bukan fase umum, melainkan capaian kompetensi khusus Kelas ${grade} SD) pada mata pelajaran: ${subject}.
+Kembalikan JSON murni: { "cp": "Pernyataan CP komprehensif 2-3 kalimat padat untuk Kelas ${grade} SD...", "goals": ["Tujuan 1", "Tujuan 2"] }`;
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 800,
+            responseMimeType: 'application/json',
+          },
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (rawText) {
+          const parsed = JSON.parse(cleanJsonResponse(rawText));
+          if (parsed?.cp && typeof parsed.cp === 'string' && parsed.cp.trim()) {
+            return {
+              cp: parsed.cp.trim(),
+              goals: Array.isArray(parsed.goals) ? parsed.goals.map(String) : [],
+              source: 'gemini_local',
+            };
+          }
+        }
+      }
+    } catch (geminiErr) {
+      console.warn('generateAiCapaianPembelajaran Gemini lokal error:', geminiErr);
+    }
+  }
+
+  return null;
+}
+
 /* =========================================================
    PROMPT & CLEANING HELPERS
 ========================================================= */

@@ -1,6 +1,31 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.56] - 2026-09-10
+### Perbaikan Tampilan Modal Katalog Mapel (Stacking Portal), Capaian Pembelajaran (CP) Spesifik Kelas 1–6 & Integrasi Elaborasi AI
+
+#### 1. Perbaikan Visual Modal Katalog Mata Pelajaran (React Portal & Stacking Context Fix)
+- Mengisolasi dialog modal katalog mata pelajaran ke tingkat `document.body` menggunakan `createPortal` dengan elevasi lapisan `z-[100]`.
+- Memperbaiki kendala tampilan sebelumnya di mana header atas (*sticky header*) menutupi bagian judul modal dan tombol tutup dialog.
+- Lapisan latar belakang redup (*backdrop blur*) kini menyelimuti seluruh layar peramban secara merata baik pada mode terang (*light mode*) maupun mode gelap (*dark mode*).
+- Dialog modal terpusat secara presisi (*vertically & horizontally centered*) dengan tinggi maksimum adaptif `max-h-[85vh]` sehingga nyaman diakses pada perangkat beresolusi apa pun.
+
+#### 2. Capaian Pembelajaran (CP) Spesifik Per Tingkat Kelas 1 hingga 6
+- Mengembangkan pustaka Capaian Pembelajaran (CP) terstandar Kurikulum Merdeka yang spesifik untuk masing-masing kelas (Kelas 1, 2, 3, 4, 5, dan 6) pada seluruh 19 mata pelajaran.
+- Setiap pergantian kelas kini secara seketika memperbarui pernyataan kompetensi yang unik dan terukur:
+  - **Kelas 1**: Pengenalan konkret, sensori awal, dan bilangan 1–20.
+  - **Kelas 2**: Penjumlahan bersusun s.d. 100, konsep perkalian berulang, dan pecahan konkret 1/2 & 1/4.
+  - **Kelas 3**: Perkalian/pembagian bilangan cacah s.d. 1.000, pecahan garis bilangan, dan keliling bangun datar.
+  - **Kelas 4**: Pecahan senilai, KPK/FPB, luas bangun datar, dan daur hidup metamorfosis.
+  - **Kelas 5**: Operasi pecahan campuran desimal, organ pernapasan/pencernaan, dan volume bangun ruang.
+  - **Kelas 6**: Bilangan bulat negatif, unsur lingkaran, sistem tata surya, dan penalaran kritis.
+
+#### 3. Elaborasi & Perumusan CP Spesifik Kelas Berbasis AI
+- Menghadirkan tombol interaktif *"Elaborasi CP via AI"* pada kartu pratinjau CP di Tahap 1.
+- Terhubung langsung dengan mesin AI untuk memperluas rumusan capaian menjadi Alur Tujuan Pembelajaran (ATP) kontekstual dan aplikatif ramah anak SD.
+- Dilengkapi mekanisme rotasi varian pedagogis kontekstual jika mode luring/offline aktif sehingga guru selalu mendapatkan inspirasi pengajaran tanpa hambatan.
+- Ditandai dengan badge indikator visual *AI Generated ✨*.
+
 ## [2.2.55] - 2026-09-10
 ### Katalog Mata Pelajaran Lengkap Kurikulum Merdeka, Pengelompokan Fase Kelas & Brainstorming Topik AI Dinamis
 
