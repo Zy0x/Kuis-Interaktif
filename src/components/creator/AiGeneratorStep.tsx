@@ -2045,26 +2045,26 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
           </div>
 
           {/* 2-Kolom: Topik & Saran Cerdas (Kiri) vs Catatan Khusus (Kanan) */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 lg:gap-8 items-start">
             
             {/* Kolom Kiri: Input Topik & Rekomendasi Ringkas */}
-            <div className="lg:col-span-6 space-y-3">
+            <div className="lg:col-span-6 space-y-2.5">
               <div>
-                <label className="block text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white mb-2">
+                <label className="block text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white mb-1.5">
                   Topik atau Materi Pembahasan Kuis <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="text"
                   value={topic}
                   onChange={(e) => onTopicChange(e.target.value)}
-                  placeholder="Contoh: Organ Pernapasan Manusia, Pecahan Senilai, Sila Pancasila..."
-                  className="w-full px-4 py-3 rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 font-semibold text-sm focus:border-blue-500 focus:outline-none min-h-[48px] shadow-xs"
+                  placeholder="Ketik topik kuis atau pilih saran di bawah..."
+                  className="w-full px-4 py-2.5 sm:py-3 rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 font-semibold text-xs sm:text-sm focus:border-blue-500 focus:outline-none min-h-[44px] shadow-xs"
                 />
               </div>
 
-              {/* Rekomendasi Topik Ringkas di Bawah Input (Clean, No Bloat) */}
+              {/* Rekomendasi Topik Ringkas: 1 Baris Horizontal Swipeable (Ultra-Compact) */}
               {activeTopicRecommendations.list.length > 0 && (
-                <div className="space-y-1.5 pt-0.5">
+                <div className="space-y-1 pt-0.5">
                   <div className="flex items-center justify-between gap-2 text-xs">
                     <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
                       <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
@@ -2096,7 +2096,8 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                     </button>
                   </div>
 
-                  <div className="flex flex-wrap gap-1.5">
+                  {/* 1 Baris Swipeable Chips (Tidak Meluber ke Bawah) */}
+                  <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hover py-1 -mx-0.5 px-0.5 touch-pan-x">
                     {activeTopicRecommendations.list.map((rec) => {
                       const isSelected = topic === rec.topic;
                       return (
@@ -2108,10 +2109,10 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                             onTopicChange(rec.topic);
                             if (rec.context) setContextNotes(rec.context);
                           }}
-                          className={`text-xs px-2.5 py-1.5 rounded-xl border font-medium transition-all text-left truncate max-w-full btn-press min-h-[36px] flex items-center gap-1 ${
+                          className={`text-xs px-2.5 py-1.5 rounded-xl border font-medium transition-all text-left whitespace-nowrap shrink-0 max-w-[260px] truncate btn-press min-h-[34px] flex items-center gap-1 ${
                             isSelected
                               ? 'bg-blue-600 text-white border-blue-600 font-bold shadow-xs'
-                              : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-750 hover:border-slate-300'
+                              : 'bg-slate-100/90 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 hover:border-slate-300'
                           }`}
                         >
                           <span>{rec.topic}</span>
@@ -2126,19 +2127,19 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
             {/* Kolom Kanan: Catatan Khusus */}
             <div className="lg:col-span-6 space-y-2">
               <div>
-                <label className="block text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white mb-2">
-                  Catatan / Bahan Pertimbangan Khusus <span className="text-slate-400 font-normal">(Opsional)</span>
+                <label className="block text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white mb-1.5">
+                  Catatan Tambahan <span className="text-slate-400 font-normal text-xs">(Opsional)</span>
                 </label>
                 <textarea
-                  rows={4}
+                  rows={3}
                   value={contextNotes}
                   onChange={(e) => setContextNotes(e.target.value)}
-                  placeholder="Contoh: Fokuskan pada organ pernapasan tertentu, gunakan bahasa santai dan kontekstual yang ramah anak..."
-                  className="w-full px-4 py-3 rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 font-medium text-xs sm:text-sm focus:border-blue-500 focus:outline-none shadow-xs resize-none"
+                  placeholder="Contoh: Fokuskan pada organ tertentu, gunakan bahasa santai dan ramah anak..."
+                  className="w-full px-4 py-2.5 sm:py-3 rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800/90 text-slate-900 dark:text-white placeholder:text-slate-400 font-medium text-xs sm:text-sm focus:border-blue-500 focus:outline-none shadow-xs resize-none leading-relaxed"
                 />
               </div>
               <p className="text-[11px] text-slate-400 dark:text-slate-500 leading-relaxed">
-                Opsional: Tambahkan batasan fokus sub-materi atau panduan gaya bahasa untuk AI.
+                Tambahkan panduan fokus materi atau gaya bahasa khusus untuk ditaati AI.
               </p>
             </div>
 

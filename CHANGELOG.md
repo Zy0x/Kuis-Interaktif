@@ -1,6 +1,19 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.65] - 2026-09-10
+### Optimalisasi Tampilan Saran Topik Menjadi 1 Baris Horisontal Swipeable & Penegasan Kotak Catatan Khusus
+
+#### 1. Kompaksi Saran Topik Cepat (Ultra-Compact Single Track)
+- Mengubah susunan saran rekomendasi topik kuis dari multi-baris vertikal (*flex-wrap*) menjadi 1 baris horisontal yang dapat digeser (*single swipeable track* / `flex-nowrap overflow-x-auto touch-pan-x`).
+- Membatasi ketinggian vertikal section saran topik menjadi ramping (~34px) sehingga menghemat ruang layar vertikal secara signifikan di perangkat *smartphone*.
+- Mengatur panjang chip rekomendasi dengan *text truncation* anggun (`max-w-[260px] truncate`) dan *touch target* nyaman yang mematuhi standar ergonomis sentuhan.
+
+#### 2. Penegasan Visibilitas Kotak Catatan Tambahan (Bahan Pertimbangan Khusus)
+- Menyederhanakan judul label menjadi **Catatan Tambahan (Opsional)** yang lugas dan komunikatif.
+- Mengatur ketinggian textarea menjadi 3 baris proporsional (`rows={3}`) dengan kontras batas dan latar belakang yang tegas, memastikan kotak catatan tidak lagi tenggelam atau tertutup oleh tumpukan teks rekomendasi di perangkat mobile.
+- Memberikan deskripsi panduan yang ringkas dan informatif di bawah textarea tanpa membebani antarmuka.
+
 ## [2.2.64] - 2026-09-10
 ### Perbaikan Redundansi Penomoran pada Tab Tahapan Pembuat Kuis Sticky Header
 
