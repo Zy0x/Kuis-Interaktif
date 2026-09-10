@@ -22,16 +22,26 @@ import {
   Eye,
   EyeOff,
   Loader2,
-  ExternalLink
+  ExternalLink,
+  Zap
 } from 'lucide-react';
 import {
+  getStoredAiProvider,
+  saveStoredAiProvider,
   getStoredGeminiApiKey,
   saveStoredGeminiApiKey,
   hasGeminiApiKey,
   getStoredGeminiModel,
   saveStoredGeminiModel,
+  getStoredGroqApiKey,
+  saveStoredGroqApiKey,
+  hasGroqApiKey,
+  getStoredGroqModel,
+  saveStoredGroqModel,
   generateHybridQuizQuestions,
-  type GeminiModel
+  type AiProvider,
+  type GeminiModel,
+  type GroqModel
 } from '../../lib/geminiApi';
 
 interface AiQuestionModalProps {
@@ -75,13 +85,19 @@ export const AiQuestionModal: React.FC<AiQuestionModalProps> = ({
   const [parsedResults, setParsedResults] = useState<ParsedQuestionItem[]>([]);
   const [notification, setNotification] = useState<string | null>(null);
 
-  // Gemini API BYOK State
-  const [apiKeyInput, setApiKeyInput] = useState<string>(() => getStoredGeminiApiKey());
-  const [selectedModel, setSelectedModel] = useState<GeminiModel>(() => getStoredGeminiModel());
+  // Multi-Provider AI BYOK State
+  const [activeProvider, setActiveProvider] = useState<AiProvider>(() => getStoredAiProvider());
+  const [geminiKeyInput, setGeminiKeyInput] = useState<string>(() => getStoredGeminiApiKey());
+  const [geminiModel, setGeminiModel] = useState<GeminiModel>(() => getStoredGeminiModel());
+  const [groqKeyInput, setGroqKeyInput] = useState<string>(() => getStoredGroqApiKey());
+  const [groqModel, setGroqModel] = useState<GroqModel>(() => getStoredGroqModel());
   const [showKeySettings, setShowKeySettings] = useState<boolean>(false);
   const [showKeyText, setShowKeyText] = useState<boolean>(false);
   const [isGeneratingAi, setIsGeneratingAi] = useState<boolean>(false);
-  const [hasConfiguredKey, setHasConfiguredKey] = useState<boolean>(() => hasGeminiApiKey());
+  const [hasConfiguredKey, setHasConfiguredKey] = useState<boolean>(() => {
+    const prov = getStoredAiProvider();
+    return prov === 'groq' ? hasGroqApiKey() : hasGeminiApiKey();
+  });
 
   useEffect(() => {
     if (isOpen) {
@@ -89,28 +105,46 @@ export const AiQuestionModal: React.FC<AiQuestionModalProps> = ({
       setGrade(currentGrade);
       setCopiedPrompt(false);
       setNotification(null);
-      setApiKeyInput(getStoredGeminiApiKey());
-      setHasConfiguredKey(hasGeminiApiKey());
+      const prov = getStoredAiProvider();
+      setActiveProvider(prov);
+      setGeminiKeyInput(getStoredGeminiApiKey());
+      setGeminiModel(getStoredGeminiModel());
+      setGroqKeyInput(getStoredGroqApiKey());
+      setGroqModel(getStoredGroqModel());
+      setHasConfiguredKey(prov === 'groq' ? hasGroqApiKey() : hasGeminiApiKey());
     }
   }, [isOpen, currentSubject, currentGrade]);
 
-  const handleSaveApiKey = () => {
+  const handleSaveApiSettings = () => {
     playClick();
-    const trimmed = apiKeyInput.trim();
-    saveStoredGeminiApiKey(trimmed);
-    saveStoredGeminiModel(selectedModel);
-    setHasConfiguredKey(Boolean(trimmed.length > 10));
+    saveStoredAiProvider(activeProvider);
+    saveStoredGeminiApiKey(geminiKeyInput.trim());
+    saveStoredGeminiModel(geminiModel);
+    saveStoredGroqApiKey(groqKeyInput.trim());
+    saveStoredGroqModel(groqModel);
+    const keyOk = activeProvider === 'groq' 
+      ? Boolean(groqKeyInput.trim().length > 5) 
+      : Boolean(geminiKeyInput.trim().length > 10);
+    setHasConfiguredKey(keyOk);
     setShowKeySettings(false);
-    showToast(trimmed ? '✓ Kunci Gemini API berhasil disimpan!' : 'Kunci API dihapus. Menggunakan generator kurikulum internal.');
+    showToast(keyOk 
+      ? `✓ Kunci API ${activeProvider === 'groq' ? 'Groq' : 'Gemini'} berhasil disimpan!` 
+      : 'Kunci API dihapus. Menggunakan generator kurikulum internal.'
+    );
   };
 
   const handleRemoveApiKey = () => {
     playClick();
-    saveStoredGeminiApiKey('');
-    setApiKeyInput('');
+    if (activeProvider === 'groq') {
+      saveStoredGroqApiKey('');
+      setGroqKeyInput('');
+    } else {
+      saveStoredGeminiApiKey('');
+      setGeminiKeyInput('');
+    }
     setHasConfiguredKey(false);
     setShowKeySettings(false);
-    showToast('Kunci Gemini API telah dihapus. Menggunakan generator kurikulum internal.');
+    showToast(`Kunci API ${activeProvider === 'groq' ? 'Groq' : 'Gemini'} telah dihapus. Menggunakan generator kurikulum internal.`);
   };
 
   // Real-time parser saat teks di tab impor berubah
@@ -159,8 +193,10 @@ export const AiQuestionModal: React.FC<AiQuestionModalProps> = ({
         topic: topic.trim() || 'Pernapasan dan Tubuh Manusia',
         count,
         questionType,
-        model: selectedModel,
-        apiKey: apiKeyInput.trim() || undefined,
+        provider: activeProvider,
+        geminiModel,
+        groqModel,
+        apiKey: (activeProvider === 'groq' ? groqKeyInput.trim() : geminiKeyInput.trim()) || undefined,
       });
 
       setRawText(JSON.stringify(result.questions, null, 2));
@@ -433,15 +469,22 @@ Pembahasan: Insang menyaring oksigen yang terlarut di dalam air.`;
                 </div>
               </div>
 
-              {/* Banner Status Engine AI Hybrid & Konfigurasi BYOK */}
+              {/* Banner Status Engine AI Hybrid & Konfigurasi BYOK (Gemini & Groq) */}
               <div className="bg-slate-50 dark:bg-slate-800/60 rounded-2xl p-3.5 border border-slate-200 dark:border-slate-700/80 space-y-3">
                 <div className="flex items-center justify-between gap-2 flex-wrap">
                   <div className="flex items-center gap-2">
                     {hasConfiguredKey ? (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                        Gemini AI Aktif ({selectedModel})
-                      </span>
+                      activeProvider === 'groq' ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300">
+                          <Zap className="w-3 h-3 text-amber-500 fill-amber-500" />
+                          Groq Cloud Aktif ({groqModel})
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                          Gemini AI Aktif ({geminiModel})
+                        </span>
+                      )
                     ) : (
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300">
                         <Sparkles className="w-3 h-3 text-blue-500" />
@@ -459,85 +502,206 @@ Pembahasan: Insang menyaring oksigen yang terlarut di dalam air.`;
                     className="text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 transition-all min-h-[36px]"
                   >
                     <Key className="w-3.5 h-3.5 text-amber-500" />
-                    <span>{showKeySettings ? 'Tutup Pengaturan' : (hasConfiguredKey ? 'Ganti Kunci API' : 'Pasang Kunci Gemini')}</span>
+                    <span>{showKeySettings ? 'Tutup Pengaturan' : (hasConfiguredKey ? 'Ganti Kunci API' : 'Pasang Kunci API (Gemini / Groq)')}</span>
                   </button>
                 </div>
 
-                {/* Form Drawer Pengaturan Kunci Gemini */}
+                {/* Form Drawer Pengaturan Multi-Provider AI (Gemini / Groq) */}
                 {showKeySettings && (
                   <div className="pt-2 border-t border-slate-200 dark:border-slate-700 space-y-3 animate-fade-in">
+                    {/* Pemilih Provider AI */}
                     <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
-                          <Key className="w-3.5 h-3.5 text-amber-500" /> Kunci API Google Gemini:
-                        </label>
-                        <a
-                          href="https://aistudio.google.com/"
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
-                        >
-                          Dapatkan di Google AI Studio <ExternalLink className="w-3 h-3" />
-                        </a>
-                      </div>
-
-                      <div className="relative">
-                        <input
-                          type={showKeyText ? 'text' : 'password'}
-                          value={apiKeyInput}
-                          onChange={(e) => setApiKeyInput(e.target.value)}
-                          placeholder="Tempelkan AIzaSy..."
-                          className="w-full pl-3 pr-10 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:border-blue-500 min-h-[42px]"
-                        />
+                      <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1.5">
+                        Pilih Penyedia AI (Provider):
+                      </label>
+                      <div className="grid grid-cols-2 gap-2">
                         <button
                           type="button"
-                          onClick={() => setShowKeyText(!showKeyText)}
-                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                          onClick={() => {
+                            playClick();
+                            setActiveProvider('gemini');
+                            setHasConfiguredKey(Boolean(geminiKeyInput.trim().length > 10));
+                          }}
+                          className={`p-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+                            activeProvider === 'gemini'
+                              ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 shadow-sm'
+                              : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400'
+                          }`}
                         >
-                          {showKeyText ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          <Sparkles className="w-3.5 h-3.5 text-blue-500" />
+                          <span>Google Gemini AI</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            playClick();
+                            setActiveProvider('groq');
+                            setHasConfiguredKey(Boolean(groqKeyInput.trim().length > 5));
+                          }}
+                          className={`p-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+                            activeProvider === 'groq'
+                              ? 'border-amber-500 bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 shadow-sm'
+                              : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400'
+                          }`}
+                        >
+                          <Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                          <span>Groq LPU (Super Cepat ⚡)</span>
                         </button>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      <div>
-                        <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">
-                          Model AI:
-                        </label>
-                        <select
-                          value={selectedModel}
-                          onChange={(e) => setSelectedModel(e.target.value as GeminiModel)}
-                          className="w-full px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-xs font-semibold focus:outline-none min-h-[38px]"
-                        >
-                          <option value="gemini-1.5-flash">Gemini 1.5 Flash (Cepat & Hemat)</option>
-                          <option value="gemini-1.5-pro">Gemini 1.5 Pro (Penalaran Tinggi)</option>
-                          <option value="gemini-2.0-flash">Gemini 2.0 Flash (Generasi Baru)</option>
-                        </select>
-                      </div>
+                    {/* Input untuk Provider Terpilih */}
+                    {activeProvider === 'gemini' ? (
+                      <div className="space-y-3">
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+                              <Key className="w-3.5 h-3.5 text-amber-500" /> Kunci API Google Gemini:
+                            </label>
+                            <a
+                              href="https://aistudio.google.com/"
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                            >
+                              Dapatkan di Google AI Studio <ExternalLink className="w-3 h-3" />
+                            </a>
+                          </div>
 
-                      <div className="flex items-end gap-2">
-                        <button
-                          type="button"
-                          onClick={handleSaveApiKey}
-                          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 min-h-[38px] transition-all"
-                        >
-                          <Check className="w-3.5 h-3.5" /> Simpan Kunci
-                        </button>
-                        {hasConfiguredKey && (
-                          <button
-                            type="button"
-                            onClick={handleRemoveApiKey}
-                            className="text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 py-2 px-3 rounded-xl border border-rose-200 dark:border-rose-900/60 min-h-[38px] transition-all"
-                          >
-                            Hapus
-                          </button>
-                        )}
-                      </div>
-                    </div>
+                          <div className="relative">
+                            <input
+                              type={showKeyText ? 'text' : 'password'}
+                              value={geminiKeyInput}
+                              onChange={(e) => setGeminiKeyInput(e.target.value)}
+                              placeholder="Tempelkan AIzaSy..."
+                              className="w-full pl-3 pr-10 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:border-blue-500 min-h-[42px]"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowKeyText(!showKeyText)}
+                              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                            >
+                              {showKeyText ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </button>
+                          </div>
+                        </div>
 
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                      💡 <strong>Langganan Gemini PRO?</strong> Akun Google Anda berhak mendapatkan API Key di <strong>aistudio.google.com</strong> secara gratis (kuota 15 req/menit). Panduan lengkap tersedia di folder <code className="text-[10px] bg-slate-200 dark:bg-slate-750 px-1 py-0.5 rounded">docs/panduan-integrasi-gemini-ai.md</code>.
-                    </p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <div>
+                            <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">
+                              Model Gemini:
+                            </label>
+                            <select
+                              value={geminiModel}
+                              onChange={(e) => setGeminiModel(e.target.value as GeminiModel)}
+                              className="w-full px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-xs font-semibold focus:outline-none min-h-[38px]"
+                            >
+                              <option value="gemini-1.5-flash">Gemini 1.5 Flash (Cepat & Hemat)</option>
+                              <option value="gemini-1.5-pro">Gemini 1.5 Pro (Penalaran Tinggi / Khusus PRO)</option>
+                              <option value="gemini-2.0-flash">Gemini 2.0 Flash (Generasi Baru)</option>
+                            </select>
+                          </div>
+
+                          <div className="flex items-end gap-2">
+                            <button
+                              type="button"
+                              onClick={handleSaveApiSettings}
+                              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 min-h-[38px] transition-all"
+                            >
+                              <Check className="w-3.5 h-3.5" /> Simpan Kunci
+                            </button>
+                            {hasGeminiApiKey() && (
+                              <button
+                                type="button"
+                                onClick={handleRemoveApiKey}
+                                className="text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 py-2 px-3 rounded-xl border border-rose-200 dark:border-rose-900/60 min-h-[38px] transition-all"
+                              >
+                                Hapus
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                          💡 <strong>Langganan Gemini PRO?</strong> Akun Google Anda berhak mendapatkan API Key di <strong>aistudio.google.com</strong> secara gratis (kuota 15 req/menit). Panduan lengkap di <code className="text-[10px] bg-slate-200 dark:bg-slate-750 px-1 py-0.5 rounded">docs/panduan-integrasi-gemini-ai.md</code>.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+                              <Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-500" /> Kunci API Groq Cloud:
+                            </label>
+                            <a
+                              href="https://console.groq.com/"
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1"
+                            >
+                              Dapatkan di console.groq.com (Gratis) <ExternalLink className="w-3 h-3" />
+                            </a>
+                          </div>
+
+                          <div className="relative">
+                            <input
+                              type={showKeyText ? 'text' : 'password'}
+                              value={groqKeyInput}
+                              onChange={(e) => setGroqKeyInput(e.target.value)}
+                              placeholder="Tempelkan gsk_..."
+                              className="w-full pl-3 pr-10 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:border-blue-500 min-h-[42px]"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowKeyText(!showKeyText)}
+                              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                            >
+                              {showKeyText ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <div>
+                            <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">
+                              Model Llama (Groq):
+                            </label>
+                            <select
+                              value={groqModel}
+                              onChange={(e) => setGroqModel(e.target.value as GroqModel)}
+                              className="w-full px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-xs font-semibold focus:outline-none min-h-[38px]"
+                            >
+                              <option value="llama-3.3-70b-versatile">Llama 3.3 70B (Cerdas & Akurat - Rekomendasi)</option>
+                              <option value="llama-3.1-8b-instant">Llama 3.1 8B (Super Kilat &lt; 1 detik)</option>
+                            </select>
+                          </div>
+
+                          <div className="flex items-end gap-2">
+                            <button
+                              type="button"
+                              onClick={handleSaveApiSettings}
+                              className="flex-1 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 min-h-[38px] transition-all"
+                            >
+                              <Check className="w-3.5 h-3.5" /> Simpan Kunci Groq
+                            </button>
+                            {hasGroqApiKey() && (
+                              <button
+                                type="button"
+                                onClick={handleRemoveApiKey}
+                                className="text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 py-2 px-3 rounded-xl border border-rose-200 dark:border-rose-900/60 min-h-[38px] transition-all"
+                              >
+                                Hapus
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                          ⚡ <strong>Groq LPU:</strong> Komputasi inferensi tercepat di dunia. 10 butir soal kuis selesai dibuat dalam waktu &lt; 1 detik tanpa perlu kartu kredit. Panduan lengkap di <code className="text-[10px] bg-slate-200 dark:bg-slate-750 px-1 py-0.5 rounded">docs/panduan-integrasi-groq-ai.md</code>.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -569,6 +733,8 @@ Pembahasan: Insang menyaring oksigen yang terlarut di dalam air.`;
                   className={`flex-1 ${
                     isGeneratingAi
                       ? 'bg-blue-400 cursor-not-allowed'
+                      : activeProvider === 'groq' && hasConfiguredKey
+                      ? 'bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 btn-press'
                       : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 btn-press'
                   } text-white font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 min-h-[44px] shadow-sm text-xs sm:text-sm transition-all`}
                 >
@@ -579,8 +745,22 @@ Pembahasan: Insang menyaring oksigen yang terlarut di dalam air.`;
                     </>
                   ) : (
                     <>
-                      <Sparkles className="w-4 h-4" />
-                      <span>{hasConfiguredKey ? 'Buat Langsung via Gemini AI' : 'Buat Langsung Sekarang'}</span>
+                      {activeProvider === 'groq' && hasConfiguredKey ? (
+                        <>
+                          <Zap className="w-4 h-4 fill-white" />
+                          <span>Buat Langsung via Groq AI ⚡</span>
+                        </>
+                      ) : hasConfiguredKey ? (
+                        <>
+                          <Sparkles className="w-4 h-4" />
+                          <span>Buat Langsung via Gemini AI</span>
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-4 h-4" />
+                          <span>Buat Langsung Sekarang</span>
+                        </>
+                      )}
                     </>
                   )}
                 </button>

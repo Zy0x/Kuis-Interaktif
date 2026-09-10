@@ -1,6 +1,35 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.42] - 2026-09-10
+### Dukungan Penuh Groq LPU Cloud API (Super Cepat ⚡), Panel Multi-Provider Gemini & Groq, serta Panduan Lengkap
+
+#### 1. Mesin Komputasi Groq LPU™ Cloud (Super Cepat & Instan)
+- **Kecepatan Inferensi Kilat (300–800 token/detik):**
+  - Mengintegrasikan Groq Cloud API yang ditenagai chip prosesor khusus LPU™ (Language Processing Unit).
+  - Pembuatan 5 hingga 10 butir soal kuis interaktif lengkap selesai diproduksi dalam waktu kurang dari 1 detik!
+- **Model Tercanggih Open-Source Meta AI:**
+  - Mendukung `llama-3.3-70b-versatile` dengan penalaran mendalam dan tata bahasa Indonesia ramah anak SD.
+  - Mendukung `llama-3.1-8b-instant` untuk kebutuhan pembuatan latihan kuis ultra cepat.
+- **Dukungan 100% Gratis Tanpa Kartu Kredit:**
+  - Kuota pengembang gratis melimpah hingga 30 request per menit dan 14.400 request per hari di console.groq.com.
+
+#### 2. Antarmuka Pemilih Multi-Provider AI (Studio Kuis Guru)
+- **Bilah Pemilih Provider Interaktif:**
+  - Guru dapat berganti antara **Google Gemini AI** dan **Groq LPU (Super Cepat ⚡)** hanya dengan 1 kali klik di modal Asisten AI.
+  - Form input kunci API, link portal resmi, dan dropdown model AI beradaptasi otomatis sesuai provider aktif.
+  - Tombol aksi cerdas dinamis: *"Buat Langsung via Groq AI ⚡"* dengan tema amber-orange atau *"Buat Langsung via Gemini AI"* dengan tema biru-indigo.
+- **Failover Antar-Provider Mulus (Smart Fallback):**
+  - Jika provider aktif mengalami gangguan, sistem otomatis mencoba provider cadangan yang kuncinya tersedia, atau langsung beralih ke Generator Kurikulum SD internal tanpa kegagalan proses.
+
+#### 3. Supabase Edge Function Multi-Provider
+- Skrip backend server-side `supabase/functions/generate-quiz-ai` kini dapat menangani `GROQ_API_KEY` maupun `GEMINI_API_KEY` dengan aman dari Supabase Secrets.
+
+#### 4. Dokumentasi Panduan Groq API (`docs/panduan-integrasi-groq-ai.md`)
+- Panduan terperinci pendaftaran gratis di console.groq.com tanpa kartu kredit.
+- Cara memasukkan kunci API di aplikasi (BYOK & Supabase Secrets).
+- Perbandingan komprehensif keunggulan Groq LPU vs Google Gemini.
+
 ## [2.2.41] - 2026-09-10
 ### Integrasi Google Gemini AI Arsitektur Hybrid, Kunci API Mandiri Guru (BYOK), Supabase Edge Function & Panduan Lengkap
 
