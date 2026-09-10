@@ -1,6 +1,18 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.79] - 2026-09-11
+### Pengembalian Tampilan Pilihan Mesin AI ke Format Standar (5 Kartu)
+
+#### 1. Restorasi Grid Mesin AI (Tahap 4)
+- Mengembalikan susunan dan tata letak pilihan Mesin AI ke format 5 kartu grid (`grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5`):
+  - **Lokal**: Mesin pembuat kuis cepat tanpa internet/kuota API (Selalu Siap).
+  - **DeepSeek**: Model penalaran mendalam (R1 & V3).
+  - **Groq**: Generasi ultra-cepat dengan LPU.
+  - **Gemini**: Pembuatan soal luas & kontekstual.
+  - **Salin / Berkas**: Alur salin prompt manual atau impor berkas dokumen.
+- Mempertahankan fitur diagnostik koneksi AI yang telah ditingkatkan: tombol **Refresh** status paralel, pengecekan ketersediaan kunci, serta banner informasi status yang akurat.
+
 ## [2.2.78] - 2026-09-11
 ### Penyempurnaan Tampilan Bersih (Clean UI) Mesin AI & Kunci API Pribadi
 
