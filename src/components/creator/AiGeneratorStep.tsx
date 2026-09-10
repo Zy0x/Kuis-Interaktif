@@ -47,6 +47,7 @@ import {
   UploadCloud, 
   Copy, 
   Check, 
+  CheckCircle2,
   Shuffle, 
   Info, 
   Eye,
@@ -1217,7 +1218,43 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
 
   // Status & Indikator
   const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  
+  // Notifikasi Toast Mengambang (Floating Toast - selalu terlihat di viewport tanpa perlu scroll)
+  const [toast, setToast] = useState<{
+    message: string;
+    type: 'error' | 'warning' | 'success' | 'info';
+  } | null>(null);
+  const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showToast = (
+    message: string,
+    type: 'error' | 'warning' | 'success' | 'info' = 'error'
+  ) => {
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+    }
+    setToast({ message, type });
+    toastTimeoutRef.current = setTimeout(() => {
+      setToast(null);
+    }, 3800);
+  };
+
+  const setErrorMessage = (msg: string | null) => {
+    if (msg) {
+      showToast(msg, 'error');
+    } else {
+      setToast(null);
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (toastTimeoutRef.current) {
+        clearTimeout(toastTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const [supabaseAi, setSupabaseAi] = useState<SupabaseAiStatus>(() => getSupabaseAiStatusSync());
   const [isCheckingCloudAi, setIsCheckingCloudAi] = useState(false);
 
@@ -1441,9 +1478,10 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
     try {
       await navigator.clipboard.writeText(generatedPromptText);
       setCopiedPrompt(true);
+      showToast('Prompt kuis berhasil disalin ke clipboard!', 'success');
       setTimeout(() => setCopiedPrompt(false), 2500);
     } catch {
-      // ignore
+      showToast('Gagal menyalin teks prompt ke clipboard.', 'error');
     }
   };
 
@@ -1460,6 +1498,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+    showToast('Template CSV berhasil diunduh.', 'success');
   };
 
   // Handler Unggah Berkas
@@ -1476,11 +1515,12 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
       if (typeof content === 'string') {
         setRawInputText(content);
         setInputMethodTab('paste');
+        showToast('Berkas soal berhasil dimuat ke editor!', 'success');
       }
     };
 
     reader.onerror = () => {
-      setErrorMessage('Gagal membaca berkas. Pastikan format berkas valid.');
+      showToast('Gagal membaca berkas. Pastikan format berkas valid.', 'error');
     };
 
     reader.readAsText(file);
@@ -1515,7 +1555,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
     setErrorMessage(null);
 
     if (!topic.trim()) {
-      setErrorMessage('Mohon lengkapi judul atau topik kuis terlebih dahulu.');
+      showToast('Mohon tentukan topik kuis terlebih dahulu.', 'warning');
       onStageChange(2);
       return;
     }
@@ -1553,7 +1593,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
 
     if (selectedEngine === 'auto' && fallbackChain.length === 0) {
       setSelectedEngine('prompt');
-      setErrorMessage('Seluruh kuota AI Cloud harian sedang limit. Sistem otomatis mengalihkan ke mode Prompt / Berkas (Direkomendasikan) agar butir soal yang dihasilkan tetap matang dan variatif.');
+      showToast('Seluruh kuota AI Cloud harian mencapai batas. Mode otomatis dialihkan ke Prompt / Berkas.', 'warning');
       setIsLoading(false);
       return;
     }
@@ -1613,9 +1653,9 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
 
       if (isQuotaErr || selectedEngine === 'auto') {
         setSelectedEngine('prompt');
-        setErrorMessage('Seluruh kuota AI Cloud saat ini sedang mencapai limit harian. Pilihan otomatis dialihkan ke mode **Prompt / Berkas (Direkomendasikan)**. Salin prompt di bawah ke ChatGPT/Claude/Gemini eksternal untuk mendapatkan butir soal yang matang dan bervariasi.');
+        showToast('Seluruh kuota AI Cloud saat ini mencapai limit harian. Mode dialihkan ke Prompt / Berkas (Direkomendasikan).', 'warning');
       } else {
-        setErrorMessage(msg);
+        showToast(msg, 'error');
       }
     } finally {
       setIsLoading(false);
@@ -1629,7 +1669,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
 
     const trimmed = rawInputText.trim();
     if (!trimmed) {
-      setErrorMessage('Mohon tempelkan teks hasil dari AI atau unggah berkas soal terlebih dahulu.');
+      showToast('Mohon tempelkan teks hasil dari AI atau unggah berkas soal terlebih dahulu.', 'warning');
       return;
     }
 
@@ -1638,7 +1678,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
       const validQuestions = parsed.filter((p) => p.valid).map((p) => p.question);
 
       if (validQuestions.length === 0) {
-        setErrorMessage('Format soal tidak dapat dikenali. Pastikan teks berisi pertanyaan, opsi pilihan, dan kunci jawaban.');
+        showToast('Format soal tidak dapat dikenali. Pastikan teks berisi pertanyaan, opsi pilihan, dan kunci jawaban.', 'error');
         return;
       }
 
@@ -1657,27 +1697,12 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
       });
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Gagal mengurai teks soal.';
-      setErrorMessage(msg);
+      showToast(msg, 'error');
     }
   };
 
   return (
     <div ref={containerRef} tabIndex={-1} className="w-full max-w-[2000px] mx-auto px-3 xs:px-4 sm:px-8 lg:px-12 py-3 sm:py-4 animate-fade-in space-y-6 outline-none focus:outline-none">
-      
-      {/* Error Message Banner */}
-      {errorMessage && (
-        <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 flex items-start gap-3 text-xs sm:text-sm animate-shake">
-          <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-rose-600" />
-          <div className="flex-1 font-medium">{errorMessage}</div>
-          <button 
-            type="button" 
-            onClick={() => setErrorMessage(null)} 
-            className="text-rose-400 hover:text-rose-700 font-bold text-xs"
-          >
-            ✕
-          </button>
-        </div>
-      )}
 
       {/* ========================================================================= */}
       {/* TAHAP 1: JENJANG PENDIDIKAN, MATA PELAJARAN & TINGKAT KELAS */}
@@ -2282,10 +2307,9 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
               onClick={() => {
                 playClick();
                 if (!topic.trim()) {
-                  setErrorMessage('Mohon tentukan materi atau topik pembahasan kuis terlebih dahulu.');
+                  showToast('Mohon tentukan materi atau topik pembahasan kuis terlebih dahulu.', 'warning');
                   return;
                 }
-                setErrorMessage(null);
                 onStageChange(3);
               }}
               className="w-full sm:w-auto px-8 py-3.5 rounded-2xl font-black text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 min-h-[48px] btn-press transition-all"
@@ -2304,27 +2328,45 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
       {stage === 3 && (
         <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-8 lg:p-10 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6 sm:space-y-8 animate-fade-in">
           
-          {/* Strip Konteks Mapel, Kelas & Topik (Ramping 1 Baris, Selaras Tahap 2) */}
-          <button
-            type="button"
-            onClick={() => {
-              playClick();
-              onStageChange(2);
-            }}
-            title="Klik untuk kembali ke Tahap 2 (Topik & Materi)"
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200/70 dark:border-blue-900/50 hover:bg-blue-100/70 dark:hover:bg-blue-900/60 text-blue-950 dark:text-blue-100 text-xs font-bold max-w-full transition-colors cursor-pointer group text-left shadow-2xs overflow-hidden"
-          >
-            <span className="text-base shrink-0">{EMOJI_BY_SUBJECT[subject]}</span>
-            <span className="shrink-0">{subject}</span>
-            <span className="text-blue-400 dark:text-blue-500 shrink-0">•</span>
-            <span className="text-blue-700 dark:text-blue-300 shrink-0 font-semibold text-[11px] sm:text-xs">
-              Kelas {grade} {educationLevel === 'SMA' ? 'SMA / SMK' : educationLevel === 'SMP' ? 'SMP' : 'SD'}
-            </span>
-            <span className="text-blue-400 dark:text-blue-500 shrink-0">•</span>
-            <span className="truncate font-semibold text-[11px] sm:text-xs text-blue-800 dark:text-blue-200">
-              "{topic}"
-            </span>
-          </button>
+          {/* Ringkasan Konfigurasi Kuis Tahap 3 (Adaptif) */}
+          <div className="p-3 sm:p-3.5 rounded-2xl bg-slate-50/90 dark:bg-slate-850/70 border border-slate-200/80 dark:border-slate-800 space-y-1 shadow-2xs">
+            <div className="flex items-center justify-between gap-2.5 flex-wrap">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-base shrink-0 select-none">
+                  {EMOJI_BY_SUBJECT[subject] || '📚'}
+                </span>
+                <div className="flex items-center gap-1.5 flex-wrap text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white">
+                  <span>{subject}</span>
+                  <span className="text-slate-300 dark:text-slate-600 select-none">•</span>
+                  <span className="text-slate-600 dark:text-slate-300 font-semibold text-xs sm:text-sm">
+                    Kelas {grade} {educationLevel === 'SMA' ? 'SMA / SMK' : educationLevel === 'SMP' ? 'SMP' : 'SD'}
+                  </span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  onStageChange(2);
+                }}
+                className="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline px-1 py-0.5 min-h-[28px] flex items-center"
+                title="Ubah topik atau materi kuis"
+              >
+                Ubah Topik
+              </button>
+            </div>
+
+            {topic ? (
+              <div className="text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-200 leading-snug break-words">
+                &ldquo;{topic}&rdquo;
+              </div>
+            ) : (
+              <div className="text-xs sm:text-sm italic text-slate-400 dark:text-slate-500">
+                Topik kuis belum ditentukan
+              </div>
+            )}
+          </div>
 
           {/* Pilihan Jumlah Butir Soal */}
           <div className="space-y-2.5">
@@ -2740,14 +2782,13 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
               onClick={() => {
                 playClick();
                 if (selectedQuestionTypes.length === 0) {
-                  setErrorMessage('Pilih minimal 1 format tipe soal untuk melanjutkan.');
+                  showToast('Pilih minimal 1 format tipe soal untuk melanjutkan.', 'warning');
                   return;
                 }
                 if (selectedQuestionTypes.length > 1 && proportionMode === 'custom' && sumCustomProportions !== currentTotalQuestions) {
-                  setErrorMessage(`Total butir soal (${sumCustomProportions}) belum sama dengan target kuis (${currentTotalQuestions}).`);
+                  showToast(`Total butir soal (${sumCustomProportions}) belum sama dengan target kuis (${currentTotalQuestions}).`, 'warning');
                   return;
                 }
-                setErrorMessage(null);
                 onStageChange(4);
               }}
               className="w-full sm:w-auto px-8 py-3.5 rounded-2xl font-black text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 min-h-[48px] btn-press transition-all"
@@ -2766,28 +2807,56 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
       {stage === 4 && (
         <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-8 lg:p-10 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6 sm:space-y-8 animate-fade-in">
           
-          {/* Strip Ringkasan Konfigurasi (Ramping 1 Baris) */}
-          <div
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200/70 dark:border-blue-900/50 text-blue-950 dark:text-blue-100 text-xs font-bold max-w-full shadow-2xs overflow-hidden"
-          >
-            <span className="text-base shrink-0">{EMOJI_BY_SUBJECT[subject]}</span>
-            <span className="shrink-0">{subject}</span>
-            <span className="text-blue-400 dark:text-blue-500 shrink-0">•</span>
-            <span className="text-blue-700 dark:text-blue-300 shrink-0 font-semibold text-[11px] sm:text-xs">
-              Kelas {grade} {educationLevel === 'SMA' ? 'SMA / SMK' : educationLevel === 'SMP' ? 'SMP' : 'SD'}
-            </span>
-            <span className="text-blue-400 dark:text-blue-500 shrink-0">•</span>
-            <span className="truncate font-semibold text-[11px] sm:text-xs text-blue-800 dark:text-blue-200">
-              "{topic}"
-            </span>
-            <span className="text-blue-400 dark:text-blue-500 shrink-0">•</span>
-            <span className="shrink-0 font-bold text-[11px] sm:text-xs text-blue-900 dark:text-blue-100">
-              {currentTotalQuestions} Soal
-            </span>
-            {includeAiImages && (
-              <span className="text-[10px] bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border border-amber-300/60 dark:border-amber-700/60 px-1.5 py-0.5 rounded-md font-extrabold shrink-0">
-                + Ilustrasi (Beta)
-              </span>
+          {/* Ringkasan Konfigurasi Kuis (Mini Spec Card Adaptif) */}
+          <div className="p-3.5 sm:p-4 rounded-2xl bg-slate-50/90 dark:bg-slate-850/70 border border-slate-200/80 dark:border-slate-800 space-y-1.5 shadow-2xs">
+            {/* Baris 1: Identitas Mata Pelajaran & Kelas (Kiri) vs Spesifikasi Soal (Kanan) */}
+            <div className="flex items-center justify-between gap-2.5 flex-wrap">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-base sm:text-lg shrink-0 select-none">
+                  {EMOJI_BY_SUBJECT[subject] || '📚'}
+                </span>
+                <div className="flex items-center gap-1.5 flex-wrap text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white">
+                  <span>{subject}</span>
+                  <span className="text-slate-300 dark:text-slate-600 select-none">•</span>
+                  <span className="text-slate-600 dark:text-slate-300 font-semibold text-xs sm:text-sm">
+                    Kelas {grade} {educationLevel === 'SMA' ? 'SMA / SMK' : educationLevel === 'SMP' ? 'SMP' : 'SD'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Lencana Spesifikasi Soal */}
+              <div className="flex items-center gap-1.5 shrink-0">
+                <span className="px-2.5 py-1 rounded-lg bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 font-extrabold text-[11px] sm:text-xs">
+                  {currentTotalQuestions} Soal
+                </span>
+                {includeAiImages && (
+                  <span className="px-2 py-1 rounded-lg bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 font-bold text-[10px] sm:text-[11px] border border-amber-200/60 dark:border-amber-800/60">
+                    + Ilustrasi
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    onStageChange(3);
+                  }}
+                  className="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline px-1 py-0.5 min-h-[28px] flex items-center"
+                  title="Ubah jumlah atau format soal"
+                >
+                  Ubah
+                </button>
+              </div>
+            </div>
+
+            {/* Baris 2: Topik Pembahasan (Ditampilkan utuh, multi-line jika panjang, bebas keterpotongan) */}
+            {topic ? (
+              <div className="text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-200 leading-snug break-words">
+                &ldquo;{topic}&rdquo;
+              </div>
+            ) : (
+              <div className="text-xs sm:text-sm italic text-slate-400 dark:text-slate-500">
+                Topik kuis belum ditentukan
+              </div>
             )}
           </div>
 
@@ -3271,7 +3340,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                           Kuota {selectedEngine === 'deepseek' ? 'DeepSeek' : selectedEngine === 'groq' ? 'Groq' : 'Gemini'} Telah Habis:
                         </span>
                         <p className="leading-relaxed text-[11px] sm:text-xs text-rose-800 dark:text-rose-300">
-                          {health.description} Anda dapat langsung beralih ke mesin <strong>Lokal</strong> untuk meracik kuis instan tanpa kuota API.
+                          {health.description} Anda dapat beralih ke mode <strong>Prompt / Berkas (Direkomendasikan)</strong> untuk hasil soal yang matang dan bervariasi.
                         </p>
                       </div>
                     </div>
@@ -3279,11 +3348,11 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                       type="button"
                       onClick={() => {
                         playClick();
-                        setSelectedEngine('local');
+                        setSelectedEngine('prompt');
                       }}
                       className="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300 font-bold text-xs hover:bg-rose-100 dark:hover:bg-rose-900/50 transition-colors inline-flex items-center justify-center gap-1.5 shadow-2xs shrink-0 self-start sm:self-center btn-press"
                     >
-                      <span>Gunakan Mesin Lokal Saja</span>
+                      <span>Gunakan Prompt / Berkas</span>
                     </button>
                   </div>
                 );
@@ -4041,6 +4110,47 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
               </div>
             </div>
 
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Floating Toast Notification (Portal mengambang di atas seluruh konten dan selalu terlihat di viewport) */}
+      {toast && typeof document !== 'undefined' && createPortal(
+        <div
+          role="alert"
+          aria-live="assertive"
+          className="fixed bottom-6 sm:bottom-8 left-1/2 -translate-x-1/2 z-[200] max-w-[92vw] sm:max-w-md w-auto animate-bounce-in pointer-events-auto"
+        >
+          <div
+            className={`px-4 py-3 rounded-2xl shadow-2xl backdrop-blur-md flex items-center gap-3 text-xs sm:text-sm font-semibold border ${
+              toast.type === 'error'
+                ? 'bg-rose-600/95 text-white border-rose-400/40 shadow-rose-950/40'
+                : toast.type === 'warning'
+                ? 'bg-amber-600/95 text-white border-amber-400/40 shadow-amber-950/40'
+                : toast.type === 'success'
+                ? 'bg-emerald-600/95 text-white border-emerald-400/40 shadow-emerald-950/40'
+                : 'bg-slate-900/95 text-white border-slate-700/50 shadow-slate-950/40'
+            }`}
+          >
+            {toast.type === 'error' ? (
+              <AlertCircle className="w-5 h-5 shrink-0 text-white" />
+            ) : toast.type === 'warning' ? (
+              <AlertTriangle className="w-5 h-5 shrink-0 text-white" />
+            ) : toast.type === 'success' ? (
+              <CheckCircle2 className="w-5 h-5 shrink-0 text-white" />
+            ) : (
+              <Sparkles className="w-5 h-5 shrink-0 text-white" />
+            )}
+            <span className="flex-1 leading-snug break-words">{toast.message}</span>
+            <button
+              type="button"
+              onClick={() => setToast(null)}
+              className="p-1 -mr-1 rounded-lg text-white/80 hover:text-white hover:bg-white/20 transition-colors shrink-0 min-w-[28px] min-h-[28px] flex items-center justify-center"
+              aria-label="Tutup notifikasi"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
         </div>,
         document.body

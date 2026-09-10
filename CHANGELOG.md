@@ -1,6 +1,28 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.91] - 2026-09-11
+### Implementasi Floating Toast Notification & Mini Spec Card Adaptif Funnel AI
+
+#### 1. Floating Toast Notification (Bebas Peringatan Statis Tersembunyi)
+- Menghapus sepenuhnya spanduk merah statis (*static alert banner*) di bagian atas kontainer yang sebelumnya kerap luput dari pandangan pengguna saat berada di bagian bawah formulir atau saat menggulir layar (*scrolling*).
+- Mengintegrasikan sistem notifikasi mengambang (*floating toast notification*) menggunakan portal viewport (`fixed bottom-6 sm:bottom-8 left-1/2 -translate-x-1/2 z-[200]`) sehingga selalu tampil jelas dan langsung terbaca di layar perangkat mana pun tanpa bergantung pada posisi scroll.
+- Mendukung berbagai varian status visual dengan kontras tinggi dan aksen warna ramah mata:
+  - **Peringatan / Warning (Amber)**: Untuk validasi kelengkapan berkas, teks input, atau kuota cloud limit.
+  - **Kendala / Error (Rose)**: Untuk kegagalan pembacaan format berkas atau sintaks soal.
+  - **Sukses / Success (Emerald)**: Untuk umpan balik penyalinan prompt AI dan pemuatan berkas.
+- Dilengkapi tombol tutup cepat (`✕`), pengatur waktu hilang otomatis (*auto-dismiss* 3,8 detik), serta dukungan pembaca layar (*accessibility* ARIA `role="alert"`).
+
+#### 2. Mini Spec Card Adaptif Tahap 4 & Tahap 3 (Opsi 1 - Bebas AI Slop)
+- Menggantikan *pill badge* 1-baris yang sempit dan rentan terpotong (*truncated*) dengan **Mini Spec Card** 2-tingkat yang adaptif, rapi, dan elegan:
+  - **Baris 1**: Ikon & Nama Mata Pelajaran beserta Tingkat Kelas di sisi kiri; Lencana jumlah target butir soal, status ilustrasi, serta tombol pintas *"Ubah"* di sisi kanan.
+  - **Baris 2**: Judul materi/topik kuis utuh yang melipat secara wajar (`leading-snug break-words`) tanpa terpotong titik-titik konyol (*no aggressive truncation*), bahkan untuk judul materi yang panjang.
+- Menerapkan desain kartu ringkas yang hemat ruang vertikal dengan latar `bg-slate-50/90 dark:bg-slate-850/70 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3.5 sm:p-4` yang konsisten di mode terang maupun gelap.
+- Menyelaraskan kartu ringkasan serupa pada Tahap 3 yang dilengkapi tautan *"Ubah Topik"* langsung kembali ke Tahap 2 dengan satu sentuhan mudah.
+
+#### 3. Rekomendasi Solutif Kuota Cloud Limit
+- Menyempurnakan kartu informasi kuota habis pada pilihan mesin cloud spesifik untuk langsung mengarahkan guru ke mode **Prompt / Berkas (Direkomendasikan)** guna menjaga kualitas dan variasi soal kuis yang dihasilkan.
+
 ## [2.2.90] - 2026-09-11
 ### Penonaktifan Cerdas AI Cloud Saat Limit & Pengalihan Rekomendasi ke Prompt/Berkas
 
