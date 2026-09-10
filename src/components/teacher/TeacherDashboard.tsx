@@ -48,12 +48,13 @@ interface TeacherDashboardProps {
   teacher: TeacherProfile;
   onLogout: () => void;
   onGoHome: () => void;
-  onOpenCreator: (quizToEdit?: Quiz) => void;
+  onOpenCreator: (quizToEdit?: Quiz, mode?: 'ai' | 'manual') => void;
   onLaunchSmartboard: (quiz: Quiz) => void;
   onPrintWorksheet: (quiz: Quiz) => void;
   playClick: () => void;
   isDark?: boolean;
   onToggleTheme?: () => void;
+  initialOpenMethodModal?: boolean;
 }
 
 export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
@@ -66,10 +67,17 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   playClick,
   isDark = false,
   onToggleTheme = () => {},
+  initialOpenMethodModal = false,
 }) => {
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [selectedQuizForDetail, setSelectedQuizForDetail] = useState<Quiz | null>(null);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(Boolean(initialOpenMethodModal));
+
+  useEffect(() => {
+    if (initialOpenMethodModal) {
+      setIsCreateModalOpen(true);
+    }
+  }, [initialOpenMethodModal]);
 
   // Search, Filter & Sort States
   const [searchQuery, setSearchQuery] = useState('');
@@ -531,11 +539,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
             {filteredQuizzes.map((quiz) => (
               <div
                 key={quiz.id}
-                onClick={() => {
-                  playClick();
-                  setSelectedQuizForDetail(quiz);
-                }}
-                className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200 dark:border-slate-800 shadow-xs hover:shadow-md hover:border-blue-400 dark:hover:border-blue-500/60 transition-all flex flex-col justify-between gap-4 group cursor-pointer"
+                className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between gap-4"
               >
                 <div className="space-y-3.5">
                   {/* Row 1: PIN Box, Visibility & Three Dots */}
@@ -615,7 +619,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                           {quiz.subject}
                         </span>
                       </div>
-                      <h3 className="font-bold text-slate-900 dark:text-white text-sm sm:text-base leading-snug line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" title={quiz.title}>
+                      <h3 className="font-bold text-slate-900 dark:text-white text-sm sm:text-base leading-snug line-clamp-2" title={quiz.title}>
                         {quiz.title}
                       </h3>
                       <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2 leading-relaxed">
@@ -704,9 +708,14 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
       <CreateQuizMethodModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
-        teacher={teacher}
-        onSelectManual={() => onOpenCreator()}
-        onSelectGeneratedDraft={(draft) => onOpenCreator(draft)}
+        onSelectAi={() => {
+          setIsCreateModalOpen(false);
+          onOpenCreator(undefined, 'ai');
+        }}
+        onSelectManual={() => {
+          setIsCreateModalOpen(false);
+          onOpenCreator(undefined, 'manual');
+        }}
         playClick={playClick}
       />
 

@@ -8,29 +8,25 @@ import {
   Trash2, 
   Image as ImageIcon, 
   Save, 
-  HelpCircle, 
-  BookOpen, 
   Eye, 
   Layers, 
-  Upload,
-  Globe,
-  Lock,
-  AlertCircle,
-  RotateCcw,
-  Edit3,
-  Copy,
-  ChevronUp,
-  ChevronDown,
-  Check,
-  X,
-  Sparkles,
-  Shuffle,
-  Star,
-  Clock,
-  Loader2
+  Upload, 
+  RotateCcw, 
+  Edit3, 
+  Copy, 
+  ChevronUp, 
+  ChevronDown, 
+  X, 
+  Sparkles, 
+  Star, 
+  Loader2,
+  ArrowRight,
+  AlertCircle
 } from 'lucide-react';
 import { AiQuestionModal } from './AiQuestionModal';
 import { generateAiIllustrationUrl } from '../../lib/geminiApi';
+import { AiGeneratorStep } from './AiGeneratorStep';
+import { InfoKuisStep } from './InfoKuisStep';
 
 interface QuizCreatorProps {
   onBack: () => void;
@@ -39,29 +35,14 @@ interface QuizCreatorProps {
   isDark?: boolean;
   onToggleTheme?: () => void;
   editingQuiz?: Quiz | null;
+  initialMode?: 'ai' | 'manual';
+  onBackToMethodSelection?: () => void;
 }
-
-const EMOJI_OPTIONS = ['🍎', '📐', '🐸', '🌱', '🫀', '🦅', '🚀', '📚', '🎨', '🔬', '⚽', '🦁', '🐯', '🐼', '💡', '🧩'];
-
-const PRESET_STICKERS = [
-  '🍎 🍎 🍎 + 🍎 🍎',
-  '🍕 1 dari 4 Bagian',
-  '⏹️ Bangun Persegi Sisi 6 cm',
-  '🔺 Segitiga Tiga Sisi',
-  '🐸 Katak Amfibi',
-  '🐟 Ikan Berenang',
-  '🌱 Bagian Daun & Akar',
-  '☀️ Cahaya Matahari',
-  '🐘 Gajah Berbelalai',
-  '❤️ Jantung Berdetak',
-  '🇮🇩 Burung Garuda Pancasila',
-  '🪙 Koin Logam Lingkaran'
-];
 
 const DRAFT_STORAGE_KEY = 'kuis_creator_draft_v1';
 
 interface CreatorDraft {
-  currentStep: 1 | 2 | 3;
+  currentStep: number;
   title: string;
   description: string;
   subject: Subject;
@@ -93,12 +74,23 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   isDark = false,
   onToggleTheme = () => {},
   editingQuiz = null,
+  initialMode = 'manual',
+  onBackToMethodSelection,
 }) => {
+  const isAiMode = initialMode === 'ai' && !editingQuiz;
+  const totalSteps = isAiMode ? 4 : 3;
+
   const [draft] = useState<CreatorDraft | null>(() => (editingQuiz ? null : loadDraft()));
 
-  const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(
-    editingQuiz && editingQuiz.questions && editingQuiz.questions.length > 0 ? 2 : (draft?.currentStep || 1)
-  );
+  const [currentStep, setCurrentStep] = useState<number>(() => {
+    if (editingQuiz && editingQuiz.questions && editingQuiz.questions.length > 0) {
+      return 2;
+    }
+    if (isAiMode) {
+      return 1;
+    }
+    return draft?.currentStep || 1;
+  });
 
   // General Quiz State
   const [title, setTitle] = useState(editingQuiz?.title || draft?.title || '');
@@ -116,7 +108,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   // Questions State
   const [questions, setQuestions] = useState<QuizQuestion[]>(editingQuiz?.questions || draft?.questions || []);
 
-  // Notice & Reset states (replacing alert/confirm)
+  // Notice & Reset states
   const [noticeMessage, setNoticeMessage] = useState<string | null>(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
@@ -163,7 +155,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
         // quota fallback
       }
     }
-  }, [currentStep, title, description, subject, grade, durationPerQuestionSec, coverEmoji, badgeTitle, visibility, defaultGameMode, shuffleQuestions, shuffleOptions, questions]);
+  }, [currentStep, title, description, subject, grade, durationPerQuestionSec, coverEmoji, badgeTitle, visibility, defaultGameMode, shuffleQuestions, shuffleOptions, questions, editingQuiz]);
 
   const handleResetDraft = () => {
     try {
@@ -198,29 +190,34 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   const [qOptions, setQOptions] = useState<string[]>(['', '', '', '']);
   const [qCorrectIndex, setQCorrectIndex] = useState<number>(0);
   const [qExplanation, setQExplanation] = useState('');
-  const [isAddingQuestion, setIsAddingQuestion] = useState(true);
-  const [isGeneratingSingleImage, setIsGeneratingSingleImage] = useState(false);
-
-  // New Question Type Specific Form States
-  const [qAcceptableAnswers, setQAcceptableAnswers] = useState<string>('');
+  const [qAcceptableAnswers, setQAcceptableAnswers] = useState('');
   const [qMatchingPairs, setQMatchingPairs] = useState<{ left: string; right: string }[]>([
     { left: '', right: '' },
     { left: '', right: '' },
     { left: '', right: '' },
   ]);
   const [qPoints, setQPoints] = useState<number>(10);
-  const [qCustomDurationSec, setQCustomDurationSec] = useState<number | ''>('');
+  const [qCustomDurationSec, setQCustomDurationSec] = useState<string>('');
+  const [isAddingQuestion, setIsAddingQuestion] = useState(false);
+  const [isGeneratingAiImage, setIsGeneratingAiImage] = useState(false);
 
-  // 1. Level 2 (Prioritas 50): Mundur dari Langkah 3 (Pratinjau) ke Langkah 2 (Soal)
-  useBackHandler('creator-step-3', 50, () => {
-    if (currentStep === 3) {
+  // Back Handlers
+  useBackHandler('creator-step-preview', 40, () => {
+    if ((isAiMode && currentStep === 4) || (!isAiMode && currentStep === 3)) {
+      setCurrentStep(isAiMode ? 3 : 2);
+      return true;
+    }
+    return false;
+  }, (isAiMode && currentStep === 4) || (!isAiMode && currentStep === 3));
+
+  useBackHandler('creator-step-info-ai', 45, () => {
+    if (isAiMode && currentStep === 3) {
       setCurrentStep(2);
       return true;
     }
     return false;
-  }, currentStep === 3);
+  }, isAiMode && currentStep === 3);
 
-  // 2. Level 2 (Prioritas 50): Mundur dari Langkah 2 ke Langkah 1, atau batalkan edit / tutup form
   useBackHandler('creator-step-2', 50, () => {
     if (currentStep === 2) {
       if (editingQuestionId) {
@@ -236,6 +233,18 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     }
     return false;
   }, currentStep === 2);
+
+  useBackHandler('creator-step-1', 55, () => {
+    if (currentStep === 1) {
+      if (isAiMode && onBackToMethodSelection) {
+        onBackToMethodSelection();
+        return true;
+      }
+      onBack();
+      return true;
+    }
+    return false;
+  }, currentStep === 1);
 
   const resetFormFields = (targetType: QuestionType = qType) => {
     setQText('');
@@ -320,248 +329,213 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     }
   };
 
-  const handleGenerateAiImageForQuestion = () => {
+  const handleGenerateSingleAiImage = () => {
     playClick();
-    const promptBasis = qImageCaption.trim() || qText.trim();
-    if (!promptBasis) {
-      showToast('Tulis deskripsi ilustrasi atau pertanyaan terlebih dahulu.');
+    const promptText = qImageCaption.trim() || qText.trim() || `${subject} Kelas ${grade}`;
+    if (!promptText) {
+      showToast('Tulis deskripsi gambar atau pertanyaan terlebih dahulu untuk membuat ilustrasi AI.');
       return;
     }
-    setIsGeneratingSingleImage(true);
+
+    setIsGeneratingAiImage(true);
     try {
-      const url = generateAiIllustrationUrl(promptBasis);
-      setQImageUrl(url);
+      const generatedUrl = generateAiIllustrationUrl(promptText);
+      setQImageUrl(generatedUrl);
       if (!qImageCaption.trim()) {
-        setQImageCaption(promptBasis.slice(0, 40));
+        setQImageCaption(promptText.slice(0, 45));
       }
-      showToast('🎨 Ilustrasi edukasi AI berhasil dibuat!');
+      showToast('🎨 Gambar ilustrasi edukasi AI berhasil dibuat!');
     } catch {
-      showToast('Gagal membuat gambar AI.');
+      showToast('Kendala saat meracik gambar AI.');
     } finally {
-      setIsGeneratingSingleImage(false);
-    }
-  };
-
-  const handleStartEditQuestion = (q: QuizQuestion) => {
-    playClick();
-    setEditingQuestionId(q.id);
-    setQText(q.text);
-    setQType(q.type || 'multiple_choice');
-    setQImageCaption(q.imageCaption || '');
-    setQImageUrl(q.imageUrl);
-    setQOptions(q.options && q.options.length > 0 ? [...q.options] : ['', '', '', '']);
-    setQCorrectIndex(q.correctIndex || 0);
-    setQExplanation(q.explanation || '');
-    setQAcceptableAnswers((q.acceptableAnswers || []).join(', '));
-    setQPoints(q.points ?? 10);
-    setQCustomDurationSec(q.customDurationSec ?? '');
-    if (q.matchingPairs && q.matchingPairs.length > 0) {
-      setQMatchingPairs([...q.matchingPairs]);
-    } else {
-      setQMatchingPairs([
-        { left: '', right: '' },
-        { left: '', right: '' },
-        { left: '', right: '' },
-      ]);
-    }
-    setIsAddingQuestion(true);
-  };
-
-  const handleCancelEdit = () => {
-    playClick();
-    setEditingQuestionId(null);
-    resetFormFields();
-    if (questions.length > 0) {
-      setIsAddingQuestion(false);
+      setIsGeneratingAiImage(false);
     }
   };
 
   const handleOpenNewQuestion = () => {
     playClick();
     setEditingQuestionId(null);
-    resetFormFields();
+    resetFormFields('multiple_choice');
     setIsAddingQuestion(true);
   };
 
-  const handleDuplicateQuestion = (id: string) => {
+  const handleStartEditQuestion = (q: QuizQuestion) => {
     playClick();
-    const index = questions.findIndex((q) => q.id === id);
-    if (index === -1) return;
+    setEditingQuestionId(q.id);
+    setQText(q.text);
+    setQType(q.type);
+    setQImageCaption(q.imageCaption || '');
+    setQImageUrl(q.imageUrl);
+    setQExplanation(q.explanation || '');
+    setQPoints(q.points || 10);
+    setQCustomDurationSec(q.customDurationSec ? String(q.customDurationSec) : '');
 
-    const source = questions[index];
-    const duplicated: QuizQuestion = {
-      ...source,
-      id: 'q_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
-      text: `${source.text} (Salinan)`,
-      options: source.options ? [...source.options] : [],
-      matchingPairs: source.matchingPairs ? [...source.matchingPairs] : undefined,
-      acceptableAnswers: source.acceptableAnswers ? [...source.acceptableAnswers] : undefined,
-      points: source.points ?? 10,
-      customDurationSec: source.customDurationSec,
-    };
-
-    const next = [...questions];
-    next.splice(index + 1, 0, duplicated);
-    setQuestions(next);
-    showToast(`Soal #${index + 1} berhasil disalin.`);
-  };
-
-  const handleMoveQuestion = (index: number, direction: 'up' | 'down') => {
-    playClick();
-    if (direction === 'up' && index === 0) return;
-    if (direction === 'down' && index === questions.length - 1) return;
-
-    const targetIndex = direction === 'up' ? index - 1 : index + 1;
-    const next = [...questions];
-    const temp = next[index];
-    next[index] = next[targetIndex];
-    next[targetIndex] = temp;
-    setQuestions(next);
-    showToast(`Urutan soal berhasil dipindahkan.`);
-  };
-
-  const handleSaveQuestion = (e: React.FormEvent, mode: 'finish' | 'continue' = 'finish') => {
-    e.preventDefault();
-    playClick();
-
-    if (!qText.trim()) {
-      showToast('Teks pertanyaan wajib diisi.');
-      return;
-    }
-
-    let validOptions: string[] = [];
-    let acceptableAnswers: string[] | undefined = undefined;
-    let matchingPairs: { left: string; right: string }[] | undefined = undefined;
-
-    if (qType === 'short_answer') {
-      const parsedAnswers = qAcceptableAnswers
-        .split(',')
-        .map((s) => s.trim())
-        .filter((s) => s.length > 0);
-
-      if (parsedAnswers.length === 0) {
-        showToast('Tulis minimal 1 kunci jawaban untuk isian singkat.');
-        return;
-      }
-      acceptableAnswers = parsedAnswers;
-      validOptions = [parsedAnswers[0]];
-    } else if (qType === 'matching_pairs') {
-      const validPairs = qMatchingPairs.filter((p) => p.left.trim() !== '' && p.right.trim() !== '');
-      if (validPairs.length < 2) {
-        showToast('Minimal harus ada 2 pasangan kartu yang terisi.');
-        return;
-      }
-      matchingPairs = validPairs.map((p) => ({ left: p.left.trim(), right: p.right.trim() }));
-      validOptions = validPairs.map((p) => `${p.left} ↔ ${p.right}`);
+    if (q.type === 'matching_pairs') {
+      setQMatchingPairs(q.matchingPairs && q.matchingPairs.length > 0 ? q.matchingPairs : [
+        { left: '', right: '' },
+        { left: '', right: '' },
+      ]);
+      setQOptions([]);
+      setQCorrectIndex(0);
+    } else if (q.type === 'short_answer') {
+      setQAcceptableAnswers(q.acceptableAnswers ? q.acceptableAnswers.join(', ') : (q.options[0] || ''));
+      setQOptions([q.options[0] || '']);
+      setQCorrectIndex(0);
     } else {
-      validOptions = qOptions.filter((opt) => opt.trim() !== '');
-      if (validOptions.length < 2) {
-        showToast('Minimal harus ada 2 pilihan jawaban.');
-        return;
-      }
+      setQOptions([...q.options]);
+      setQCorrectIndex(q.correctIndex);
     }
 
-    const calculatedPoints = Number(qPoints) > 0 ? Number(qPoints) : 10;
-    const customDuration = typeof qCustomDurationSec === 'number' && qCustomDurationSec > 0 ? qCustomDurationSec : undefined;
+    setIsAddingQuestion(true);
+  };
 
-    if (editingQuestionId) {
-      const updatedQuestions = questions.map((q) => {
-        if (q.id === editingQuestionId) {
-          return {
-            ...q,
-            text: qText.trim(),
-            type: qType,
-            imageCaption: qImageCaption.trim() || undefined,
-            imageUrl: qImageUrl,
-            options: validOptions,
-            correctIndex: qType === 'short_answer' || qType === 'matching_pairs' ? 0 : Math.min(qCorrectIndex, validOptions.length - 1),
-            explanation: qExplanation.trim() || 'Jawaban ini benar sesuai dengan konsep materi terkait.',
-            acceptableAnswers,
-            matchingPairs,
-            points: calculatedPoints,
-            customDurationSec: customDuration,
-          };
-        }
-        return q;
-      });
-
-      setQuestions(updatedQuestions);
-      setEditingQuestionId(null);
-      resetFormFields();
-      if (mode === 'finish') {
-        setIsAddingQuestion(false);
-      }
-      showToast('Perubahan butir soal berhasil disimpan.');
-      return;
-    }
-
-    const newQuestion: QuizQuestion = {
-      id: 'q_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
-      text: qText.trim(),
-      type: qType,
-      imageCaption: qImageCaption.trim() || undefined,
-      imageUrl: qImageUrl,
-      options: validOptions,
-      correctIndex: qType === 'short_answer' || qType === 'matching_pairs' ? 0 : Math.min(qCorrectIndex, validOptions.length - 1),
-      explanation: qExplanation.trim() || 'Jawaban ini benar sesuai dengan konsep materi terkait.',
-      acceptableAnswers,
-      matchingPairs,
-      points: calculatedPoints,
-      customDurationSec: customDuration,
-    };
-
-    setQuestions([...questions, newQuestion]);
+  const handleCancelEdit = () => {
+    playClick();
+    setEditingQuestionId(null);
+    setIsAddingQuestion(false);
     resetFormFields();
+  };
 
-    if (mode === 'continue') {
-      setIsAddingQuestion(true);
-      showToast('Soal disimpan. Silakan buat soal berikutnya!');
-    } else {
-      setIsAddingQuestion(false);
-      showToast('Soal berhasil disimpan ke bank soal.');
-    }
+  const handleDuplicateQuestion = (q: QuizQuestion) => {
+    playClick();
+    const dup: QuizQuestion = {
+      ...q,
+      id: 'q_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      text: q.text + ' (Salinan)',
+    };
+    setQuestions((prev) => [...prev, dup]);
+    showToast('Soal berhasil diduplikasi.');
   };
 
   const handleDeleteQuestion = (id: string) => {
     playClick();
+    setQuestions((prev) => prev.filter((q) => q.id !== id));
     if (editingQuestionId === id) {
       handleCancelEdit();
     }
-    setQuestions((prev) => prev.filter((q) => q.id !== id));
     showToast('Soal telah dihapus.');
+  };
+
+  const handleMoveQuestion = (index: number, direction: 'up' | 'down') => {
+    playClick();
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= questions.length) return;
+    const reordered = [...questions];
+    const [moved] = reordered.splice(index, 1);
+    reordered.splice(targetIndex, 0, moved);
+    setQuestions(reordered);
+  };
+
+  const handleSaveQuestion = (e: React.FormEvent, afterSave: 'continue' | 'finish' = 'continue') => {
+    e.preventDefault();
+    playClick();
+
+    if (!qText.trim()) {
+      showToast('Pertanyaan soal tidak boleh kosong.');
+      return;
+    }
+
+    let finalOptions = qOptions;
+    let finalAcceptable: string[] | undefined = undefined;
+    let finalPairs = undefined;
+
+    if (qType === 'matching_pairs') {
+      const validPairs = qMatchingPairs.filter((p) => p.left.trim() && p.right.trim());
+      if (validPairs.length < 2) {
+        showToast('Minimal harus mengisi 2 pasangan kartu yang lengkap (kiri dan kanan).');
+        return;
+      }
+      finalPairs = validPairs.map((p) => ({ left: p.left.trim(), right: p.right.trim() }));
+      finalOptions = finalPairs.map((p) => `${p.left} -> ${p.right}`);
+    } else if (qType === 'short_answer') {
+      const list = qAcceptableAnswers.split(',').map((s) => s.trim()).filter(Boolean);
+      if (list.length === 0) {
+        showToast('Harap masukkan minimal 1 jawaban benar untuk isian singkat.');
+        return;
+      }
+      finalAcceptable = list;
+      finalOptions = [list[0]];
+    } else {
+      for (let i = 0; i < qOptions.length; i++) {
+        if (!qOptions[i].trim()) {
+          showToast(`Opsi jawaban ${String.fromCharCode(65 + i)} belum diisi.`);
+          return;
+        }
+      }
+    }
+
+    const durationVal = parseInt(qCustomDurationSec);
+    const validCustomDuration = !isNaN(durationVal) && durationVal >= 5 && durationVal <= 180 ? durationVal : undefined;
+
+    const targetId = editingQuestionId || ('q_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6));
+
+    const newQuestion: QuizQuestion = {
+      id: targetId,
+      text: qText.trim(),
+      type: qType,
+      options: finalOptions,
+      correctIndex: qType === 'matching_pairs' ? 0 : qCorrectIndex,
+      acceptableAnswers: finalAcceptable,
+      matchingPairs: finalPairs,
+      imageCaption: qImageCaption.trim() || undefined,
+      imageUrl: qImageUrl,
+      explanation: qExplanation.trim() || '',
+      points: qPoints || 10,
+      customDurationSec: validCustomDuration,
+    };
+
+    if (editingQuestionId) {
+      setQuestions((prev) => prev.map((q) => (q.id === editingQuestionId ? newQuestion : q)));
+      showToast('Perubahan butir soal berhasil disimpan.');
+    } else {
+      setQuestions((prev) => [...prev, newQuestion]);
+      showToast('Soal baru berhasil ditambahkan.');
+    }
+
+    if (afterSave === 'finish') {
+      setIsAddingQuestion(false);
+      setEditingQuestionId(null);
+      resetFormFields();
+    } else {
+      setEditingQuestionId(null);
+      resetFormFields(qType);
+      setIsAddingQuestion(true);
+    }
   };
 
   const handleFinalPublish = () => {
     playClick();
     if (!title.trim()) {
       showToast('Judul kuis tidak boleh kosong.');
-      setCurrentStep(1);
+      setCurrentStep(isAiMode ? 3 : 1);
       return;
     }
     if (questions.length === 0) {
-      showToast('Kuis minimal harus memiliki 1 soal.');
+      showToast('Kuis harus memiliki minimal 1 butir soal sebelum diterbitkan.');
       setCurrentStep(2);
       return;
     }
 
     const finalQuiz: Quiz = {
-      id: editingQuiz?.id || ('custom_' + Date.now()),
+      id: editingQuiz?.id || ('quiz_' + Date.now()),
       title: title.trim(),
-      description: description.trim() || `Kuis interaktif buatan Guru untuk Kelas ${grade}.`,
+      description: description.trim(),
       subject,
       grade,
       durationPerQuestionSec,
       coverEmoji,
-      themeColor: editingQuiz?.themeColor || 'from-blue-600 to-indigo-600',
-      badgeTitle: badgeTitle.trim() || 'Bintang Juara',
+      badgeTitle: badgeTitle.trim() || 'Bintang Pintar',
+      themeColor: editingQuiz?.themeColor || '#2563eb',
       visibility,
-      questions,
-      pinCode: editingQuiz?.pinCode,
-      creatorId: editingQuiz?.creatorId,
-      creatorName: editingQuiz?.creatorName,
       defaultGameMode,
       shuffleQuestions,
       shuffleOptions,
+      questions,
+      pinCode: editingQuiz?.pinCode || Math.floor(1000 + Math.random() * 9000).toString(),
+      isPublished: true,
+      creatorId: editingQuiz?.creatorId || 'teacher_custom',
+      creatorName: editingQuiz?.creatorName || 'Guru Kuis',
+      createdAt: editingQuiz?.createdAt || new Date().toISOString(),
     };
 
     try {
@@ -573,31 +547,57 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     onSaveQuiz(finalQuiz);
   };
 
+  const handleHeaderBack = () => {
+    playClick();
+    if (isAiMode && currentStep === 1) {
+      if (onBackToMethodSelection) {
+        onBackToMethodSelection();
+      } else {
+        onBack();
+      }
+      return;
+    }
+    if (currentStep > 1) {
+      setCurrentStep((prev) => prev - 1);
+      return;
+    }
+    onBack();
+  };
+
   return (
-    <div className="w-full min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-20 select-none flex flex-col">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col pb-16">
       
       {/* Top Header */}
-      <header className="w-full sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-3 sm:px-8 lg:px-12 pt-[max(env(safe-area-inset-top),0.625rem)] pb-2.5 sm:pb-3 shadow-sm">
-        <div className={`w-full mx-auto flex items-center justify-between gap-2 sm:gap-3 transition-all ${
-          currentStep === 2 ? 'max-w-[2000px]' : 'max-w-4xl 2xl:max-w-5xl'
-        }`}>
+      <header className="w-full sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-3 sm:px-6 lg:px-8 pt-[max(env(safe-area-inset-top),0.625rem)] pb-2.5 sm:pb-3 shadow-xs">
+        <div className="w-full max-w-6xl 2xl:max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-3 transition-all">
           <button
-            onClick={() => {
-              playClick();
-              onBack();
-            }}
-            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 font-semibold text-xs sm:text-sm min-h-[44px] min-w-[44px] justify-center btn-press transition-colors flex-shrink-0"
+            onClick={handleHeaderBack}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 font-semibold text-xs sm:text-sm min-h-[44px] min-w-[44px] justify-center btn-press transition-colors flex-shrink-0"
           >
             <ArrowLeft className="w-4 h-4" />
             <span className="hidden xs:inline">Kembali</span>
           </button>
 
           <div className="text-center min-w-0 flex-1 px-1">
-            <h1 className="text-xs xs:text-sm sm:text-lg font-bold text-slate-900 dark:text-white leading-tight truncate">
-              {editingQuiz ? 'Edit Kuis ✏️' : 'Studio Kuis Guru 🧑‍🏫'}
+            <h1 className="text-xs xs:text-sm sm:text-lg font-extrabold text-slate-900 dark:text-white leading-tight truncate">
+              {editingQuiz ? 'Edit Kuis ✏️' : isAiMode ? 'Studio Kuis AI ⚡' : 'Studio Kuis Guru 🧑‍🏫'}
             </h1>
             <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium truncate hidden xs:block">
-              Langkah {currentStep} dari 3: {currentStep === 1 ? 'Informasi Kuis' : currentStep === 2 ? 'Bank Soal' : 'Pratinjau'}
+              Langkah {currentStep} dari {totalSteps}: {
+                isAiMode
+                  ? currentStep === 1
+                    ? 'Generator Kilat AI'
+                    : currentStep === 2
+                    ? 'Bank Soal'
+                    : currentStep === 3
+                    ? 'Informasi Kuis'
+                    : 'Pratinjau & Simpan'
+                  : currentStep === 1
+                  ? 'Informasi Kuis'
+                  : currentStep === 2
+                  ? 'Bank Soal'
+                  : 'Pratinjau & Simpan'
+              }
             </p>
           </div>
 
@@ -610,7 +610,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                   setShowResetConfirm(true);
                 }}
                 className="text-xs font-semibold text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 p-2 sm:px-2.5 sm:py-1.5 rounded-xl border border-rose-200 dark:border-rose-900/50 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors flex items-center gap-1 min-h-[44px] min-w-[44px] justify-center"
-                title="Hapus draf yang sedang diedit"
+                title="Hapus draf yang sedang dibuat"
                 aria-label="Reset Draf"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
@@ -624,56 +624,119 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
           </div>
         </div>
 
-        {/* Step Tabs */}
-        <div className={`w-full mx-auto mt-2 grid grid-cols-3 gap-1.5 sm:gap-2 transition-all ${
-          currentStep === 2 ? 'max-w-[2000px]' : 'max-w-4xl 2xl:max-w-5xl'
+        {/* Step Navigation Tabs */}
+        <div className={`w-full max-w-6xl 2xl:max-w-7xl mx-auto mt-2.5 grid gap-1.5 sm:gap-2 transition-all ${
+          isAiMode ? 'grid-cols-4' : 'grid-cols-3'
         }`}>
-          <button
-            onClick={() => {
-              playClick();
-              setCurrentStep(1);
-            }}
-            className={`py-2 px-1 rounded-xl font-bold text-xs sm:text-sm transition-all min-h-[44px] truncate ${
-              currentStep === 1
-                ? 'bg-blue-600 text-white shadow-sm'
-                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-            }`}
-          >
-            <span className="hidden xs:inline">1. Info Kuis</span>
-            <span className="xs:hidden">1. Info</span>
-          </button>
-          <button
-            onClick={() => {
-              playClick();
-              setCurrentStep(2);
-            }}
-            className={`py-2 px-1 rounded-xl font-bold text-xs sm:text-sm transition-all min-h-[44px] truncate ${
-              currentStep === 2
-                ? 'bg-blue-600 text-white shadow-sm'
-                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-            }`}
-          >
-            <span className="hidden xs:inline">2. Bank Soal ({questions.length})</span>
-            <span className="xs:hidden">2. Soal ({questions.length})</span>
-          </button>
-          <button
-            onClick={() => {
-              playClick();
-              setCurrentStep(3);
-            }}
-            className={`py-2 px-1 rounded-xl font-bold text-xs sm:text-sm transition-all min-h-[44px] truncate ${
-              currentStep === 3
-                ? 'bg-blue-600 text-white shadow-sm'
-                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-            }`}
-          >
-            <span className="hidden xs:inline">3. Pratinjau</span>
-            <span className="xs:hidden">3. Simpan</span>
-          </button>
+          {isAiMode ? (
+            <>
+              <button
+                onClick={() => {
+                  playClick();
+                  setCurrentStep(1);
+                }}
+                className={`py-2 px-1 rounded-xl font-bold text-xs sm:text-sm transition-all min-h-[44px] truncate ${
+                  currentStep === 1
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                <span className="hidden sm:inline">1. ⚡ Generator AI</span>
+                <span className="sm:hidden">1. AI</span>
+              </button>
+              <button
+                onClick={() => {
+                  playClick();
+                  setCurrentStep(2);
+                }}
+                className={`py-2 px-1 rounded-xl font-bold text-xs sm:text-sm transition-all min-h-[44px] truncate ${
+                  currentStep === 2
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                <span className="hidden sm:inline">2. Bank Soal ({questions.length})</span>
+                <span className="sm:hidden">2. Soal ({questions.length})</span>
+              </button>
+              <button
+                onClick={() => {
+                  playClick();
+                  setCurrentStep(3);
+                }}
+                className={`py-2 px-1 rounded-xl font-bold text-xs sm:text-sm transition-all min-h-[44px] truncate ${
+                  currentStep === 3
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                <span className="hidden sm:inline">3. Info Kuis</span>
+                <span className="sm:hidden">3. Info</span>
+              </button>
+              <button
+                onClick={() => {
+                  playClick();
+                  setCurrentStep(4);
+                }}
+                className={`py-2 px-1 rounded-xl font-bold text-xs sm:text-sm transition-all min-h-[44px] truncate ${
+                  currentStep === 4
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                <span className="hidden sm:inline">4. Pratinjau</span>
+                <span className="sm:hidden">4. Simpan</span>
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={() => {
+                  playClick();
+                  setCurrentStep(1);
+                }}
+                className={`py-2 px-1 rounded-xl font-bold text-xs sm:text-sm transition-all min-h-[44px] truncate ${
+                  currentStep === 1
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                <span className="hidden sm:inline">1. Info Kuis</span>
+                <span className="sm:hidden">1. Info</span>
+              </button>
+              <button
+                onClick={() => {
+                  playClick();
+                  setCurrentStep(2);
+                }}
+                className={`py-2 px-1 rounded-xl font-bold text-xs sm:text-sm transition-all min-h-[44px] truncate ${
+                  currentStep === 2
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                <span className="hidden sm:inline">2. Bank Soal ({questions.length})</span>
+                <span className="sm:hidden">2. Soal ({questions.length})</span>
+              </button>
+              <button
+                onClick={() => {
+                  playClick();
+                  setCurrentStep(3);
+                }}
+                className={`py-2 px-1 rounded-xl font-bold text-xs sm:text-sm transition-all min-h-[44px] truncate ${
+                  currentStep === 3
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                <span className="hidden sm:inline">3. Pratinjau</span>
+                <span className="sm:hidden">3. Simpan</span>
+              </button>
+            </>
+          )}
         </div>
       </header>
 
-      {/* Floating notice toast (replaces alert) */}
+      {/* Floating Notice Toast */}
       {noticeMessage && (
         <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 dark:bg-slate-100/95 text-white dark:text-slate-900 px-4 py-2.5 rounded-xl shadow-xl border border-slate-700/40 dark:border-slate-300/40 flex items-center gap-2.5 text-xs sm:text-sm font-semibold backdrop-blur-md animate-fade-in">
           <AlertCircle className="w-4 h-4 text-amber-400 dark:text-amber-600 shrink-0" />
@@ -681,9 +744,9 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
         </div>
       )}
 
-      {/* Custom Reset Draft Modal */}
+      {/* Reset Confirmation Modal */}
       {showResetConfirm && (
-        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 max-w-sm w-full border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-rose-100 dark:bg-rose-950/50 flex items-center justify-center text-rose-600 dark:text-rose-400 shrink-0">
@@ -691,346 +754,99 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
               </div>
               <div>
                 <h3 className="text-sm font-bold text-slate-900 dark:text-white">Kosongkan Draf?</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Seluruh data judul dan soal yang belum disimpan akan dihapus permanen.</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Seluruh data judul dan butir soal yang belum disimpan akan dihapus permanen.</p>
               </div>
             </div>
             <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
               <button
                 type="button"
                 onClick={() => setShowResetConfirm(false)}
-                className="px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                className="px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
               >
                 Batal
               </button>
               <button
                 type="button"
                 onClick={handleResetDraft}
-                className="px-4 py-2 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-sm transition-colors"
+                className="px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 transition-colors"
               >
-                Hapus Draf
+                Ya, Kosongkan
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Main Form Content */}
-      <main className="w-full max-w-[2000px] mx-auto px-3 xs:px-4 sm:px-8 lg:px-12 pt-5 flex-1">
+      {/* Main Content View */}
+      <main className="flex-1 w-full mt-4">
+        
+        {/* ================= STEP 1 IN AI MODE: GENERATOR AI ================= */}
+        {isAiMode && currentStep === 1 && (
+          <AiGeneratorStep
+            onGenerated={(data) => {
+              setQuestions(data.questions);
+              setTitle(`Kuis ${data.subject}: ${data.topic.length > 40 ? data.topic.slice(0, 40) + '...' : data.topic}`);
+              setDescription(`Latihan kuis interaktif Kurikulum Merdeka mata pelajaran ${data.subject} Kelas ${data.grade} SD topik ${data.topic}.`);
+              setSubject(data.subject);
+              setGrade(data.grade);
+              setCoverEmoji(data.coverEmoji);
+              setBadgeTitle(data.badgeTitle);
+              setCurrentStep(2);
+              showToast(`⚡ Berhasil meracik ${data.questions.length} butir soal! Silakan periksa di Bank Soal.`);
+            }}
+            onBack={() => {
+              if (onBackToMethodSelection) {
+                onBackToMethodSelection();
+              } else {
+                onBack();
+              }
+            }}
+            playClick={playClick}
+            initialSubject={subject}
+            initialGrade={grade}
+          />
+        )}
 
-        {/* ================= STEP 1: GENERAL INFO ================= */}
-        {currentStep === 1 && (
-          <div className="max-w-4xl 2xl:max-w-5xl mx-auto bg-white dark:bg-slate-900 rounded-2xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-card space-y-5 animate-fade-in">
-            <div className="flex items-center gap-2 pb-3 border-b border-slate-100 dark:border-slate-800">
-              <BookOpen className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-              <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">Informasi Dasar Kuis</h2>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="sm:col-span-2">
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                  Judul Kuis <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none font-semibold text-sm min-h-[44px]"
-                  required
-                />
-              </div>
-
-              <div className="sm:col-span-2">
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                  Deskripsi / Petunjuk untuk Siswa
-                </label>
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  rows={2}
-                  className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none text-sm font-medium"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                  Target Kelas <span className="text-rose-500">*</span>
-                </label>
-                <select
-                  value={grade}
-                  onChange={(e) => setGrade(Number(e.target.value))}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 focus:border-blue-500 focus:outline-none font-semibold text-sm min-h-[44px] bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                >
-                  {[1, 2, 3, 4, 5, 6].map((g) => (
-                    <option key={g} value={g}>Kelas {g}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                  Mata Pelajaran <span className="text-rose-500">*</span>
-                </label>
-                <select
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value as Subject)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 focus:border-blue-500 focus:outline-none font-semibold text-sm min-h-[44px] bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                >
-                  <option value="Matematika">Matematika</option>
-                  <option value="IPA">IPA (Sains)</option>
-                  <option value="Bahasa Indonesia">Bahasa Indonesia</option>
-                  <option value="Pendidikan Pancasila">Pendidikan Pancasila</option>
-                  <option value="Pengetahuan Umum">Pengetahuan Umum</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                  Waktu Menjawab Per Soal
-                </label>
-                <div className="flex items-center gap-1.5">
-                  {[15, 20, 30, 45, 60].map((dur) => (
-                    <button
-                      type="button"
-                      key={dur}
-                      onClick={() => {
-                        playClick();
-                        setDurationPerQuestionSec(dur);
-                      }}
-                      className={`flex-1 py-2 rounded-lg font-bold text-xs min-h-[40px] ${
-                        durationPerQuestionSec === dur
-                          ? 'bg-blue-600 text-white shadow-sm'
-                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-                      }`}
-                    >
-                      {dur}s
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                  Gelar Hadiah Kuis
-                </label>
-                <input
-                  type="text"
-                  value={badgeTitle}
-                  onChange={(e) => setBadgeTitle(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none font-semibold text-sm min-h-[44px]"
-                />
-              </div>
-
-              <div className="sm:col-span-2">
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                  Pilih Ikon Sampul Kuis
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {EMOJI_OPTIONS.map((em) => (
-                    <button
-                      type="button"
-                      key={em}
-                      onClick={() => {
-                        playClick();
-                        setCoverEmoji(em);
-                      }}
-                      className={`w-10 h-10 rounded-xl text-xl flex items-center justify-center border transition-all ${
-                        coverEmoji === em
-                          ? 'bg-blue-50 dark:bg-blue-900/40 border-blue-500 ring-2 ring-blue-400 shadow-sm'
-                          : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750'
-                      }`}
-                    >
-                      {em}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Visibility Selector */}
-              <div className="sm:col-span-2 pt-3 border-t border-slate-100 dark:border-slate-800">
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">
-                  Visibilitas & Akses Kuis <span className="text-rose-500">*</span>
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      playClick();
-                      setVisibility('public');
-                    }}
-                    className={`p-3.5 rounded-xl border text-left flex items-start gap-3 transition-all min-h-[48px] btn-press ${
-                      visibility === 'public'
-                        ? 'bg-blue-50/80 border-blue-500 text-blue-950 dark:bg-blue-950/40 dark:border-blue-500 dark:text-blue-100 ring-2 ring-blue-400/30 shadow-sm'
-                        : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-750'
-                    }`}
-                  >
-                    <Globe className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <div className="font-bold text-xs sm:text-sm flex items-center gap-1.5">
-                        <span>🌐 Publik (Katalog Siswa)</span>
-                      </div>
-                      <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-snug">
-                        Tampil di beranda siswa dan katalog publik. Semua siswa dapat langsung melihat dan memainkannya.
-                      </div>
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      playClick();
-                      setVisibility('private');
-                    }}
-                    className={`p-3.5 rounded-xl border text-left flex items-start gap-3 transition-all min-h-[48px] btn-press ${
-                      visibility === 'private'
-                        ? 'bg-amber-50/80 border-amber-500 text-amber-950 dark:bg-amber-950/40 dark:border-amber-500 dark:text-amber-100 ring-2 ring-amber-400/30 shadow-sm'
-                        : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-750'
-                    }`}
-                  >
-                    <Lock className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <div className="font-bold text-xs sm:text-sm flex items-center gap-1.5">
-                        <span>🔒 Privat (Hanya Lewat PIN)</span>
-                      </div>
-                      <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-snug">
-                        Tersembunyi dari katalog publik siswa. Hanya siswa dengan PIN 4 digit atau tautan langsung yang dapat mengakses.
-                      </div>
-                    </div>
-                  </button>
-                </div>
-              </div>
-
-              {/* Default Game Mode Selector */}
-              <div className="sm:col-span-2 pt-3 border-t border-slate-100 dark:border-slate-800">
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2 flex items-center justify-between">
-                  <span>Mode Permainan Bawaan</span>
-                  <span className="text-[11px] font-normal text-slate-500 dark:text-slate-400">Dapat diubah siswa saat lobi</span>
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                  {[
-                    {
-                      id: 'standard' as GameMode,
-                      title: 'Standar ⏱️',
-                      sub: 'Timer per soal dengan tantangan skor kecepatan.',
-                      activeBg: 'bg-blue-50/80 border-blue-500 text-blue-950 dark:bg-blue-950/40 dark:border-blue-500 dark:text-blue-100 ring-2 ring-blue-400/30 shadow-sm',
-                    },
-                    {
-                      id: 'survival_3hearts' as GameMode,
-                      title: '3 Hati (Survival) ❤️',
-                      sub: 'Tantangan 3 nyawa. Salah atau kehabisan waktu berkurang 1 hati.',
-                      activeBg: 'bg-rose-50/80 border-rose-500 text-rose-950 dark:bg-rose-950/40 dark:border-rose-500 dark:text-rose-100 ring-2 ring-rose-400/30 shadow-sm',
-                    },
-                    {
-                      id: 'untimed' as GameMode,
-                      title: 'Santai 🧘',
-                      sub: 'Belajar tanpa tekanan waktu, fokus pada pemahaman konsep.',
-                      activeBg: 'bg-emerald-50/80 border-emerald-500 text-emerald-950 dark:bg-emerald-950/40 dark:border-emerald-500 dark:text-emerald-100 ring-2 ring-emerald-400/30 shadow-sm',
-                    },
-                  ].map((m) => (
-                    <button
-                      type="button"
-                      key={m.id}
-                      onClick={() => {
-                        playClick();
-                        setDefaultGameMode(m.id);
-                      }}
-                      className={`p-3 rounded-xl border text-left flex flex-col justify-between transition-all min-h-[52px] btn-press ${
-                        defaultGameMode === m.id
-                          ? m.activeBg
-                          : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-750'
-                      }`}
-                    >
-                      <span className="font-bold text-xs sm:text-sm">{m.title}</span>
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-snug">
-                        {m.sub}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Shuffle Options */}
-              <div className="sm:col-span-2 pt-3 border-t border-slate-100 dark:border-slate-800">
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">
-                  Pengaturan Acak (Fair Play & Variasi Belajar)
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  <label className={`p-3 rounded-xl border flex items-center justify-between gap-3 cursor-pointer min-h-[48px] transition-colors ${
-                    shuffleQuestions
-                      ? 'bg-indigo-50/70 dark:bg-indigo-950/30 border-indigo-300 dark:border-indigo-800'
-                      : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'
-                  }`}>
-                    <div className="flex items-center gap-2.5">
-                      <Shuffle className={`w-4 h-4 ${shuffleQuestions ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`} />
-                      <div>
-                        <span className="block text-xs font-bold text-slate-800 dark:text-slate-200">
-                          Acak Urutan Soal
-                        </span>
-                        <span className="block text-[10px] text-slate-500 dark:text-slate-400">
-                          Setiap siswa menerima urutan nomor yang berbeda
-                        </span>
-                      </div>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={shuffleQuestions}
-                      onChange={(e) => setShuffleQuestions(e.target.checked)}
-                      className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 cursor-pointer"
-                    />
-                  </label>
-
-                  <label className={`p-3 rounded-xl border flex items-center justify-between gap-3 cursor-pointer min-h-[48px] transition-colors ${
-                    shuffleOptions
-                      ? 'bg-indigo-50/70 dark:bg-indigo-950/30 border-indigo-300 dark:border-indigo-800'
-                      : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'
-                  }`}>
-                    <div className="flex items-center gap-2.5">
-                      <Shuffle className={`w-4 h-4 ${shuffleOptions ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`} />
-                      <div>
-                        <span className="block text-xs font-bold text-slate-800 dark:text-slate-200">
-                          Acak Urutan Pilihan Jawaban
-                        </span>
-                        <span className="block text-[10px] text-slate-500 dark:text-slate-400">
-                          Pilihan A, B, C, D diacak posisinya
-                        </span>
-                      </div>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={shuffleOptions}
-                      onChange={(e) => setShuffleOptions(e.target.checked)}
-                      className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 cursor-pointer"
-                    />
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-end">
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  if (!title.trim()) {
-                    showToast('Silakan isi judul kuis terlebih dahulu.');
-                    return;
-                  }
-                  setCurrentStep(2);
-                }}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-xl shadow-sm flex items-center gap-2 min-h-[44px] btn-press text-sm"
-              >
-                <span>Lanjut ke Bank Soal</span>
-              </button>
-            </div>
-          </div>
+        {/* ================= STEP 1 IN MANUAL MODE: INFO KUIS ================= */}
+        {!isAiMode && currentStep === 1 && (
+          <InfoKuisStep
+            title={title}
+            setTitle={setTitle}
+            description={description}
+            setDescription={setDescription}
+            grade={grade}
+            setGrade={setGrade}
+            subject={subject}
+            setSubject={setSubject}
+            durationPerQuestionSec={durationPerQuestionSec}
+            setDurationPerQuestionSec={setDurationPerQuestionSec}
+            badgeTitle={badgeTitle}
+            setBadgeTitle={setBadgeTitle}
+            coverEmoji={coverEmoji}
+            setCoverEmoji={setCoverEmoji}
+            visibility={visibility}
+            setVisibility={setVisibility}
+            defaultGameMode={defaultGameMode}
+            setDefaultGameMode={setDefaultGameMode}
+            shuffleQuestions={shuffleQuestions}
+            setShuffleQuestions={setShuffleQuestions}
+            shuffleOptions={shuffleOptions}
+            setShuffleOptions={setShuffleOptions}
+            questionsCount={questions.length}
+            isAiMode={false}
+            onNext={() => setCurrentStep(2)}
+            onBack={onBack}
+            playClick={playClick}
+          />
         )}
 
         {/* ================= STEP 2: BANK SOAL ================= */}
         {currentStep === 2 && (
-          <div className="space-y-5 animate-fade-in">
+          <div className="w-full max-w-6xl 2xl:max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 space-y-5 animate-fade-in">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 2xl:gap-8 items-start">
               
               {/* Question Bank List */}
-              <div className="lg:col-span-5 2xl:col-span-4 bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
+              <div className="lg:col-span-5 2xl:col-span-4 bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
                 <div className="flex items-center justify-between gap-2 flex-wrap">
                   <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                     <Layers className="w-4 h-4 text-blue-600 dark:text-blue-400" /> Bank Soal ({questions.length})
@@ -1042,8 +858,8 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                         playClick();
                         setIsAiModalOpen(true);
                       }}
-                      className="px-2.5 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 font-bold text-xs flex items-center gap-1.5 min-h-[36px] transition-colors border border-indigo-200/60 dark:border-indigo-800/60"
-                      title="Asisten AI & Impor Cepat Soal"
+                      className="px-2.5 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 font-bold text-xs flex items-center gap-1.5 min-h-[36px] transition-colors border border-indigo-200/60 dark:border-indigo-800/60"
+                      title="Asisten AI & Tambah Soal Cepat"
                     >
                       <Sparkles className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" /> Asisten AI
                     </button>
@@ -1051,7 +867,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                       <button
                         type="button"
                         onClick={handleOpenNewQuestion}
-                        className="px-2.5 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/50 font-bold text-xs flex items-center gap-1 min-h-[36px] transition-colors"
+                        className="px-2.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1 min-h-[36px] transition-colors shadow-xs"
                       >
                         <Plus className="w-3.5 h-3.5" /> Tambah Soal
                       </button>
@@ -1059,672 +875,414 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                   </div>
                 </div>
 
-                {questions.length === 0 ? (
-                  <div className="text-center py-8 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-dashed border-slate-200 dark:border-slate-700 p-4 space-y-2.5">
-                    <p className="text-xs text-slate-500 dark:text-slate-400">Belum ada soal. Tulis soal di sebelah kanan atau buat dengan asisten AI.</p>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        playClick();
-                        setIsAiModalOpen(true);
-                      }}
-                      className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-sm min-h-[38px] transition-colors"
-                    >
-                      <Sparkles className="w-3.5 h-3.5" /> Buka Asisten AI & Impor
-                    </button>
-                  </div>
-                ) : (
-                  <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
-                    {questions.map((q, idx) => {
-                      const isBeingEdited = editingQuestionId === q.id;
+                {/* Questions Accordion / List */}
+                <div className="space-y-2 max-h-[calc(100vh-280px)] overflow-y-auto pr-1">
+                  {questions.length === 0 ? (
+                    <div className="text-center py-12 px-4 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 text-slate-400 space-y-3">
+                      <p className="text-xs">Belum ada butir soal di kuis ini.</p>
+                      <button
+                        type="button"
+                        onClick={handleOpenNewQuestion}
+                        className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1"
+                      >
+                        <Plus className="w-3.5 h-3.5" /> Buat Butir Soal Pertama
+                      </button>
+                    </div>
+                  ) : (
+                    questions.map((q, idx) => {
+                      const isEditingThis = editingQuestionId === q.id;
                       return (
                         <div
                           key={q.id}
-                          className={`p-3 rounded-xl border transition-all ${
-                            isBeingEdited
-                              ? 'border-blue-500 dark:border-blue-400 bg-blue-50/70 dark:bg-blue-950/40 ring-2 ring-blue-400/30 dark:ring-blue-500/30 shadow-sm'
-                              : 'border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/60 hover:border-slate-300 dark:hover:border-slate-700'
+                          className={`p-3.5 rounded-2xl border transition-all ${
+                            isEditingThis
+                              ? 'border-blue-500 bg-blue-50/40 dark:bg-blue-950/30 ring-2 ring-blue-400/20 shadow-xs'
+                              : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 hover:border-slate-300 dark:hover:border-slate-700 shadow-xs'
                           }`}
                         >
-                          {/* Top Row: Info & Actions Toolbar */}
-                          <div className="flex items-center justify-between gap-1.5 pb-2 mb-2 border-b border-slate-200/60 dark:border-slate-700/60">
-                            <div className="flex items-center gap-1.5 min-w-0">
-                              <span
-                                className={`w-5 h-5 rounded-md text-[11px] font-bold flex items-center justify-center flex-shrink-0 transition-colors ${
-                                  isBeingEdited ? 'bg-amber-500 text-white' : 'bg-blue-600 text-white'
-                                }`}
-                              >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-start gap-2 min-w-0 flex-1">
+                              <span className="w-6 h-6 rounded-lg bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 font-extrabold text-xs flex items-center justify-center flex-shrink-0">
                                 {idx + 1}
                               </span>
-                              <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase truncate">
-                                {q.type === 'short_answer'
-                                  ? 'Isian'
-                                  : q.type === 'image_guess'
-                                  ? 'Tebak Gbr'
-                                  : q.type === 'matching_pairs'
-                                  ? 'Jodohkan'
-                                  : q.type === 'true_false'
-                                  ? 'Benar/Salah'
-                                  : 'Pilgan'}
-                              </span>
-                              <span className="text-[10px] font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 px-1.5 py-0.5 rounded flex items-center gap-0.5 flex-shrink-0">
-                                <Star className="w-2.5 h-2.5 text-amber-500" /> {q.points || 10}p
-                              </span>
-                              {q.customDurationSec && (
-                                <span className="text-[10px] font-semibold bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded flex items-center gap-0.5 flex-shrink-0">
-                                  <Clock className="w-2.5 h-2.5 text-blue-500" /> {q.customDurationSec}s
-                                </span>
-                              )}
-                              {isBeingEdited && (
-                                <span className="text-[10px] font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 px-1.5 py-0.5 rounded">
-                                  Diedit
-                                </span>
-                              )}
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-1 mb-1 flex-wrap">
+                                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 flex items-center gap-0.5">
+                                    <Star className="w-2.5 h-2.5 text-amber-500" /> {q.points || 10}p
+                                  </span>
+                                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                                    {q.type === 'multiple_choice' ? 'Pilihan Ganda' : q.type === 'true_false' ? 'Benar / Salah' : q.type === 'short_answer' ? 'Isian' : q.type === 'matching_pairs' ? 'Pasangan' : 'Tebak Gambar'}
+                                  </span>
+                                </div>
+                                <p className="text-xs font-bold text-slate-900 dark:text-white line-clamp-2 leading-snug">
+                                  {q.text}
+                                </p>
+                              </div>
                             </div>
 
-                            {/* Toolbar: Reorder, Edit, Duplicate, Delete */}
-                            <div className="flex items-center gap-0.5 flex-shrink-0">
+                            <div className="flex items-center gap-1 flex-shrink-0">
                               <button
                                 type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleMoveQuestion(idx, 'up');
-                                }}
                                 disabled={idx === 0}
-                                className="p-1 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-200/70 dark:hover:bg-slate-700/60 disabled:opacity-25 disabled:hover:bg-transparent disabled:hover:text-slate-400 rounded-lg min-w-[32px] min-h-[32px] flex items-center justify-center transition-colors"
-                                title="Geser Urutan ke Atas"
-                                aria-label={`Geser Soal ${idx + 1} ke Atas`}
+                                onClick={() => handleMoveQuestion(idx, 'up')}
+                                className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed"
+                                title="Pindah ke Atas"
                               >
-                                <ChevronUp className="w-4 h-4" />
+                                <ChevronUp className="w-3.5 h-3.5" />
                               </button>
-
                               <button
                                 type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleMoveQuestion(idx, 'down');
-                                }}
                                 disabled={idx === questions.length - 1}
-                                className="p-1 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-200/70 dark:hover:bg-slate-700/60 disabled:opacity-25 disabled:hover:bg-transparent disabled:hover:text-slate-400 rounded-lg min-w-[32px] min-h-[32px] flex items-center justify-center transition-colors"
-                                title="Geser Urutan ke Bawah"
-                                aria-label={`Geser Soal ${idx + 1} ke Bawah`}
+                                onClick={() => handleMoveQuestion(idx, 'down')}
+                                className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed"
+                                title="Pindah ke Bawah"
                               >
-                                <ChevronDown className="w-4 h-4" />
+                                <ChevronDown className="w-3.5 h-3.5" />
                               </button>
-
                               <button
                                 type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleStartEditQuestion(q);
-                                }}
-                                className={`p-1 rounded-lg min-w-[32px] min-h-[32px] flex items-center justify-center transition-colors ${
-                                  isBeingEdited
-                                    ? 'bg-blue-600 text-white'
-                                    : 'text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/40'
-                                }`}
-                                title="Edit Soal Ini"
-                                aria-label={`Edit Soal ${idx + 1}`}
+                                onClick={() => handleStartEditQuestion(q)}
+                                className="p-1 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 text-blue-600 dark:text-blue-400"
+                                title="Edit Soal"
                               >
                                 <Edit3 className="w-3.5 h-3.5" />
                               </button>
-
                               <button
                                 type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDuplicateQuestion(q.id);
-                                }}
-                                className="p-1 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded-lg min-w-[32px] min-h-[32px] flex items-center justify-center transition-colors"
-                                title="Duplikat Soal"
-                                aria-label={`Duplikat Soal ${idx + 1}`}
+                                onClick={() => handleDuplicateQuestion(q)}
+                                className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600"
+                                title="Duplikasi Soal"
                               >
                                 <Copy className="w-3.5 h-3.5" />
                               </button>
-
                               <button
                                 type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteQuestion(q.id);
-                                }}
-                                className="p-1 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg min-w-[32px] min-h-[32px] flex items-center justify-center transition-colors"
+                                onClick={() => handleDeleteQuestion(q.id)}
+                                className="p-1 rounded-lg hover:bg-rose-100 dark:hover:bg-rose-950/40 text-rose-500 hover:text-rose-700"
                                 title="Hapus Soal"
-                                aria-label={`Hapus Soal ${idx + 1}`}
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             </div>
                           </div>
-
-                          {/* Clickable Card Body for Quick Edit */}
-                          <div
-                            onClick={() => handleStartEditQuestion(q)}
-                            className="space-y-1 cursor-pointer group"
-                            title="Klik untuk mengedit soal ini"
-                          >
-                            <p className="font-bold text-slate-800 dark:text-slate-200 text-xs line-clamp-2 break-words group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                              {q.text}
-                            </p>
-                            <div className="flex items-center justify-between text-[11px] pt-0.5">
-                              <span className="text-emerald-700 dark:text-emerald-400 font-semibold truncate">
-                                {q.type === 'short_answer'
-                                  ? `✍️ Kunci: ${q.acceptableAnswers?.[0] || q.options[0] || '-'}`
-                                  : q.type === 'matching_pairs'
-                                  ? `🧩 ${q.matchingPairs?.length || q.options.length} Pasangan Kartu`
-                                  : `✓ Kunci: ${q.options[q.correctIndex] || '-'}`}
-                              </span>
-                              {q.imageUrl && (
-                                <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium flex items-center gap-0.5 flex-shrink-0">
-                                  <ImageIcon className="w-3 h-3" /> Ada Gambar
-                                </span>
-                              )}
-                            </div>
-                          </div>
                         </div>
                       );
-                    })}
-                  </div>
-                )}
+                    })
+                  )}
+                </div>
               </div>
 
-              {/* Form Input Soal */}
+              {/* Question Editor Form */}
               <div className="lg:col-span-7 2xl:col-span-8">
                 {isAddingQuestion ? (
-                  <form
-                    onSubmit={(e) => handleSaveQuestion(e, 'continue')}
-                    className="bg-white dark:bg-slate-900 rounded-2xl p-5 sm:p-6 border border-slate-200 dark:border-slate-800 shadow-card space-y-4"
-                  >
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
-                      <div className="flex items-center gap-2">
-                        {editingQuestionId ? (
-                          <>
-                            <div className="w-8 h-8 rounded-lg bg-amber-500 text-white flex items-center justify-center flex-shrink-0 shadow-xs">
-                              <Edit3 className="w-4 h-4" />
-                            </div>
-                            <div>
-                              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                                Edit Soal #{questions.findIndex((q) => q.id === editingQuestionId) + 1}
-                              </h3>
-                              <p className="text-[11px] text-amber-600 dark:text-amber-400 font-medium">
-                                Mode pengeditan butir soal
-                              </p>
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center flex-shrink-0 shadow-xs">
-                              <Plus className="w-4 h-4" />
-                            </div>
-                            <div>
-                              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                                Tambah Soal #{questions.length + 1}
-                              </h3>
-                              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                                Masukkan pertanyaan dan opsi jawaban
-                              </p>
-                            </div>
-                          </>
-                        )}
+                  <form onSubmit={(e) => handleSaveQuestion(e, 'finish')} className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-7 border border-slate-200 dark:border-slate-800 shadow-card space-y-5">
+                    
+                    <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                      <h3 className="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white flex items-center gap-2">
+                        <span>{editingQuestionId ? 'Edit Butir Soal' : 'Buat Butir Soal Baru'}</span>
+                      </h3>
+                      <button
+                        type="button"
+                        onClick={handleCancelEdit}
+                        className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    {/* Tipe Soal & Poin */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                          Tipe Soal
+                        </label>
+                        <select
+                          value={qType}
+                          onChange={(e) => handleTypeChange(e.target.value as QuestionType)}
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs sm:text-sm font-semibold focus:border-blue-500 focus:outline-none min-h-[42px]"
+                        >
+                          <option value="multiple_choice">Pilihan Ganda (4 Opsi)</option>
+                          <option value="true_false">Benar / Salah</option>
+                          <option value="short_answer">Isian Singkat</option>
+                          <option value="matching_pairs">Pasangan Kartu</option>
+                          <option value="image_guess">Tebak Gambar Misteri</option>
+                        </select>
                       </div>
 
-                      <div className="flex flex-wrap sm:flex-nowrap bg-slate-100 dark:bg-slate-800 p-1 rounded-xl w-full sm:w-auto gap-1">
-                        {[
-                          { id: 'multiple_choice' as QuestionType, label: 'Pilgan' },
-                          { id: 'true_false' as QuestionType, label: 'Benar/Salah' },
-                          { id: 'short_answer' as QuestionType, label: 'Isian' },
-                          { id: 'image_guess' as QuestionType, label: 'Tebak Gbr' },
-                          { id: 'matching_pairs' as QuestionType, label: 'Jodohkan' },
-                        ].map((t) => (
-                          <button
-                            key={t.id}
-                            type="button"
-                            onClick={() => handleTypeChange(t.id)}
-                            className={`flex-1 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all min-h-[36px] flex items-center justify-center whitespace-nowrap ${
-                              qType === t.id
-                                ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm font-bold'
-                                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                            }`}
-                          >
-                            {t.label}
-                          </button>
-                        ))}
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                          Poin Soal
+                        </label>
+                        <div className="flex items-center gap-1.5">
+                          {[5, 10, 15, 20].map((p) => (
+                            <button
+                              type="button"
+                              key={p}
+                              onClick={() => {
+                                playClick();
+                                setQPoints(p);
+                              }}
+                              className={`flex-1 py-2 rounded-xl font-bold text-xs min-h-[42px] transition-all ${
+                                qPoints === p
+                                  ? 'bg-amber-500 text-white shadow-xs'
+                                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                              }`}
+                            >
+                              {p}p
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     </div>
 
+                    {/* Pertanyaan */}
                     <div>
                       <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                        Teks Pertanyaan <span className="text-rose-500">*</span>
+                        Pertanyaan Soal <span className="text-rose-500">*</span>
                       </label>
                       <textarea
                         value={qText}
                         onChange={(e) => setQText(e.target.value)}
-                        rows={2}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none font-semibold text-sm min-h-[44px]"
+                        rows={3}
+                        placeholder="Ketik pertanyaan dengan jelas..."
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium text-xs sm:text-sm focus:border-blue-500 focus:outline-none"
                         required
                       />
                     </div>
 
-                    {/* Sisipkan Ilustrasi */}
-                    <div className="bg-slate-50 dark:bg-slate-800/50 p-3.5 rounded-xl border border-slate-200/80 dark:border-slate-700 space-y-2.5">
-                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                        <ImageIcon className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" /> Sisipkan Gambar / Ilustrasi (Opsional)
-                      </label>
-
-                      <div className="flex flex-wrap gap-1">
-                        {PRESET_STICKERS.map((stk) => (
+                    {/* Gambar Ilustrasi */}
+                    <div className="p-3.5 rounded-2xl bg-slate-50/70 dark:bg-slate-850/50 border border-slate-200/80 dark:border-slate-800 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                          <ImageIcon className="w-4 h-4 text-blue-500" /> Ilustrasi Pendukung (Opsional)
+                        </span>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <label className="px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700 text-xs font-bold flex items-center gap-1 min-h-[36px] cursor-pointer">
+                            <Upload className="w-3.5 h-3.5" />
+                            <span>Unggah</span>
+                            <input type="file" accept="image/*" onChange={handleImageUpload} className="sr-only" />
+                          </label>
                           <button
                             type="button"
-                            key={stk}
-                            onClick={() => {
-                              playClick();
-                              setQImageCaption(stk);
-                            }}
-                            className={`px-2 py-1 rounded-lg text-xs font-medium border transition-colors min-h-[32px] ${
-                              qImageCaption === stk
-                                ? 'bg-blue-600 text-white border-blue-600 font-bold'
-                                : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
-                            }`}
+                            onClick={handleGenerateSingleAiImage}
+                            disabled={isGeneratingAiImage}
+                            className="px-2.5 py-1 rounded-xl bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 hover:bg-purple-100 border border-purple-200 dark:border-purple-800 text-xs font-bold flex items-center gap-1 min-h-[36px]"
                           >
-                            {stk}
+                            {isGeneratingAiImage ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                            <span>🎨 Buat Gambar AI</span>
                           </button>
-                        ))}
-                      </div>
-
-                      <div className="space-y-2 pt-1">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          <input
-                            type="text"
-                            value={qImageCaption}
-                            onChange={(e) => setQImageCaption(e.target.value)}
-                            placeholder="Kata kunci gambar (misal: Daun Hijau, Garuda)"
-                            aria-label="Deskripsi ilustrasi"
-                            className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs font-medium"
-                          />
-
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={handleGenerateAiImageForQuestion}
-                              disabled={isGeneratingSingleImage}
-                              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 text-xs font-bold transition-all min-h-[36px]"
-                              title="Buat gambar edukasi AI gratis tanpa API key"
-                            >
-                              {isGeneratingSingleImage ? (
-                                <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-600" />
-                              ) : (
-                                <Sparkles className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-                              )}
-                              <span>{isGeneratingSingleImage ? 'Membuat...' : '🎨 Buat Gambar AI'}</span>
-                            </button>
-
-                            <label className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer min-h-[36px]">
-                              <Upload className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-                              <span className="text-xs font-medium text-slate-600 dark:text-slate-300 truncate">
-                                {qImageUrl ? 'Ganti Foto' : 'Unggah Foto'}
-                              </span>
-                              <input
-                                type="file"
-                                accept="image/*"
-                                onChange={handleImageUpload}
-                                className="hidden"
-                              />
-                            </label>
-                          </div>
-                        </div>
-
-                        {/* Pratinjau Gambar / Ilustrasi */}
-                        {qImageUrl && (
-                          <div className="relative p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 flex items-center gap-3">
-                            <img
-                              src={qImageUrl}
-                              alt={qImageCaption || 'Pratinjau Ilustrasi'}
-                              className="w-14 h-14 object-cover rounded-lg border border-slate-200 dark:border-slate-700 flex-shrink-0"
-                              loading="lazy"
-                              onError={(e) => {
-                                (e.target as HTMLElement).style.opacity = '0.5';
-                              }}
-                            />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
-                                {qImageCaption || 'Ilustrasi Soal'}
-                              </p>
-                              <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
-                                {qImageUrl.startsWith('data:') ? 'Foto dari perangkat' : 'Gambar Ilustrasi AI'}
-                              </p>
-                            </div>
+                          {qImageUrl && (
                             <button
                               type="button"
                               onClick={() => {
                                 playClick();
                                 setQImageUrl(undefined);
                               }}
-                              className="p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-lg text-xs font-bold transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
-                              title="Hapus gambar"
-                              aria-label="Hapus Gambar"
+                              className="text-xs text-rose-500 hover:underline px-2 py-1"
                             >
-                              <X className="w-4 h-4" />
+                              Hapus
                             </button>
-                          </div>
-                        )}
+                          )}
+                        </div>
                       </div>
+
+                      {qImageUrl && (
+                        <div className="flex items-center gap-3">
+                          <img src={qImageUrl} alt="Ilustrasi" className="w-20 h-20 object-cover rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs" />
+                          <div className="min-w-0 flex-1">
+                            <input
+                              type="text"
+                              value={qImageCaption}
+                              onChange={(e) => setQImageCaption(e.target.value)}
+                              placeholder="Keterangan / label gambar..."
+                              className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white"
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
 
-                    {/* Mode Isian Singkat */}
-                    {qType === 'short_answer' && (
-                      <div className="space-y-3 pt-1">
-                        <div>
-                          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                            Kunci Jawaban Utama <span className="text-rose-500">*</span>
-                          </label>
-                          <input
-                            type="text"
-                            value={qOptions[0] || ''}
-                            onChange={(e) => {
-                              handleOptionChange(0, e.target.value);
-                              if (!qAcceptableAnswers.trim()) {
-                                setQAcceptableAnswers(e.target.value);
-                              }
-                            }}
-                            placeholder="Contoh: Paru-paru"
-                            className="w-full px-3.5 py-2.5 rounded-xl border border-emerald-300 dark:border-emerald-700/60 bg-emerald-50/40 dark:bg-emerald-950/20 text-slate-900 dark:text-white text-xs sm:text-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500 min-h-[44px]"
-                            required
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center justify-between">
-                            <span>Variasi Jawaban Diterima (Pisahkan tanda koma):</span>
-                            <span className="text-[11px] font-normal text-slate-500">Opsional</span>
-                          </label>
-                          <input
-                            type="text"
-                            value={qAcceptableAnswers}
-                            onChange={(e) => setQAcceptableAnswers(e.target.value)}
-                            placeholder="Contoh: paru paru, pulmo, paru-paru"
-                            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs sm:text-sm font-semibold focus:outline-none focus:border-blue-500 min-h-[44px]"
-                          />
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
-                            💡 Pemeriksaan otomatis mengabaikan huruf besar/kecil (case-insensitive).
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Mode Menjodohkan */}
-                    {qType === 'matching_pairs' && (
-                      <div className="space-y-3 pt-1">
-                        <div className="flex items-center justify-between">
-                          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                            Pasangan Kartu (Kolom Kiri ↔ Kolom Kanan) <span className="text-rose-500">*</span>
-                          </label>
-                          <button
-                            type="button"
-                            onClick={handleAddMatchingPair}
-                            className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/50 min-h-[36px]"
-                          >
-                            <Plus className="w-3.5 h-3.5" /> Tambah Pasangan
-                          </button>
-                        </div>
-
-                        <div className="space-y-2">
-                          {qMatchingPairs.map((pair, idx) => (
-                            <div key={idx} className="flex items-center gap-2 p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/60">
-                              <span className="w-6 h-6 rounded-md bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 text-[11px] font-bold flex items-center justify-center flex-shrink-0">
-                                {idx + 1}
-                              </span>
-                              <input
-                                type="text"
-                                value={pair.left}
-                                onChange={(e) => handleMatchingPairChange(idx, 'left', e.target.value)}
-                                placeholder={`Konsep ${idx + 1} (contoh: Insang)`}
-                                className="flex-1 px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs font-semibold focus:outline-none focus:border-blue-500 min-h-[38px]"
-                                required
-                              />
-                              <span className="text-slate-400 font-bold text-xs select-none">↔</span>
-                              <input
-                                type="text"
-                                value={pair.right}
-                                onChange={(e) => handleMatchingPairChange(idx, 'right', e.target.value)}
-                                placeholder={`Pasangan ${idx + 1} (contoh: Ikan)`}
-                                className="flex-1 px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs font-semibold focus:outline-none focus:border-blue-500 min-h-[38px]"
-                                required
-                              />
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveMatchingPair(idx)}
-                                disabled={qMatchingPairs.length <= 2}
-                                className="w-8 h-8 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-400 flex items-center justify-center transition-colors flex-shrink-0"
-                                title="Hapus Pasangan"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                          💡 Di arena kuis siswa, kedua kolom akan diacak secara terpisah. Siswa mencocokkan setiap kartu ke pasangannya.
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Banner Edukasi Tebak Gambar */}
-                    {qType === 'image_guess' && (
-                      <div className="p-3 rounded-xl bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800/60 flex items-start gap-2.5">
-                        <span className="text-xl select-none">🧩</span>
-                        <div>
-                          <h4 className="text-xs font-bold text-purple-900 dark:text-purple-200">Mode Tebak Gambar Misteri</h4>
-                          <p className="text-[11px] text-purple-700 dark:text-purple-300 mt-0.5 leading-relaxed">
-                            Gambar kuis akan ditutupi oleh 9 panel puzzle misteri di arena siswa. Siswa dapat mengetuk kotak untuk mengintip gambar sebelum memilih jawaban di bawah. Pastikan Anda menyisipkan gambar/ilustrasi di atas!
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Pilihan Jawaban (Pilgan, Benar/Salah, Tebak Gambar) */}
-                    {(qType === 'multiple_choice' || qType === 'true_false' || qType === 'image_guess') && (
-                      <div className="space-y-2 pt-1">
+                    {/* Opsi Jawaban Sesuai Tipe Soal */}
+                    {qType === 'multiple_choice' && (
+                      <div className="space-y-2">
                         <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                          Opsi Jawaban & Kunci Benar (Klik Huruf/Centang untuk Menandai Kunci)
+                          Opsi Pilihan Ganda (Klik lingkaran untuk menandai kunci benar)
                         </label>
-
-                        {qOptions.map((opt, idx) => {
-                          const isCorrect = qCorrectIndex === idx;
-                          const letters = ['A', 'B', 'C', 'D'];
-                          return (
-                            <div
-                              key={idx}
-                              className={`flex items-center gap-2 p-1.5 rounded-xl border transition-all ${
-                                isCorrect
-                                  ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-500 dark:border-emerald-600 shadow-sm'
-                                  : 'bg-white dark:bg-slate-800/80 border-slate-200 dark:border-slate-700'
-                              }`}
-                            >
+                        <div className="space-y-2">
+                          {qOptions.map((opt, idx) => (
+                            <div key={idx} className="flex items-center gap-2">
                               <button
                                 type="button"
                                 onClick={() => {
                                   playClick();
                                   setQCorrectIndex(idx);
                                 }}
-                                className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs transition-all flex-shrink-0 ${
-                                  isCorrect
-                                    ? 'bg-emerald-600 text-white shadow-sm'
-                                    : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
+                                className={`w-9 h-9 rounded-xl font-bold text-xs flex items-center justify-center transition-all ${
+                                  qCorrectIndex === idx
+                                    ? 'bg-emerald-600 text-white shadow-xs'
+                                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200'
                                 }`}
-                                title="Tandai Kunci Jawaban Benar"
                               >
-                                {isCorrect ? '✓' : letters[idx]}
+                                {String.fromCharCode(65 + idx)}
                               </button>
-
                               <input
                                 type="text"
                                 value={opt}
                                 onChange={(e) => handleOptionChange(idx, e.target.value)}
-                                aria-label={`Pilihan ${letters[idx]}`}
-                                disabled={qType === 'true_false'}
-                                className="flex-1 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs sm:text-sm font-semibold focus:outline-none focus:border-blue-500 min-h-[38px]"
-                                required
+                                placeholder={`Opsi ${String.fromCharCode(65 + idx)}`}
+                                className="flex-1 px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs sm:text-sm font-medium focus:border-blue-500 focus:outline-none min-h-[42px]"
                               />
-
-                              {isCorrect && (
-                                <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900/40 rounded-md whitespace-nowrap">
-                                  Kunci Benar
-                                </span>
-                              )}
                             </div>
-                          );
-                        })}
+                          ))}
+                        </div>
                       </div>
                     )}
 
-                    {/* Pengaturan Bobot Poin & Waktu Khusus Soal */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50 dark:bg-slate-850/60 p-3.5 rounded-xl border border-slate-200/80 dark:border-slate-700">
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
-                          <Star className="w-3.5 h-3.5 text-amber-500" /> Bobot Nilai Poin
+                    {qType === 'true_false' && (
+                      <div className="space-y-2">
+                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                          Kunci Pernyataan
                         </label>
-                        <div className="flex items-center gap-1.5">
-                          {[5, 10, 15, 20].map((pts) => (
+                        <div className="grid grid-cols-2 gap-3">
+                          {['Benar', 'Salah'].map((val, idx) => (
                             <button
-                              key={pts}
                               type="button"
+                              key={val}
                               onClick={() => {
                                 playClick();
-                                setQPoints(pts);
+                                setQCorrectIndex(idx);
                               }}
-                              className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all min-h-[38px] ${
-                                qPoints === pts
-                                  ? 'bg-amber-500 text-white shadow-xs'
-                                  : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-amber-50 dark:hover:bg-slate-700'
+                              className={`p-3 rounded-xl font-bold text-xs sm:text-sm border transition-all ${
+                                qCorrectIndex === idx
+                                  ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 ring-2 ring-emerald-400'
+                                  : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
                               }`}
                             >
-                              {pts}
+                              {val}
                             </button>
                           ))}
-                          <input
-                            type="number"
-                            min={1}
-                            max={100}
-                            value={qPoints}
-                            onChange={(e) => setQPoints(Math.max(1, Number(e.target.value) || 1))}
-                            className="w-14 px-1.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-bold text-xs text-center min-h-[38px]"
-                            title="Kustom bobot poin"
-                          />
                         </div>
                       </div>
+                    )}
 
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
-                          <Clock className="w-3.5 h-3.5 text-blue-500" /> Waktu Khusus Soal Ini (Detik)
+                    {qType === 'short_answer' && (
+                      <div className="space-y-1.5">
+                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                          Kunci Jawaban Singkat <span className="text-slate-400 font-normal">(Pisahkan dengan koma jika ada variasi ejaan)</span>
                         </label>
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="number"
-                            min={5}
-                            max={300}
-                            placeholder={`Standar Kuis (${durationPerQuestionSec} dtk)`}
-                            value={qCustomDurationSec}
-                            onChange={(e) => setQCustomDurationSec(e.target.value ? Math.max(5, Number(e.target.value)) : '')}
-                            className="flex-1 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium text-xs min-h-[38px]"
-                          />
-                          {qCustomDurationSec !== '' && (
-                            <button
-                              type="button"
-                              onClick={() => setQCustomDurationSec('')}
-                              className="text-xs text-slate-500 hover:text-rose-500 font-bold px-2 py-1 min-h-[38px]"
-                            >
-                              Reset
-                            </button>
-                          )}
-                        </div>
-                        <span className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 block">
-                          Kosongkan bila ingin mengikuti durasi kuis umum ({durationPerQuestionSec} detik).
-                        </span>
+                        <input
+                          type="text"
+                          value={qAcceptableAnswers}
+                          onChange={(e) => setQAcceptableAnswers(e.target.value)}
+                          placeholder="Contoh: Paru-paru, paru paru, pulmo"
+                          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs sm:text-sm font-medium focus:border-blue-500 focus:outline-none"
+                        />
                       </div>
-                    </div>
+                    )}
 
-                    {/* Catatan Penjelasan */}
+                    {qType === 'matching_pairs' && (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                            Pasangan Kartu Cocok
+                          </label>
+                          <button
+                            type="button"
+                            onClick={handleAddMatchingPair}
+                            className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1"
+                          >
+                            <Plus className="w-3.5 h-3.5" /> Tambah Pasangan
+                          </button>
+                        </div>
+                        <div className="space-y-2">
+                          {qMatchingPairs.map((pair, idx) => (
+                            <div key={idx} className="flex items-center gap-2">
+                              <input
+                                type="text"
+                                value={pair.left}
+                                onChange={(e) => handleMatchingPairChange(idx, 'left', e.target.value)}
+                                placeholder={`Kartu Kiri #${idx + 1}`}
+                                className="flex-1 px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium"
+                              />
+                              <span className="text-slate-400 font-bold">➔</span>
+                              <input
+                                type="text"
+                                value={pair.right}
+                                onChange={(e) => handleMatchingPairChange(idx, 'right', e.target.value)}
+                                placeholder={`Kartu Kanan #${idx + 1}`}
+                                className="flex-1 px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium"
+                              />
+                              {qMatchingPairs.length > 2 && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveMatchingPair(idx)}
+                                  className="p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Pembahasan */}
                     <div>
-                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
-                        <HelpCircle className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" /> Penjelasan Pembahasan
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                        Pembahasan Edukatif (Muncul saat siswa selesai menjawab)
                       </label>
-                      <input
-                        type="text"
+                      <textarea
                         value={qExplanation}
                         onChange={(e) => setQExplanation(e.target.value)}
-                        className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none font-medium text-xs sm:text-sm min-h-[40px]"
+                        rows={2}
+                        placeholder="Jelaskan alasan mengapa jawaban tersebut benar untuk menambah wawasan siswa..."
+                        className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium focus:border-blue-500 focus:outline-none"
                       />
                     </div>
 
-                    <div className="pt-2 flex flex-wrap sm:flex-nowrap gap-2 items-center">
-                      {editingQuestionId ? (
-                        <>
-                          <button
-                            type="button"
-                            onClick={handleCancelEdit}
-                            className="w-full sm:w-auto px-4 py-2.5 rounded-xl font-semibold text-xs text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 min-h-[44px] flex items-center justify-center gap-1.5 transition-colors"
-                          >
-                            <X className="w-4 h-4" /> Batal Edit
-                          </button>
-                          <button
-                            type="button"
-                            onClick={(e) => handleSaveQuestion(e, 'finish')}
-                            className="w-full sm:flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-xl shadow-sm flex items-center justify-center gap-1.5 min-h-[44px] btn-press text-xs sm:text-sm"
-                          >
-                            <Check className="w-4 h-4" />
-                            <span>Perbarui Soal</span>
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          {questions.length > 0 && (
-                            <button
-                              type="button"
-                              onClick={() => setIsAddingQuestion(false)}
-                              className="w-full sm:w-auto px-4 py-2.5 rounded-xl font-semibold text-xs text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 min-h-[44px] flex items-center justify-center gap-1.5 transition-colors"
-                            >
-                              Tutup Form
-                            </button>
-                          )}
-                          <button
-                            type="button"
-                            onClick={(e) => handleSaveQuestion(e, 'continue')}
-                            className="w-full sm:flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-xl shadow-sm flex items-center justify-center gap-1.5 min-h-[44px] btn-press text-xs sm:text-sm"
-                            title="Simpan soal ini dan langsung siapkan formulir untuk soal berikutnya"
-                          >
-                            <Plus className="w-4 h-4" />
-                            <span>Simpan & Buat Baru</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={(e) => handleSaveQuestion(e, 'finish')}
-                            className="w-full sm:w-auto px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-slate-700 dark:text-slate-200 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 min-h-[44px] flex items-center justify-center gap-1.5 transition-colors border border-slate-200/80 dark:border-slate-700"
-                            title="Simpan soal ini dan tutup formulir"
-                          >
-                            <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                            <span>Simpan & Selesai</span>
-                          </button>
-                        </>
-                      )}
+                    {/* Tombol Simpan Butir Soal */}
+                    <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                      <button
+                        type="button"
+                        onClick={handleCancelEdit}
+                        className="px-4 py-2.5 rounded-xl font-semibold text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                      >
+                        Batal
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => handleSaveQuestion(e, 'continue')}
+                        className="px-4 py-2.5 rounded-xl font-bold text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800"
+                      >
+                        Simpan & Tambah Lagi
+                      </button>
+                      <button
+                        type="submit"
+                        className="px-5 py-2.5 rounded-xl font-bold text-xs text-white bg-blue-600 hover:bg-blue-700 shadow-sm btn-press"
+                      >
+                        Simpan & Selesai
+                      </button>
                     </div>
+
                   </form>
                 ) : (
-                  <div className="text-center py-10 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 space-y-3">
-                    <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto">
-                      <Layers className="w-6 h-6" />
+                  <div className="text-center py-16 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 space-y-3 shadow-xs">
+                    <div className="w-14 h-14 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto shadow-xs">
+                      <Layers className="w-7 h-7" />
                     </div>
                     <div>
-                      <p className="font-bold text-slate-800 dark:text-slate-200 text-sm">Formulir Soal Sedang Ditutup</p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                        Pilih butir soal di samping untuk mengedit, atau klik tombol di bawah untuk menambah soal baru.
+                      <p className="font-extrabold text-slate-900 dark:text-white text-base">Editor Soal Siap Digunakan</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto leading-relaxed">
+                        Pilih butir soal di samping untuk mengoreksi teks/jawaban, atau klik tombol di bawah untuk menyusun butir soal baru.
                       </p>
                     </div>
                     <button
                       type="button"
                       onClick={handleOpenNewQuestion}
-                      className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm inline-flex items-center gap-2 min-h-[44px] shadow-sm btn-press transition-colors"
+                      className="px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm inline-flex items-center gap-2 min-h-[44px] shadow-sm btn-press transition-colors"
                     >
-                      <Plus className="w-4 h-4" /> Tambah Soal Baru
+                      <Plus className="w-4 h-4" /> Tambah Butir Soal Baru
                     </button>
                   </div>
                 )}
@@ -1732,16 +1290,18 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
 
             </div>
 
-            <div className="flex justify-between items-center pt-3 border-t border-slate-200 dark:border-slate-800">
+            {/* Bottom Bar: Step 2 Navigation */}
+            <div className="flex justify-between items-center pt-4 border-t border-slate-200 dark:border-slate-800">
               <button
                 type="button"
                 onClick={() => {
                   playClick();
                   setCurrentStep(1);
                 }}
-                className="px-4 py-2.5 rounded-xl font-semibold text-xs text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 min-h-[42px] hover:bg-slate-50 dark:hover:bg-slate-750"
+                className="px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 min-h-[44px] flex items-center gap-1.5 transition-colors"
               >
-                ← Kembali ke Info
+                <ArrowLeft className="w-4 h-4" />
+                <span>{isAiMode ? 'Kembali ke Generator AI' : 'Kembali ke Info Kuis'}</span>
               </button>
 
               <button
@@ -1749,140 +1309,197 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                 onClick={() => {
                   playClick();
                   if (questions.length === 0) {
-                    showToast('Tambahkan minimal 1 soal terlebih dahulu.');
+                    showToast('Tambahkan minimal 1 butir soal sebelum melanjutkan.');
                     return;
                   }
                   setCurrentStep(3);
                 }}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-5 rounded-xl shadow-sm flex items-center gap-1.5 min-h-[42px] btn-press text-xs sm:text-sm"
+                className="px-6 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-sm flex items-center gap-2 min-h-[44px] btn-press transition-all"
               >
-                <span>Lihat Pratinjau ({questions.length} Soal)</span>
-                <Eye className="w-4 h-4" />
+                <span>{isAiMode ? 'Lanjut ke Informasi Kuis' : `Lihat Pratinjau (${questions.length} Soal)`}</span>
+                <ArrowRight className="w-4 h-4" />
               </button>
             </div>
 
           </div>
         )}
 
-        {/* ================= STEP 3: PREVIEW & PUBLISH ================= */}
-        {currentStep === 3 && (
-          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-card space-y-5 animate-fade-in max-w-3xl 2xl:max-w-4xl mx-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-              <div className="flex items-center gap-2">
-                <Eye className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                <h2 className="text-base font-bold text-slate-900 dark:text-white">Pratinjau Kuis Siswa</h2>
-              </div>
-              <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">Siap Diterbitkan</span>
-            </div>
+        {/* ================= STEP 3 IN AI MODE: INFO KUIS ================= */}
+        {isAiMode && currentStep === 3 && (
+          <InfoKuisStep
+            title={title}
+            setTitle={setTitle}
+            description={description}
+            setDescription={setDescription}
+            grade={grade}
+            setGrade={setGrade}
+            subject={subject}
+            setSubject={setSubject}
+            durationPerQuestionSec={durationPerQuestionSec}
+            setDurationPerQuestionSec={setDurationPerQuestionSec}
+            badgeTitle={badgeTitle}
+            setBadgeTitle={setBadgeTitle}
+            coverEmoji={coverEmoji}
+            setCoverEmoji={setCoverEmoji}
+            visibility={visibility}
+            setVisibility={setVisibility}
+            defaultGameMode={defaultGameMode}
+            setDefaultGameMode={setDefaultGameMode}
+            shuffleQuestions={shuffleQuestions}
+            setShuffleQuestions={setShuffleQuestions}
+            shuffleOptions={shuffleOptions}
+            setShuffleOptions={setShuffleOptions}
+            questionsCount={questions.length}
+            isAiMode={true}
+            onNext={() => setCurrentStep(4)}
+            onBack={() => setCurrentStep(2)}
+            playClick={playClick}
+          />
+        )}
 
-            {/* Simulated Card */}
-            <div className="bg-white dark:bg-slate-800/80 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 shadow-sm space-y-2.5">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                  <div className="w-11 h-11 rounded-xl bg-slate-100 dark:bg-slate-700/80 border border-slate-200 dark:border-slate-600 flex items-center justify-center text-2xl select-none flex-shrink-0 shadow-xs">
-                    {coverEmoji}
+        {/* ================= STEP PREVIEW & PUBLISH (Step 4 in AI, Step 3 in Manual) ================= */}
+        {((isAiMode && currentStep === 4) || (!isAiMode && currentStep === 3)) && (
+          <div className="w-full max-w-6xl 2xl:max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 animate-fade-in space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+              
+              {/* Kolom Kiri: Pratinjau Soal (8 kolom di desktop) */}
+              <div className="lg:col-span-8 bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-card space-y-5">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-2">
+                    <Eye className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                    <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+                      Pratinjau Butir Soal Kuis ({questions.length} Soal)
+                    </h2>
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg border block w-fit max-w-full truncate bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800">
-                      {subject}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-1.5 flex-shrink-0">
-                  <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-600 font-bold text-xs whitespace-nowrap">
-                    Kelas {grade}
+                  <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2.5 py-1 rounded-xl">
+                    Siap Diterbitkan
                   </span>
                 </div>
+
+                {/* Questions Summary List */}
+                <div className="space-y-2">
+                  <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
+                    {questions.map((q, idx) => (
+                      <div
+                        key={q.id}
+                        onClick={() => {
+                          handleStartEditQuestion(q);
+                          setCurrentStep(2);
+                        }}
+                        className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/90 hover:bg-blue-50/60 dark:hover:bg-blue-950/30 border border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-700 flex items-center justify-between text-xs cursor-pointer transition-all group"
+                        title="Klik untuk mengedit butir soal ini di Bank Soal"
+                      >
+                        <div className="truncate mr-3 min-w-0">
+                          <span className="font-extrabold text-blue-600 dark:text-blue-400 mr-2 flex-shrink-0">#{idx + 1}</span>
+                          <span className="font-semibold text-slate-800 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                            {q.text}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <span className="text-[10px] font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-lg flex items-center gap-1">
+                            <Star className="w-3 h-3 text-amber-500" /> {q.points || 10}p
+                          </span>
+                          <span className="font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2.5 py-1 rounded-lg text-xs">
+                            {q.type === 'short_answer'
+                              ? (q.acceptableAnswers?.[0] || q.options[0] || '-')
+                              : q.type === 'matching_pairs'
+                              ? `${q.matchingPairs?.length || q.options.length} Pasang`
+                              : (q.options[q.correctIndex] || '-')}
+                          </span>
+                          <span className="p-1 text-slate-400 group-hover:text-blue-600 rounded">
+                            <Edit3 className="w-4 h-4" />
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
 
-              <h4 className="text-base font-bold text-slate-900 dark:text-white leading-snug break-words line-clamp-2">{title}</h4>
-              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{description || 'Kuis interaktif buatan Guru.'}</p>
-
-              <div className="flex items-center justify-between text-xs text-slate-400 dark:text-slate-500 font-medium pt-3 border-t border-slate-100 dark:border-slate-700 flex-wrap gap-2">
-                <span>{questions.length} Soal</span>
-                <span>{durationPerQuestionSec}s per soal</span>
-                <span>Mode: {defaultGameMode === 'survival_3hearts' ? '3 Hati ❤️' : defaultGameMode === 'untimed' ? 'Santai 🧘' : 'Standar ⏱️'}</span>
-                <span>Lencana: {badgeTitle}</span>
-              </div>
-            </div>
-
-            {/* Questions Summary */}
-            <div className="space-y-2">
-              <h4 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                Ringkasan {questions.length} Soal:
-              </h4>
-
-              <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1">
-                {questions.map((q, idx) => (
-                  <div
-                    key={q.id}
-                    onClick={() => {
-                      handleStartEditQuestion(q);
-                      setCurrentStep(2);
-                    }}
-                    className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/90 hover:bg-blue-50/60 dark:hover:bg-blue-950/30 border border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-700 flex items-center justify-between text-xs cursor-pointer transition-all group"
-                    title="Klik untuk langsung mengedit soal ini di Langkah 2"
-                  >
-                    <div className="truncate mr-2 min-w-0">
-                      <span className="font-bold text-blue-600 dark:text-blue-400 mr-1.5 flex-shrink-0">#{idx + 1}</span>
-                      <span className="font-medium text-slate-800 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                        {q.text}
-                      </span>
+              {/* Kolom Kanan: Card Kuis & Tombol Simpan (4 kolom di desktop) */}
+              <div className="lg:col-span-4 space-y-4">
+                
+                {/* Simulated Card */}
+                <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">
+                    Kartu Kuis Siswa
+                  </span>
+                  <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 space-y-3">
+                    <div className="flex items-start gap-3">
+                      <div className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-800 flex items-center justify-center text-2xl flex-shrink-0 shadow-xs border border-slate-200 dark:border-slate-700">
+                        {coverEmoji}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                            Kelas {grade} SD
+                          </span>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 border border-blue-200 dark:border-blue-900">
+                            {subject}
+                          </span>
+                        </div>
+                        <h4 className="font-bold text-slate-900 dark:text-white text-sm leading-snug line-clamp-2">{title}</h4>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2 leading-relaxed">{description || 'Kuis interaktif buatan Guru.'}</p>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1.5 flex-shrink-0">
-                      <span className="text-[10px] font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 px-1.5 py-0.5 rounded flex items-center gap-0.5">
-                        <Star className="w-2.5 h-2.5 text-amber-500" /> {q.points || 10}p
-                      </span>
-                      {q.customDurationSec && (
-                        <span className="text-[10px] font-semibold bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded flex items-center gap-0.5">
-                          <Clock className="w-2.5 h-2.5 text-blue-500" /> {q.customDurationSec}s
+
+                    <div className="pt-2 border-t border-slate-200/60 dark:border-slate-700/60 text-xs text-slate-500 dark:text-slate-400 font-medium space-y-1">
+                      <div className="flex justify-between">
+                        <span>Total Soal:</span>
+                        <span className="font-bold text-slate-900 dark:text-white">{questions.length} Butir</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Durasi Menjawab:</span>
+                        <span className="font-bold text-slate-900 dark:text-white">{durationPerQuestionSec}s / soal</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Mode Permainan:</span>
+                        <span className="font-bold text-slate-900 dark:text-white">
+                          {defaultGameMode === 'survival_3hearts' ? '3 Hati ❤️' : defaultGameMode === 'untimed' ? 'Santai 🧘' : 'Standar ⏱️'}
                         </span>
-                      )}
-                      <span className="font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded text-[11px]">
-                        {q.type === 'short_answer'
-                          ? (q.acceptableAnswers?.[0] || q.options[0] || '-')
-                          : q.type === 'matching_pairs'
-                          ? `${q.matchingPairs?.length || q.options.length} Pasang`
-                          : (q.options[q.correctIndex] || '-')}
-                      </span>
-                      <span className="p-1 text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 rounded">
-                        <Edit3 className="w-3.5 h-3.5" />
-                      </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Status Akses:</span>
+                        <span className="font-bold text-slate-900 dark:text-white">
+                          {visibility === 'public' ? '🌐 Publik' : '🔒 Privat PIN'}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                ))}
+                </div>
+
+                {/* Action Buttons */}
+                <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
+                  <button
+                    type="button"
+                    onClick={handleFinalPublish}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-3.5 px-5 rounded-2xl shadow-md flex items-center justify-center gap-2 min-h-[48px] btn-press text-sm transition-all"
+                  >
+                    <Save className="w-4 h-4" />
+                    <span>{editingQuiz ? 'Simpan Perubahan Kuis' : 'Terbitkan Kuis Sekarang'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setCurrentStep(isAiMode ? 3 : 2);
+                    }}
+                    className="w-full py-2.5 px-4 rounded-xl font-bold text-xs text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 min-h-[44px] transition-colors"
+                  >
+                    {isAiMode ? '← Edit Info Kuis' : '← Edit Butir Soal'}
+                  </button>
+                </div>
+
               </div>
-            </div>
 
-            {/* Action Buttons */}
-            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex gap-2.5">
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  setCurrentStep(2);
-                }}
-                className="flex-1 py-2.5 px-4 rounded-xl font-semibold text-xs sm:text-sm text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 min-h-[44px]"
-              >
-                ← Edit Soal
-              </button>
-
-              <button
-                type="button"
-                onClick={handleFinalPublish}
-                className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-5 rounded-xl shadow-sm flex items-center justify-center gap-2 min-h-[44px] btn-press text-xs sm:text-sm"
-              >
-                <Save className="w-4 h-4" />
-                <span>{editingQuiz ? 'Simpan Perubahan Kuis' : 'Terbitkan Kuis Sekarang'}</span>
-              </button>
             </div>
           </div>
         )}
 
       </main>
 
-      {/* Asisten Soal AI & Impor Modal */}
+      {/* Asisten Soal AI Modal */}
       <AiQuestionModal
         isOpen={isAiModalOpen}
         onClose={() => setIsAiModalOpen(false)}

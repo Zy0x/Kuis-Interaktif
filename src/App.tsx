@@ -61,6 +61,8 @@ export const App: React.FC = () => {
   // Unified Auth State
   const [teacher, setTeacher] = useState<TeacherProfile | null>(initialTeacher);
   const [editingQuiz, setEditingQuiz] = useState<Quiz | null>(null);
+  const [creatorInitialMode, setCreatorInitialMode] = useState<'ai' | 'manual'>('manual');
+  const [reopenMethodModal, setReopenMethodModal] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authInitialTab, setAuthInitialTab] = useState<AuthModalTab>('student');
 
@@ -369,8 +371,16 @@ export const App: React.FC = () => {
       {currentScreen === 'creator' && teacher && (
         <QuizCreator
           editingQuiz={editingQuiz}
+          initialMode={creatorInitialMode}
           onBack={() => {
             setEditingQuiz(null);
+            setReopenMethodModal(false);
+            setCurrentScreen('teacher-dashboard');
+            saveNavigationState({ screen: 'teacher-dashboard', replace: false });
+          }}
+          onBackToMethodSelection={() => {
+            setEditingQuiz(null);
+            setReopenMethodModal(true);
             setCurrentScreen('teacher-dashboard');
             saveNavigationState({ screen: 'teacher-dashboard', replace: false });
           }}
@@ -386,8 +396,10 @@ export const App: React.FC = () => {
           teacher={teacher}
           onLogout={handleTeacherLogout}
           onGoHome={handleGoHome}
-          onOpenCreator={(quizToEdit?: Quiz) => {
+          onOpenCreator={(quizToEdit?: Quiz, mode?: 'ai' | 'manual') => {
             setEditingQuiz(quizToEdit || null);
+            setCreatorInitialMode(mode || (quizToEdit ? 'manual' : 'manual'));
+            setReopenMethodModal(false);
             setCurrentScreen('creator');
             saveNavigationState({ screen: 'creator', quiz: quizToEdit, replace: false });
           }}
@@ -396,6 +408,7 @@ export const App: React.FC = () => {
           isDark={isDark}
           onToggleTheme={toggleTheme}
           playClick={playClick}
+          initialOpenMethodModal={reopenMethodModal}
         />
       )}
 

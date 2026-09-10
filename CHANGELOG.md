@@ -1,6 +1,38 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.45] - 2026-09-10
+### Studio Kuis AI Halaman Penuh, Navigasi Pemilihan Metode Cerdas, Isolasi Interaksi Kartu Kuis, dan Optimalisasi Responsivitas Layar Lebar
+
+#### 1. Isolasi Interaksi Kartu Kuis (Dashboard Guru)
+- Menghilangkan interaksi klik global pada kontainer kartu kuis untuk mencegah pembukaan tidak sengaja saat navigasi.
+- Seluruh tindakan dikendalikan secara presisi lewat tombol-tombol aksi resmi yang berdedikasi:
+  - Tombol *"Mode IFP"* untuk menyajikan kuis di Smartboard kelas.
+  - Tombol *"Bagi Tautan"* untuk membagikan tautan langsung siswa.
+  - Tombol *"Detail & Nilai"* untuk mengakses statistik, rekap perolehan nilai, dan pratinjau soal.
+  - Menu titik tiga (*Actions Menu*) untuk duplikasi, ubah status akses publik/privat, dan penghapusan kuis.
+
+#### 2. Generator Kilat AI Halaman Penuh di Studio Kuis (`QuizCreator`)
+- Menggantikan modal pop-up AI berukuran terbatas dengan antarmuka kerja halaman penuh yang luas, nyaman, dan kaya fitur di Studio Kuis.
+- **Alur 4 Tahap Terpadu Khusus Mode AI:**
+  1. **Langkah 1: ⚡ Generator AI** — Racik soal otomatis berbasis Kurikulum Merdeka atau tempel teks dokumen pelajaran, pemilihan tingkat kelas SD (1–6), jumlah butir (5, 10, 15, custom hingga 50), mesin komputasi AI (Lokal, Gemini 2.0 / PRO, Groq LPU), dan sakelar ilustrasi gambar edukasi AI gratis.
+  2. **Langkah 2: 📝 Bank Soal** — Tinjau hasil generasi butir soal, koreksi kalimat soal, edit opsi jawaban & kunci, tambah ilustrasi gambar, atau tambah soal baru.
+  3. **Langkah 3: ℹ️ Info Kuis** — Lengkapi judul kuis, deskripsi instruksi siswa, durasi pengerjaan per butir, gelar lencana, emoji sampul, mode game bawaan, dan visibilitas kuis.
+  4. **Langkah 4: 👁️ Pratinjau & Simpan** — Tinjau keseluruhan kuis dengan kartu pratinjau siswa langsung (*Live Card Preview*) sebelum diterbitkan.
+- **Mode Manual & Edit Tetap Ringkas 3 Langkah:**
+  - `1. Info Kuis` ➔ `2. Bank Soal` ➔ `3. Pratinjau`.
+
+#### 3. Navigasi Batal / Kembali Cerdas ke Modal Pemilihan Metode
+- Saat guru berada di Langkah 1 Generator Kilat AI dan memutuskan untuk kembali atau berganti metode, tombol *"Ganti Metode"* maupun *"Kembali"* langsung mengarahkan guru kembali ke Dashboard Guru dengan membuka otomatis modal *"Pilih Metode Pembuatan Kuis"*.
+- Menghilangkan friksi pengguna sehingga guru dapat dengan cepat beralih antara racik kilat AI ataupun buat kuis mandiri dari nol tanpa harus mengulang navigasi dari awal.
+
+#### 4. Presisi Responsivitas Layar Lebar & Touch Target Mobile-First
+- Memperluas lebar kontainer kerja Studio Kuis menjadi `max-w-6xl 2xl:max-w-7xl` untuk menghilangkan celah kosong berlebih pada layar monitor desktop dan smartboard interaktif.
+- Mengadopsi tata letak adaptif 2 kolom di layar besar:
+  - Kolom utama formulir dan butir soal di sisi kiri.
+  - Kolom panduan, tips Kurikulum Merdeka, keunggulan komputasi AI, serta *Live Quiz Card Preview* interaktif di sisi kanan.
+- Memastikan seluruh target sentuh memenuhi standar $\ge 44 \times 44\text{ px}$ dan tata letak tetap stabil dan rapi dari layar mobile portrait (390px) hingga monitor 4K.
+
 ## [2.2.44] - 2026-09-10
 ### Redesain Dashboard Guru Clean & Terfokus, Tampilan Terpadu Detail Kuis & Rekap Nilai Siswa, serta Akses Instan Generator Kilat AI
 
