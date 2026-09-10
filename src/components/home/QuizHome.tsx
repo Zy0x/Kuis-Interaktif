@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import type { Quiz, GradeLevel, Subject, TeacherProfile } from '../../types/quiz';
+import type { Quiz, GradeLevel, Subject, TeacherProfile, GameMode } from '../../types/quiz';
 import { MASTER_TEACHER_EMAIL } from '../../types/quiz';
 import { AVATAR_LIST } from '../../data/seedQuizzes';
 import { DataManager } from '../../lib/supabaseClient';
@@ -37,7 +37,7 @@ import {
 } from 'lucide-react';
 
 interface QuizHomeProps {
-  onSelectQuiz: (quiz: Quiz) => void;
+  onSelectQuiz: (quiz: Quiz, mode?: GameMode) => void;
   onOpenTeacherPortal: () => void;
   onOpenAuthModal?: (tab?: 'teacher' | 'student') => void;
   onEnterPin: (quiz: Quiz) => void;
@@ -272,8 +272,11 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
     setProfileTab('guest');
   };
 
+  const [selectedGameMode, setSelectedGameMode] = useState<GameMode>('standard');
+
   const handleStartWithRules = (quiz: Quiz) => {
     playClick();
+    setSelectedGameMode(quiz.defaultGameMode || 'standard');
     setRulesModalQuiz(quiz);
   };
 
@@ -904,6 +907,37 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                   </p>
                 </div>
               </div>
+
+              {/* Game Mode Picker */}
+              <div className="pt-1">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                  Pilih Mode Permainan:
+                </label>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {[
+                    { mode: 'standard' as GameMode, label: 'Standar ⏱️', desc: 'Dengan Timer' },
+                    { mode: 'survival_3hearts' as GameMode, label: '3 Hati ❤️', desc: 'Survival' },
+                    { mode: 'untimed' as GameMode, label: 'Santai 🧘', desc: 'Bebas Waktu' },
+                  ].map((m) => (
+                    <button
+                      type="button"
+                      key={m.mode}
+                      onClick={() => {
+                        playClick();
+                        setSelectedGameMode(m.mode);
+                      }}
+                      className={`p-2 rounded-xl border text-center transition-all min-h-[46px] flex flex-col items-center justify-center ${
+                        selectedGameMode === m.mode
+                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-bold ring-1 ring-blue-400'
+                          : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50'
+                      }`}
+                    >
+                      <span className="text-xs font-bold leading-tight">{m.label}</span>
+                      <span className="text-[10px] opacity-75">{m.desc}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
 
             {/* Footer Buttons */}
@@ -918,7 +952,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                 onClick={() => {
                   const q = rulesModalQuiz;
                   setRulesModalQuiz(null);
-                  onSelectQuiz(q);
+                  onSelectQuiz(q, selectedGameMode);
                 }}
                 className="flex-[2] py-2.5 px-4 rounded-xl font-bold text-xs sm:text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-sm flex items-center justify-center gap-2 min-h-[44px] btn-press"
               >

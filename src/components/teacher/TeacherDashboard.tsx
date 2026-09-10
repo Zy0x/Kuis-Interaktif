@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import type { Quiz, TeacherProfile, StudentSubmission } from '../../types/quiz';
+import type { Quiz, TeacherProfile, StudentSubmission, Subject } from '../../types/quiz';
 import { MASTER_TEACHER_EMAIL } from '../../types/quiz';
 import { DataManager } from '../../lib/supabaseClient';
 import { useBackHandler } from '../../lib/navigationHistory';
@@ -7,6 +7,7 @@ import { ThemeToggle } from '../common/ThemeToggle';
 import { ConfirmDeleteModal } from '../common/ConfirmDeleteModal';
 import { QuizSettingsModal } from '../common/QuizSettingsModal';
 import { saveNavigationState } from '../../lib/navigationState';
+import { generateAiPrompt, generateCurriculumSeedQuestions } from '../../lib/aiQuestionParser';
 import { 
   GraduationCap, 
   Plus, 
@@ -26,7 +27,8 @@ import {
   MoreVertical,
   Pencil,
   HelpCircle,
-  Clock
+  Clock,
+  Sparkles
 } from 'lucide-react';
 
 const getSubjectBadge = (subject: string) => {
@@ -93,9 +95,12 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   const [copiedLink, setCopiedLink] = useState<string | null>(null);
 
   // Generator state
-  const [genGrade, setGenGrade] = useState<number>(3);
+  const [genGrade, setGenGrade] = useState<number>(4);
   const [genCount, setGenCount] = useState<number>(5);
+  const [genSubject, setGenSubject] = useState<Subject>('IPA');
+  const [genTopic, setGenTopic] = useState<string>('Organ Pernapasan Manusia');
   const [genLoading, setGenLoading] = useState(false);
+  const [copiedAiPrompt, setCopiedAiPrompt] = useState(false);
 
   // Delete confirmation state (In-App Modal)
   const [quizToDelete, setQuizToDelete] = useState<Quiz | null>(null);
@@ -199,15 +204,57 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
     }
   };
 
+  const handleCopyAiPrompt = () => {
+    playClick();
+    const promptText = generateAiPrompt({
+      subject: genSubject,
+      grade: genGrade,
+      topic: genTopic.trim() || 'Kurikulum Merdeka SD',
+      count: genCount,
+      questionType: 'multiple_choice',
+    });
+    navigator.clipboard.writeText(promptText);
+    setCopiedAiPrompt(true);
+    setTimeout(() => setCopiedAiPrompt(false), 3000);
+  };
+
   const handleRunGenerator = async () => {
     playClick();
     setGenLoading(true);
     try {
-      const generated = DataManager.generateQuickMathQuiz(genGrade, genCount);
-      generated.creatorName = teacher.fullName;
-      generated.creatorId = teacher.id;
-      generated.visibility = 'public';
-      await DataManager.saveCustomQuiz(generated);
+      const questions = generateCurriculumSeedQuestions(
+        genTopic.trim() || 'Materi Pembelajaran',
+        genSubject,
+        genGrade,
+        genCount
+      );
+
+      const emojiMap: Record<string, string> = {
+        'Matematika': '📐',
+        'IPA': '🌱',
+        'Bahasa Indonesia': '📚',
+        'Pendidikan Pancasila': '🇮🇩',
+        'Pengetahuan Umum': '💡'
+      };
+
+      const finalQuiz: Quiz = {
+        id: 'custom_ai_' + Date.now(),
+        title: `Kuis ${genSubject}: ${genTopic || 'Kurikulum SD'}`,
+        description: `Latihan kuis interaktif mata pelajaran ${genSubject} Kelas ${genGrade} SD tentang ${genTopic || 'materi terkait'}.`,
+        subject: genSubject,
+        grade: genGrade,
+        durationPerQuestionSec: 30,
+        coverEmoji: emojiMap[genSubject] || '🍎',
+        themeColor: 'from-blue-600 to-indigo-600',
+        badgeTitle: 'Bintang Prestasi',
+        questions,
+        visibility: 'public',
+        creatorName: teacher.fullName,
+        creatorId: teacher.id,
+        isPublished: true,
+      };
+
+      await DataManager.saveCustomQuiz(finalQuiz);
       await loadData();
       setActiveTab('quizzes');
     } finally {
@@ -676,94 +723,165 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
           </section>
         )}
 
-        {/* TAB 3: GENERATOR KILAT SOAL */}
+        {/* TAB 3: GENERATOR KUIS AI & KILAT */}
         {activeTab === 'generator' && (
           <section className="max-w-3xl 2xl:max-w-4xl mx-auto bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-card space-y-6 animate-fade-in">
             <div className="space-y-2 text-center">
-              <div className="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto text-2xl">
-                ⚡
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center mx-auto text-2xl shadow-sm">
+                <Sparkles className="w-6 h-6" />
               </div>
               <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
-                Generator Kilat Soal Matematika
+                Generator Kuis AI & Kilat
               </h2>
               <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 max-w-md mx-auto">
-                Buat satu set latihan berhitung lengkap dengan opsi jawaban dan pembahasan langkah otomatis hanya dalam 1 detik.
+                Buat satu paket kuis interaktif lengkap dalam hitungan detik atau buat template prompt standar untuk ChatGPT & Gemini.
               </p>
             </div>
 
             <div className="space-y-4 pt-2">
+              {/* Input Topik */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">
-                  Pilih Tingkat Kelas:
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                  Topik atau Materi Pembelajaran:
                 </label>
-                <div className="grid grid-cols-6 gap-2">
-                  {[1, 2, 3, 4, 5, 6].map((g) => (
-                    <button
-                      key={g}
-                      type="button"
-                      onClick={() => {
-                        playClick();
-                        setGenGrade(g);
-                      }}
-                      className={`py-3 rounded-xl font-bold text-xs sm:text-sm transition-all min-h-[44px] ${
-                        genGrade === g
-                          ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-400'
-                          : 'bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-750'
-                      }`}
-                    >
-                      Kelas {g}
-                    </button>
-                  ))}
-                </div>
+                <input
+                  type="text"
+                  value={genTopic}
+                  onChange={(e) => setGenTopic(e.target.value)}
+                  placeholder="Contoh: Organ Pernapasan Manusia, Bilangan Pecahan, Sila Pancasila..."
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium text-xs sm:text-sm focus:outline-none focus:border-blue-500 min-h-[44px]"
+                />
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">
-                  Jumlah Soal:
-                </label>
-                <div className="grid grid-cols-3 gap-3">
-                  {[5, 10, 15].map((cnt) => (
-                    <button
-                      key={cnt}
-                      type="button"
-                      onClick={() => {
-                        playClick();
-                        setGenCount(cnt);
-                      }}
-                      className={`py-2.5 rounded-xl font-semibold text-xs sm:text-sm transition-all min-h-[44px] ${
-                        genCount === cnt
-                          ? 'bg-slate-900 dark:bg-blue-600 text-white'
-                          : 'bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-750'
-                      }`}
-                    >
-                      {cnt} Soal
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/60 text-xs text-blue-900 dark:text-blue-200 space-y-1">
-                <span className="font-bold flex items-center gap-1">
-                  <BookOpen className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" /> Spesifikasi Soal Kelas {genGrade}:
+              {/* Saran Topik Populer */}
+              <div className="space-y-1.5">
+                <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                  Saran Topik Kurikulum SD:
                 </span>
-                <p className="text-blue-800 dark:text-blue-300">
-                  {genGrade <= 2
-                    ? 'Penjumlahan dan pengurangan angka ramah anak dengan batas puluhan.'
-                    : genGrade <= 4
-                    ? 'Perkalian dan pembagian konsep dasar bilangan cacah.'
-                    : 'Operasi campuran, persentase, dan perpangkatan kuadrat.'}
-                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    'Organ Pernapasan Manusia',
+                    'Sistem Pencernaan & Nutrisi',
+                    'Pecahan & Bilangan Cacah',
+                    'Pengamalan Sila Pancasila',
+                    'Siklus Air & Cuaca'
+                  ].map((st) => (
+                    <button
+                      key={st}
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        setGenTopic(st);
+                      }}
+                      className="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 transition-colors border border-slate-200/80 dark:border-slate-700 min-h-[32px]"
+                    >
+                      + {st}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              <button
-                type="button"
-                disabled={genLoading}
-                onClick={handleRunGenerator}
-                className="w-full py-3.5 px-6 rounded-2xl font-black text-sm sm:text-base text-white bg-blue-600 hover:bg-blue-700 shadow-md flex items-center justify-center gap-2 min-h-[50px] btn-press transition-all disabled:opacity-50"
-              >
-                <Zap className="w-5 h-5 text-amber-300" />
-                <span>{genLoading ? 'Membuat Kuis...' : 'Generate & Simpan ke Bank Soal'}</span>
-              </button>
+              {/* Mapel & Kelas & Jumlah */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Mata Pelajaran:
+                  </label>
+                  <select
+                    value={genSubject}
+                    onChange={(e) => setGenSubject(e.target.value as Subject)}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-semibold text-xs sm:text-sm min-h-[42px]"
+                  >
+                    <option value="IPA">IPA (Sains)</option>
+                    <option value="Matematika">Matematika</option>
+                    <option value="Bahasa Indonesia">Bahasa Indonesia</option>
+                    <option value="Pendidikan Pancasila">Pendidikan Pancasila</option>
+                    <option value="Pengetahuan Umum">Pengetahuan Umum</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Tingkat Kelas:
+                  </label>
+                  <div className="grid grid-cols-6 gap-1">
+                    {[1, 2, 3, 4, 5, 6].map((g) => (
+                      <button
+                        key={g}
+                        type="button"
+                        onClick={() => {
+                          playClick();
+                          setGenGrade(g);
+                        }}
+                        className={`py-2 rounded-lg font-bold text-xs transition-all min-h-[40px] ${
+                          genGrade === g
+                            ? 'bg-blue-600 text-white shadow-sm'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                        }`}
+                      >
+                        {g}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Jumlah Soal:
+                  </label>
+                  <div className="grid grid-cols-3 gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+                    {[3, 5, 10].map((cnt) => (
+                      <button
+                        key={cnt}
+                        type="button"
+                        onClick={() => {
+                          playClick();
+                          setGenCount(cnt);
+                        }}
+                        className={`py-1.5 rounded-lg text-xs font-bold transition-all min-h-[36px] ${
+                          genCount === cnt
+                            ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm'
+                            : 'text-slate-600 dark:text-slate-400'
+                        }`}
+                      >
+                        {cnt} Soal
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons: Copy Prompt vs Direct Generate */}
+              <div className="pt-2 flex flex-col sm:flex-row gap-3">
+                <button
+                  type="button"
+                  onClick={handleCopyAiPrompt}
+                  className="flex-1 py-3 px-4 rounded-xl font-bold text-xs sm:text-sm text-slate-700 dark:text-slate-200 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 border border-slate-200/80 dark:border-slate-700 min-h-[48px] flex items-center justify-center gap-2 transition-colors btn-press"
+                  title="Salin prompt standar untuk digunakan di ChatGPT, Gemini, atau Claude"
+                >
+                  {copiedAiPrompt ? (
+                    <>
+                      <Check className="w-4 h-4 text-emerald-600" />
+                      <span className="text-emerald-700 dark:text-emerald-400">Prompt AI Tersalin!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4 text-slate-500" />
+                      <span>Salin Prompt untuk ChatGPT/Gemini</span>
+                    </>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  disabled={genLoading}
+                  onClick={handleRunGenerator}
+                  className="flex-1 py-3 px-6 rounded-xl font-bold text-xs sm:text-sm text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-sm flex items-center justify-center gap-2 min-h-[48px] btn-press transition-all disabled:opacity-50"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  <span>{genLoading ? 'Membuat Paket Kuis...' : 'Generate & Terbitkan Kuis'}</span>
+                </button>
+              </div>
             </div>
           </section>
         )}

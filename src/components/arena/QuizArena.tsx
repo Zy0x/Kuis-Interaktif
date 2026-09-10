@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import type { Quiz, QuizAttemptAnswer } from '../../types/quiz';
+import type { Quiz, QuizAttemptAnswer, QuizQuestion, GameMode } from '../../types/quiz';
 import { useBackHandler } from '../../lib/navigationHistory';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 import { ThemeToggle } from '../common/ThemeToggle';
@@ -23,11 +23,16 @@ import {
   Flame,
   MoreVertical,
   Sun,
-  Moon
+  Moon,
+  RotateCcw,
+  Send,
+  Lightbulb,
+  Puzzle
 } from 'lucide-react';
 
 interface QuizArenaProps {
   quiz: Quiz;
+  initialMode?: GameMode;
   onFinishQuiz: (answers: QuizAttemptAnswer[], totalTimeSpent: number) => void;
   onExit: () => void;
   isMuted: boolean;
@@ -44,6 +49,7 @@ interface QuizArenaProps {
 
 export const QuizArena: React.FC<QuizArenaProps> = ({
   quiz,
+  initialMode,
   onFinishQuiz,
   onExit,
   isMuted,
@@ -58,6 +64,23 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   onToggleTheme = () => {},
 }) => {
   const STORAGE_KEY = `kuis_arena_progress_${quiz.id}`;
+
+  const gameMode: GameMode = initialMode || quiz.defaultGameMode || 'standard';
+  const [hearts, setHearts] = useState<number>(3);
+  const [isGameOver, setIsGameOver] = useState(false);
+
+  // Active Questions (support shuffleQuestions)
+  const [activeQuestions] = useState<QuizQuestion[]>(() => {
+    if (quiz.shuffleQuestions) {
+      const arr = [...quiz.questions];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+    return quiz.questions;
+  });
 
   const [currentIndex, setCurrentIndex] = useState<number>(() => {
     try {
@@ -107,8 +130,22 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [isMobileToolsOpen, setIsMobileToolsOpen] = useState(false);
 
+  // Question Types States
+  // 1. Short Answer state
+  const [shortAnswerInput, setShortAnswerInput] = useState('');
+  const [showFirstLetterHint, setShowFirstLetterHint] = useState(false);
+
+  // 2. Mystery Image Reveal state (3x3 grid)
+  const [revealedTiles, setRevealedTiles] = useState<Set<number>>(new Set());
+
+  // 3. Matching Pairs state
+  const [selectedLeft, setSelectedLeft] = useState<number | null>(null);
+  const [matchedPairs, setMatchedPairs] = useState<Set<number>>(new Set());
+  const [wrongPairAttempt, setWrongPairAttempt] = useState<{ left: number; right: number } | null>(null);
+  const [shuffledRightItems, setShuffledRightItems] = useState<{ originalIndex: number; text: string }[]>([]);
+
   // Kunci scroll body saat dialog konfirmasi keluar atau menu alat mobile aktif
-  useBodyScrollLock(showExitConfirm || isMobileToolsOpen);
+  useBodyScrollLock(showExitConfirm || isMobileToolsOpen || isGameOver);
   
   // Smartboard / Teacher IFP Features
   const [isPaused, setIsPaused] = useState(false);
@@ -165,23 +202,23 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 
   // 2. Pause BGM when quiz is paused or exit dialog is open
   useEffect(() => {
-    if (isPaused || showExitConfirm) {
+    if (isPaused || showExitConfirm || isGameOver) {
       pauseBgm();
     } else if (!isAnswerConfirmed) {
       resumeBgm();
     }
-  }, [isPaused, showExitConfirm, isAnswerConfirmed, pauseBgm, resumeBgm]);
+  }, [isPaused, showExitConfirm, isGameOver, isAnswerConfirmed, pauseBgm, resumeBgm]);
 
-  // 3. Accelerate tempo during last 5 seconds countdown
+  // 3. Accelerate tempo during last 5 seconds countdown (only in timed modes)
   useEffect(() => {
-    if (timeLeft <= 5 && timeLeft > 0 && !isAnswerConfirmed && !isPaused) {
+    if (gameMode !== 'untimed' && timeLeft <= 5 && timeLeft > 0 && !isAnswerConfirmed && !isPaused && !isGameOver) {
       setUrgent(true);
     } else {
       setUrgent(false);
     }
-  }, [timeLeft, isAnswerConfirmed, isPaused, setUrgent]);
+  }, [timeLeft, isAnswerConfirmed, isPaused, isGameOver, gameMode, setUrgent]);
 
-  // 1. Level 1 (Prioritas 100): Tutup Modal Menu Alat Mobile jika sedang terbuka
+  // Back Handlers
   useBackHandler('arena-mobile-tools', 100, () => {
     if (isMobileToolsOpen) {
       setIsMobileToolsOpen(false);
@@ -190,7 +227,6 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     return false;
   }, isMobileToolsOpen);
 
-  // 2. Level 1 (Prioritas 100): Tutup Modal Polling IFP jika sedang terbuka
   useBackHandler('arena-poll-modal', 100, () => {
     if (isPollOpen) {
       setIsPollOpen(false);
@@ -199,7 +235,6 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     return false;
   }, isPollOpen);
 
-  // 3. Level 1 (Prioritas 100): Batalkan Modal Konfirmasi Keluar jika sedang terbuka
   useBackHandler('arena-dismiss-exit-confirm', 100, () => {
     if (showExitConfirm) {
       setShowExitConfirm(false);
@@ -208,9 +243,8 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     return false;
   }, showExitConfirm);
 
-  // 4. Level 1 Safety Guard (Prioritas 80): Mencegah soal hilang tiba-tiba dengan membuka dialog konfirmasi
   useBackHandler('arena-prompt-exit-confirm', 80, () => {
-    if (!showExitConfirm && !isPollOpen && !isMobileToolsOpen) {
+    if (!showExitConfirm && !isPollOpen && !isMobileToolsOpen && !isGameOver) {
       setIsPaused(true);
       setShowExitConfirm(true);
       return true;
@@ -218,9 +252,21 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     return false;
   }, true);
 
-  const question = quiz.questions[currentIndex];
-  const isLastQuestion = currentIndex === quiz.questions.length - 1;
+  const question = activeQuestions[currentIndex] || activeQuestions[0];
+  const isLastQuestion = currentIndex === activeQuestions.length - 1;
   const timerRef = useRef<number | null>(null);
+
+  // Initialize right column shuffle for matching pairs
+  useEffect(() => {
+    if (question?.type === 'matching_pairs' && question.matchingPairs && question.matchingPairs.length > 0) {
+      const rights = question.matchingPairs.map((p, idx) => ({ originalIndex: idx, text: p.right }));
+      for (let i = rights.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [rights[i], rights[j]] = [rights[j], rights[i]];
+      }
+      setShuffledRightItems(rights);
+    }
+  }, [currentIndex, question]);
 
   // Fullscreen toggle
   const toggleFullscreen = () => {
@@ -242,15 +288,21 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 
   // Timer effect
   useEffect(() => {
-    if (isAnswerConfirmed || isPaused) {
+    if (isAnswerConfirmed || isPaused || isGameOver) {
       if (timerRef.current) clearInterval(timerRef.current);
       return;
     }
 
     timerRef.current = window.setInterval(() => {
+      setTotalTimeSpent((t) => t + 1);
+
+      if (gameMode === 'untimed') {
+        return; // Untimed mode does not count down
+      }
+
       setTimeLeft((prev) => {
         if (prev <= 1) {
-          handleAnswerSelect(-1);
+          handleAnswerSelect(-1, undefined, false);
           return 0;
         }
         if (prev <= 6 && prev > 1 && playTick) {
@@ -258,15 +310,35 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
         }
         return prev - 1;
       });
-      setTotalTimeSpent((t) => t + 1);
     }, 1000);
 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [currentIndex, isAnswerConfirmed, isPaused, quiz.durationPerQuestionSec, playTick]);
+  }, [currentIndex, isAnswerConfirmed, isPaused, isGameOver, gameMode, quiz.durationPerQuestionSec, playTick]);
 
-  const handleAnswerSelect = (optionIndex: number) => {
+  const normalizeAnswer = (text: string) => {
+    return text
+      .toLowerCase()
+      .trim()
+      .replace(/[.,/#!$%^&*;:{}=\-_`~()]/g, '')
+      .replace(/\s+/g, ' ');
+  };
+
+  const getFirstLetterHint = (q: QuizQuestion) => {
+    const primary = q.acceptableAnswers?.[0] || q.options?.[q.correctIndex] || q.options?.[0] || '';
+    if (!primary.trim()) return '';
+    const clean = primary.trim();
+    const firstChar = clean[0].toUpperCase();
+    const rest = clean.slice(1).replace(/[a-zA-Z0-9]/g, '_ ');
+    return `${firstChar} ${rest}`.trim();
+  };
+
+  const handleAnswerSelect = (
+    optionIndex: number,
+    textAns?: string,
+    explicitIsCorrect?: boolean
+  ) => {
     if (isAnswerConfirmed) return;
     if (timerRef.current) clearInterval(timerRef.current);
 
@@ -274,7 +346,21 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     setIsAnswerConfirmed(true);
     setDucked(true);
 
-    const isCorrect = optionIndex === question.correctIndex;
+    // If image_guess, reveal all 9 tiles
+    setRevealedTiles(new Set([0, 1, 2, 3, 4, 5, 6, 7, 8]));
+
+    let isCorrect = false;
+    if (explicitIsCorrect !== undefined) {
+      isCorrect = explicitIsCorrect;
+    } else if (question.type === 'short_answer') {
+      const clean = normalizeAnswer(textAns || shortAnswerInput);
+      const acceptable = (question.acceptableAnswers || []).map(normalizeAnswer);
+      const optMatch = question.options[question.correctIndex] ? normalizeAnswer(question.options[question.correctIndex]) : '';
+      isCorrect = (Boolean(optMatch) && clean === optMatch) || acceptable.includes(clean);
+    } else {
+      isCorrect = optionIndex === question.correctIndex;
+    }
+
     if (isCorrect) {
       const nextStreak = streak + 1;
       setStreak(nextStreak);
@@ -285,12 +371,22 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     } else {
       setStreak(0);
       playWrong();
+      if (gameMode === 'survival_3hearts') {
+        setHearts((h) => {
+          const next = Math.max(0, h - 1);
+          if (next === 0) {
+            setIsGameOver(true);
+          }
+          return next;
+        });
+      }
     }
 
-    const timeSpent = quiz.durationPerQuestionSec - timeLeft;
+    const timeSpent = gameMode === 'untimed' ? 5 : (quiz.durationPerQuestionSec - timeLeft);
     const recordedAnswer: QuizAttemptAnswer = {
       questionId: question.id,
       selectedIndex: optionIndex,
+      textAnswer: textAns || (question.type === 'short_answer' ? shortAnswerInput.trim() : undefined),
       isCorrect,
       timeSpentSec: Math.max(1, timeSpent),
     };
@@ -301,7 +397,40 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   const handleTeacherReveal = () => {
     if (isAnswerConfirmed) return;
     if (playReveal) playReveal();
-    handleAnswerSelect(question.correctIndex);
+    if (question.type === 'short_answer') {
+      const primaryAns = question.acceptableAnswers?.[0] || question.options[question.correctIndex] || 'Jawaban Tepat';
+      setShortAnswerInput(primaryAns);
+      handleAnswerSelect(0, primaryAns, true);
+    } else if (question.type === 'matching_pairs') {
+      if (question.matchingPairs) {
+        setMatchedPairs(new Set(question.matchingPairs.map((_, i) => i)));
+      }
+      handleAnswerSelect(0, 'Semua Cocok', true);
+    } else {
+      handleAnswerSelect(question.correctIndex);
+    }
+  };
+
+  const handleRetryQuiz = () => {
+    playClick();
+    setIsGameOver(false);
+    setHearts(3);
+    setCurrentIndex(0);
+    setAnswersList([]);
+    setTimeLeft(quiz.durationPerQuestionSec);
+    setTotalTimeSpent(0);
+    setStreak(0);
+    setSelectedOption(null);
+    setIsAnswerConfirmed(false);
+    setShortAnswerInput('');
+    setShowFirstLetterHint(false);
+    setRevealedTiles(new Set());
+    setSelectedLeft(null);
+    setMatchedPairs(new Set());
+    setWrongPairAttempt(null);
+    try {
+      sessionStorage.removeItem(STORAGE_KEY);
+    } catch {}
   };
 
   const handleNext = () => {
@@ -320,6 +449,12 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
       setTimeLeft(quiz.durationPerQuestionSec);
       setIsPaused(false);
       setPollVotes({ 0: 0, 1: 0, 2: 0, 3: 0 });
+      setShortAnswerInput('');
+      setShowFirstLetterHint(false);
+      setRevealedTiles(new Set());
+      setSelectedLeft(null);
+      setMatchedPairs(new Set());
+      setWrongPairAttempt(null);
     }
   };
 
@@ -332,7 +467,62 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     }));
   };
 
-  const progressPercent = ((currentIndex + 1) / quiz.questions.length) * 100;
+  const handleTileClick = (tileIdx: number) => {
+    if (isAnswerConfirmed) return;
+    playClick();
+    setRevealedTiles((prev) => {
+      const next = new Set(prev);
+      next.add(tileIdx);
+      return next;
+    });
+  };
+
+  const handleRevealRandomTile = () => {
+    if (isAnswerConfirmed) return;
+    playClick();
+    const unrevealed = [0, 1, 2, 3, 4, 5, 6, 7, 8].filter((i) => !revealedTiles.has(i));
+    if (unrevealed.length > 0) {
+      const pick = unrevealed[Math.floor(Math.random() * unrevealed.length)];
+      setRevealedTiles((prev) => new Set(prev).add(pick));
+    }
+  };
+
+  const handleLeftPairClick = (idx: number) => {
+    if (isAnswerConfirmed || matchedPairs.has(idx)) return;
+    playClick();
+    setSelectedLeft(idx === selectedLeft ? null : idx);
+  };
+
+  const handleRightPairClick = (item: { originalIndex: number; text: string }) => {
+    if (isAnswerConfirmed || matchedPairs.has(item.originalIndex) || selectedLeft === null) return;
+    playClick();
+
+    if (item.originalIndex === selectedLeft) {
+      // Correct match
+      const nextMatched = new Set(matchedPairs);
+      nextMatched.add(selectedLeft);
+      setMatchedPairs(nextMatched);
+      setSelectedLeft(null);
+      playCorrect();
+
+      const totalPairs = question.matchingPairs?.length || 0;
+      if (nextMatched.size === totalPairs) {
+        setTimeout(() => {
+          handleAnswerSelect(0, 'Semua Pasangan Cocok', true);
+        }, 400);
+      }
+    } else {
+      // Wrong match
+      playWrong();
+      setWrongPairAttempt({ left: selectedLeft, right: item.originalIndex });
+      setTimeout(() => {
+        setWrongPairAttempt(null);
+        setSelectedLeft(null);
+      }, 600);
+    }
+  };
+
+  const progressPercent = ((currentIndex + 1) / activeQuestions.length) * 100;
 
   return (
     <div className="fixed inset-0 z-30 w-full h-full h-[100dvh] overflow-hidden bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col justify-between select-none">
@@ -364,17 +554,40 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
             </div>
           </div>
 
-          {/* Center: Timer & Streak Pill */}
+          {/* Center: Timer, Game Mode & Streak Pill */}
           <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+            {gameMode === 'survival_3hearts' && (
+              <div className="flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900 text-xs shadow-xs" title={`${hearts} Kesempatan Tersisa`}>
+                {[1, 2, 3].map((hIdx) => (
+                  <span
+                    key={hIdx}
+                    className={`transition-all duration-300 text-xs sm:text-sm ${
+                      hIdx <= hearts ? 'scale-100' : 'opacity-25 grayscale scale-75'
+                    }`}
+                  >
+                    {hIdx <= hearts ? '❤️' : '🖤'}
+                  </span>
+                ))}
+              </div>
+            )}
+
             <span className={`inline-flex items-center gap-1 text-xs sm:text-sm font-bold px-2.5 py-1 rounded-xl transition-colors ${
               isPaused 
                 ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 animate-pulse'
+                : gameMode === 'untimed'
+                ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
                 : timeLeft <= 5 
                 ? 'bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 font-extrabold animate-pulse' 
                 : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200'
             }`}>
               <Clock className="w-3.5 h-3.5 flex-shrink-0" />
-              <span>{isPaused ? 'Jeda' : `${timeLeft}s`}</span>
+              <span>
+                {isPaused 
+                  ? 'Jeda' 
+                  : gameMode === 'untimed'
+                  ? `Santai (${Math.floor(totalTimeSpent / 60)}:${(totalTimeSpent % 60).toString().padStart(2, '0')})`
+                  : `${timeLeft}s`}
+              </span>
             </span>
 
             {streak >= 2 && (
@@ -514,8 +727,71 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
             {question.text}
           </h3>
 
-          {/* Illustration Container */}
-          {question.imageUrl ? (
+          {/* Illustration Container (Special Mystery Grid for image_guess) */}
+          {question.type === 'image_guess' ? (
+            <div className="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-850 max-h-56 sm:max-h-64 flex flex-col items-center justify-center p-2 flex-shrink-0 select-none">
+              <div className="relative max-h-48 sm:max-h-56 w-auto aspect-video max-w-full rounded-xl overflow-hidden flex items-center justify-center bg-slate-200 dark:bg-slate-800">
+                {question.imageUrl ? (
+                  <img
+                    src={question.imageUrl}
+                    alt="Gambar Misteri"
+                    className="max-h-48 sm:max-h-56 w-auto object-contain mx-auto"
+                  />
+                ) : (
+                  <div className="text-5xl sm:text-6xl p-4">
+                    {question.imageCaption || '❓'}
+                  </div>
+                )}
+
+                {/* 3x3 Mystery Tiles Overlay */}
+                <div className="absolute inset-0 grid grid-cols-3 grid-rows-3 gap-1 p-1">
+                  {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((tileIdx) => {
+                    const isRevealed = revealedTiles.has(tileIdx);
+                    return (
+                      <button
+                        type="button"
+                        key={tileIdx}
+                        disabled={isAnswerConfirmed || isRevealed}
+                        onClick={() => handleTileClick(tileIdx)}
+                        className={`w-full h-full rounded-lg sm:rounded-xl font-black text-xs sm:text-sm flex flex-col items-center justify-center transition-all duration-300 ${
+                          isRevealed
+                            ? 'opacity-0 pointer-events-none scale-90'
+                            : 'bg-gradient-to-br from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white shadow-sm border border-white/40 cursor-pointer active:scale-95'
+                        }`}
+                        title={isRevealed ? 'Kotak Terbuka' : `Ketuk untuk membuka kotak #${tileIdx + 1}`}
+                      >
+                        {!isRevealed && (
+                          <>
+                            <Puzzle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white/90 mb-0.5" />
+                            <span>{tileIdx + 1}</span>
+                          </>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Mystery Grid Helper Buttons */}
+              <div className="mt-2 flex items-center justify-between w-full max-w-sm px-1 text-xs">
+                <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                  {isAnswerConfirmed
+                    ? '🎉 Seluruh kotak terbuka!'
+                    : `Kotak tertutup: ${9 - revealedTiles.size}/9`}
+                </span>
+                {!isAnswerConfirmed && (
+                  <button
+                    type="button"
+                    onClick={handleRevealRandomTile}
+                    className="px-2.5 py-1 rounded-lg bg-amber-100 dark:bg-amber-950/60 hover:bg-amber-200 dark:hover:bg-amber-900 text-amber-800 dark:text-amber-300 font-bold text-[11px] flex items-center gap-1 transition-colors min-h-[32px]"
+                  >
+                    <Puzzle className="w-3 h-3" />
+                    <span>Buka 1 Kotak Acak</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          ) : question.imageUrl ? (
             <div className="rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 text-center max-h-36 sm:max-h-52 xl:max-h-64 flex items-center justify-center p-2 flex-shrink-0">
               <img
                 src={question.imageUrl}
@@ -534,7 +810,176 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
             </div>
           ) : null}
 
-          {/* Answer Options: 2 Columns on Tablet/Desktop/Smartboard, 1 Column on Mobile */}
+          {/* Type: Short Answer Input */}
+          {question.type === 'short_answer' && (
+            <div className="w-full bg-slate-50 dark:bg-slate-850 p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
+              <label className="block text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300">
+                Tulis Jawaban Singkatmu:
+              </label>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  disabled={isAnswerConfirmed}
+                  value={shortAnswerInput}
+                  onChange={(e) => setShortAnswerInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && shortAnswerInput.trim() && !isAnswerConfirmed) {
+                      handleAnswerSelect(0, shortAnswerInput);
+                    }
+                  }}
+                  placeholder="Ketik jawaban di sini..."
+                  className={`flex-1 px-4 py-3 rounded-xl border bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-bold text-sm sm:text-base focus:outline-none min-h-[50px] transition-all ${
+                    isAnswerConfirmed
+                      ? selectedOption === 0 && answersList[currentIndex]?.isCorrect
+                        ? 'border-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/20 text-emerald-900 dark:text-emerald-100'
+                        : 'border-rose-400 bg-rose-50/40 dark:bg-rose-950/20 text-rose-900 dark:text-rose-100'
+                      : 'border-slate-300 dark:border-slate-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-200'
+                  }`}
+                />
+
+                {!isAnswerConfirmed ? (
+                  <button
+                    type="button"
+                    disabled={!shortAnswerInput.trim()}
+                    onClick={() => handleAnswerSelect(0, shortAnswerInput)}
+                    className="px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white font-bold text-xs sm:text-sm rounded-xl flex items-center gap-1.5 min-h-[50px] shadow-sm btn-press transition-colors flex-shrink-0"
+                  >
+                    <Send className="w-4 h-4" />
+                    <span>Kirim</span>
+                  </button>
+                ) : null}
+              </div>
+
+              {/* First-Letter Hint Pill */}
+              <div className="flex items-center justify-between gap-2 flex-wrap pt-1">
+                {!isAnswerConfirmed && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setShowFirstLetterHint(true);
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/50 hover:bg-amber-100 dark:hover:bg-amber-900/60 text-amber-700 dark:text-amber-300 font-bold text-xs border border-amber-200 dark:border-amber-800 min-h-[36px] transition-colors"
+                  >
+                    <Lightbulb className="w-3.5 h-3.5" />
+                    <span>Bantuan Huruf Pertama</span>
+                  </button>
+                )}
+
+                {showFirstLetterHint && (
+                  <div className="px-3 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 font-mono font-bold text-xs sm:text-sm border border-blue-200 dark:border-blue-800">
+                    Petunjuk: {getFirstLetterHint(question)}
+                  </div>
+                )}
+              </div>
+
+              {/* Status Feedback After Answer Confirmed */}
+              {isAnswerConfirmed && (
+                <div className={`p-3 rounded-xl border flex items-center gap-2 text-xs sm:text-sm font-bold ${
+                  answersList[currentIndex]?.isCorrect
+                    ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200 border-emerald-300 dark:border-emerald-800'
+                    : 'bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-200 border-rose-300 dark:border-rose-800'
+                }`}>
+                  {answersList[currentIndex]?.isCorrect ? (
+                    <>
+                      <CheckCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                      <span>Luar biasa! Jawabanmu tepat: <strong>{shortAnswerInput}</strong></span>
+                    </>
+                  ) : (
+                    <>
+                      <XCircle className="w-5 h-5 text-rose-500 dark:text-rose-400 flex-shrink-0" />
+                      <span>Kunci Jawaban: <strong>{question.acceptableAnswers?.[0] || question.options[question.correctIndex] || 'Jawaban Tepat'}</strong></span>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Type: Matching Pairs Card */}
+          {question.type === 'matching_pairs' && (
+            <div className="w-full space-y-3">
+              {/* Instructions banner */}
+              <div className="text-center p-2 rounded-xl bg-blue-50 dark:bg-blue-950/50 border border-blue-200/80 dark:border-blue-900 text-xs sm:text-sm font-bold text-blue-700 dark:text-blue-300">
+                {matchedPairs.size === (question.matchingPairs?.length || 0)
+                  ? '🎉 Semua Pasangan Berhasil Dijodohkan Sempurna!'
+                  : selectedLeft === null
+                  ? '👉 Ketuk satu kartu di Kolom A, lalu pilih pasangannya di Kolom B.'
+                  : '🎯 Sekarang ketuk kartu pasangannya di Kolom B!'}
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
+                {/* Column A: Left Items */}
+                <div className="space-y-2">
+                  <span className="text-xs font-extrabold text-slate-500 dark:text-slate-400 block px-1">
+                    Kolom A (Soal)
+                  </span>
+                  {(question.matchingPairs || []).map((pair, idx) => {
+                    const isMatched = matchedPairs.has(idx);
+                    const isSelected = selectedLeft === idx;
+                    const isWrong = wrongPairAttempt?.left === idx;
+
+                    return (
+                      <button
+                        type="button"
+                        key={idx}
+                        disabled={isAnswerConfirmed || isMatched}
+                        onClick={() => handleLeftPairClick(idx)}
+                        className={`w-full p-3 rounded-2xl text-left font-bold text-xs sm:text-sm flex items-center justify-between min-h-[50px] border transition-all ${
+                          isMatched
+                            ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-800 dark:text-emerald-200 shadow-xs'
+                            : isWrong
+                            ? 'bg-rose-50 border-rose-400 text-rose-700 animate-shake'
+                            : isSelected
+                            ? 'bg-blue-50 dark:bg-blue-950/60 border-2 border-blue-500 text-blue-900 dark:text-blue-100 ring-2 ring-blue-300'
+                            : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 hover:border-blue-300 hover:bg-slate-50 dark:hover:bg-slate-750'
+                        }`}
+                      >
+                        <span className="truncate pr-1">{pair.left}</span>
+                        {isMatched && <CheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0" />}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Column B: Right Items (Shuffled) */}
+                <div className="space-y-2">
+                  <span className="text-xs font-extrabold text-slate-500 dark:text-slate-400 block px-1">
+                    Kolom B (Pasangan)
+                  </span>
+                  {shuffledRightItems.map((item, idx) => {
+                    const isMatched = matchedPairs.has(item.originalIndex);
+                    const isWrong = wrongPairAttempt?.right === item.originalIndex;
+
+                    return (
+                      <button
+                        type="button"
+                        key={idx}
+                        disabled={isAnswerConfirmed || isMatched || selectedLeft === null}
+                        onClick={() => handleRightPairClick(item)}
+                        className={`w-full p-3 rounded-2xl text-left font-bold text-xs sm:text-sm flex items-center justify-between min-h-[50px] border transition-all ${
+                          isMatched
+                            ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-800 dark:text-emerald-200 shadow-xs'
+                            : isWrong
+                            ? 'bg-rose-50 border-rose-400 text-rose-700 animate-shake'
+                            : selectedLeft !== null
+                            ? 'bg-blue-50/50 dark:bg-blue-950/30 border-dashed border-blue-300 hover:bg-blue-100/60 text-slate-800 dark:text-slate-200'
+                            : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 opacity-80'
+                        }`}
+                      >
+                        <span className="truncate pr-1">{item.text}</span>
+                        {isMatched && <CheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Answer Options for Multiple Choice, True/False, and Image Guess: 2 Columns on Tablet/Desktop/Smartboard, 1 Column on Mobile */}
+          {(question.type === 'multiple_choice' || question.type === 'true_false' || question.type === 'image_guess') && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 xl:gap-4">
             {question.options.map((optText, idx) => {
               const isSelected = selectedOption === idx;
@@ -601,6 +1046,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
               );
             })}
           </div>
+          )}
 
           {/* Explanation Callout */}
           {isAnswerConfirmed && (
@@ -854,6 +1300,54 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                 className="flex-1 py-2.5 rounded-xl font-bold text-xs text-white bg-rose-600 hover:bg-rose-700 min-h-[44px] transition-colors"
               >
                 Ya, Keluar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Game Over Modal (Survival 3 Hearts Mode) */}
+      {isGameOver && (
+        <div 
+          className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 sm:p-6 modal-wrapper overscroll-contain"
+          onWheel={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+        >
+          <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-sm animate-backdrop-fade touch-none" />
+          <div 
+            className="relative z-10 bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-sm w-full shadow-pop border border-rose-200 dark:border-rose-900 text-center space-y-4 animate-modal-card-in overscroll-contain"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-16 h-16 rounded-3xl bg-rose-50 dark:bg-rose-950/80 text-rose-500 border border-rose-200 dark:border-rose-800 flex items-center justify-center text-3xl mx-auto shadow-sm">
+              💔
+            </div>
+            <div>
+              <h4 className="text-lg font-black text-slate-900 dark:text-white">Kesempatan Habis!</h4>
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed mt-1">
+                Kamu telah menggunakan 3 kesempatan di Mode Tantangan 3 Hati. Ayo evaluasi dan coba lagi!
+              </p>
+            </div>
+            <div className="flex flex-col gap-2 pt-2">
+              <button
+                type="button"
+                onClick={handleRetryQuiz}
+                className="w-full py-3 px-4 rounded-xl font-bold text-xs sm:text-sm text-white bg-blue-600 hover:bg-blue-700 flex items-center justify-center gap-2 shadow-sm min-h-[46px] btn-press transition-colors"
+              >
+                <RotateCcw className="w-4 h-4" />
+                <span>Ulangi Kuis Dari Awal</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  stopBgm();
+                  try {
+                    sessionStorage.removeItem(STORAGE_KEY);
+                  } catch {}
+                  onFinishQuiz(answersList, totalTimeSpent);
+                }}
+                className="w-full py-2.5 px-4 rounded-xl font-semibold text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 min-h-[44px] transition-colors"
+              >
+                Lihat Rekap Nilai Sekarang
               </button>
             </div>
           </div>

@@ -1,6 +1,49 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.39] - 2026-09-10
+### Arena Gameplay Multi-Format (5 Jenis Soal), 3 Mode Permainan Edukatif & Asisten AI Studio Kuis
+
+#### 1. Mesin Arena Gameplay Multi-Format (5 Tipe Soal)
+- **Format Isian Singkat (`short_answer`):**
+  - Siswa dapat mengetik langsung jawaban singkat pada kotak masukan teks responsif.
+  - Dilengkapi fitur *Bantuan Huruf Pertama* untuk menuntun siswa SD tanpa memberikan jawaban langsung.
+  - Validasi otomatis bersifat *case-insensitive* dan mendukung multi-sinonim melalui daftar `acceptableAnswers`.
+- **Format Tebak Gambar Misteri (`image_guess`):**
+  - Gambar soal ditutupi oleh 9 blok puzzle misteri yang dapat dibuka bertahap.
+  - Siswa dapat mengetuk masing-masing kotak atau menekan tombol *Buka 1 Kotak Acak* untuk mengintip petunjuk visual sebelum memilih opsi jawaban.
+  - Gambar terbuka penuh secara otomatis saat siswa memilih jawaban atau ketika waktu habis.
+- **Format Menjodohkan Kartu (`matching_pairs`):**
+  - Menghadirkan antarmuka dua kolom interaktif (Kolom A untuk konsep/pertanyaan dan Kolom B untuk pasangan/jawaban) yang diacak secara mandiri.
+  - Interaksi tap-to-match intuitif: mengetuk kartu di Kolom A menyorot kartu terpilih, dilanjutkan memilih pasangannya di Kolom B.
+  - Validasi visual instan dengan kunci centang hijau saat cocok, dan animasi getar lembut saat belum tepat.
+- **Dukungan Pilihan Ganda (`multiple_choice`) & Benar/Salah (`true_false`):**
+  - Dipertahankan dengan presisi tinggi dan tombol buka kunci guru (*Teacher Unlock*) yang diperbarui untuk seluruh 5 tipe soal.
+
+#### 2. Tiga Mode Permainan Edukatif (Game Modes)
+- **Mode Standar (⏱️):** Permainan berbasis waktu per butir soal dengan indikator kecepatan dan skor kombo bertingkat.
+- **Mode 3 Hati / Survival (❤️):** Menghadirkan tantangan 3 kesempatan nyawa. Jawaban yang salah atau waktu yang habis mengurangi 1 hati. Dilengkapi dialog evaluasi belajar jika seluruh hati habis.
+- **Mode Santai / Untimed (🧘):** Membebaskan siswa dari tekanan stopwatch, sangat ideal untuk remedial, latihan mandiri di rumah, atau anak berkebutuhan khusus.
+
+#### 3. Pembaruan Studio Kuis Guru (QuizCreator)
+- **Pengaturan Mode & Fair Play (Langkah 1):**
+  - Guru dapat menentukan Mode Permainan Bawaan kuis (*defaultGameMode*).
+  - Opsi pengacakan kuis: *Acak Urutan Soal* dan *Acak Urutan Pilihan Jawaban*.
+- **Pembangun Soal 5 Format (Langkah 2):**
+  - Bilah pemilih format soal dinamis: Pilgan, Benar/Salah, Isian Singkat, Tebak Gambar, dan Menjodohkan.
+  - Formulir pasangan kartu dinamis untuk Menjodohkan dengan tombol tambah/hapus pasangan.
+  - Kolom masukan kunci utama dan variasi sinonim ejaan untuk Isian Singkat.
+- **Pratinjau Akurat (Langkah 3):**
+  - Kartu simulasi dan daftar ringkasan butir soal menampilkan rincian mode dan kunci jawaban yang tepat untuk seluruh format.
+
+#### 4. Asisten AI & Generator Cepat Guru
+- Mengintegrasikan modal asisten AI dengan generator prompt terstruktur untuk mempermudah guru merancang soal tematik berkualitas tinggi.
+- Parser cerdas yang mampu mendeteksi format JSON maupun teks terstruktur untuk diimpor langsung ke bank soal.
+
+#### 5. Integrasi Lobi Siswa & Tinjauan Hasil Lengkap
+- Lobi siswa kini dilengkapi pemilih kartu mode permainan sebelum memulai petualangan kuis.
+- Layar hasil akhir (*QuizResult*) menampilkan ulasan jawaban siswa dan kunci jawaban yang rapi untuk seluruh format soal.
+
 ## [2.2.38] - 2026-09-10
 ### Fitur Manajemen Butir Soal Lengkap: Edit Soal, Duplikasi, Pengaturan Urutan, dan Alur Simpan Cepat
 

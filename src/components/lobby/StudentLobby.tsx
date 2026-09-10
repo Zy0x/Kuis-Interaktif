@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { Quiz } from '../../types/quiz';
+import type { Quiz, GameMode } from '../../types/quiz';
 import { AVATAR_LIST } from '../../data/seedQuizzes';
 import { DataManager } from '../../lib/supabaseClient';
 import { ThemeToggle } from '../common/ThemeToggle';
@@ -7,7 +7,7 @@ import { Play, Sparkles, Clock, HelpCircle, ArrowLeft, User } from 'lucide-react
 
 interface StudentLobbyProps {
   quiz: Quiz;
-  onStartQuiz: () => void;
+  onStartQuiz: (mode?: GameMode) => void;
   onBackToHome: () => void;
   playClick: () => void;
   isDark?: boolean;
@@ -31,6 +31,7 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
   );
   const [nickname, setNickname] = useState(isCustom ? profile.nickname : '');
   const [selectedAvatar, setSelectedAvatar] = useState(profile.avatarId);
+  const [selectedMode, setSelectedMode] = useState<GameMode>(quiz.defaultGameMode || 'standard');
 
   const handleStart = (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,7 +41,7 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
       nickname: cleanNick,
       avatarId: selectedAvatar,
     });
-    onStartQuiz();
+    onStartQuiz(selectedMode);
   };
 
   return (
@@ -177,8 +178,63 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
               </div>
             </div>
 
+            {/* Game Mode Selector */}
+            <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2 flex items-center justify-between">
+                <span>Pilih Mode Permainan:</span>
+                <span className="text-[11px] font-normal text-slate-500 dark:text-slate-400">Sesuaikan gaya belajar</span>
+              </label>
+
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  {
+                    mode: 'standard' as GameMode,
+                    title: 'Standar',
+                    icon: '⏱️',
+                    desc: 'Timer per soal',
+                    borderActive: 'border-blue-500 bg-blue-50/60 dark:bg-blue-950/40 text-blue-900 dark:text-blue-100 ring-2 ring-blue-400'
+                  },
+                  {
+                    mode: 'survival_3hearts' as GameMode,
+                    title: '3 Hati',
+                    icon: '❤️',
+                    desc: 'Mode bertahan',
+                    borderActive: 'border-rose-500 bg-rose-50/60 dark:bg-rose-950/40 text-rose-900 dark:text-rose-100 ring-2 ring-rose-400'
+                  },
+                  {
+                    mode: 'untimed' as GameMode,
+                    title: 'Santai',
+                    icon: '🧘',
+                    desc: 'Tanpa buru-buru',
+                    borderActive: 'border-emerald-500 bg-emerald-50/60 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-100 ring-2 ring-emerald-400'
+                  },
+                ].map((item) => {
+                  const isActive = selectedMode === item.mode;
+                  return (
+                    <button
+                      type="button"
+                      key={item.mode}
+                      onClick={() => {
+                        playClick();
+                        setSelectedMode(item.mode);
+                      }}
+                      className={`p-2.5 rounded-2xl flex flex-col items-center text-center transition-all min-h-[64px] border ${
+                        isActive
+                          ? item.borderActive
+                          : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300'
+                      }`}
+                    >
+                      <span className="text-xl mb-0.5 select-none">{item.icon}</span>
+                      <span className="text-xs font-bold leading-tight">{item.title}</span>
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 leading-tight">{item.desc}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* Launch Button */}
-            <div className="pt-3">
+            <div className="pt-2">
               <button
                 type="submit"
                 className="w-full py-3.5 px-6 rounded-2xl font-black text-sm sm:text-base text-white bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2 min-h-[52px] btn-press transition-all"

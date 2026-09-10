@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import type { Quiz, QuizAttemptAnswer, TeacherProfile, ScreenState } from './types/quiz';
+import type { Quiz, QuizAttemptAnswer, TeacherProfile, ScreenState, GameMode } from './types/quiz';
 import { SplashScreen } from './components/pwa/SplashScreen';
 import { InstallPrompt } from './components/pwa/InstallPrompt';
 import { ReorientationOverlay } from './components/pwa/ReorientationOverlay';
@@ -54,6 +54,7 @@ export const App: React.FC = () => {
   });
 
   const [activeQuiz, setActiveQuiz] = useState<Quiz | null>(null);
+  const [activeGameMode, setActiveGameMode] = useState<GameMode>('standard');
   const [lastAnswers, setLastAnswers] = useState<QuizAttemptAnswer[]>(() => initialNav.lastAnswers || []);
   const [lastTimeSpent, setLastTimeSpent] = useState<number>(() => initialNav.lastTimeSpent || 0);
 
@@ -141,14 +142,16 @@ export const App: React.FC = () => {
     return () => window.removeEventListener('popstate', handlePopState);
   }, [teacher, activeQuiz]);
 
-  const handleSelectQuiz = (quiz: Quiz) => {
+  const handleSelectQuiz = (quiz: Quiz, mode?: GameMode) => {
     setActiveQuiz(quiz);
+    setActiveGameMode(mode || quiz.defaultGameMode || 'standard');
     setCurrentScreen('arena');
     saveNavigationState({ screen: 'arena', quiz, replace: false });
   };
 
   const handleEnterPinLobby = (quiz: Quiz) => {
     setActiveQuiz(quiz);
+    setActiveGameMode(quiz.defaultGameMode || 'standard');
     setCurrentScreen('student-lobby');
     saveNavigationState({ screen: 'student-lobby', quiz, replace: false });
   };
@@ -351,7 +354,8 @@ export const App: React.FC = () => {
       {currentScreen === 'student-lobby' && activeQuiz && (
         <StudentLobby
           quiz={activeQuiz}
-          onStartQuiz={() => {
+          onStartQuiz={(mode) => {
+            if (mode) setActiveGameMode(mode);
             setCurrentScreen('arena');
             saveNavigationState({ screen: 'arena', quiz: activeQuiz, replace: false });
           }}
@@ -412,6 +416,7 @@ export const App: React.FC = () => {
       {currentScreen === 'arena' && activeQuiz && (
         <QuizArena
           quiz={activeQuiz}
+          initialMode={activeGameMode}
           onFinishQuiz={handleFinishQuiz}
           onExit={handleGoHome}
           isDark={isDark}

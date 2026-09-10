@@ -7,7 +7,14 @@ export type Subject =
   | 'Pendidikan Pancasila' 
   | 'Pengetahuan Umum';
 
-export type QuestionType = 'multiple_choice' | 'true_false' | 'image_guess';
+export type QuestionType = 
+  | 'multiple_choice' 
+  | 'true_false' 
+  | 'image_guess' 
+  | 'short_answer' 
+  | 'matching_pairs';
+
+export type GameMode = 'standard' | 'survival_3hearts' | 'untimed';
 
 export type ScreenState = 
   | 'home' 
@@ -27,6 +34,10 @@ export interface QuizQuestion {
   options: string[];
   correctIndex: number;
   explanation: string;
+  acceptableAnswers?: string[]; // Variasi kunci jawaban benar untuk isian singkat
+  matchingPairs?: { left: string; right: string }[]; // Pasangan kartu untuk menjodohkan
+  customDurationSec?: number; // Durasi waktu kustom khusus butir soal ini (opsional)
+  points?: number; // Poin/bobot nilai butir soal (default 10)
 }
 
 export interface Quiz {
@@ -46,6 +57,9 @@ export interface Quiz {
   isPublished?: boolean;
   createdAt?: string;
   visibility?: 'public' | 'private';
+  shuffleQuestions?: boolean;
+  shuffleOptions?: boolean;
+  defaultGameMode?: GameMode;
 }
 
 export const MASTER_TEACHER_EMAIL = 'zy0x.noir@gmail.com';
@@ -87,6 +101,7 @@ export interface StudentSubmission {
 export interface QuizAttemptAnswer {
   questionId: string;
   selectedIndex: number;
+  textAnswer?: string;
   isCorrect: boolean;
   timeSpentSec: number;
 }

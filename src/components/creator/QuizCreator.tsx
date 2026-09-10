@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import type { Quiz, QuizQuestion, Subject } from '../../types/quiz';
+import type { Quiz, QuizQuestion, Subject, QuestionType, GameMode } from '../../types/quiz';
 import { useBackHandler } from '../../lib/navigationHistory';
 import { ThemeToggle } from '../common/ThemeToggle';
 import { 
@@ -22,8 +22,11 @@ import {
   ChevronUp,
   ChevronDown,
   Check,
-  X
+  X,
+  Sparkles,
+  Shuffle
 } from 'lucide-react';
+import { AiQuestionModal } from './AiQuestionModal';
 
 interface QuizCreatorProps {
   onBack: () => void;
@@ -63,6 +66,9 @@ interface CreatorDraft {
   coverEmoji: string;
   badgeTitle: string;
   visibility: 'public' | 'private';
+  defaultGameMode?: GameMode;
+  shuffleQuestions?: boolean;
+  shuffleOptions?: boolean;
   questions: QuizQuestion[];
 }
 
@@ -97,6 +103,9 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   const [coverEmoji, setCoverEmoji] = useState(editingQuiz?.coverEmoji || draft?.coverEmoji || '🍎');
   const [badgeTitle, setBadgeTitle] = useState(editingQuiz?.badgeTitle || draft?.badgeTitle || 'Bintang Pintar');
   const [visibility, setVisibility] = useState<'public' | 'private'>(editingQuiz?.visibility || draft?.visibility || 'public');
+  const [defaultGameMode, setDefaultGameMode] = useState<GameMode>(editingQuiz?.defaultGameMode || draft?.defaultGameMode || 'standard');
+  const [shuffleQuestions, setShuffleQuestions] = useState<boolean>(editingQuiz?.shuffleQuestions ?? draft?.shuffleQuestions ?? false);
+  const [shuffleOptions, setShuffleOptions] = useState<boolean>(editingQuiz?.shuffleOptions ?? draft?.shuffleOptions ?? false);
 
   // Questions State
   const [questions, setQuestions] = useState<QuizQuestion[]>(editingQuiz?.questions || draft?.questions || []);
@@ -104,9 +113,16 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   // Notice & Reset states (replacing alert/confirm)
   const [noticeMessage, setNoticeMessage] = useState<string | null>(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
 
   const showToast = (msg: string) => {
     setNoticeMessage(msg);
+  };
+
+  const handleImportAiQuestions = (newQuestions: QuizQuestion[]) => {
+    playClick();
+    setQuestions((prev) => [...prev, ...newQuestions]);
+    showToast(`${newQuestions.length} butir soal berhasil ditambahkan ke bank soal!`);
   };
 
   useEffect(() => {
@@ -130,6 +146,9 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
         coverEmoji,
         badgeTitle,
         visibility,
+        defaultGameMode,
+        shuffleQuestions,
+        shuffleOptions,
         questions,
       };
       try {
@@ -138,7 +157,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
         // quota fallback
       }
     }
-  }, [currentStep, title, description, subject, grade, durationPerQuestionSec, coverEmoji, badgeTitle, visibility, questions]);
+  }, [currentStep, title, description, subject, grade, durationPerQuestionSec, coverEmoji, badgeTitle, visibility, defaultGameMode, shuffleQuestions, shuffleOptions, questions]);
 
   const handleResetDraft = () => {
     try {
@@ -154,6 +173,9 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     setCoverEmoji('🍎');
     setBadgeTitle('Bintang Pintar');
     setVisibility('public');
+    setDefaultGameMode('standard');
+    setShuffleQuestions(false);
+    setShuffleOptions(false);
     setQuestions([]);
     setEditingQuestionId(null);
     setCurrentStep(1);
@@ -164,13 +186,21 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   // Active Question Form State
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
   const [qText, setQText] = useState('');
-  const [qType, setQType] = useState<'multiple_choice' | 'true_false'>('multiple_choice');
+  const [qType, setQType] = useState<QuestionType>('multiple_choice');
   const [qImageCaption, setQImageCaption] = useState('');
   const [qImageUrl, setQImageUrl] = useState<string | undefined>(undefined);
   const [qOptions, setQOptions] = useState<string[]>(['', '', '', '']);
   const [qCorrectIndex, setQCorrectIndex] = useState<number>(0);
   const [qExplanation, setQExplanation] = useState('');
   const [isAddingQuestion, setIsAddingQuestion] = useState(true);
+
+  // New Question Type Specific Form States
+  const [qAcceptableAnswers, setQAcceptableAnswers] = useState<string>('');
+  const [qMatchingPairs, setQMatchingPairs] = useState<{ left: string; right: string }[]>([
+    { left: '', right: '' },
+    { left: '', right: '' },
+    { left: '', right: '' },
+  ]);
 
   // 1. Level 2 (Prioritas 50): Mundur dari Langkah 3 (Pratinjau) ke Langkah 2 (Soal)
   useBackHandler('creator-step-3', 50, () => {
@@ -198,13 +228,23 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     return false;
   }, currentStep === 2);
 
-  const resetFormFields = (targetType: 'multiple_choice' | 'true_false' = qType) => {
+  const resetFormFields = (targetType: QuestionType = qType) => {
     setQText('');
     setQImageCaption('');
     setQImageUrl(undefined);
     setQExplanation('');
+    setQAcceptableAnswers('');
+    setQMatchingPairs([
+      { left: '', right: '' },
+      { left: '', right: '' },
+      { left: '', right: '' },
+    ]);
     if (targetType === 'true_false') {
       setQOptions(['Benar', 'Salah']);
+    } else if (targetType === 'short_answer') {
+      setQOptions(['']);
+    } else if (targetType === 'matching_pairs') {
+      setQOptions([]);
     } else {
       setQOptions(['', '', '', '']);
     }
@@ -217,10 +257,40 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     setQOptions(updated);
   };
 
-  const handleTypeChange = (type: 'multiple_choice' | 'true_false') => {
+  const handleMatchingPairChange = (index: number, field: 'left' | 'right', val: string) => {
+    setQMatchingPairs((prev) => {
+      const next = [...prev];
+      next[index] = { ...next[index], [field]: val };
+      return next;
+    });
+  };
+
+  const handleAddMatchingPair = () => {
+    if (qMatchingPairs.length >= 6) {
+      showToast('Maksimal 6 pasangan kartu untuk kenyamanan tampilan siswa.');
+      return;
+    }
+    setQMatchingPairs((prev) => [...prev, { left: '', right: '' }]);
+  };
+
+  const handleRemoveMatchingPair = (index: number) => {
+    if (qMatchingPairs.length <= 2) {
+      showToast('Minimal harus ada 2 pasangan kartu.');
+      return;
+    }
+    setQMatchingPairs((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleTypeChange = (type: QuestionType) => {
     setQType(type);
     if (type === 'true_false') {
       setQOptions(['Benar', 'Salah']);
+      setQCorrectIndex(0);
+    } else if (type === 'short_answer') {
+      setQOptions(['']);
+      setQCorrectIndex(0);
+    } else if (type === 'matching_pairs') {
+      setQOptions([]);
       setQCorrectIndex(0);
     } else {
       setQOptions(['', '', '', '']);
@@ -243,12 +313,22 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     playClick();
     setEditingQuestionId(q.id);
     setQText(q.text);
-    setQType(q.type === 'true_false' ? 'true_false' : 'multiple_choice');
+    setQType(q.type || 'multiple_choice');
     setQImageCaption(q.imageCaption || '');
     setQImageUrl(q.imageUrl);
-    setQOptions([...q.options]);
-    setQCorrectIndex(q.correctIndex);
+    setQOptions(q.options && q.options.length > 0 ? [...q.options] : ['', '', '', '']);
+    setQCorrectIndex(q.correctIndex || 0);
     setQExplanation(q.explanation || '');
+    setQAcceptableAnswers((q.acceptableAnswers || []).join(', '));
+    if (q.matchingPairs && q.matchingPairs.length > 0) {
+      setQMatchingPairs([...q.matchingPairs]);
+    } else {
+      setQMatchingPairs([
+        { left: '', right: '' },
+        { left: '', right: '' },
+        { left: '', right: '' },
+      ]);
+    }
     setIsAddingQuestion(true);
   };
 
@@ -278,7 +358,9 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
       ...source,
       id: 'q_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
       text: `${source.text} (Salinan)`,
-      options: [...source.options],
+      options: source.options ? [...source.options] : [],
+      matchingPairs: source.matchingPairs ? [...source.matchingPairs] : undefined,
+      acceptableAnswers: source.acceptableAnswers ? [...source.acceptableAnswers] : undefined,
     };
 
     const next = [...questions];
@@ -310,10 +392,36 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
       return;
     }
 
-    const validOptions = qOptions.filter((opt) => opt.trim() !== '');
-    if (validOptions.length < 2) {
-      showToast('Minimal harus ada 2 pilihan jawaban.');
-      return;
+    let validOptions: string[] = [];
+    let acceptableAnswers: string[] | undefined = undefined;
+    let matchingPairs: { left: string; right: string }[] | undefined = undefined;
+
+    if (qType === 'short_answer') {
+      const parsedAnswers = qAcceptableAnswers
+        .split(',')
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
+
+      if (parsedAnswers.length === 0) {
+        showToast('Tulis minimal 1 kunci jawaban untuk isian singkat.');
+        return;
+      }
+      acceptableAnswers = parsedAnswers;
+      validOptions = [parsedAnswers[0]];
+    } else if (qType === 'matching_pairs') {
+      const validPairs = qMatchingPairs.filter((p) => p.left.trim() !== '' && p.right.trim() !== '');
+      if (validPairs.length < 2) {
+        showToast('Minimal harus ada 2 pasangan kartu yang terisi.');
+        return;
+      }
+      matchingPairs = validPairs.map((p) => ({ left: p.left.trim(), right: p.right.trim() }));
+      validOptions = validPairs.map((p) => `${p.left} ↔ ${p.right}`);
+    } else {
+      validOptions = qOptions.filter((opt) => opt.trim() !== '');
+      if (validOptions.length < 2) {
+        showToast('Minimal harus ada 2 pilihan jawaban.');
+        return;
+      }
     }
 
     if (editingQuestionId) {
@@ -326,8 +434,10 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
             imageCaption: qImageCaption.trim() || undefined,
             imageUrl: qImageUrl,
             options: validOptions,
-            correctIndex: Math.min(qCorrectIndex, validOptions.length - 1),
+            correctIndex: qType === 'short_answer' || qType === 'matching_pairs' ? 0 : Math.min(qCorrectIndex, validOptions.length - 1),
             explanation: qExplanation.trim() || 'Jawaban ini benar sesuai dengan konsep materi terkait.',
+            acceptableAnswers,
+            matchingPairs,
           };
         }
         return q;
@@ -350,8 +460,10 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
       imageCaption: qImageCaption.trim() || undefined,
       imageUrl: qImageUrl,
       options: validOptions,
-      correctIndex: Math.min(qCorrectIndex, validOptions.length - 1),
+      correctIndex: qType === 'short_answer' || qType === 'matching_pairs' ? 0 : Math.min(qCorrectIndex, validOptions.length - 1),
       explanation: qExplanation.trim() || 'Jawaban ini benar sesuai dengan konsep materi terkait.',
+      acceptableAnswers,
+      matchingPairs,
     };
 
     setQuestions([...questions, newQuestion]);
@@ -403,6 +515,9 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
       pinCode: editingQuiz?.pinCode,
       creatorId: editingQuiz?.creatorId,
       creatorName: editingQuiz?.creatorName,
+      defaultGameMode,
+      shuffleQuestions,
+      shuffleOptions,
     };
 
     try {
@@ -739,6 +854,111 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                   </button>
                 </div>
               </div>
+
+              {/* Default Game Mode Selector */}
+              <div className="sm:col-span-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2 flex items-center justify-between">
+                  <span>Mode Permainan Bawaan</span>
+                  <span className="text-[11px] font-normal text-slate-500 dark:text-slate-400">Dapat diubah siswa saat lobi</span>
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  {[
+                    {
+                      id: 'standard' as GameMode,
+                      title: 'Standar ⏱️',
+                      sub: 'Timer per soal dengan tantangan skor kecepatan.',
+                      activeBg: 'bg-blue-50/80 border-blue-500 text-blue-950 dark:bg-blue-950/40 dark:border-blue-500 dark:text-blue-100 ring-2 ring-blue-400/30 shadow-sm',
+                    },
+                    {
+                      id: 'survival_3hearts' as GameMode,
+                      title: '3 Hati (Survival) ❤️',
+                      sub: 'Tantangan 3 nyawa. Salah atau kehabisan waktu berkurang 1 hati.',
+                      activeBg: 'bg-rose-50/80 border-rose-500 text-rose-950 dark:bg-rose-950/40 dark:border-rose-500 dark:text-rose-100 ring-2 ring-rose-400/30 shadow-sm',
+                    },
+                    {
+                      id: 'untimed' as GameMode,
+                      title: 'Santai 🧘',
+                      sub: 'Belajar tanpa tekanan waktu, fokus pada pemahaman konsep.',
+                      activeBg: 'bg-emerald-50/80 border-emerald-500 text-emerald-950 dark:bg-emerald-950/40 dark:border-emerald-500 dark:text-emerald-100 ring-2 ring-emerald-400/30 shadow-sm',
+                    },
+                  ].map((m) => (
+                    <button
+                      type="button"
+                      key={m.id}
+                      onClick={() => {
+                        playClick();
+                        setDefaultGameMode(m.id);
+                      }}
+                      className={`p-3 rounded-xl border text-left flex flex-col justify-between transition-all min-h-[52px] btn-press ${
+                        defaultGameMode === m.id
+                          ? m.activeBg
+                          : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-750'
+                      }`}
+                    >
+                      <span className="font-bold text-xs sm:text-sm">{m.title}</span>
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-snug">
+                        {m.sub}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Shuffle Options */}
+              <div className="sm:col-span-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">
+                  Pengaturan Acak (Fair Play & Variasi Belajar)
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <label className={`p-3 rounded-xl border flex items-center justify-between gap-3 cursor-pointer min-h-[48px] transition-colors ${
+                    shuffleQuestions
+                      ? 'bg-indigo-50/70 dark:bg-indigo-950/30 border-indigo-300 dark:border-indigo-800'
+                      : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'
+                  }`}>
+                    <div className="flex items-center gap-2.5">
+                      <Shuffle className={`w-4 h-4 ${shuffleQuestions ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`} />
+                      <div>
+                        <span className="block text-xs font-bold text-slate-800 dark:text-slate-200">
+                          Acak Urutan Soal
+                        </span>
+                        <span className="block text-[10px] text-slate-500 dark:text-slate-400">
+                          Setiap siswa menerima urutan nomor yang berbeda
+                        </span>
+                      </div>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={shuffleQuestions}
+                      onChange={(e) => setShuffleQuestions(e.target.checked)}
+                      className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 cursor-pointer"
+                    />
+                  </label>
+
+                  <label className={`p-3 rounded-xl border flex items-center justify-between gap-3 cursor-pointer min-h-[48px] transition-colors ${
+                    shuffleOptions
+                      ? 'bg-indigo-50/70 dark:bg-indigo-950/30 border-indigo-300 dark:border-indigo-800'
+                      : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'
+                  }`}>
+                    <div className="flex items-center gap-2.5">
+                      <Shuffle className={`w-4 h-4 ${shuffleOptions ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`} />
+                      <div>
+                        <span className="block text-xs font-bold text-slate-800 dark:text-slate-200">
+                          Acak Urutan Pilihan Jawaban
+                        </span>
+                        <span className="block text-[10px] text-slate-500 dark:text-slate-400">
+                          Pilihan A, B, C, D diacak posisinya
+                        </span>
+                      </div>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={shuffleOptions}
+                      onChange={(e) => setShuffleOptions(e.target.checked)}
+                      className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 cursor-pointer"
+                    />
+                  </label>
+                </div>
+              </div>
             </div>
 
             <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-end">
@@ -767,24 +987,47 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
               
               {/* Question Bank List */}
               <div className="lg:col-span-5 2xl:col-span-4 bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
                   <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                     <Layers className="w-4 h-4 text-blue-600 dark:text-blue-400" /> Bank Soal ({questions.length})
                   </h3>
-                  {(!isAddingQuestion || editingQuestionId) && (
+                  <div className="flex items-center gap-1.5">
                     <button
                       type="button"
-                      onClick={handleOpenNewQuestion}
-                      className="px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/50 font-bold text-xs flex items-center gap-1 min-h-[36px] transition-colors"
+                      onClick={() => {
+                        playClick();
+                        setIsAiModalOpen(true);
+                      }}
+                      className="px-2.5 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 font-bold text-xs flex items-center gap-1.5 min-h-[36px] transition-colors border border-indigo-200/60 dark:border-indigo-800/60"
+                      title="Asisten AI & Impor Cepat Soal"
                     >
-                      <Plus className="w-3.5 h-3.5" /> Tambah Soal
+                      <Sparkles className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" /> Asisten AI
                     </button>
-                  )}
+                    {(!isAddingQuestion || editingQuestionId) && (
+                      <button
+                        type="button"
+                        onClick={handleOpenNewQuestion}
+                        className="px-2.5 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/50 font-bold text-xs flex items-center gap-1 min-h-[36px] transition-colors"
+                      >
+                        <Plus className="w-3.5 h-3.5" /> Tambah Soal
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {questions.length === 0 ? (
-                  <div className="text-center py-8 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-dashed border-slate-200 dark:border-slate-700 p-4">
-                    <p className="text-xs text-slate-500 dark:text-slate-400">Belum ada soal. Tulis soal pertamamu di formulir sebelah kanan.</p>
+                  <div className="text-center py-8 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-dashed border-slate-200 dark:border-slate-700 p-4 space-y-2.5">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Belum ada soal. Tulis soal di sebelah kanan atau buat dengan asisten AI.</p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        setIsAiModalOpen(true);
+                      }}
+                      className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-sm min-h-[38px] transition-colors"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" /> Buka Asisten AI & Impor
+                    </button>
                   </div>
                 ) : (
                   <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
@@ -810,7 +1053,15 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                                 {idx + 1}
                               </span>
                               <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase truncate">
-                                {q.type === 'multiple_choice' ? 'Pilgan' : 'Benar/Salah'}
+                                {q.type === 'short_answer'
+                                  ? 'Isian'
+                                  : q.type === 'image_guess'
+                                  ? 'Tebak Gbr'
+                                  : q.type === 'matching_pairs'
+                                  ? 'Jodohkan'
+                                  : q.type === 'true_false'
+                                  ? 'Benar/Salah'
+                                  : 'Pilgan'}
                               </span>
                               {isBeingEdited && (
                                 <span className="text-[10px] font-bold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 px-1.5 py-0.5 rounded">
@@ -905,7 +1156,11 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                             </p>
                             <div className="flex items-center justify-between text-[11px] pt-0.5">
                               <span className="text-emerald-700 dark:text-emerald-400 font-semibold truncate">
-                                ✓ Kunci: {q.options[q.correctIndex]}
+                                {q.type === 'short_answer'
+                                  ? `✍️ Kunci: ${q.acceptableAnswers?.[0] || q.options[0] || '-'}`
+                                  : q.type === 'matching_pairs'
+                                  ? `🧩 ${q.matchingPairs?.length || q.options.length} Pasangan Kartu`
+                                  : `✓ Kunci: ${q.options[q.correctIndex] || '-'}`}
                               </span>
                               {q.imageUrl && (
                                 <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium flex items-center gap-0.5 flex-shrink-0">
@@ -961,29 +1216,27 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                         )}
                       </div>
 
-                      <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl w-full sm:w-auto">
-                        <button
-                          type="button"
-                          onClick={() => handleTypeChange('multiple_choice')}
-                          className={`flex-1 sm:flex-initial px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all min-h-[36px] flex items-center justify-center ${
-                            qType === 'multiple_choice'
-                              ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm font-bold'
-                              : 'text-slate-600 dark:text-slate-400'
-                          }`}
-                        >
-                          Pilihan Ganda
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleTypeChange('true_false')}
-                          className={`flex-1 sm:flex-initial px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all min-h-[36px] flex items-center justify-center ${
-                            qType === 'true_false'
-                              ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm font-bold'
-                              : 'text-slate-600 dark:text-slate-400'
-                          }`}
-                        >
-                          Benar / Salah
-                        </button>
+                      <div className="flex flex-wrap sm:flex-nowrap bg-slate-100 dark:bg-slate-800 p-1 rounded-xl w-full sm:w-auto gap-1">
+                        {[
+                          { id: 'multiple_choice' as QuestionType, label: 'Pilgan' },
+                          { id: 'true_false' as QuestionType, label: 'Benar/Salah' },
+                          { id: 'short_answer' as QuestionType, label: 'Isian' },
+                          { id: 'image_guess' as QuestionType, label: 'Tebak Gbr' },
+                          { id: 'matching_pairs' as QuestionType, label: 'Jodohkan' },
+                        ].map((t) => (
+                          <button
+                            key={t.id}
+                            type="button"
+                            onClick={() => handleTypeChange(t.id)}
+                            className={`flex-1 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all min-h-[36px] flex items-center justify-center whitespace-nowrap ${
+                              qType === t.id
+                                ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm font-bold'
+                                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                            }`}
+                          >
+                            {t.label}
+                          </button>
+                        ))}
                       </div>
                     </div>
 
@@ -1050,59 +1303,172 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                       </div>
                     </div>
 
-                    {/* Pilihan Jawaban */}
-                    <div className="space-y-2 pt-1">
-                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                        Opsi Jawaban & Kunci Benar (Klik Lingkaran untuk Menandai Kunci)
-                      </label>
+                    {/* Mode Isian Singkat */}
+                    {qType === 'short_answer' && (
+                      <div className="space-y-3 pt-1">
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                            Kunci Jawaban Utama <span className="text-rose-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            value={qOptions[0] || ''}
+                            onChange={(e) => {
+                              handleOptionChange(0, e.target.value);
+                              if (!qAcceptableAnswers.trim()) {
+                                setQAcceptableAnswers(e.target.value);
+                              }
+                            }}
+                            placeholder="Contoh: Paru-paru"
+                            className="w-full px-3.5 py-2.5 rounded-xl border border-emerald-300 dark:border-emerald-700/60 bg-emerald-50/40 dark:bg-emerald-950/20 text-slate-900 dark:text-white text-xs sm:text-sm font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500 min-h-[44px]"
+                            required
+                          />
+                        </div>
 
-                      {qOptions.map((opt, idx) => {
-                        const isCorrect = qCorrectIndex === idx;
-                        const letters = ['A', 'B', 'C', 'D'];
-                        return (
-                          <div
-                            key={idx}
-                            className={`flex items-center gap-2 p-1.5 rounded-xl border transition-all ${
-                              isCorrect
-                                ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-500 dark:border-emerald-600 shadow-sm'
-                                : 'bg-white dark:bg-slate-800/80 border-slate-200 dark:border-slate-700'
-                            }`}
+                        <div>
+                          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center justify-between">
+                            <span>Variasi Jawaban Diterima (Pisahkan tanda koma):</span>
+                            <span className="text-[11px] font-normal text-slate-500">Opsional</span>
+                          </label>
+                          <input
+                            type="text"
+                            value={qAcceptableAnswers}
+                            onChange={(e) => setQAcceptableAnswers(e.target.value)}
+                            placeholder="Contoh: paru paru, pulmo, paru-paru"
+                            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs sm:text-sm font-semibold focus:outline-none focus:border-blue-500 min-h-[44px]"
+                          />
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                            💡 Pemeriksaan otomatis mengabaikan huruf besar/kecil (case-insensitive).
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Mode Menjodohkan */}
+                    {qType === 'matching_pairs' && (
+                      <div className="space-y-3 pt-1">
+                        <div className="flex items-center justify-between">
+                          <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                            Pasangan Kartu (Kolom Kiri ↔ Kolom Kanan) <span className="text-rose-500">*</span>
+                          </label>
+                          <button
+                            type="button"
+                            onClick={handleAddMatchingPair}
+                            className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/50 min-h-[36px]"
                           >
-                            <button
-                              type="button"
-                              onClick={() => {
-                                playClick();
-                                setQCorrectIndex(idx);
-                              }}
-                              className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs transition-all flex-shrink-0 ${
-                                isCorrect
-                                  ? 'bg-emerald-600 text-white shadow-sm'
-                                  : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
-                              }`}
-                              title="Tandai Kunci Jawaban Benar"
-                            >
-                              {isCorrect ? '✓' : letters[idx]}
-                            </button>
+                            <Plus className="w-3.5 h-3.5" /> Tambah Pasangan
+                          </button>
+                        </div>
 
-                            <input
-                              type="text"
-                              value={opt}
-                              onChange={(e) => handleOptionChange(idx, e.target.value)}
-                              aria-label={`Pilihan ${letters[idx]}`}
-                              disabled={qType === 'true_false'}
-                              className="flex-1 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs sm:text-sm font-semibold focus:outline-none focus:border-blue-500 min-h-[38px]"
-                              required
-                            />
-
-                            {isCorrect && (
-                              <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900/40 rounded-md whitespace-nowrap">
-                                Kunci Benar
+                        <div className="space-y-2">
+                          {qMatchingPairs.map((pair, idx) => (
+                            <div key={idx} className="flex items-center gap-2 p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/60">
+                              <span className="w-6 h-6 rounded-md bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 text-[11px] font-bold flex items-center justify-center flex-shrink-0">
+                                {idx + 1}
                               </span>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
+                              <input
+                                type="text"
+                                value={pair.left}
+                                onChange={(e) => handleMatchingPairChange(idx, 'left', e.target.value)}
+                                placeholder={`Konsep ${idx + 1} (contoh: Insang)`}
+                                className="flex-1 px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs font-semibold focus:outline-none focus:border-blue-500 min-h-[38px]"
+                                required
+                              />
+                              <span className="text-slate-400 font-bold text-xs select-none">↔</span>
+                              <input
+                                type="text"
+                                value={pair.right}
+                                onChange={(e) => handleMatchingPairChange(idx, 'right', e.target.value)}
+                                placeholder={`Pasangan ${idx + 1} (contoh: Ikan)`}
+                                className="flex-1 px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs font-semibold focus:outline-none focus:border-blue-500 min-h-[38px]"
+                                required
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveMatchingPair(idx)}
+                                disabled={qMatchingPairs.length <= 2}
+                                className="w-8 h-8 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-slate-400 flex items-center justify-center transition-colors flex-shrink-0"
+                                title="Hapus Pasangan"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                          💡 Di arena kuis siswa, kedua kolom akan diacak secara terpisah. Siswa mencocokkan setiap kartu ke pasangannya.
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Banner Edukasi Tebak Gambar */}
+                    {qType === 'image_guess' && (
+                      <div className="p-3 rounded-xl bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800/60 flex items-start gap-2.5">
+                        <span className="text-xl select-none">🧩</span>
+                        <div>
+                          <h4 className="text-xs font-bold text-purple-900 dark:text-purple-200">Mode Tebak Gambar Misteri</h4>
+                          <p className="text-[11px] text-purple-700 dark:text-purple-300 mt-0.5 leading-relaxed">
+                            Gambar kuis akan ditutupi oleh 9 panel puzzle misteri di arena siswa. Siswa dapat mengetuk kotak untuk mengintip gambar sebelum memilih jawaban di bawah. Pastikan Anda menyisipkan gambar/ilustrasi di atas!
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Pilihan Jawaban (Pilgan, Benar/Salah, Tebak Gambar) */}
+                    {(qType === 'multiple_choice' || qType === 'true_false' || qType === 'image_guess') && (
+                      <div className="space-y-2 pt-1">
+                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                          Opsi Jawaban & Kunci Benar (Klik Huruf/Centang untuk Menandai Kunci)
+                        </label>
+
+                        {qOptions.map((opt, idx) => {
+                          const isCorrect = qCorrectIndex === idx;
+                          const letters = ['A', 'B', 'C', 'D'];
+                          return (
+                            <div
+                              key={idx}
+                              className={`flex items-center gap-2 p-1.5 rounded-xl border transition-all ${
+                                isCorrect
+                                  ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-500 dark:border-emerald-600 shadow-sm'
+                                  : 'bg-white dark:bg-slate-800/80 border-slate-200 dark:border-slate-700'
+                              }`}
+                            >
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  playClick();
+                                  setQCorrectIndex(idx);
+                                }}
+                                className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs transition-all flex-shrink-0 ${
+                                  isCorrect
+                                    ? 'bg-emerald-600 text-white shadow-sm'
+                                    : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
+                                }`}
+                                title="Tandai Kunci Jawaban Benar"
+                              >
+                                {isCorrect ? '✓' : letters[idx]}
+                              </button>
+
+                              <input
+                                type="text"
+                                value={opt}
+                                onChange={(e) => handleOptionChange(idx, e.target.value)}
+                                aria-label={`Pilihan ${letters[idx]}`}
+                                disabled={qType === 'true_false'}
+                                className="flex-1 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs sm:text-sm font-semibold focus:outline-none focus:border-blue-500 min-h-[38px]"
+                                required
+                              />
+
+                              {isCorrect && (
+                                <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900/40 rounded-md whitespace-nowrap">
+                                  Kunci Benar
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
 
                     {/* Catatan Penjelasan */}
                     <div>
@@ -1260,9 +1626,10 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
               <h4 className="text-base font-bold text-slate-900 dark:text-white leading-snug break-words line-clamp-2">{title}</h4>
               <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{description || 'Kuis interaktif buatan Guru.'}</p>
 
-              <div className="flex items-center justify-between text-xs text-slate-400 dark:text-slate-500 font-medium pt-3 border-t border-slate-100 dark:border-slate-700">
+              <div className="flex items-center justify-between text-xs text-slate-400 dark:text-slate-500 font-medium pt-3 border-t border-slate-100 dark:border-slate-700 flex-wrap gap-2">
                 <span>{questions.length} Soal</span>
                 <span>{durationPerQuestionSec}s per soal</span>
+                <span>Mode: {defaultGameMode === 'survival_3hearts' ? '3 Hati ❤️' : defaultGameMode === 'untimed' ? 'Santai 🧘' : 'Standar ⏱️'}</span>
                 <span>Lencana: {badgeTitle}</span>
               </div>
             </div>
@@ -1292,7 +1659,11 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                     </div>
                     <div className="flex items-center gap-1.5 flex-shrink-0">
                       <span className="font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded text-[11px]">
-                        {q.options[q.correctIndex]}
+                        {q.type === 'short_answer'
+                          ? (q.acceptableAnswers?.[0] || q.options[0] || '-')
+                          : q.type === 'matching_pairs'
+                          ? `${q.matchingPairs?.length || q.options.length} Pasang`
+                          : (q.options[q.correctIndex] || '-')}
                       </span>
                       <span className="p-1 text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 rounded">
                         <Edit3 className="w-3.5 h-3.5" />
@@ -1329,6 +1700,16 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
         )}
 
       </main>
+
+      {/* Asisten Soal AI & Impor Modal */}
+      <AiQuestionModal
+        isOpen={isAiModalOpen}
+        onClose={() => setIsAiModalOpen(false)}
+        onImportQuestions={handleImportAiQuestions}
+        currentSubject={subject}
+        currentGrade={grade}
+        playClick={playClick}
+      />
 
     </div>
   );

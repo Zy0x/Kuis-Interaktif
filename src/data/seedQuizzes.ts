@@ -241,6 +241,35 @@ export const INITIAL_QUIZZES: Quiz[] = [
         options: ['Benar', 'Salah'],
         correctIndex: 0,
         explanation: 'Benar! Pembuluh nadi (arteri) mengalirkan darah bertekanan tinggi dari jantung.'
+      },
+      {
+        id: 'q5-4',
+        text: 'Organ pernapasan utama manusia yang berfungsi sebagai tempat pertukaran oksigen dan karbon dioksida adalah...',
+        type: 'short_answer',
+        imageCaption: '🫁 Organ pernapasan',
+        options: ['Paru-paru'],
+        acceptableAnswers: ['paru-paru', 'paru paru', 'pulmo'],
+        correctIndex: 0,
+        explanation: 'Paru-paru adalah organ tempat darah melepaskan karbon dioksida dan mengikat oksigen segar melalui alveolus.'
+      },
+      {
+        id: 'q5-5',
+        text: 'Jodohkanlah organ tubuh berikut dengan fungsi utamanya yang tepat!',
+        type: 'matching_pairs',
+        options: [
+          'Jantung ↔ Memompa darah',
+          'Paru-paru ↔ Menghirup oksigen',
+          'Lambung ↔ Mencerna makanan',
+          'Otak ↔ Pusat kendali tubuh'
+        ],
+        matchingPairs: [
+          { left: 'Jantung', right: 'Memompa darah' },
+          { left: 'Paru-paru', right: 'Menghirup oksigen' },
+          { left: 'Lambung', right: 'Mencerna makanan' },
+          { left: 'Otak', right: 'Pusat kendali tubuh' }
+        ],
+        correctIndex: 0,
+        explanation: 'Setiap organ memiliki tugas khusus yang saling mendukung kerja tubuh kita.'
       }
     ]
   },

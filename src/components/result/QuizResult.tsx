@@ -226,14 +226,22 @@ export const QuizResult: React.FC<QuizResultProps> = ({
                     <p className="text-slate-600 dark:text-slate-300">
                       Jawabanmu:{' '}
                       <span className={isCorrect ? 'font-bold text-emerald-700 dark:text-emerald-400' : 'font-bold text-rose-600 dark:text-rose-400'}>
-                        {selectedIdx >= 0 ? q.options[selectedIdx] : 'Waktu Habis'}
+                        {studentAnswer?.textAnswer 
+                          ? studentAnswer.textAnswer 
+                          : q.type === 'matching_pairs'
+                          ? (isCorrect ? 'Semua Pasangan Tepat' : 'Belum Selesai')
+                          : selectedIdx >= 0 && q.options?.[selectedIdx]
+                          ? q.options[selectedIdx] 
+                          : 'Waktu Habis'}
                       </span>
                     </p>
                     {!isCorrect && (
                       <p className="text-slate-600 dark:text-slate-300">
                         Kunci Jawaban:{' '}
                         <span className="font-bold text-emerald-700 dark:text-emerald-400">
-                          {q.options[q.correctIndex]}
+                          {q.type === 'matching_pairs'
+                            ? (q.matchingPairs?.map((p) => `${p.left} ↔ ${p.right}`).join(', ') || 'Pasangan Konsep Tepat')
+                            : q.acceptableAnswers?.[0] || q.options?.[q.correctIndex] || 'Jawaban Tepat'}
                         </span>
                       </p>
                     )}
