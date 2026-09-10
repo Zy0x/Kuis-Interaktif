@@ -1583,9 +1583,9 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
         <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-8 lg:p-10 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6 sm:space-y-8 animate-fade-in">
           
           {/* Selector Jenjang Pendidikan (SD, SMP, SMA/SMK) */}
-          <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 sm:gap-4">
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-white">Jenjang Pendidikan</span>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300">
                   Kurikulum Merdeka
@@ -1596,7 +1596,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
               </p>
             </div>
 
-            <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shrink-0">
+            <div className="flex items-center gap-1 sm:gap-1.5 p-1 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 w-full sm:w-auto sm:shrink-0">
               {([
                 { id: 'SD' as EducationLevel, label: 'SD / MI', icon: '🎒' },
                 { id: 'SMP' as EducationLevel, label: 'SMP / MTs', icon: '🏫' },
@@ -1608,14 +1608,14 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                     key={lvl.id}
                     type="button"
                     onClick={() => handleEducationLevelChange(lvl.id)}
-                    className={`min-h-[44px] px-3 sm:px-4 py-2 rounded-xl flex items-center gap-1.5 transition-all font-bold text-xs sm:text-sm btn-press ${
+                    className={`flex-1 sm:flex-none min-h-[44px] px-2 sm:px-4 py-2 rounded-xl flex items-center justify-center sm:justify-start gap-1.5 transition-all text-xs sm:text-sm btn-press ${
                       isSelected
                         ? 'bg-blue-600 text-white shadow-sm'
                         : 'text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-700'
                     }`}
                   >
                     <span className="text-base shrink-0">{lvl.icon}</span>
-                    <span className="font-extrabold">{lvl.label}</span>
+                    <span className="font-extrabold truncate">{lvl.label}</span>
                   </button>
                 );
               })}
