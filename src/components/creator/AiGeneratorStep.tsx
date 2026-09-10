@@ -1192,8 +1192,8 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
   const [trueFalseStyle, setTrueFalseStyle] = useState<'benar_salah' | 'sesuai_tidak' | 'ya_tidak'>('benar_salah');
   const [matchingPairCount, setMatchingPairCount] = useState<3 | 4 | 5>(4);
 
-  // Pilihan Mesin AI
-  const [selectedEngine, setSelectedEngine] = useState<'local' | 'deepseek' | 'groq' | 'gemini' | 'prompt'>('deepseek');
+  // Pilihan Mesin AI (default 'auto' untuk memilih mesin terbaik secara otomatis)
+  const [selectedEngine, setSelectedEngine] = useState<'auto' | 'local' | 'deepseek' | 'groq' | 'gemini' | 'prompt'>('auto');
 
   // Modal Pengaturan Kunci API Mandiri (BYOK)
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
@@ -1224,23 +1224,24 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
     checkSupabaseAiStatus()
       .then((status) => {
         setSupabaseAi(status);
-        if (status.hasDeepSeek || hasDeepSeekApiKey()) {
-          setSelectedEngine('deepseek');
-        } else if (status.hasGroq || hasGroqApiKey()) {
-          setSelectedEngine('groq');
-        } else if (status.hasGemini || hasGeminiApiKey()) {
-          setSelectedEngine('gemini');
-        } else {
-          setSelectedEngine('local');
-        }
       })
-      .catch(() => {
-        setSelectedEngine('local');
-      })
+      .catch(() => {})
       .finally(() => {
         setIsCheckingCloudAi(false);
       });
   }, []);
+
+  // Resolusi engine aktual dari mode Auto — prioritas: DeepSeek → Groq → Gemini → Lokal
+  const resolvedEngine = useMemo<'local' | 'deepseek' | 'groq' | 'gemini'>(() => {
+    if (selectedEngine !== 'auto') {
+      return (selectedEngine === 'prompt' ? 'local' : selectedEngine) as 'local' | 'deepseek' | 'groq' | 'gemini';
+    }
+    if (supabaseAi.hasDeepSeek || hasDeepSeekApiKey()) return 'deepseek';
+    if (supabaseAi.hasGroq || hasGroqApiKey()) return 'groq';
+    if (supabaseAi.hasGemini || hasGeminiApiKey()) return 'gemini';
+    return 'local';
+  }, [selectedEngine, supabaseAi]);
+
 
   // Hitung total butir soal aktual
   const currentTotalQuestions = useMemo(() => {
@@ -1472,31 +1473,56 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
 
     setIsLoading(true);
 
+    const isSingle = selectedQuestionTypes.length === 1;
+    const baseParams = {
+      topic: topic.trim(),
+      subject,
+      grade,
+      educationLevel,
+      count: currentTotalQuestions,
+      questionType: isSingle ? selectedQuestionTypes[0] : 'campuran' as const,
+      typeProportions: !isSingle ? proportions : undefined,
+      includeAiImages,
+      contextNotes: contextNotes.trim() || undefined,
+      mcOptionCount,
+      trueFalseStyle,
+      matchingPairCount,
+    };
+
+    // Rantai fallback — mode Auto mencoba semua engine yang tersedia secara berurutan
+    const fallbackChain: Array<'deepseek' | 'groq' | 'gemini' | 'local'> = (() => {
+      if (selectedEngine === 'local') return ['local'];
+      if (selectedEngine !== 'auto') return [resolvedEngine as 'deepseek' | 'groq' | 'gemini' | 'local'];
+      const chain: Array<'deepseek' | 'groq' | 'gemini' | 'local'> = [];
+      if (supabaseAi.hasDeepSeek || hasDeepSeekApiKey()) chain.push('deepseek');
+      if (supabaseAi.hasGroq || hasGroqApiKey()) chain.push('groq');
+      if (supabaseAi.hasGemini || hasGeminiApiKey()) chain.push('gemini');
+      chain.push('local');
+      return chain;
+    })();
+
     try {
-      let providerToUse: AiProvider | undefined = undefined;
-      if (selectedEngine === 'deepseek') providerToUse = 'deepseek';
-      else if (selectedEngine === 'groq') providerToUse = 'groq';
-      else if (selectedEngine === 'gemini') providerToUse = 'gemini';
+      let lastError: Error | null = null;
+      let result: Awaited<ReturnType<typeof generateHybridQuizQuestions>> | null = null;
 
-      const isSingle = selectedQuestionTypes.length === 1;
-      const result = await generateHybridQuizQuestions({
-        topic: topic.trim(),
-        subject,
-        grade,
-        educationLevel,
-        count: currentTotalQuestions,
-        questionType: isSingle ? selectedQuestionTypes[0] : 'campuran',
-        typeProportions: !isSingle ? proportions : undefined,
-        provider: providerToUse,
-        includeAiImages,
-        contextNotes: contextNotes.trim() || undefined,
-        mcOptionCount,
-        trueFalseStyle,
-        matchingPairCount,
-      });
+      for (const engine of fallbackChain) {
+        try {
+          const provider: AiProvider | undefined =
+            engine === 'deepseek' ? 'deepseek' :
+            engine === 'groq' ? 'groq' :
+            engine === 'gemini' ? 'gemini' : undefined;
 
-      if (!result.questions || result.questions.length === 0) {
-        throw new Error('Tidak ada butir soal yang berhasil diracik. Silakan coba kembali.');
+          result = await generateHybridQuizQuestions({ ...baseParams, provider });
+          if (result.questions && result.questions.length > 0) break;
+        } catch (err: unknown) {
+          lastError = err instanceof Error ? err : new Error(String(err));
+          if (selectedEngine === 'auto' && fallbackChain.indexOf(engine) < fallbackChain.length - 1) continue;
+          throw lastError;
+        }
+      }
+
+      if (!result || !result.questions || result.questions.length === 0) {
+        throw lastError || new Error('Tidak ada butir soal yang berhasil diracik. Silakan coba kembali.');
       }
 
       const badge = educationLevel === 'SMA' ? 'Bintang Cendekia' : educationLevel === 'SMP' ? 'Bintang Mandiri' : 'Bintang Pintar';
@@ -2791,7 +2817,70 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
               </div>
             </div>
 
+            {/* 1. Opsi Utama: Mode Otomatis (Rekomendasi) */}
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                setSelectedEngine('auto');
+              }}
+              className={`w-full p-3.5 sm:p-4 rounded-2xl border text-left transition-all flex items-center justify-between gap-3 btn-press min-h-[64px] ${
+                selectedEngine === 'auto'
+                  ? 'border-blue-600 bg-blue-50/80 dark:bg-blue-950/40 text-blue-950 dark:text-blue-50 ring-2 ring-blue-500/25 shadow-xs'
+                  : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 hover:border-slate-300 dark:hover:border-slate-700 text-slate-700 dark:text-slate-300'
+              }`}
+            >
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl font-bold shrink-0 transition-colors shadow-2xs ${
+                  selectedEngine === 'auto'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-blue-100 dark:bg-blue-900/60 text-blue-600'
+                }`}>
+                  ⚡
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-extrabold text-xs sm:text-base text-slate-900 dark:text-white block truncate">
+                      Otomatis
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-md font-bold bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300">
+                      Direkomendasikan
+                    </span>
+                    {isCheckingCloudAi ? (
+                      <span className="text-[11px] text-slate-400 flex items-center gap-1">
+                        <Loader2 className="w-3 h-3 animate-spin" /> Memeriksa...
+                      </span>
+                    ) : (
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold">
+                        (Aktif: {resolvedEngine === 'deepseek' ? '🐋 DeepSeek' : resolvedEngine === 'groq' ? '⚡ Groq' : resolvedEngine === 'gemini' ? '✨ Gemini' : '🤖 Lokal'})
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5 sm:mt-1 leading-snug">
+                    Aplikasi memilih AI terbaik yang tersedia, dengan peralihan otomatis ke cadangan jika kuota limit.
+                  </p>
+                </div>
+              </div>
+              <div className="shrink-0 flex items-center">
+                <div className={`w-5 h-5 rounded-full flex items-center justify-center border transition-all ${
+                  selectedEngine === 'auto'
+                    ? 'border-blue-600 bg-blue-600 text-white shadow-2xs'
+                    : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800'
+                }`}>
+                  {selectedEngine === 'auto' && <Check className="w-3 h-3 stroke-[3]" />}
+                </div>
+              </div>
+            </button>
+
+            {/* Sub-label pemisah */}
+            <div className="flex items-center justify-between pt-1">
+              <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
+                Atau Pilih Mesin Spesifik:
+              </span>
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
+
               
               {/* Option 1: Lokal */}
               <button
@@ -3033,7 +3122,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
             </div>
 
             {/* Indikator Status & Rekomendasi Mesin Terpilih (Informatif & Solutif) */}
-            {selectedEngine !== 'local' && selectedEngine !== 'prompt' && (() => {
+            {selectedEngine !== 'auto' && selectedEngine !== 'local' && selectedEngine !== 'prompt' && (() => {
               const health = getEngineHealthDetail(selectedEngine, supabaseAi);
               if (health.status === 'quota_exhausted') {
                 return (

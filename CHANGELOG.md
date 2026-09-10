@@ -1,6 +1,22 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.80] - 2026-09-11
+### Integrasi Sempurna Mode Otomatis dengan Restorasi Ikon Ikonik Mesin AI
+
+#### 1. Mode Otomatis (Auto) sebagai Opsi Utama
+- Menghadirkan kembali kartu **Mode Otomatis (Direkomendasikan)** di posisi teratas dengan deteksi model aktif dinamis (`Aktif: 🐋 DeepSeek` dsb.) serta rantai fallback cerdas saat kuota/antrean server tercapai.
+- Pengguna tetap dapat memilih model AI spesifik langsung dari daftar kartu di bawahnya secara bebas.
+
+#### 2. Restorasi Total Ikon Ikonik Mesin AI
+- Mengembalikan gaya ikon kotak squircle dengan palet warna asli untuk seluruh pilihan mesin:
+  - **Otomatis**: Ikon `⚡` dalam kotak biru solid (`bg-blue-600`).
+  - **Lokal**: Ikon `🤖` dalam kotak squircle biru lembut (`bg-blue-100 dark:bg-blue-900/60 text-blue-600`).
+  - **DeepSeek AI**: Ikon `🐋` dalam kotak squircle biru langit (`bg-sky-100 dark:bg-sky-900/60 text-sky-600`).
+  - **Groq Cloud**: Ikon `⚡` dalam kotak squircle amber (`bg-amber-100 dark:bg-amber-900/60 text-amber-600`).
+  - **Google Gemini**: Ikon `✨` dalam kotak squircle ungu (`bg-purple-100 dark:bg-purple-900/60 text-purple-600`).
+  - **Salin / Berkas**: Ikon `📝` dalam kotak squircle indigo (`bg-indigo-100 dark:bg-indigo-900/60 text-indigo-600`).
+
 ## [2.2.79] - 2026-09-11
 ### Pengembalian Tampilan Pilihan Mesin AI ke Format Standar (5 Kartu)
 
