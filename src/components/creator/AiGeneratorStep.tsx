@@ -3239,101 +3239,107 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-stretch">
                 
                 {/* Kolom Kiri: Teks Prompt Siap Pakai */}
-                <div className="lg:col-span-6 flex flex-col justify-between p-4 sm:p-5 rounded-3xl bg-slate-50/80 dark:bg-slate-850/60 border border-slate-200 dark:border-slate-800 space-y-3.5 shadow-2xs">
-                  <div className="space-y-2.5">
-                    <div className="flex items-center justify-between flex-wrap gap-2">
-                      <span className="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-white flex items-center gap-2">
-                        <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-[11px] font-black inline-flex items-center justify-center">1</span>
-                        <span>Salin Prompt AI</span>
-                      </span>
+                <div className="lg:col-span-6 flex flex-col justify-between p-4 sm:p-5 rounded-3xl bg-slate-50/80 dark:bg-slate-850/60 border border-slate-200 dark:border-slate-800 gap-3.5 shadow-2xs">
+                  {/* Header Card 1 */}
+                  <div className="flex items-center justify-between flex-wrap gap-2 shrink-0">
+                    <span className="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-[11px] font-black inline-flex items-center justify-center">1</span>
+                      <span>Salin Prompt AI</span>
+                    </span>
 
-                      <button
-                        type="button"
-                        onClick={handleCopyPrompt}
-                        className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-2 shadow-xs btn-press min-h-[36px]"
-                      >
-                        {copiedPrompt ? (
-                          <>
-                            <Check className="w-3.5 h-3.5 text-emerald-300" />
-                            <span>Tersalin!</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="w-3.5 h-3.5" />
-                            <span>Salin Prompt</span>
-                          </>
-                        )}
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={handleCopyPrompt}
+                      className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-2 shadow-xs btn-press min-h-[36px]"
+                    >
+                      {copiedPrompt ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 text-emerald-300" />
+                          <span>Tersalin!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5" />
+                          <span>Salin Prompt</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
 
-                    <div className="relative group">
+                  {/* Area Konten Fleksibel */}
+                  <div className="flex-1 flex flex-col min-h-0">
+                    <div className="relative group flex-1 flex flex-col min-h-0">
                       <textarea
                         readOnly
                         rows={5}
                         value={generatedPromptText}
-                        className="w-full px-4 py-3 rounded-2xl border-2 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 font-mono text-xs sm:text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none select-all leading-relaxed shadow-xs min-h-[120px] sm:min-h-[135px] resize-y"
+                        className="w-full flex-1 px-4 py-3 rounded-2xl border-2 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 font-mono text-xs sm:text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none select-all leading-relaxed shadow-xs min-h-[135px] resize-y"
                       />
                     </div>
                   </div>
 
-                  <div className="p-3 rounded-2xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200/70 dark:border-blue-900/50 text-[11px] text-blue-900 dark:text-blue-200 leading-relaxed font-medium">
-                    💡 <strong>Cara Pakai:</strong> Salin prompt di atas → tempelkan ke ChatGPT/Claude/Gemini → salin balasannya dan masukkan pada kolom di samping/bawah.
+                  {/* Footer Helper Box Card 1 */}
+                  <div className="p-3 rounded-2xl bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200/70 dark:border-blue-900/50 text-[11px] text-blue-900 dark:text-blue-200 leading-relaxed font-medium flex items-center gap-2 shrink-0">
+                    <span className="text-base shrink-0">💡</span>
+                    <span><strong>Cara Pakai:</strong> Salin prompt di atas → tempelkan ke ChatGPT/Claude/Gemini → salin balasannya dan masukkan pada kolom di samping/bawah.</span>
                   </div>
                 </div>
 
                 {/* Kolom Kanan: Input Hasil Soal / Unggah Berkas */}
-                <div className="lg:col-span-6 flex flex-col justify-between p-4 sm:p-5 rounded-3xl bg-slate-50/80 dark:bg-slate-850/60 border border-slate-200 dark:border-slate-800 space-y-3.5 shadow-2xs">
-                  <div className="space-y-2.5">
-                    <div className="flex items-center justify-between flex-wrap gap-2">
-                      <span className="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-white flex items-center gap-2">
-                        <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-[11px] font-black inline-flex items-center justify-center">2</span>
-                        <span>Hasil Kuis / Berkas</span>
-                      </span>
+                <div className="lg:col-span-6 flex flex-col justify-between p-4 sm:p-5 rounded-3xl bg-slate-50/80 dark:bg-slate-850/60 border border-slate-200 dark:border-slate-800 gap-3.5 shadow-2xs">
+                  {/* Header Card 2 */}
+                  <div className="flex items-center justify-between flex-wrap gap-2 shrink-0">
+                    <span className="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                      <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-[11px] font-black inline-flex items-center justify-center">2</span>
+                      <span>Hasil Kuis / Berkas</span>
+                    </span>
 
-                      <div className="flex p-0.5 rounded-xl bg-slate-200/70 dark:bg-slate-800 border border-slate-300/50 dark:border-slate-700">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            playClick();
-                            setInputMethodTab('paste');
-                          }}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all min-h-[32px] ${
-                            inputMethodTab === 'paste'
-                              ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs'
-                              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                          }`}
-                        >
-                          📝 Tempel Teks
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            playClick();
-                            setInputMethodTab('file');
-                          }}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all min-h-[32px] ${
-                            inputMethodTab === 'file'
-                              ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs'
-                              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                          }`}
-                        >
-                          📂 Unggah Berkas
-                        </button>
-                      </div>
+                    <div className="flex p-0.5 rounded-xl bg-slate-200/70 dark:bg-slate-800 border border-slate-300/50 dark:border-slate-700">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          playClick();
+                          setInputMethodTab('paste');
+                        }}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all min-h-[32px] ${
+                          inputMethodTab === 'paste'
+                            ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs'
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                        }`}
+                      >
+                        📝 Tempel Teks
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          playClick();
+                          setInputMethodTab('file');
+                        }}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all min-h-[32px] ${
+                          inputMethodTab === 'file'
+                            ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs'
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                        }`}
+                      >
+                        📂 Unggah Berkas
+                      </button>
                     </div>
+                  </div>
 
+                  {/* Area Konten Fleksibel yang Mengisi Ruang Penuh */}
+                  <div className="flex-1 flex flex-col min-h-0">
                     {inputMethodTab === 'paste' ? (
-                      <div>
-                        <div className="relative group">
+                      <div className="flex-1 flex flex-col justify-between space-y-1.5 min-h-0">
+                        <div className="relative group flex-1 flex flex-col min-h-0">
                           <textarea
                             rows={5}
                             value={rawInputText}
                             onChange={(e) => setRawInputText(e.target.value)}
                             placeholder="Tempelkan hasil respons AI (format JSON array atau teks bernomor: 1. Pertanyaan... A. Opsi... Kunci: ...) di sini..."
-                            className="w-full px-4 py-3 rounded-2xl border-2 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 font-mono text-xs sm:text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none leading-relaxed shadow-xs min-h-[120px] sm:min-h-[135px] resize-y"
+                            className="w-full flex-1 px-4 py-3 rounded-2xl border-2 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 font-mono text-xs sm:text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none leading-relaxed shadow-xs min-h-[135px] resize-y"
                           />
                         </div>
-                        <div className="flex items-center justify-between text-[11px] text-slate-400 mt-1.5 px-0.5">
+                        <div className="flex items-center justify-between text-[11px] text-slate-400 px-0.5 shrink-0">
                           <span>Mendukung format JSON atau teks kuis bernomor.</span>
                           {rawInputText.length > 0 && (
                             <span className="font-bold text-blue-600 dark:text-blue-400">{rawInputText.length} karakter</span>
@@ -3341,8 +3347,8 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                         </div>
                       </div>
                     ) : (
-                      <div className="p-5 sm:p-6 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-center space-y-3 min-h-[120px] sm:min-h-[135px] flex flex-col justify-center shadow-xs">
-                        <UploadCloud className="w-10 h-10 text-blue-500 mx-auto" />
+                      <div className="flex-1 p-5 sm:p-6 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-center space-y-3 flex flex-col justify-center items-center shadow-xs min-h-[150px]">
+                        <UploadCloud className="w-10 h-10 text-blue-500 shrink-0" />
                         <div>
                           <label className="inline-block px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm cursor-pointer shadow-sm min-h-[42px] btn-press">
                             Pilih Berkas (.xlsx, .csv, .json, .txt)
@@ -3358,7 +3364,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                           </p>
                         </div>
 
-                        <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-center">
+                        <div className="pt-2 border-t border-slate-100 dark:border-slate-700/60 w-full flex items-center justify-center">
                           <button
                             type="button"
                             onClick={handleDownloadCsvTemplate}
@@ -3372,9 +3378,11 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                     )}
                   </div>
 
-                  <p className="text-[11px] text-slate-400 dark:text-slate-500">
-                    ⚡ Seluruh butir soal akan otomatis diekstrak dan siap diperiksa di Studio Bank Soal.
-                  </p>
+                  {/* Footer Helper Box Card 2: Menyelaraskan dengan Card 1 */}
+                  <div className="p-3 rounded-2xl bg-blue-50/50 dark:bg-blue-950/30 border border-blue-200/50 dark:border-blue-900/40 text-[11px] text-blue-900 dark:text-blue-200 leading-relaxed font-medium flex items-center gap-2 shrink-0">
+                    <Zap className="w-4 h-4 text-amber-500 shrink-0" />
+                    <span>Seluruh butir soal akan otomatis diekstrak dan siap diperiksa di Studio Bank Soal.</span>
+                  </div>
                 </div>
 
               </div>

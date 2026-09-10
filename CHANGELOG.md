@@ -1,6 +1,16 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.86] - 2026-09-11
+### Optimalisasi Responsivitas & Eliminasi Celah Kosong Tab Unggah Berkas
+
+#### 1. Keselarasan Proporsi & Tata Letak Kartu Masukan Kuis
+- Menghilangkan celah vertikal kosong (*empty gap*) pada kartu **Hasil Kuis / Berkas** (Tahap 4) saat tab *Unggah Berkas* dipilih:
+  - Menerapkan pembungkus `flex-1 min-h-0` pada area konten utama sehingga area drop-zone berkas dan textarea teks mengisi ruang secara presisi dan dinamis.
+  - Memperbarui zona unggah berkas (*drop-zone*) dengan fleksibilitas penuh (`flex-1 min-h-[150px]`) dan perataan terpusat yang proporsional.
+- Menyelaraskan kotak catatan pembantu (*footer helper note*) di dasar kedua kartu (Salin Prompt & Unggah/Tempel) dengan gaya visual serasi `rounded-2xl` serta ikon penjelas yang bersih.
+- Menjamin stabilitas tinggi dan simetri visual antar-kartu di desktop maupun layar sentuh mobile tanpa pergeseran tata letak (*layout jump*).
+
 ## [2.2.85] - 2026-09-11
 ### Penyeragaman Desain Input Field Prompt & Berkas Selaras Tahap Sebelumnya
 
