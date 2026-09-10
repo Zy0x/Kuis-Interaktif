@@ -1,6 +1,19 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.60] - 2026-09-10
+### Penyelarasan Presisi Tata Letak Tab Tahapan Pembuat Kuis Sticky Header dengan Kontainer Konten
+
+#### 1. Penyelarasan Margin dan Padding Horizontal Tab Sticky Header
+- Menyelaraskan padding horizontal kontainer tab 4-tahap pembuatan kuis AI (`px-3 xs:px-4 sm:px-8 lg:px-12`) agar sejajar presisi dengan tepi kiri dan kanan kartu konten di bawahnya (`AiGeneratorStep`).
+- Menghilangkan tampilan tab yang sebelumnya terlalu menempel ke tepi layar (*edge-to-edge*), menghadirkan ruang napas visual yang harmonis di perangkat desktop, tablet, maupun layar sentuh ponsel.
+- Menambahkan bantalan vertikal bawah (`pb-2.5 sm:pb-3`) pada kontainer tab agar indikator *progress track* memiliki jarak estetis yang konsisten dengan garis pembatas header.
+- Menerapkan penyesuaian penyelarasan yang sama pada tab navigasi 3-langkah mode Studio Kuis utama.
+
+#### 2. Kestabilan Responsivitas & Target Sentuh Mobile
+- Mempertahankan ukuran target sentuh ramah jari ($\ge 44\times 44\text{ px}$) untuk semua tombol tab tahapan di berbagai orientasi layar.
+- Memastikan label tahapan tetap rapi dan tidak mengalami distorsi layout pada berbagai resolusi layar ponsel reguler maupun non-reguler.
+
 ## [2.2.59] - 2026-09-10
 ### Standarisasi Mata Pelajaran IPS SD, Kartu Pemilihan Format Tipe Soal Cerdas Dinamis, Deteksi Status Kesehatan Mesin AI & Penyeragaman Nama Mesin Lokal
 

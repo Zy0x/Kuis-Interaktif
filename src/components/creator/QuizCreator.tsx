@@ -713,7 +713,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
 
         {/* 4-Stage Funnel Tabs in Sticky Header (SELALU MENEMPEL DI HEADER SAAT SCROLL) */}
         {aiFunnelActive ? (
-          <div className="w-full max-w-[2000px] mx-auto mt-2.5 space-y-2 transition-all">
+          <div className="w-full max-w-[2000px] mx-auto px-3 xs:px-4 sm:px-8 lg:px-12 mt-2.5 pb-2.5 sm:pb-3 space-y-2 transition-all">
             <div className="grid grid-cols-4 gap-1 sm:gap-2">
               <button
                 type="button"
@@ -842,7 +842,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
           </div>
         ) : (
           /* 3 Step Navigation Tabs (HANYA MUNCUL DI STUDIO KUIS UTAMA) */
-          <div className="w-full max-w-[2000px] mx-auto mt-2.5 grid grid-cols-3 gap-1.5 sm:gap-2 transition-all">
+          <div className="w-full max-w-[2000px] mx-auto px-3 xs:px-4 sm:px-8 lg:px-12 mt-2.5 pb-2.5 sm:pb-3 grid grid-cols-3 gap-1.5 sm:gap-2 transition-all">
             {isAiMode ? (
               <>
                 <button
