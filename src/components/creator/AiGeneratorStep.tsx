@@ -1439,21 +1439,21 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
     reader.readAsText(file);
   };
 
-  // Simpan Pengaturan Kunci API (BYOK)
+  // Simpan Pengaturan Kunci API Pribadi
   const handleSaveApiKeySettings = () => {
     playClick();
     if (apiKeyTab === 'deepseek') {
       saveStoredDeepSeekApiKey(deepseekKeyInput.trim());
       saveStoredDeepSeekModel(deepseekModelChoice);
-      setKeySaveMessage(deepseekKeyInput.trim() ? '✓ Kunci DeepSeek berhasil disimpan di peramban!' : 'Kunci DeepSeek dikosongkan.');
+      setKeySaveMessage(deepseekKeyInput.trim() ? 'Kunci DeepSeek berhasil disimpan.' : 'Kunci DeepSeek telah dihapus.');
     } else if (apiKeyTab === 'groq') {
       saveStoredGroqApiKey(groqKeyInput.trim());
       saveStoredGroqModel(groqModelChoice);
-      setKeySaveMessage(groqKeyInput.trim() ? '✓ Kunci Groq berhasil disimpan di peramban!' : 'Kunci Groq dikosongkan.');
+      setKeySaveMessage(groqKeyInput.trim() ? 'Kunci Groq berhasil disimpan.' : 'Kunci Groq telah dihapus.');
     } else if (apiKeyTab === 'gemini') {
       saveStoredGeminiApiKey(geminiKeyInput.trim());
       saveStoredGeminiModel(geminiModelChoice);
-      setKeySaveMessage(geminiKeyInput.trim() ? '✓ Kunci Gemini berhasil disimpan di peramban!' : 'Kunci Gemini dikosongkan.');
+      setKeySaveMessage(geminiKeyInput.trim() ? 'Kunci Gemini berhasil disimpan.' : 'Kunci Gemini telah dihapus.');
     }
     setTimeout(() => {
       setKeySaveMessage(null);
@@ -2807,7 +2807,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                     setIsApiKeyModalOpen(true);
                   }}
                   className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 transition-all btn-press min-h-[40px]"
-                  title="Atur Kunci API mandiri (BYOK) untuk DeepSeek, Groq, atau Gemini"
+                  title="Atur Kunci API pribadi untuk DeepSeek, Groq, atau Gemini"
                 >
                   <Key className="w-3.5 h-3.5 text-blue-500" />
                   <span>Kunci API Pribadi</span>
@@ -3214,7 +3214,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                 <div className="flex items-center gap-2">
                   <span className="text-lg">🐋</span>
                   <span>
-                    <strong>Gunakan DeepSeek Pribadi:</strong> Masukkan API Key gratis dari <em>platform.deepseek.com</em> untuk menggunakan model V3 / R1 secara langsung.
+                    <strong>Kunci DeepSeek Diperlukan:</strong> Masukkan API Key dari <em>platform.deepseek.com</em> untuk mengaktifkan model ini.
                   </span>
                 </div>
                 <button
@@ -3227,7 +3227,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                   className="px-3.5 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs btn-press shrink-0 min-h-[36px]"
                 >
                   <Key className="w-3.5 h-3.5" />
-                  <span>Masukkan Kunci DeepSeek</span>
+                  <span>Atur Kunci API</span>
                 </button>
               </div>
             )}
@@ -3557,7 +3557,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
         document.body
       )}
       {/* ========================================================================= */}
-      {/* MODAL OVERLAY: PENGATURAN KUNCI API PRIBADI / BYOK (PORTAL KE BODY Z-[100]) */}
+      {/* MODAL OVERLAY: PENGATURAN KUNCI API PRIBADI (PORTAL KE BODY Z-[100]) */}
       {/* ========================================================================= */}
       {isApiKeyModalOpen && typeof document !== 'undefined' && createPortal(
         <div 
@@ -3576,10 +3576,10 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                 </div>
                 <div className="min-w-0">
                   <h3 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white truncate">
-                    Pengaturan Kunci API Mandiri (BYOK)
+                    Kunci API Pribadi
                   </h3>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                    Tersimpan aman secara lokal di peramban Anda
+                    Tersimpan aman di peramban perangkat Anda (privat)
                   </p>
                 </div>
               </div>
@@ -3623,7 +3623,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
-                  <span>⚡ Groq LPU</span>
+                  <span>⚡ Groq</span>
                   {hasGroqApiKey() && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>}
                 </button>
 
@@ -3639,7 +3639,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
-                  <span>✨ Gemini AI</span>
+                  <span>✨ Gemini</span>
                   {hasGeminiApiKey() && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>}
                 </button>
               </div>
@@ -3660,14 +3660,14 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                   {supabaseAi.hasDeepSeek && (
                     <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
-                      <span><strong>Cloud Aktif:</strong> DeepSeek API Key telah disetel di server Supabase Secrets. Form ini opsional jika ingin menimpa dengan kunci pribadi.</span>
+                      <span><strong>Kunci Bawaan Siap:</strong> Layanan DeepSeek aktif di sistem. Kolom di bawah opsional jika ingin memakai akun & kuota pribadi Anda.</span>
                     </div>
                   )}
 
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-xs font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-1">
-                        <span>🐋 Kunci API DeepSeek (sk-...):</span>
+                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                        Kunci API DeepSeek:
                       </label>
                       <a
                         href="https://platform.deepseek.com/"
@@ -3675,7 +3675,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                         rel="noreferrer"
                         className="text-[11px] font-bold text-sky-600 dark:text-sky-400 hover:underline flex items-center gap-1"
                       >
-                        Dapatkan di platform.deepseek.com <ExternalLink className="w-3 h-3" />
+                        Dapatkan Kunci <ExternalLink className="w-3 h-3" />
                       </a>
                     </div>
                     <div className="relative">
@@ -3696,26 +3696,26 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                     </div>
                   </div>
 
-                    <div>
-                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200 block mb-1.5">
-                        Pilihan Model DeepSeek:
-                      </label>
-                      <select
-                        value={deepseekModelChoice}
-                        onChange={(e) => setDeepseekModelChoice(e.target.value as DeepSeekModel)}
-                        className="w-full px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-semibold focus:outline-none min-h-[44px]"
-                      >
-                        <option value="deepseek-chat">DeepSeek-V3 (deepseek-chat)</option>
-                        <option value="deepseek-reasoner">DeepSeek-R1 (deepseek-reasoner)</option>
-                      </select>
-                    </div>
-
-                    <div className="flex items-center gap-2 text-[11px] text-slate-400 dark:text-slate-500 pt-1">
-                      <ShieldCheck className="w-4 h-4 shrink-0 text-slate-400" />
-                      <span>Kunci API tersimpan di peramban lokal dan hanya digunakan untuk memanggil API secara langsung.</span>
-                    </div>
+                  <div>
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 block mb-1.5">
+                      Pilihan Model:
+                    </label>
+                    <select
+                      value={deepseekModelChoice}
+                      onChange={(e) => setDeepseekModelChoice(e.target.value as DeepSeekModel)}
+                      className="w-full px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-semibold focus:outline-none min-h-[44px]"
+                    >
+                      <option value="deepseek-chat">DeepSeek-V3 (Standar & Cepat)</option>
+                      <option value="deepseek-reasoner">DeepSeek-R1 (Penalaran HOTS)</option>
+                    </select>
                   </div>
-                )}
+
+                  <div className="flex items-center gap-2 text-[11px] text-slate-400 dark:text-slate-500 pt-1">
+                    <ShieldCheck className="w-4 h-4 shrink-0 text-emerald-500" />
+                    <span>Kunci tersimpan lokal di peramban dan hanya digunakan saat meracik soal.</span>
+                  </div>
+                </div>
+              )}
 
               {/* TAB 2: GROQ CLOUD */}
               {apiKeyTab === 'groq' && (
@@ -3723,14 +3723,14 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                   {supabaseAi.hasGroq && (
                     <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
-                      <span><strong>Cloud Aktif:</strong> Kunci Groq aktif di server Supabase Secrets.</span>
+                      <span><strong>Kunci Bawaan Siap:</strong> Layanan Groq aktif di sistem. Kolom di bawah opsional jika ingin memakai akun & kuota pribadi Anda.</span>
                     </div>
                   )}
 
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-xs font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-1">
-                        <span>⚡ Kunci API Groq (gsk_...):</span>
+                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                        Kunci API Groq:
                       </label>
                       <a
                         href="https://console.groq.com/"
@@ -3738,7 +3738,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                         rel="noreferrer"
                         className="text-[11px] font-bold text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1"
                       >
-                        Dapatkan di console.groq.com <ExternalLink className="w-3 h-3" />
+                        Dapatkan Kunci <ExternalLink className="w-3 h-3" />
                       </a>
                     </div>
                     <div className="relative">
@@ -3761,24 +3761,24 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
 
                   <div>
                     <label className="text-xs font-bold text-slate-800 dark:text-slate-200 block mb-1.5">
-                      Pilihan Model Groq:
+                      Pilihan Model:
                     </label>
                     <select
                       value={groqModelChoice}
                       onChange={(e) => setGroqModelChoice(e.target.value as GroqModel)}
                       className="w-full px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-semibold focus:outline-none min-h-[44px]"
                     >
-                      <option value="llama-3.3-70b-versatile">Llama 3.3 70B (llama-3.3-70b-versatile)</option>
-                      <option value="llama-3.1-8b-instant">Llama 3.1 8B (llama-3.1-8b-instant)</option>
-                      <option value="deepseek-r1-distill-llama-70b">DeepSeek R1 Distill (deepseek-r1-distill-llama-70b)</option>
-                      <option value="qwen/qwen3.8-27b">Qwen 3.8 27B (qwen/qwen3.8-27b)</option>
-                      <option value="gemma2-9b-it">Gemma 2 9B (gemma2-9b-it)</option>
+                      <option value="llama-3.3-70b-versatile">Llama 3.3 70B (Akurat & Seimbang)</option>
+                      <option value="llama-3.1-8b-instant">Llama 3.1 8B (Sangat Cepat)</option>
+                      <option value="deepseek-r1-distill-llama-70b">DeepSeek R1 Distill (Penalaran HOTS)</option>
+                      <option value="qwen/qwen3.8-27b">Qwen 3.8 27B (Responsif)</option>
+                      <option value="gemma2-9b-it">Gemma 2 9B (Ringan)</option>
                     </select>
                   </div>
 
                   <div className="flex items-center gap-2 text-[11px] text-slate-400 dark:text-slate-500 pt-1">
-                    <ShieldCheck className="w-4 h-4 shrink-0 text-slate-400" />
-                    <span>Kunci API tersimpan di peramban lokal dan hanya digunakan untuk memanggil API secara langsung.</span>
+                    <ShieldCheck className="w-4 h-4 shrink-0 text-emerald-500" />
+                    <span>Kunci tersimpan lokal di peramban dan hanya digunakan saat meracik soal.</span>
                   </div>
                 </div>
               )}
@@ -3789,14 +3789,14 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                   {supabaseAi.hasGemini && (
                     <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
-                      <span><strong>Cloud Aktif:</strong> Kunci Gemini aktif di server Supabase Secrets.</span>
+                      <span><strong>Kunci Bawaan Siap:</strong> Layanan Gemini aktif di sistem. Kolom di bawah opsional jika ingin memakai akun & kuota pribadi Anda.</span>
                     </div>
                   )}
 
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1">
-                        <span>✨ Kunci API Gemini (AIzaSy...):</span>
+                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                        Kunci API Gemini:
                       </label>
                       <a
                         href="https://aistudio.google.com/"
@@ -3804,7 +3804,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                         rel="noreferrer"
                         className="text-[11px] font-bold text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-1"
                       >
-                        Dapatkan di aistudio.google.com <ExternalLink className="w-3 h-3" />
+                        Dapatkan Kunci <ExternalLink className="w-3 h-3" />
                       </a>
                     </div>
                     <div className="relative">
@@ -3827,23 +3827,23 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
 
                   <div>
                     <label className="text-xs font-bold text-slate-800 dark:text-slate-200 block mb-1.5">
-                      Pilihan Model Gemini:
+                      Pilihan Model:
                     </label>
                     <select
                       value={geminiModelChoice}
                       onChange={(e) => setGeminiModelChoice(e.target.value as GeminiModel)}
                       className="w-full px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-semibold focus:outline-none min-h-[44px]"
                     >
-                      <option value="gemini-2.0-flash">Gemini 2.0 Flash (gemini-2.0-flash)</option>
-                      <option value="gemini-1.5-pro">Gemini 1.5 Pro (gemini-1.5-pro)</option>
-                      <option value="gemini-3.8-flash">Gemini 3.8 Flash (gemini-3.8-flash)</option>
-                      <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash Lite (gemini-3.1-flash-lite)</option>
+                      <option value="gemini-2.0-flash">Gemini 2.0 Flash (Cepat & Akurat)</option>
+                      <option value="gemini-1.5-pro">Gemini 1.5 Pro (Detail & Konteks Luas)</option>
+                      <option value="gemini-3.8-flash">Gemini 3.8 Flash (Performa Tinggi)</option>
+                      <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash Lite (Sangat Ringan)</option>
                     </select>
                   </div>
 
                   <div className="flex items-center gap-2 text-[11px] text-slate-400 dark:text-slate-500 pt-1">
-                    <ShieldCheck className="w-4 h-4 shrink-0 text-slate-400" />
-                    <span>Kunci API tersimpan di peramban lokal dan hanya digunakan untuk memanggil API secara langsung.</span>
+                    <ShieldCheck className="w-4 h-4 shrink-0 text-emerald-500" />
+                    <span>Kunci tersimpan lokal di peramban dan hanya digunakan saat meracik soal.</span>
                   </div>
                 </div>
               )}
@@ -3869,7 +3869,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                         saveStoredGeminiApiKey('');
                         setGeminiKeyInput('');
                       }
-                      setKeySaveMessage('Kunci dihapus.');
+                      setKeySaveMessage('Kunci telah dihapus.');
                       setTimeout(() => setKeySaveMessage(null), 1000);
                     }}
                     className="text-xs font-bold text-rose-600 hover:text-rose-700 dark:text-rose-400 hover:underline px-2 py-1.5 min-h-[36px]"

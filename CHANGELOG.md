@@ -1,6 +1,18 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.84] - 2026-09-11
+### Pembersihan Modal Kunci API Pribadi (Bebas AI Slop & Bahasa Jelas)
+
+#### 1. Penyederhanaan Judul & Tab Provider
+- Menyederhanakan judul modal menjadi **"Kunci API Pribadi"** dan menghapus jargon teknis yang tidak perlu (*BYOK*).
+- Merapikan label switcher tab penyedia menjadi **DeepSeek**, **Groq**, dan **Gemini** yang bersih dan konsisten dengan tampilan kartu utama.
+
+#### 2. Bahasa Antarmuka Komunikatif & Opsi Model Bersih
+- Menata ulang pesan status kunci bawaan agar komunikatif tanpa membingungkan pengguna.
+- Merapikan penamaan opsi pilihan model pada *dropdown* (DeepSeek-V3, DeepSeek-R1 HOTS, Llama 3.3 70B, Gemini 2.0 Flash) dengan penjelasan fungsi yang ringkas dan bebas redundansi.
+- Memperbarui tautan panduan resmi (*Dapatkan Kunci*) serta catatan privasi penyimpanan lokal dengan visual proteksi yang tenang.
+
 ## [2.2.83] - 2026-09-11
 ### Penyesuaian Penamaan Kartu Mesin Alternatif: Lokal & Prompt / Berkas
 

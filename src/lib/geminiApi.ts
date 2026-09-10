@@ -403,7 +403,7 @@ export function getEngineHealthDetail(
       unconfigured: {
         label: 'Belum Disetel',
         color: '#64748b',
-        description: 'Kunci API mandiri (BYOK) atau kredensial cloud belum dikonfigurasi.',
+        description: 'Kunci API pribadi atau kredensial server belum disetel.',
       },
     }[st];
 
