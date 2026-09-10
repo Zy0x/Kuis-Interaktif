@@ -39,9 +39,12 @@ import {
   getStoredGroqModel,
   saveStoredGroqModel,
   generateHybridQuizQuestions,
+  checkSupabaseAiStatus,
+  getSupabaseAiStatusSync,
   type AiProvider,
   type GeminiModel,
-  type GroqModel
+  type GroqModel,
+  type SupabaseAiStatus
 } from '../../lib/geminiApi';
 
 interface AiQuestionModalProps {
@@ -92,11 +95,15 @@ export const AiQuestionModal: React.FC<AiQuestionModalProps> = ({
   const [groqKeyInput, setGroqKeyInput] = useState<string>(() => getStoredGroqApiKey());
   const [groqModel, setGroqModel] = useState<GroqModel>(() => getStoredGroqModel());
   const [showKeySettings, setShowKeySettings] = useState<boolean>(false);
+  const [supabaseAi, setSupabaseAi] = useState<SupabaseAiStatus>(() => getSupabaseAiStatusSync());
   const [showKeyText, setShowKeyText] = useState<boolean>(false);
   const [isGeneratingAi, setIsGeneratingAi] = useState<boolean>(false);
   const [hasConfiguredKey, setHasConfiguredKey] = useState<boolean>(() => {
     const prov = getStoredAiProvider();
-    return prov === 'groq' ? hasGroqApiKey() : hasGeminiApiKey();
+    const status = getSupabaseAiStatusSync();
+    return prov === 'groq' 
+      ? (hasGroqApiKey() || status.hasGroq) 
+      : (hasGeminiApiKey() || status.hasGemini);
   });
   const [includeAiImages, setIncludeAiImages] = useState<boolean>(false);
 
@@ -113,7 +120,15 @@ export const AiQuestionModal: React.FC<AiQuestionModalProps> = ({
       setGeminiModel(getStoredGeminiModel());
       setGroqKeyInput(getStoredGroqApiKey());
       setGroqModel(getStoredGroqModel());
-      setHasConfiguredKey(prov === 'groq' ? hasGroqApiKey() : hasGeminiApiKey());
+
+      // Cek status Cloud Secrets dari Supabase
+      checkSupabaseAiStatus().then((status) => {
+        setSupabaseAi(status);
+        const configured = prov === 'groq' 
+          ? (hasGroqApiKey() || status.hasGroq) 
+          : (hasGeminiApiKey() || status.hasGemini);
+        setHasConfiguredKey(configured);
+      });
     }
   }, [isOpen, currentSubject, currentGrade]);
 
@@ -557,10 +572,16 @@ Pembahasan: Insang menyaring oksigen yang terlarut di dalam air.`;
                     {/* Input untuk Provider Terpilih */}
                     {activeProvider === 'gemini' ? (
                       <div className="space-y-3">
+                        {supabaseAi.hasGemini && (
+                          <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse flex-shrink-0" />
+                            <span><strong>Terhubung via Supabase Secrets:</strong> Kunci API Gemini telah aktif di server cloud. Pengisian form di bawah ini opsional (hanya bila ingin menimpa dengan kunci pribadi).</span>
+                          </div>
+                        )}
                         <div>
                           <div className="flex items-center justify-between mb-1">
                             <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
-                              <Key className="w-3.5 h-3.5 text-amber-500" /> Kunci API Google Gemini:
+                              <Key className="w-3.5 h-3.5 text-amber-500" /> Kunci API Google Gemini (Opsional jika sudah ada di Secrets):
                             </label>
                             <a
                               href="https://aistudio.google.com/"
@@ -577,7 +598,7 @@ Pembahasan: Insang menyaring oksigen yang terlarut di dalam air.`;
                               type={showKeyText ? 'text' : 'password'}
                               value={geminiKeyInput}
                               onChange={(e) => setGeminiKeyInput(e.target.value)}
-                              placeholder="Tempelkan AIzaSy..."
+                              placeholder={supabaseAi.hasGemini ? "Sudah terisi via Supabase Secrets (atau tempel AIzaSy... baru)" : "Tempelkan AIzaSy..."}
                               className="w-full pl-3 pr-10 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:border-blue-500 min-h-[42px]"
                             />
                             <button
@@ -600,11 +621,13 @@ Pembahasan: Insang menyaring oksigen yang terlarut di dalam air.`;
                               onChange={(e) => setGeminiModel(e.target.value as GeminiModel)}
                               className="w-full px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-xs font-semibold focus:outline-none min-h-[38px]"
                             >
-                              <option value="gemini-2.0-flash">Gemini 2.0 Flash (Generasi Baru, Cepat & Cerdas)</option>
-                              <option value="gemini-2.0-flash-thinking-exp-01-21">Gemini 2.0 Flash Thinking (Penalaran Mendalam)</option>
-                              <option value="gemini-1.5-pro">Gemini 1.5 Pro (Model Penalaran Tinggi / Langganan PRO)</option>
-                              <option value="gemini-1.5-flash">Gemini 1.5 Flash (Cepat & Hemat Kuota)</option>
-                              <option value="gemini-1.5-flash-8b">Gemini 1.5 Flash-8B (Super Ringan)</option>
+                              <option value="gemini-3.8-flash">Gemini 3.8 Flash (Generasi Terbaru, Cepat & Cerdas)</option>
+                              <option value="gemini-3.6-flash">Gemini 3.6 Flash (Sangat Responsif)</option>
+                              <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash-Lite (Stabil & Cepat)</option>
+                              <option value="gemini-3.5-flash-lite">Gemini 3.5 Flash-Lite</option>
+                              <option value="gemini-flash-latest">Gemini Flash Latest</option>
+                              <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+                              <option value="gemini-1.5-pro">Gemini 1.5 Pro (Model Penalaran PRO)</option>
                             </select>
                           </div>
 
@@ -634,10 +657,16 @@ Pembahasan: Insang menyaring oksigen yang terlarut di dalam air.`;
                       </div>
                     ) : (
                       <div className="space-y-3">
+                        {supabaseAi.hasGroq && (
+                          <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse flex-shrink-0" />
+                            <span><strong>Terhubung via Supabase Secrets:</strong> Kunci API Groq telah aktif di server cloud. Pengisian form di bawah ini opsional (hanya bila ingin menimpa dengan kunci pribadi).</span>
+                          </div>
+                        )}
                         <div>
                           <div className="flex items-center justify-between mb-1">
                             <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
-                              <Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-500" /> Kunci API Groq Cloud:
+                              <Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-500" /> Kunci API Groq Cloud (Opsional jika sudah ada di Secrets):
                             </label>
                             <a
                               href="https://console.groq.com/"
@@ -654,7 +683,7 @@ Pembahasan: Insang menyaring oksigen yang terlarut di dalam air.`;
                               type={showKeyText ? 'text' : 'password'}
                               value={groqKeyInput}
                               onChange={(e) => setGroqKeyInput(e.target.value)}
-                              placeholder="Tempelkan gsk_..."
+                              placeholder={supabaseAi.hasGroq ? "Sudah terisi via Supabase Secrets (atau tempel gsk_... baru)" : "Tempelkan gsk_..."}
                               className="w-full pl-3 pr-10 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:border-blue-500 min-h-[42px]"
                             />
                             <button
@@ -677,11 +706,14 @@ Pembahasan: Insang menyaring oksigen yang terlarut di dalam air.`;
                               onChange={(e) => setGroqModel(e.target.value as GroqModel)}
                               className="w-full px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-xs font-semibold focus:outline-none min-h-[38px]"
                             >
-                              <option value="llama-3.3-70b-versatile">Llama 3.3 70B (Cerdas & Akurat - Rekomendasi Utama)</option>
-                              <option value="llama-3.1-8b-instant">Llama 3.1 8B (Super Kilat &lt; 0.5 detik)</option>
-                              <option value="deepseek-r1-distill-llama-70b">DeepSeek R1 70B (Penalaran & Logika MTK)</option>
-                              <option value="gemma2-9b-it">Google Gemma 2 9B (Kompak & Efisien)</option>
-                              <option value="mixtral-8x7b-32768">Mixtral 8x7B (Konteks Panjang 32k)</option>
+                              <option value="qwen/qwen3.8-27b">Qwen 3.8 27B (Bahasa Indonesia Sangat Bagus - Default)</option>
+                              <option value="openai/gpt-oss-20b">GPT-OSS 20B (Super Cepat & Ringkas)</option>
+                              <option value="openai/gpt-oss-120b">GPT-OSS 120B (Model Terbesar & Cerdas)</option>
+                              <option value="llama-3.3-70b-versatile">Llama 3.3 70B (Versatile)</option>
+                              <option value="llama-3.1-8b-instant">Llama 3.1 8B (Super Kilat)</option>
+                              <option value="deepseek-r1-distill-llama-70b">DeepSeek R1 70B (Penalaran MTK)</option>
+                              <option value="gemma2-9b-it">Google Gemma 2 9B</option>
+                              <option value="mixtral-8x7b-32768">Mixtral 8x7B</option>
                             </select>
                           </div>
 

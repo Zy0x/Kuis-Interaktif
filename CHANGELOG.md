@@ -1,6 +1,25 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.48] - 2026-09-10
+### Integrasi Penuh AI Server-Side via Supabase Secrets & Edge Functions (Zero-Leak Security)
+
+#### 1. Penghubungan Aman API AI via Supabase Secrets & Edge Functions
+- Mengintegrasikan mesin komputasi AI (*Google Gemini* dan *Groq Cloud LPU*) langsung ke Supabase Edge Functions (`generate-quiz-ai`), memanfaatkan penyimpanan rahasia server-side (`Supabase Secrets`).
+- Menjamin keamanan tingkat tinggi (*Non-Negotiable Security - Rule 9 & 10*): Kunci API tidak lagi disimpan di browser pengguna (`localStorage`) dan tidak pernah terekspos ke frontend publik.
+- Seluruh pemanggilan AI dijalankan secara aman melalui `supabase.functions.invoke('generate-quiz-ai')` dengan verifikasi serverless Deno runtime.
+
+#### 2. Fitur AI Otomatis Terbuka di Antarmuka Studio Kuis
+- Studio Kuis dan Generator Kilat AI kini secara otomatis mendeteksi ketersediaan kunci API di Supabase Cloud Secrets saat formulir dimuat.
+- Opsi mesin AI *Google Gemini AI* dan *Groq Cloud LPU* langsung aktif dan terbuka dengan label status terverifikasi `(Aktif via Supabase Cloud)`.
+- Menghadirkan lencana indikator status *Cloud Secrets Aktif* yang memberikan kepastian visual kepada guru bahwa sistem AI siap digunakan seketika.
+
+#### 3. Dukungan Model Generasi Baru & Mekanisme Failover Cerdas
+- Mendukung model inferensi mutakhir berkecepatan tinggi:
+  - **Groq Cloud:** Mendukung model *Qwen 3.8 27B* dan *GPT-OSS* dengan pemahaman Kurikulum Merdeka yang sangat akurat.
+  - **Google Gemini:** Mendukung generasi terbaru *Gemini 3.8 Flash*, *Gemini 3.6 Flash*, dan *Gemini 3.1 Flash-Lite*.
+- Dilengkapi sistem *multi-model cascade failover*: jika sebuah model mengalami lonjakan antrean trafik, sistem secara otomatis beralih ke model cadangan server-side tanpa mengganggu alur pembuatan kuis oleh guru.
+
 ## [2.2.47] - 2026-09-10
 ### Ekspansi Lebar Penuh Studio Kuis (Ultra-Wide max-w-[2000px]) Selaras dengan Dashboard Guru
 

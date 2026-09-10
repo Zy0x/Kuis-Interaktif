@@ -1,9 +1,15 @@
 import type { QuestionType, QuizQuestion, Subject } from '../types/quiz';
 import { generateCurriculumSeedQuestions } from './aiQuestionParser';
+import { supabase, isSupabaseConfigured } from './supabaseClient';
 
 export type AiProvider = 'gemini' | 'groq';
 
 export type GeminiModel = 
+  | 'gemini-3.8-flash'
+  | 'gemini-3.6-flash'
+  | 'gemini-3.1-flash-lite'
+  | 'gemini-3.5-flash-lite'
+  | 'gemini-flash-latest'
   | 'gemini-2.0-flash' 
   | 'gemini-2.0-flash-thinking-exp-01-21' 
   | 'gemini-1.5-pro' 
@@ -11,6 +17,9 @@ export type GeminiModel =
   | 'gemini-1.5-flash-8b';
 
 export type GroqModel = 
+  | 'qwen/qwen3.8-27b'
+  | 'openai/gpt-oss-20b'
+  | 'openai/gpt-oss-120b'
   | 'llama-3.3-70b-versatile' 
   | 'llama-3.1-8b-instant' 
   | 'deepseek-r1-distill-llama-70b' 
@@ -22,6 +31,16 @@ const STORAGE_KEY_GEMINI_API_KEY = 'kuis_sd_gemini_api_key';
 const STORAGE_KEY_GEMINI_MODEL = 'kuis_sd_gemini_model';
 const STORAGE_KEY_GROQ_API_KEY = 'kuis_sd_groq_api_key';
 const STORAGE_KEY_GROQ_MODEL = 'kuis_sd_groq_model';
+
+export interface SupabaseAiStatus {
+  checked: boolean;
+  available: boolean;
+  hasGemini: boolean;
+  hasGroq: boolean;
+  groqModels: string[];
+  geminiModels: string[];
+  error?: string | null;
+}
 
 export interface GenerateAiQuestionsParams {
   subject: Subject;
@@ -171,6 +190,145 @@ export function saveStoredGroqModel(model: GroqModel): void {
 
 export function hasAnyAiApiKey(): boolean {
   return hasGeminiApiKey() || hasGroqApiKey();
+}
+
+/* =========================================================
+   SUPABASE EDGE FUNCTION AI STATUS & HELPERS (RULE 9 & 10)
+========================================================= */
+
+let cachedSupabaseAiStatus: SupabaseAiStatus = {
+  checked: false,
+  available: false,
+  hasGemini: false,
+  hasGroq: false,
+  groqModels: [],
+  geminiModels: [],
+  error: null,
+};
+
+export function getSupabaseAiStatusSync(): SupabaseAiStatus {
+  return cachedSupabaseAiStatus;
+}
+
+export async function checkSupabaseAiStatus(forceRefresh = false): Promise<SupabaseAiStatus> {
+  if (cachedSupabaseAiStatus.checked && !forceRefresh) {
+    return cachedSupabaseAiStatus;
+  }
+
+  if (!isSupabaseConfigured || !supabase) {
+    cachedSupabaseAiStatus = {
+      checked: true,
+      available: false,
+      hasGemini: false,
+      hasGroq: false,
+      groqModels: [],
+      geminiModels: [],
+      error: 'Supabase client belum dikonfigurasi.',
+    };
+    return cachedSupabaseAiStatus;
+  }
+
+  try {
+    const { data, error } = await supabase.functions.invoke('generate-quiz-ai', {
+      body: { action: 'check_status' },
+    });
+
+    if (error || !data) {
+      cachedSupabaseAiStatus = {
+        checked: true,
+        available: false,
+        hasGemini: false,
+        hasGroq: false,
+        groqModels: [],
+        geminiModels: [],
+        error: error?.message || 'Gagal memeriksa status Edge Function Supabase.',
+      };
+      return cachedSupabaseAiStatus;
+    }
+
+    cachedSupabaseAiStatus = {
+      checked: true,
+      available: Boolean(data.hasGemini || data.hasGroq),
+      hasGemini: Boolean(data.hasGemini),
+      hasGroq: Boolean(data.hasGroq),
+      groqModels: Array.isArray(data.groqModels) ? data.groqModels : [],
+      geminiModels: Array.isArray(data.geminiModels) ? data.geminiModels : [],
+      error: null,
+    };
+    return cachedSupabaseAiStatus;
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    cachedSupabaseAiStatus = {
+      checked: true,
+      available: false,
+      hasGemini: false,
+      hasGroq: false,
+      groqModels: [],
+      geminiModels: [],
+      error: msg,
+    };
+    return cachedSupabaseAiStatus;
+  }
+}
+
+export function isGeminiAvailable(): boolean {
+  return hasGeminiApiKey() || cachedSupabaseAiStatus.hasGemini;
+}
+
+export function isGroqAvailable(): boolean {
+  return hasGroqApiKey() || cachedSupabaseAiStatus.hasGroq;
+}
+
+export function isAnyAiAvailable(): boolean {
+  return isGeminiAvailable() || isGroqAvailable();
+}
+
+/**
+ * Panggil Supabase Edge Function server-side (generate-quiz-ai)
+ * Menggunakan kredensial dari Supabase Secrets (Rule 9 & 10)
+ */
+export async function callSupabaseAiEdgeFunction(params: GenerateAiQuestionsParams): Promise<{
+  questions: QuizQuestion[];
+  provider: 'gemini' | 'groq';
+  model?: string;
+}> {
+  if (!supabase) {
+    throw new Error('Supabase client tidak tersedia.');
+  }
+
+  const payload = {
+    subject: params.subject,
+    grade: params.grade,
+    topic: params.topic,
+    count: params.count,
+    questionType: params.questionType,
+    provider: params.provider || (cachedSupabaseAiStatus.hasGroq ? 'groq' : 'gemini'),
+    model: params.model || (params.provider === 'groq' ? params.groqModel : params.geminiModel),
+  };
+
+  const { data, error } = await supabase.functions.invoke('generate-quiz-ai', {
+    body: payload,
+  });
+
+  if (error) {
+    throw new Error(`Supabase AI Function error: ${error.message}`);
+  }
+
+  if (!data?.success && data?.error) {
+    throw new Error(data.error);
+  }
+
+  const rawList = Array.isArray(data?.questions) ? data.questions : [];
+  if (rawList.length === 0) {
+    throw new Error('Supabase AI tidak mengembalikan daftar butir soal yang valid.');
+  }
+
+  const normalized = normalizeQuestions(rawList, data.provider || 'supabase', params.includeAiImages);
+  return {
+    questions: normalized,
+    provider: data.provider || 'gemini',
+    model: data.model,
+  };
 }
 
 /* =========================================================
@@ -490,17 +648,52 @@ export async function generateHybridQuizQuestions(
 ): Promise<HybridGenerateResult> {
   const provider = params.provider || getStoredAiProvider();
 
-  // 1. Coba provider utama yang dipilih
+  // 1. Coba via Supabase Cloud Edge Function jika provider tersedia di Supabase Secrets (Rule 9 & Rule 10)
+  let cloudStatus: SupabaseAiStatus | null = null;
+  try {
+    cloudStatus = await checkSupabaseAiStatus();
+  } catch (statusErr) {
+    console.warn('Cek status Supabase AI notice:', statusErr);
+  }
+
+  const isCloudGroq = Boolean(cloudStatus?.hasGroq);
+  const isCloudGemini = Boolean(cloudStatus?.hasGemini);
+
+  if (provider === 'groq' && isCloudGroq) {
+    try {
+      const result = await callSupabaseAiEdgeFunction({ ...params, provider: 'groq' });
+      return {
+        questions: result.questions,
+        source: 'groq_api',
+        message: `⚡ Berhasil meracik ${result.questions.length} butir soal materi "${params.topic}" via Groq Cloud (${result.model || 'LPU Engine'})!`,
+      };
+    } catch (cloudGroqErr: unknown) {
+      console.warn('Panggilan Groq via Supabase Edge Function gagal, mencoba cadangan:', cloudGroqErr);
+    }
+  } else if (provider === 'gemini' && isCloudGemini) {
+    try {
+      const result = await callSupabaseAiEdgeFunction({ ...params, provider: 'gemini' });
+      return {
+        questions: result.questions,
+        source: 'gemini_api',
+        message: `✨ Berhasil meracik ${result.questions.length} butir soal materi "${params.topic}" via Google Gemini AI (${result.model || 'PRO'})!`,
+      };
+    } catch (cloudGeminiErr: unknown) {
+      console.warn('Panggilan Gemini via Supabase Edge Function gagal, mencoba cadangan:', cloudGeminiErr);
+    }
+  }
+
+  // 2. Coba provider utama dengan API Key lokal jika tersedia di browser
   if (provider === 'groq' && hasGroqApiKey()) {
     try {
       const questions = await callGroqApi(params);
       return {
         questions,
         source: 'groq_api',
-        message: `⚡ Berhasil membuat ${questions.length} butir soal materi "${params.topic}" via Groq Cloud (${params.groqModel || getStoredGroqModel()})!`,
+        message: `⚡ Berhasil membuat ${questions.length} butir soal materi "${params.topic}" via Groq Cloud Lokal (${params.groqModel || getStoredGroqModel()})!`,
       };
     } catch (groqErr: unknown) {
-      console.warn('Panggilan Groq gagal, mencoba cadangan:', groqErr);
+      console.warn('Panggilan Groq lokal gagal, mencoba cadangan:', groqErr);
     }
   } else if (provider === 'gemini' && hasGeminiApiKey()) {
     try {
@@ -508,39 +701,67 @@ export async function generateHybridQuizQuestions(
       return {
         questions,
         source: 'gemini_api',
-        message: `✨ Berhasil membuat ${questions.length} butir soal materi "${params.topic}" via Google Gemini AI!`,
+        message: `✨ Berhasil membuat ${questions.length} butir soal materi "${params.topic}" via Google Gemini AI Lokal!`,
       };
     } catch (geminiErr: unknown) {
-      console.warn('Panggilan Gemini gagal, mencoba cadangan:', geminiErr);
+      console.warn('Panggilan Gemini lokal gagal, mencoba cadangan:', geminiErr);
     }
   }
 
-  // 2. Coba provider alternatif jika provider utama gagal/belum ada key
-  if (provider === 'groq' && hasGeminiApiKey()) {
-    try {
-      const questions = await callGeminiApi(params);
-      return {
-        questions,
-        source: 'gemini_api',
-        message: `Beralih ke Google Gemini: ${questions.length} butir soal materi "${params.topic}" berhasil dibuat.`,
-      };
-    } catch {
-      // lanjut ke fallback lokal
+  // 3. Coba provider alternatif via Cloud atau Kunci Lokal jika provider utama belum siap/gagal
+  if (provider === 'groq') {
+    if (isCloudGemini) {
+      try {
+        const result = await callSupabaseAiEdgeFunction({ ...params, provider: 'gemini' });
+        return {
+          questions: result.questions,
+          source: 'gemini_api',
+          message: `Beralih ke Google Gemini Cloud: ${result.questions.length} butir soal materi "${params.topic}" berhasil dibuat.`,
+        };
+      } catch {
+        // lanjut
+      }
     }
-  } else if (provider === 'gemini' && hasGroqApiKey()) {
-    try {
-      const questions = await callGroqApi(params);
-      return {
-        questions,
-        source: 'groq_api',
-        message: `Beralih ke Groq Cloud: ${questions.length} butir soal materi "${params.topic}" berhasil dibuat.`,
-      };
-    } catch {
-      // lanjut ke fallback lokal
+    if (hasGeminiApiKey()) {
+      try {
+        const questions = await callGeminiApi(params);
+        return {
+          questions,
+          source: 'gemini_api',
+          message: `Beralih ke Google Gemini: ${questions.length} butir soal materi "${params.topic}" berhasil dibuat.`,
+        };
+      } catch {
+        // lanjut ke fallback lokal
+      }
+    }
+  } else if (provider === 'gemini') {
+    if (isCloudGroq) {
+      try {
+        const result = await callSupabaseAiEdgeFunction({ ...params, provider: 'groq' });
+        return {
+          questions: result.questions,
+          source: 'groq_api',
+          message: `Beralih ke Groq Cloud: ${result.questions.length} butir soal materi "${params.topic}" berhasil dibuat.`,
+        };
+      } catch {
+        // lanjut
+      }
+    }
+    if (hasGroqApiKey()) {
+      try {
+        const questions = await callGroqApi(params);
+        return {
+          questions,
+          source: 'groq_api',
+          message: `Beralih ke Groq Cloud: ${questions.length} butir soal materi "${params.topic}" berhasil dibuat.`,
+        };
+      } catch {
+        // lanjut ke fallback lokal
+      }
     }
   }
 
-  // 3. Fallback mulus ke Generator Kurikulum SD lokal (Offline & 100% Reliable)
+  // 4. Fallback mulus ke Generator Kurikulum SD lokal (Offline & 100% Reliable)
   const localQuestions = generateCurriculumSeedQuestions(
     params.topic,
     params.subject,

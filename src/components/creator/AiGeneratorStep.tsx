@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { Subject, QuestionType, QuizQuestion } from '../../types/quiz';
 import { 
   generateHybridQuizQuestions, 
   hasGeminiApiKey, 
-  hasGroqApiKey, 
-  type AiProvider 
+  hasGroqApiKey,
+  checkSupabaseAiStatus,
+  getSupabaseAiStatusSync,
+  type AiProvider,
+  type SupabaseAiStatus
 } from '../../lib/geminiApi';
 import { parseRawQuestionsText } from '../../lib/aiQuestionParser';
 import { 
@@ -15,7 +18,8 @@ import {
   Loader2, 
   AlertCircle,
   Layers,
-  FileCheck2
+  FileCheck2,
+  Cloud
 } from 'lucide-react';
 
 interface AiGeneratorStepProps {
@@ -72,8 +76,38 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const hasGemini = hasGeminiApiKey();
-  const hasGroq = hasGroqApiKey();
+  // Status AI via Supabase Cloud Edge Function (Rule 9 & 10)
+  const [supabaseAi, setSupabaseAi] = useState<SupabaseAiStatus>(() => getSupabaseAiStatusSync());
+  const [isCheckingCloudAi, setIsCheckingCloudAi] = useState<boolean>(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    setIsCheckingCloudAi(true);
+    checkSupabaseAiStatus()
+      .then((status) => {
+        if (!isMounted) return;
+        setSupabaseAi(status);
+        // Otomatis arahkan ke Cloud Provider jika tersedia di Supabase Secrets
+        if (status.hasGroq) {
+          setSelectedProvider('groq');
+        } else if (status.hasGemini) {
+          setSelectedProvider('gemini');
+        }
+      })
+      .catch((err) => {
+        console.warn('Cek status Cloud AI notice:', err);
+      })
+      .finally(() => {
+        if (isMounted) setIsCheckingCloudAi(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const hasGemini = hasGeminiApiKey() || supabaseAi.hasGemini;
+  const hasGroq = hasGroqApiKey() || supabaseAi.hasGroq;
 
   const handleGenerate = async () => {
     playClick();
@@ -363,20 +397,33 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
               {/* Grid 2-Kolom: Mesin Pembuat Soal & Gambar AI */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 pt-2 border-t border-slate-100 dark:border-slate-800">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                    Mesin Pembuat Soal
-                  </label>
+                  <div className="flex items-center justify-between mb-1.5 gap-2">
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                      Mesin Pembuat Soal
+                    </label>
+                    {isCheckingCloudAi && (
+                      <span className="text-[10px] text-blue-500 flex items-center gap-1 font-semibold">
+                        <Loader2 className="w-3 h-3 animate-spin" /> Cek Cloud...
+                      </span>
+                    )}
+                    {!isCheckingCloudAi && (supabaseAi.hasGemini || supabaseAi.hasGroq) && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                        <Cloud className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                        Cloud Secrets Aktif
+                      </span>
+                    )}
+                  </div>
                   <select
                     value={selectedProvider}
                     onChange={(e) => setSelectedProvider(e.target.value as any)}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium text-xs sm:text-sm focus:border-blue-500 focus:outline-none min-h-[44px]"
                   >
                     <option value="local">🤖 Kurikulum SD Lokal (Cepat & Mandiri)</option>
-                    <option value="gemini" disabled={!hasGemini}>
-                      ✨ Google Gemini AI {hasGemini ? '(Aktif / PRO)' : '(API Key Belum Diisi)'}
-                    </option>
                     <option value="groq" disabled={!hasGroq}>
-                      ⚡ Groq Cloud LPU {hasGroq ? '(Aktif)' : '(API Key Belum Diisi)'}
+                      ⚡ Groq Cloud LPU {supabaseAi.hasGroq ? '(Aktif via Supabase Cloud)' : hasGroqApiKey() ? '(Aktif via Kunci Lokal)' : '(Kunci Belum Diisi)'}
+                    </option>
+                    <option value="gemini" disabled={!hasGemini}>
+                      ✨ Google Gemini AI {supabaseAi.hasGemini ? '(Aktif via Supabase Cloud)' : hasGeminiApiKey() ? '(Aktif via Kunci Lokal)' : '(Kunci Belum Diisi)'}
                     </option>
                   </select>
                 </div>

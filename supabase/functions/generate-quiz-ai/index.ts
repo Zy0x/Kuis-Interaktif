@@ -1,8 +1,8 @@
 // Supabase Edge Function: generate-quiz-ai
 // Endpoint AI server-side yang aman untuk Google Gemini & Groq API (Rule 9 & Rule 10)
 // Setup secrets:
-// - supabase secrets set GEMINI_API_KEY="AIzaSy..."
-// - supabase secrets set GROQ_API_KEY="gsk_..."
+// - supabase secrets set GEMINI_API_KEY="..."
+// - supabase secrets set GROQ_API_KEY="..."
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -19,6 +19,70 @@ serve(async (req) => {
   try {
     const geminiApiKey = Deno.env.get("GEMINI_API_KEY");
     const groqApiKey = Deno.env.get("GROQ_API_KEY");
+
+    let body: any = {};
+    try {
+      body = await req.json();
+    } catch {
+      body = {};
+    }
+
+    const { action } = body;
+
+    // 1. Status Check & Model Discovery Action
+    if (action === "check_status") {
+      let groqModels: string[] = [];
+      let geminiModels: string[] = [];
+      let groqError: string | null = null;
+      let geminiError: string | null = null;
+
+      if (groqApiKey) {
+        try {
+          const res = await fetch("https://api.groq.com/openai/v1/models", {
+            headers: { Authorization: `Bearer ${groqApiKey}` },
+          });
+          if (res.ok) {
+            const data = await res.json();
+            groqModels = (data.data || []).map((m: any) => m.id);
+          } else {
+            groqError = await res.text();
+          }
+        } catch (e: any) {
+          groqError = e?.message || String(e);
+        }
+      }
+
+      if (geminiApiKey) {
+        try {
+          const res = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models?key=${geminiApiKey}`
+          );
+          if (res.ok) {
+            const data = await res.json();
+            geminiModels = (data.models || [])
+              .filter((m: any) => m.supportedGenerationMethods?.includes("generateContent"))
+              .map((m: any) => m.name.replace("models/", ""));
+          } else {
+            geminiError = await res.text();
+          }
+        } catch (e: any) {
+          geminiError = e?.message || String(e);
+        }
+      }
+
+      return new Response(
+        JSON.stringify({
+          status: "ready",
+          hasGemini: Boolean(geminiApiKey),
+          hasGroq: Boolean(groqApiKey),
+          groqModels,
+          geminiModels,
+          groqError,
+          geminiError,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+      );
+    }
 
     if (!geminiApiKey && !groqApiKey) {
       return new Response(
@@ -40,7 +104,7 @@ serve(async (req) => {
       questionType = "campuran", 
       provider = groqApiKey ? "groq" : "gemini",
       model 
-    } = await req.json();
+    } = body;
 
     if (!topic) {
       return new Response(
@@ -69,7 +133,7 @@ Tingkat: Kelas ${grade} SD
 Topik: ${topic}
 Format: ${formatInstruction}
 
-KEMBALIKAN HANYA ARRAY JSON MURNI TANPA PEMBUKA/PENUTUP:
+KEMBALIKAN HANYA ARRAY JSON MURNI TANPA PEMBUKA/PENUTUP MARKDOWN ATAU PENJELASAN LAIN:
 [
   {
     "text": "Pertanyaan...",
@@ -86,10 +150,11 @@ KEMBALIKAN HANYA ARRAY JSON MURNI TANPA PEMBUKA/PENUTUP:
 ]`;
 
     let cleanedJson = "";
+    let effectiveProvider = provider;
+    let usedModel = "";
 
-    // Pilihan 1: Groq Cloud (Super Cepat)
-    if (provider === "groq" && groqApiKey) {
-      const groqModel = model || "llama-3.3-70b-versatile";
+    // Helper panggil Groq dengan model tertentu
+    async function tryGroq(modelName: string): Promise<string> {
       const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -97,30 +162,27 @@ KEMBALIKAN HANYA ARRAY JSON MURNI TANPA PEMBUKA/PENUTUP:
           "Authorization": `Bearer ${groqApiKey}`,
         },
         body: JSON.stringify({
-          model: groqModel,
+          model: modelName,
           messages: [
             { role: "system", content: systemPrompt },
-            { role: "user", content: `Buatkan ${count} butir soal tentang "${topic}".` },
+            { role: "user", content: `Buatkan ${count} butir soal tentang materi "${topic}". Kembalikan array JSON valid.` },
           ],
-          response_format: { type: "json_object" },
           temperature: 0.6,
-          max_tokens: 3000,
+          max_tokens: 3500,
         }),
       });
 
       if (!groqRes.ok) {
-        throw new Error(`Groq API error: ${await groqRes.text()}`);
+        throw new Error(`Groq (${modelName}) error: ${await groqRes.text()}`);
       }
 
       const groqData = await groqRes.json();
-      const content = groqData?.choices?.[0]?.message?.content || "";
-      cleanedJson = content.trim();
-    } 
-    // Pilihan 2: Google Gemini API
-    else if (geminiApiKey) {
-      const geminiModel = model || "gemini-1.5-flash";
-      const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${geminiApiKey}`;
+      return (groqData?.choices?.[0]?.message?.content || "").trim();
+    }
 
+    // Helper panggil Gemini dengan model tertentu
+    async function tryGemini(modelName: string): Promise<string> {
+      const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${geminiApiKey}`;
       const geminiRes = await fetch(geminiEndpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -128,35 +190,129 @@ KEMBALIKAN HANYA ARRAY JSON MURNI TANPA PEMBUKA/PENUTUP:
           contents: [{ parts: [{ text: systemPrompt }] }],
           generationConfig: {
             temperature: 0.7,
-            maxOutputTokens: 2500,
+            maxOutputTokens: 3500,
             responseMimeType: "application/json",
           },
         }),
       });
 
       if (!geminiRes.ok) {
-        throw new Error(`Gemini API error: ${await geminiRes.text()}`);
+        throw new Error(`Gemini (${modelName}) error: ${await geminiRes.text()}`);
       }
 
       const geminiData = await geminiRes.json();
-      const rawText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || "";
-      cleanedJson = rawText.trim();
+      return (geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || "").trim();
     }
 
+    // Eksekusi Pilihan Provider dengan Fallback Cascade
+    if (provider === "groq" && groqApiKey) {
+      const groqCandidates = model 
+        ? [model, "qwen/qwen3.8-27b", "openai/gpt-oss-20b", "openai/gpt-oss-120b"]
+        : ["qwen/qwen3.8-27b", "openai/gpt-oss-20b", "openai/gpt-oss-120b"];
+      
+      let lastErr: any = null;
+      for (const m of groqCandidates) {
+        try {
+          cleanedJson = await tryGroq(m);
+          usedModel = m;
+          effectiveProvider = "groq";
+          break;
+        } catch (e: any) {
+          lastErr = e;
+        }
+      }
+
+      // Jika Groq gagal tapi ada Gemini API Key, gunakan Gemini sebagai backup otomatis
+      if (!cleanedJson && geminiApiKey) {
+        const geminiCandidates = ["gemini-3.1-flash-lite", "gemini-3.8-flash", "gemini-3.5-flash-lite"];
+        for (const m of geminiCandidates) {
+          try {
+            cleanedJson = await tryGemini(m);
+            usedModel = m;
+            effectiveProvider = "gemini";
+            break;
+          } catch {
+            // lanjut cascade
+          }
+        }
+      }
+
+      if (!cleanedJson && lastErr) throw lastErr;
+    } else if (geminiApiKey) {
+      const geminiCandidates = model
+        ? [model, "gemini-3.1-flash-lite", "gemini-3.8-flash", "gemini-3.5-flash-lite"]
+        : ["gemini-3.1-flash-lite", "gemini-3.8-flash", "gemini-3.5-flash-lite"];
+
+      let lastErr: any = null;
+      for (const m of geminiCandidates) {
+        try {
+          cleanedJson = await tryGemini(m);
+          usedModel = m;
+          effectiveProvider = "gemini";
+          break;
+        } catch (e: any) {
+          lastErr = e;
+        }
+      }
+
+      // Jika Gemini gagal tapi ada Groq API Key, gunakan Groq sebagai backup otomatis
+      if (!cleanedJson && groqApiKey) {
+        const groqCandidates = ["qwen/qwen3.8-27b", "openai/gpt-oss-20b"];
+        for (const m of groqCandidates) {
+          try {
+            cleanedJson = await tryGroq(m);
+            usedModel = m;
+            effectiveProvider = "groq";
+            break;
+          } catch {
+            // lanjut cascade
+          }
+        }
+      }
+
+      if (!cleanedJson && lastErr) throw lastErr;
+    }
+
+    // Bersihkan format respons JSON
     if (cleanedJson.startsWith("```json")) cleanedJson = cleanedJson.replace(/^```json\s*/i, "");
     if (cleanedJson.startsWith("```")) cleanedJson = cleanedJson.replace(/^```\s*/i, "");
     if (cleanedJson.endsWith("```")) cleanedJson = cleanedJson.replace(/\s*```$/i, "");
+    cleanedJson = cleanedJson.trim();
 
-    const parsed = JSON.parse(cleanedJson);
-    const questions = Array.isArray(parsed) ? parsed : (parsed.questions || parsed.data || []);
+    let parsed: any = null;
+    try {
+      parsed = JSON.parse(cleanedJson);
+    } catch {
+      // Robust regex extraction jika model menyertakan teks sebelum atau sesudah array JSON
+      const firstBracket = cleanedJson.indexOf("[");
+      const lastBracket = cleanedJson.lastIndexOf("]");
+      if (firstBracket !== -1 && lastBracket > firstBracket) {
+        const sliced = cleanedJson.substring(firstBracket, lastBracket + 1);
+        parsed = JSON.parse(sliced);
+      } else {
+        const firstBrace = cleanedJson.indexOf("{");
+        const lastBrace = cleanedJson.lastIndexOf("}");
+        if (firstBrace !== -1 && lastBrace > firstBrace) {
+          const sliced = cleanedJson.substring(firstBrace, lastBrace + 1);
+          parsed = JSON.parse(sliced);
+        }
+      }
+    }
 
-    return new Response(JSON.stringify({ questions, provider }), {
+    const questions = Array.isArray(parsed) ? parsed : (parsed?.questions || parsed?.data || []);
+
+    return new Response(JSON.stringify({ 
+      questions, 
+      provider: effectiveProvider, 
+      model: usedModel, 
+      success: true 
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
   } catch (error: any) {
     return new Response(
-      JSON.stringify({ error: error?.message || "Terjadi kesalahan pemrosesan AI." }),
+      JSON.stringify({ error: error?.message || "Terjadi kesalahan pemrosesan AI.", success: false }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
     );
   }
