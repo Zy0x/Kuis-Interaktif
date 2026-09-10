@@ -1,6 +1,18 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.88] - 2026-09-11
+### Penataan Responsif Toolbar Aksi Mesin AI (Bebas AI Slop)
+
+#### 1. Optimalisasi Struktur Tata Letak 2-Baris Responsif
+- Menata ulang header bagian **Pilih Mesin AI** pada Tahap 4 agar presisi di desktop maupun layar ponsel (*mobile-first*):
+  - **Baris 1**: Judul bagian di sisi kiri dan toolbar aksi di sisi kanan selalu sejajar berdampingan (`flex items-center justify-between`) tanpa patah atau melayang canggung di bawah deskripsi.
+  - **Baris 2**: Deskripsi panduan berada tepat di bawah judul secara proporsional.
+
+#### 2. Penyempurnaan Desain Tombol Segarkan & Kunci API
+- Mengubah tombol refresh menjadi *ghost icon button* yang halus (`p-2 rounded-xl text-slate-400 hover:text-blue-600`) dengan umpan balik animasi putar halus (`animate-spin`) saat pemeriksaan server aktif.
+- Menyeragamkan tombol Kunci API menjadi tombol kapsul ramping (*compact pill*) dengan label komunikatif **"Kunci API"** dan indikator titik hijau aktif, menghilangkan beban visual berlebihan.
+
 ## [2.2.87] - 2026-09-11
 ### Standarisasi Input Field Teks Panjang & Eliminasi Handle Resize Ganda
 
