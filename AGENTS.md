@@ -24,6 +24,47 @@ Dokumen ini berfungsi sebagai instruksi operasional wajib (**Standard Operating 
   `POST https://api.supabase.com/v1/projects/${projectId}/database/query`
 - Memverifikasi keberadaan dan jumlah baris seluruh tabel utama (`quizzes`, `quiz_questions`, `profiles_player`, `profiles_teacher`, `quiz_attempts`).
 
+### ⚡ Deploy Edge Functions (WAJIB — Jalankan Tanpa Diminta)
+
+**Setiap kali ada perubahan pada file `supabase/functions/**`**, agen WAJIB langsung men-deploy ulang
+edge function yang berubah setelah commit. Gunakan perintah berikut:
+
+```powershell
+# Baca token dari .env (jangan hardcode di sini)
+$env:SUPABASE_ACCESS_TOKEN=(Get-Content .env | Select-String "SUPABASE_ACCESS_TOKEN" | ForEach-Object { $_ -replace "SUPABASE_ACCESS_TOKEN=","" })
+
+# Deploy edge function (ganti <nama-function> sesuai folder)
+supabase functions deploy <nama-function> --project-ref colpcgesngntiztjeprg
+```
+
+**Contoh deploy `generate-quiz-ai`:**
+```powershell
+$env:SUPABASE_ACCESS_TOKEN=(Get-Content .env | Select-String "SUPABASE_ACCESS_TOKEN" | ForEach-Object { $_ -replace "SUPABASE_ACCESS_TOKEN=","" })
+supabase functions deploy generate-quiz-ai --project-ref colpcgesngntiztjeprg
+```
+
+> ⚠️ Peringatan "Docker is not running" dan "new version available" **BUKAN ERROR** — deploy tetap berhasil.
+> Konfirmasi sukses: `Deployed Functions on project colpcgesngntiztjeprg: <nama-function>`
+> Token dan Project Ref tersimpan di `.env` (tidak pernah di-commit ke Git).
+
+**Informasi proyek:**
+| Item | Sumber |
+|------|--------|
+| **Project Ref** | `colpcgesngntiztjeprg` |
+| **Supabase URL** | lihat `.env` → `VITE_SUPABASE_URL` |
+| **Access Token** | lihat `.env` → `SUPABASE_ACCESS_TOKEN` |
+| **Edge Function aktif** | `generate-quiz-ai` |
+
+**Nama Secret yang BENAR di Supabase → Settings → Edge Functions → Secrets:**
+| Nama Secret (HURUF BESAR PERSIS) | Provider AI |
+|----------------------------------|-------------|
+| `GEMINI_API_KEY` | Google Gemini |
+| `GROQ_API_KEY` | Groq Cloud |
+| `DEEPSEEK_API_KEY` | DeepSeek AI |
+
+> ⚠️ Jika nama secret salah (misal `DEEPSEEK_KEY` bukan `DEEPSEEK_API_KEY`), provider akan tampil
+> badge **"Belum"** di UI meskipun key sudah diisi. Nama harus persis seperti tabel di atas.
+
 ---
 
 ## 🔒 2. STANDAR BAKU ANTI-AI SLOP & ZERO BACKEND EXPOSURE (WAJIB UTAMA)
