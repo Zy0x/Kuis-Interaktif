@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import type { QuizQuestion, QuestionType, Subject } from '../../types/quiz';
 import { 
   generateAiPrompt, 
@@ -83,6 +83,15 @@ export const AiQuestionModal: React.FC<AiQuestionModalProps> = ({
 
   // Generator State
   const [topic, setTopic] = useState('');
+  const modalTopicRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (modalTopicRef.current) {
+      modalTopicRef.current.style.height = 'auto';
+      modalTopicRef.current.style.height = `${Math.max(44, modalTopicRef.current.scrollHeight)}px`;
+    }
+  }, [topic, activeTab]);
+
   const [subject, setSubject] = useState<Subject>(currentSubject);
   const [grade, setGrade] = useState<number>(currentGrade);
   const [count, setCount] = useState<number>(5);
@@ -386,12 +395,17 @@ Pembahasan: Insang menyaring oksigen yang terlarut di dalam air.`;
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
                   Topik atau Materi yang Ingin Dibuat <span className="text-rose-500">*</span>
                 </label>
-                <input
-                  type="text"
+                <textarea
+                  ref={modalTopicRef}
+                  rows={1}
+                  spellCheck={false}
                   value={topic}
-                  onChange={(e) => setTopic(e.target.value)}
+                  onChange={(e) => setTopic(e.target.value.replace(/\r?\n/g, ' '))}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') e.preventDefault();
+                  }}
                   placeholder="Contoh: Organ Pernapasan Manusia, Pecahan Senilai, Sila Pancasila..."
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium text-xs sm:text-sm focus:outline-none focus:border-blue-500 min-h-[44px]"
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium text-xs sm:text-sm focus:outline-none focus:border-blue-500 min-h-[44px] resize-none overflow-hidden leading-relaxed transition-[height] duration-75"
                 />
               </div>
 

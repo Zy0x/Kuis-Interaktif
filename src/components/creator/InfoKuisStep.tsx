@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import type { Subject, GameMode, EducationLevel } from '../../types/quiz';
 import { 
   BookOpen, 
@@ -78,6 +78,15 @@ export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
   playClick,
 }) => {
   const isTitleFilled = Boolean(title.trim());
+  const titleTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Otomatis sesuaikan tinggi textarea judul kuis agar teks panjang selalu wrap ke bawah dan terbaca utuh
+  useEffect(() => {
+    if (titleTextareaRef.current) {
+      titleTextareaRef.current.style.height = 'auto';
+      titleTextareaRef.current.style.height = `${Math.max(46, titleTextareaRef.current.scrollHeight)}px`;
+    }
+  }, [title]);
 
   const handleNextClick = () => {
     playClick();
@@ -120,12 +129,17 @@ export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
                 Judul Kuis <span className="text-rose-500">*</span>
               </label>
-              <input
-                type="text"
+              <textarea
+                ref={titleTextareaRef}
+                rows={1}
+                spellCheck={false}
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={(e) => setTitle(e.target.value.replace(/\r?\n/g, ' '))}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') e.preventDefault();
+                }}
                 placeholder="Contoh: Kuis IPAS: Sistem Pencernaan Manusia"
-                className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-bold text-sm sm:text-base focus:border-blue-500 focus:outline-none min-h-[46px]"
+                className="w-full px-4 py-2.5 sm:py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-bold text-sm sm:text-base focus:border-blue-500 focus:outline-none min-h-[46px] resize-none overflow-hidden leading-relaxed transition-[height] duration-75"
                 required
               />
             </div>

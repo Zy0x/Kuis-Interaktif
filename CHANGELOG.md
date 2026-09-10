@@ -1,6 +1,20 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.68] - 2026-09-10
+### Bidang Input Judul & Topik Fleksibel dengan Pembungkusan Teks Otomatis (Auto-Wrap & Auto-Resize)
+
+#### 1. Pembungkusan Teks Otomatis ke Bawah (*Downward Text Wrapping*)
+- Mengonversi elemen input satu baris (*single-line input*) pada kolom **Topik Pembahasan Kuis** (Tahap 2 Generator AI dan Modal AI) serta **Judul Kuis** (Info Kuis Dasar) menjadi bidang teks yang membungkus kata ke bawah (*soft wrapping*) secara otomatis ketika teks melebihi batas lebar layar.
+- Mencegah teks terpotong secara horisontal (*horizontal ellipsis/clipping*) pada layar ponsel, sehingga topik panjang seperti *"Operasi Perkalian dan Pembagian Bilangan Cacah"* dapat terbaca utuh 100% tanpa ada huruf yang tersembunyi.
+
+#### 2. Penyesuaian Tinggi Dinamis (*Flexible Dynamic Height*)
+- Mengimplementasikan penyesuaian tinggi otomatis berbasis `scrollHeight` yang adaptif:
+  - Dimulai dari ketinggian standar 1 baris ramping (~46 px).
+  - Mengembang (*expand*) ke bawah secara dinamis mengikuti penambahan baris teks.
+- Dilengkapi sanitasi enter (`Enter` key suppression) untuk menjaga teks judul/topik tetap merupakan satu kesatuan frasa tanpa baris kosong berlebih.
+- Mengaktifkan `spellCheck={false}` untuk tampilan antarmuka yang bersih bebas dari garis merah pemeriksa ejaan.
+
 ## [2.2.67] - 2026-09-10
 ### Transformasi Ringkasan Mapel Menjadi Strip Pill Mini Ramping 1 Baris (Opsi B)
 

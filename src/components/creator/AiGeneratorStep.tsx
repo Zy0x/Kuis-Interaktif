@@ -1007,6 +1007,15 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
   onTopicChange,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const topicTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Otomatis sesuaikan tinggi textarea topik agar teks panjang selalu wrap ke bawah dan terbaca utuh
+  useEffect(() => {
+    if (topicTextareaRef.current) {
+      topicTextareaRef.current.style.height = 'auto';
+      topicTextareaRef.current.style.height = `${Math.max(46, topicTextareaRef.current.scrollHeight)}px`;
+    }
+  }, [topic, stage]);
 
   // Selalu reset posisi scroll ke paling atas dan kembalikan fokus saat tahapan funnel berubah
   useEffect(() => {
@@ -2048,12 +2057,19 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                 <label className="block text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white mb-1.5">
                   Topik atau Materi Pembahasan Kuis <span className="text-rose-500">*</span>
                 </label>
-                <input
-                  type="text"
+                <textarea
+                  ref={topicTextareaRef}
+                  rows={1}
+                  spellCheck={false}
                   value={topic}
-                  onChange={(e) => onTopicChange(e.target.value)}
+                  onChange={(e) => onTopicChange(e.target.value.replace(/\r?\n/g, ' '))}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                    }
+                  }}
                   placeholder="Ketik topik kuis atau pilih saran di bawah..."
-                  className="w-full px-4 py-2.5 sm:py-3 rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 font-semibold text-xs sm:text-sm focus:border-blue-500 focus:outline-none min-h-[44px] shadow-xs"
+                  className="w-full px-4 py-2.5 sm:py-3 rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 font-semibold text-xs sm:text-sm focus:border-blue-500 focus:outline-none min-h-[46px] shadow-xs resize-none overflow-hidden leading-relaxed transition-[height] duration-75"
                 />
               </div>
 
