@@ -29,43 +29,209 @@ export interface ParsedQuestionItem {
 }
 
 /**
+ * Membersihkan awalan label huruf atau angka pada teks opsi pilihan ganda
+ * Contoh: "A. Harimau" -> "Harimau", "(B) Kelinci" -> "Kelinci", "1. Kucing" -> "Kucing"
+ */
+export const cleanOptionText = (opt: any): string => {
+  if (typeof opt !== 'string') return String(opt ?? '').trim();
+  let cleaned = opt.trim();
+  // Hilangkan pola awalan seperti:
+  cleaned = cleaned.replace(/^(\*?\s*[\(\[]?[A-Ea-e0-9]+(?:[\)\]]|\s*[-–—:\.\)])\s*)/, '').trim();
+  return cleaned;
+};
+
+/**
+ * Menyelesaikan indeks jawaban benar secara toleran dari berbagai bentuk keluaran AI:
+ * - Integer 0-based: 0, 1, 2
+ * - String angka: "0", "1", "2"
+ * - Huruf opsi: "A", "B", "C", "D", "E"
+ * - Teks opsi langsung: "Harimau"
+ */
+export const resolveCorrectIndex = (
+  rawCorrect: any,
+  rawKunci: any,
+  options: string[]
+): number => {
+  if (options.length === 0) return 0;
+
+  // 1. Jika sudah bertipe number murni
+  if (typeof rawCorrect === 'number' && !isNaN(rawCorrect)) {
+    let idx = Math.floor(rawCorrect);
+    // Jika AI keliru menggunakan 1-based indexing (misal 1 untuk A, 4 untuk D) dan idx == options.length
+    if (idx === options.length && options.length > 0) {
+      idx = options.length - 1;
+    }
+    return Math.min(Math.max(0, idx), options.length - 1);
+  }
+  if (typeof rawKunci === 'number' && !isNaN(rawKunci)) {
+    let idx = Math.floor(rawKunci);
+    if (idx === options.length && options.length > 0) {
+      idx = options.length - 1;
+    }
+    return Math.min(Math.max(0, idx), options.length - 1);
+  }
+
+  // 2. Jika string
+  const val = String(rawCorrect ?? rawKunci ?? '').trim();
+  if (!val) return 0;
+
+  // Cek apakah string angka: "0", "1", "2", dll
+  if (/^\d+$/.test(val)) {
+    let num = parseInt(val, 10);
+    if (num === options.length && options.length > 0) {
+      num = options.length - 1;
+    }
+    return Math.min(Math.max(0, num), options.length - 1);
+  }
+
+  // Cek apakah huruf A, B, C, D, E (dengan atau tanpa tanda baca kurung/titik)
+  const letterMatch = val.match(/^[\(\[]?([A-Ea-e])[\)\]\.\:\-]?$/i);
+  if (letterMatch) {
+    const letter = letterMatch[1].toUpperCase();
+    const idx = ['A', 'B', 'C', 'D', 'E'].indexOf(letter);
+    if (idx >= 0 && idx < options.length) {
+      return idx;
+    }
+  }
+
+  // Cek pencocokan teks opsi langsung
+  const cleanVal = cleanOptionText(val).toLowerCase();
+  const foundIdx = options.findIndex((opt) => cleanOptionText(opt).toLowerCase() === cleanVal);
+  if (foundIdx >= 0) {
+    return foundIdx;
+  }
+
+  // Pencocokan substring toleran
+  const partialIdx = options.findIndex((opt) => {
+    const o = cleanOptionText(opt).toLowerCase();
+    return o.length > 2 && (o.includes(cleanVal) || cleanVal.includes(o));
+  });
+  if (partialIdx >= 0) {
+    return partialIdx;
+  }
+
+  return 0;
+};
+
+/**
+ * Sanitasi string JSON sebelum diurai:
+ * Mengatasi smart quotes, trailing comma, komentar JS, dan karakter tak terlihat.
+ */
+const sanitizeJsonString = (str: string): string => {
+  return str
+    // Standarisasi tanda petik miring / tipografis (smart quotes)
+    .replace(/[\u201C\u201D\u201E\u201F\u00AB\u00BB]/g, '"')
+    .replace(/[\u2018\u2019\u201A\u201B]/g, "'")
+    // Hapus komentar satu baris //...
+    .replace(/\/\/[^\r\n]*$/gm, '')
+    // Hapus komentar multi-baris /* ... */
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    // Hapus trailing comma sebelum kurung tutup } atau ]
+    .replace(/,\s*([\]\}])/g, '$1')
+    // Hapus karakter zero-width tak terlihat
+    .replace(/[\u200B-\u200D\uFEFF]/g, '')
+    .trim();
+};
+
+/**
+ * Mengekstraksi substring JSON yang valid dari teks luaran AI
+ * Membuang kalimat basa-basi pembuka dan penutup secara presisi.
+ */
+const extractJsonSubstring = (text: string): string | null => {
+  let clean = text.trim();
+  // Hilangkan pembungkus markdown ```json ... ``` jika ada
+  if (clean.includes('```')) {
+    const codeBlockMatch = clean.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+    if (codeBlockMatch && codeBlockMatch[1]) {
+      clean = codeBlockMatch[1].trim();
+    }
+  }
+
+  // Cari blok array [ ... ]
+  const firstBracket = clean.indexOf('[');
+  const lastBracket = clean.lastIndexOf(']');
+  if (firstBracket !== -1 && lastBracket > firstBracket) {
+    return clean.substring(firstBracket, lastBracket + 1);
+  }
+
+  // Cek apakah dibungkus objek { "questions": [ ... ] } atau { "soal": [ ... ] }
+  const firstBrace = clean.indexOf('{');
+  const lastBrace = clean.lastIndexOf('}');
+  if (firstBrace !== -1 && lastBrace > firstBrace) {
+    return clean.substring(firstBrace, lastBrace + 1);
+  }
+
+  return null;
+};
+
+/**
  * Menghasilkan teks instruksi prompt terstruktur presisi tinggi untuk ditempel
  * pada AI eksternal (ChatGPT, Google Gemini, Claude, DeepSeek, dll).
- * Menjamin 100% kepatuhan format JSON dan bebas AI slop.
+ * Menjamin 100% kepatuhan format JSON, anti-chat role lock, dan bebas AI slop.
  */
 export const generateAiPrompt = (params: GeneratePromptParams): string => {
   const level = params.educationLevel || (params.grade >= 10 ? 'SMA' : params.grade >= 7 ? 'SMP' : 'SD');
   const mcCount = params.mcOptionCount || (level === 'SMA' ? 5 : (level === 'SD' && params.grade <= 2 ? 3 : 4));
   const mcLetters = ['A', 'B', 'C', 'D', 'E'].slice(0, mcCount).join(', ');
-  const tfOptions = params.trueFalseStyle === 'sesuai_tidak' 
-    ? '["Sesuai", "Tidak Sesuai"]' 
+  
+  const tfLabels = params.trueFalseStyle === 'sesuai_tidak' 
+    ? ['Sesuai', 'Tidak Sesuai'] 
     : params.trueFalseStyle === 'ya_tidak' 
-    ? '["Ya", "Tidak"]' 
-    : '["Benar", "Salah"]';
+    ? ['Ya', 'Tidak'] 
+    : ['Benar', 'Salah'];
+  const tfOptions = JSON.stringify(tfLabels);
+  
   const matchingCount = params.matchingPairCount || (level === 'SD' ? 3 : 4);
 
-  let typeInstruction = `Gunakan tipe Pilihan Ganda dengan tepat ${mcCount} opsi (${mcLetters}).`;
+  // Tentukan jenis soal yang aktif berdasarkan input pengguna
+  const activeTypes: QuestionType[] = [];
+  let typeInstruction = '';
 
   if (params.typeProportions) {
     const p = params.typeProportions;
     const parts: string[] = [];
-    if (p.multiple_choice && p.multiple_choice > 0) parts.push(`${p.multiple_choice} butir Pilihan Ganda (type: "multiple_choice", ${mcCount} opsi: ${mcLetters})`);
-    if (p.true_false && p.true_false > 0) parts.push(`${p.true_false} butir Benar/Salah (type: "true_false", opsi: ${tfOptions})`);
-    if (p.short_answer && p.short_answer > 0) parts.push(`${p.short_answer} butir Isian Singkat (type: "short_answer", sertakan sinonim pada acceptableAnswers)`);
-    if (p.matching_pairs && p.matching_pairs > 0) parts.push(`${p.matching_pairs} butir Menjodohkan (type: "matching_pairs", ${matchingCount} pasang kartu)`);
+    if (p.multiple_choice && p.multiple_choice > 0) {
+      activeTypes.push('multiple_choice');
+      parts.push(`${p.multiple_choice} butir Pilihan Ganda (type: "multiple_choice", ${mcCount} opsi: ${mcLetters})`);
+    }
+    if (p.true_false && p.true_false > 0) {
+      activeTypes.push('true_false');
+      parts.push(`${p.true_false} butir Benar/Salah (type: "true_false", opsi: ${tfOptions})`);
+    }
+    if (p.short_answer && p.short_answer > 0) {
+      activeTypes.push('short_answer');
+      parts.push(`${p.short_answer} butir Isian Singkat (type: "short_answer", sertakan variasi pada acceptableAnswers)`);
+    }
+    if (p.matching_pairs && p.matching_pairs > 0) {
+      activeTypes.push('matching_pairs');
+      parts.push(`${p.matching_pairs} butir Menjodohkan (type: "matching_pairs", tepat ${matchingCount} pasang kartu)`);
+    }
     if (parts.length > 0) {
-      typeInstruction = `Wajib ikuti pembagian proporsi tipe soal berikut secara tepat:\n- ${parts.join('\n- ')}.`;
+      typeInstruction = `Wajib ikuti pembagian proporsi tipe soal berikut secara tepat:\n- ${parts.join('\n- ')}`;
     }
   } else if (params.questionType === 'true_false') {
-    typeInstruction = `Gunakan tipe Benar / Salah dengan 2 opsi tepat: ${tfOptions}.`;
+    activeTypes.push('true_false');
+    typeInstruction = `Gunakan HANYA tipe Benar / Salah (type: "true_false") dengan 2 opsi tepat: ${tfOptions}.`;
   } else if (params.questionType === 'short_answer') {
-    typeInstruction = 'Gunakan tipe Isian Singkat (siswa mengetikkan 1-2 kata kunci atau angka, wajib sertakan 2-4 sinonim/variasi pada acceptableAnswers).';
+    activeTypes.push('short_answer');
+    typeInstruction = 'Gunakan HANYA tipe Isian Singkat (type: "short_answer"). Siswa mengetikkan 1-2 kata kunci atau angka. Wajib sertakan 2-4 sinonim/variasi jawaban pada array acceptableAnswers.';
   } else if (params.questionType === 'image_guess') {
-    typeInstruction = `Gunakan tipe Tebak Gambar Misteri (${mcCount} opsi pilihan ${mcLetters} dengan imageCaption nama objek).`;
+    activeTypes.push('image_guess');
+    typeInstruction = `Gunakan HANYA tipe Tebak Gambar Misteri (type: "image_guess") dengan ${mcCount} opsi (${mcLetters}) dan wajib sertakan imageCaption nama objek yang ditebak.`;
   } else if (params.questionType === 'matching_pairs') {
-    typeInstruction = `Gunakan tipe Menjodohkan dengan tepat ${matchingCount} pasang kartu konsep kiri (left) dan kanan (right).`;
+    activeTypes.push('matching_pairs');
+    typeInstruction = `Gunakan HANYA tipe Menjodohkan (type: "matching_pairs") dengan tepat ${matchingCount} pasang kartu konsep kiri (left) dan kanan (right).`;
   } else if (params.questionType === 'campuran') {
-    typeInstruction = `Campurkan secara seimbang format: Pilihan Ganda (${mcCount} opsi: ${mcLetters}), Benar/Salah (${tfOptions}), Isian Singkat (dengan acceptableAnswers), dan Menjodohkan (${matchingCount} pasang).`;
+    activeTypes.push('multiple_choice', 'true_false', 'short_answer', 'matching_pairs');
+    typeInstruction = `Campurkan secara seimbang format soal berikut:\n- Pilihan Ganda (type: "multiple_choice", ${mcCount} opsi: ${mcLetters})\n- Benar / Salah (type: "true_false", opsi: ${tfOptions})\n- Isian Singkat (type: "short_answer", acceptableAnswers)\n- Menjodohkan (type: "matching_pairs", ${matchingCount} pasang)`;
+  } else {
+    // Default: Pilihan Ganda saja
+    activeTypes.push('multiple_choice');
+    typeInstruction = `Gunakan HANYA tipe Pilihan Ganda (type: "multiple_choice") dengan tepat ${mcCount} opsi (${mcLetters}).`;
+  }
+
+  if (activeTypes.length === 0) {
+    activeTypes.push('multiple_choice');
   }
 
   const contextBlock = params.contextNotes && params.contextNotes.trim()
@@ -73,7 +239,7 @@ export const generateAiPrompt = (params: GeneratePromptParams): string => {
     : '';
 
   const imageBlock = params.includeImages
-    ? `- Kebutuhan Gambar: Karena pengguna mengaktifkan opsi ilustrasi, pada SETIAP butir soal sertakan properti "imageCaption" (label singkat bahasa Indonesia) dan "imagePrompt" (deskripsi visual 1 kalimat bahasa Inggris untuk menghasilkan gambar edukatif).\n`
+    ? `- Kebutuhan Gambar: Karena opsi ilustrasi diaktifkan, pada SETIAP butir soal sertakan properti "imageCaption" (label singkat bahasa Indonesia) dan "imagePrompt" (deskripsi visual 1 kalimat bahasa Inggris untuk generator gambar).\n`
     : '';
 
   const levelText = level === 'SMA'
@@ -82,141 +248,340 @@ export const generateAiPrompt = (params: GeneratePromptParams): string => {
       ? `Kelas ${params.grade} SMP (Fase D)`
       : `Kelas ${params.grade} SD (Fase ${params.grade <= 2 ? 'A' : params.grade <= 4 ? 'B' : 'C'})`;
 
-  const roleText = level === 'SMA'
-    ? 'ahli penyusun materi dan soal kuis interaktif SMA / SMK berstandar Kurikulum Merdeka Indonesia. Karakteristik soal: berorientasi penalaran kritis tingkat tinggi (HOTS), pengujian konsep mendalam, studi kasus saintifik/sosial terapan, dan bahasa akademis yang lugas.'
-    : level === 'SMP'
-      ? 'ahli penyusun materi dan soal kuis interaktif Sekolah Menengah Pertama (SMP) berstandar Kurikulum Merdeka Indonesia. Karakteristik soal: komunikatif ramah remaja, merangsang daya nalar terapan, studi kasus kontekstual, dan literasi-numerasi terpadu.'
-      : 'ahli penyusun materi dan soal kuis interaktif Sekolah Dasar (SD) berstandar Kurikulum Merdeka Indonesia. Karakteristik soal: mendidik, menyenangkan, ramah anak, dan berbasis visual/situasi konkret.';
+  // Buat contoh dinamis HANYA untuk tipe soal yang aktif (mencegah model AI bodoh bingung atau salah tiru)
+  const sampleItems: string[] = [];
 
-  const mcOptionsExample = JSON.stringify(Array.from({ length: mcCount }, (_, i) => `Opsi ${String.fromCharCode(65 + i)}`));
+  if (activeTypes.includes('multiple_choice')) {
+    const sampleOptions = mcCount === 3
+      ? '["Pilihan Satu", "Pilihan Dua", "Pilihan Tiga"]'
+      : mcCount === 5
+      ? '["Pilihan Satu", "Pilihan Dua", "Pilihan Tiga", "Pilihan Empat", "Pilihan Lima"]'
+      : '["Pilihan Satu", "Pilihan Dua", "Pilihan Tiga", "Pilihan Empat"]';
 
-  return `Kamu adalah ${roleText}
-Buatkan ${params.count} butir soal kuis interaktif yang mendidik dan komunikatif untuk:
-- Mata Pelajaran: ${params.subject}
-- Tingkat: ${levelText}
-- Topik Pembahasan: "${params.topic}"
-- Tingkat Kesulitan: ${params.difficulty || 'sedang'}
-${contextBlock}${imageBlock}- Bentuk Soal: ${typeInstruction}
-
-ATURAN PENTING KELUARAN (WAJIB DIIKUTI TANPA KECUALI):
-Keluarkan HANYA satu blok kode JSON murni tanpa pembuka/penutup basa-basi, menggunakan array objek dengan struktur persis seperti contoh berikut:
-[
-  {
+    sampleItems.push(`  {
     "type": "multiple_choice",
-    "text": "Pertanyaan pilihan ganda dengan materi yang jelas dan mendidik?",
-    "options": ${mcOptionsExample},
+    "text": "Pertanyaan materi dengan stimulus penalaran yang jelas?",
+    "options": ${sampleOptions},
     "correctIndex": 0,
-    "explanation": "Penjelasan konsep mengapa jawaban ini benar.",
-    "imageCaption": "🌱 Ilustrasi materi",
-    "points": 10
-  },
-  {
+    "explanation": "Penjelasan konsep mengapa jawaban pertama benar (1-3 kalimat edukatif).",
+    "points": 10${params.includeImages ? ',\n    "imageCaption": "🌱 Label Ilustrasi Materi",\n    "imagePrompt": "Educational clean illustration of the topic"' : ''}
+  }`);
+  }
+
+  if (activeTypes.includes('true_false')) {
+    sampleItems.push(`  {
     "type": "true_false",
-    "text": "Pernyataan konseptual yang diuji kebenarannya?",
+    "text": "Pernyataan materi faktual atau konseptual yang diuji kebenarannya?",
     "options": ${tfOptions},
     "correctIndex": 0,
-    "explanation": "Penjelasan konsep kebenaran materi.",
-    "points": 10
-  },
-  {
+    "explanation": "Penjelasan konsep pendukung mengapa pernyataan ini bernilai benar/salah.",
+    "points": 10${params.includeImages ? ',\n    "imageCaption": "🔬 Label Ilustrasi Materi",\n    "imagePrompt": "A scientific diagram illustrating the fact"' : ''}
+  }`);
+  }
+
+  if (activeTypes.includes('short_answer')) {
+    sampleItems.push(`  {
     "type": "short_answer",
-    "text": "Pertanyaan isian singkat yang jelas dan terarah?",
+    "text": "Pertanyaan isian singkat terarah yang membutuhkan jawaban presisi?",
     "acceptableAnswers": ["Kunci Utama", "variasi sinonim", "ejaan lain", "angka"],
-    "explanation": "Penjelasan konsep materi yang tepat.",
-    "points": 10
-  },
-  {
+    "explanation": "Penjelasan konsep materi yang melatarbelakangi jawaban yang tepat.",
+    "points": 10${params.includeImages ? ',\n    "imageCaption": "📝 Label Ilustrasi",\n    "imagePrompt": "A clear graphic representing the answer"' : ''}
+  }`);
+  }
+
+  if (activeTypes.includes('matching_pairs')) {
+    const samplePairs = Array.from({ length: matchingCount }, (_, i) => 
+      `      {"left": "Konsep ${i + 1}", "right": "Pasangan ${i + 1}"}`
+    ).join(',\n');
+
+    sampleItems.push(`  {
     "type": "matching_pairs",
-    "text": "Jodohkan konsep di sebelah kiri dengan pasangannya di sebelah kanan!",
+    "text": "Jodohkan konsep di sebelah kiri dengan pasangan definisinya di sebelah kanan!",
     "matchingPairs": [
-${Array.from({ length: matchingCount }, (_, i) => `      {"left": "Konsep ${i + 1}", "right": "Pasangan ${i + 1}"}`).join(',\n')}
+${samplePairs}
     ],
-    "explanation": "Penjelasan keterkaitan konsep yang dijodohkan.",
-    "points": 15
-  },
-  {
+    "explanation": "Penjelasan keterkaitan antarkonsep yang dijodohkan.",
+    "points": 15${params.includeImages ? ',\n    "imageCaption": "🧩 Label Ilustrasi Menjodohkan",\n    "imagePrompt": "Diagram showing the related concepts connected together"' : ''}
+  }`);
+  }
+
+  if (activeTypes.includes('image_guess')) {
+    const sampleOptions = mcCount === 3
+      ? '["Objek Satu", "Objek Dua", "Objek Tiga"]'
+      : mcCount === 5
+      ? '["Objek Satu", "Objek Dua", "Objek Tiga", "Objek Empat", "Objek Lima"]'
+      : '["Objek Satu", "Objek Dua", "Objek Tiga", "Objek Empat"]';
+
+    sampleItems.push(`  {
     "type": "image_guess",
     "text": "Perhatikan petunjuk visual berikut! Apakah nama objek/organ ini?",
-    "options": ${mcOptionsExample},
+    "options": ${sampleOptions},
     "correctIndex": 0,
-    "imageCaption": "🫁 Organ Tubuh",
-    "explanation": "Penjelasan objek materi terkait.",
-    "points": 10
+    "imageCaption": "🫁 Organ Paru-paru",
+    "explanation": "Penjelasan identitas dan fungsi objek tersebut.",
+    "points": 10${params.includeImages ? ',\n    "imagePrompt": "Clean 3D medical style render of human lungs on plain background"' : ''}
+  }`);
   }
-]
 
-Panduan Teknis:
-1. Pastikan setiap butir soal menyertakan "type" sesuai format di atas.
-2. Untuk "short_answer", sertakan array "acceptableAnswers" berisi kata kunci benar dan variasinya.
-3. Untuk "matching_pairs", sertakan array "matchingPairs" minimal ${matchingCount} pasang objek { "left": "...", "right": "..." }.
-4. Untuk "multiple_choice" dan "image_guess", "correctIndex" adalah nomor indeks (0 untuk opsi pertama, dst).
-5. Bobot "points" standar adalah 10 (atau 15 untuk menjodohkan).`;
+  const exampleJsonBlock = `[\n${sampleItems.join(',\n')}\n]`;
+
+  return `[SISTEM INSTRUKSI: GENERATOR DATA SOAL / HEADLESS JSON COMPILER]
+PERAN ANDA:
+Anda bertindak murni sebagai ENGINE GENERATOR DATA SOAL berstandar Kurikulum Merdeka Indonesia.
+⚠️ PERHATIAN PENTING: Anda BUKAN pemandu kuis interaktif, BUKAN asisten obrolan (chat assistant), dan BUKAN lawan bermain kuis!
+
+PERINGATAN KERAS & ATURAN MUTLAK (WAJIB DIPATUHI 100%):
+1. DILARANG KERAS mengajak pengguna bermain kuis di dalam obrolan chat!
+2. JANGAN menyapa ("Halo!", "Tentu!", "Siap!"), JANGAN bertanya ("Apakah kamu siap?"), dan JANGAN menyajikan soal satu demi satu!
+3. WAJIB hasilkan SELURUH ${params.count} butir soal SEKALIGUS dalam SATU respons utuh!
+4. DILARANG menyisipkan teks pengantar atau penutup apapun di luar blok kode JSON!
+5. Keluaran WAJIB diawali dengan karakter '[' dan diakhiri dengan karakter ']' (HANYA SATU BLOK KODE JSON MURNI).
+
+SPESIFIKASI SOAL:
+- Mata Pelajaran: ${params.subject}
+- Tingkat / Jenjang: ${levelText}
+- Topik Pembahasan: "${params.topic}"
+- Jumlah Target: TEPAT ${params.count} butir soal lengkap
+- Tingkat Kesulitan: ${params.difficulty || 'sedang'} (berbobot edukatif, menstimulasi penalaran, kontekstual)
+${contextBlock}${imageBlock}- Aturan Tipe Soal:
+  ${typeInstruction}
+
+PANDUAN STRUKTUR JSON (ANTI-KESALAHAN FORMAT):
+1. Properti "type": Wajib bernilai salah satu dari: ${activeTypes.map((t) => `"${t}"`).join(', ')}.
+2. Properti "text": Teks pertanyaan yang jelas, berbobot, dan tidak ambigu.
+3. Properti "options": Array string berisi teks jawaban MURNI.
+   ⚠️ DILARANG MENYERTAKAN AWALAN HURUF SEPERTI "A. ", "B. ", "1. " DI DALAM ARRAY OPTIONS!
+   - Contoh BENAR: ["Jakarta", "Surabaya", "Bandung", "Medan"]
+   - Contoh SALAH: ["A. Jakarta", "B. Surabaya", "C. Bandung", "D. Medan"]
+4. Properti "correctIndex": WAJIB ANGKA BULAT INTEGER 0-BASED (0 untuk opsi pertama, 1 untuk opsi kedua, dst).
+   ⚠️ DILARANG MENGGUNAKAN HURUF ("A", "B") DAN DILARANG MENGGUNAKAN STRING ("0").
+5. Properti "explanation": Penjelasan konsep mengapa kunci tersebut benar (1-3 kalimat edukatif).
+6. Properti "points": Nilai poin standar (10 untuk pilihan ganda/isian/benar-salah, 15 untuk menjodohkan).
+7. Validitas JSON: Wajib mematuhi RFC 8259. DILARANG menggunakan trailing comma (koma gantung sebelum '}' atau ']') dan DILARANG menyisipkan komentar (seperti // atau /* */).
+
+CONTOH FORMAT KELUARAN YANG DIWAJIBKAN:
+${exampleJsonBlock}
+
+PENGINGAT TERAKHIR:
+Hasilkan TEPAT ${params.count} butir soal di atas SEKALIGUS sekarang juga. Mulai respons Anda langsung dengan karakter '[':`;
 };
 
 /**
  * Mengurai teks mentah (baik JSON maupun format teks bernomor bebas) menjadi
  * butir-butir soal yang siap dimasukkan ke Bank Soal kuis.
+ * Dilengkapi pertahanan berlapis terhadap format AI eksternal yang tidak sempurna.
  */
 export const parseRawQuestionsText = (rawText: string): ParsedQuestionItem[] => {
   const trimmed = rawText.trim();
   if (!trimmed) return [];
 
-  // 1. Coba parse sebagai JSON terlebih dahulu
-  try {
-    // Bersihkan pembungkus markdown ```json ... ``` jika ada
-    let cleanJson = trimmed;
-    if (cleanJson.includes('```')) {
-      const match = cleanJson.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-      if (match && match[1]) {
-        cleanJson = match[1].trim();
+  // 1. Ekstraksi & penguraian JSON dengan sanitasi tangguh
+  const jsonCandidate = extractJsonSubstring(trimmed);
+  if (jsonCandidate) {
+    try {
+      const sanitized = sanitizeJsonString(jsonCandidate);
+      let parsed: any = null;
+
+      try {
+        parsed = JSON.parse(sanitized);
+      } catch {
+        // Coba perbaiki format jika model AI menggunakan kutip satu (single quotes)
+        try {
+          const fixedQuotes = sanitized
+            .replace(/'([^'\\]*(?:\\.[^'\\]*)*)'\s*:/g, '"$1":')
+            .replace(/:\s*'([^'\\]*(?:\\.[^'\\]*)*)'/g, ': "$1"');
+          parsed = JSON.parse(fixedQuotes);
+        } catch {
+          // Gagal JSON, lanjut ke pengujian format lain di bawah
+        }
       }
-    }
 
-    const parsed = JSON.parse(cleanJson);
-    const list = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.questions) ? parsed.questions : null);
+      const list = Array.isArray(parsed)
+        ? parsed
+        : Array.isArray(parsed?.questions)
+        ? parsed.questions
+        : Array.isArray(parsed?.soal)
+        ? parsed.soal
+        : Array.isArray(parsed?.data)
+        ? parsed.data
+        : null;
 
-    if (list && list.length > 0) {
-      return list.map((item: any, idx: number): ParsedQuestionItem => {
-        const id = 'q_ai_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6) + '_' + idx;
-        const text = String(item.text || item.question || item.pertanyaan || '').trim();
-        const explanation = String(item.explanation || item.pembahasan || item.alasan || 'Jawaban ini benar sesuai konsep materi.').trim();
-        const imageCaption = item.imageCaption || item.ilustrasi ? String(item.imageCaption || item.ilustrasi).trim() : undefined;
-        const imageUrl = item.imageUrl || item.gambar ? String(item.imageUrl || item.gambar).trim() : undefined;
-        const points = typeof item.points === 'number' && item.points > 0 ? item.points : (typeof item.poin === 'number' ? item.poin : 10);
-        const customDurationSec = typeof item.customDurationSec === 'number' && item.customDurationSec > 0 ? item.customDurationSec : undefined;
+      if (list && list.length > 0) {
+        return list.map((item: any, idx: number): ParsedQuestionItem => {
+          const id = 'q_ai_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6) + '_' + idx;
+          const text = String(item.text || item.question || item.pertanyaan || item.soal || '').trim();
+          const explanation = String(item.explanation || item.pembahasan || item.alasan || item.penjelasan || 'Jawaban ini benar sesuai konsep materi.').trim();
+          const imageCaption = item.imageCaption || item.ilustrasi ? String(item.imageCaption || item.ilustrasi).trim() : undefined;
+          const imageUrl = item.imageUrl || item.gambar ? String(item.imageUrl || item.gambar).trim() : undefined;
+          const points = typeof item.points === 'number' && item.points > 0 ? item.points : (typeof item.poin === 'number' && item.poin > 0 ? item.poin : 10);
+          const customDurationSec = typeof item.customDurationSec === 'number' && item.customDurationSec > 0 ? item.customDurationSec : undefined;
 
-        const rawType = String(item.type || item.tipe || '').toLowerCase();
-        let type: QuestionType = 'multiple_choice';
+          const rawType = String(item.type || item.tipe || '').toLowerCase().trim();
+          let type: QuestionType = 'multiple_choice';
 
-        if (rawType === 'true_false' || rawType === 'benar_salah' || rawType === 'benar-salah') {
-          type = 'true_false';
-        } else if (rawType === 'short_answer' || rawType === 'isian' || rawType === 'isian_singkat' || item.acceptableAnswers || item.variasi_jawaban) {
-          type = 'short_answer';
-        } else if (rawType === 'matching_pairs' || rawType === 'menjodohkan' || rawType === 'jodohkan' || item.matchingPairs || item.pasangan) {
-          type = 'matching_pairs';
-        } else if (rawType === 'image_guess' || rawType === 'tebak_gambar') {
-          type = 'image_guess';
-        }
+          if (rawType === 'true_false' || rawType === 'benar_salah' || rawType === 'benar-salah' || rawType === 'bs' || rawType === 'b/s' || rawType === 'sesuai_tidak' || rawType === 'ya_tidak') {
+            type = 'true_false';
+          } else if (rawType === 'short_answer' || rawType === 'isian' || rawType === 'isian_singkat' || rawType === 'isian singkat' || item.acceptableAnswers || item.variasi_jawaban) {
+            type = 'short_answer';
+          } else if (rawType === 'matching_pairs' || rawType === 'menjodohkan' || rawType === 'jodohkan' || rawType === 'pasangan' || item.matchingPairs || item.pasangan) {
+            type = 'matching_pairs';
+          } else if (rawType === 'image_guess' || rawType === 'tebak_gambar' || rawType === 'tebak gambar') {
+            type = 'image_guess';
+          } else if (Array.isArray(item.options) && item.options.length === 2 && (String(item.options[0]).toLowerCase() === 'benar' || String(item.options[0]).toLowerCase() === 'ya' || String(item.options[0]).toLowerCase() === 'sesuai')) {
+            type = 'true_false';
+          }
 
-        // Validasi teks pertanyaan
-        if (!text) {
-          return {
-            id,
-            valid: false,
-            errorReason: 'Teks pertanyaan kosong.',
-            question: { id, text: 'Soal Tanpa Teks', type, options: ['-', '-'], correctIndex: 0, explanation, points }
-          };
-        }
+          // Validasi teks pertanyaan
+          if (!text) {
+            return {
+              id,
+              valid: false,
+              errorReason: 'Teks pertanyaan kosong.',
+              question: { id, text: 'Soal Tanpa Teks', type, options: ['-', '-'], correctIndex: 0, explanation, points }
+            };
+          }
 
-        // A. Format Benar / Salah
-        if (type === 'true_false') {
+          // A. Format Benar / Salah
+          if (type === 'true_false') {
+            const rawOptions = Array.isArray(item.options) ? item.options : (Array.isArray(item.pilihan) ? item.pilihan : []);
+            const options = rawOptions.length >= 2 ? rawOptions.slice(0, 2).map((o: any) => cleanOptionText(o)) : ['Benar', 'Salah'];
+            
+            let correctIndex = 0;
+            const val = String(item.correctIndex ?? item.kunci ?? item.jawaban ?? '').toLowerCase().trim();
+            if (val.includes('salah') || val.includes('tidak') || val.includes('false') || val === '1' || val === 'b') {
+              correctIndex = 1;
+            } else if (typeof item.correctIndex === 'number') {
+              correctIndex = item.correctIndex === 1 ? 1 : 0;
+            }
+
+            return {
+              id,
+              valid: true,
+              question: {
+                id,
+                text,
+                type: 'true_false',
+                options,
+                correctIndex,
+                explanation,
+                imageCaption,
+                imageUrl,
+                points,
+                customDurationSec
+              }
+            };
+          }
+
+          // B. Format Isian Singkat (Short Answer)
+          if (type === 'short_answer') {
+            let acceptable: string[] = [];
+            if (Array.isArray(item.acceptableAnswers)) {
+              acceptable = item.acceptableAnswers.map((s: any) => cleanOptionText(s)).filter(Boolean);
+            } else if (Array.isArray(item.variasi_jawaban)) {
+              acceptable = item.variasi_jawaban.map((s: any) => cleanOptionText(s)).filter(Boolean);
+            } else if (typeof item.acceptableAnswers === 'string') {
+              acceptable = item.acceptableAnswers.split(',').map((s: string) => cleanOptionText(s)).filter(Boolean);
+            } else if (typeof item.kunci === 'string') {
+              acceptable = [cleanOptionText(item.kunci)];
+            } else if (typeof item.jawaban === 'string') {
+              acceptable = [cleanOptionText(item.jawaban)];
+            } else if (Array.isArray(item.options) && item.options.length > 0) {
+              acceptable = [cleanOptionText(item.options[0])];
+            }
+
+            acceptable = Array.from(new Set(acceptable.filter(Boolean)));
+
+            if (acceptable.length === 0) {
+              return {
+                id,
+                valid: false,
+                errorReason: 'Kunci jawaban isian singkat belum ditentukan.',
+                question: { id, text, type, options: [''], correctIndex: 0, explanation, points }
+              };
+            }
+
+            return {
+              id,
+              valid: true,
+              question: {
+                id,
+                text,
+                type: 'short_answer',
+                options: [acceptable[0]],
+                correctIndex: 0,
+                acceptableAnswers: acceptable,
+                explanation,
+                imageCaption,
+                imageUrl,
+                points,
+                customDurationSec
+              }
+            };
+          }
+
+          // C. Format Menjodohkan (Matching Pairs)
+          if (type === 'matching_pairs') {
+            const rawPairs = Array.isArray(item.matchingPairs) 
+              ? item.matchingPairs 
+              : (Array.isArray(item.pasangan) ? item.pasangan : (Array.isArray(item.pairs) ? item.pairs : []));
+
+            const pairs: { left: string; right: string }[] = rawPairs
+              .map((p: any) => {
+                if (typeof p === 'string') {
+                  const parts = p.split(/↔|<->|->|==|=/);
+                  if (parts.length >= 2) {
+                    return { left: cleanOptionText(parts[0]), right: cleanOptionText(parts[1]) };
+                  }
+                }
+                return {
+                  left: cleanOptionText(p.left || p.kiri || p.item || p.key || ''),
+                  right: cleanOptionText(p.right || p.kanan || p.pasangan || p.value || p.match || '')
+                };
+              })
+              .filter((p: { left: string; right: string }) => p.left && p.right);
+
+            if (pairs.length < 2) {
+              return {
+                id,
+                valid: false,
+                errorReason: 'Minimal harus ada 2 pasangan kartu yang valid.',
+                question: { id, text, type, options: [], correctIndex: 0, explanation, points }
+              };
+            }
+
+            return {
+              id,
+              valid: true,
+              question: {
+                id,
+                text,
+                type: 'matching_pairs',
+                options: pairs.map((p) => `${p.left} ↔ ${p.right}`),
+                correctIndex: 0,
+                matchingPairs: pairs,
+                explanation,
+                imageCaption,
+                imageUrl,
+                points: points || 15,
+                customDurationSec
+              }
+            };
+          }
+
+          // D. Pilihan Ganda atau Tebak Gambar
           const rawOptions = Array.isArray(item.options) ? item.options : (Array.isArray(item.pilihan) ? item.pilihan : []);
-          const options = rawOptions.length >= 2 ? rawOptions.slice(0, 2).map(String) : ['Benar', 'Salah'];
-          let correctIndex = 0;
-          if (typeof item.correctIndex === 'number') {
-            correctIndex = item.correctIndex;
-          } else if (typeof item.kunci === 'string') {
-            correctIndex = item.kunci.toLowerCase().includes('salah') ? 1 : 0;
+          // Bersihkan awalan huruf dari opsi secara otomatis
+          const options = rawOptions.map((o: any) => cleanOptionText(o)).filter(Boolean);
+
+          const validIndex = resolveCorrectIndex(item.correctIndex, item.kunci || item.jawaban, options);
+
+          if (options.length < 2) {
+            return {
+              id,
+              valid: false,
+              errorReason: 'Pilihan jawaban kurang dari 2 opsi.',
+              question: { id, text, type, options, correctIndex: 0, explanation, imageCaption, points }
+            };
           }
 
           return {
@@ -225,9 +590,9 @@ export const parseRawQuestionsText = (rawText: string): ParsedQuestionItem[] => 
             question: {
               id,
               text,
-              type: 'true_false',
+              type: type === 'image_guess' ? 'image_guess' : 'multiple_choice',
               options,
-              correctIndex: Math.min(Math.max(0, correctIndex), 1),
+              correctIndex: validIndex,
               explanation,
               imageCaption,
               imageUrl,
@@ -235,137 +600,11 @@ export const parseRawQuestionsText = (rawText: string): ParsedQuestionItem[] => 
               customDurationSec
             }
           };
-        }
-
-        // B. Format Isian Singkat (Short Answer)
-        if (type === 'short_answer') {
-          let acceptable: string[] = [];
-          if (Array.isArray(item.acceptableAnswers)) {
-            acceptable = item.acceptableAnswers.map((s: any) => String(s).trim()).filter(Boolean);
-          } else if (Array.isArray(item.variasi_jawaban)) {
-            acceptable = item.variasi_jawaban.map((s: any) => String(s).trim()).filter(Boolean);
-          } else if (typeof item.acceptableAnswers === 'string') {
-            acceptable = item.acceptableAnswers.split(',').map((s: string) => s.trim()).filter(Boolean);
-          } else if (typeof item.kunci === 'string') {
-            acceptable = [item.kunci.trim()];
-          } else if (typeof item.jawaban === 'string') {
-            acceptable = [item.jawaban.trim()];
-          } else if (Array.isArray(item.options) && item.options.length > 0) {
-            acceptable = [String(item.options[0]).trim()];
-          }
-
-          if (acceptable.length === 0) {
-            return {
-              id,
-              valid: false,
-              errorReason: 'Kunci jawaban isian singkat belum ditentukan.',
-              question: { id, text, type, options: [''], correctIndex: 0, explanation, points }
-            };
-          }
-
-          return {
-            id,
-            valid: true,
-            question: {
-              id,
-              text,
-              type: 'short_answer',
-              options: [acceptable[0]],
-              correctIndex: 0,
-              acceptableAnswers: acceptable,
-              explanation,
-              imageCaption,
-              imageUrl,
-              points,
-              customDurationSec
-            }
-          };
-        }
-
-        // C. Format Menjodohkan (Matching Pairs)
-        if (type === 'matching_pairs') {
-          const rawPairs = Array.isArray(item.matchingPairs) ? item.matchingPairs : (Array.isArray(item.pasangan) ? item.pasangan : []);
-          const pairs: { left: string; right: string }[] = rawPairs
-            .map((p: any) => ({
-              left: String(p.left || p.kiri || p.item || '').trim(),
-              right: String(p.right || p.kanan || p.pasangan || '').trim()
-            }))
-            .filter((p: { left: string; right: string }) => p.left && p.right);
-
-          if (pairs.length < 2) {
-            return {
-              id,
-              valid: false,
-              errorReason: 'Minimal harus ada 2 pasangan kartu yang valid.',
-              question: { id, text, type, options: [], correctIndex: 0, explanation, points }
-            };
-          }
-
-          return {
-            id,
-            valid: true,
-            question: {
-              id,
-              text,
-              type: 'matching_pairs',
-              options: pairs.map((p) => `${p.left} ↔ ${p.right}`),
-              correctIndex: 0,
-              matchingPairs: pairs,
-              explanation,
-              imageCaption,
-              imageUrl,
-              points: points || 15,
-              customDurationSec
-            }
-          };
-        }
-
-        // D. Pilihan Ganda atau Tebak Gambar
-        const rawOptions = Array.isArray(item.options) ? item.options : (Array.isArray(item.pilihan) ? item.pilihan : []);
-        const options = rawOptions.map((o: any) => String(o).trim()).filter(Boolean);
-
-        let correctIndex = 0;
-        if (typeof item.correctIndex === 'number') {
-          correctIndex = item.correctIndex;
-        } else if (typeof item.kunci === 'number') {
-          correctIndex = item.kunci;
-        } else if (typeof item.correctIndex === 'string' || typeof item.kunci === 'string') {
-          const letter = String(item.correctIndex || item.kunci).trim().toUpperCase();
-          const letterIdx = ['A', 'B', 'C', 'D', 'E'].indexOf(letter);
-          if (letterIdx >= 0) correctIndex = letterIdx;
-        }
-
-        if (options.length < 2) {
-          return {
-            id,
-            valid: false,
-            errorReason: 'Pilihan jawaban kurang dari 2 opsi.',
-            question: { id, text, type, options, correctIndex: 0, explanation, imageCaption, points }
-          };
-        }
-
-        const validIndex = Math.min(Math.max(0, correctIndex), options.length - 1);
-
-        return {
-          id,
-          valid: true,
-          question: {
-            id,
-            text,
-            type: type === 'image_guess' ? 'image_guess' : 'multiple_choice',
-            options,
-            correctIndex: validIndex,
-            explanation,
-            imageCaption,
-            imageUrl,
-            points,
-            customDurationSec
-          }
-        };
-      });
+        });
+      }
+    } catch {
+      // Jika bukan JSON atau gagal parse, lanjutkan ke pemeriksa format selanjutnya
     }
-  } catch {
-    // Jika bukan JSON murni, lanjutkan ke parser di bawah
   }
 
   // 2. Cek apakah teks berformat CSV (tabel baris berkoma atau bertitik-koma)
@@ -382,22 +621,29 @@ export const parseRawQuestionsText = (rawText: string): ParsedQuestionItem[] => 
 
 /**
  * Parser pola teks alami (misal copy-paste dari Word, WhatsApp, atau ringkasan AI).
+ * Tahan terhadap kalimat pembuka chat seperti "Halo! Berikut soal kuisnya:".
  */
 const parseNaturalTextFormat = (text: string): ParsedQuestionItem[] => {
   const results: ParsedQuestionItem[] = [];
   
-  // Pisahkan butir soal berdasarkan pola angka pembuka: "1.", "1)", "Soal 1:", dll
-  const blocks = text.split(/(?:^|\n)(?=(?:(?:Soal\s*)?\d+[\.\)]|\#\s*\d+))/i).filter((b) => b.trim().length > 0);
+  // Cari posisi awal soal pertama untuk membuang salam pembuka percakapan AI
+  const firstQuestionMatch = text.search(/(?:^|\n)\s*(?:(?:Soal|Pertanyaan|No\.?|Nomor)?\s*\**\d+[\.\)]|\#+\s*\d+)/i);
+  const cleanText = firstQuestionMatch >= 0 ? text.substring(firstQuestionMatch).trim() : text.trim();
+
+  // Pisahkan butir soal berdasarkan pola angka pembuka: "1.", "1)", "Soal 1:", "**1.**", dll
+  const blocks = cleanText
+    .split(/(?:^|\n)(?=(?:(?:Soal|Pertanyaan|No\.?|Nomor)?\s*\**\d+[\.\)]|\#+\s*\d+))/i)
+    .filter((b) => b.trim().length > 0);
 
   blocks.forEach((block, idx) => {
-    const lines = block.split('\n').map((l) => l.trim()).filter(Boolean);
+    const lines = block.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
     if (lines.length === 0) return;
 
     const id = 'q_parsed_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6) + '_' + idx;
     
     let questionText = '';
     const optionLines: string[] = [];
-    let detectedKeyLetter: string | null = null;
+    let detectedKeyVal: string | null = null;
     let explanationText = '';
     let isTrueFalse = false;
     let isShortAnswer = false;
@@ -405,69 +651,74 @@ const parseNaturalTextFormat = (text: string): ParsedQuestionItem[] => {
     let acceptableAnswersList: string[] = [];
     const matchingPairsList: { left: string; right: string }[] = [];
 
-    lines.forEach((line) => {
+    for (const line of lines) {
       // Deteksi format Menjodohkan: "Hidung ↔ Menyaring debu" atau "Kiri -> Kanan"
       const matchPairRegex = /^[-*•]?\s*([^↔\->=]+)\s*(?:↔|<->|->|==|=)\s*(.+)$/;
       const pairMatch = line.match(matchPairRegex);
       if (pairMatch && (isMatching || line.includes('↔') || line.includes('<->') || line.includes('->'))) {
         isMatching = true;
-        matchingPairsList.push({ left: pairMatch[1].trim(), right: pairMatch[2].trim() });
-        return;
+        matchingPairsList.push({ left: cleanOptionText(pairMatch[1]), right: cleanOptionText(pairMatch[2]) });
+        continue;
       }
 
       // Deteksi kunci isian singkat: "Kunci Isian: ...", "Jawaban Singkat: ...", "Variasi: ..."
-      const shortAnsMatch = line.match(/(?:Kunci\s*(?:Isian|Singkat)?|Jawaban\s*Singkat|Variasi(?:\s*Jawaban)?)\s*:\s*(.+)/i);
+      const shortAnsMatch = line.match(/(?:Kunci\s*(?:Isian|Singkat)+|Jawaban\s*(?:Isian|Singkat)+|Variasi(?:\s*Jawaban)?|Acceptable\s*Answers?)\s*:\s*(.+)/i);
       if (shortAnsMatch) {
         isShortAnswer = true;
-        const vals = shortAnsMatch[1].split(',').map((s) => s.trim()).filter(Boolean);
+        const vals = shortAnsMatch[1].split(',').map((s) => cleanOptionText(s)).filter(Boolean);
         acceptableAnswersList.push(...vals);
-        return;
+        continue;
       }
 
-      // Deteksi kunci jawaban umum: "Kunci: A", "Kunci Jawaban: B", "Jawaban: Benar"
-      const keyMatch = line.match(/(?:Kunci(?:\s*Jawaban)?|Jawaban)\s*:\s*([A-E]|Benar|Salah)/i);
+      // Deteksi kunci jawaban umum: "Kunci: A", "Kunci Jawaban: B", "Jawaban: Benar", "Kunci: [A]"
+      const keyMatch = line.match(/(?:Kunci(?:\s*Jawaban)?|Jawaban|Answer)\s*:\s*(\*?\s*[\(\[]?([A-Ea-e0-9]|Benar|Salah|True|False)[\)\]]?|[^\n]+)/i);
       if (keyMatch) {
-        detectedKeyLetter = keyMatch[1].toUpperCase();
-        return;
+        detectedKeyVal = keyMatch[1].replace(/[\*\[\]\(\)]/g, '').trim();
+        continue;
       }
 
-      // Deteksi pembahasan: "Pembahasan: ...", "Penjelasan: ..."
-      const expMatch = line.match(/(?:Pembahasan|Penjelasan|Alasan)\s*:\s*(.+)/i);
+      // Deteksi pembahasan: "Pembahasan: ...", "Penjelasan: ...", "Alasan: ..."
+      const expMatch = line.match(/(?:Pembahasan|Penjelasan|Alasan|Catatan|Explanation)\s*:\s*(.+)/i);
       if (expMatch) {
         explanationText = expMatch[1].trim();
-        return;
+        continue;
       }
 
-      // Deteksi opsi: "A. ...", "B) ...", "*A. ..."
-      const optMatch = line.match(/^(\*?\s*[A-E][\.\)]\s*)(.+)/i);
+      // Deteksi opsi pilihan: "A. ...", "B) ...", "*A. ...", "(A) ...", "- A. ...", "A - ..."
+      const optMatch = line.match(/^(\*?\s*[-*•]?\s*[\(\[]?([A-Ea-e])(?:[\)\]]|\s*[-–—:\.\)])\s*)(.+)/i);
       if (optMatch) {
-        if (optMatch[1].includes('*')) {
-          const letter = optMatch[1].replace(/[^A-E]/gi, '').toUpperCase();
-          if (letter) detectedKeyLetter = letter;
+        if (optMatch[1].includes('*') || line.startsWith('*')) {
+          detectedKeyVal = optMatch[2].toUpperCase();
         }
-        optionLines.push(optMatch[2].trim());
-        return;
+        optionLines.push(cleanOptionText(optMatch[3]));
+        continue;
       }
 
       // Deteksi indikator Benar / Salah atau Menjodohkan
-      if (line.match(/^(?:Opsi\s*:?\s*)?\[?(?:Benar|Salah)\]?/i) || line.includes('[B/S]')) {
+      if (line.match(/^(?:Opsi\s*:?\s*)?\[?(?:Benar|Salah|True|False|Sesuai|Tidak Sesuai)\]?/i) || line.includes('[B/S]')) {
         isTrueFalse = true;
       }
       if (line.toLowerCase().includes('jodohkan') || line.toLowerCase().includes('pasangkan')) {
         isMatching = true;
       }
 
-      // Jika belum masuk opsi dan bukan keterangan lain, anggap bagian dari teks pertanyaan
+      // Jika belum masuk opsi dan bukan metadata lain, anggap bagian dari teks pertanyaan
       if (optionLines.length === 0 && matchingPairsList.length === 0 && acceptableAnswersList.length === 0) {
-        const cleanedQuestionLine = line.replace(/^(?:(?:Soal\s*)?\d+[\.\)]|\#\s*\d+)\s*/i, '').trim();
+        const cleanedQuestionLine = line
+          .replace(/^(?:(?:Soal|Pertanyaan|No\.?|Nomor)?\s*\**\d+[\.\)]|\#+\s*\d+)\s*/i, '')
+          .replace(/^\*\*|\*\*$/g, '')
+          .trim();
         if (cleanedQuestionLine) {
           questionText += (questionText ? ' ' : '') + cleanedQuestionLine;
         }
       }
-    });
+    }
 
     if (!questionText) {
-      questionText = lines[0].replace(/^(?:(?:Soal\s*)?\d+[\.\)]|\#\s*\d+)\s*/i, '').trim();
+      questionText = lines[0]
+        .replace(/^(?:(?:Soal|Pertanyaan|No\.?|Nomor)?\s*\**\d+[\.\)]|\#+\s*\d+)\s*/i, '')
+        .replace(/^\*\*|\*\*$/g, '')
+        .trim();
     }
 
     // Kasus Menjodohkan
@@ -511,8 +762,21 @@ const parseNaturalTextFormat = (text: string): ParsedQuestionItem[] => {
     }
 
     // Kasus Benar / Salah
-    if (isTrueFalse || (optionLines.length === 0 && (detectedKeyLetter === 'BENAR' || detectedKeyLetter === 'SALAH'))) {
-      const correctIdx = detectedKeyLetter === 'SALAH' ? 1 : 0;
+    const keyUpper = detectedKeyVal ? String(detectedKeyVal).toUpperCase().trim() : '';
+    const isBsKey = Boolean(
+      keyUpper === 'BENAR' || 
+      keyUpper === 'SALAH' ||
+      keyUpper === 'TRUE' ||
+      keyUpper === 'FALSE'
+    );
+    if (isTrueFalse || (optionLines.length === 0 && isBsKey)) {
+      const correctIdx = (
+        keyUpper === 'SALAH' || 
+        keyUpper === 'FALSE' ||
+        keyUpper === 'B' ||
+        keyUpper === '1'
+      ) ? 1 : 0;
+
       results.push({
         id,
         valid: Boolean(questionText),
@@ -531,16 +795,19 @@ const parseNaturalTextFormat = (text: string): ParsedQuestionItem[] => {
     }
 
     // Kasus Pilihan Ganda
-    let correctIdx = 0;
-    if (detectedKeyLetter) {
-      const letterIdx = ['A', 'B', 'C', 'D', 'E'].indexOf(detectedKeyLetter);
-      if (letterIdx >= 0) correctIdx = letterIdx;
-    }
-
     const validOptions = optionLines.length >= 2 ? optionLines : (
-      lines.slice(1).filter((l) => !l.toLowerCase().startsWith('kunci') && !l.toLowerCase().startsWith('pembahasan') && !l.toLowerCase().startsWith('variasi'))
+      lines.slice(1)
+        .map((l) => cleanOptionText(l))
+        .filter((l) => 
+          !l.toLowerCase().startsWith('kunci') && 
+          !l.toLowerCase().startsWith('jawaban') && 
+          !l.toLowerCase().startsWith('pembahasan') && 
+          !l.toLowerCase().startsWith('penjelasan') && 
+          !l.toLowerCase().startsWith('variasi')
+        )
     );
 
+    const correctIdx = resolveCorrectIndex(undefined, detectedKeyVal, validOptions);
     const isValid = Boolean(questionText) && validOptions.length >= 2;
 
     results.push({
@@ -555,8 +822,8 @@ const parseNaturalTextFormat = (text: string): ParsedQuestionItem[] => {
         id,
         text: questionText || 'Pertanyaan Baru',
         type: 'multiple_choice',
-        options: validOptions.length >= 2 ? validOptions : ['Pilihan A', 'Pilihan B'],
-        correctIndex: Math.min(correctIdx, Math.max(0, validOptions.length - 1)),
+        options: validOptions.length >= 2 ? validOptions : ['Pilihan Satu', 'Pilihan Dua'],
+        correctIndex: correctIdx,
         explanation: explanationText || 'Jawaban ini benar sesuai konsep materi.',
         points: 10
       }

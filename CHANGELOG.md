@@ -1,6 +1,31 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.92] - 2026-09-11
+### Overhaul Acuan Template Prompt AI Anti-Chat & Parser Ekstra Tangguh Multi-Lapis
+
+#### 1. Anti-Chat Role Lock & System Override (`generateAiPrompt`)
+- **Eliminasi Pemicu Mode Obrolan Interaktif**: Menghapus frasa pemicu roleplay obrolan seperti *"kuis interaktif"* dan *"komunikatif"* yang sebelumnya menyebabkan model AI chat (seperti ChatGPT, Gemini, Claude, DeepSeek) menyapa pengguna, bertanya *"Apakah kamu siap?"*, dan menyajikan soal satu demi satu layaknya pemandu kuis (*interactive quiz master*).
+- **Penetapan Peran Kompiler Data Murni**: Menerapkan blok instruksi tegas di bagian awal prompt: `PERAN: ENGINE GENERATOR DATA MURNI / HEADLESS JSON COMPILER`.
+- **Negative Constraints Mutlak**: Melarang keras kalimat pengantar/penutup, melarang menyapa, melarang menyajikan soal satu demi satu, dan mewajibkan seluruh butir soal dikeluarkan sekaligus dalam format blok kode JSON array `[ ... ]` murni.
+- **Tail Lock**: Menyisipkan pengingat penutup di baris terbawah prompt untuk memaksa model langsung memulai responsnya dengan karakter pembuka `[`.
+
+#### 2. Contoh JSON Dinamis Berbasis Tipe Soal Terpilih (*Dynamic JSON Examples*)
+- Menghilangkan contoh statis 5-tipe soal yang sebelumnya membingungkan model AI berkemampuan rendah (*untrained/dumb LLMs*) sehingga meniru seluruh tipe soal meski pengguna hanya memilih satu format.
+- Mengintegrasikan generator contoh yang secara dinamis hanya menampilkan blok contoh untuk format yang benar-benar aktif (misalnya jika memilih *Pilihan Ganda*, contoh yang ditampilkan hanya *Pilihan Ganda* dengan jumlah opsi yang sesuai).
+- Menyesuaikan struktur contoh secara tepat untuk mode *Benar/Salah*, *Isian Singkat*, *Menjodohkan*, *Tebak Gambar*, maupun proporsi seimbang pada tipe *Campuran*.
+
+#### 3. Aturan Skema Anti-Bodoh (*Foolproof Schema Rules*)
+- **Opsi Bersih Tanpa Label**: Memberikan larangan eksplisit untuk tidak menyertakan prefiks huruf seperti `"A. "`, `"B. "`, atau `"1. "` di dalam array `options` (menghindari tampilan berulang seperti *"A. A. Jakarta"* di antarmuka).
+- **Kunci 0-Based Integer**: Menegaskan bahwa `correctIndex` wajib berupa angka bulat 0-based (`0` untuk opsi pertama, `1` untuk kedua), serta melarang keras penggunaan huruf `"A"` atau string angka `"0"`.
+
+#### 4. Parser Ekstra Tangguh Multi-Lapis (*Ultra-Resilient Parser*)
+- **Ekstraksi Substring Cerdas**: Memotong teks masukan dari karakter `[` pertama hingga `]` terakhir (atau `{` pertama hingga `}` terakhir) sehingga salam pembuka chat (*pleasantries*) dan salam penutup AI dibuang secara otomatis tanpa merusak data.
+- **Sanitasi Sintaks JSON**: Membersihkan *trailing comma* sebelum `}` atau `]`, komentar satu baris (`//`) dan multi-baris (`/* */`), serta menstandarisasi tanda kutip miring (*smart/curly quotes*) menjadi kutip standar RFC 8259.
+- **Pembersih Prefiks Opsi Otomatis (`cleanOptionText`)**: Memotong awalan huruf/angka seperti `A. `, `(A) `, `[A] `, `1. `, `A - `, `A: ` pada setiap opsi agar teks pilihan selalu bersih dan rapi.
+- **Resolusi Kunci Jawaban Fleksibel (`resolveCorrectIndex`)**: Mampu mengonversi indeks kunci dari berbagai variasi keluaran AI, baik berupa integer, string angka, huruf (`A` -> `0`, `B` -> `1`), maupun teks jawaban langsung yang dicocokkan dengan teks opsi.
+- **Perbaikan Deteksi Format Teks Alami (`parseNaturalTextFormat`)**: Membuang kalimat pembuka percakapan sebelum nomor soal pertama, serta menyempurnakan ekspresi reguler deteksi isian singkat agar tidak salah mengenali kunci pilihan ganda umum (`Kunci: A`).
+
 ## [2.2.91] - 2026-09-11
 ### Implementasi Floating Toast Notification & Mini Spec Card Adaptif Funnel AI
 
