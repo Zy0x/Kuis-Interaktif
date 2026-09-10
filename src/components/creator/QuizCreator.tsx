@@ -26,9 +26,11 @@ import {
   Sparkles,
   Shuffle,
   Star,
-  Clock
+  Clock,
+  Loader2
 } from 'lucide-react';
 import { AiQuestionModal } from './AiQuestionModal';
+import { generateAiIllustrationUrl } from '../../lib/geminiApi';
 
 interface QuizCreatorProps {
   onBack: () => void;
@@ -195,6 +197,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   const [qCorrectIndex, setQCorrectIndex] = useState<number>(0);
   const [qExplanation, setQExplanation] = useState('');
   const [isAddingQuestion, setIsAddingQuestion] = useState(true);
+  const [isGeneratingSingleImage, setIsGeneratingSingleImage] = useState(false);
 
   // New Question Type Specific Form States
   const [qAcceptableAnswers, setQAcceptableAnswers] = useState<string>('');
@@ -312,6 +315,28 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
         setQImageUrl(reader.result as string);
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleGenerateAiImageForQuestion = () => {
+    playClick();
+    const promptBasis = qImageCaption.trim() || qText.trim();
+    if (!promptBasis) {
+      showToast('Tulis deskripsi ilustrasi atau pertanyaan terlebih dahulu.');
+      return;
+    }
+    setIsGeneratingSingleImage(true);
+    try {
+      const url = generateAiIllustrationUrl(promptBasis);
+      setQImageUrl(url);
+      if (!qImageCaption.trim()) {
+        setQImageCaption(promptBasis.slice(0, 40));
+      }
+      showToast('🎨 Ilustrasi edukasi AI berhasil dibuat!');
+    } catch {
+      showToast('Gagal membuat gambar AI.');
+    } finally {
+      setIsGeneratingSingleImage(false);
     }
   };
 
@@ -1304,27 +1329,82 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                         ))}
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-                        <input
-                          type="text"
-                          value={qImageCaption}
-                          onChange={(e) => setQImageCaption(e.target.value)}
-                          aria-label="Deskripsi ilustrasi"
-                          className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs font-medium"
-                        />
-
-                        <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer min-h-[36px]">
-                          <Upload className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-                          <span className="text-xs font-medium text-slate-600 dark:text-slate-300 truncate">
-                            {qImageUrl ? '✓ Foto Terpilih' : 'Unggah Foto'}
-                          </span>
+                      <div className="space-y-2 pt-1">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           <input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleImageUpload}
-                            className="hidden"
+                            type="text"
+                            value={qImageCaption}
+                            onChange={(e) => setQImageCaption(e.target.value)}
+                            placeholder="Kata kunci gambar (misal: Daun Hijau, Garuda)"
+                            aria-label="Deskripsi ilustrasi"
+                            className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs font-medium"
                           />
-                        </label>
+
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={handleGenerateAiImageForQuestion}
+                              disabled={isGeneratingSingleImage}
+                              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/60 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 text-xs font-bold transition-all min-h-[36px]"
+                              title="Buat gambar edukasi AI gratis tanpa API key"
+                            >
+                              {isGeneratingSingleImage ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-600" />
+                              ) : (
+                                <Sparkles className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                              )}
+                              <span>{isGeneratingSingleImage ? 'Membuat...' : '🎨 Buat Gambar AI'}</span>
+                            </button>
+
+                            <label className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer min-h-[36px]">
+                              <Upload className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                              <span className="text-xs font-medium text-slate-600 dark:text-slate-300 truncate">
+                                {qImageUrl ? 'Ganti Foto' : 'Unggah Foto'}
+                              </span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleImageUpload}
+                                className="hidden"
+                              />
+                            </label>
+                          </div>
+                        </div>
+
+                        {/* Pratinjau Gambar / Ilustrasi */}
+                        {qImageUrl && (
+                          <div className="relative p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 flex items-center gap-3">
+                            <img
+                              src={qImageUrl}
+                              alt={qImageCaption || 'Pratinjau Ilustrasi'}
+                              className="w-14 h-14 object-cover rounded-lg border border-slate-200 dark:border-slate-700 flex-shrink-0"
+                              loading="lazy"
+                              onError={(e) => {
+                                (e.target as HTMLElement).style.opacity = '0.5';
+                              }}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
+                                {qImageCaption || 'Ilustrasi Soal'}
+                              </p>
+                              <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                                {qImageUrl.startsWith('data:') ? 'Foto dari perangkat' : 'Gambar Ilustrasi AI'}
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                playClick();
+                                setQImageUrl(undefined);
+                              }}
+                              className="p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-lg text-xs font-bold transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
+                              title="Hapus gambar"
+                              aria-label="Hapus Gambar"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
 

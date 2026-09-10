@@ -2,8 +2,20 @@ import type { QuestionType, QuizQuestion, Subject } from '../types/quiz';
 import { generateCurriculumSeedQuestions } from './aiQuestionParser';
 
 export type AiProvider = 'gemini' | 'groq';
-export type GeminiModel = 'gemini-1.5-flash' | 'gemini-1.5-pro' | 'gemini-2.0-flash';
-export type GroqModel = 'llama-3.3-70b-versatile' | 'llama-3.1-8b-instant';
+
+export type GeminiModel = 
+  | 'gemini-2.0-flash' 
+  | 'gemini-2.0-flash-thinking-exp-01-21' 
+  | 'gemini-1.5-pro' 
+  | 'gemini-1.5-flash' 
+  | 'gemini-1.5-flash-8b';
+
+export type GroqModel = 
+  | 'llama-3.3-70b-versatile' 
+  | 'llama-3.1-8b-instant' 
+  | 'deepseek-r1-distill-llama-70b' 
+  | 'gemma2-9b-it' 
+  | 'mixtral-8x7b-32768';
 
 const STORAGE_KEY_AI_PROVIDER = 'kuis_sd_ai_provider';
 const STORAGE_KEY_GEMINI_API_KEY = 'kuis_sd_gemini_api_key';
@@ -22,6 +34,7 @@ export interface GenerateAiQuestionsParams {
   groqModel?: GroqModel;
   model?: string; // generic fallback
   apiKey?: string;
+  includeAiImages?: boolean; // Otomatis lampirkan ilustrasi AI untuk soal tebak gambar / bergambar
 }
 
 export interface HybridGenerateResult {
@@ -80,12 +93,19 @@ export function hasGeminiApiKey(): boolean {
 export function getStoredGeminiModel(): GeminiModel {
   try {
     const saved = localStorage.getItem(STORAGE_KEY_GEMINI_MODEL) as GeminiModel;
-    if (saved === 'gemini-1.5-pro' || saved === 'gemini-2.0-flash') {
+    const validModels: GeminiModel[] = [
+      'gemini-2.0-flash',
+      'gemini-2.0-flash-thinking-exp-01-21',
+      'gemini-1.5-pro',
+      'gemini-1.5-flash',
+      'gemini-1.5-flash-8b'
+    ];
+    if (saved && validModels.includes(saved)) {
       return saved;
     }
-    return 'gemini-1.5-flash';
+    return 'gemini-2.0-flash';
   } catch {
-    return 'gemini-1.5-flash';
+    return 'gemini-2.0-flash';
   }
 }
 
@@ -125,8 +145,15 @@ export function hasGroqApiKey(): boolean {
 export function getStoredGroqModel(): GroqModel {
   try {
     const saved = localStorage.getItem(STORAGE_KEY_GROQ_MODEL) as GroqModel;
-    if (saved === 'llama-3.1-8b-instant') {
-      return 'llama-3.1-8b-instant';
+    const validModels: GroqModel[] = [
+      'llama-3.3-70b-versatile',
+      'llama-3.1-8b-instant',
+      'deepseek-r1-distill-llama-70b',
+      'gemma2-9b-it',
+      'mixtral-8x7b-32768'
+    ];
+    if (saved && validModels.includes(saved)) {
+      return saved;
     }
     return 'llama-3.3-70b-versatile';
   } catch {
@@ -200,6 +227,26 @@ ATURAN WAJIB OUTPUT:
 }`;
 }
 
+/**
+ * Buat URL ilustrasi edukatif berbasis AI (100% Gratis, tanpa API Key atau kuota).
+ * Menggunakan Pollinations AI Engine dengan parameter kurikulum ramah anak.
+ */
+export function generateAiIllustrationUrl(prompt: string, options?: { width?: number; height?: number; seed?: number }): string {
+  const width = options?.width || 600;
+  const height = options?.height || 400;
+  const seed = options?.seed ?? Math.floor(Math.random() * 1000000);
+
+  // Bersihkan teks prompt dan tambahkan penegasan gaya ilustrasi edukasi SD
+  const cleanPrompt = prompt
+    .replace(/[^\w\s\u00C0-\u024F\u1E00-\u1EFF,-]/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  const educationalPrompt = `educational illustration for elementary school children, clean colorful 3d vector style, vibrant clear subject: ${cleanPrompt || 'science nature learning'}`;
+
+  return `https://image.pollinations.ai/prompt/${encodeURIComponent(educationalPrompt)}?width=${width}&height=${height}&nologo=true&seed=${seed}`;
+}
+
 function cleanJsonResponse(rawResponse: string): string {
   let cleaned = rawResponse.trim();
   if (cleaned.startsWith('```json')) {
@@ -213,7 +260,7 @@ function cleanJsonResponse(rawResponse: string): string {
   return cleaned.trim();
 }
 
-function normalizeQuestions(rawList: any[], providerPrefix: string): QuizQuestion[] {
+function normalizeQuestions(rawList: any[], providerPrefix: string, autoGenerateImages = false): QuizQuestion[] {
   return rawList.map((item, idx) => {
     const qType: QuestionType = (
       ['multiple_choice', 'true_false', 'short_answer', 'image_guess', 'matching_pairs'].includes(item.type)
@@ -240,10 +287,20 @@ function normalizeQuestions(rawList: any[], providerPrefix: string): QuizQuestio
       ? item.customDurationSec 
       : undefined;
 
+    const rawCaption = item.imageCaption ? String(item.imageCaption) : undefined;
+    let imageUrl = item.imageUrl ? String(item.imageUrl) : undefined;
+
+    // Otomatis pasang ilustrasi gambar jika diminta atau bertipe tebak gambar
+    if (!imageUrl && (autoGenerateImages || qType === 'image_guess') && (rawCaption || item.text)) {
+      imageUrl = generateAiIllustrationUrl(rawCaption || String(item.text).slice(0, 80));
+    }
+
     return {
       id: `q_${providerPrefix}_${Date.now()}_${idx}_${Math.random().toString(36).substring(2, 6)}`,
       text: String(item.text || `Pertanyaan #${idx + 1}`),
       type: qType,
+      imageUrl,
+      imageCaption: rawCaption,
       options,
       correctIndex,
       explanation: String(item.explanation || 'Pembahasan materi terkait konsep kurikulum.'),
@@ -251,7 +308,6 @@ function normalizeQuestions(rawList: any[], providerPrefix: string): QuizQuestio
       customDurationSec,
       acceptableAnswers: Array.isArray(item.acceptableAnswers) ? item.acceptableAnswers.map(String) : undefined,
       matchingPairs: Array.isArray(item.matchingPairs) ? item.matchingPairs : undefined,
-      imageCaption: item.imageCaption ? String(item.imageCaption) : undefined,
     };
   });
 }
@@ -320,7 +376,7 @@ export async function callGeminiApi(params: GenerateAiQuestionsParams): Promise<
       throw new Error('Format balasan Gemini tidak memuat daftar soal.');
     }
 
-    return normalizeQuestions(list, 'gemini');
+    return normalizeQuestions(list, 'gemini', params.includeAiImages);
   } catch (err: unknown) {
     clearTimeout(timeoutId);
     if (err instanceof Error) {
@@ -412,7 +468,7 @@ Kembalikan objek JSON dengan format:
       throw new Error('Format balasan Groq tidak memuat daftar soal yang valid.');
     }
 
-    return normalizeQuestions(list, 'groq');
+    return normalizeQuestions(list, 'groq', params.includeAiImages);
   } catch (err: unknown) {
     clearTimeout(timeoutId);
     if (err instanceof Error) {
@@ -492,6 +548,14 @@ export async function generateHybridQuizQuestions(
     params.count,
     params.questionType
   );
+
+  if (params.includeAiImages) {
+    localQuestions.forEach((q) => {
+      if (!q.imageUrl) {
+        q.imageUrl = generateAiIllustrationUrl(q.imageCaption || q.text.slice(0, 80));
+      }
+    });
+  }
 
   return {
     questions: localQuestions,

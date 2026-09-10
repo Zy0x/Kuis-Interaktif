@@ -1,6 +1,35 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.43] - 2026-09-10
+### Ekspansi Model AI Generasi Baru (Gemini 2.0 Flash Thinking, Groq DeepSeek R1), Generator Gambar Edukasi AI 100% Gratis & Dokumentasi Komprehensif
+
+#### 1. Ekspansi Model AI Generasi Baru (Gemini & Groq)
+- **Keluarga Model Google Gemini Terkini:**
+  - `gemini-2.0-flash`: Generasi terbaru dengan kecepatan respon tinggi dan instruksi cerdas untuk penyusunan soal tematik.
+  - `gemini-2.0-flash-thinking-exp-01-21`: Model penalaran bertahap (*chain-of-thought*) untuk penyusunan soal HOTS, literasi kompleks, dan eksplorasi sains.
+  - `gemini-1.5-pro`: Model kasta tertinggi dengan penalaran mendalam, optimal untuk pengguna langganan Google One AI Premium / Gemini PRO.
+  - `gemini-1.5-flash` & `gemini-1.5-flash-8b`: Pilihan model cepat dan ultra hemat kuota.
+  - Klarifikasi seputar penamaan versi AI (Google Gemini 2.0 vs rumor generasi mendatang).
+- **Ragam Model Unggulan Groq Cloud LPU™:**
+  - `llama-3.3-70b-versatile`: Model 70B berkualitas tinggi setara GPT-4 dengan tata bahasa Indonesia presisi.
+  - `deepseek-r1-distill-llama-70b`: Model reasoning penalaran tingkat tinggi untuk logika matematika dan deduksi sains SD.
+  - `llama-3.1-8b-instant`: Kecepatan komputasi super kilat (< 0,5 detik).
+  - `gemma2-9b-it` & `mixtral-8x7b-32768`: Alternatif model kompak dan pemrosesan konteks panjang.
+
+#### 2. Integrasi Pembuat Gambar Edukasi AI (100% Gratis Selamanya)
+- **Mesin Visual Pollinations AI / Flux Engine:**
+  - Menghadirkan generator ilustrasi edukatif berbasis AI secara cuma-cuma tanpa memerlukan API key tambahan, tanpa langganan, dan tanpa batasan kuota.
+  - Otomatis mengoptimasi prompt menjadi gaya ilustrasi 3D vektor edukasi anak SD (*clean, colorful, vibrant, child-friendly*).
+- **Pembuatan Gambar Otomatis di Modal Asisten AI:**
+  - Dilengkapi sakelar *"🎨 Sertakan Ilustrasi Gambar AI"* yang secara otomatis melampirkan gambar visual relevan ke butir soal kuis atau mode tebak gambar (*image_guess*).
+- **Tombol "🎨 Buat Gambar AI" Mandiri di Editor Soal:**
+  - Guru dapat membuat gambar ilustrasi langsung dari kata kunci deskripsi atau teks pertanyaan pada formulir pembuatan soal (Langkah 2).
+  - Pratinjau thumbnail visual langsung muncul dengan informasi asal media serta tombol hapus cepat.
+
+#### 3. Panduan Resmi Komprehensif Model & Gambar AI
+- Menyediakan dokumen panduan lengkap `docs/panduan-model-ai-dan-generate-gambar.md` yang merinci setiap model yang didukung, cara memanfaatkan langganan Gemini PRO, akses gratis Groq Cloud, dan panduan lengkap membuat gambar edukasi AI.
+
 ## [2.2.42] - 2026-09-10
 ### Dukungan Penuh Groq LPU Cloud API (Super Cepat ⚡), Panel Multi-Provider Gemini & Groq, serta Panduan Lengkap
 

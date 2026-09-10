@@ -98,6 +98,7 @@ export const AiQuestionModal: React.FC<AiQuestionModalProps> = ({
     const prov = getStoredAiProvider();
     return prov === 'groq' ? hasGroqApiKey() : hasGeminiApiKey();
   });
+  const [includeAiImages, setIncludeAiImages] = useState<boolean>(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -105,6 +106,7 @@ export const AiQuestionModal: React.FC<AiQuestionModalProps> = ({
       setGrade(currentGrade);
       setCopiedPrompt(false);
       setNotification(null);
+      setIncludeAiImages(false);
       const prov = getStoredAiProvider();
       setActiveProvider(prov);
       setGeminiKeyInput(getStoredGeminiApiKey());
@@ -197,6 +199,7 @@ export const AiQuestionModal: React.FC<AiQuestionModalProps> = ({
         geminiModel,
         groqModel,
         apiKey: (activeProvider === 'groq' ? groqKeyInput.trim() : geminiKeyInput.trim()) || undefined,
+        includeAiImages,
       });
 
       setRawText(JSON.stringify(result.questions, null, 2));
@@ -597,9 +600,11 @@ Pembahasan: Insang menyaring oksigen yang terlarut di dalam air.`;
                               onChange={(e) => setGeminiModel(e.target.value as GeminiModel)}
                               className="w-full px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-xs font-semibold focus:outline-none min-h-[38px]"
                             >
-                              <option value="gemini-1.5-flash">Gemini 1.5 Flash (Cepat & Hemat)</option>
-                              <option value="gemini-1.5-pro">Gemini 1.5 Pro (Penalaran Tinggi / Khusus PRO)</option>
-                              <option value="gemini-2.0-flash">Gemini 2.0 Flash (Generasi Baru)</option>
+                              <option value="gemini-2.0-flash">Gemini 2.0 Flash (Generasi Baru, Cepat & Cerdas)</option>
+                              <option value="gemini-2.0-flash-thinking-exp-01-21">Gemini 2.0 Flash Thinking (Penalaran Mendalam)</option>
+                              <option value="gemini-1.5-pro">Gemini 1.5 Pro (Model Penalaran Tinggi / Langganan PRO)</option>
+                              <option value="gemini-1.5-flash">Gemini 1.5 Flash (Cepat & Hemat Kuota)</option>
+                              <option value="gemini-1.5-flash-8b">Gemini 1.5 Flash-8B (Super Ringan)</option>
                             </select>
                           </div>
 
@@ -624,7 +629,7 @@ Pembahasan: Insang menyaring oksigen yang terlarut di dalam air.`;
                         </div>
 
                         <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                          💡 <strong>Langganan Gemini PRO?</strong> Akun Google Anda berhak mendapatkan API Key di <strong>aistudio.google.com</strong> secara gratis (kuota 15 req/menit). Panduan lengkap di <code className="text-[10px] bg-slate-200 dark:bg-slate-750 px-1 py-0.5 rounded">docs/panduan-integrasi-gemini-ai.md</code>.
+                          💡 <strong>Langganan Gemini PRO?</strong> Akun Google Anda berhak mendapatkan API Key di <strong>aistudio.google.com</strong> secara gratis (kuota 15 req/menit). Anda juga bisa menikmati model penalaran tertinggi <em>Gemini 1.5 Pro</em> dan <em>Gemini 2.0 Flash Thinking</em>. Panduan lengkap di <code className="text-[10px] bg-slate-200 dark:bg-slate-750 px-1 py-0.5 rounded">docs/panduan-integrasi-gemini-ai.md</code>.
                         </p>
                       </div>
                     ) : (
@@ -665,15 +670,18 @@ Pembahasan: Insang menyaring oksigen yang terlarut di dalam air.`;
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           <div>
                             <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">
-                              Model Llama (Groq):
+                              Model AI (Groq LPU):
                             </label>
                             <select
                               value={groqModel}
                               onChange={(e) => setGroqModel(e.target.value as GroqModel)}
                               className="w-full px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-xs font-semibold focus:outline-none min-h-[38px]"
                             >
-                              <option value="llama-3.3-70b-versatile">Llama 3.3 70B (Cerdas & Akurat - Rekomendasi)</option>
-                              <option value="llama-3.1-8b-instant">Llama 3.1 8B (Super Kilat &lt; 1 detik)</option>
+                              <option value="llama-3.3-70b-versatile">Llama 3.3 70B (Cerdas & Akurat - Rekomendasi Utama)</option>
+                              <option value="llama-3.1-8b-instant">Llama 3.1 8B (Super Kilat &lt; 0.5 detik)</option>
+                              <option value="deepseek-r1-distill-llama-70b">DeepSeek R1 70B (Penalaran & Logika MTK)</option>
+                              <option value="gemma2-9b-it">Google Gemma 2 9B (Kompak & Efisien)</option>
+                              <option value="mixtral-8x7b-32768">Mixtral 8x7B (Konteks Panjang 32k)</option>
                             </select>
                           </div>
 
@@ -698,12 +706,43 @@ Pembahasan: Insang menyaring oksigen yang terlarut di dalam air.`;
                         </div>
 
                         <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                          ⚡ <strong>Groq LPU:</strong> Komputasi inferensi tercepat di dunia. 10 butir soal kuis selesai dibuat dalam waktu &lt; 1 detik tanpa perlu kartu kredit. Panduan lengkap di <code className="text-[10px] bg-slate-200 dark:bg-slate-750 px-1 py-0.5 rounded">docs/panduan-integrasi-groq-ai.md</code>.
+                          ⚡ <strong>Groq LPU:</strong> Komputasi inferensi tercepat di dunia. Kini mendukung <em>Llama 3.3 70B</em> dan <em>DeepSeek R1</em> dengan penalaran mendalam. Panduan lengkap di <code className="text-[10px] bg-slate-200 dark:bg-slate-750 px-1 py-0.5 rounded">docs/panduan-integrasi-groq-ai.md</code>.
                         </p>
                       </div>
                     )}
                   </div>
                 )}
+              </div>
+
+              {/* Opsi Ilustrasi Gambar AI Otomatis (Pollinations AI) */}
+              <div className="p-3 bg-gradient-to-r from-indigo-50/70 to-purple-50/70 dark:from-indigo-950/30 dark:to-purple-950/30 rounded-2xl border border-indigo-200/80 dark:border-indigo-800/60 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center flex-shrink-0 text-sm shadow-sm">
+                    🎨
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 flex-wrap">
+                      <span>Sertakan Ilustrasi Gambar AI</span>
+                      <span className="px-1.5 py-0.2 rounded text-[10px] bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-extrabold">Gratis 100%</span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                      Otomatis melampirkan gambar edukatif ramah anak di setiap soal
+                    </p>
+                  </div>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                  <input
+                    type="checkbox"
+                    checked={includeAiImages}
+                    onChange={(e) => {
+                      playClick();
+                      setIncludeAiImages(e.target.checked);
+                    }}
+                    className="sr-only peer"
+                    aria-label="Sertakan Gambar AI Edukasi Otomatis"
+                  />
+                  <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-indigo-600"></div>
+                </label>
               </div>
 
               {/* Action Buttons */}
