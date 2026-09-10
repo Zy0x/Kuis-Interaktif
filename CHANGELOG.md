@@ -1,6 +1,17 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.85] - 2026-09-11
+### Penyeragaman Desain Input Field Prompt & Berkas Selaras Tahap Sebelumnya
+
+#### 1. Keselarasan Visual Input Field & Textarea
+- Menyeragamkan gaya visual kolom input/textarea pada kartu **Prompt / Berkas** (Tahap 4) agar persis selaras dengan kolom input pada tahap sebelumnya (Tahap 2):
+  - Menggunakan sudut membulat `rounded-2xl` yang halus dan konsisten.
+  - Menerapkan ketebalan bingkai `border-2 border-slate-300 dark:border-slate-700` dengan elevasi bayangan `shadow-xs`.
+  - Menyelaraskan warna latar permukaan `bg-white dark:bg-slate-800` pada mode terang dan gelap.
+  - Menghadirkan ring fokus interaktif `focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20`.
+- Memperbarui tab switcher metode masukan (*Tempel Teks* vs *Unggah Berkas*) serta tombol aksi utama dengan palet warna primer biru yang konsisten.
+
 ## [2.2.84] - 2026-09-11
 ### Pembersihan Modal Kunci API Pribadi (Bebas AI Slop & Bahasa Jelas)
 

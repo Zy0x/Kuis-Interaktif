@@ -3239,18 +3239,18 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-stretch">
                 
                 {/* Kolom Kiri: Teks Prompt Siap Pakai */}
-                <div className="lg:col-span-6 flex flex-col justify-between p-4 sm:p-5 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-200/80 dark:border-indigo-900/60 space-y-3.5">
+                <div className="lg:col-span-6 flex flex-col justify-between p-4 sm:p-5 rounded-3xl bg-slate-50/80 dark:bg-slate-850/60 border border-slate-200 dark:border-slate-800 space-y-3.5 shadow-2xs">
                   <div className="space-y-2.5">
                     <div className="flex items-center justify-between flex-wrap gap-2">
-                      <span className="font-extrabold text-xs sm:text-sm text-indigo-950 dark:text-indigo-200 flex items-center gap-2">
-                        <span className="w-5 h-5 rounded-full bg-indigo-600 text-white text-[11px] font-black inline-flex items-center justify-center">1</span>
+                      <span className="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-[11px] font-black inline-flex items-center justify-center">1</span>
                         <span>Salin Prompt AI</span>
                       </span>
 
                       <button
                         type="button"
                         onClick={handleCopyPrompt}
-                        className="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center gap-2 shadow-xs btn-press min-h-[38px]"
+                        className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-2 shadow-xs btn-press min-h-[36px]"
                       >
                         {copiedPrompt ? (
                           <>
@@ -3266,29 +3266,31 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                       </button>
                     </div>
 
-                    <textarea
-                      readOnly
-                      rows={5}
-                      value={generatedPromptText}
-                      className="w-full p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-900 text-xs font-mono text-slate-700 dark:text-slate-300 focus:outline-none select-all leading-relaxed resize-none"
-                    />
+                    <div className="relative group">
+                      <textarea
+                        readOnly
+                        rows={5}
+                        value={generatedPromptText}
+                        className="w-full px-4 py-3 rounded-2xl border-2 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 font-mono text-xs sm:text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none select-all leading-relaxed shadow-xs min-h-[120px] sm:min-h-[135px] resize-y"
+                      />
+                    </div>
                   </div>
 
-                  <div className="p-3 rounded-xl bg-indigo-100/70 dark:bg-indigo-900/40 text-[11px] text-indigo-800 dark:text-indigo-300 leading-relaxed font-medium">
+                  <div className="p-3 rounded-2xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200/70 dark:border-blue-900/50 text-[11px] text-blue-900 dark:text-blue-200 leading-relaxed font-medium">
                     💡 <strong>Cara Pakai:</strong> Salin prompt di atas → tempelkan ke ChatGPT/Claude/Gemini → salin balasannya dan masukkan pada kolom di samping/bawah.
                   </div>
                 </div>
 
                 {/* Kolom Kanan: Input Hasil Soal / Unggah Berkas */}
-                <div className="lg:col-span-6 flex flex-col justify-between p-4 sm:p-5 rounded-2xl bg-slate-50/80 dark:bg-slate-850/80 border border-slate-200 dark:border-slate-800 space-y-3.5">
+                <div className="lg:col-span-6 flex flex-col justify-between p-4 sm:p-5 rounded-3xl bg-slate-50/80 dark:bg-slate-850/60 border border-slate-200 dark:border-slate-800 space-y-3.5 shadow-2xs">
                   <div className="space-y-2.5">
                     <div className="flex items-center justify-between flex-wrap gap-2">
                       <span className="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-white flex items-center gap-2">
-                        <span className="w-5 h-5 rounded-full bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 text-[11px] font-black inline-flex items-center justify-center">2</span>
+                        <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-[11px] font-black inline-flex items-center justify-center">2</span>
                         <span>Hasil Kuis / Berkas</span>
                       </span>
 
-                      <div className="flex p-0.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+                      <div className="flex p-0.5 rounded-xl bg-slate-200/70 dark:bg-slate-800 border border-slate-300/50 dark:border-slate-700">
                         <button
                           type="button"
                           onClick={() => {
@@ -3297,8 +3299,8 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                           }}
                           className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all min-h-[32px] ${
                             inputMethodTab === 'paste'
-                              ? 'bg-blue-600 text-white shadow-2xs'
-                              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                              ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs'
+                              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                           }`}
                         >
                           📝 Tempel Teks
@@ -3311,8 +3313,8 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                           }}
                           className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all min-h-[32px] ${
                             inputMethodTab === 'file'
-                              ? 'bg-blue-600 text-white shadow-2xs'
-                              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                              ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs'
+                              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                           }`}
                         >
                           📂 Unggah Berkas
@@ -3322,14 +3324,16 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
 
                     {inputMethodTab === 'paste' ? (
                       <div>
-                        <textarea
-                          rows={5}
-                          value={rawInputText}
-                          onChange={(e) => setRawInputText(e.target.value)}
-                          placeholder="Tempelkan hasil respons AI (format JSON array atau teks bernomor: 1. Pertanyaan... A. Opsi... Kunci: ...) di sini..."
-                          className="w-full p-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 font-mono text-xs focus:border-blue-500 focus:outline-none leading-relaxed shadow-2xs"
-                        />
-                        <div className="flex items-center justify-between text-[11px] text-slate-400 mt-1">
+                        <div className="relative group">
+                          <textarea
+                            rows={5}
+                            value={rawInputText}
+                            onChange={(e) => setRawInputText(e.target.value)}
+                            placeholder="Tempelkan hasil respons AI (format JSON array atau teks bernomor: 1. Pertanyaan... A. Opsi... Kunci: ...) di sini..."
+                            className="w-full px-4 py-3 rounded-2xl border-2 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 font-mono text-xs sm:text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none leading-relaxed shadow-xs min-h-[120px] sm:min-h-[135px] resize-y"
+                          />
+                        </div>
+                        <div className="flex items-center justify-between text-[11px] text-slate-400 mt-1.5 px-0.5">
                           <span>Mendukung format JSON atau teks kuis bernomor.</span>
                           {rawInputText.length > 0 && (
                             <span className="font-bold text-blue-600 dark:text-blue-400">{rawInputText.length} karakter</span>
@@ -3337,7 +3341,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                         </div>
                       </div>
                     ) : (
-                      <div className="p-5 sm:p-6 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-center space-y-3">
+                      <div className="p-5 sm:p-6 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-center space-y-3 min-h-[120px] sm:min-h-[135px] flex flex-col justify-center shadow-xs">
                         <UploadCloud className="w-10 h-10 text-blue-500 mx-auto" />
                         <div>
                           <label className="inline-block px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm cursor-pointer shadow-sm min-h-[42px] btn-press">
