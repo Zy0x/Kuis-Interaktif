@@ -1,6 +1,14 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.74] - 2026-09-10
+### Pembersihan Gaya Bahasa (Copywriting) Kartu Ilustrasi Soal
+
+#### 1. Eliminasi Redundansi & AI Slop pada Label Fitur
+- Menyederhanakan judul fitur dari *"Sertakan Gambar Ilustrasi AI"* menjadi lebih lugas, elegan, dan profesional: **"Ilustrasi Soal"** dengan badge status **BETA**.
+- Mengganti kalimat deskripsi yang terkesan kaku dan bertele-tele (*AI slop*) menjadi satu kalimat manusiawi yang ringkas dan bersahabat: *"Buat gambar visual pendukung yang sesuai dengan materi kuis."*
+- Memperbarui badge ringkasan Tahap 4 menjadi `+ Ilustrasi (Beta)`.
+
 ## [2.2.73] - 2026-09-10
 ### Pelabelan Status Beta Ilustrasi AI & Penegasan Relevansi Gambar Nyata
 

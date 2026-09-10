@@ -2552,14 +2552,14 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white">
-                      Sertakan Gambar Ilustrasi AI
+                      Ilustrasi Soal
                     </span>
                     <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border border-amber-300/80 dark:border-amber-700/80 uppercase tracking-wider">
                       Beta
                     </span>
                   </div>
                   <span className="text-[11px] text-slate-400 dark:text-slate-500 block mt-0.5 leading-snug">
-                    Eksperimental: Mencari / menghasilkan gambar visual nyata yang relevan dengan pertanyaan (bukan ikon generik). Hasil bergantung pada ketersediaan generator AI.
+                    Buat gambar visual pendukung yang sesuai dengan materi kuis.
                   </span>
                 </div>
               </div>
@@ -2634,7 +2634,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
             </span>
             {includeAiImages && (
               <span className="text-[10px] bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border border-amber-300/60 dark:border-amber-700/60 px-1.5 py-0.5 rounded-md font-extrabold shrink-0">
-                + Gambar (Beta)
+                + Ilustrasi (Beta)
               </span>
             )}
           </button>
