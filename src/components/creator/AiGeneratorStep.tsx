@@ -43,7 +43,6 @@ import {
   ArrowLeft,
   Loader2, 
   AlertCircle, 
-  AlertTriangle,
   Download, 
   UploadCloud, 
   Copy, 
@@ -56,7 +55,8 @@ import {
   X,
   Key,
   ExternalLink,
-  RefreshCw
+  RefreshCw,
+  ShieldCheck
 } from 'lucide-react';
 
 export type CreationStage = 1 | 2 | 3 | 4;
@@ -1194,7 +1194,6 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
 
   // Pilihan Mesin AI — 'auto' = pilih terbaik yang tersedia secara otomatis
   const [selectedEngine, setSelectedEngine] = useState<'auto' | 'local' | 'deepseek' | 'groq' | 'gemini' | 'prompt'>('auto');
-  const [showAlternatifEngines, setShowAlternatifEngines] = useState(false);
 
   // Modal Pengaturan Kunci API Mandiri (BYOK)
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
@@ -2754,264 +2753,244 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
           </button>
 
           {/* Pilihan Mesin Pembuat Soal */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="space-y-3.5">
+            <div className="flex items-center justify-between flex-wrap gap-2.5">
               <div>
-                <label className="block text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white">
+                <label className="block text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
                   Pilih Mesin AI
                 </label>
                 <p className="text-xs text-slate-400 dark:text-slate-500">
-                  Pilih generator AI langsung atau salin prompt / impor berkas.
+                  Pilih mode otomatis yang praktis atau tentukan penyedia AI sendiri.
                 </p>
               </div>
 
-              <div className="flex items-center gap-2 flex-wrap">
-                {isCheckingCloudAi && (
-                  <span className="text-[11px] text-blue-500 font-bold flex items-center gap-1.5 bg-blue-50 dark:bg-blue-950/50 px-2.5 py-1 rounded-lg">
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" /> Memeriksa Status Cloud...
-                  </span>
-                )}
+              <div className="flex items-center gap-2">
+                {/* Tombol Refresh Status */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    setIsCheckingCloudAi(true);
+                    checkSupabaseAiStatus(true)
+                      .then((status) => {
+                        setSupabaseAi(status);
+                      })
+                      .catch(() => {})
+                      .finally(() => setIsCheckingCloudAi(false));
+                  }}
+                  disabled={isCheckingCloudAi}
+                  className="p-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 flex items-center justify-center transition-all btn-press min-h-[38px] min-w-[38px] disabled:opacity-50"
+                  title="Periksa ulang status ketersediaan AI"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isCheckingCloudAi ? 'animate-spin text-blue-500' : ''}`} />
+                </button>
 
-                {/* Refresh Status Button */}
-                {!isCheckingCloudAi && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      playClick();
-                      setIsCheckingCloudAi(true);
-                      checkSupabaseAiStatus(true)
-                        .then((status) => {
-                          setSupabaseAi(status);
-                        })
-                        .catch(() => {})
-                        .finally(() => setIsCheckingCloudAi(false));
-                    }}
-                    className="px-2.5 py-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 transition-all btn-press min-h-[40px]"
-                    title="Periksa ulang status ketersediaan semua mesin AI"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Refresh</span>
-                  </button>
-                )}
-
+                {/* Tombol Kunci API Pribadi */}
                 <button
                   type="button"
                   onClick={() => {
                     playClick();
                     setIsApiKeyModalOpen(true);
                   }}
-                  className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 transition-all btn-press min-h-[40px]"
-                  title="Atur Kunci API mandiri (BYOK) untuk DeepSeek, Groq, atau Gemini"
+                  className="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 transition-all btn-press min-h-[38px]"
+                  title="Atur Kunci API mandiri untuk DeepSeek, Groq, atau Gemini"
                 >
-                  <Key className="w-3.5 h-3.5 text-blue-500" />
-                  <span>Kunci API Pribadi</span>
+                  <Key className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                  <span>Kunci API</span>
                   {(hasDeepSeekApiKey() || hasGroqApiKey() || hasGeminiApiKey()) && (
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                   )}
                 </button>
               </div>
             </div>
 
-            <div className="space-y-2">
-
-              {/* ── Kartu Auto (full-width, default) ── */}
-              <button
-                type="button"
-                onClick={() => { playClick(); setSelectedEngine('auto'); }}
-                className={`w-full p-3.5 rounded-2xl border text-left transition-all flex items-center gap-3.5 btn-press ${
+            {/* 1. Opsi Utama: Mode Otomatis */}
+            <button
+              type="button"
+              onClick={() => { playClick(); setSelectedEngine('auto'); }}
+              className={`w-full p-3.5 sm:p-4 rounded-2xl border text-left transition-all flex items-center justify-between gap-3 btn-press ${
+                selectedEngine === 'auto'
+                  ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/25 ring-2 ring-blue-500/20 shadow-xs'
+                  : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 hover:border-slate-300 dark:hover:border-slate-700'
+              }`}
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
                   selectedEngine === 'auto'
-                    ? 'border-blue-500 bg-blue-50/80 dark:bg-blue-950/40 ring-2 ring-blue-500/20'
-                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 hover:border-slate-300 dark:hover:border-slate-700'
-                }`}
-              >
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0 ${
-                  selectedEngine === 'auto' ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-800'
-                }`}>⚡</div>
-                <div className="flex-1 min-w-0">
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                }`}>
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className={`font-extrabold text-sm ${selectedEngine === 'auto' ? 'text-blue-900 dark:text-blue-100' : 'text-slate-900 dark:text-white'}`}>
+                    <span className={`font-bold text-sm ${selectedEngine === 'auto' ? 'text-blue-950 dark:text-blue-100' : 'text-slate-900 dark:text-white'}`}>
                       Otomatis
                     </span>
-                    {selectedEngine === 'auto' && (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-600 text-white whitespace-nowrap">Direkomendasikan</span>
-                    )}
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300">
+                      Direkomendasikan
+                    </span>
                     {isCheckingCloudAi ? (
-                      <span className="text-[10px] text-slate-400 dark:text-slate-500 flex items-center gap-1">
+                      <span className="text-[11px] text-slate-400 flex items-center gap-1">
                         <Loader2 className="w-3 h-3 animate-spin" /> Memeriksa...
                       </span>
                     ) : (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                        {resolvedEngine === 'deepseek' ? '🐋 DeepSeek' : resolvedEngine === 'groq' ? '⚡ Groq' : resolvedEngine === 'gemini' ? '✨ Gemini' : '🤖 Lokal'}
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                        (Aktif: {resolvedEngine === 'deepseek' ? 'DeepSeek' : resolvedEngine === 'groq' ? 'Groq' : resolvedEngine === 'gemini' ? 'Gemini' : 'Lokal'})
                       </span>
                     )}
                   </div>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">
-                    Pilih AI terbaik yang tersedia. Beralih otomatis ke cadangan jika gagal.
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">
+                    Memilih mesin AI terbaik yang tersedia, dengan peralihan cadangan jika limit tercapai.
                   </p>
                 </div>
-                <div className={`w-5 h-5 rounded-full flex items-center justify-center border shrink-0 transition-all ${
-                  selectedEngine === 'auto' ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800'
+              </div>
+              <div className={`w-5 h-5 rounded-full flex items-center justify-center border shrink-0 transition-all ${
+                selectedEngine === 'auto'
+                  ? 'border-blue-600 bg-blue-600 text-white'
+                  : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800'
+              }`}>
+                {selectedEngine === 'auto' && <Check className="w-3 h-3 stroke-[3]" />}
+              </div>
+            </button>
+
+            {/* 2. Opsi Cloud AI Spesifik */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              {([
+                { id: 'deepseek' as const, label: 'DeepSeek', desc: 'Penalaran kritis & HOTS' },
+                { id: 'groq' as const, label: 'Groq', desc: 'Generasi kilat & presisi' },
+                { id: 'gemini' as const, label: 'Google Gemini', desc: 'Variatif & kontekstual' },
+              ] as const).map((eng) => {
+                const isSelected = selectedEngine === eng.id;
+                const health = getEngineHealthDetail(eng.id, supabaseAi);
+                return (
+                  <button
+                    key={eng.id}
+                    type="button"
+                    onClick={() => { playClick(); setSelectedEngine(eng.id); }}
+                    className={`p-3.5 rounded-2xl border text-left transition-all flex flex-col justify-between gap-2.5 btn-press min-h-[82px] ${
+                      isSelected
+                        ? 'border-blue-500 bg-blue-50/40 dark:bg-blue-950/20 ring-1 ring-blue-500/30 shadow-xs'
+                        : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 hover:border-slate-300 dark:hover:border-slate-700'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className={`font-bold text-xs sm:text-sm ${isSelected ? 'text-blue-950 dark:text-blue-100' : 'text-slate-900 dark:text-white'}`}>
+                        {eng.label}
+                      </span>
+                      {renderEngineStatusBadge(health, true)}
+                    </div>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug">
+                      {eng.desc}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* 3. Opsi Alternatif: Tanpa Internet & Salin Berkas */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-0.5">
+              {/* Tanpa Internet */}
+              <button
+                type="button"
+                onClick={() => { playClick(); setSelectedEngine('local'); }}
+                className={`p-3.5 rounded-2xl border text-left transition-all flex items-center justify-between gap-3 btn-press ${
+                  selectedEngine === 'local'
+                    ? 'border-slate-600 dark:border-slate-400 bg-slate-100 dark:bg-slate-800 shadow-xs'
+                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 hover:border-slate-300 dark:hover:border-slate-700'
+                }`}
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">Tanpa Internet</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded font-semibold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
+                      Offline
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">Pembuat kuis instan tanpa kuota API.</p>
+                </div>
+                <div className={`w-4 h-4 rounded-full flex items-center justify-center border shrink-0 transition-all ${
+                  selectedEngine === 'local'
+                    ? 'border-slate-700 bg-slate-700 text-white dark:border-slate-300 dark:bg-slate-300 dark:text-slate-900'
+                    : 'border-slate-300 dark:border-slate-700'
                 }`}>
-                  {selectedEngine === 'auto' && <Check className="w-3 h-3 stroke-[3]" />}
+                  {selectedEngine === 'local' && <Check className="w-2.5 h-2.5 stroke-[3]" />}
                 </div>
               </button>
 
-              {/* ── Grid 3 Cloud AI ── */}
-              <div className="grid grid-cols-3 gap-2">
-                {([
-                  { id: 'deepseek' as const, icon: '🐋', label: 'DeepSeek', desc: 'Analitis, HOTS', speed: 3, quality: 4, sel: 'border-sky-500 bg-sky-50/80 dark:bg-sky-950/40 ring-2 ring-sky-500/20', dot: 'border-sky-600 bg-sky-600', iconBg: 'bg-sky-100 dark:bg-sky-900/60' },
-                  { id: 'groq' as const, icon: '⚡', label: 'Groq', desc: 'Tercepat', speed: 4, quality: 2, sel: 'border-amber-500 bg-amber-50/80 dark:bg-amber-950/40 ring-2 ring-amber-500/20', dot: 'border-amber-600 bg-amber-600', iconBg: 'bg-amber-100 dark:bg-amber-900/60' },
-                  { id: 'gemini' as const, icon: '✨', label: 'Gemini', desc: 'Variatif', speed: 3, quality: 3, sel: 'border-purple-500 bg-purple-50/80 dark:bg-purple-950/40 ring-2 ring-purple-500/20', dot: 'border-purple-600 bg-purple-600', iconBg: 'bg-purple-100 dark:bg-purple-900/60' },
-                ] as const).map((eng) => {
-                  const isSelected = selectedEngine === eng.id;
-                  const health = getEngineHealthDetail(eng.id, supabaseAi);
-                  const isReady = health.status === 'ready';
-                  return (
-                    <button
-                      key={eng.id}
-                      type="button"
-                      onClick={() => { playClick(); setSelectedEngine(eng.id); }}
-                      className={`p-3 rounded-2xl border text-left flex flex-col gap-2 transition-all btn-press ${isSelected ? eng.sel : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 hover:border-slate-300 dark:hover:border-slate-700'}`}
-                    >
-                      <div className="flex items-start justify-between gap-1">
-                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-lg shrink-0 ${eng.iconBg}`}>{eng.icon}</div>
-                        <div className={`w-4 h-4 rounded-full flex items-center justify-center border shrink-0 ${isSelected ? `${eng.dot} text-white` : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800'}`}>
-                          {isSelected && <Check className="w-2.5 h-2.5 stroke-[3]" />}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-1 flex-wrap mb-0.5">
-                          <span className="font-extrabold text-xs text-slate-900 dark:text-white leading-tight">{eng.label}</span>
-                          {renderEngineStatusBadge(health, true)}
-                        </div>
-                        <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-snug">{eng.desc}</p>
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <div className="flex items-center gap-1">
-                          <span className="text-[9px] text-slate-400 w-9 shrink-0">Cepat</span>
-                          <div className="flex gap-0.5">{[1,2,3,4].map(i => <div key={i} className={`w-2 h-1.5 rounded-sm ${i <= eng.speed ? (isReady ? 'bg-emerald-400' : 'bg-slate-300 dark:bg-slate-600') : 'bg-slate-200 dark:bg-slate-700'}`} />)}</div>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <span className="text-[9px] text-slate-400 w-9 shrink-0">Pintar</span>
-                          <div className="flex gap-0.5">{[1,2,3,4].map(i => <div key={i} className={`w-2 h-1.5 rounded-sm ${i <= eng.quality ? (isReady ? 'bg-blue-400' : 'bg-slate-300 dark:bg-slate-600') : 'bg-slate-200 dark:bg-slate-700'}`} />)}</div>
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* ── Cara Lain (collapse/expand) ── */}
-              <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
-                <button
-                  type="button"
-                  onClick={() => { playClick(); setShowAlternatifEngines(v => !v); }}
-                  className={`w-full flex items-center justify-between px-3.5 py-2.5 text-xs font-bold transition-colors ${
-                    selectedEngine === 'local' || selectedEngine === 'prompt'
-                      ? 'text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-800/60'
-                      : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/40'
-                  }`}
-                >
-                  <span className="flex items-center gap-2">
-                    Cara Lain
-                    {(selectedEngine === 'local' || selectedEngine === 'prompt') && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded font-bold bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300">Aktif</span>
-                    )}
-                  </span>
-                  <svg className={`w-4 h-4 transition-transform ${showAlternatifEngines ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-
-                {showAlternatifEngines && (
-                  <div className="border-t border-slate-100 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800 animate-fade-in">
-                    <button
-                      type="button"
-                      onClick={() => { playClick(); setSelectedEngine('local'); }}
-                      className={`w-full p-3.5 text-left flex items-center gap-3 transition-all btn-press ${selectedEngine === 'local' ? 'bg-slate-50 dark:bg-slate-800' : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'}`}
-                    >
-                      <div className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-base shrink-0">🤖</div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-extrabold text-xs text-slate-900 dark:text-white">Tanpa Internet</span>
-                          <span className="text-[10px] px-1.5 py-0.5 rounded font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 whitespace-nowrap">Selalu Siap</span>
-                        </div>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">Buat soal tanpa internet atau kuota API.</p>
-                      </div>
-                      <div className={`w-4 h-4 rounded-full flex items-center justify-center border shrink-0 ${selectedEngine === 'local' ? 'border-slate-600 bg-slate-600 text-white' : 'border-slate-300 dark:border-slate-600'}`}>
-                        {selectedEngine === 'local' && <Check className="w-2.5 h-2.5 stroke-[3]" />}
-                      </div>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => { playClick(); setSelectedEngine('prompt'); }}
-                      className={`w-full p-3.5 text-left flex items-center gap-3 transition-all btn-press ${selectedEngine === 'prompt' ? 'bg-slate-50 dark:bg-slate-800' : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'}`}
-                    >
-                      <div className="w-9 h-9 rounded-xl bg-indigo-100 dark:bg-indigo-900/60 flex items-center justify-center text-base shrink-0">📋</div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-extrabold text-xs text-slate-900 dark:text-white">Salin / Berkas</span>
-                          <span className="text-[10px] px-1.5 py-0.5 rounded font-bold bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300">Manual</span>
-                        </div>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">Tempel hasil ChatGPT/Claude atau impor berkas.</p>
-                      </div>
-                      <div className={`w-4 h-4 rounded-full flex items-center justify-center border shrink-0 ${selectedEngine === 'prompt' ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-300 dark:border-slate-600'}`}>
-                        {selectedEngine === 'prompt' && <Check className="w-2.5 h-2.5 stroke-[3]" />}
-                      </div>
-                    </button>
+              {/* Salin Teks / Berkas */}
+              <button
+                type="button"
+                onClick={() => { playClick(); setSelectedEngine('prompt'); }}
+                className={`p-3.5 rounded-2xl border text-left transition-all flex items-center justify-between gap-3 btn-press ${
+                  selectedEngine === 'prompt'
+                    ? 'border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/20 ring-1 ring-indigo-500/30 shadow-xs'
+                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 hover:border-slate-300 dark:hover:border-slate-700'
+                }`}
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">Salin Teks / Berkas</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded font-semibold bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300">
+                      Manual
+                    </span>
                   </div>
-                )}
-              </div>
-
-              {/* Status warning untuk engine yang dipilih manual (bukan auto) */}
-              {selectedEngine !== 'auto' && selectedEngine !== 'local' && selectedEngine !== 'prompt' && (() => {
-                const health = getEngineHealthDetail(selectedEngine, supabaseAi);
-                if (health.status === 'quota_exhausted' || health.status === 'busy' || health.status === 'error') {
-                  return (
-                    <div className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 text-xs flex items-start justify-between gap-3 animate-fade-in">
-                      <div className="flex items-start gap-2">
-                        <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-                        <p className="text-amber-900 dark:text-amber-200 leading-snug">{health.description}</p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => { playClick(); setSelectedEngine('auto'); }}
-                        className="px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300 font-bold text-[11px] hover:bg-amber-50 dark:hover:bg-amber-900/30 transition-colors shrink-0 btn-press"
-                      >Pakai Auto</button>
-                    </div>
-                  );
-                }
-                return null;
-              })()}
-
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">Salin prompt ke ChatGPT/Claude atau impor file.</p>
+                </div>
+                <div className={`w-4 h-4 rounded-full flex items-center justify-center border shrink-0 transition-all ${
+                  selectedEngine === 'prompt'
+                    ? 'border-indigo-600 bg-indigo-600 text-white'
+                    : 'border-slate-300 dark:border-slate-700'
+                }`}>
+                  {selectedEngine === 'prompt' && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                </div>
+              </button>
             </div>
 
+            {/* Peringatan & Bantuan Bersih jika Mesin yang Dipilih Belum Siap */}
+            {selectedEngine !== 'auto' && selectedEngine !== 'local' && selectedEngine !== 'prompt' && (() => {
+              const health = getEngineHealthDetail(selectedEngine, supabaseAi);
+              const providerName = selectedEngine === 'deepseek' ? 'DeepSeek' : selectedEngine === 'groq' ? 'Groq' : 'Gemini';
 
-            {/* Banner info bantuan jika DeepSeek dipilih dan belum ada kunci */}
-            {selectedEngine === 'deepseek' && !hasDeepSeekApiKey() && !supabaseAi.hasDeepSeek && (
-              <div className="p-3.5 sm:p-4 rounded-2xl bg-sky-50 dark:bg-sky-950/40 border border-sky-200/80 dark:border-sky-900/60 text-xs text-sky-900 dark:text-sky-200 flex items-center justify-between gap-3 flex-wrap animate-fade-in">
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">🐋</span>
-                  <span>
-                    <strong>Gunakan DeepSeek Pribadi:</strong> Masukkan API Key gratis dari <em>platform.deepseek.com</em> untuk menggunakan model V3 / R1 secara langsung.
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    playClick();
-                    setApiKeyTab('deepseek');
-                    setIsApiKeyModalOpen(true);
-                  }}
-                  className="px-3.5 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs btn-press shrink-0 min-h-[36px]"
-                >
-                  <Key className="w-3.5 h-3.5" />
-                  <span>Masukkan Kunci DeepSeek</span>
-                </button>
-              </div>
-            )}
+              if (health.status === 'unconfigured') {
+                return (
+                  <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-800 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in">
+                    <span className="text-slate-600 dark:text-slate-300">
+                      Kunci API {providerName} belum terhubung di server atau peramban.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        setApiKeyTab(selectedEngine);
+                        setIsApiKeyModalOpen(true);
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition-colors btn-press self-start sm:self-center shrink-0 min-h-[34px]"
+                    >
+                      Masukkan Kunci {providerName}
+                    </button>
+                  </div>
+                );
+              }
+
+              if (health.status === 'quota_exhausted' || health.status === 'busy' || health.status === 'error') {
+                return (
+                  <div className="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-fade-in">
+                    <p className="text-amber-900 dark:text-amber-200 leading-snug">{health.description}</p>
+                    <button
+                      type="button"
+                      onClick={() => { playClick(); setSelectedEngine('auto'); }}
+                      className="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300 font-bold text-xs hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors shrink-0 btn-press self-start sm:self-center min-h-[34px]"
+                    >
+                      Beralih ke Otomatis
+                    </button>
+                  </div>
+                );
+              }
+              return null;
+            })()}
           </div>
+
 
           {/* Area Interaktif Khusus jika Salin Prompt / Berkas Dipilih */}
           {selectedEngine === 'prompt' && (
@@ -3337,7 +3316,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
         document.body
       )}
       {/* ========================================================================= */}
-      {/* MODAL OVERLAY: PENGATURAN KUNCI API PRIBADI / BYOK (PORTAL KE BODY Z-[100]) */}
+      {/* MODAL OVERLAY: PENGATURAN KUNCI API PRIBADI (PORTAL KE BODY Z-[100])      */}
       {/* ========================================================================= */}
       {isApiKeyModalOpen && typeof document !== 'undefined' && createPortal(
         <div 
@@ -3350,44 +3329,44 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
           >
             {/* Header Modal */}
             <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-10 h-10 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xl font-black shrink-0">
-                  🔑
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center shrink-0">
+                  <Key className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
-                  <h3 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white truncate">
-                    Pengaturan Kunci API Mandiri (BYOK)
+                  <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white truncate">
+                    Kunci API Pribadi
                   </h3>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                    Tersimpan aman secara lokal di peramban Anda
+                  <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 truncate">
+                    Gunakan kuota mandiri untuk akses pembuatan kuis tanpa batas
                   </p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setIsApiKeyModalOpen(false)}
-                className="w-10 h-10 rounded-2xl flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors btn-press shrink-0"
+                className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors btn-press shrink-0"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
             {/* Provider Switcher Tabs */}
-            <div className="p-3 sm:p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-850/40">
-              <div className="grid grid-cols-3 gap-1.5 p-1 rounded-2xl bg-slate-200/70 dark:bg-slate-800 border border-slate-300/40 dark:border-slate-700/60">
+            <div className="p-3 sm:p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-850/40">
+              <div className="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-slate-200/60 dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700/60">
                 <button
                   type="button"
                   onClick={() => {
                     playClick();
                     setApiKeyTab('deepseek');
                   }}
-                  className={`py-2 px-2.5 rounded-xl font-extrabold text-xs transition-all flex items-center justify-center gap-1.5 min-h-[38px] ${
+                  className={`py-2 px-2.5 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-1.5 min-h-[36px] ${
                     apiKeyTab === 'deepseek'
-                      ? 'bg-white dark:bg-slate-900 text-sky-600 dark:text-sky-400 shadow-xs'
+                      ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xs'
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
-                  <span>🐋 DeepSeek</span>
+                  <span>DeepSeek</span>
                   {hasDeepSeekApiKey() && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>}
                 </button>
 
@@ -3397,13 +3376,13 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                     playClick();
                     setApiKeyTab('groq');
                   }}
-                  className={`py-2 px-2.5 rounded-xl font-extrabold text-xs transition-all flex items-center justify-center gap-1.5 min-h-[38px] ${
+                  className={`py-2 px-2.5 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-1.5 min-h-[36px] ${
                     apiKeyTab === 'groq'
-                      ? 'bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 shadow-xs'
+                      ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xs'
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
-                  <span>⚡ Groq LPU</span>
+                  <span>Groq</span>
                   {hasGroqApiKey() && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>}
                 </button>
 
@@ -3413,13 +3392,13 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                     playClick();
                     setApiKeyTab('gemini');
                   }}
-                  className={`py-2 px-2.5 rounded-xl font-extrabold text-xs transition-all flex items-center justify-center gap-1.5 min-h-[38px] ${
+                  className={`py-2 px-2.5 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-1.5 min-h-[36px] ${
                     apiKeyTab === 'gemini'
-                      ? 'bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 shadow-xs'
+                      ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xs'
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                   }`}
                 >
-                  <span>✨ Gemini AI</span>
+                  <span>Google Gemini</span>
                   {hasGeminiApiKey() && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>}
                 </button>
               </div>
@@ -3428,7 +3407,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
             {/* Tab Contents */}
             <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
               {keySaveMessage && (
-                <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-800 dark:text-emerald-200 font-bold flex items-center gap-2 animate-fade-in">
+                <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-800 dark:text-emerald-200 font-semibold flex items-center gap-2 animate-fade-in">
                   <Check className="w-4 h-4 text-emerald-500" />
                   <span>{keySaveMessage}</span>
                 </div>
@@ -3438,24 +3417,24 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
               {apiKeyTab === 'deepseek' && (
                 <div className="space-y-4 animate-fade-in">
                   {supabaseAi.hasDeepSeek && (
-                    <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
-                      <span><strong>Cloud Aktif:</strong> DeepSeek API Key telah disetel di server Supabase Secrets. Form ini opsional jika ingin menimpa dengan kunci pribadi.</span>
+                    <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-300 flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+                      <span>Kunci default server aktif. Mengisi form ini akan mengutamakan kuota akun pribadi Anda.</span>
                     </div>
                   )}
 
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-xs font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-1">
-                        <span>🐋 Kunci API DeepSeek (sk-...):</span>
+                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                        Kunci API DeepSeek
                       </label>
                       <a
                         href="https://platform.deepseek.com/"
                         target="_blank"
                         rel="noreferrer"
-                        className="text-[11px] font-bold text-sky-600 dark:text-sky-400 hover:underline flex items-center gap-1"
+                        className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
                       >
-                        Dapatkan di platform.deepseek.com <ExternalLink className="w-3 h-3" />
+                        Dapatkan kunci <ExternalLink className="w-3 h-3" />
                       </a>
                     </div>
                     <div className="relative">
@@ -3464,7 +3443,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                         value={deepseekKeyInput}
                         onChange={(e) => setDeepseekKeyInput(e.target.value)}
                         placeholder="sk-..."
-                        className="w-full pl-3.5 pr-10 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:border-sky-500 min-h-[44px]"
+                        className="w-full pl-3.5 pr-10 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:border-blue-500 min-h-[44px]"
                       />
                       <button
                         type="button"
@@ -3477,22 +3456,22 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                   </div>
 
                   <div>
-                    <label className="text-xs font-extrabold text-slate-800 dark:text-slate-200 block mb-1.5">
-                      Pilihan Model DeepSeek:
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 block mb-1.5">
+                      Model Pilihan
                     </label>
                     <select
                       value={deepseekModelChoice}
                       onChange={(e) => setDeepseekModelChoice(e.target.value as DeepSeekModel)}
-                      className="w-full px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-semibold focus:outline-none min-h-[44px]"
+                      className="w-full px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-medium focus:outline-none min-h-[44px]"
                     >
-                      <option value="deepseek-chat">deepseek-chat (DeepSeek-V3 - Cepat, Responsif, Format JSON Stabil)</option>
-                      <option value="deepseek-reasoner">deepseek-reasoner (DeepSeek-R1 - Penalaran Logika & Matematika Mendalam)</option>
+                      <option value="deepseek-chat">DeepSeek-V3 (deepseek-chat)</option>
+                      <option value="deepseek-reasoner">DeepSeek-R1 (deepseek-reasoner)</option>
                     </select>
                   </div>
 
-                  <div className="p-3.5 rounded-xl bg-sky-50 dark:bg-sky-950/40 text-[11px] text-sky-900 dark:text-sky-300 space-y-1 leading-relaxed border border-sky-200/80 dark:border-sky-900/60">
-                    <p className="font-bold">💡 Keunggulan DeepSeek AI:</p>
-                    <p>DeepSeek-V3 dan DeepSeek-R1 menawarkan efisiensi komputasi tinggi dan pemahaman bahasa Indonesia yang alami untuk perumusan soal Kurikulum Merdeka (SD, SMP, dan SMA).</p>
+                  <div className="flex items-center gap-2 text-[11px] text-slate-400 dark:text-slate-500 pt-1">
+                    <ShieldCheck className="w-4 h-4 shrink-0 text-slate-400" />
+                    <span>Kunci API tersimpan di peramban lokal dan hanya digunakan untuk memanggil API.</span>
                   </div>
                 </div>
               )}
@@ -3501,24 +3480,24 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
               {apiKeyTab === 'groq' && (
                 <div className="space-y-4 animate-fade-in">
                   {supabaseAi.hasGroq && (
-                    <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
-                      <span><strong>Cloud Aktif:</strong> Kunci Groq aktif di server Supabase Secrets.</span>
+                    <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-300 flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+                      <span>Kunci default server aktif. Mengisi form ini akan mengutamakan kuota akun pribadi Anda.</span>
                     </div>
                   )}
 
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-xs font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-1">
-                        <span>⚡ Kunci API Groq (gsk_...):</span>
+                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                        Kunci API Groq
                       </label>
                       <a
                         href="https://console.groq.com/"
                         target="_blank"
                         rel="noreferrer"
-                        className="text-[11px] font-bold text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1"
+                        className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
                       >
-                        Dapatkan di console.groq.com <ExternalLink className="w-3 h-3" />
+                        Dapatkan kunci <ExternalLink className="w-3 h-3" />
                       </a>
                     </div>
                     <div className="relative">
@@ -3527,7 +3506,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                         value={groqKeyInput}
                         onChange={(e) => setGroqKeyInput(e.target.value)}
                         placeholder="gsk_..."
-                        className="w-full pl-3.5 pr-10 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:border-amber-500 min-h-[44px]"
+                        className="w-full pl-3.5 pr-10 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:border-blue-500 min-h-[44px]"
                       />
                       <button
                         type="button"
@@ -3540,20 +3519,25 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                   </div>
 
                   <div>
-                    <label className="text-xs font-extrabold text-slate-800 dark:text-slate-200 block mb-1.5">
-                      Pilihan Model Groq LPU:
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 block mb-1.5">
+                      Model Pilihan
                     </label>
                     <select
                       value={groqModelChoice}
                       onChange={(e) => setGroqModelChoice(e.target.value as GroqModel)}
-                      className="w-full px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-semibold focus:outline-none min-h-[44px]"
+                      className="w-full px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-medium focus:outline-none min-h-[44px]"
                     >
-                      <option value="llama-3.3-70b-versatile">Llama 3.3 70B (Sangat Cerdas & Presisi)</option>
-                      <option value="llama-3.1-8b-instant">Llama 3.1 8B Instant (Super Kilat)</option>
-                      <option value="deepseek-r1-distill-llama-70b">DeepSeek R1 Distill Llama 70B (Penalaran MTK)</option>
-                      <option value="qwen/qwen3.8-27b">Qwen 3.8 27B</option>
-                      <option value="gemma2-9b-it">Google Gemma 2 9B</option>
+                      <option value="llama-3.3-70b-versatile">Llama 3.3 70B (llama-3.3-70b-versatile)</option>
+                      <option value="llama-3.1-8b-instant">Llama 3.1 8B Instant (llama-3.1-8b-instant)</option>
+                      <option value="deepseek-r1-distill-llama-70b">DeepSeek R1 Distill 70B (deepseek-r1-distill-llama-70b)</option>
+                      <option value="qwen/qwen3.8-27b">Qwen 3.8 27B (qwen/qwen3.8-27b)</option>
+                      <option value="gemma2-9b-it">Google Gemma 2 9B (gemma2-9b-it)</option>
                     </select>
+                  </div>
+
+                  <div className="flex items-center gap-2 text-[11px] text-slate-400 dark:text-slate-500 pt-1">
+                    <ShieldCheck className="w-4 h-4 shrink-0 text-slate-400" />
+                    <span>Kunci API tersimpan di peramban lokal dan hanya digunakan untuk memanggil API.</span>
                   </div>
                 </div>
               )}
@@ -3562,24 +3546,24 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
               {apiKeyTab === 'gemini' && (
                 <div className="space-y-4 animate-fade-in">
                   {supabaseAi.hasGemini && (
-                    <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
-                      <span><strong>Cloud Aktif:</strong> Kunci Gemini aktif di server Supabase Secrets.</span>
+                    <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-300 flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+                      <span>Kunci default server aktif. Mengisi form ini akan mengutamakan kuota akun pribadi Anda.</span>
                     </div>
                   )}
 
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-xs font-extrabold text-slate-800 dark:text-slate-200 flex items-center gap-1">
-                        <span>✨ Kunci API Gemini (AIzaSy...):</span>
+                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                        Kunci API Google Gemini
                       </label>
                       <a
                         href="https://aistudio.google.com/"
                         target="_blank"
                         rel="noreferrer"
-                        className="text-[11px] font-bold text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-1"
+                        className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
                       >
-                        Dapatkan di aistudio.google.com <ExternalLink className="w-3 h-3" />
+                        Dapatkan kunci <ExternalLink className="w-3 h-3" />
                       </a>
                     </div>
                     <div className="relative">
@@ -3588,7 +3572,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                         value={geminiKeyInput}
                         onChange={(e) => setGeminiKeyInput(e.target.value)}
                         placeholder="AIzaSy..."
-                        className="w-full pl-3.5 pr-10 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:border-purple-500 min-h-[44px]"
+                        className="w-full pl-3.5 pr-10 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:border-blue-500 min-h-[44px]"
                       />
                       <button
                         type="button"
@@ -3601,19 +3585,23 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                   </div>
 
                   <div>
-                    <label className="text-xs font-extrabold text-slate-800 dark:text-slate-200 block mb-1.5">
-                      Pilihan Model Gemini:
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200 block mb-1.5">
+                      Model Pilihan
                     </label>
                     <select
                       value={geminiModelChoice}
                       onChange={(e) => setGeminiModelChoice(e.target.value as GeminiModel)}
-                      className="w-full px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-semibold focus:outline-none min-h-[44px]"
+                      className="w-full px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-medium focus:outline-none min-h-[44px]"
                     >
-                      <option value="gemini-2.0-flash">Gemini 2.0 Flash (Default Tercepat)</option>
-                      <option value="gemini-1.5-pro">Gemini 1.5 Pro (Penalaran PRO Tingkat Lanjut)</option>
-                      <option value="gemini-3.8-flash">Gemini 3.8 Flash</option>
-                      <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash Lite</option>
+                      <option value="gemini-2.0-flash">Gemini 2.0 Flash (gemini-2.0-flash)</option>
+                      <option value="gemini-1.5-pro">Gemini 1.5 Pro (gemini-1.5-pro)</option>
+                      <option value="gemini-1.5-flash">Gemini 1.5 Flash (gemini-1.5-flash)</option>
                     </select>
+                  </div>
+
+                  <div className="flex items-center gap-2 text-[11px] text-slate-400 dark:text-slate-500 pt-1">
+                    <ShieldCheck className="w-4 h-4 shrink-0 text-slate-400" />
+                    <span>Kunci API tersimpan di peramban lokal dan hanya digunakan untuk memanggil API.</span>
                   </div>
                 </div>
               )}
@@ -3639,10 +3627,10 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                         saveStoredGeminiApiKey('');
                         setGeminiKeyInput('');
                       }
-                      setKeySaveMessage('Kunci dihapus.');
+                      setKeySaveMessage('Kunci berhasil dihapus.');
                       setTimeout(() => setKeySaveMessage(null), 1000);
                     }}
-                    className="text-xs font-bold text-rose-600 hover:text-rose-700 dark:text-rose-400 hover:underline px-2 py-1.5 min-h-[36px]"
+                    className="text-xs font-semibold text-rose-600 hover:text-rose-700 dark:text-rose-400 hover:underline px-2 py-1.5 min-h-[36px]"
                   >
                     Hapus Kunci
                   </button>
@@ -3653,14 +3641,14 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsApiKeyModalOpen(false)}
-                  className="px-4 py-2 rounded-xl font-bold text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-750 transition-colors btn-press min-h-[40px]"
+                  className="px-4 py-2 rounded-xl font-semibold text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-750 transition-colors btn-press min-h-[40px]"
                 >
                   Batal
                 </button>
                 <button
                   type="button"
                   onClick={handleSaveApiKeySettings}
-                  className="px-5 py-2 rounded-xl font-black text-xs text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-500/20 flex items-center gap-1.5 btn-press transition-all min-h-[40px]"
+                  className="px-5 py-2 rounded-xl font-bold text-xs text-white bg-blue-600 hover:bg-blue-700 shadow-xs flex items-center gap-1.5 btn-press transition-all min-h-[40px]"
                 >
                   <Check className="w-3.5 h-3.5" />
                   <span>Simpan Kunci</span>
@@ -3672,6 +3660,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
         </div>,
         document.body
       )}
+
 
     </div>
   );

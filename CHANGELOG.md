@@ -1,6 +1,23 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.78] - 2026-09-11
+### Penyempurnaan Tampilan Bersih (Clean UI) Mesin AI & Kunci API Pribadi
+
+#### 1. Pembersihan Tampilan Pilihan Mesin AI (Tahap 4)
+- Menghilangkan dekorasi visual berlebih (emoji berulang, dot indikator kompleks, dan badge berlapis) demi menghadirkan antarmuka yang tenang, rapi, dan mudah dipindai di berbagai ukuran layar.
+- Kartu **Otomatis (Direkomendasikan)** ditata secara elegan sebagai opsi utama lengkap dengan status mesin aktif saat ini.
+- Tiga mesin cloud (**DeepSeek**, **Groq**, dan **Google Gemini**) disusun dalam grid 3 kolom yang kompak, simetris, dan responsif.
+- Opsi alternatif (**Tanpa Internet / Offline** dan **Salin Teks / Berkas / Manual**) disajikan dalam dua kartu sejajar yang bersih tanpa perlu membuka-tutup accordion yang rumit.
+- Target sentuh disesuaikan mengikuti standar mobile-first (minimal 44px) dengan visual feedback yang halus.
+
+#### 2. Redesain Elegan Modal Kunci API Pribadi
+- Menghapus seluruh teks promosi dan istilah teknis yang tidak perlu (*AI slop*) pada modal pengaturan API Key.
+- Mengganti penamaan teknis *BYOK* menjadi **Kunci API Pribadi** yang komunikatif bagi para pendidik.
+- Pemilihan model disederhanakan menggunakan nama resmi yang ringkas dan bebas dari deskripsi berlebihan.
+- Segmented tab navigasi diperbarui menjadi flat, minimalis, dan dilengkapi indikator dot hijau jika kunci telah tersimpan.
+- Catatan keamanan data disajikan secara profesional dan transparan (kunci hanya tersimpan di peramban lokal perangkat pengguna).
+
 ## [2.2.77] - 2026-09-11
 ### Redesign Tahap 4 — Mode Otomatis & Tampilan Mesin AI yang Lebih Cerdas
 
