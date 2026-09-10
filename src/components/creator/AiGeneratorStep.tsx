@@ -12,12 +12,10 @@ import {
   Zap, 
   FileText, 
   ArrowLeft, 
-  ArrowRight, 
   Loader2, 
-  CheckCircle2, 
   AlertCircle,
-  Lightbulb,
-  Cpu
+  Layers,
+  FileCheck2
 } from 'lucide-react';
 
 interface AiGeneratorStepProps {
@@ -42,9 +40,7 @@ const TOPIC_SUGGESTIONS = [
   'Pecahan & Bilangan Cacah',
   'Pengamalan Sila Pancasila',
   'Siklus Air & Wujud Benda',
-  'Ciri Khusus Hewan & Habitat',
-  'Fotosintesis & Rantai Makanan',
-  'Pahlawan & Tokoh Sejarah Nasional'
+  'Ciri Makhluk Hidup & Habitat'
 ];
 
 const EMOJI_BY_SUBJECT: Record<Subject, string> = {
@@ -147,63 +143,57 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
   };
 
   return (
-    <div className="max-w-6xl 2xl:max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 animate-fade-in space-y-6">
-      
-      {/* Banner / Header Title */}
-      <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-3xl p-6 sm:p-8 text-white shadow-lg relative overflow-hidden">
-        <div className="absolute right-0 top-0 translate-x-8 -translate-y-8 w-64 h-64 bg-white/10 rounded-full blur-2xl pointer-events-none" />
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-1.5">
-            <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider text-amber-300">
-              <Zap className="w-3.5 h-3.5 fill-amber-300" />
-              <span>Tahap 1: Generator Kilat Soal AI</span>
+    <div className="w-full max-w-6xl 2xl:max-w-7xl mx-auto px-3 xs:px-4 sm:px-6 lg:px-8 py-4 sm:py-6 animate-fade-in">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        {/* Kolom Kiri: Formulir Generator AI (8 kolom di layar besar) */}
+        <div className="lg:col-span-8 bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-card space-y-6">
+          
+          {/* Header Kartu */}
+          <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800 gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center flex-shrink-0 font-bold shadow-xs">
+                <Zap className="w-5 h-5 fill-blue-500/20 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div className="min-w-0">
+                <h2 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white truncate">
+                  Generator Kilat Soal AI
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 truncate hidden xs:block">
+                  Otomatis meracik butir soal sesuai materi, lalu masuk ke editor untuk ditinjau
+                </p>
+              </div>
             </div>
-            <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight">
-              Racik Soal Kurikulum Merdeka Secara Otomatis
-            </h2>
-            <p className="text-xs sm:text-sm text-blue-100 max-w-2xl leading-relaxed">
-              Cukup ketik topik materi atau tempel bahan ajar. AI akan menyusun soal, opsi, kunci jawaban, dan pembahasan. Soal langsung tersaji di Bank Soal untuk Anda koreksi atau tambah sebelum dirilis.
-            </p>
-          </div>
 
-          <div className="flex items-center gap-2 flex-shrink-0">
             <button
               type="button"
               onClick={() => {
                 playClick();
                 onBack();
               }}
-              className="px-4 py-2.5 rounded-2xl bg-white/15 hover:bg-white/25 text-white text-xs sm:text-sm font-bold backdrop-blur-sm transition-all flex items-center gap-2 min-h-[44px] min-w-[44px] justify-center btn-press"
+              className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-750 font-bold text-xs sm:text-sm flex items-center gap-1.5 transition-colors flex-shrink-0 min-h-[40px] btn-press"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>Ganti Metode</span>
             </button>
           </div>
-        </div>
-      </div>
 
-      {/* Main 2-Column Responsive Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        
-        {/* Kolom Kiri: Formulir Generator (8 kolom di desktop) */}
-        <div className="lg:col-span-8 bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-card space-y-6">
-          
-          {/* Submode Switcher Tabs */}
-          <div className="flex p-1.5 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60">
+          {/* Tab Switcher */}
+          <div className="flex p-1 rounded-2xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60">
             <button
               type="button"
               onClick={() => {
                 playClick();
                 setSubMode('ai');
               }}
-              className={`flex-1 py-2.5 px-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all min-h-[44px] ${
+              className={`flex-1 py-2.5 px-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all min-h-[42px] ${
                 subMode === 'ai'
                   ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm border border-slate-200/60 dark:border-slate-700/60'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               <Sparkles className="w-4 h-4 text-blue-500" />
-              <span>✨ Racik Otomatis AI</span>
+              <span>Racik Otomatis AI</span>
             </button>
 
             <button
@@ -212,21 +202,20 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                 playClick();
                 setSubMode('paste');
               }}
-              className={`flex-1 py-2.5 px-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all min-h-[44px] ${
+              className={`flex-1 py-2.5 px-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all min-h-[42px] ${
                 subMode === 'paste'
                   ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm border border-slate-200/60 dark:border-slate-700/60'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               <FileText className="w-4 h-4 text-purple-500" />
-              <span>📄 Tempel Teks / Dokumen</span>
+              <span>Tempel Teks / Dokumen</span>
             </button>
           </div>
 
           {/* Form Fields: AI Mode */}
           {subMode === 'ai' ? (
             <div className="space-y-5">
-              
               {/* Topik Materi */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
@@ -237,38 +226,36 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                   value={genTopic}
                   onChange={(e) => setGenTopic(e.target.value)}
                   placeholder="Contoh: Organ Pernapasan Manusia, Bilangan Pecahan, Pengamalan Pancasila..."
-                  className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 font-medium text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none min-h-[46px]"
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 font-medium text-sm focus:border-blue-500 focus:outline-none min-h-[44px]"
                 />
 
                 {/* Suggestions Chips */}
-                <div className="mt-2.5 space-y-1.5">
-                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                    Saran Topik Kurikulum Merdeka:
+                <div className="mt-2.5 flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">
+                    Saran Topik:
                   </span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {TOPIC_SUGGESTIONS.map((topic) => (
-                      <button
-                        key={topic}
-                        type="button"
-                        onClick={() => {
-                          playClick();
-                          setGenTopic(topic);
-                        }}
-                        className={`text-xs px-3 py-1.5 rounded-xl border font-medium transition-all min-h-[36px] flex items-center ${
-                          genTopic === topic
-                            ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-800 shadow-xs'
-                            : 'bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
-                        }`}
-                      >
-                        + {topic}
-                      </button>
-                    ))}
-                  </div>
+                  {TOPIC_SUGGESTIONS.map((topic) => (
+                    <button
+                      key={topic}
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        setGenTopic(topic);
+                      }}
+                      className={`text-[11px] px-2.5 py-1 rounded-lg border font-medium transition-colors ${
+                        genTopic === topic
+                          ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-800'
+                          : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
+                      }`}
+                    >
+                      + {topic}
+                    </button>
+                  ))}
                 </div>
               </div>
 
-              {/* Grid: Mata Pelajaran & Jenjang Kelas */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Grid 2-Kolom: Mata Pelajaran & Jenjang Kelas */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
                     Mata Pelajaran <span className="text-rose-500">*</span>
@@ -312,8 +299,8 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                 </div>
               </div>
 
-              {/* Grid: Jumlah Soal & Format Tipe */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Grid 2-Kolom: Jumlah Soal & Format Tipe */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
                     Jumlah Soal <span className="text-slate-400 font-normal">(Maks. 50 butir)</span>
@@ -349,7 +336,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                           if (!isNaN(val)) setGenCount(val);
                         }}
                         placeholder="Kustom"
-                        className="w-full text-center py-2 px-1 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-bold text-xs min-h-[44px] focus:border-blue-500 focus:outline-none"
+                        className="w-full px-2 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-bold text-xs text-center min-h-[44px] focus:outline-none focus:border-blue-500"
                       />
                     </div>
                   </div>
@@ -357,7 +344,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                    Format Tipe Soal
+                    Format Tipe Soal <span className="text-rose-500">*</span>
                   </label>
                   <select
                     value={genType}
@@ -365,126 +352,71 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-semibold text-sm focus:border-blue-500 focus:outline-none min-h-[44px]"
                   >
                     <option value="campuran">Campuran (Bervariasi)</option>
-                    <option value="multiple_choice">Pilihan Ganda Saja (4 Opsi)</option>
-                    <option value="true_false">Benar / Salah</option>
-                    <option value="short_answer">Isian Singkat</option>
-                    <option value="matching_pairs">Pasangan Kartu (Cocok Gambar/Teks)</option>
+                    <option value="multiple_choice">Pilihan Ganda Saja</option>
+                    <option value="true_false">Benar / Salah Saja</option>
+                    <option value="short_answer">Isian Singkat Saja</option>
+                    <option value="matching_pairs">Menjodohkan Saja</option>
                   </select>
                 </div>
               </div>
 
-              {/* Mesin AI Selector */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                  Mesin Pembuat Soal AI
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      playClick();
-                      setSelectedProvider('local');
-                    }}
-                    className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all min-h-[64px] ${
-                      selectedProvider === 'local'
-                        ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/40 text-blue-900 dark:text-blue-100 ring-2 ring-blue-400'
-                        : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-xs">Kurikulum SD Lokal</span>
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300">Offline</span>
-                    </div>
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Cepat, stabil, tanpa kuota</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      playClick();
-                      setSelectedProvider('gemini');
-                    }}
-                    className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all min-h-[64px] ${
-                      selectedProvider === 'gemini'
-                        ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/40 text-blue-900 dark:text-blue-100 ring-2 ring-blue-400'
-                        : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-xs">Google Gemini AI</span>
-                      {hasGemini ? (
-                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">Aktif</span>
-                      ) : (
-                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300">Default</span>
-                      )}
-                    </div>
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Model 2.0 Flash / Pro</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      playClick();
-                      setSelectedProvider('groq');
-                    }}
-                    className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all min-h-[64px] ${
-                      selectedProvider === 'groq'
-                        ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/40 text-blue-900 dark:text-blue-100 ring-2 ring-blue-400'
-                        : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-xs">Groq Cloud LPU™</span>
-                      {hasGroq ? (
-                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">Aktif</span>
-                      ) : (
-                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">LPU</span>
-                      )}
-                    </div>
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Super Kilat (&lt;1 detik)</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Sakelar Ilustrasi Gambar AI */}
-              <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
+              {/* Grid 2-Kolom: Mesin Pembuat Soal & Gambar AI */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 pt-2 border-t border-slate-100 dark:border-slate-800">
                 <div>
-                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                    <span>🎨 Sertakan Ilustrasi Gambar AI Otomatis</span>
-                    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
-                      100% Gratis
-                    </span>
-                  </span>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                    Menggunakan mesin visual edukatif untuk butir soal sains & tebak gambar anak SD.
-                  </p>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                    Mesin Pembuat Soal
+                  </label>
+                  <select
+                    value={selectedProvider}
+                    onChange={(e) => setSelectedProvider(e.target.value as any)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium text-xs sm:text-sm focus:border-blue-500 focus:outline-none min-h-[44px]"
+                  >
+                    <option value="local">🤖 Kurikulum SD Lokal (Cepat & Mandiri)</option>
+                    <option value="gemini" disabled={!hasGemini}>
+                      ✨ Google Gemini AI {hasGemini ? '(Aktif / PRO)' : '(API Key Belum Diisi)'}
+                    </option>
+                    <option value="groq" disabled={!hasGroq}>
+                      ⚡ Groq Cloud LPU {hasGroq ? '(Aktif)' : '(API Key Belum Diisi)'}
+                    </option>
+                  </select>
                 </div>
 
-                <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
-                  <input
-                    type="checkbox"
-                    checked={includeAiImages}
-                    onChange={(e) => setIncludeAiImages(e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                </label>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                    Ilustrasi Gambar
+                  </label>
+                  <label className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 cursor-pointer min-h-[44px] hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={includeAiImages}
+                      onChange={(e) => setIncludeAiImages(e.target.checked)}
+                      className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300"
+                    />
+                    <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">
+                      🎨 Sertakan Gambar Ilustrasi Edukasi AI (Gratis)
+                    </span>
+                  </label>
+                </div>
               </div>
-
             </div>
           ) : (
             /* Form Fields: Paste Mode */
-            <div className="space-y-4">
+            <div className="space-y-5">
               <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                  Tempel Materi / Teks Dokumen Soal
-                </label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Tempel Teks Soal / Dokumen Materi <span className="text-rose-500">*</span>
+                  </label>
+                  <span className="text-[11px] text-slate-400">
+                    {rawText.length} karakter
+                  </span>
+                </div>
                 <textarea
-                  rows={8}
                   value={rawText}
                   onChange={(e) => setRawText(e.target.value)}
-                  placeholder={`Contoh format:\n1. Apa fungsi utama dari paru-paru pada manusia?\nA. Mencerna makanan\nB. Tempat pertukaran oksigen dan karbon dioksida\nC. Memompa darah\nD. Menyaring racun\nKunci: B\nPembahasan: Paru-paru merupakan organ pernapasan utama...`}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 font-mono text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none leading-relaxed"
+                  placeholder={`Contoh format:\n1. Apa fungsi lambung pada manusia?\nA. Mengunyah makanan\nB. Mencerna protein dengan asam lambung\nC. Menyerap air\nD. Memompa darah\nKunci: B\n\nAtau tempel materi teks bebas untuk diracik...`}
+                  rows={7}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-xs focus:border-blue-500 focus:outline-none leading-relaxed"
                 />
               </div>
 
@@ -532,24 +464,35 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
             </div>
           )}
 
-          {/* Action Button */}
-          <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+          {/* Action Buttons Footer */}
+          <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                onBack();
+              }}
+              className="w-full sm:w-auto px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-slate-700 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 min-h-[44px] flex items-center justify-center gap-2 transition-colors btn-press"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Ganti Metode</span>
+            </button>
+
             <button
               type="button"
               disabled={isLoading}
               onClick={handleGenerate}
-              className="w-full py-3.5 px-6 rounded-2xl font-extrabold text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-md flex items-center justify-center gap-2 min-h-[48px] btn-press transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full sm:w-auto px-8 py-3 rounded-xl font-extrabold text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-md flex items-center justify-center gap-2 min-h-[44px] btn-press transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  <span>Sedang Meracik Soal Kurikulum Merdeka...</span>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Sedang Meracik Soal...</span>
                 </>
               ) : (
                 <>
-                  <Zap className="w-5 h-5 text-amber-300 fill-amber-300" />
-                  <span>⚡ Racik Soal Sekarang & Buka Bank Soal</span>
-                  <ArrowRight className="w-4 h-4 ml-1" />
+                  <Zap className="w-4 h-4 text-amber-300 fill-amber-300" />
+                  <span>Buat Kuis Sekarang & Buka Editor</span>
                 </>
               )}
             </button>
@@ -557,78 +500,100 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
 
         </div>
 
-        {/* Kolom Kanan: Panduan, Tips & Live Status (4 kolom di desktop) */}
+        {/* Kolom Kanan: Spesifikasi Target & Struktur Format (4 kolom di layar besar) */}
         <div className="lg:col-span-4 space-y-4">
           
-          {/* Card 1: Tips Kurikulum Merdeka */}
-          <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
-            <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
-              <Lightbulb className="w-5 h-5" />
-              <h3 className="font-extrabold text-sm text-slate-900 dark:text-white">
-                Tips Kurikulum Merdeka SD
-              </h3>
+          {/* Card 1: Ringkasan Spesifikasi Target */}
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200 dark:border-slate-800 shadow-card space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="font-extrabold text-xs text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                <FileCheck2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <span>Spesifikasi Target Kuis</span>
+              </h4>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300">
+                {customCountInput || genCount} Butir
+              </span>
             </div>
-            <ul className="text-xs text-slate-600 dark:text-slate-300 space-y-2 leading-relaxed">
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
-                <span>Gunakan bahasa kontekstual, komunikatif, dan akrab dengan kehidupan sehari-hari siswa.</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
-                <span>Padukan soal pemahaman dasar (LOTS) dengan analisis penalaran bergambar (HOTS).</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
-                <span>Setelah diracik, seluruh butir soal dapat Anda edit atau tambah di Langkah 2 (Bank Soal).</span>
-              </li>
-            </ul>
-          </div>
 
-          {/* Card 2: Kecepatan Mesin AI */}
-          <div className="bg-gradient-to-br from-slate-50 to-blue-50/40 dark:from-slate-850 dark:to-blue-950/20 rounded-3xl p-5 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
-            <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400">
-              <Cpu className="w-5 h-5" />
-              <h3 className="font-extrabold text-sm text-slate-900 dark:text-white">
-                Keunggulan Komputasi AI
-              </h3>
-            </div>
-            <div className="text-xs text-slate-600 dark:text-slate-300 space-y-2.5">
-              <div className="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700">
-                <span className="font-bold text-slate-900 dark:text-white block">⚡ Groq Cloud LPU™:</span>
-                <span className="text-[11px] text-slate-500 dark:text-slate-400">Kecepatan inferensi super instan (&lt;1 detik) untuk 5–10 butir soal.</span>
-              </div>
-              <div className="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700">
-                <span className="font-bold text-slate-900 dark:text-white block">🧠 Google Gemini 2.0:</span>
-                <span className="text-[11px] text-slate-500 dark:text-slate-400">Dukungan penalaran mendalam (*Flash Thinking*) dan langganan Gemini PRO.</span>
-              </div>
-              <div className="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700">
-                <span className="font-bold text-slate-900 dark:text-white block">🎨 Ilustrasi Edukasi Gratis:</span>
-                <span className="text-[11px] text-slate-500 dark:text-slate-400">Gambar ilustrasi bergaya 3D vektor tanpa batasan kuota.</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Card 3: Rencana Kuis */}
-          <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
-            <h4 className="font-extrabold text-xs text-slate-400 uppercase tracking-wider">
-              Rencana Target Kuis:
-            </h4>
-            <div className="space-y-1.5 text-xs text-slate-700 dark:text-slate-300 font-medium">
-              <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
-                <span className="text-slate-500">Mata Pelajaran:</span>
+            <div className="space-y-2 text-xs divide-y divide-slate-100 dark:divide-slate-800">
+              <div className="flex items-center justify-between pt-1">
+                <span className="text-slate-500 dark:text-slate-400">Mata Pelajaran:</span>
                 <span className="font-bold text-slate-900 dark:text-white">{genSubject}</span>
               </div>
-              <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
-                <span className="text-slate-500">Tingkat Kelas:</span>
+              <div className="flex items-center justify-between pt-2">
+                <span className="text-slate-500 dark:text-slate-400">Tingkat Kelas:</span>
                 <span className="font-bold text-slate-900 dark:text-white">Kelas {genGrade} SD</span>
               </div>
-              <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800">
-                <span className="text-slate-500">Target Soal:</span>
-                <span className="font-bold text-blue-600 dark:text-blue-400">{customCountInput || genCount} Butir</span>
+              <div className="flex items-center justify-between pt-2">
+                <span className="text-slate-500 dark:text-slate-400">Format Soal:</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200 capitalize">
+                  {genType === 'campuran' ? 'Campuran (Bervariasi)' : genType.replace('_', ' ')}
+                </span>
               </div>
-              <div className="flex justify-between py-1">
-                <span className="text-slate-500">Alur Setelah Ini:</span>
-                <span className="font-bold text-emerald-600 dark:text-emerald-400">Langkah 2: Bank Soal</span>
+              <div className="flex items-center justify-between pt-2">
+                <span className="text-slate-500 dark:text-slate-400">Ilustrasi Gambar:</span>
+                <span className={`font-bold ${includeAiImages ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`}>
+                  {includeAiImages ? 'Aktif (AI Gratis)' : 'Teks Saja'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 2: Struktur Format Butir Soal */}
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200 dark:border-slate-800 shadow-card space-y-3">
+            <h4 className="font-extrabold text-xs text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+              <Layers className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+              <span>Format Butir Soal</span>
+            </h4>
+            
+            <div className="p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/70 space-y-2 text-xs">
+              <div className="flex items-center justify-between font-bold text-slate-900 dark:text-white">
+                <span>#1 Butir Soal</span>
+                <span className="text-[10px] text-amber-600 bg-amber-50 dark:bg-amber-950/50 px-1.5 py-0.5 rounded">10 Poin</span>
+              </div>
+              <p className="text-slate-500 dark:text-slate-400 italic text-[11px]">
+                Pertanyaan kontekstual sesuai tingkat kelas...
+              </p>
+              <div className="space-y-1 text-[11px] pt-1">
+                <div className="p-1 px-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-700/60 text-slate-700 dark:text-slate-300">
+                  A. Opsi Pilihan 1
+                </div>
+                <div className="p-1 px-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 font-bold flex items-center justify-between">
+                  <span>B. Kunci Jawaban Benar</span>
+                  <span>✓</span>
+                </div>
+              </div>
+              <p className="text-[10px] text-slate-400 pt-1 border-t border-slate-200/60 dark:border-slate-700/60">
+                💡 Dilengkapi pembahasan edukatif untuk siswa.
+              </p>
+            </div>
+            
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+              Seluruh butir soal dapat dikoreksi, diganti gambar, atau ditambah di <strong className="text-slate-700 dark:text-slate-300">Langkah 2 (Bank Soal)</strong> sebelum kuis diterbitkan.
+            </p>
+          </div>
+
+          {/* Card 3: Panduan Alur Kerja Kuis */}
+          <div className="bg-slate-50 dark:bg-slate-850 rounded-3xl p-4 border border-slate-200/80 dark:border-slate-800 space-y-2 text-xs">
+            <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider block">
+              Alur Kerja Studio:
+            </span>
+            <div className="space-y-1.5 font-semibold text-slate-700 dark:text-slate-300">
+              <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
+                <span className="w-5 h-5 rounded-full bg-blue-100 dark:bg-blue-900/60 flex items-center justify-center text-[10px] font-bold">1</span>
+                <span>Racik Soal AI (Langkah ini)</span>
+              </div>
+              <div className="flex items-center gap-2 text-slate-500">
+                <span className="w-5 h-5 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-[10px] font-bold">2</span>
+                <span>Tinjau & Edit Bank Soal</span>
+              </div>
+              <div className="flex items-center gap-2 text-slate-500">
+                <span className="w-5 h-5 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-[10px] font-bold">3</span>
+                <span>Atur Informasi Kuis</span>
+              </div>
+              <div className="flex items-center gap-2 text-slate-500">
+                <span className="w-5 h-5 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-[10px] font-bold">4</span>
+                <span>Pratinjau & Terbitkan</span>
               </div>
             </div>
           </div>
@@ -636,7 +601,6 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
         </div>
 
       </div>
-
     </div>
   );
 };

@@ -1,6 +1,25 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.46] - 2026-09-10
+### Eliminasi Total "AI Slop" & Pengisian Celah Kosong Layar Lebar dengan Panel Pratinjau Fungsional
+
+#### 1. Pembersihan Menyeluruh Elemen "AI Slop" & Clutter
+- Menghapus total banner promosi ungu raksasa (*hero banner*) yang memakan ruang vertikal dan menenggelamkan tombol aksi.
+- Menghapus seluruh kartu teks artikel/pemasaran AI yang tidak dibutuhkan guru (seperti promosi kecepatan Groq LPU, klaim komputasi Gemini, dan tips umum).
+- Mengembalikan antarmuka ke standar alat profesional yang bersih, fokus, dan langsung pada fungsi pembuatan kuis.
+
+#### 2. Mengatasi Celah Kosong Kiri dan Kanan pada Layar Lebar (Desktop/Widescreen)
+- Menyempurnakan kontainer antarmuka Studio Kuis menjadi `max-w-6xl 2xl:max-w-7xl` yang konsisten di semua tahapan (*Info Kuis*, *Generator AI*, *Bank Soal*, dan *Pratinjau*).
+- Menghadirkan tata letak 2 kolom adaptif yang fungsional dan relevan:
+  - **Di Langkah 1 Info Kuis:**
+    - Kolom Kiri: Formulir lengkap konfigurasi identitas kuis.
+    - Kolom Kanan: **Pratinjau Kartu Siswa Real-Time (*Live Preview*)** yang memperbarui tampilan kartu kuis di katalog secara langsung saat guru mengetik, serta **Checklist Kesiapan Kuis** fungsional.
+  - **Di Langkah 1 Generator Kilat AI:**
+    - Kolom Kiri: Formulir input topik, pilihan mapel, kelas, jumlah butir, format soal, dan mesin AI tanpa scroll berlebih. Tombol *"Buat Kuis Sekarang & Buka Editor"* kini langsung terlihat di layar.
+    - Kolom Kanan: **Spesifikasi Target Kuis**, **Pratinjau Format Butir Soal (Mockup Pertanyaan, Opsi, Kunci, dan Pembahasan)**, serta **Alur Kerja Studio**.
+- Menghilangkan kesan "kotak sempit mengambang" dengan celah kosong berlebih di monitor desktop, sembari menjaga kenyamanan responsif satu kolom di perangkat smartphone dan tablet.
+
 ## [2.2.45] - 2026-09-10
 ### Studio Kuis AI Halaman Penuh, Navigasi Pemilihan Metode Cerdas, Isolasi Interaksi Kartu Kuis, dan Optimalisasi Responsivitas Layar Lebar
 

@@ -1359,7 +1359,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
 
         {/* ================= STEP PREVIEW & PUBLISH (Step 4 in AI, Step 3 in Manual) ================= */}
         {((isAiMode && currentStep === 4) || (!isAiMode && currentStep === 3)) && (
-          <div className="w-full max-w-6xl 2xl:max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 animate-fade-in space-y-6">
+          <div className="w-full max-w-6xl 2xl:max-w-7xl mx-auto px-3 xs:px-4 sm:px-6 lg:px-8 py-4 sm:py-6 animate-fade-in space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
               
               {/* Kolom Kiri: Pratinjau Soal (8 kolom di desktop) */}
