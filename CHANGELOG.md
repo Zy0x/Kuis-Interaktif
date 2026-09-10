@@ -1,6 +1,18 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.64] - 2026-09-10
+### Perbaikan Redundansi Penomoran pada Tab Tahapan Pembuat Kuis Sticky Header
+
+#### 1. Eliminasi Nomor Ganda pada Tab Navigasi Langkah
+- Memperbaiki redundansi penomoran di mana lencana nomor bulat telah menampilkan angka tahap (`1`, `2`, `3`, `4`), namun teks label di sebelahnya masih memuat awalan angka yang sama (`1. Mapel & Kelas`, `2. Topik Materi`, dst).
+- Menyederhanakan teks label tahapan menjadi bersih dan proporsional:
+  - Tab 1: Bulat `1` + **Mapel & Kelas** (Ponsel: **Mapel**)
+  - Tab 2: Bulat `2` + **Topik Materi** (Ponsel: **Topik**)
+  - Tab 3: Bulat `3` + **Format Soal** (Ponsel: **Format**)
+  - Tab 4: Bulat `4` + **Mesin AI** (Ponsel: **Mesin**)
+- Mengoptimalkan ruang tampilan (*screen real-estate*) tombol tab di layar ponsel agar label tidak terpotong atau mengalami *text-wrap* canggung.
+
 ## [2.2.63] - 2026-09-10
 ### Integrasi Matriks Profil Perangkat Emulasi Kustom untuk Quality Check Responsivitas
 

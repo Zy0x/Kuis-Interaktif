@@ -757,8 +757,8 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                   1
                 </span>
                 <span className="truncate">
-                  <span className="hidden md:inline">1. Mapel & Kelas</span>
-                  <span className="md:hidden">1. Mapel</span>
+                  <span className="hidden md:inline">Mapel & Kelas</span>
+                  <span className="md:hidden">Mapel</span>
                 </span>
               </button>
 
@@ -780,8 +780,8 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                   2
                 </span>
                 <span className="truncate">
-                  <span className="hidden md:inline">2. Topik Materi</span>
-                  <span className="md:hidden">2. Topik</span>
+                  <span className="hidden md:inline">Topik Materi</span>
+                  <span className="md:hidden">Topik</span>
                 </span>
               </button>
 
@@ -807,8 +807,8 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                   3
                 </span>
                 <span className="truncate">
-                  <span className="hidden md:inline">3. Format Soal</span>
-                  <span className="md:hidden">3. Soal</span>
+                  <span className="hidden md:inline">Format Soal</span>
+                  <span className="md:hidden">Format</span>
                 </span>
               </button>
 
@@ -834,8 +834,8 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                   4
                 </span>
                 <span className="truncate">
-                  <span className="hidden md:inline">4. Mesin AI</span>
-                  <span className="md:hidden">4. AI</span>
+                  <span className="hidden md:inline">Mesin AI</span>
+                  <span className="md:hidden">Mesin</span>
                 </span>
               </button>
             </div>
