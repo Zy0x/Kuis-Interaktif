@@ -89,6 +89,7 @@ export interface GenerateAiQuestionsParams {
   mcOptionCount?: number; // 3, 4, atau 5 opsi pilihan ganda
   trueFalseStyle?: 'benar_salah' | 'sesuai_tidak' | 'ya_tidak';
   matchingPairCount?: number; // 3, 4, atau 5 pasang menjodohkan
+  allowLocalFallback?: boolean; // false untuk mencegah silent fallback ke lokal saat cloud limit
 }
 
 export interface HybridGenerateResult {
@@ -1623,7 +1624,11 @@ export async function generateHybridQuizQuestions(
     }
   }
 
-  // 4. Fallback mulus ke Generator Kurikulum SD lokal (Offline & 100% Reliable)
+  // 4. Fallback ke Generator Kurikulum lokal jika diizinkan (Offline & 100% Reliable)
+  if (params.allowLocalFallback === false) {
+    throw new Error('Seluruh kuota AI Cloud harian sedang limit. Sistem mengalihkan ke mode Prompt / Berkas (Direkomendasikan) agar hasil kuis tidak monoton.');
+  }
+
   const localQuestions = generateCurriculumSeedQuestions(
     params.topic,
     params.subject,

@@ -1,6 +1,22 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.90] - 2026-09-11
+### Penonaktifan Cerdas AI Cloud Saat Limit & Pengalihan Rekomendasi ke Prompt/Berkas
+
+#### 1. Penonaktifan Visual & Interaksi AI Cloud Saat Limit Kuota
+- Menerapkan status nonaktif (*grayed out*, `opacity-50 cursor-not-allowed`, `disabled`) pada kartu model cloud spesifik (DeepSeek, Groq, Gemini) ketika status kuotanya mencapai batas harian (`quota_exhausted` / 429).
+- Ketika seluruh AI Cloud yang terkonfigurasi mengalami limit kuota, kartu utama **Otomatis** secara otomatis dinonaktifkan dengan lencana *"Semua Cloud Limit"*, indikator status *(Kuota Habis)*, serta teks panduan solutif.
+- Menghadirkan *Alert Banner* edukatif di bagian atas yang menerangkan penyebab penonaktifan cloud dan memandu guru untuk menggunakan AI eksternal tanpa batasan kuota.
+
+#### 2. Pengalihan Otomatis ke Mode Prompt / Berkas (Direkomendasikan)
+- Mengalihkan pilihan mesin AI secara otomatis ke **Prompt / Berkas** saat seluruh AI Cloud limit, menghindari *default* ke Generator Lokal karena hasil racikan lokal cenderung monoton dan kurang matang.
+- Mengubah lencana pada kartu **Prompt / Berkas** menjadi **"Direkomendasikan"** dengan aksen bintang (*Sparkles*), serta memperbarui deskripsi kartu guna menegaskan solusi terbaik saat kuota Cloud habis.
+- Kartu **Lokal** tetap dapat diakses secara manual jika guru membutuhkan pengerjaan luring (*offline*), namun tidak dijadikan rekomendasi sistem.
+
+#### 3. Proteksi Runtime Generator AI Direct
+- Menambahkan parameter `allowLocalFallback: false` pada mode Otomatis dan Cloud sehingga kegagalan kuota di tingkat server tidak akan secara diam-diam (*silent fallback*) menghasilkan soal lokal berkualitas rendah, melainkan langsung beralih ke formulir Prompt / Berkas siap salin dengan notifikasi yang jelas.
+
 ## [2.2.89] - 2026-09-11
 ### Penyederhanaan Pilihan Mesin AI 3-Pilar & Eliminasi Navigasi Bawah Redundan
 

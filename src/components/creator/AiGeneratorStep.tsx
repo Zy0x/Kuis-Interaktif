@@ -1234,16 +1234,61 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
       });
   }, []);
 
+  // Status kesehatan & limit masing-masing cloud engine
+  const deepseekHealth = useMemo(() => getEngineHealthDetail('deepseek', supabaseAi), [supabaseAi]);
+  const groqHealth = useMemo(() => getEngineHealthDetail('groq', supabaseAi), [supabaseAi]);
+  const geminiHealth = useMemo(() => getEngineHealthDetail('gemini', supabaseAi), [supabaseAi]);
+
+  // Status apakah provider tertentu sedang limit kuota harian
+  const isDeepSeekLimited = deepseekHealth.status === 'quota_exhausted';
+  const isGroqLimited = groqHealth.status === 'quota_exhausted';
+  const isGeminiLimited = geminiHealth.status === 'quota_exhausted';
+
+  // Cek ketersediaan provider cloud (konfigurasi + tidak limit kuota)
+  const isDeepSeekConfigured = Boolean(supabaseAi.hasDeepSeek) || hasDeepSeekApiKey();
+  const isGroqConfigured = Boolean(supabaseAi.hasGroq) || hasGroqApiKey();
+  const isGeminiConfigured = Boolean(supabaseAi.hasGemini) || hasGeminiApiKey();
+
+  const isDeepSeekAvailable = isDeepSeekConfigured && !isDeepSeekLimited && deepseekHealth.status !== 'error';
+  const isGroqAvailable = isGroqConfigured && !isGroqLimited && groqHealth.status !== 'error';
+  const isGeminiAvailable = isGeminiConfigured && !isGeminiLimited && geminiHealth.status !== 'error';
+
+  const anyCloudConfigured = isDeepSeekConfigured || isGroqConfigured || isGeminiConfigured;
+  const anyCloudAvailable = isDeepSeekAvailable || isGroqAvailable || isGeminiAvailable;
+
+  // Seluruh AI Cloud limit: jika cloud dikonfigurasi namun tidak ada satupun yang bisa dipakai (semua limit kuota/error)
+  const isAllCloudLimited = anyCloudConfigured && !anyCloudAvailable;
+
   // Resolusi engine aktual dari mode Auto — prioritas: DeepSeek → Groq → Gemini → Lokal
   const resolvedEngine = useMemo<'local' | 'deepseek' | 'groq' | 'gemini'>(() => {
     if (selectedEngine !== 'auto') {
       return (selectedEngine === 'prompt' ? 'local' : selectedEngine) as 'local' | 'deepseek' | 'groq' | 'gemini';
     }
-    if (supabaseAi.hasDeepSeek || hasDeepSeekApiKey()) return 'deepseek';
-    if (supabaseAi.hasGroq || hasGroqApiKey()) return 'groq';
-    if (supabaseAi.hasGemini || hasGeminiApiKey()) return 'gemini';
+    if (isDeepSeekAvailable) return 'deepseek';
+    if (isGroqAvailable) return 'groq';
+    if (isGeminiAvailable) return 'gemini';
     return 'local';
-  }, [selectedEngine, supabaseAi]);
+  }, [selectedEngine, isDeepSeekAvailable, isGroqAvailable, isGeminiAvailable]);
+
+  // Otomatis alihkan ke mode 'prompt' jika seluruh AI Cloud limit dan mode aktif saat ini bukan lokal
+  useEffect(() => {
+    if (isAllCloudLimited) {
+      if (selectedEngine === 'auto' || selectedEngine === 'deepseek' || selectedEngine === 'groq' || selectedEngine === 'gemini') {
+        setSelectedEngine('prompt');
+      }
+    }
+  }, [isAllCloudLimited, selectedEngine]);
+
+  // Alihkan engine individu jika engine spesifik yang dipilih sedang limit
+  useEffect(() => {
+    if (selectedEngine === 'deepseek' && isDeepSeekLimited) {
+      setSelectedEngine(anyCloudAvailable ? 'auto' : 'prompt');
+    } else if (selectedEngine === 'groq' && isGroqLimited) {
+      setSelectedEngine(anyCloudAvailable ? 'auto' : 'prompt');
+    } else if (selectedEngine === 'gemini' && isGeminiLimited) {
+      setSelectedEngine(anyCloudAvailable ? 'auto' : 'prompt');
+    }
+  }, [selectedEngine, isDeepSeekLimited, isGroqLimited, isGeminiLimited, anyCloudAvailable]);
 
 
   // Hitung total butir soal aktual
@@ -1457,6 +1502,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
       saveStoredGeminiModel(geminiModelChoice);
       setKeySaveMessage(geminiKeyInput.trim() ? 'Kunci Gemini berhasil disimpan.' : 'Kunci Gemini telah dihapus.');
     }
+    setSupabaseAi({ ...getSupabaseAiStatusSync() });
     setTimeout(() => {
       setKeySaveMessage(null);
       setIsApiKeyModalOpen(false);
@@ -1492,17 +1538,25 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
       matchingPairCount,
     };
 
-    // Rantai fallback — mode Auto mencoba semua engine yang tersedia secara berurutan
+    // Rantai fallback — mode Auto mencoba semua engine cloud yang tersedia secara berurutan
     const fallbackChain: Array<'deepseek' | 'groq' | 'gemini' | 'local'> = (() => {
       if (selectedEngine === 'local') return ['local'];
       if (selectedEngine !== 'auto') return [resolvedEngine as 'deepseek' | 'groq' | 'gemini' | 'local'];
       const chain: Array<'deepseek' | 'groq' | 'gemini' | 'local'> = [];
-      if (supabaseAi.hasDeepSeek || hasDeepSeekApiKey()) chain.push('deepseek');
-      if (supabaseAi.hasGroq || hasGroqApiKey()) chain.push('groq');
-      if (supabaseAi.hasGemini || hasGeminiApiKey()) chain.push('gemini');
-      chain.push('local');
+      if (isDeepSeekAvailable) chain.push('deepseek');
+      if (isGroqAvailable) chain.push('groq');
+      if (isGeminiAvailable) chain.push('gemini');
+      // Perhatian: Tidak mendorong 'local' otomatis di mode Auto saat cloud limit.
+      // Sesuai instruksi: bila seluruh cloud limit, alihkan ke Prompt / Berkas (Direkomendasikan)
       return chain;
     })();
+
+    if (selectedEngine === 'auto' && fallbackChain.length === 0) {
+      setSelectedEngine('prompt');
+      setErrorMessage('Seluruh kuota AI Cloud harian sedang limit. Sistem otomatis mengalihkan ke mode Prompt / Berkas (Direkomendasikan) agar butir soal yang dihasilkan tetap matang dan variatif.');
+      setIsLoading(false);
+      return;
+    }
 
     try {
       let lastError: Error | null = null;
@@ -1515,7 +1569,11 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
             engine === 'groq' ? 'groq' :
             engine === 'gemini' ? 'gemini' : undefined;
 
-          result = await generateHybridQuizQuestions({ ...baseParams, provider });
+          result = await generateHybridQuizQuestions({
+            ...baseParams,
+            provider,
+            allowLocalFallback: false,
+          });
           if (result.questions && result.questions.length > 0) break;
         } catch (err: unknown) {
           lastError = err instanceof Error ? err : new Error(String(err));
@@ -1543,7 +1601,22 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
       });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Terjadi kendala saat meracik soal AI.';
-      setErrorMessage(msg);
+      // Sinkronkan status Supabase AI terbaru untuk memicu reaktivitas badge kuota
+      const updatedAiStatus = getSupabaseAiStatusSync();
+      setSupabaseAi({ ...updatedAiStatus });
+
+      const isQuotaErr = msg.toLowerCase().includes('429') || 
+                         msg.toLowerCase().includes('quota') || 
+                         msg.toLowerCase().includes('limit') || 
+                         msg.toLowerCase().includes('balance') ||
+                         msg.toLowerCase().includes('exhausted');
+
+      if (isQuotaErr || selectedEngine === 'auto') {
+        setSelectedEngine('prompt');
+        setErrorMessage('Seluruh kuota AI Cloud saat ini sedang mencapai limit harian. Pilihan otomatis dialihkan ke mode **Prompt / Berkas (Direkomendasikan)**. Salin prompt di bawah ke ChatGPT/Claude/Gemini eksternal untuk mendapatkan butir soal yang matang dan bervariasi.');
+      } else {
+        setErrorMessage(msg);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -2775,24 +2848,45 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
               </p>
             </div>
 
+            {/* Alert Banner jika Seluruh AI Cloud Sedang Limit Kuota */}
+            {isAllCloudLimited && (
+              <div className="p-3.5 sm:p-4 rounded-2xl bg-amber-50/90 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-3 animate-fade-in shadow-2xs">
+                <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <p className="font-extrabold text-amber-950 dark:text-amber-100 text-xs sm:text-sm">
+                    Seluruh Layanan AI Cloud Sedang Mencapai Limit Kuota
+                  </p>
+                  <p className="leading-relaxed text-amber-800 dark:text-amber-300 text-[11px] sm:text-xs">
+                    Pilihan otomatis dialihkan ke <strong>Prompt / Berkas (Direkomendasikan)</strong>. Generator lokal dihindari agar butir soal kuis Anda tetap berkualitas matang, mendidik, dan tidak monoton. Silakan salin prompt di bawah ke ChatGPT/Claude/Gemini secara gratis.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* 1. Tiga Mode Pilihan Mesin Utama */}
             <div className="space-y-3">
-              {/* Opsi 1: Mode Otomatis (Rekomendasi Utama) */}
+              {/* Opsi 1: Mode Otomatis (Rekomendasi Utama Cloud) */}
               <button
                 type="button"
+                disabled={isAllCloudLimited}
                 onClick={() => {
+                  if (isAllCloudLimited) return;
                   playClick();
                   setSelectedEngine('auto');
                 }}
-                className={`w-full p-3.5 sm:p-4 rounded-2xl border text-left transition-all flex items-center justify-between gap-3 btn-press min-h-[64px] ${
-                  selectedEngine === 'auto'
-                    ? 'border-blue-600 bg-blue-50/80 dark:bg-blue-950/40 text-blue-950 dark:text-blue-50 ring-2 ring-blue-500/25 shadow-xs'
-                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 hover:border-slate-300 dark:hover:border-slate-700 text-slate-700 dark:text-slate-300'
+                className={`w-full p-3.5 sm:p-4 rounded-2xl border text-left transition-all flex items-center justify-between gap-3 min-h-[64px] ${
+                  isAllCloudLimited
+                    ? 'opacity-60 cursor-not-allowed bg-slate-100/90 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-500'
+                    : selectedEngine === 'auto'
+                    ? 'border-blue-600 bg-blue-50/80 dark:bg-blue-950/40 text-blue-950 dark:text-blue-50 ring-2 ring-blue-500/25 shadow-xs btn-press'
+                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 hover:border-slate-300 dark:hover:border-slate-700 text-slate-700 dark:text-slate-300 btn-press'
                 }`}
               >
                 <div className="flex items-center gap-3 min-w-0 flex-1">
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl font-bold shrink-0 transition-colors shadow-2xs ${
-                    selectedEngine === 'auto'
+                    isAllCloudLimited
+                      ? 'bg-slate-200 dark:bg-slate-800 text-slate-400'
+                      : selectedEngine === 'auto'
                       ? 'bg-blue-600 text-white'
                       : 'bg-blue-100 dark:bg-blue-900/60 text-blue-600'
                   }`}>
@@ -2800,15 +2894,28 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-extrabold text-xs sm:text-base text-slate-900 dark:text-white block truncate">
+                      <span className={`font-extrabold text-xs sm:text-base block truncate ${
+                        isAllCloudLimited ? 'text-slate-500 dark:text-slate-400' : 'text-slate-900 dark:text-white'
+                      }`}>
                         Otomatis
                       </span>
-                      <span className="text-[10px] px-2 py-0.5 rounded-md font-bold bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300">
-                        Direkomendasikan
-                      </span>
+                      {isAllCloudLimited ? (
+                        <span className="text-[10px] px-2 py-0.5 rounded-md font-bold bg-rose-100 dark:bg-rose-950/80 text-rose-700 dark:text-rose-300 inline-flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3 text-rose-500" />
+                          Semua Cloud Limit
+                        </span>
+                      ) : (
+                        <span className="text-[10px] px-2 py-0.5 rounded-md font-bold bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300">
+                          Direkomendasikan
+                        </span>
+                      )}
                       {isCheckingCloudAi ? (
                         <span className="text-[11px] text-slate-400 flex items-center gap-1">
                           <Loader2 className="w-3 h-3 animate-spin" /> Memeriksa...
+                        </span>
+                      ) : isAllCloudLimited ? (
+                        <span className="text-[11px] text-rose-500 dark:text-rose-400 font-semibold">
+                          (Kuota Habis)
                         </span>
                       ) : (
                         <span className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold">
@@ -2817,22 +2924,26 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                       )}
                     </div>
                     <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5 sm:mt-1 leading-snug">
-                      Pilih model terbaik otomatis. Beralih ke cadangan jika batas tercapai.
+                      {isAllCloudLimited
+                        ? 'Seluruh kuota AI Cloud harian sedang limit. Pilihan dialihkan ke Prompt / Berkas di bawah.'
+                        : 'Pilih model terbaik otomatis. Beralih ke cadangan jika batas tercapai.'}
                     </p>
                   </div>
                 </div>
                 <div className="shrink-0 flex items-center">
                   <div className={`w-5 h-5 rounded-full flex items-center justify-center border transition-all ${
-                    selectedEngine === 'auto'
+                    isAllCloudLimited
+                      ? 'border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800'
+                      : selectedEngine === 'auto'
                       ? 'border-blue-600 bg-blue-600 text-white shadow-2xs'
                       : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800'
                   }`}>
-                    {selectedEngine === 'auto' && <Check className="w-3 h-3 stroke-[3]" />}
+                    {!isAllCloudLimited && selectedEngine === 'auto' && <Check className="w-3 h-3 stroke-[3]" />}
                   </div>
                 </div>
               </button>
 
-              {/* Grid 2 Kolom: Lokal (Offline) vs Prompt / Berkas (Manual) */}
+              {/* Grid 2 Kolom: Lokal (Offline) vs Prompt / Berkas (Manual / Rekomendasi Saat Limit) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {/* Opsi 2: Lokal */}
                 <button
@@ -2852,8 +2963,8 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                       🤖
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-extrabold text-xs sm:text-base text-slate-900 dark:text-white block truncate">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="font-extrabold text-xs sm:text-base text-slate-900 dark:text-white shrink-0">
                           Lokal
                         </span>
                         <span className="text-[10px] px-2 py-0.5 rounded-md font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 inline-flex items-center gap-1 shrink-0">
@@ -2877,7 +2988,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                   </div>
                 </button>
 
-                {/* Opsi 3: Prompt / Berkas */}
+                {/* Opsi 3: Prompt / Berkas (Jatuh Ke Sini & Direkomendasikan Saat Cloud Limit) */}
                 <button
                   type="button"
                   onClick={() => {
@@ -2887,6 +2998,8 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                   className={`p-3.5 sm:p-4 rounded-2xl border text-left transition-all flex items-center justify-between gap-3 btn-press min-h-[58px] ${
                     selectedEngine === 'prompt'
                       ? 'border-indigo-600 bg-indigo-50/80 dark:bg-indigo-950/40 text-indigo-950 dark:text-indigo-50 ring-2 ring-indigo-500/25 shadow-xs'
+                      : isAllCloudLimited
+                      ? 'border-amber-300 dark:border-amber-700 bg-amber-50/40 dark:bg-amber-950/20 text-amber-900 dark:text-amber-200 hover:border-amber-400'
                       : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700'
                   }`}
                 >
@@ -2895,16 +3008,25 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                       📝
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-extrabold text-xs sm:text-base text-slate-900 dark:text-white block truncate">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="font-extrabold text-xs sm:text-base text-slate-900 dark:text-white shrink-0">
                           Prompt / Berkas
                         </span>
-                        <span className="text-[10px] px-2 py-0.5 rounded-md font-bold bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 shrink-0">
-                          Manual
-                        </span>
+                        {isAllCloudLimited ? (
+                          <span className="text-[10px] px-2 py-0.5 rounded-md font-bold bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 inline-flex items-center gap-1 shrink-0 shadow-2xs">
+                            <Sparkles className="w-3 h-3 text-amber-500 fill-amber-500" />
+                            Direkomendasikan
+                          </span>
+                        ) : (
+                          <span className="text-[10px] px-2 py-0.5 rounded-md font-bold bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 shrink-0">
+                            Manual
+                          </span>
+                        )}
                       </div>
                       <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5 sm:mt-1 leading-snug line-clamp-2">
-                        Gunakan hasil prompt AI eksternal atau impor berkas dokumen.
+                        {isAllCloudLimited
+                          ? 'Rekomendasi saat kuota Cloud habis: salin prompt ke ChatGPT/Claude/Gemini untuk butir soal kaya & matang.'
+                          : 'Gunakan hasil prompt AI eksternal atau impor berkas dokumen.'}
                       </p>
                     </div>
                   </div>
@@ -2932,11 +3054,15 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                 >
                   <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showSpecificCloudModels || selectedEngine === 'deepseek' || selectedEngine === 'groq' || selectedEngine === 'gemini' ? 'rotate-180 text-blue-500' : ''}`} />
                   <span>Pilih Model Cloud Tertentu (DeepSeek, Groq, Gemini)</span>
-                  {(selectedEngine === 'deepseek' || selectedEngine === 'groq' || selectedEngine === 'gemini') && (
+                  {isAllCloudLimited ? (
+                    <span className="text-[10px] px-2 py-0.5 rounded-md bg-rose-100 dark:bg-rose-950 text-rose-600 dark:text-rose-400 font-extrabold">
+                      Semua Cloud Limit
+                    </span>
+                  ) : (selectedEngine === 'deepseek' || selectedEngine === 'groq' || selectedEngine === 'gemini') ? (
                     <span className="text-[10px] px-2 py-0.5 rounded-md bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400 font-extrabold">
                       Aktif: {selectedEngine === 'deepseek' ? 'DeepSeek' : selectedEngine === 'groq' ? 'Groq' : 'Gemini'}
                     </span>
-                  )}
+                  ) : null}
                 </button>
 
                 {/* Sub-grid Model Cloud: Tampil hanya jika dibuka atau jika salah satu sedang aktif */}
@@ -2945,46 +3071,61 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                     {/* Option: DeepSeek AI */}
                     <button
                       type="button"
+                      disabled={isDeepSeekLimited}
                       onClick={() => {
+                        if (isDeepSeekLimited) return;
                         playClick();
                         setSelectedEngine('deepseek');
                       }}
-                      className={`p-3.5 sm:p-4 rounded-2xl border text-left transition-all flex items-center sm:items-stretch sm:flex-col justify-between gap-3 btn-press min-h-[58px] sm:min-h-[135px] ${
-                        selectedEngine === 'deepseek'
-                          ? 'border-sky-600 bg-sky-50/80 dark:bg-sky-950/40 text-sky-950 dark:text-sky-50 ring-2 ring-sky-500/25 shadow-xs'
-                          : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700'
+                      title={isDeepSeekLimited ? 'Kuota DeepSeek sedang mencapai limit' : undefined}
+                      className={`p-3.5 sm:p-4 rounded-2xl border text-left transition-all flex items-center sm:items-stretch sm:flex-col justify-between gap-3 min-h-[58px] sm:min-h-[135px] ${
+                        isDeepSeekLimited
+                          ? 'opacity-50 cursor-not-allowed bg-slate-100/70 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800'
+                          : selectedEngine === 'deepseek'
+                          ? 'border-sky-600 bg-sky-50/80 dark:bg-sky-950/40 text-sky-950 dark:text-sky-50 ring-2 ring-sky-500/25 shadow-xs btn-press'
+                          : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700 btn-press'
                       }`}
                     >
                       <div className="flex items-center sm:items-start gap-3 sm:block flex-1 min-w-0">
                         <div className="flex items-center justify-between sm:mb-2.5 shrink-0">
-                          <div className="w-9 h-9 rounded-xl bg-sky-100 dark:bg-sky-900/60 text-sky-600 flex items-center justify-center text-lg font-bold shrink-0">
+                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-lg font-bold shrink-0 ${
+                            isDeepSeekLimited
+                              ? 'bg-slate-200 dark:bg-slate-800 text-slate-400'
+                              : 'bg-sky-100 dark:bg-sky-900/60 text-sky-600'
+                          }`}>
                             🐋
                           </div>
                           <div className="hidden sm:block">
-                            {renderEngineStatusBadge(getEngineHealthDetail('deepseek', supabaseAi))}
+                            {renderEngineStatusBadge(deepseekHealth)}
                           </div>
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center justify-between gap-2">
-                            <span className="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-white block truncate">
+                            <span className={`font-extrabold text-xs sm:text-sm block truncate ${
+                              isDeepSeekLimited ? 'text-slate-400 dark:text-slate-500' : 'text-slate-900 dark:text-white'
+                            }`}>
                               DeepSeek AI
                             </span>
                             <div className="sm:hidden">
-                              {renderEngineStatusBadge(getEngineHealthDetail('deepseek', supabaseAi), true)}
+                              {renderEngineStatusBadge(deepseekHealth, true)}
                             </div>
                           </div>
                           <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug line-clamp-2 sm:line-clamp-none">
-                            Fokus pada soal penalaran logis dan berpikir kritis (HOTS).
+                            {isDeepSeekLimited
+                              ? 'Batas kuota harian tercapai. Tidak dapat dipilih.'
+                              : 'Fokus pada soal penalaran logis dan berpikir kritis (HOTS).'}
                           </p>
                         </div>
                       </div>
                       <div className="shrink-0 flex items-center sm:mt-2.5 sm:self-end">
                         <div className={`w-5 h-5 rounded-full flex items-center justify-center border transition-all ${
-                          selectedEngine === 'deepseek'
+                          isDeepSeekLimited
+                            ? 'border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800'
+                            : selectedEngine === 'deepseek'
                             ? 'border-sky-600 bg-sky-600 text-white shadow-2xs'
                             : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800'
                         }`}>
-                          {selectedEngine === 'deepseek' && <Check className="w-3 h-3 stroke-[3]" />}
+                          {!isDeepSeekLimited && selectedEngine === 'deepseek' && <Check className="w-3 h-3 stroke-[3]" />}
                         </div>
                       </div>
                     </button>
@@ -2992,46 +3133,61 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                     {/* Option: Groq Cloud */}
                     <button
                       type="button"
+                      disabled={isGroqLimited}
                       onClick={() => {
+                        if (isGroqLimited) return;
                         playClick();
                         setSelectedEngine('groq');
                       }}
-                      className={`p-3.5 sm:p-4 rounded-2xl border text-left transition-all flex items-center sm:items-stretch sm:flex-col justify-between gap-3 btn-press min-h-[58px] sm:min-h-[135px] ${
-                        selectedEngine === 'groq'
-                          ? 'border-amber-600 bg-amber-50/80 dark:bg-amber-950/40 text-amber-950 dark:text-amber-50 ring-2 ring-amber-500/25 shadow-xs'
-                          : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700'
+                      title={isGroqLimited ? 'Kuota Groq sedang mencapai limit' : undefined}
+                      className={`p-3.5 sm:p-4 rounded-2xl border text-left transition-all flex items-center sm:items-stretch sm:flex-col justify-between gap-3 min-h-[58px] sm:min-h-[135px] ${
+                        isGroqLimited
+                          ? 'opacity-50 cursor-not-allowed bg-slate-100/70 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800'
+                          : selectedEngine === 'groq'
+                          ? 'border-amber-600 bg-amber-50/80 dark:bg-amber-950/40 text-amber-950 dark:text-amber-50 ring-2 ring-amber-500/25 shadow-xs btn-press'
+                          : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700 btn-press'
                       }`}
                     >
                       <div className="flex items-center sm:items-start gap-3 sm:block flex-1 min-w-0">
                         <div className="flex items-center justify-between sm:mb-2.5 shrink-0">
-                          <div className="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-900/60 text-amber-600 flex items-center justify-center text-lg font-bold shrink-0">
+                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-lg font-bold shrink-0 ${
+                            isGroqLimited
+                              ? 'bg-slate-200 dark:bg-slate-800 text-slate-400'
+                              : 'bg-amber-100 dark:bg-amber-900/60 text-amber-600'
+                          }`}>
                             ⚡
                           </div>
                           <div className="hidden sm:block">
-                            {renderEngineStatusBadge(getEngineHealthDetail('groq', supabaseAi))}
+                            {renderEngineStatusBadge(groqHealth)}
                           </div>
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center justify-between gap-2">
-                            <span className="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-white block truncate">
+                            <span className={`font-extrabold text-xs sm:text-sm block truncate ${
+                              isGroqLimited ? 'text-slate-400 dark:text-slate-500' : 'text-slate-900 dark:text-white'
+                            }`}>
                               Groq Cloud
                             </span>
                             <div className="sm:hidden">
-                              {renderEngineStatusBadge(getEngineHealthDetail('groq', supabaseAi), true)}
+                              {renderEngineStatusBadge(groqHealth, true)}
                             </div>
                           </div>
                           <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug line-clamp-2 sm:line-clamp-none">
-                            Generasi butir soal paling cepat dengan pemrosesan efisien.
+                            {isGroqLimited
+                              ? 'Batas kuota harian tercapai. Tidak dapat dipilih.'
+                              : 'Generasi butir soal paling cepat dengan pemrosesan efisien.'}
                           </p>
                         </div>
                       </div>
                       <div className="shrink-0 flex items-center sm:mt-2.5 sm:self-end">
                         <div className={`w-5 h-5 rounded-full flex items-center justify-center border transition-all ${
-                          selectedEngine === 'groq'
+                          isGroqLimited
+                            ? 'border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800'
+                            : selectedEngine === 'groq'
                             ? 'border-amber-600 bg-amber-600 text-white shadow-2xs'
                             : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800'
                         }`}>
-                          {selectedEngine === 'groq' && <Check className="w-3 h-3 stroke-[3]" />}
+                          {!isGroqLimited && selectedEngine === 'groq' && <Check className="w-3 h-3 stroke-[3]" />}
                         </div>
                       </div>
                     </button>
@@ -3039,46 +3195,61 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                     {/* Option: Google Gemini */}
                     <button
                       type="button"
+                      disabled={isGeminiLimited}
                       onClick={() => {
+                        if (isGeminiLimited) return;
                         playClick();
                         setSelectedEngine('gemini');
                       }}
-                      className={`p-3.5 sm:p-4 rounded-2xl border text-left transition-all flex items-center sm:items-stretch sm:flex-col justify-between gap-3 btn-press min-h-[58px] sm:min-h-[135px] ${
-                        selectedEngine === 'gemini'
-                          ? 'border-purple-600 bg-purple-50/80 dark:bg-purple-950/40 text-purple-950 dark:text-purple-50 ring-2 ring-purple-500/25 shadow-xs'
-                          : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700'
+                      title={isGeminiLimited ? 'Kuota Google Gemini sedang mencapai limit' : undefined}
+                      className={`p-3.5 sm:p-4 rounded-2xl border text-left transition-all flex items-center sm:items-stretch sm:flex-col justify-between gap-3 min-h-[58px] sm:min-h-[135px] ${
+                        isGeminiLimited
+                          ? 'opacity-50 cursor-not-allowed bg-slate-100/70 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800'
+                          : selectedEngine === 'gemini'
+                          ? 'border-purple-600 bg-purple-50/80 dark:bg-purple-950/40 text-purple-950 dark:text-purple-50 ring-2 ring-purple-500/25 shadow-xs btn-press'
+                          : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700 btn-press'
                       }`}
                     >
                       <div className="flex items-center sm:items-start gap-3 sm:block flex-1 min-w-0">
                         <div className="flex items-center justify-between sm:mb-2.5 shrink-0">
-                          <div className="w-9 h-9 rounded-xl bg-purple-100 dark:bg-purple-900/60 text-purple-600 flex items-center justify-center text-lg font-bold shrink-0">
+                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-lg font-bold shrink-0 ${
+                            isGeminiLimited
+                              ? 'bg-slate-200 dark:bg-slate-800 text-slate-400'
+                              : 'bg-purple-100 dark:bg-purple-900/60 text-purple-600'
+                          }`}>
                             ✨
                           </div>
                           <div className="hidden sm:block">
-                            {renderEngineStatusBadge(getEngineHealthDetail('gemini', supabaseAi))}
+                            {renderEngineStatusBadge(geminiHealth)}
                           </div>
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center justify-between gap-2">
-                            <span className="font-extrabold text-xs sm:text-sm text-slate-900 dark:text-white block truncate">
+                            <span className={`font-extrabold text-xs sm:text-sm block truncate ${
+                              isGeminiLimited ? 'text-slate-400 dark:text-slate-500' : 'text-slate-900 dark:text-white'
+                            }`}>
                               Google Gemini
                             </span>
                             <div className="sm:hidden">
-                              {renderEngineStatusBadge(getEngineHealthDetail('gemini', supabaseAi), true)}
+                              {renderEngineStatusBadge(geminiHealth, true)}
                             </div>
                           </div>
                           <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug line-clamp-2 sm:line-clamp-none">
-                            Gaya bahasa luwes dengan variasi pertanyaan yang luas.
+                            {isGeminiLimited
+                              ? 'Batas kuota harian tercapai. Tidak dapat dipilih.'
+                              : 'Gaya bahasa luwes dengan variasi pertanyaan yang luas.'}
                           </p>
                         </div>
                       </div>
                       <div className="shrink-0 flex items-center sm:mt-2.5 sm:self-end">
                         <div className={`w-5 h-5 rounded-full flex items-center justify-center border transition-all ${
-                          selectedEngine === 'gemini'
+                          isGeminiLimited
+                            ? 'border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800'
+                            : selectedEngine === 'gemini'
                             ? 'border-purple-600 bg-purple-600 text-white shadow-2xs'
                             : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800'
                         }`}>
-                          {selectedEngine === 'gemini' && <Check className="w-3 h-3 stroke-[3]" />}
+                          {!isGeminiLimited && selectedEngine === 'gemini' && <Check className="w-3 h-3 stroke-[3]" />}
                         </div>
                       </div>
                     </button>
@@ -3840,6 +4011,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                         saveStoredGeminiApiKey('');
                         setGeminiKeyInput('');
                       }
+                      setSupabaseAi({ ...getSupabaseAiStatusSync() });
                       setKeySaveMessage('Kunci telah dihapus.');
                       setTimeout(() => setKeySaveMessage(null), 1000);
                     }}
