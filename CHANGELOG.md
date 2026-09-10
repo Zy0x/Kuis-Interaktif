@@ -1,6 +1,28 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.71] - 2026-09-10
+### Refaktor Tahap Format Soal: Eliminasi AI Slop, Layout Ringkas, dan Konsistensi Konteks
+
+#### 1. Penyelarasan Strip Konteks (Tahap 2, 3, dan 4)
+- Menghapus tombol redundan *"Ubah Topik"* dan *"Ubah Pengaturan"* yang sebelumnya memakan ruang dan memicu pemenggalan baris janggal (*broken wrap*) pada layar ponsel.
+- Menerapkan chip konteks ramping 1 baris terpadu (`[Emoji] Mapel • Kelas • "Topik" • [Soal]`) yang dapat diklik langsung untuk kembali ke tahap sebelumnya secara mulus.
+
+#### 2. Penyederhanaan Pilihan Jumlah Butir Soal
+- Mengeliminasi repetisi teks berulang (*AI slop*) dari tombol butir soal (`"X Butir Soal"` disederhanakan menjadi `{X} Soal`).
+- Memperbaiki kotak input kustom ke-6 agar tidak lagi menampilkan duplikasi angka yang membingungkan saat opsi preset dipilih. Kotak kustom kini memiliki placeholder jernih (`Kustom`) dan status fokus yang jelas.
+- Menyusun tombol preset dalam tata letak responsif 3-kolom di ponsel (2 baris rapi) dan 6-kolom di desktop (1 baris seimbang).
+
+#### 3. Redesain Kompak Kartu Format Tipe Soal
+- Mengeliminasi teks deskripsi ganda yang berulang pada judul bagian.
+- Menata 4 kartu format dalam format grid 2×2 di ponsel dan 4-kolom di desktop sehingga seluruh format dapat ditinjau langsung tanpa harus menggulir berlebihan.
+- Menghilangkan *triple status indicator* (lingkaran radio + badge "Terpilih" + footer "✓ Aktif dalam Kuis"), digantikan dengan indikator centang terpadu yang elegan dan modern.
+
+#### 4. Kontrol Proporsi Cerdas & Toggle Ilustrasi AI Modern
+- Menyembunyikan banner penguncian 100% yang bertele-tele saat hanya 1 tipe format aktif, sehingga tampilan tetap bersih dan fokus pada pengisian.
+- Menampilkan kontrol proporsi (*Seimbang* vs *Kustom*) secara dinamis hanya jika pengguna memilih 2 format atau lebih.
+- Mengubah kotak ilustrasi AI menjadi kartu toggle switch modern dengan ikon palet seni yang ramah sentuhan.
+
 ## [2.2.70] - 2026-09-10
 ### Penegasan Hierarki Visual Input Utama & Eliminasi Truncate pada Saran Ide Topik
 

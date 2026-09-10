@@ -43,7 +43,6 @@ import {
   Loader2, 
   AlertCircle, 
   AlertTriangle,
-  CheckCircle2,
   Download, 
   UploadCloud, 
   Copy, 
@@ -1174,18 +1173,15 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
 
   // Soal & Format Tipe Soal
   const [questionCount, setQuestionCount] = useState<number>(5);
-  const [customCountStr, setCustomCountStr] = useState<string>('5');
+  const [customCountStr, setCustomCountStr] = useState<string>('');
   const [selectedQuestionTypes, setSelectedQuestionTypes] = useState<SupportedFormat[]>([
     'multiple_choice',
-    'true_false',
-    'short_answer',
-    'matching_pairs',
   ]);
   const [proportionMode, setProportionMode] = useState<'balanced' | 'custom'>('balanced');
   const [proportions, setProportions] = useState({
-    multiple_choice: 3,
-    true_false: 1,
-    short_answer: 1,
+    multiple_choice: 5,
+    true_false: 0,
+    short_answer: 0,
     matching_pairs: 0,
   });
   const [includeAiImages, setIncludeAiImages] = useState(false);
@@ -1242,8 +1238,10 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
 
   // Hitung total butir soal aktual
   const currentTotalQuestions = useMemo(() => {
-    const parsed = parseInt(customCountStr);
-    if (!isNaN(parsed) && parsed >= 1 && parsed <= 50) return parsed;
+    if (customCountStr.trim() !== '') {
+      const parsed = parseInt(customCountStr);
+      if (!isNaN(parsed) && parsed >= 1 && parsed <= 50) return parsed;
+    }
     return questionCount;
   }, [customCountStr, questionCount]);
 
@@ -2193,42 +2191,40 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
       {stage === 3 && (
         <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-8 lg:p-10 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6 sm:space-y-8 animate-fade-in">
           
-          {/* Pill Ringkasan Materi & Topik */}
-          <div className="flex items-center justify-between gap-2.5 flex-wrap p-3.5 sm:p-4 rounded-2xl bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900/60">
-            <div className="flex items-center gap-2 text-blue-900 dark:text-blue-200 text-xs sm:text-sm font-black flex-wrap min-w-0 flex-1">
-              <span className="text-xl sm:text-2xl shrink-0">{EMOJI_BY_SUBJECT[subject]}</span>
-              <span className="shrink-0">{subject}</span>
-              <span className="text-blue-400 shrink-0">•</span>
-              <span className="shrink-0">
-                Kelas {grade} {educationLevel === 'SMA' ? 'SMA / SMK' : educationLevel === 'SMP' ? 'SMP' : 'SD'}
-              </span>
-              <span className="text-blue-400 shrink-0">•</span>
-              <span className="truncate max-w-[160px] xs:max-w-[220px] sm:max-w-md font-semibold">"{topic}"</span>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                playClick();
-                onStageChange(2);
-              }}
-              className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline px-2.5 py-1 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/50 shrink-0"
-            >
-              Ubah Topik ✏️
-            </button>
-          </div>
+          {/* Strip Konteks Mapel, Kelas & Topik (Ramping 1 Baris, Selaras Tahap 2) */}
+          <button
+            type="button"
+            onClick={() => {
+              playClick();
+              onStageChange(2);
+            }}
+            title="Klik untuk kembali ke Tahap 2 (Topik & Materi)"
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200/70 dark:border-blue-900/50 hover:bg-blue-100/70 dark:hover:bg-blue-900/60 text-blue-950 dark:text-blue-100 text-xs font-bold max-w-full transition-colors cursor-pointer group text-left shadow-2xs overflow-hidden"
+          >
+            <span className="text-base shrink-0">{EMOJI_BY_SUBJECT[subject]}</span>
+            <span className="shrink-0">{subject}</span>
+            <span className="text-blue-400 dark:text-blue-500 shrink-0">•</span>
+            <span className="text-blue-700 dark:text-blue-300 shrink-0 font-semibold text-[11px] sm:text-xs">
+              Kelas {grade} {educationLevel === 'SMA' ? 'SMA / SMK' : educationLevel === 'SMP' ? 'SMP' : 'SD'}
+            </span>
+            <span className="text-blue-400 dark:text-blue-500 shrink-0">•</span>
+            <span className="truncate font-semibold text-[11px] sm:text-xs text-blue-800 dark:text-blue-200">
+              "{topic}"
+            </span>
+          </button>
 
           {/* Pilihan Jumlah Butir Soal */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
+          <div className="space-y-2.5">
+            <div className="flex items-center justify-between">
               <label className="block text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white">
                 Jumlah Butir Soal <span className="text-rose-500">*</span>
               </label>
-              <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">
-                Pilih opsi cepat atau ketik kustom (1 - 50 butir)
+              <span className="text-[11px] sm:text-xs text-slate-400 dark:text-slate-500 font-medium">
+                Pilih opsi cepat atau kustom (1 - 50)
               </span>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3">
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-2.5">
               {[5, 10, 15, 20, 25].map((cnt) => (
                 <button
                   key={cnt}
@@ -2236,18 +2232,19 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                   onClick={() => {
                     playClick();
                     setQuestionCount(cnt);
-                    setCustomCountStr(String(cnt));
+                    setCustomCountStr('');
                     if (proportionMode === 'custom') {
                       handleAutoDistributeProportions(cnt);
                     }
                   }}
-                  className={`py-3.5 px-3 rounded-2xl font-black text-sm min-h-[50px] transition-all btn-press flex items-center justify-center ${
-                    questionCount === cnt && customCountStr === String(cnt)
-                      ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20 ring-2 ring-blue-400/40'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-750'
+                  className={`py-2.5 sm:py-3 px-2 rounded-xl sm:rounded-2xl font-bold text-xs sm:text-sm min-h-[46px] sm:min-h-[48px] transition-all btn-press flex items-center justify-center gap-1 ${
+                    questionCount === cnt && customCountStr === ''
+                      ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/25 ring-2 ring-blue-400/40 font-black'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-750 border border-slate-200/60 dark:border-slate-700/60'
                   }`}
                 >
-                  {cnt} Butir Soal
+                  <span className="text-sm sm:text-base font-extrabold">{cnt}</span>
+                  <span className="text-[11px] opacity-80">Soal</span>
                 </button>
               ))}
               <div>
@@ -2266,59 +2263,54 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                       }
                     }
                   }}
-                  placeholder="Kustom (1-50)"
-                  className="w-full px-3 py-3.5 rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-black text-sm text-center min-h-[50px] focus:outline-none focus:border-blue-500 shadow-xs"
+                  placeholder="Kustom"
+                  className={`w-full px-2 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl border font-bold text-xs sm:text-sm text-center min-h-[46px] sm:min-h-[48px] focus:outline-none transition-all shadow-xs ${
+                    customCountStr !== ''
+                      ? 'border-blue-500 ring-2 ring-blue-400/40 bg-blue-50/50 dark:bg-blue-950/40 text-blue-900 dark:text-blue-100 font-extrabold'
+                      : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600'
+                  }`}
                 />
               </div>
             </div>
           </div>
 
-          {/* Format Tipe Soal & Proporsi (Cerdas Dinamis) */}
-          <div className="pt-6 border-t border-slate-100 dark:border-slate-800 space-y-5">
-            <div>
-              <div className="flex items-center justify-between flex-wrap gap-2 mb-1">
-                <label className="block text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white">
-                  Pilih Format Tipe Soal <span className="text-rose-500">*</span>
-                </label>
-                <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">
-                  Pilih minimal 1 format (dapat kombinasi beberapa tipe)
-                </span>
-              </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Tentukan variasi format soal yang ingin diikutsertakan dalam peracikan kuis.
-              </p>
+          {/* Format Tipe Soal & Proporsi */}
+          <div className="pt-5 border-t border-slate-100 dark:border-slate-800 space-y-3.5">
+            <div className="flex items-center justify-between flex-wrap gap-1.5">
+              <label className="block text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white">
+                Format Tipe Soal <span className="text-rose-500">*</span>
+              </label>
+              <span className="text-[11px] sm:text-xs text-slate-400 dark:text-slate-500 font-medium">
+                Pilih satu atau kombinasikan beberapa format
+              </span>
             </div>
 
-            {/* Kartu Pemilihan Tipe Soal */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
+            {/* Kartu Format: Grid 2-kolom kompak di mobile, 4-kolom di desktop */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5">
               {[
                 {
                   type: 'multiple_choice' as const,
                   label: 'Pilihan Ganda',
                   icon: '🔘',
-                  badge: 'Opsi A, B, C, D',
-                  desc: 'Pertanyaan objektif dengan 4 opsi dan 1 kunci jawaban tepat.',
+                  desc: '4 opsi jawaban (A, B, C, D)',
                 },
                 {
                   type: 'true_false' as const,
                   label: 'Benar / Salah',
                   icon: '⚖️',
-                  badge: 'Validasi Konsep',
-                  desc: 'Menganalisis kebenaran pernyataan konsep materi pelajaran.',
+                  desc: 'Pernyataan benar atau salah',
                 },
                 {
                   type: 'short_answer' as const,
                   label: 'Isian Singkat',
                   icon: '✍️',
-                  badge: 'Ketik Kata Kunci',
-                  desc: 'Siswa mengetik jawaban eksak berupa kata kunci atau angka.',
+                  desc: 'Ketik kata kunci atau angka',
                 },
                 {
                   type: 'matching_pairs' as const,
                   label: 'Menjodohkan',
                   icon: '🧩',
-                  badge: 'Pasangan Konsep',
-                  desc: 'Menghubungkan kartu konsep kiri dengan padanan di kanan.',
+                  desc: 'Pasangkan kartu konsep',
                 },
               ].map((fmt) => {
                 const isSelected = selectedQuestionTypes.includes(fmt.type);
@@ -2327,98 +2319,63 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                     key={fmt.type}
                     type="button"
                     onClick={() => handleToggleQuestionType(fmt.type)}
-                    className={`p-4 sm:p-5 rounded-2xl border text-left transition-all min-h-[120px] flex flex-col justify-between btn-press ${
+                    className={`p-3 sm:p-4 rounded-2xl border text-left transition-all min-h-[92px] sm:min-h-[104px] flex flex-col justify-between btn-press ${
                       isSelected
                         ? 'border-blue-500 bg-blue-50/70 dark:bg-blue-950/40 text-blue-950 dark:text-blue-100 ring-2 ring-blue-500/20 shadow-xs'
-                        : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700 opacity-75'
+                        : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700'
                     }`}
                   >
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-2xl">{fmt.icon}</span>
-                        <span
-                          className={`text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1 ${
-                            isSelected
-                              ? 'bg-blue-200 dark:bg-blue-900/80 text-blue-800 dark:text-blue-200'
-                              : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
-                          }`}
-                        >
-                          {isSelected ? (
-                            <>
-                              <CheckCircle2 className="w-3 h-3 text-blue-600 dark:text-blue-400" />
-                              <span>Terpilih</span>
-                            </>
-                          ) : (
-                            <span>Nonaktif</span>
-                          )}
-                        </span>
+                    <div className="flex items-center justify-between gap-1 mb-1.5">
+                      <span className="text-xl sm:text-2xl shrink-0">{fmt.icon}</span>
+                      <div className={`w-5 h-5 rounded-full flex items-center justify-center transition-all ${
+                        isSelected
+                          ? 'bg-blue-600 text-white shadow-xs'
+                          : 'border-2 border-slate-300 dark:border-slate-600 bg-transparent'
+                      }`}>
+                        {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
                       </div>
-                      <span className="font-black text-sm sm:text-base block">
+                    </div>
+                    <div>
+                      <span className="font-extrabold text-xs sm:text-sm block leading-snug">
                         {fmt.label}
                       </span>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-snug">
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">
                         {fmt.desc}
                       </p>
-                    </div>
-                    <div className="pt-2 text-[11px] font-bold text-blue-600 dark:text-blue-400">
-                      {isSelected ? '✓ Aktif dalam Kuis' : '+ Klik untuk Memilih'}
                     </div>
                   </button>
                 );
               })}
             </div>
 
-            {/* Pengaturan Proporsi Cerdas Dinamis di Bawah Kartu Format */}
-            {selectedQuestionTypes.length === 1 ? (
-              <div className="p-4 sm:p-5 rounded-2xl bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900/60 flex items-start gap-3.5 animate-fade-in">
-                <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 text-xl font-bold">
-                  🎯
-                </div>
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-black text-xs sm:text-sm text-blue-950 dark:text-blue-100">
-                      Format Tunggal Aktif: {
-                        selectedQuestionTypes[0] === 'multiple_choice' ? 'Pilihan Ganda' :
-                        selectedQuestionTypes[0] === 'true_false' ? 'Benar / Salah' :
-                        selectedQuestionTypes[0] === 'short_answer' ? 'Isian Singkat' : 'Menjodohkan'
-                      }
-                    </span>
-                    <span className="text-[10px] px-2.5 py-0.5 rounded-full font-extrabold bg-blue-200 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
-                      100% Terkunci ({currentTotalQuestions} Butir)
-                    </span>
-                  </div>
-                  <p className="text-xs text-blue-800/80 dark:text-blue-300/80 leading-relaxed">
-                    Seluruh <strong>{currentTotalQuestions} butir soal</strong> akan dibuat penuh dalam format ini tanpa perlu pembagian manual. Klik kartu format lain di atas jika ingin meracik kuis multi-tipe.
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-4 pt-2">
+            {/* Pengaturan Proporsi: Hanya tampil jika pengguna memilih >= 2 format */}
+            {selectedQuestionTypes.length > 1 && (
+              <div className="space-y-3 pt-2 animate-fade-in">
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <div>
                     <span className="block text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white">
-                      Pembagian Proporsi Soal ({selectedQuestionTypes.length} Format Terpilih)
+                      Pembagian Proporsi Soal ({selectedQuestionTypes.length} Format)
                     </span>
-                    <p className="text-xs text-slate-400 dark:text-slate-500">
-                      Pilih pembagian seimbang otomatis atau sesuaikan jumlah butir tiap format secara mandiri.
+                    <p className="text-[11px] text-slate-400 dark:text-slate-500">
+                      Tentukan pembagian jumlah butir soal untuk tiap format terpilih
                     </p>
                   </div>
 
                   {/* Mode Switcher */}
-                  <div className="flex p-1.5 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60">
+                  <div className="flex p-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/60">
                     <button
                       type="button"
                       onClick={() => {
                         playClick();
                         setProportionMode('balanced');
                       }}
-                      className={`px-4 py-2 rounded-xl text-xs font-bold transition-all min-h-[40px] flex items-center gap-1.5 ${
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
                         proportionMode === 'balanced'
-                          ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm font-extrabold'
+                          ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs font-extrabold'
                           : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                       }`}
                     >
-                      <span>⚖️ Otomatis Seimbang</span>
+                      <span>⚖️ Seimbang</span>
                     </button>
                     <button
                       type="button"
@@ -2427,37 +2384,37 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                         setProportionMode('custom');
                         handleAutoDistributeProportions(currentTotalQuestions, selectedQuestionTypes);
                       }}
-                      className={`px-4 py-2 rounded-xl text-xs font-bold transition-all min-h-[40px] flex items-center gap-1.5 ${
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
                         proportionMode === 'custom'
-                          ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm font-extrabold'
+                          ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs font-extrabold'
                           : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                       }`}
                     >
-                      <span>🎛️ Kustom Mandiri</span>
+                      <span>🎛️ Kustom</span>
                     </button>
                   </div>
                 </div>
 
                 {proportionMode === 'balanced' ? (
-                  <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 dark:bg-slate-850/60 border border-slate-200/80 dark:border-slate-700/60 text-xs sm:text-sm text-slate-600 dark:text-slate-300 flex items-start gap-3 animate-fade-in">
-                    <Info className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
-                    <div className="space-y-1.5 leading-relaxed">
-                      <span className="font-bold text-slate-800 dark:text-slate-200 block">
+                  <div className="p-3 sm:p-4 rounded-2xl bg-slate-50 dark:bg-slate-850/60 border border-slate-200/80 dark:border-slate-700/60 text-xs text-slate-600 dark:text-slate-300 flex items-start gap-2.5 animate-fade-in">
+                    <Info className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
+                    <div className="space-y-1 leading-relaxed">
+                      <span className="font-bold text-slate-800 dark:text-slate-200 block text-xs">
                         Distribusi Berimbang Otomatis ({currentTotalQuestions} Butir):
                       </span>
-                      <div className="flex flex-wrap gap-2 pt-0.5">
+                      <div className="flex flex-wrap gap-1.5 pt-0.5">
                         {selectedQuestionTypes.map((t) => (
                           <span
                             key={t}
-                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-800 dark:text-slate-200 shadow-2xs"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 shadow-2xs"
                           >
                             <span>
                               {t === 'multiple_choice' ? '🔘 Pilihan Ganda' :
                                t === 'true_false' ? '⚖️ Benar/Salah' :
                                t === 'short_answer' ? '✍️ Isian Singkat' : '🧩 Menjodohkan'}
                             </span>
-                            <span className="text-blue-600 dark:text-blue-400 font-black">
-                              {proportions[t]} butir ({Math.round(((proportions[t] || 0) / Math.max(1, currentTotalQuestions)) * 100)}%)
+                            <span className="text-blue-600 dark:text-blue-400 font-bold">
+                              {proportions[t]} butir
                             </span>
                           </span>
                         ))}
@@ -2465,27 +2422,27 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-4 p-5 rounded-2xl bg-slate-50 dark:bg-slate-850/60 border border-slate-200 dark:border-slate-700 animate-fade-in">
-                    <div className="flex items-center justify-between text-xs pb-3 border-b border-slate-200/60 dark:border-slate-700/60 flex-wrap gap-2">
+                  <div className="space-y-3 p-3.5 sm:p-4 rounded-2xl bg-slate-50 dark:bg-slate-850/60 border border-slate-200 dark:border-slate-700 animate-fade-in">
+                    <div className="flex items-center justify-between text-xs pb-2.5 border-b border-slate-200/60 dark:border-slate-700/60 flex-wrap gap-2">
                       <span className="font-bold text-slate-600 dark:text-slate-300">
-                        Atur Alokasi Jumlah Soal Tiap Format Terpilih:
+                        Alokasi Butir Tiap Format:
                       </span>
-                      <span className={`font-black px-3 py-1 rounded-full text-xs ${
+                      <span className={`font-black px-2.5 py-0.5 rounded-full text-xs ${
                         sumCustomProportions === currentTotalQuestions
                           ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300'
                           : 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300'
                       }`}>
-                        Total Dialokasikan: {sumCustomProportions} / {currentTotalQuestions} Butir
+                        Total: {sumCustomProportions} / {currentTotalQuestions} Butir
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
                       {selectedQuestionTypes.map((t) => {
                         const info = {
-                          multiple_choice: { label: 'Pilihan Ganda', sub: '4 opsi (A, B, C, D)', badgeBg: 'bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-300' },
-                          true_false: { label: 'Benar / Salah', sub: 'Pernyataan materi', badgeBg: 'bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-300' },
-                          short_answer: { label: 'Isian Singkat', sub: 'Ketik kata kunci', badgeBg: 'bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-300' },
-                          matching_pairs: { label: 'Menjodohkan', sub: 'Pasangan konsep', badgeBg: 'bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-300' },
+                          multiple_choice: { label: 'Pilihan Ganda', badgeBg: 'bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-300' },
+                          true_false: { label: 'Benar / Salah', badgeBg: 'bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-300' },
+                          short_answer: { label: 'Isian Singkat', badgeBg: 'bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-300' },
+                          matching_pairs: { label: 'Menjodohkan', badgeBg: 'bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-300' },
                         }[t];
                         const val = proportions[t] || 0;
                         const pct = Math.round((val / Math.max(1, currentTotalQuestions)) * 100);
@@ -2493,31 +2450,27 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                         return (
                           <div
                             key={t}
-                            className="p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between space-y-3 shadow-xs"
+                            className="p-2.5 sm:p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between space-y-2 shadow-2xs"
                           >
-                            <div>
-                              <div className="flex items-center justify-between">
-                                <span className="font-black text-xs sm:text-sm text-slate-900 dark:text-white">
-                                  {info.label}
-                                </span>
-                                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${info.badgeBg}`}>
-                                  {pct}%
-                                </span>
-                              </div>
-                              <span className="text-[11px] text-slate-400 mt-0.5 block">{info.sub}</span>
+                            <div className="flex items-center justify-between">
+                              <span className="font-bold text-xs text-slate-900 dark:text-white truncate">
+                                {info.label}
+                              </span>
+                              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-extrabold ${info.badgeBg}`}>
+                                {pct}%
+                              </span>
                             </div>
-                            <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
-                              <span className="text-xs font-bold text-slate-400">Butir:</span>
-                              <div className="flex items-center gap-2">
+                            <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-800">
+                              <div className="flex items-center gap-1.5 w-full justify-between">
                                 <button
                                   type="button"
                                   onClick={() => {
                                     playClick();
                                     setProportions((p) => ({ ...p, [t]: Math.max(0, (p[t] || 0) - 1) }));
                                   }}
-                                  className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 font-black text-sm flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 btn-press text-slate-800 dark:text-slate-200"
+                                  className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 font-bold text-sm flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 btn-press text-slate-800 dark:text-slate-200 shrink-0"
                                 >-</button>
-                                <span className="w-7 text-center font-black text-sm text-slate-900 dark:text-white">
+                                <span className="font-black text-sm text-slate-900 dark:text-white">
                                   {val}
                                 </span>
                                 <button
@@ -2526,7 +2479,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                                     playClick();
                                     setProportions((p) => ({ ...p, [t]: (p[t] || 0) + 1 }));
                                   }}
-                                  className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 font-black text-sm flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 btn-press text-slate-800 dark:text-slate-200"
+                                  className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 font-bold text-sm flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 btn-press text-slate-800 dark:text-slate-200 shrink-0"
                                 >+</button>
                               </div>
                             </div>
@@ -2536,9 +2489,9 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                     </div>
 
                     {sumCustomProportions !== currentTotalQuestions && (
-                      <p className="text-[11px] sm:text-xs font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1.5 pt-1">
+                      <p className="text-[11px] font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1.5 pt-0.5">
                         <span>⚠️</span>
-                        <span>Total alokasi ({sumCustomProportions}) harus sama dengan total butir kuis ({currentTotalQuestions}).</span>
+                        <span>Total alokasi ({sumCustomProportions}) harus pas dengan total butir ({currentTotalQuestions}).</span>
                       </p>
                     )}
                   </div>
@@ -2548,31 +2501,43 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
           </div>
 
           {/* Kotak Sertakan Gambar AI */}
-          <div className="pt-6 border-t border-slate-100 dark:border-slate-800">
-            <label className="flex items-center gap-4 p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-850/60 cursor-pointer min-h-[60px] hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors btn-press">
-              <input
-                type="checkbox"
-                checked={includeAiImages}
-                onChange={(e) => setIncludeAiImages(e.target.checked)}
-                className="w-5 h-5 rounded-md text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-slate-600 shrink-0"
-              />
-              <div>
-                <span className="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white block">
-                  🎨 Sertakan Gambar Ilustrasi Edukasi AI
-                </span>
-                <span className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 block mt-0.5">
-                  Menyertakan gambar edukasi visual yang relevan untuk merangsang imajinasi dan ketertarikan belajar siswa SD.
-                </span>
+          <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+            <label className="flex items-center justify-between gap-3 p-3.5 sm:p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-850/50 cursor-pointer hover:bg-slate-100/80 dark:hover:bg-slate-800/80 transition-colors btn-press">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-purple-100 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center text-lg shrink-0">
+                  🎨
+                </div>
+                <div>
+                  <span className="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white block">
+                    Sertakan Gambar Ilustrasi Edukasi AI
+                  </span>
+                  <span className="text-[11px] text-slate-400 dark:text-slate-500 block">
+                    Menambahkan ilustrasi visual pendukung yang relevan pada butir soal kuis.
+                  </span>
+                </div>
+              </div>
+              <div className="relative inline-flex items-center shrink-0">
+                <input
+                  type="checkbox"
+                  checked={includeAiImages}
+                  onChange={(e) => setIncludeAiImages(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
               </div>
             </label>
           </div>
 
           {/* Navigasi Tahap 3 */}
-          <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end">
+          <div className="pt-5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end">
             <button
               type="button"
               onClick={() => {
                 playClick();
+                if (selectedQuestionTypes.length === 0) {
+                  setErrorMessage('Pilih minimal 1 format tipe soal untuk melanjutkan.');
+                  return;
+                }
                 if (selectedQuestionTypes.length > 1 && proportionMode === 'custom' && sumCustomProportions !== currentTotalQuestions) {
                   setErrorMessage(`Total butir soal (${sumCustomProportions}) belum sama dengan target kuis (${currentTotalQuestions}).`);
                   return;
@@ -2596,44 +2561,36 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
       {stage === 4 && (
         <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-8 lg:p-10 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6 sm:space-y-8 animate-fade-in">
           
-          {/* Pill Ringkasan Konfigurasi Lengkap */}
-          <div className="flex items-center justify-between gap-2.5 flex-wrap p-3.5 sm:p-4 rounded-2xl bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900/60">
-            <div className="flex items-center gap-2 text-blue-900 dark:text-blue-200 text-xs sm:text-sm font-black flex-wrap min-w-0 flex-1">
-              <span className="text-xl sm:text-2xl shrink-0">{EMOJI_BY_SUBJECT[subject]}</span>
-              <span className="shrink-0">{subject}</span>
-              <span className="text-blue-400 shrink-0">•</span>
-              <span className="shrink-0">
-                Kelas {grade} {educationLevel === 'SMA' ? 'SMA / SMK' : educationLevel === 'SMP' ? 'SMP' : 'SD'}
+          {/* Strip Ringkasan Konfigurasi (Ramping 1 Baris, Selaras Tahap 2 & 3) */}
+          <button
+            type="button"
+            onClick={() => {
+              playClick();
+              onStageChange(3);
+            }}
+            title="Klik untuk kembali ke Tahap 3 (Format & Butir Soal)"
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200/70 dark:border-blue-900/50 hover:bg-blue-100/70 dark:hover:bg-blue-900/60 text-blue-950 dark:text-blue-100 text-xs font-bold max-w-full transition-colors cursor-pointer group text-left shadow-2xs overflow-hidden"
+          >
+            <span className="text-base shrink-0">{EMOJI_BY_SUBJECT[subject]}</span>
+            <span className="shrink-0">{subject}</span>
+            <span className="text-blue-400 dark:text-blue-500 shrink-0">•</span>
+            <span className="text-blue-700 dark:text-blue-300 shrink-0 font-semibold text-[11px] sm:text-xs">
+              Kelas {grade} {educationLevel === 'SMA' ? 'SMA / SMK' : educationLevel === 'SMP' ? 'SMP' : 'SD'}
+            </span>
+            <span className="text-blue-400 dark:text-blue-500 shrink-0">•</span>
+            <span className="truncate font-semibold text-[11px] sm:text-xs text-blue-800 dark:text-blue-200">
+              "{topic}"
+            </span>
+            <span className="text-blue-400 dark:text-blue-500 shrink-0">•</span>
+            <span className="shrink-0 font-bold text-[11px] sm:text-xs text-blue-900 dark:text-blue-100">
+              {currentTotalQuestions} Soal
+            </span>
+            {includeAiImages && (
+              <span className="text-[10px] bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded-md font-extrabold shrink-0">
+                + Gambar
               </span>
-              <span className="text-blue-400 shrink-0">•</span>
-              <span className="truncate max-w-[140px] xs:max-w-[200px] sm:max-w-xs font-semibold">"{topic}"</span>
-              <span className="text-blue-400 shrink-0">•</span>
-              <span className="shrink-0 font-bold">{currentTotalQuestions} Soal</span>
-              <span className="text-blue-400 shrink-0">•</span>
-              <span className="shrink-0 font-semibold text-blue-700 dark:text-blue-300">
-                {selectedQuestionTypes.length === 1
-                  ? (selectedQuestionTypes[0] === 'multiple_choice' ? 'Pilihan Ganda' :
-                     selectedQuestionTypes[0] === 'true_false' ? 'Benar/Salah' :
-                     selectedQuestionTypes[0] === 'short_answer' ? 'Isian' : 'Menjodohkan')
-                  : `${selectedQuestionTypes.length} Tipe Format`}
-              </span>
-              {includeAiImages && (
-                <span className="text-[10px] bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-md font-bold">
-                  + Gambar AI
-                </span>
-              )}
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                playClick();
-                onStageChange(3);
-              }}
-              className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline px-2.5 py-1 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/50 shrink-0"
-            >
-              Ubah Pengaturan ✏️
-            </button>
-          </div>
+            )}
+          </button>
 
           {/* Pilihan Mesin Pembuat Soal */}
           <div className="space-y-4">
