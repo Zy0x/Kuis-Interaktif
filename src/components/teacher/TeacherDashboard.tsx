@@ -7,7 +7,8 @@ import { ThemeToggle } from '../common/ThemeToggle';
 import { ConfirmDeleteModal } from '../common/ConfirmDeleteModal';
 import { QuizSettingsModal } from '../common/QuizSettingsModal';
 import { saveNavigationState } from '../../lib/navigationState';
-import { generateAiPrompt, generateCurriculumSeedQuestions } from '../../lib/aiQuestionParser';
+import { generateAiPrompt } from '../../lib/aiQuestionParser';
+import { generateHybridQuizQuestions, hasGeminiApiKey } from '../../lib/geminiApi';
 import { 
   GraduationCap, 
   Plus, 
@@ -222,12 +223,14 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
     playClick();
     setGenLoading(true);
     try {
-      const questions = generateCurriculumSeedQuestions(
-        genTopic.trim() || 'Materi Pembelajaran',
-        genSubject,
-        genGrade,
-        genCount
-      );
+      const result = await generateHybridQuizQuestions({
+        topic: genTopic.trim() || 'Materi Pembelajaran',
+        subject: genSubject,
+        grade: genGrade,
+        count: genCount,
+        questionType: 'campuran',
+      });
+      const questions = result.questions;
 
       const emojiMap: Record<string, string> = {
         'Matematika': '📐',
@@ -879,7 +882,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                   className="flex-1 py-3 px-6 rounded-xl font-bold text-xs sm:text-sm text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-sm flex items-center justify-center gap-2 min-h-[48px] btn-press transition-all disabled:opacity-50"
                 >
                   <Sparkles className="w-4 h-4" />
-                  <span>{genLoading ? 'Membuat Paket Kuis...' : 'Generate & Terbitkan Kuis'}</span>
+                  <span>{genLoading ? 'Membuat Paket Kuis...' : (hasGeminiApiKey() ? 'Buat via Gemini AI & Terbitkan' : 'Generate & Terbitkan Kuis')}</span>
                 </button>
               </div>
             </div>

@@ -1,6 +1,34 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.41] - 2026-09-10
+### Integrasi Google Gemini AI Arsitektur Hybrid, Kunci API Mandiri Guru (BYOK), Supabase Edge Function & Panduan Lengkap
+
+#### 1. Arsitektur AI Hybrid Tiga Lapis (Triple-Layer Reliability)
+- **Direct API Call ke Google Gemini AI:**
+  - Mengintegrasikan pemanggilan langsung ke Google Gemini API (`gemini-1.5-flash`, `gemini-1.5-pro`, dan `gemini-2.0-flash`) untuk meracik soal interaktif otomatis dengan daya analisis mendalam sesuai topik Kurikulum Merdeka.
+  - Normalisasi otomatis seluruh 5 tipe soal: Pilihan Ganda, Benar/Salah, Isian Singkat (dengan variasi sinonim ejaan), Menjodohkan (dengan pasangan konsep), dan Tebak Gambar (dengan petunjuk gambar).
+- **Auto Fallback Tanpa Kendala (Zero-Downtime Guarantee):**
+  - Jika kunci API belum disetel, koneksi internet terputus, atau kuota gratis habis (status 429), aplikasi secara otomatis dalam hitungan milidetik beralih ke Generator Kurikulum SD Internal tanpa memunculkan pesan error teknis yang membingungkan.
+- **Salin Prompt AI Terstandar:**
+  - Tetap menyediakan opsi salin prompt terstruktur untuk digunakan pada antarmuka web ChatGPT, Claude, atau Gemini Web bagi pengguna yang ingin menyusun soal secara manual.
+
+#### 2. Panel Pengaturan Kunci API Guru (BYOK – Bring Your Own Key)
+- **Pengaturan Mandiri Ramah Pengguna:**
+  - Guru dapat memasukkan API Key Google Gemini mereka sendiri di modal Asisten AI.
+  - Fitur sensor sandi dengan tombol intip (eye toggle), pemilihan model AI default, tombol simpan, dan opsi hapus kunci.
+  - Status indikator aktif (*🟢 Gemini AI Aktif*) dan status generator internal (*⚡ Mode Kurikulum SD*).
+  - Kunci disimpan aman secara lokal di peramban guru (`localStorage`) dan tidak pernah dikirim ke antarmuka siswa.
+
+#### 3. Supabase Edge Function Siap Pakai (`generate-quiz-ai`)
+- Menyediakan arsitektur fungsi server-side di `supabase/functions/generate-quiz-ai` yang memanggil Google Gemini API dengan proteksi rahasia `GEMINI_API_KEY` pada Supabase Secrets sesuai standar keamanan data tertinggi.
+
+#### 4. Dokumentasi Panduan Integrasi Gemini AI (`docs/panduan-integrasi-gemini-ai.md`)
+- Panduan terperinci mengenai perbedaan langganan konsumen **Gemini PRO / Advanced** dengan **Google AI Studio Developer API**.
+- Langkah-demi-langkah mendapatkan API Key gratis dari Google AI Studio (`aistudio.google.com`).
+- Tutorial konfigurasi kunci via antarmuka guru maupun via Supabase Secrets / CLI.
+- Panduan pemilihan model dan penanganan kendala (troubleshooting).
+
 ## [2.2.40] - 2026-09-10
 ### Generator Soal Instan Kurikulum SD, Asisten Multi-Format 5 Tipe Soal, Bobot Poin & Durasi Khusus Per Butir Soal
 

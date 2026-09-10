@@ -3,7 +3,6 @@ import type { QuizQuestion, QuestionType, Subject } from '../../types/quiz';
 import { 
   generateAiPrompt, 
   parseRawQuestionsText, 
-  generateCurriculumSeedQuestions, 
   type ParsedQuestionItem 
 } from '../../lib/aiQuestionParser';
 import { 
@@ -18,8 +17,22 @@ import {
   BookOpen,
   ArrowRight,
   Star,
-  Clock
+  Clock,
+  Key,
+  Eye,
+  EyeOff,
+  Loader2,
+  ExternalLink
 } from 'lucide-react';
+import {
+  getStoredGeminiApiKey,
+  saveStoredGeminiApiKey,
+  hasGeminiApiKey,
+  getStoredGeminiModel,
+  saveStoredGeminiModel,
+  generateHybridQuizQuestions,
+  type GeminiModel
+} from '../../lib/geminiApi';
 
 interface AiQuestionModalProps {
   isOpen: boolean;
@@ -62,14 +75,43 @@ export const AiQuestionModal: React.FC<AiQuestionModalProps> = ({
   const [parsedResults, setParsedResults] = useState<ParsedQuestionItem[]>([]);
   const [notification, setNotification] = useState<string | null>(null);
 
+  // Gemini API BYOK State
+  const [apiKeyInput, setApiKeyInput] = useState<string>(() => getStoredGeminiApiKey());
+  const [selectedModel, setSelectedModel] = useState<GeminiModel>(() => getStoredGeminiModel());
+  const [showKeySettings, setShowKeySettings] = useState<boolean>(false);
+  const [showKeyText, setShowKeyText] = useState<boolean>(false);
+  const [isGeneratingAi, setIsGeneratingAi] = useState<boolean>(false);
+  const [hasConfiguredKey, setHasConfiguredKey] = useState<boolean>(() => hasGeminiApiKey());
+
   useEffect(() => {
     if (isOpen) {
       setSubject(currentSubject);
       setGrade(currentGrade);
       setCopiedPrompt(false);
       setNotification(null);
+      setApiKeyInput(getStoredGeminiApiKey());
+      setHasConfiguredKey(hasGeminiApiKey());
     }
   }, [isOpen, currentSubject, currentGrade]);
+
+  const handleSaveApiKey = () => {
+    playClick();
+    const trimmed = apiKeyInput.trim();
+    saveStoredGeminiApiKey(trimmed);
+    saveStoredGeminiModel(selectedModel);
+    setHasConfiguredKey(Boolean(trimmed.length > 10));
+    setShowKeySettings(false);
+    showToast(trimmed ? '✓ Kunci Gemini API berhasil disimpan!' : 'Kunci API dihapus. Menggunakan generator kurikulum internal.');
+  };
+
+  const handleRemoveApiKey = () => {
+    playClick();
+    saveStoredGeminiApiKey('');
+    setApiKeyInput('');
+    setHasConfiguredKey(false);
+    setShowKeySettings(false);
+    showToast('Kunci Gemini API telah dihapus. Menggunakan generator kurikulum internal.');
+  };
 
   // Real-time parser saat teks di tab impor berubah
   useEffect(() => {
@@ -106,26 +148,37 @@ export const AiQuestionModal: React.FC<AiQuestionModalProps> = ({
     setTimeout(() => setCopiedPrompt(false), 3000);
   };
 
-  const handleDirectGenerate = () => {
+  const handleDirectGenerate = async () => {
     playClick();
-    const questions = generateCurriculumSeedQuestions(
-      topic.trim() || 'Pernapasan dan Tubuh Manusia',
-      subject,
-      grade,
-      count,
-      questionType
-    );
+    setIsGeneratingAi(true);
 
-    setRawText(JSON.stringify(questions, null, 2));
-    setActiveTab('import');
-    setParsedResults(
-      questions.map((q) => ({
-        id: q.id,
-        valid: true,
-        question: q,
-      }))
-    );
-    showToast(`Berhasil membuat ${questions.length} butir soal materi "${topic || 'Kurikulum SD'}"!`);
+    try {
+      const result = await generateHybridQuizQuestions({
+        subject,
+        grade,
+        topic: topic.trim() || 'Pernapasan dan Tubuh Manusia',
+        count,
+        questionType,
+        model: selectedModel,
+        apiKey: apiKeyInput.trim() || undefined,
+      });
+
+      setRawText(JSON.stringify(result.questions, null, 2));
+      setActiveTab('import');
+      setParsedResults(
+        result.questions.map((q) => ({
+          id: q.id,
+          valid: true,
+          question: q,
+        }))
+      );
+      showToast(result.message);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Gagal menghasilkan soal.';
+      showToast(msg);
+    } finally {
+      setIsGeneratingAi(false);
+    }
   };
 
   const handleLoadSample = () => {
@@ -380,13 +433,121 @@ Pembahasan: Insang menyaring oksigen yang terlarut di dalam air.`;
                 </div>
               </div>
 
-              {/* Action Buttons: Salin Prompt vs Buat Langsung */}
-              <div className="pt-2 flex flex-col sm:flex-row gap-2.5">
+              {/* Banner Status Engine AI Hybrid & Konfigurasi BYOK */}
+              <div className="bg-slate-50 dark:bg-slate-800/60 rounded-2xl p-3.5 border border-slate-200 dark:border-slate-700/80 space-y-3">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    {hasConfiguredKey ? (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                        Gemini AI Aktif ({selectedModel})
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300">
+                        <Sparkles className="w-3 h-3 text-blue-500" />
+                        Generator Kurikulum SD (Gratis & Offline)
+                      </span>
+                    )}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setShowKeySettings(!showKeySettings);
+                    }}
+                    className="text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 transition-all min-h-[36px]"
+                  >
+                    <Key className="w-3.5 h-3.5 text-amber-500" />
+                    <span>{showKeySettings ? 'Tutup Pengaturan' : (hasConfiguredKey ? 'Ganti Kunci API' : 'Pasang Kunci Gemini')}</span>
+                  </button>
+                </div>
+
+                {/* Form Drawer Pengaturan Kunci Gemini */}
+                {showKeySettings && (
+                  <div className="pt-2 border-t border-slate-200 dark:border-slate-700 space-y-3 animate-fade-in">
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+                          <Key className="w-3.5 h-3.5 text-amber-500" /> Kunci API Google Gemini:
+                        </label>
+                        <a
+                          href="https://aistudio.google.com/"
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                        >
+                          Dapatkan di Google AI Studio <ExternalLink className="w-3 h-3" />
+                        </a>
+                      </div>
+
+                      <div className="relative">
+                        <input
+                          type={showKeyText ? 'text' : 'password'}
+                          value={apiKeyInput}
+                          onChange={(e) => setApiKeyInput(e.target.value)}
+                          placeholder="Tempelkan AIzaSy..."
+                          className="w-full pl-3 pr-10 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:border-blue-500 min-h-[42px]"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowKeyText(!showKeyText)}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                        >
+                          {showKeyText ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 block mb-1">
+                          Model AI:
+                        </label>
+                        <select
+                          value={selectedModel}
+                          onChange={(e) => setSelectedModel(e.target.value as GeminiModel)}
+                          className="w-full px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 text-xs font-semibold focus:outline-none min-h-[38px]"
+                        >
+                          <option value="gemini-1.5-flash">Gemini 1.5 Flash (Cepat & Hemat)</option>
+                          <option value="gemini-1.5-pro">Gemini 1.5 Pro (Penalaran Tinggi)</option>
+                          <option value="gemini-2.0-flash">Gemini 2.0 Flash (Generasi Baru)</option>
+                        </select>
+                      </div>
+
+                      <div className="flex items-end gap-2">
+                        <button
+                          type="button"
+                          onClick={handleSaveApiKey}
+                          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 min-h-[38px] transition-all"
+                        >
+                          <Check className="w-3.5 h-3.5" /> Simpan Kunci
+                        </button>
+                        {hasConfiguredKey && (
+                          <button
+                            type="button"
+                            onClick={handleRemoveApiKey}
+                            className="text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 py-2 px-3 rounded-xl border border-rose-200 dark:border-rose-900/60 min-h-[38px] transition-all"
+                          >
+                            Hapus
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                      💡 <strong>Langganan Gemini PRO?</strong> Akun Google Anda berhak mendapatkan API Key di <strong>aistudio.google.com</strong> secara gratis (kuota 15 req/menit). Panduan lengkap tersedia di folder <code className="text-[10px] bg-slate-200 dark:bg-slate-750 px-1 py-0.5 rounded">docs/panduan-integrasi-gemini-ai.md</code>.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-2.5 pt-2">
                 <button
                   type="button"
                   onClick={handleCopyPrompt}
-                  className="flex-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-200 font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 min-h-[44px] transition-colors border border-slate-200/80 dark:border-slate-700 btn-press text-xs sm:text-sm"
-                  title="Salin template prompt standar untuk ditempel ke ChatGPT/Gemini"
+                  className="flex-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-white font-bold py-3 px-4 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-2 min-h-[44px] transition-all btn-press text-xs sm:text-sm"
                 >
                   {copiedPrompt ? (
                     <>
@@ -404,10 +565,24 @@ Pembahasan: Insang menyaring oksigen yang terlarut di dalam air.`;
                 <button
                   type="button"
                   onClick={handleDirectGenerate}
-                  className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 min-h-[44px] shadow-sm btn-press text-xs sm:text-sm"
+                  disabled={isGeneratingAi}
+                  className={`flex-1 ${
+                    isGeneratingAi
+                      ? 'bg-blue-400 cursor-not-allowed'
+                      : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 btn-press'
+                  } text-white font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 min-h-[44px] shadow-sm text-xs sm:text-sm transition-all`}
                 >
-                  <Sparkles className="w-4 h-4" />
-                  <span>Buat Langsung Sekarang</span>
+                  {isGeneratingAi ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Sedang Meracik Soal AI...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4" />
+                      <span>{hasConfiguredKey ? 'Buat Langsung via Gemini AI' : 'Buat Langsung Sekarang'}</span>
+                    </>
+                  )}
                 </button>
               </div>
             </div>
