@@ -1,6 +1,18 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.61] - 2026-09-10
+### Reset Otomatis Posisi Scroll & Fokus ke Bagian Atas Halaman saat Navigasi Langkah Pembuat Kuis
+
+#### 1. Reset Posisi Scroll Instan (Scroll-to-Top)
+- Mengatasi kendala posisi scroll yang tertahan di bagian bawah saat berpindah tahapan (*Next* / *Previous*) pada Asisten Racik Kuis AI maupun Studio Kuis.
+- Menerapkan mekanisme reset scroll langsung (`window.scrollTo({ top: 0, left: 0, behavior: 'instant' })`) yang diperkuat dengan sinkronisasi `requestAnimationFrame` untuk mencegah efek loncat (*scroll retention*) saat peramban menghitung tata letak baru.
+- Menetapkan `window.history.scrollRestoration = 'manual'` guna memastikan peramban tidak memaksakan posisi scroll dari langkah sebelumnya.
+
+#### 2. Manajemen Fokus Aksesibilitas (a11y)
+- Menambahkan referensi kontainer utama (`mainContentRef` dan `containerRef`) dengan atribut `tabIndex={-1}` yang secara otomatis memindahkan fokus peramban ke bagian atas kartu konten baru tanpa pergeseran scroll yang tidak diinginkan (`preventScroll: true`).
+- Memastikan pembaca layar (*screen reader*) dan navigasi keyboard langsung memulai interaksi dari awal tahapan baru (judul tahapan dan masukan utama), alih-alih tertahan pada elemen tombol lama yang telah dilepas (*unmounted*).
+
 ## [2.2.60] - 2026-09-10
 ### Penyelarasan Presisi Tata Letak Tab Tahapan Pembuat Kuis Sticky Header dengan Kontainer Konten
 

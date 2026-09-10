@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import type { Subject, QuizQuestion, EducationLevel } from '../../types/quiz';
 import { 
@@ -1007,6 +1007,26 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
   topic,
   onTopicChange,
 }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Selalu reset posisi scroll ke paling atas dan kembalikan fokus saat tahapan funnel berubah
+  useEffect(() => {
+    const resetScrollAndFocus = () => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+      if (containerRef.current) {
+        containerRef.current.focus({ preventScroll: true });
+      }
+    };
+
+    resetScrollAndFocus();
+    const rafId = requestAnimationFrame(() => {
+      resetScrollAndFocus();
+    });
+    return () => cancelAnimationFrame(rafId);
+  }, [stage]);
+
   const [educationLevel, setEducationLevel] = useState<EducationLevel>(() => {
     if (initialEducationLevel) return initialEducationLevel;
     if (initialGrade) {
@@ -1517,7 +1537,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
   };
 
   return (
-    <div className="w-full max-w-[2000px] mx-auto px-3 xs:px-4 sm:px-8 lg:px-12 py-3 sm:py-4 animate-fade-in space-y-6">
+    <div ref={containerRef} tabIndex={-1} className="w-full max-w-[2000px] mx-auto px-3 xs:px-4 sm:px-8 lg:px-12 py-3 sm:py-4 animate-fade-in space-y-6 outline-none focus:outline-none">
       
       {/* Error Message Banner */}
       {errorMessage && (

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import type { Quiz, QuizQuestion, Subject, QuestionType, GameMode, EducationLevel } from '../../types/quiz';
 import { useBackHandler } from '../../lib/navigationHistory';
 import { ThemeToggle } from '../common/ThemeToggle';
@@ -185,6 +185,30 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
       }
     }
   }, [currentStep, aiFunnelActive, aiFunnelStage, funnelTopic, title, description, subject, grade, educationLevel, durationPerQuestionSec, coverEmoji, badgeTitle, visibility, defaultGameMode, shuffleQuestions, shuffleOptions, questions, editingQuiz]);
+
+  const mainContentRef = useRef<HTMLElement>(null);
+
+  // Selalu reset posisi scroll ke paling atas dan kembalikan fokus ke konten saat perpindahan tahap/langkah
+  useEffect(() => {
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
+
+    const resetScrollAndFocus = () => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+      if (mainContentRef.current) {
+        mainContentRef.current.focus({ preventScroll: true });
+      }
+    };
+
+    resetScrollAndFocus();
+    const rafId = requestAnimationFrame(() => {
+      resetScrollAndFocus();
+    });
+    return () => cancelAnimationFrame(rafId);
+  }, [aiFunnelStage, currentStep, aiFunnelActive]);
 
   const handleResetDraft = () => {
     try {
@@ -980,7 +1004,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
       )}
 
       {/* Main Content View */}
-      <main className="flex-1 w-full mt-2 sm:mt-4">
+      <main ref={mainContentRef} tabIndex={-1} className="flex-1 w-full mt-2 sm:mt-4 outline-none focus:outline-none">
         
         {/* ================= 1. ASISTEN RACIK KUIS AI (CREATION FUNNEL) ================= */}
         {aiFunnelActive ? (
