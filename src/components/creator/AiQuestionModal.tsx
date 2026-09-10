@@ -116,6 +116,8 @@ export const AiQuestionModal: React.FC<AiQuestionModalProps> = ({
       questionType
     );
 
+    setRawText(JSON.stringify(questions, null, 2));
+    setActiveTab('import');
     setParsedResults(
       questions.map((q) => ({
         id: q.id,
