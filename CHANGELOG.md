@@ -1,6 +1,30 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.27] - 2026-09-11
+### Penataan Hierarki Tipografi Micro-Header Formulir: Penonjolan Teks Utama & Penempatan Vertikal Teks Pendamping Anti-Squish
+
+#### 1. Masalah yang Diselesaikan
+- **Perebutan Ruang Horizontal (*Width Conflict*)**: Pemaksaan judul dan teks pendamping dalam 1 baris menggunakan `flex justify-between` menyebabkan kedua teks saling mendesak pada perangkat seluler.
+- **Pemotongan Baris Kikuk (*Awkward Wrapping*)**: Pada tampilan mobile sebelumnya, teks judul terbelah patah (misal `PENGATURAN SKOR & WAKTU` terpisah dengan `SOAL` di baris kedua, dan `Akumulasi Kuis:` terpisah dengan `50p`), serta `Pembahasan Jawaban` dan `Muncul setelah siswa menjawab` terlipat menjadi 2 kolom bertingkat yang tidak rapi.
+- **Ketidakseimbangan Hierarki Visual**: Teks pendamping berbobot sama dengan teks utama sehingga mengaburkan fokus pengisian yang esensial.
+
+#### 2. Implementasi & Desain Hierarki Vertikal Terpadu (`QuizCreator.tsx`)
+- **Penonjolan Dominan Teks Utama (*Primary Label Dominance*)**:
+  - Seluruh label utama (`Pertanyaan Soal`, `Pilihan Jawaban`, `Pembahasan Jawaban`, `Pengaturan Skor & Durasi`, `Bobot Poin Butir Ini`, `Durasi Timer Menjawab`) ditingkatkan bobot visualnya menggunakan `font-black text-slate-900 dark:text-white` sehingga menjadi titik fokus pandang utama pengguna.
+- **Penempatan Vertikal Teks Pendamping yang Tenang (*Subordinate Companion Text*)**:
+  - Teks pendamping dan panduan edukatif diposisikan tepat di bawah judul secara vertikal (*top-to-bottom reading flow*) dengan tipografi lembut (`text-[11px] font-normal text-slate-400 dark:text-slate-500`).
+  - Menghilangkan 100% risiko teks terpotong atau berjejalan pada layar sekecil apa pun (320px hingga 4K).
+- **Badge Status Mungil & Halus**:
+  - Penanda `Wajib diisi` (merah lembut) dan `Opsional` (abu-abu netral) dikemas sebagai badge kapsul mungil tepat di samping judul, menggantikan teks kurung biasa tanpa memberatkan kalimat judul.
+- **Penyempurnaan Panel Pengaturan Skor & Durasi**:
+  - Menyederhanakan judul menjadi `Pengaturan Skor & Durasi` dengan panduan vertikal di bawahnya.
+  - Komponen `Akumulasi Kuis: 100p 🎯 Pas 100` dipisah menjadi kartu pill independen yang tampil anggun di baris kedua pada layar seluler atau sejajar di desktop.
+
+#### 3. Kepatuhan Standar Teknis & Estetika (Rule 1, Rule 2, & Rule 4)
+- **Mobile-First & Responsivitas 720p - 4K**: Tidak ada pemotongan kata di resolusi non-reguler ponsel pintar maupun tablet.
+- **Readability & Kontras Sempurna**: Rasio kontras tinggi di mode gelap maupun mode terang, dengan estetika bersih (*anti AI-slop*).
+
 ## [2.3.26] - 2026-09-11
 ### Restrukturisasi Hierarki Visual 3 Zona Formulir Edit Soal & Optimasi Ergonomis Mobile-First Anti AI-Slop
 
