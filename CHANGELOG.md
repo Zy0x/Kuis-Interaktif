@@ -1,6 +1,25 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.20] - 2026-09-11
+### Komponen Custom Dropdown Tipe Soal: Desain Modern, Berikon, & Konsisten dengan Sistem Web
+
+#### 1. Masalah yang Diselesaikan
+- **Inkonsistensi Visual Elemen Dropdown Bawaan (*Native WebView*)**: Pemilihan tipe soal sebelumnya menggunakan elemen HTML `<select>` murni yang memicu *native picker* OS perangkat (Android, iOS, Windows). Tampilan ini tidak selaras dengan bahasa desain modern aplikasi, tidak mendukung ikon tematik, kaku pada mode gelap, dan mengurangi estetika visual editor kuis.
+
+#### 2. Implementasi & Desain Clean (`QuestionTypeDropdown.tsx` & `QuizCreator.tsx`)
+- **Komponen Kustom `QuestionTypeDropdown` Terpadu**:
+  - **Tombol Pemicu (*Trigger*) Modern**: Dilengkapi dengan wadah ikon tematik berwarna, label tipe soal dinamis (`Pilihan Ganda (4 Opsi)`, `Benar / Salah`, `Isian Singkat`, `Menjodohkan Kartu`), indikator panah halus (`ChevronDown`) dengan rotasi 180° yang mulus, serta cincin fokus elegan (`ring-2 ring-blue-500/20`).
+  - **Menu Popover Mengambang (*Floating Listbox*)**:
+    - Berlatar kaca buram (`bg-white/95 dark:bg-slate-850/95 backdrop-blur-md`) dengan bayangan mendalam dan sudut membulat modern (`rounded-2xl`).
+    - Setiap opsi menyajikan:
+      1. Ikon representatif berwarna tegas (Biru untuk Pilihan Ganda, Hijau Zamrud untuk Benar/Salah, Kuning Amber untuk Isian Singkat, dan Ungu untuk Menjodohkan).
+      2. Judul tebal dan deskripsi fungsi singkat tanpa teks bertele-tele.
+      3. Lencana centang aktif (`✓`) pada opsi yang sedang terpilih.
+    - Dilengkapi pendeteksi klik di luar elemen (*click-outside*) dan penutupan via tombol keyboard Escape untuk kenyamanan navigasi.
+- **Optimalisasi Tata Letak Proporsional (Grid 5-3-4)**:
+  - Kolom baris atas disempurnakan menjadi 5 kolom untuk Tipe Soal, 3 kolom untuk Bobot Poin, dan 4 kolom untuk Waktu Jawab, menjamin seluruh teks judul tipe soal tampil utuh tanpa terpotong (*no clipping*) pada semua ukuran layar.
+
 ## [2.3.19] - 2026-09-11
 ### Sistem Bobot Poin Terpadu & Arsitektur Sinkronisasi Durasi Waktu Transparan
 

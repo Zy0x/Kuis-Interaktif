@@ -30,6 +30,7 @@ import { AiQuestionModal } from './AiQuestionModal';
 import { ImageSelectorModal } from './ImageSelectorModal';
 import { AiGeneratorStep, clearAiGeneratorDraft } from './AiGeneratorStep';
 import { InfoKuisStep } from './InfoKuisStep';
+import { QuestionTypeDropdown } from './QuestionTypeDropdown';
 import { ResizableTextarea } from '../common/ResizableTextarea';
 
 interface QuizCreatorProps {
@@ -2197,25 +2198,20 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
           <form onSubmit={(e) => handleSaveQuestion(e, 'finish')} className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-7 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4 sm:space-y-5 animate-fade-in">
             {/* Tipe Soal, Bobot Poin, & Waktu Jawab (Proporsional & Rapi) */}
             <div className="grid grid-cols-1 sm:grid-cols-12 gap-3.5 items-start">
-              {/* Tipe Soal: 4 kolom pada desktop */}
-              <div className="sm:col-span-4">
+              {/* Tipe Soal: 5 kolom pada desktop */}
+              <div className="sm:col-span-5">
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                   Tipe Soal
                 </label>
-                <select
+                <QuestionTypeDropdown
                   value={qType}
-                  onChange={(e) => handleTypeChange(e.target.value as QuestionType)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none min-h-[44px]"
-                >
-                  <option value="multiple_choice">Pilihan Ganda ({qOptions.length} Opsi)</option>
-                  <option value="true_false">Benar / Salah</option>
-                  <option value="short_answer">Isian Singkat</option>
-                  <option value="matching_pairs">Menjodohkan Kartu</option>
-                </select>
+                  onChange={handleTypeChange}
+                  optionsCount={qOptions.length}
+                />
               </div>
 
-              {/* Bobot Poin: 4 kolom pada desktop */}
-              <div className="sm:col-span-4">
+              {/* Bobot Poin: 3 kolom pada desktop */}
+              <div className="sm:col-span-3">
                 <div className="flex items-center justify-between mb-1">
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
                     Bobot Poin
