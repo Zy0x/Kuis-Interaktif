@@ -274,6 +274,23 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     return questions.filter((q) => Boolean(q.customDurationSec && q.customDurationSec > 0)).length;
   }, [questions]);
 
+  // Estimasi total durasi pengerjaan kuis
+  const totalEstimatedSeconds = useMemo(() => {
+    return questions.reduce((sum, q) => {
+      const dur = q.customDurationSec ? parseInt(String(q.customDurationSec), 10) : durationPerQuestionSec;
+      return sum + (isNaN(dur) || dur <= 0 ? durationPerQuestionSec : dur);
+    }, 0);
+  }, [questions, durationPerQuestionSec]);
+
+  const formattedEstimatedDuration = useMemo(() => {
+    if (totalEstimatedSeconds <= 0) return '0 dtk';
+    if (totalEstimatedSeconds < 60) return `${totalEstimatedSeconds} dtk`;
+    const mins = Math.floor(totalEstimatedSeconds / 60);
+    const secs = totalEstimatedSeconds % 60;
+    if (secs === 0) return `${mins} mnt`;
+    return `${mins}m ${secs}s`;
+  }, [totalEstimatedSeconds]);
+
   // Proyeksi akumulasi total poin saat mengedit butir soal aktif
   const otherQuestionsPoints = useMemo(() => {
     return questions
@@ -2096,88 +2113,144 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
         {!isAddingQuestion ? (
           /* ================= 1-KOLOM DAFTAR BANK SOAL (KE BAWAH RESPONSIV) ================= */
           <div className="space-y-4 sm:space-y-5 pb-6 sm:pb-8">
-            {/* Slim Control Bar Bank Soal (Compact, Informatif, Streamlined & Bersih) */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-4 px-3.5 sm:px-5 py-2.5 sm:py-3 bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
-              {/* Sisi Kiri: Status Counter Butir Soal + Status Akumulasi Poin + Aksi Cerdas Kontekstual */}
-              <div className="flex items-center flex-wrap gap-2 min-w-0">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-100 dark:border-blue-900/40 shrink-0">
-                  <Layers className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                  <span>{questions.length} Butir Soal</span>
-                </span>
-
-                {questions.length > 0 && (
-                  totalQuizPoints === 100 ? (
-                    /* Ketika pas 100 poin: Tampilan bersih tanpa tombol bagi rata yang membingungkan */
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 shrink-0" title="Total bobot kuis tepat 100 poin (Skala Rapor Standar)">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                      <span>Total: 100 Poin (Pas 🎯)</span>
-                    </span>
-                  ) : totalQuizPoints < 100 ? (
-                    /* Ketika belum 100 poin: Tampilkan status kurang poin + aksi cerdas kontekstual bagi rata */
-                    <div className="inline-flex items-center gap-1.5 flex-wrap">
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 shrink-0" title={`Kurang ${100 - totalQuizPoints} poin dari target standar 100 poin (nilai rapor tetap dinormalkan otomatis)`}>
-                        <AlertCircle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                        <span>Total: {totalQuizPoints}p (Kurang {100 - totalQuizPoints}p)</span>
-                      </span>
-
-                      <button
-                        type="button"
-                        onClick={handleDistribute100Points}
-                        className="text-[11px] font-bold text-amber-800 dark:text-amber-200 bg-amber-100/80 hover:bg-amber-200 dark:bg-amber-900/50 dark:hover:bg-amber-850 px-2.5 py-1 rounded-xl border border-amber-300/90 dark:border-amber-700/80 transition-all inline-flex items-center gap-1.5 min-h-[30px] shrink-0 btn-press"
-                        title="Bagi rata bobot poin ke seluruh butir soal agar pas 100 poin"
-                      >
-                        <Scale className="w-3.5 h-3.5 text-amber-700 dark:text-amber-300 shrink-0" />
-                        <span>Bagi Rata 100p</span>
-                      </button>
-                    </div>
-                  ) : (
-                    /* Ketika melebihi 100 poin: Tampilkan status dinamis + opsi bagi rata ke 100 poin */
-                    <div className="inline-flex items-center gap-1.5 flex-wrap">
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60 shrink-0" title="Skala dinamis. Nilai rapor siswa tetap otomatis dinormalkan ke skala 100">
-                        <Star className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-                        <span>Total: {totalQuizPoints}p (Dinamis)</span>
-                      </span>
-
-                      <button
-                        type="button"
-                        onClick={handleDistribute100Points}
-                        className="text-[11px] font-bold text-indigo-800 dark:text-indigo-200 bg-indigo-100/80 hover:bg-indigo-200 dark:bg-indigo-900/50 dark:hover:bg-indigo-850 px-2.5 py-1 rounded-xl border border-indigo-300/90 dark:border-indigo-700/80 transition-all inline-flex items-center gap-1.5 min-h-[30px] shrink-0 btn-press"
-                        title="Bagi rata bobot poin ke seluruh butir soal agar pas 100 poin"
-                      >
-                        <Scale className="w-3.5 h-3.5 text-indigo-700 dark:text-indigo-300 shrink-0" />
-                        <span>Bagi Rata 100p</span>
-                      </button>
-                    </div>
-                  )
-                )}
+            {/* Section Header: Judul Seksi Bank Soal & Kontrol Tinjauan Pembahasan */}
+            <div className="flex flex-col xs:flex-row items-start xs:items-center justify-between gap-3 pb-0.5">
+              <div>
+                <h2 className="text-sm sm:text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+                  <span>Daftar Butir Soal</span>
+                  <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
+                    ({questions.length})
+                  </span>
+                </h2>
+                <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Kelola urutan kartu soal, verifikasi bobot nilai, dan tinjau kunci jawaban.
+                </p>
               </div>
 
-              {/* Sisi Kanan: Kontrol Tampilan Review (Toggle Pembahasan dengan Ikon Lucide Modern) */}
-              <div className="flex items-center justify-end shrink-0">
-                {questions.length > 0 && (
+              {questions.length > 0 && (
+                <div className="flex items-center gap-2 shrink-0 self-end xs:self-auto">
                   <button
                     type="button"
                     onClick={handleToggleAllExplanations}
-                    className={`text-[11px] sm:text-xs font-bold px-3 py-1.5 rounded-xl border transition-all inline-flex items-center gap-1.5 min-h-[36px] sm:min-h-[38px] shrink-0 btn-press ${
+                    className={`text-xs font-bold px-3.5 py-2 rounded-xl border transition-all inline-flex items-center gap-2 min-h-[40px] shrink-0 btn-press shadow-2xs ${
                       showAllExplanations
-                        ? 'text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 border-blue-200 dark:border-blue-800/80 shadow-2xs'
-                        : 'text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 bg-slate-50 hover:bg-blue-50/80 dark:bg-slate-800/70 dark:hover:bg-blue-950/50 border-slate-200/80 dark:border-slate-700/60 hover:border-blue-200 dark:hover:border-blue-800/60'
+                        ? 'text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/70 border-blue-200 dark:border-blue-800/80 shadow-xs'
+                        : 'text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 bg-white dark:bg-slate-900 hover:bg-blue-50/70 dark:hover:bg-blue-950/40 border-slate-200/90 dark:border-slate-800 hover:border-blue-200 dark:hover:border-blue-800/60'
                     }`}
                     title="Buka atau sembunyikan semua pembahasan soal sekaligus"
                   >
                     {showAllExplanations ? (
                       <>
-                        <EyeOff className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+                        <EyeOff className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
                         <span>Tutup Pembahasan</span>
                       </>
                     ) : (
                       <>
-                        <Eye className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+                        <Eye className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
                         <span>Buka Pembahasan</span>
                       </>
                     )}
                   </button>
-                )}
+                </div>
+              )}
+            </div>
+
+            {/* Grid 3 Mini Stat Cards Dashboard (Proporsional, Padat & Terstruktur) */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+              {/* Card 1: Jumlah Butir Soal */}
+              <div className="p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-3.5">
+                <div className="w-11 h-11 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-900/40 flex items-center justify-center shrink-0 shadow-2xs">
+                  <Layers className="w-5 h-5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-[10px] sm:text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                    Jumlah Soal
+                  </div>
+                  <div className="flex items-baseline gap-1.5 mt-0.5">
+                    <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
+                      {questions.length}
+                    </span>
+                    <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                      Butir Aktif
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 2: Total Bobot Poin & Logika Cerdas Bagi Rata */}
+              <div className="p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-3.5">
+                <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border shadow-2xs ${
+                  totalQuizPoints === 100
+                    ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/40'
+                    : totalQuizPoints < 100
+                    ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-900/40'
+                    : 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border-indigo-100 dark:border-indigo-900/40'
+                }`}>
+                  {totalQuizPoints === 100 ? (
+                    <CheckCircle2 className="w-5 h-5" />
+                  ) : totalQuizPoints < 100 ? (
+                    <AlertCircle className="w-5 h-5" />
+                  ) : (
+                    <Star className="w-5 h-5" />
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-[10px] sm:text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center justify-between">
+                    <span>Total Bobot</span>
+                    {totalQuizPoints === 100 && (
+                      <span className="text-[10px] font-extrabold text-emerald-600 dark:text-emerald-400">
+                        Pas 100 🎯
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center justify-between gap-1.5 mt-0.5">
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
+                        {totalQuizPoints}
+                      </span>
+                      <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                        Poin
+                      </span>
+                    </div>
+
+                    {/* Tombol Aksi Cerdas Kontekstual Jika Belum 100 */}
+                    {questions.length > 0 && totalQuizPoints !== 100 && (
+                      <button
+                        type="button"
+                        onClick={handleDistribute100Points}
+                        className={`text-[10px] font-extrabold px-2.5 py-1 rounded-lg border transition-all inline-flex items-center gap-1 shrink-0 btn-press ${
+                          totalQuizPoints < 100
+                            ? 'text-amber-800 dark:text-amber-200 bg-amber-100/90 hover:bg-amber-200 dark:bg-amber-900/60 dark:hover:bg-amber-800 border-amber-300 dark:border-amber-700'
+                            : 'text-indigo-800 dark:text-indigo-200 bg-indigo-100/90 hover:bg-indigo-200 dark:bg-indigo-900/60 dark:hover:bg-indigo-800 border-indigo-300 dark:border-indigo-700'
+                        }`}
+                        title="Bagi rata bobot poin ke seluruh soal agar pas 100 poin"
+                      >
+                        <Scale className="w-3 h-3" />
+                        <span>Bagi Rata 100p</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 3: Estimasi Durasi Total Kuis */}
+              <div className="p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-3.5">
+                <div className="w-11 h-11 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 border border-purple-100 dark:border-purple-900/40 flex items-center justify-center shrink-0 shadow-2xs">
+                  <Clock className="w-5 h-5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-[10px] sm:text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                    Estimasi Waktu
+                  </div>
+                  <div className="flex items-baseline gap-1.5 mt-0.5">
+                    <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
+                      {formattedEstimatedDuration}
+                    </span>
+                    <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 truncate">
+                      (~{durationPerQuestionSec}s/soal)
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
 

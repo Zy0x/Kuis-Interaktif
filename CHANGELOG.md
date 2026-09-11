@@ -1,6 +1,26 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.33] - 2026-09-11
+### Redesain Dashboard Mini Stat Cards Bank Soal: Header Seksi Terstruktur & Metrik Interaktif Proporsional
+
+#### 1. Masalah & Kebutuhan yang Diselesaikan
+- **Kesan Hampa & Kosong pada Layar Lebar**: Bilah kontrol bank soal sebelumnya menggunakan satu kontainer kartu memanjang yang terbentang melintasi layar (hingga 1900px+), namun hanya memuat dua badge kecil di ujung kiri dan satu tombol kecil di ujung kanan. Jarak kosong yang sangat lebar di tengahnya membuat bilah tersebut tampak hampa, tidak proporsional, dan terkesan canggung.
+- **Ketiadaan Konteks Judul & Metrik Durasi**: Guru memerlukan gambaran menyeluruh yang terstruktur saat memeriksa bank soal, termasuk berapa lama kuis akan berlangsung jika diujikan kepada siswa di kelas.
+
+#### 2. Implementasi Desain & Fungsionalitas
+- **Header Seksi Terpadu (`QuizCreator.tsx`)**:
+  - Menghadirkan judul seksi tegas **Daftar Butir Soal ({questions.length})** lengkap dengan deskripsi fungsional panduan guru.
+  - Menyelaraskan tombol aksi peninjauan kunci jawaban (`Buka / Tutup Pembahasan`) di sisi kanan header dengan ikon Lucide `Eye` dan `EyeOff`.
+- **Grid 3 Mini Stat Cards Dashboard (Pilihan B)**:
+  - Menggantikan bilah kosong memanjang dengan 3 widget kartu metrik profesional berjejer rapi (`grid-cols-1 sm:grid-cols-3`):
+    1. **Kartu Jumlah Soal**: Menampilkan total butir soal aktif dengan aksen warna biru dan ikon `Layers`.
+    2. **Kartu Total Bobot & Aksi Cerdas**: Menampilkan akumulasi poin secara visual dengan status `Pas 100 🎯` (warna emerald) jika sudah pas, atau indikator peringatan (warna amber) dan tombol aksi kontekstual `[ ⚖️ Bagi Rata 100p ]` yang tersemat rapi di dalam kartu saat bobot belum 100.
+    3. **Kartu Estimasi Durasi Kuis**: Menghitung akumulasi waktu pengerjaan secara otomatis dari durasi kustom maupun durasi standar per soal (contoh: `1 mnt (~30s/soal)`), memberikan estimasi waktu nyata bagi guru saat mengatur alokasi jam pelajaran.
+- **Responsivitas Antar-Platform (Rule 1 & Rule 2)**:
+  - Mengisi ruang desktop secara berimbang, padat manfaat, dan tidak ada ruang kosong hampa.
+  - Pada layar ponsel mobile portrait, kartu tersusun menjadi tumpukan widget ringkas yang sangat nyaman dibaca (*glanceable*) dengan target sentuh tombol $\ge 40\text{–}44\text{ px}$.
+
 ## [2.3.32] - 2026-09-11
 ### Perapian Kontrol Bar Bank Soal: Logika Cerdas Kontekstual Bagi Rata Poin & Toggle Pembahasan Terpadu
 
