@@ -1,6 +1,43 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.38] - 2026-09-11
+### Audit Total & Rekayasa Ulang Tab Info Kuis: Mobile-First, Anti-Slop, Fase Kurikulum Merdeka, Durasi Kustom & Pratinjau Terpadu
+
+#### 1. Masalah & Kebutuhan yang Diselesaikan
+- **Pelanggaran Standar Touch Target Mobile**: Tombol preset durasi sebelumnya hanya berukuran `min-h-[42px]` (< 44px), serta kotak centang pengacakan kecil (16px) yang rawan salah sentuh di layar ponsel cerdas.
+- **Keterbatasan Preset Waktu**: Guru matematika/fisika tidak leluasa menentukan durasi panjang (90s, 120s, 180s) atau hafalan kilat (10s), serta kuis dengan durasi khusus tidak memiliki representasi visual tombol aktif.
+- **Keterbatasan Pilihan Emoji Sampul**: Terkunci pada 16 emoji statis tanpa kategorisasi dan tanpa kemampuan mengetik emoji bebas.
+- **Ketidaksesuaian Kurikulum Merdeka**: Pemilihan jenjang dan kelas sebelumnya bercampur baur tanpa indikator Fase (Fase A - F) dan tanpa penyaringan mata pelajaran yang cerdas.
+- **Ergonomi Tata Letak Mobile**: Di mobile, kartu pratinjau kartu siswa terdorong jauh ke bawah setelah tombol aksi navigasi, sehingga guru tidak sempat melihat pratinjau kartu kuisnya sebelum berpindah langkah.
+
+#### 2. Implementasi Desain & Fungsionalitas
+- **Banner AI Ringkas & Bebas Slop (`InfoKuisStep.tsx`)**:
+  - Menghilangkan redundansi ikon ganda pada tombol racik AI.
+  - Microcopy edukatif: badge `Kurikulum Merdeka 🇮🇩` dan penjelasan fungsional manfaat racikan identitas kuis.
+- **Penghitung Karakter & Template Instruksi Cepat**:
+  - Penanda panjang karakter dinamis pada judul kuis (`panjang/100 karakter`).
+  - Tiga chip rekomendasi instruksi kuis siap pakai yang dapat disematkan ke deskripsi hanya dengan satu sentuhan.
+- **Selektor Jenjang & Fase Kurikulum Merdeka Terpadu**:
+  - Tiga tab jenjang: `SD / MI (Fase A - C)`, `SMP / MTs (Fase D)`, dan `SMA / SMK (Fase E - F)`.
+  - Dropdown kelas otomatis terfilter sesuai jenjang dan menyertakan deskripsi fase capaian pembelajaran.
+  - Daftar mata pelajaran terfilter cerdas memprioritaskan mapel relevan per jenjang.
+- **Durasi Menjawab Fleksibel (Preset Lengkap + Mode Kustom)**:
+  - 8 tombol preset durasi touch-friendly $\ge 44\text{px}$: `10s`, `15s`, `20s`, `30s`, `45s`, `60s`, `90s`, `120s`.
+  - Mode atur detik kustom (5 - 300 detik) untuk kebebasan pengaturan waktu guru.
+- **Kategori Emoji Tematik & Input Emoji Bebas**:
+  - 5 kategori emoji tematik: Sains & Alam, Matematika, Bahasa & Seni, Karakter & Juara, Sekolah & Fauna.
+  - Dukungan pengetikan atau penempelan emoji bebas dari keyboard pengguna dengan badge "Terpilih" yang selalu akurat.
+- **Rekomendasi Gelar Hadiah / Lencana Siswa Kontekstual**:
+  - Menampilkan 4 chip gelar inspiratif otomatis sesuai mata pelajaran yang dipilih (misal: "Peneliti Sains Cilik", "Master Logika", "Duta Karakter Bangsa").
+- **Modern iOS-Style Card Toggle Switch untuk Pengacakan**:
+  - Mengganti checkbox kaku menjadi kartu toggle modern dengan touch target $\ge 56\text{px}$ untuk pengacakan nomor soal dan opsi jawaban.
+- **Pratinjau Kartu Siswa & Status Kesiapan Terpadu**:
+  - Desktop: Sticky sidebar sisi kanan dengan live preview kartu siswa dan checklist kesiapan kuis.
+  - Mobile: Accordion pratinjau ringkas tepat di atas tombol navigasi langkah, sehingga alur penyusunan kuis terasa mulus dan alami tanpa scroll bolak-balik.
+- **Tombol Navigasi Responsif**:
+  - Tombol `Kembali` dan `Lanjut ke Bank Soal` berukuran $\ge 48\text{px}$, tersusun responsif (stacked di layar sangat sempit / inline di tablet-desktop).
+
 ## [2.3.37] - 2026-09-11
 ### Tombol Kontekstual "Ingin Bagi Rata?" & Dialog Konfirmasi Presisi Anti-Slop Bagi Rata 100 Poin
 
