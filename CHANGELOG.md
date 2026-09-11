@@ -1,6 +1,25 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.32] - 2026-09-11
+### Perapian Kontrol Bar Bank Soal: Logika Cerdas Kontekstual Bagi Rata Poin & Toggle Pembahasan Terpadu
+
+#### 1. Masalah & Kebutuhan yang Diselesaikan
+- **Redundansi Tombol "Bagi Rata 100p" saat Poin Sudah Pas**: Tombol `Bagi Rata 100p` sebelumnya tampil permanen di kontrol bar bahkan ketika total poin kuis sudah bernilai `Total: 100 Poin (Pas 🎯)`. Hal ini membingungkan guru/pengguna mengenai tujuan dan efek dari tombol tersebut.
+- **Tata Letak Asimetris & Menggantung di Layar Sempit**: Penempatan tombol aksi pengubah bobot soal (`Bagi Rata 100p`) diletakkan berdampingan dengan aksi filter tampilan UI (`Buka Pembahasan`) di sisi kanan bawah dengan styling `self-end`, menyebabkan layout terpecah menjadi 2 baris canggung dengan ruang kosong besar di mobile.
+- **Inkonsistensi Visual Emoji Tempelan**: Tombol `💡 Buka Pembahasan` menggunakan emoji mentah yang tidak selaras dengan sistem desain ikon Lucide di seluruh aplikasi kuis.
+
+#### 2. Implementasi Desain & Fungsionalitas
+- **Eliminasi Tombol Permanen Redundan (`QuizCreator.tsx`)**:
+  - Saat total bobot butir kuis telah mencapai tepat 100 poin (`totalQuizPoints === 100`), tombol `Bagi Rata 100p` disembunyikan sepenuhnya. Kontrol bar tampil ramping, bersih, dan menenangkan (*clutter-free*).
+- **Logika Aksi Cerdas Kontekstual (Hanya Muncul Jika Poin $\neq$ 100)**:
+  - Tombol `[ ⚖️ Bagi Rata 100p ]` kini diposisikan secara kontekstual tepat di samping badge status poin (`Kurang Xp` / `Dinamis`).
+  - Ketika guru mengklik tombol tersebut, bobot seluruh soal otomatis dibagi rata agar pas 100 poin, notifikasi sukses ditampilkan, dan tombol tersebut langsung menghilang seketika saat status poin berubah menjadi `Total: 100 Poin (Pas 🎯)`.
+- **Integrasi Ikon Standar Lucide Modern**:
+  - Mengganti emoji mentah dengan ikon Lucide profesional [`Eye`](file:///E:/Data/GitHub/Kuis%20Interaktif/src/components/creator/QuizCreator.tsx) untuk membuka seluruh pembahasan dan [`EyeOff`](file:///E:/Data/GitHub/Kuis%20Interaktif/src/components/creator/QuizCreator.tsx) untuk menutup pembahasan, dengan indikator aktif beraksen biru halus.
+- **Tata Letak Seimbang & Ergonomis Mobile-First**:
+  - Menghilangkan `self-end` yang menggantung. Kontrol bar kini menyatu dalam satu baris yang seimbang dan responsif di desktop maupun layar sentuh seluler ($\ge 36\text{–}44\text{ px}$).
+
 ## [2.3.31] - 2026-09-11
 ### Peningkatan Kontras Badge Dark Mode, Input Auto-Resize Wrapping Dinamis, & Restrukturisasi Tombol Tambah Pengecoh
 
