@@ -4,6 +4,8 @@ import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 import { useBackHandler } from '../../lib/navigationHistory';
 import { generateRandomPin } from '../../lib/supabaseClient';
 import { copyTextToClipboard } from '../../lib/aiQuestionParser';
+import { useDrawerSwipeDown } from '../../hooks/useDrawerSwipeDown';
+import { DrawerHandle } from './DrawerHandle';
 import { 
   X, 
   Globe, 
@@ -78,6 +80,18 @@ export const QuizSettingsModal: React.FC<QuizSettingsModalProps> = ({
       setToastMessage(null);
     }
   }, [quiz]);
+
+  const handleClose = () => {
+    if (!isDuplicating && !isUpdatingVisibility) {
+      playClick();
+      onClose();
+    }
+  };
+
+  const { handleRef, drawerStyle, backdropStyle } = useDrawerSwipeDown({
+    onClose: handleClose,
+    enabled: isOpen && !isDuplicating && !isUpdatingVisibility,
+  });
 
   if (!isOpen || !quiz) return null;
 
@@ -189,22 +203,19 @@ export const QuizSettingsModal: React.FC<QuizSettingsModalProps> = ({
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs animate-backdrop-fade touch-none"
-        onClick={() => {
-          if (!isDuplicating && !isUpdatingVisibility) {
-            playClick();
-            onClose();
-          }
-        }}
+        style={backdropStyle}
+        onClick={handleClose}
         aria-hidden="true"
       />
 
       {/* Action Sheet / Settings Modal */}
       <div 
-        className="relative z-10 w-full sm:max-w-md bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xl p-4 sm:p-5 pt-3 animate-slide-up max-h-[85vh] overflow-y-auto overscroll-contain pb-[max(env(safe-area-inset-bottom),1.25rem)] space-y-3 text-left"
+        className="relative z-10 w-full sm:max-w-md bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xl p-4 sm:p-5 pt-2 animate-slide-up max-h-[85vh] overflow-y-auto overscroll-contain pb-[max(env(safe-area-inset-bottom),1.25rem)] space-y-3 text-left"
         onClick={(e) => e.stopPropagation()}
+        style={drawerStyle}
       >
-        {/* Mobile Drag Pill */}
-        <div className="w-10 h-1 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto sm:hidden mb-1" />
+        {/* Mobile Drag Handle - Swipe Down to Close */}
+        <DrawerHandle ref={handleRef} className="sm:hidden -mt-1 mb-1" />
 
         {/* Minimalist Header */}
         <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">

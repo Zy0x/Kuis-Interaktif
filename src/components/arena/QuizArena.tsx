@@ -4,6 +4,8 @@ import { useBackHandler } from '../../lib/navigationHistory';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 import { ThemeToggle } from '../common/ThemeToggle';
 import { useQuizBgm } from '../../hooks/useQuizBgm';
+import { useDrawerSwipeDown } from '../../hooks/useDrawerSwipeDown';
+import { DrawerHandle } from '../common/DrawerHandle';
 import { 
   X, 
   Volume2, 
@@ -131,6 +133,18 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   });
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [isMobileToolsOpen, setIsMobileToolsOpen] = useState(false);
+
+  const { 
+    handleRef: mobileToolsHandleRef, 
+    drawerStyle: mobileToolsDrawerStyle, 
+    backdropStyle: mobileToolsBackdropStyle 
+  } = useDrawerSwipeDown({
+    onClose: () => {
+      if (playClick) playClick();
+      setIsMobileToolsOpen(false);
+    },
+    enabled: isMobileToolsOpen,
+  });
 
   // Question Types States
   // 1. Short Answer state
@@ -1187,13 +1201,18 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
         >
           <div
             className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs animate-backdrop-fade touch-none"
+            style={mobileToolsBackdropStyle}
             onClick={() => setIsMobileToolsOpen(false)}
             aria-hidden="true"
           />
           <div
-            className="relative z-10 w-full sm:max-w-md bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4 animate-modal-card-in"
+            className="relative z-10 w-full sm:max-w-md bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl p-5 pt-2 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4 animate-modal-card-in"
             onClick={(e) => e.stopPropagation()}
+            style={mobileToolsDrawerStyle}
           >
+            {/* Mobile Drag Handle - Swipe Down to Close */}
+            <DrawerHandle ref={mobileToolsHandleRef} className="sm:hidden -mt-1 mb-1" />
+
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
               <div>
                 <h4 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">Alat & Pengaturan Kuis</h4>

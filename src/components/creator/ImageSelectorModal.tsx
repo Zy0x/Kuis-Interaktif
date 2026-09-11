@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  X, 
   Search, 
   Sparkles, 
   Globe, 
@@ -15,6 +14,8 @@ import {
   type EducationalImageResult 
 } from '../../lib/imageService';
 import { useBackHandler } from '../../lib/navigationHistory';
+import { useDrawerSwipeDown } from '../../hooks/useDrawerSwipeDown';
+import { DrawerHandle } from '../common/DrawerHandle';
 
 interface ImageSelectorModalProps {
   isOpen: boolean;
@@ -110,6 +111,12 @@ export const ImageSelectorModal: React.FC<ImageSelectorModalProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
+  // Swipe Down to Dismiss Drawer Hook
+  const { handleRef, drawerStyle, backdropStyle } = useDrawerSwipeDown({
+    onClose,
+    enabled: isOpen,
+  });
+
   if (!isOpen) return null;
 
   const handleSearch = async (queryToUse?: string) => {
@@ -165,15 +172,17 @@ export const ImageSelectorModal: React.FC<ImageSelectorModalProps> = ({
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs animate-fade-in"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs animate-fade-in overscroll-contain"
       onClick={onClose}
+      style={backdropStyle}
     >
       <div 
-        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-t-3xl sm:rounded-3xl w-full max-w-2xl h-[92dvh] sm:h-auto sm:max-h-[88vh] flex flex-col shadow-2xl overflow-hidden animate-scale-up"
+        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-t-3xl sm:rounded-3xl w-full max-w-2xl h-[92dvh] sm:h-auto sm:max-h-[88vh] flex flex-col shadow-2xl overflow-hidden animate-scale-up overscroll-contain"
         onClick={(e) => e.stopPropagation()}
+        style={drawerStyle}
       >
-        {/* Mobile Pull Handle Indicator */}
-        <div className="w-12 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 mx-auto mt-2.5 mb-1 sm:hidden shrink-0" />
+        {/* Mobile Pull Handle - Swipe Down to Close */}
+        <DrawerHandle ref={handleRef} className="sm:hidden" />
 
         {/* Header Modal */}
         <div className="p-3.5 sm:p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0">
@@ -190,14 +199,6 @@ export const ImageSelectorModal: React.FC<ImageSelectorModalProps> = ({
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-11 h-11 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors btn-press shrink-0 ml-2"
-            aria-label="Tutup modal"
-          >
-            <X className="w-5 h-5" />
-          </button>
         </div>
 
         {/* Segmented Tab Switcher */}

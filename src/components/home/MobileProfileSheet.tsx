@@ -3,6 +3,8 @@ import type { TeacherProfile, PlayerProfile } from '../../types/quiz';
 import { AVATAR_LIST } from '../../data/seedQuizzes';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 import { useBackHandler } from '../../lib/navigationHistory';
+import { useDrawerSwipeDown } from '../../hooks/useDrawerSwipeDown';
+import { DrawerHandle } from '../common/DrawerHandle';
 import { 
   X, 
   Moon, 
@@ -58,39 +60,47 @@ export const MobileProfileSheet: React.FC<MobileProfileSheetProps> = ({
     return true;
   }, isOpen);
 
+  const handleClose = () => {
+    playClick();
+    onClose();
+  };
+
+  const { handleRef, drawerStyle, backdropStyle } = useDrawerSwipeDown({
+    onClose: handleClose,
+    enabled: isOpen,
+  });
+
   if (!isOpen) return null;
 
   const currentAvatar = AVATAR_LIST.find((a) => a.id === profile.avatarId) || AVATAR_LIST[0];
 
   return (
-    <div className="fixed inset-0 z-50 sm:hidden flex flex-col justify-end select-none">
+    <div className="fixed inset-0 z-50 sm:hidden flex flex-col justify-end select-none overscroll-contain">
       {/* Dimmed Backdrop */}
       <div
         className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs animate-backdrop-fade"
-        onClick={() => {
-          playClick();
-          onClose();
-        }}
+        style={backdropStyle}
+        onClick={handleClose}
         aria-hidden="true"
       />
 
       {/* Bottom Sheet Container */}
       <div 
-        className="relative z-10 w-full bg-white dark:bg-slate-900 rounded-t-3xl border-t border-slate-200/90 dark:border-slate-800 shadow-2xl p-4 xs:p-5 pt-3 animate-slide-up max-h-[88vh] overflow-y-auto overscroll-contain pb-[max(env(safe-area-inset-bottom),1.25rem)]"
+        className="relative z-10 w-full bg-white dark:bg-slate-900 rounded-t-3xl border-t border-slate-200/90 dark:border-slate-800 shadow-2xl p-4 xs:p-5 pt-2 animate-slide-up max-h-[88vh] overflow-y-auto overscroll-contain pb-[max(env(safe-area-inset-bottom),1.25rem)]"
         role="dialog"
         aria-modal="true"
         aria-label="Menu Profil dan Pengaturan Cepat"
+        style={drawerStyle}
       >
-        {/* Top Drag Indicator & Close Row */}
+        {/* Mobile Drag Handle - Swipe Down to Close */}
+        <DrawerHandle ref={handleRef} className="-mt-1 mb-0.5" />
+
+        {/* Header Row */}
         <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800/80">
-          <div className="w-8" />
-          <div className="w-12 h-1.5 bg-slate-300 dark:bg-slate-700 rounded-full" />
+          <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Menu & Profil</span>
           <button
-            onClick={() => {
-              playClick();
-              onClose();
-            }}
-            className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
+            onClick={handleClose}
+            className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
             aria-label="Tutup Panel Profil"
           >
             <X className="w-5 h-5" />

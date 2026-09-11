@@ -1,6 +1,34 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.30] - 2026-09-11
+### Standarisasi Interaksi Drawer Mobile: Eliminasi Tombol Tutup Ganda & Gesture Swipe-Down to Close Anti Pull-to-Refresh
+
+#### 1. Masalah & Kebutuhan yang Diselesaikan
+- **Tombol Tutup Ganda (*Redundant Close Controls*)**: Pada modal pemilihan ilustrasi edukasi (`ImageSelectorModal`), terdapat tombol `X` di header atas dan tombol "Tutup" di bagian bawah. Hal ini membebani visual dan mempersempit ruang judul modal.
+- **Pill Handle Statis Tanpa Fungsi**: Garis tengah atas (*pill handle indicator*) pada drawer sebelumnya hanya hiasan visual pasif dan tidak dapat ditarik untuk menutup drawer secara intuitif.
+- **Risiko Konflik Pull-to-Refresh Mobile**: Pada browser seluler (Chrome Android, Safari iOS, PWA), menarik elemen layar ke bawah berisiko memicu gesture refresh bawaan browser (*browser pull-to-refresh*), yang berpotensi memuat ulang halaman dan menghilangkan draf yang sedang dikerjakan.
+
+#### 2. Implementasi Desain & Fungsionalitas
+- **Konsolidasi Tombol Tutup Bersih (`ImageSelectorModal.tsx`)**:
+  - Menghapus tombol `X` di header atas sehingga judul dan deskripsi modal mendapatkan ruang penuh yang lega.
+  - Mempertahankan tombol `Tutup` di bagian footer bawah sebagai tombol aksi penutupan utama yang mudah dijangkau satu tangan (*thumb-friendly*).
+- **Hook Terpusat `useDrawerSwipeDown` (`src/hooks/useDrawerSwipeDown.ts`)**:
+  - Melacak pergerakan gesture pointer dan touch secara mulus dengan translasi visual langsung (`translateY`).
+  - Efek pemudaran backdrop (*backdrop opacity damping*) yang responsif terhadap jarak tarikan.
+  - Snap-back halus jika tarikan belum mencapai batas (threshold 70px) atau ditarik perlahan.
+  - Dismiss otomatis saat tarikan melebihi batas atau adanya sentakan cepat (*downward flick/swipe*).
+- **Proteksi Mutlak Anti Pull-to-Refresh (Mobile-First Safe)**:
+  - Mengikat listener native `touchmove` dengan opsi `{ passive: false }` dan `e.preventDefault()` pada handle bar, serta properti CSS `touch-action: none` mutlak.
+  - Menjamin 100% bebas dari reload halaman browser saat menarik garis tengah drawer ke bawah.
+- **Komponen Modular `DrawerHandle` (`src/components/common/DrawerHandle.tsx`)**:
+  - Area target sentuh ergonomis ($\ge 44\times 44\text{ px}$), cursor grab/grabbing intuitif, dan dukungan ARIA (`role="button"`, `aria-label="Tarik ke bawah untuk menutup"`).
+- **Standardisasi ke Seluruh Drawer dalam Sistem**:
+  - `ImageSelectorModal.tsx`: Drawer Pemilih Ilustrasi Edukasi.
+  - `QuizSettingsModal.tsx`: Drawer Pengaturan Kuis Guru.
+  - `MobileProfileSheet.tsx`: Drawer Menu Profil & Pengaturan Cepat Mobile.
+  - `QuizArena.tsx`: Drawer Menu Alat & Pengaturan Kuis Mobile.
+
 ## [2.3.29] - 2026-09-11
 ### Redesain Bersih Editor Menjodohkan Pasangan Kartu, Dukungan Kartu Pengecoh Sisi Kanan, & Penilaian Proporsional Adil (Partial Credit Scoring)
 
