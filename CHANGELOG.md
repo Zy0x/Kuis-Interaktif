@@ -1,6 +1,19 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.4] - 2026-09-11
+### Eliminasi Celah Samping Layar Lebar & Penyelarasan Kontainer Penuh `max-w-[2000px]` dengan Grid Opsi 4-Kolom
+
+#### 1. Masalah yang Diselesaikan
+- **Celah Samping Timpang di Monitor Layar Lebar (*Widescreen Canyon Margins*)**: Pada layar monitor desktop 1080p, 2K, hingga 4K, kontainer Bank Soal dan tab navigasi sebelumnya dibatasi `max-w-4xl 2xl:max-w-5xl` (~1024px), sementara navbar header atas menggunakan `max-w-[2000px]`. Hal ini menghasilkan celah kosong (*gutter*) yang sangat lebar (~450px di kiri dan kanan) dan membuat konten kuis tampak menciut di tengah.
+- **Penyajian Opsi Jawaban Menumpuk**: Opsi pilihan ganda (A, B, C, D) di monitor lebar sebelumnya hanya memakai 2 kolom, memboroskan ruang horizontal dan memperpanjang kartu secara vertikal.
+
+#### 2. Penyelarasan Kontainer Lebar Maksimal Harmonis (`QuizCreator.tsx`)
+- **Penyelarasan Presisi Seluruh Viewport**: Mengubah kontainer tab AI Funnel, Tab Navigasi 3 Langkah, Studio Bank Soal, dan Halaman Pratinjau & Simpan menjadi `w-full max-w-[2000px] mx-auto px-3 xs:px-4 sm:px-8 lg:px-12`. Tampilan kini sejajar sempurna dengan navbar header aplikasi di seluruh ukuran layar.
+- **Tetap Mempertahankan 1-Kolom Mengalir ke Bawah (*Single Downward Flow*)**: Sesuai instruksi, kartu soal tidak dipecah menjadi 2 kolom kartu bersebelahan, melainkan tetap mengalir ke bawah secara alami dan teratur.
+- **Opsi Jawaban 4 Kolom di Layar Lebar (`lg:grid-cols-4`)**: Pilihan jawaban A, B, C, dan D pada kartu soal serta formulir editor soal otomatis menyebar proporsional dalam 4 kolom sejajar di layar besar (`lg:grid-cols-4`), 2 kolom di tablet (`sm:grid-cols-2`), dan 1 kolom di ponsel (`grid-cols-1`). Hal ini menghemat ruang vertikal dan mengisi ruang horizontal secara estetis dan ergonomis.
+- **Kartu Menjodohkan 4 Kolom**: Pasangan butir soal menjodohkan juga ditingkatkan menjadi `lg:grid-cols-4` di layar desktop.
+
 ## [2.3.3] - 2026-09-11
 ### Eliminasi Kolom Kosong & Penerapan Tata Letak 1-Kolom Responsif Mengalir ke Bawah pada Studio Bank Soal
 

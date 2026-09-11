@@ -895,7 +895,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
 
         {/* 4-Stage Funnel Tabs in Sticky Header (SELALU MENEMPEL DI HEADER SAAT SCROLL) */}
         {aiFunnelActive ? (
-          <div className="w-full max-w-3xl lg:max-w-4xl 2xl:max-w-5xl mx-auto px-3 xs:px-4 sm:px-6 mt-2.5 pb-2.5 sm:pb-3 space-y-2 transition-all">
+          <div className="w-full max-w-[2000px] mx-auto px-3 xs:px-4 sm:px-8 lg:px-12 mt-2.5 pb-2.5 sm:pb-3 space-y-2 transition-all">
             <div className="grid grid-cols-4 gap-1 sm:gap-2">
               <button
                 type="button"
@@ -1024,7 +1024,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
           </div>
         ) : (
           /* 3 Step Navigation Tabs (HANYA MUNCUL DI STUDIO KUIS UTAMA) */
-          <div className="w-full max-w-3xl lg:max-w-4xl 2xl:max-w-5xl mx-auto px-3 xs:px-4 sm:px-6 mt-2.5 pb-2.5 sm:pb-3 grid grid-cols-3 gap-1.5 sm:gap-2 transition-all">
+          <div className="w-full max-w-[2000px] mx-auto px-3 xs:px-4 sm:px-8 lg:px-12 mt-2.5 pb-2.5 sm:pb-3 grid grid-cols-3 gap-1.5 sm:gap-2 transition-all">
             {isAiMode ? (
               <>
                 <button
@@ -1335,7 +1335,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   // Helper renderer untuk Bank Soal
   function renderBankSoalView(isAi: boolean) {
     return (
-      <div className="w-full max-w-3xl lg:max-w-4xl 2xl:max-w-5xl mx-auto px-3 sm:px-6 space-y-5 animate-fade-in">
+      <div className="w-full max-w-[2000px] mx-auto px-3 xs:px-4 sm:px-8 lg:px-12 space-y-5 animate-fade-in">
         {!isAddingQuestion ? (
           /* ================= 1-KOLOM DAFTAR BANK SOAL (KE BAWAH RESPONSIV) ================= */
           <div className="space-y-4 sm:space-y-5">
@@ -1490,14 +1490,14 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                       {/* 3. Pratinjau Pilihan Jawaban & Kunci Benar */}
                       <div className="mt-2 space-y-1.5">
                         {q.type === 'multiple_choice' && (
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
                             {q.options.map((opt, oIdx) => {
                               const isCorrect = q.correctIndex === oIdx;
                               const letter = String.fromCharCode(65 + oIdx);
                               return (
                                 <div
                                   key={oIdx}
-                                  className={`px-3 py-2 rounded-xl text-xs flex items-start gap-2 border transition-all ${
+                                  className={`px-3 py-2.5 rounded-xl text-xs flex items-start gap-2.5 border transition-all ${
                                     isCorrect
                                       ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700/80 text-emerald-900 dark:text-emerald-200 font-bold shadow-xs'
                                       : 'bg-slate-50/70 dark:bg-slate-800/40 border-slate-200/80 dark:border-slate-700/60 text-slate-700 dark:text-slate-300'
@@ -1527,13 +1527,13 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                         )}
 
                         {q.type === 'true_false' && (
-                          <div className="grid grid-cols-2 gap-2">
+                          <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
                             {['Benar', 'Salah'].map((label, oIdx) => {
                               const isCorrect = q.correctIndex === oIdx;
                               return (
                                 <div
                                   key={label}
-                                  className={`px-3 py-2 rounded-xl text-xs flex items-center justify-center gap-2 border font-bold ${
+                                  className={`px-3 py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 border font-bold ${
                                     isCorrect
                                       ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700 text-emerald-900 dark:text-emerald-200'
                                       : 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 opacity-60'
@@ -1566,7 +1566,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                             <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">
                               Pasangan Kartu Menjodohkan:
                             </span>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
                               {q.matchingPairs.map((pair, pIdx) => (
                                 <div key={pIdx} className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/60 text-[11px]">
                                   <span className="font-semibold text-slate-800 dark:text-slate-200">{pair.left}</span>
@@ -1939,7 +1939,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                     <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
                       Pilihan Jawaban & Kunci Benar (Klik huruf atau centang untuk memilih kunci benar)
                     </label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
                       {qOptions.map((opt, oIdx) => (
                         <div
                           key={oIdx}
@@ -2114,7 +2114,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   // Helper renderer untuk Pratinjau & Simpan (Step 3)
   function renderPreviewView(isAi: boolean) {
     return (
-      <div className="w-full max-w-4xl 2xl:max-w-5xl mx-auto px-3 sm:px-6 py-4 sm:py-6 animate-fade-in space-y-6">
+      <div className="w-full max-w-[2000px] mx-auto px-3 xs:px-4 sm:px-8 lg:px-12 py-4 sm:py-6 animate-fade-in space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           
           {/* Kolom Kiri: Pratinjau Soal (8 kolom di desktop) */}
