@@ -1,6 +1,18 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.98] - 2026-09-11
+### Integrasi Alur Kerja Microsoft Bing Image Creator (DALL-E 3) & Penempelan Gambar Instan
+
+#### 1. Tab Khusus Bing Image Creator (DALL-E 3) di Modal Ilustrasi
+- Menyediakan tab khusus **Bing DALL-E 3** pada Modal Pemilih Ilustrasi (`ImageSelectorModal.tsx`).
+- Menghadirkan generator formula prompt teks buku pelajaran sains yang dioptimalkan secara spesifik untuk mesin DALL-E 3 (`buildBingDallePrompt`).
+- **Tombol Satu Klik "Salin Prompt & Buka Bing Image Creator"**: Otomatis menyalin prompt instruksi ke papan klip (*clipboard*) dan membuka antarmuka pembuat gambar resmi Microsoft Bing Image Creator pada tab baru.
+
+#### 2. Fitur Penempelan Cerdas (Smart Clipboard Paste Handler)
+- Mendukung penempelan gambar langsung melalui tombol pintas keyboard <kbd>Ctrl + V</kbd> pada modal: saat pengguna menyalin gambar hasil dari Bing, mereka cukup kembali ke aplikasi dan menekan <kbd>Ctrl + V</kbd> untuk langsung memasang gambar ke soal.
+- Kolom penempelan tautan gambar (*Image URL*) dengan pratinjau langsung untuk tautan CDN resmi `th.bing.com` maupun tautan gambar publik lainnya.
+
 ## [2.2.97] - 2026-09-11
 ### Peningkatan Akurasi Ilustrasi Soal: Sistem Pencarian Hybrid (Ensiklopedia & AI Diagram Flux)
 

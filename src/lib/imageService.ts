@@ -224,3 +224,15 @@ export async function searchAllEducationalImages(
 
   return combined;
 }
+
+/**
+ * Formula prompt khusus untuk Microsoft Designer / Bing Image Creator (DALL-E 3)
+ */
+export function buildBingDallePrompt(
+  caption: string,
+  topic?: string,
+  subject?: string
+): string {
+  const targetConcept = caption.trim() || topic?.trim() || subject?.trim() || 'science concept';
+  return `A clear, high-detail educational 2D science textbook diagram explaining "${targetConcept}", clearly labeled with neat educational annotations, clean solid white background, flat colorful vector infographic style for elementary and middle school students, highly accurate and educational, no 3D isometric cube, no futuristic circuit board, no distorted text`;
+}
