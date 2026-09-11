@@ -970,7 +970,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
           
           {/* Header Left: Back Button + Title */}
           {isQuestionEditorActive ? (
-            <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               <button
                 type="button"
                 onClick={handleCancelEdit}
@@ -981,78 +981,25 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                 <ArrowLeft className="w-5 h-5" />
               </button>
 
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="hidden sm:flex w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 items-center justify-center font-bold shadow-xs shrink-0">
+              <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+                <div className="hidden xs:flex w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 items-center justify-center font-bold shadow-xs shrink-0">
                   <Edit3 className="w-4 h-4" />
                 </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-1.5 sm:gap-2">
-                    <h1 className="text-xs sm:text-base font-black text-slate-900 dark:text-white whitespace-nowrap">
-                      {editingQuestionId ? `Edit Soal #${currentQuestionNumber}` : 'Tambah Soal Baru'}
-                    </h1>
-                    <span className="hidden sm:inline-flex px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60 shrink-0">
-                      {editingQuestionId && currentEditingIndex !== -1
-                        ? `${currentQuestionNumber} dari ${questions.length} Soal`
-                        : `Butir Soal #${currentQuestionNumber}`}
-                    </span>
-                    {editingQuestionId && questions.length > 1 && (
-                      <div className="hidden sm:inline-flex items-center gap-0.5 bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 border border-slate-200/80 dark:border-slate-700/80 shrink-0">
-                        <button
-                          type="button"
-                          onClick={() => handleNavigateQuestion('prev')}
-                          disabled={currentEditingIndex <= 0}
-                          className="w-7 h-7 rounded-md flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-white dark:hover:bg-slate-700 disabled:opacity-25 disabled:pointer-events-none transition-colors"
-                          title="Soal Sebelumnya"
-                          aria-label="Soal Sebelumnya"
-                        >
-                          <ChevronLeft className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleNavigateQuestion('next')}
-                          disabled={currentEditingIndex >= questions.length - 1}
-                          className="w-7 h-7 rounded-md flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-white dark:hover:bg-slate-700 disabled:opacity-25 disabled:pointer-events-none transition-colors"
-                          title="Soal Berikutnya"
-                          aria-label="Soal Berikutnya"
-                        >
-                          <ChevronRight className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                  {/* Tampilan Baris ke-2 khusus Mobile (< sm) */}
-                  <div className="sm:hidden flex items-center gap-1.5 mt-0.5">
-                    <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 leading-tight">
-                      {editingQuestionId && currentEditingIndex !== -1
-                        ? `${currentQuestionNumber} dari ${questions.length} Soal`
-                        : `Butir Soal #${currentQuestionNumber}`}
-                    </span>
-                    {editingQuestionId && questions.length > 1 && (
-                      <div className="inline-flex items-center gap-0.5 bg-slate-100 dark:bg-slate-800 rounded-md p-0.5 border border-slate-200/80 dark:border-slate-700/80 shrink-0">
-                        <button
-                          type="button"
-                          onClick={() => handleNavigateQuestion('prev')}
-                          disabled={currentEditingIndex <= 0}
-                          className="w-5 h-5 rounded flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-white dark:hover:bg-slate-700 disabled:opacity-25 disabled:pointer-events-none transition-colors"
-                          title="Soal Sebelumnya"
-                          aria-label="Soal Sebelumnya"
-                        >
-                          <ChevronLeft className="w-3 h-3" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleNavigateQuestion('next')}
-                          disabled={currentEditingIndex >= questions.length - 1}
-                          className="w-5 h-5 rounded flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-white dark:hover:bg-slate-700 disabled:opacity-25 disabled:pointer-events-none transition-colors"
-                          title="Soal Berikutnya"
-                          aria-label="Soal Berikutnya"
-                        >
-                          <ChevronRight className="w-3 h-3" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                <h1 className="text-sm sm:text-base font-black text-slate-900 dark:text-white truncate">
+                  {editingQuestionId ? (
+                    <>
+                      <span>Edit </span>
+                      <span className="hidden sm:inline">Butir </span>
+                      <span>Soal</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Tambah </span>
+                      <span className="hidden sm:inline">Butir </span>
+                      <span>Soal</span>
+                    </>
+                  )}
+                </h1>
               </div>
             </div>
           ) : (
@@ -1111,7 +1058,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                 <button
                   type="button"
                   onClick={handleCancelEdit}
-                  className="px-3 sm:px-3.5 py-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors min-h-[44px]"
+                  className="hidden sm:inline-flex px-3 sm:px-3.5 py-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors min-h-[44px] items-center"
                 >
                   Batal
                 </button>
@@ -1172,6 +1119,59 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
             )}
           </div>
         </div>
+
+        {/* Sub-Panel Ramping: Konteks & Navigasi Butir Soal (Tier 2) */}
+        {isQuestionEditorActive && (
+          <div className="border-t border-slate-200/80 dark:border-slate-800/80 bg-slate-50/95 dark:bg-slate-850/95 backdrop-blur-xs">
+            <div className="max-w-[2000px] mx-auto px-3 xs:px-4 sm:px-8 lg:px-12 py-2 flex items-center justify-between gap-2">
+              
+              {/* Sisi Kiri: Status & Nomor Butir Soal */}
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="inline-flex items-center px-2.5 py-1 rounded-xl text-xs font-black bg-blue-600 text-white shadow-xs shrink-0">
+                  Soal #{currentQuestionNumber}
+                </span>
+                <span className="text-xs font-bold text-slate-600 dark:text-slate-300 truncate">
+                  {editingQuestionId && currentEditingIndex !== -1
+                    ? `dari ${questions.length} butir`
+                    : 'Butir soal baru'}
+                </span>
+              </div>
+
+              {/* Sisi Kanan: Pager Navigasi Antar-Soal */}
+              {editingQuestionId && questions.length > 1 && (
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => handleNavigateQuestion('prev')}
+                    disabled={currentEditingIndex <= 0}
+                    className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center gap-1 disabled:opacity-30 disabled:pointer-events-none transition-all shadow-2xs active:scale-95 btn-press min-h-[36px]"
+                    title="Simpan & Beralih ke Soal Sebelumnya"
+                    aria-label="Soal Sebelumnya"
+                  >
+                    <ChevronLeft className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                    <span className="hidden sm:inline">Sebelumnya</span>
+                  </button>
+
+                  <div className="px-2.5 py-1 text-xs font-extrabold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xs shrink-0">
+                    {currentQuestionNumber} / {questions.length}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleNavigateQuestion('next')}
+                    disabled={currentEditingIndex >= questions.length - 1}
+                    className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center gap-1 disabled:opacity-30 disabled:pointer-events-none transition-all shadow-2xs active:scale-95 btn-press min-h-[36px]"
+                    title="Simpan & Beralih ke Soal Berikutnya"
+                    aria-label="Soal Berikutnya"
+                  >
+                    <span className="hidden sm:inline">Berikutnya</span>
+                    <ChevronRight className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* 4-Stage Funnel Tabs in Sticky Header (SELALU MENEMPEL DI HEADER SAAT SCROLL) */}
         {aiFunnelActive ? (

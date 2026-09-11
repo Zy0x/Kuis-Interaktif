@@ -1,6 +1,23 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.18] - 2026-09-11
+### Arsitektur Two-Tier Sticky Header & Sub-Panel Ramping Navigasi Butir Soal
+
+#### 1. Masalah yang Diselesaikan
+- **Kepadatan Informasi di Header Utama Mobile**: Penggabungan judul editor, kontrol aksi global (Simpan/Batal), indikator nomor soal, dan tombol navigasi pager dalam satu baris header sempit (360px–390px) menyebabkan penumpukan elemen visual dan risiko teks saling bertubrukan (*overlapping*).
+- **Redundansi Aksi Navigasi Kembali**: Keberadaan tombol teks `Batal` di samping tombol panah kembali `[←]` pada layar ponsel mempersempit ruang horizontal tanpa memberikan nilai tambah ergonomi.
+
+#### 2. Implementasi & Desain Clean (`QuizCreator.tsx`)
+- **Arsitektur Header Dua Tingkat (Two-Tier Sticky Header)**:
+  - **Tier 1 (Header Utama)**: Fokus eksklusif pada identitas aksi (`[←]` Kembali/Batal, ikon butir soal, judul ringkas `Edit Soal` di mobile / `Edit Butir Soal` di desktop) serta aksi global (`[💾 Simpan]` dan `[🌙 Theme]`). Tombol teks `Batal` otomatis disembunyikan di layar ponsel (< 640px) karena sudah terwakili secara intuitif oleh tombol kembali `[←]`.
+  - **Tier 2 (Sub-Panel Ramping Berlatar Khusus)**: Baris sub-panel ramping di bawah header utama dengan latar `bg-slate-50/95 dark:bg-slate-850/95 backdrop-blur-xs` dan pembatas halus yang menyajikan:
+    - Sisi Kiri: Badge status `Soal #X` berlatar biru tegas beserta konteks `dari Y butir`.
+    - Sisi Kanan: Pager navigasi antar-soal (`[‹]` `X / Y` `[›]` di mobile, serta label teks lengkap `[‹ Sebelumnya]` dan `[Berikutnya ›]` di desktop/tablet).
+- **Presisi Responsivitas Mobile-First & Keterbacaan**:
+  - Tampilan 100% bebas tumpang-tindih di seluruh rentang resolusi ponsel non-reguler hingga desktop 4K.
+  - Setiap target sentuh memenuhi standar kenyamanan minimal 44×44 px pada tombol utama dan 36×36 px pada tombol sub-panel.
+
 ## [2.3.17] - 2026-09-11
 ### Peningkatan Komprehensif Editor Butir Soal: Navigasi Cepat, Opsi Fleksibel, & Timer Kustom
 
