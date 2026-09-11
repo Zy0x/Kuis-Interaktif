@@ -1,6 +1,24 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.36] - 2026-09-11
+### Standarisasi Penulisan Satuan Bobot Nilai "X Poin" & Eliminasi Tombol Global Pembahasan untuk Kemandirian Kartu Soal
+
+#### 1. Masalah & Kebutuhan yang Diselesaikan
+- **Ambiguitas Format Singkatan "10p"**: Penulisan bobot nilai menggunakan akhiran "p" (misal: `10p`, `50p`) berpotensi disalahartikan sebagai nomor halaman, persen, atau istilah teknis/gaming, serta tidak selaras dengan tulisan `100 Poin` pada dashboard ringkasan.
+- **Redundansi Kontrol Pembahasan Global**: Tombol global buka/tutup pembahasan pada dashboard mini stat dirasa berlebihan karena setiap kartu butir soal telah memiliki tombol pembuka pembahasan edukatif mandirinya masing-masing.
+
+#### 2. Implementasi Desain & Fungsionalitas
+- **Standarisasi Kebahasaan & Keterbacaan "X Poin" (`QuizCreator.tsx`)**:
+  - Mengubah seluruh tampilan bobot butir soal menjadi format formal yang eksplisit: **`★ X Poin`** (misal: `★ 50 Poin`, `★ 10 Poin`).
+  - Menyelaraskan seluruh label pendukung: teks akumulasi (`{total} Poin / 100 Poin`), label standar (`Standar 10 Poin`), preset cepat butir (`5 Poin`, `10 Poin`, `15 Poin`, `20 Poin`), tombol cerdas bagi rata (`Bagi Rata 100 Poin`), hingga kartu pratinjau kuis di Langkah 3.
+  - Memastikan nol ambiguitas (*Zero Cognitive Load*) bagi guru dan siswa sesuai Rule 2 & Rule 3.
+- **Penyederhanaan Bersih Card 1 Dashboard & Optimasi Kode (Rule 6)**:
+  - Menghapus tombol toggle global dari Card 1. Card 1 kini tampil murni dan tenang menampilkan `Jumlah Soal: {questions.length} Butir Aktif` dengan tinggi kartu yang simetris sempurna terhadap Card 2 dan Card 3.
+  - Menghapus state `showAllExplanations`, fungsi `handleToggleAllExplanations`, dan impor `EyeOff` yang sudah tidak digunakan guna menjaga kebersihan bundle.
+- **Kemandirian Tinjauan Soal**:
+  - Guru dapat memeriksa atau menyembunyikan pembahasan edukatif secara terfokus pada masing-masing butir soal melalui tombol akordeon `💡 Lihat Pembahasan Edukatif`.
+
 ## [2.3.35] - 2026-09-11
 ### Eliminasi Redundansi Header Bank Soal & Penyatuan Tombol Compact Buka/Tutup Pembahasan ke Dalam Card Jumlah Soal (Opsi A)
 

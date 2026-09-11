@@ -9,7 +9,6 @@ import {
   Image as ImageIcon, 
   Save, 
   Eye, 
-  EyeOff, 
   Layers, 
   RotateCcw, 
   Edit3, 
@@ -258,7 +257,6 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   const [qCustomDurationSec, setQCustomDurationSec] = useState<string>(() => draft?.activeQuestionDraft?.qCustomDurationSec ?? '');
   const [isAddingQuestion, setIsAddingQuestion] = useState(() => draft?.activeQuestionDraft?.isAddingQuestion ?? false);
   const [expandedExplanations, setExpandedExplanations] = useState<Record<string, boolean>>({});
-  const [showAllExplanations, setShowAllExplanations] = useState(false);
   const [showFloatingActions, setShowFloatingActions] = useState(true);
   const [isSpeedDialOpen, setIsSpeedDialOpen] = useState(false);
   const [showRacikUlangConfirm, setShowRacikUlangConfirm] = useState(false);
@@ -465,17 +463,6 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   const toggleExplanation = (id: string) => {
     playClick();
     setExpandedExplanations((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
-
-  const handleToggleAllExplanations = () => {
-    playClick();
-    const nextState = !showAllExplanations;
-    setShowAllExplanations(nextState);
-    const updated: Record<string, boolean> = {};
-    questions.forEach((q) => {
-      updated[q.id] = nextState;
-    });
-    setExpandedExplanations(updated);
   };
 
   // Persist draft automatically (only if creating new quiz)
@@ -2197,58 +2184,22 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
           <div className="space-y-4 sm:space-y-5 pb-6 sm:pb-8">
             {/* Grid 3 Mini Stat Cards Dashboard (Proporsional, Padat & Terstruktur) */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-              {/* Card 1: Jumlah Butir Soal & Toggle Pembahasan */}
+              {/* Card 1: Jumlah Butir Soal */}
               <div className="p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs flex items-center gap-3.5">
                 <div className="w-11 h-11 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-900/40 flex items-center justify-center shrink-0 shadow-2xs">
                   <Layers className="w-5 h-5" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-[10px] sm:text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center justify-between">
-                    <span>Jumlah Soal</span>
-                    {showAllExplanations && (
-                      <span className="text-[10px] font-extrabold text-blue-600 dark:text-blue-400">
-                        Kunci Terbuka 💡
-                      </span>
-                    )}
+                  <div className="text-[10px] sm:text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                    Jumlah Soal
                   </div>
-                  <div className="flex items-center justify-between gap-1.5 mt-0.5">
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
-                        {questions.length}
-                      </span>
-                      <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                        Butir
-                      </span>
-                    </div>
-
-                    {/* Tombol Aksi Compact: Buka / Tutup Pembahasan */}
-                    {questions.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={handleToggleAllExplanations}
-                        className={`text-[10px] font-extrabold px-2.5 py-1.5 rounded-lg border transition-all inline-flex items-center gap-1 shrink-0 btn-press min-h-[32px] shadow-2xs ${
-                          showAllExplanations
-                            ? 'text-blue-800 dark:text-blue-200 bg-blue-100/90 hover:bg-blue-200 dark:bg-blue-900/60 dark:hover:bg-blue-800 border-blue-300 dark:border-blue-700'
-                            : 'text-slate-700 dark:text-slate-200 hover:text-blue-700 dark:hover:text-blue-300 bg-slate-100/90 hover:bg-blue-50 dark:bg-slate-800 dark:hover:bg-blue-950/40 border-slate-200/90 dark:border-slate-700 hover:border-blue-200'
-                        }`}
-                        title={showAllExplanations ? 'Tutup semua pembahasan butir soal' : 'Buka semua pembahasan butir soal'}
-                        aria-label={showAllExplanations ? 'Tutup semua pembahasan' : 'Buka semua pembahasan'}
-                      >
-                        {showAllExplanations ? (
-                          <>
-                            <EyeOff className="w-3 h-3 text-blue-600 dark:text-blue-400 shrink-0" />
-                            <span className="hidden md:inline">Tutup Pembahasan</span>
-                            <span className="md:hidden">Tutup Bahas</span>
-                          </>
-                        ) : (
-                          <>
-                            <Eye className="w-3 h-3 text-slate-500 dark:text-slate-400 shrink-0" />
-                            <span className="hidden md:inline">Buka Pembahasan</span>
-                            <span className="md:hidden">Buka Bahas</span>
-                          </>
-                        )}
-                      </button>
-                    )}
+                  <div className="flex items-baseline gap-1.5 mt-0.5 min-h-[32px] sm:min-h-[34px] items-center">
+                    <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
+                      {questions.length}
+                    </span>
+                    <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                      Butir Aktif
+                    </span>
                   </div>
                 </div>
               </div>
@@ -2279,7 +2230,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center justify-between gap-1.5 mt-0.5">
+                  <div className="flex items-center justify-between gap-1.5 mt-0.5 min-h-[32px] sm:min-h-[34px]">
                     <div className="flex items-baseline gap-1">
                       <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
                         {totalQuizPoints}
@@ -2294,7 +2245,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                       <button
                         type="button"
                         onClick={handleDistribute100Points}
-                        className={`text-[10px] font-extrabold px-2.5 py-1 rounded-lg border transition-all inline-flex items-center gap-1 shrink-0 btn-press ${
+                        className={`text-[10px] font-extrabold px-2.5 py-1.5 rounded-lg border transition-all inline-flex items-center gap-1 shrink-0 btn-press min-h-[32px] ${
                           totalQuizPoints < 100
                             ? 'text-amber-800 dark:text-amber-200 bg-amber-100/90 hover:bg-amber-200 dark:bg-amber-900/60 dark:hover:bg-amber-800 border-amber-300 dark:border-amber-700'
                             : 'text-indigo-800 dark:text-indigo-200 bg-indigo-100/90 hover:bg-indigo-200 dark:bg-indigo-900/60 dark:hover:bg-indigo-800 border-indigo-300 dark:border-indigo-700'
@@ -2302,7 +2253,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                         title="Bagi rata bobot poin ke seluruh soal agar pas 100 poin"
                       >
                         <Scale className="w-3 h-3" />
-                        <span>Bagi Rata 100p</span>
+                        <span>Bagi Rata 100 Poin</span>
                       </button>
                     )}
                   </div>
@@ -2378,7 +2329,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
 
                         <div className="flex items-center gap-1.5 shrink-0">
                           <span className="text-[11px] font-bold px-2 py-0.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/50 inline-flex items-center gap-1" title="Bobot nilai butir soal">
-                            <Star className="w-3 h-3 text-amber-500 fill-amber-400" /> {q.points || 10}p
+                            <Star className="w-3 h-3 text-amber-500 fill-amber-400" /> {q.points || 10} Poin
                           </span>
                           {q.customDurationSec ? (
                             <span className="text-[11px] font-semibold px-2 py-0.5 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/50 inline-flex items-center gap-1" title="Durasi kustom khusus butir soal ini">
@@ -3317,7 +3268,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                             ? 'text-emerald-600 dark:text-emerald-400' 
                             : 'text-blue-600 dark:text-blue-400'
                         }`}>
-                          {projectedTotalPoints}p
+                          {projectedTotalPoints} Poin
                         </strong>
                         {projectedTotalPoints === 100 ? (
                           <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded-md">
@@ -3325,7 +3276,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                           </span>
                         ) : (
                           <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500">
-                            / 100p
+                            / 100 Poin
                           </span>
                         )}
                       </div>
@@ -3341,7 +3292,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                             Bobot Poin Butir Ini
                           </label>
                           <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500">
-                            (Standar 10p)
+                            (Standar 10 Poin)
                           </span>
                         </div>
                         <p className="text-[11px] font-normal text-slate-400 dark:text-slate-500">
@@ -3375,7 +3326,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                                   : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-750'
                               }`}
                             >
-                              {p}p
+                              {p} Poin
                             </button>
                           ))}
                         </div>
@@ -3559,7 +3510,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <span className="text-[10px] font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-lg flex items-center gap-1">
-                        <Star className="w-3 h-3 text-amber-500" /> {q.points || 10}p
+                        <Star className="w-3 h-3 text-amber-500" /> {q.points || 10} Poin
                       </span>
                       <span className="font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2.5 py-1 rounded-lg text-xs">
                         {q.type === 'short_answer'
