@@ -1,6 +1,21 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.3] - 2026-09-11
+### Eliminasi Kolom Kosong & Penerapan Tata Letak 1-Kolom Responsif Mengalir ke Bawah pada Studio Bank Soal
+
+#### 1. Masalah yang Diselesaikan
+- **Pemborosan 50% Layar Desktop (*Dead Space*)**: Sebelumnya, separuh layar kanan monitor pada Studio Bank Soal dihabiskan hanya untuk kartu placeholder kosong ("Editor Soal Siap Digunakan") saat tidak sedang mengedit soal, sementara daftar soal di sisi kiri terhimpit sempit.
+- **Peregangan Ekstrem Tab Wizard**: Tab langkah wizard direntangkan selebar 2000px tanpa batas proporsional sehingga tombol menjadi terlalu renggang di monitor lebar.
+- **Scrollbar Ganda di Layar Besar**: Adanya scrollbar internal sempit di kolom kiri membuat peninjauan butir soal terasa terbatas seperti berada di dalam iframe.
+
+#### 2. Arsitektur 1-Kolom Responsif Mengalir ke Bawah (`QuizCreator.tsx`)
+- **Penghapusan Total Pembagian 2 Kolom & Kolom Kosong**: Struktur `grid-cols-12` dan kolom placeholder kosong dihapus sepenuhnya. Seluruh tata letak kini mengalir ke bawah (*single downward flow*) terpusat (`max-w-3xl lg:max-w-4xl 2xl:max-w-5xl mx-auto`).
+- **Penyajian Daftar Soal Lapang & Alami**: Kartu-kartu butir soal mengalir ke bawah dengan lebar ergonomis, opsi pilihan ganda berbaris seimbang 2 kolom (`grid-cols-1 sm:grid-cols-2`), dan bebas dari scrollbar internal kotak sempit.
+- **Tombol Tambah Cepat di Bawah Kartu**: Ditambahkan tombol kartu putus-putus (*dashed*) `+ Tambah Butir Soal Baru` di bawah butir soal terakhir agar guru dapat langsung menambahkan soal baru di akhir alur peninjauan.
+- **Fokus Editor Terpadu**: Saat menekan *"Edit Soal"* atau *"+ Tambah Soal"*, tampilan kontainer bertransisi rapi ke formulir editor soal yang lapang dengan tombol navigasi `← Kembali ke Daftar Soal` yang selalu aktif di semua perangkat (ponsel hingga desktop lebar).
+- **Pembatasan Lebar Tab Wizard & Pratinjau**: Tab langkah wizard atas dan pratinjau langkah 3 dibatasi secara harmonis (`max-w-4xl 2xl:max-w-5xl mx-auto`) sehingga proporsional dan tidak meregang liar di layar lebar.
+
 ## [2.3.2] - 2026-09-11
 ### Optimasi Presisi Mobile-First Studio Bank Soal: Action Bar 1-Baris Utuh & Perapian Header Metadata
 

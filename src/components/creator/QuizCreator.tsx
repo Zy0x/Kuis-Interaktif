@@ -895,7 +895,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
 
         {/* 4-Stage Funnel Tabs in Sticky Header (SELALU MENEMPEL DI HEADER SAAT SCROLL) */}
         {aiFunnelActive ? (
-          <div className="w-full max-w-[2000px] mx-auto px-3 xs:px-4 sm:px-8 lg:px-12 mt-2.5 pb-2.5 sm:pb-3 space-y-2 transition-all">
+          <div className="w-full max-w-3xl lg:max-w-4xl 2xl:max-w-5xl mx-auto px-3 xs:px-4 sm:px-6 mt-2.5 pb-2.5 sm:pb-3 space-y-2 transition-all">
             <div className="grid grid-cols-4 gap-1 sm:gap-2">
               <button
                 type="button"
@@ -1024,7 +1024,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
           </div>
         ) : (
           /* 3 Step Navigation Tabs (HANYA MUNCUL DI STUDIO KUIS UTAMA) */
-          <div className="w-full max-w-[2000px] mx-auto px-3 xs:px-4 sm:px-8 lg:px-12 mt-2.5 pb-2.5 sm:pb-3 grid grid-cols-3 gap-1.5 sm:gap-2 transition-all">
+          <div className="w-full max-w-3xl lg:max-w-4xl 2xl:max-w-5xl mx-auto px-3 xs:px-4 sm:px-6 mt-2.5 pb-2.5 sm:pb-3 grid grid-cols-3 gap-1.5 sm:gap-2 transition-all">
             {isAiMode ? (
               <>
                 <button
@@ -1335,72 +1335,71 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   // Helper renderer untuk Bank Soal
   function renderBankSoalView(isAi: boolean) {
     return (
-      <div className="w-full max-w-6xl 2xl:max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 space-y-5 animate-fade-in">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 2xl:gap-8 items-start">
-          
-          {/* Question Bank List Column */}
-          <div className={`lg:col-span-6 2xl:col-span-6 bg-white dark:bg-slate-900 rounded-3xl p-4 sm:p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4 ${
-            isAddingQuestion ? 'hidden lg:block' : 'block'
-          }`}>
-            {/* Header Bank Soal */}
-            <div className="flex items-center justify-between gap-2 pb-3 border-b border-slate-100 dark:border-slate-800 flex-wrap">
-              <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold shadow-xs">
-                  <Layers className="w-5 h-5" />
+      <div className="w-full max-w-3xl lg:max-w-4xl 2xl:max-w-5xl mx-auto px-3 sm:px-6 space-y-5 animate-fade-in">
+        {!isAddingQuestion ? (
+          /* ================= 1-KOLOM DAFTAR BANK SOAL (KE BAWAH RESPONSIV) ================= */
+          <div className="space-y-4 sm:space-y-5">
+            {/* Header Card Bank Soal */}
+            <div className="bg-white dark:bg-slate-900 rounded-3xl p-4 sm:p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+              <div className="flex items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800 flex-wrap">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-10 h-10 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold shadow-xs">
+                    <Layers className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                      <span>Bank Soal</span>
+                      <span className="px-2 py-0.5 rounded-full text-xs bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-bold">
+                        {questions.length} Butir
+                      </span>
+                    </h3>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                      Periksa pertanyaan, opsi pilihan, dan kunci jawaban
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
-                    <span>Bank Soal</span>
-                    <span className="px-2 py-0.5 rounded-full text-xs bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-bold">
-                      {questions.length} Butir
-                    </span>
-                  </h3>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                    Periksa pertanyaan, opsi pilihan, dan kunci jawaban
-                  </p>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setIsAiModalOpen(true);
+                    }}
+                    className="px-3.5 py-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 font-bold text-xs flex items-center gap-1.5 min-h-[44px] transition-colors border border-indigo-200/60 dark:border-indigo-800/60 active:scale-95"
+                    title="Asisten AI & Tambah Soal Cepat"
+                  >
+                    <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                    <span>Asisten AI</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleOpenNewQuestion}
+                    className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 min-h-[44px] transition-colors shadow-xs active:scale-95"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Tambah Soal</span>
+                  </button>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    playClick();
-                    setIsAiModalOpen(true);
-                  }}
-                  className="px-3 py-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 font-bold text-xs flex items-center gap-1.5 min-h-[44px] transition-colors border border-indigo-200/60 dark:border-indigo-800/60 active:scale-95"
-                  title="Asisten AI & Tambah Soal Cepat"
-                >
-                  <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                  <span className="hidden xs:inline">Asisten AI</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={handleOpenNewQuestion}
-                  className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 min-h-[44px] transition-colors shadow-xs active:scale-95"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Tambah Soal</span>
-                </button>
-              </div>
+              {/* Quick toggle all explanations if questions exist */}
+              {questions.length > 0 && (
+                <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 px-1 pt-1">
+                  <span>Menampilkan {questions.length} butir soal</span>
+                  <button
+                    type="button"
+                    onClick={handleToggleAllExplanations}
+                    className="text-blue-600 dark:text-blue-400 font-bold hover:underline inline-flex items-center gap-1 min-h-[36px]"
+                  >
+                    <span>💡 {showAllExplanations ? 'Tutup Semua Pembahasan' : 'Buka Semua Pembahasan'}</span>
+                  </button>
+                </div>
+              )}
             </div>
 
-            {/* Quick toggle all explanations if questions exist */}
-            {questions.length > 0 && (
-              <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 px-1">
-                <span>Menampilkan {questions.length} butir soal</span>
-                <button
-                  type="button"
-                  onClick={handleToggleAllExplanations}
-                  className="text-blue-600 dark:text-blue-400 font-bold hover:underline inline-flex items-center gap-1 min-h-[36px]"
-                >
-                  <span>💡 {showAllExplanations ? 'Tutup Semua Pembahasan' : 'Buka Semua Pembahasan'}</span>
-                </button>
-              </div>
-            )}
-
-            {/* Questions List */}
-            <div className="space-y-4 lg:max-h-[calc(100vh-280px)] lg:overflow-y-auto pr-1">
+            {/* Questions List (Mengalir ke bawah alami dan lega) */}
+            <div className="space-y-4">
               {questions.length === 0 ? (
                 <div className="text-center py-12 px-4 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 text-slate-400 space-y-3">
                   <p className="text-sm font-semibold text-slate-600 dark:text-slate-400">Belum ada butir soal di kuis ini.</p>
@@ -1663,28 +1662,86 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                   );
                 })
               )}
+
+              {/* Quick Add Question Button below question cards */}
+              {questions.length > 0 && (
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    onClick={handleOpenNewQuestion}
+                    className="w-full py-3.5 px-4 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-blue-400 dark:hover:border-blue-500 bg-white/60 dark:bg-slate-900/60 hover:bg-blue-50/50 dark:hover:bg-blue-950/20 text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all min-h-[48px] active:scale-99 shadow-2xs"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Tambah Butir Soal Baru</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Bottom Bar: Bank Soal Navigation */}
+            <div className="flex justify-between items-center pt-4 border-t border-slate-200 dark:border-slate-800">
+              {isAi ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    setAiFunnelActive(true);
+                  }}
+                  className="px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 min-h-[44px] flex items-center gap-1.5 transition-colors"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Racik Ulang dengan AI</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    setCurrentStep(1);
+                  }}
+                  className="px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 min-h-[44px] flex items-center gap-1.5 transition-colors"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Kembali ke Pengaturan Kuis</span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  if (questions.length === 0) {
+                    showToast('Tambahkan minimal 1 butir soal sebelum melanjutkan.');
+                    return;
+                  }
+                  if (isAi) {
+                    setCurrentStep(2); // Lanjut ke Pengaturan Kuis di AI mode
+                  } else {
+                    setCurrentStep(3); // Lanjut ke Pratinjau di Manual mode
+                  }
+                }}
+                className="px-6 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-sm flex items-center gap-2 min-h-[44px] btn-press transition-all"
+              >
+                <span>{isAi ? 'Lanjut ke Pengaturan Kuis' : `Lihat Pratinjau (${questions.length} Soal)`}</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
             </div>
           </div>
-
-          {/* Question Editor Form Column */}
-          <div className={`lg:col-span-6 2xl:col-span-6 ${
-            isAddingQuestion ? 'block' : 'hidden lg:block'
-          }`}>
-            {isAddingQuestion ? (
-              <form onSubmit={(e) => handleSaveQuestion(e, 'finish')} className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-7 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4 sm:space-y-5 animate-fade-in">
-                
-                {/* Header Editor: Mobile Back + Desktop Title */}
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-                  <div className="flex items-center gap-2.5">
-                    <button
-                      type="button"
-                      onClick={handleCancelEdit}
-                      className="lg:hidden px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs flex items-center gap-1.5 min-h-[44px] transition-colors"
-                      title="Kembali ke Daftar Soal"
-                    >
-                      <ArrowLeft className="w-4 h-4" />
-                      <span>Daftar Soal</span>
-                    </button>
+        ) : (
+          /* ================= MODE EDITOR SOAL TERFOKUS ================= */
+          <form onSubmit={(e) => handleSaveQuestion(e, 'finish')} className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-7 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4 sm:space-y-5 animate-fade-in">
+            {/* Header Editor: Back + Title + Close */}
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={handleCancelEdit}
+                  className="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs flex items-center gap-1.5 min-h-[44px] transition-colors"
+                  title="Kembali ke Daftar Soal"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Daftar Soal</span>
+                </button>
                     <div className="flex items-center gap-2">
                       <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold shadow-xs">
                         <Edit3 className="w-4 h-4" />
@@ -2049,90 +2106,15 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                 </div>
 
               </form>
-            ) : (
-              <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-8 space-y-4 shadow-xs">
-                <div className="w-16 h-16 rounded-3xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto shadow-xs">
-                  <Layers className="w-8 h-8" />
-                </div>
-                <div className="space-y-1">
-                  <p className="font-extrabold text-slate-900 dark:text-white text-lg">Editor Soal Siap Digunakan</p>
-                  <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
-                    Pilih tombol <strong className="text-blue-600 dark:text-blue-400">"Edit Soal"</strong> pada butir soal di samping untuk merevisi teks dan kunci, atau klik tombol di bawah untuk menambah butir soal baru.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleOpenNewQuestion}
-                  className="px-6 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm inline-flex items-center gap-2 min-h-[48px] shadow-sm btn-press transition-colors"
-                >
-                  <Plus className="w-5 h-5" />
-                  <span>Tambah Butir Soal Baru</span>
-                </button>
-              </div>
             )}
           </div>
-
-        </div>
-
-        {/* Bottom Bar: Bank Soal Navigation (Hanya tampil di mobile jika tidak sedang mengedit soal) */}
-        <div className={`flex justify-between items-center pt-4 border-t border-slate-200 dark:border-slate-800 ${
-          isAddingQuestion ? 'hidden lg:flex' : 'flex'
-        }`}>
-          {isAi ? (
-            <button
-              type="button"
-              onClick={() => {
-                playClick();
-                setAiFunnelActive(true);
-              }}
-              className="px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 min-h-[44px] flex items-center gap-1.5 transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Racik Ulang dengan AI</span>
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => {
-                playClick();
-                setCurrentStep(1);
-              }}
-              className="px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 min-h-[44px] flex items-center gap-1.5 transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Kembali ke Pengaturan Kuis</span>
-            </button>
-          )}
-
-          <button
-            type="button"
-            onClick={() => {
-              playClick();
-              if (questions.length === 0) {
-                showToast('Tambahkan minimal 1 butir soal sebelum melanjutkan.');
-                return;
-              }
-              if (isAi) {
-                setCurrentStep(2); // Lanjut ke Pengaturan Kuis di AI mode
-              } else {
-                setCurrentStep(3); // Lanjut ke Pratinjau di Manual mode
-              }
-            }}
-            className="px-6 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-sm flex items-center gap-2 min-h-[44px] btn-press transition-all"
-          >
-            <span>{isAi ? 'Lanjut ke Pengaturan Kuis' : `Lihat Pratinjau (${questions.length} Soal)`}</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
-        </div>
-
-      </div>
-    );
-  }
+        );
+      }
 
   // Helper renderer untuk Pratinjau & Simpan (Step 3)
   function renderPreviewView(isAi: boolean) {
     return (
-      <div className="w-full max-w-[2000px] mx-auto px-3 xs:px-4 sm:px-8 lg:px-12 py-4 sm:py-6 animate-fade-in space-y-6">
+      <div className="w-full max-w-4xl 2xl:max-w-5xl mx-auto px-3 sm:px-6 py-4 sm:py-6 animate-fade-in space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           
           {/* Kolom Kiri: Pratinjau Soal (8 kolom di desktop) */}
