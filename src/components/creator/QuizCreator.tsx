@@ -21,6 +21,7 @@ import {
   Star, 
   ArrowRight,
   AlertCircle,
+  AlertTriangle,
   Check,
   CheckCircle2,
   Clock,
@@ -245,6 +246,8 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   const [showFloatingActions, setShowFloatingActions] = useState(true);
   const [isSpeedDialOpen, setIsSpeedDialOpen] = useState(false);
   const [showRacikUlangConfirm, setShowRacikUlangConfirm] = useState(false);
+  const [showUnsavedConfirm, setShowUnsavedConfirm] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState<{ type: 'prev_question' } | { type: 'next_question' } | { type: 'cancel_edit' } | null>(null);
 
   // Akumulasi Bobot Poin & Status Timer
   const totalQuizPoints = useMemo(() => {
@@ -263,6 +266,66 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   }, [questions, editingQuestionId]);
 
   const projectedTotalPoints = otherQuestionsPoints + (Number(qPoints) || 0);
+
+  // Deteksi akurat apakah butir soal yang sedang aktif diedit / dibuat mengalami modifikasi
+  const isCurrentQuestionDirty = useMemo(() => {
+    if (!isAddingQuestion && !editingQuestionId) return false;
+
+    if (editingQuestionId) {
+      const orig = questions.find((q) => q.id === editingQuestionId);
+      if (!orig) return false;
+
+      if (qText.trim() !== orig.text.trim()) return true;
+      if (qType !== orig.type) return true;
+      if (Number(qPoints) !== (orig.points || 10)) return true;
+      const origDurStr = orig.customDurationSec ? String(orig.customDurationSec) : '';
+      if (qCustomDurationSec.trim() !== origDurStr) return true;
+      if ((qExplanation.trim() || '') !== (orig.explanation?.trim() || '')) return true;
+      if (qImageUrl !== orig.imageUrl) return true;
+      if ((qImageCaption.trim() || '') !== (orig.imageCaption?.trim() || '')) return true;
+
+      if (qType === 'multiple_choice' || qType === 'true_false') {
+        if (qCorrectIndex !== orig.correctIndex) return true;
+        if (qOptions.length !== orig.options.length) return true;
+        if (qOptions.some((opt, idx) => opt.trim() !== (orig.options[idx] || '').trim())) return true;
+      } else if (qType === 'short_answer') {
+        const origAcceptableStr = orig.acceptableAnswers ? orig.acceptableAnswers.join(', ') : (orig.options[0] || '');
+        if (qAcceptableAnswers.trim() !== origAcceptableStr.trim()) return true;
+      } else if (qType === 'matching_pairs') {
+        const origPairs = orig.matchingPairs || [];
+        if (qMatchingPairs.length !== origPairs.length) return true;
+        if (qMatchingPairs.some((p, idx) => p.left.trim() !== (origPairs[idx]?.left || '').trim() || p.right.trim() !== (origPairs[idx]?.right || '').trim())) return true;
+      }
+
+      return false;
+    }
+
+    // Penambahan soal baru: cek apakah pengguna sudah menginputkan konten
+    if (qText.trim()) return true;
+    if (qExplanation.trim()) return true;
+    if (qImageUrl) return true;
+    if (qType === 'multiple_choice' && qOptions.some((opt) => opt.trim())) return true;
+    if (qType === 'short_answer' && qAcceptableAnswers.trim()) return true;
+    if (qType === 'matching_pairs' && qMatchingPairs.some((p) => p.left.trim() || p.right.trim())) return true;
+    if (qType === 'true_false' && (qCorrectIndex !== 0 || (qOptions[0] && qOptions[0] !== 'Benar') || (qOptions[1] && qOptions[1] !== 'Salah'))) return true;
+
+    return false;
+  }, [
+    isAddingQuestion,
+    editingQuestionId,
+    questions,
+    qText,
+    qType,
+    qPoints,
+    qCustomDurationSec,
+    qExplanation,
+    qImageUrl,
+    qImageCaption,
+    qCorrectIndex,
+    qOptions,
+    qAcceptableAnswers,
+    qMatchingPairs
+  ]);
 
   // Aksi Bagi Rata 100 Poin Presisi
   const handleDistribute100Points = () => {
@@ -576,6 +639,14 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   };
 
   // Back Handlers
+  useBackHandler('creator-unsaved-modal', 82, () => {
+    if (showUnsavedConfirm) {
+      handleCancelConfirmation();
+      return true;
+    }
+    return false;
+  }, showUnsavedConfirm);
+
   useBackHandler('creator-step-preview', 40, () => {
     if (!aiFunnelActive && currentStep === 3) {
       setCurrentStep(2);
@@ -586,12 +657,8 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
 
   useBackHandler('creator-step-2', 50, () => {
     if (!aiFunnelActive && currentStep === 2) {
-      if (editingQuestionId) {
+      if (editingQuestionId || isAddingQuestion) {
         handleCancelEdit();
-        return true;
-      }
-      if (isAddingQuestion && questions.length > 0) {
-        setIsAddingQuestion(false);
         return true;
       }
       setCurrentStep(1);
@@ -602,7 +669,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
 
   useBackHandler('creator-step-1', 55, () => {
     if (!aiFunnelActive && currentStep === 1) {
-      if (isAiMode && (editingQuestionId || (isAddingQuestion && questions.length > 0))) {
+      if (isAiMode && (editingQuestionId || isAddingQuestion)) {
         handleCancelEdit();
         return true;
       }
@@ -782,11 +849,21 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     setIsAddingQuestion(true);
   };
 
-  const handleCancelEdit = () => {
+  const handleCancelEditImmediate = () => {
     playClick();
     setEditingQuestionId(null);
     setIsAddingQuestion(false);
     resetFormFields();
+  };
+
+  const handleCancelEdit = () => {
+    if (isCurrentQuestionDirty) {
+      playClick();
+      setPendingNavigation({ type: 'cancel_edit' });
+      setShowUnsavedConfirm(true);
+    } else {
+      handleCancelEditImmediate();
+    }
   };
 
   const handleDuplicateQuestion = (q: QuizQuestion) => {
@@ -805,7 +882,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     if (!window.confirm('Hapus butir soal ini dari bank soal?')) return;
     setQuestions((prev) => prev.filter((q) => q.id !== id));
     if (editingQuestionId === id) {
-      handleCancelEdit();
+      handleCancelEditImmediate();
     }
     showToast('Soal telah dihapus.');
   };
@@ -820,62 +897,36 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     setQuestions(reordered);
   };
 
-  const handleNavigateQuestion = (direction: 'prev' | 'next') => {
-    if (!editingQuestionId) return;
-    const currentIdx = questions.findIndex((q) => q.id === editingQuestionId);
-    if (currentIdx === -1) return;
-
-    const targetIndex = direction === 'prev' ? currentIdx - 1 : currentIdx + 1;
-    if (targetIndex < 0 || targetIndex >= questions.length) return;
-
-    playClick();
-
-    // Auto-save perubahan butir soal aktif jika pertanyaan terisi
-    if (qText.trim()) {
-      let finalOptions = qOptions;
-      let finalAcceptable: string[] | undefined = undefined;
-      let finalPairs = undefined;
-
-      if (qType === 'matching_pairs') {
-        const validPairs = qMatchingPairs.filter((p) => p.left.trim() && p.right.trim());
-        if (validPairs.length >= 2) {
-          finalPairs = validPairs.map((p) => ({ left: p.left.trim(), right: p.right.trim() }));
-          finalOptions = finalPairs.map((p) => `${p.left} -> ${p.right}`);
-        }
-      } else if (qType === 'short_answer') {
-        const parts = qAcceptableAnswers.split(',').map((s) => s.trim()).filter(Boolean);
-        if (parts.length > 0) {
-          finalAcceptable = parts;
-          finalOptions = [parts[0]];
-        }
-      } else if (qType === 'true_false') {
-        const opt0 = (qOptions[0] || 'Benar').trim() || 'Benar';
-        const opt1 = (qOptions[1] || 'Salah').trim() || 'Salah';
-        finalOptions = [opt0, opt1];
-      }
-
-      const durationNum = parseInt(qCustomDurationSec);
-      const questionObj: QuizQuestion = {
-        id: editingQuestionId,
-        text: qText.trim(),
-        type: qType,
-        options: finalOptions,
-        correctIndex: qType === 'matching_pairs' || qType === 'short_answer' ? 0 : qCorrectIndex,
-        explanation: qExplanation.trim() || 'Pembahasan materi terkait konsep pertanyaan ini.',
-        imageUrl: qImageUrl,
-        imageCaption: qImageCaption.trim() || undefined,
-        imagePrompt: qImagePrompt.trim() || undefined,
-        acceptableAnswers: finalAcceptable,
-        matchingPairs: finalPairs,
-        points: Number(qPoints) || 10,
-        customDurationSec: !isNaN(durationNum) && durationNum > 0 ? durationNum : undefined,
-      };
-
-      setQuestions((prev) => prev.map((q) => (q.id === editingQuestionId ? questionObj : q)));
+  const executeNavigation = (
+    nav: { type: 'prev_question' } | { type: 'next_question' } | { type: 'cancel_edit' },
+    questionsList: QuizQuestion[] = questions
+  ) => {
+    if (nav.type === 'cancel_edit') {
+      handleCancelEditImmediate();
+      return;
     }
 
-    const targetQ = questions[targetIndex];
+    if (!editingQuestionId) return;
+    const currentIdx = questionsList.findIndex((q) => q.id === editingQuestionId);
+    if (currentIdx === -1) return;
+
+    const targetIndex = nav.type === 'prev_question' ? currentIdx - 1 : currentIdx + 1;
+    if (targetIndex < 0 || targetIndex >= questionsList.length) return;
+
+    playClick();
+    const targetQ = questionsList[targetIndex];
     handleStartEditQuestion(targetQ);
+  };
+
+  const handleNavigateQuestion = (direction: 'prev' | 'next') => {
+    if (isCurrentQuestionDirty) {
+      playClick();
+      setPendingNavigation({ type: direction === 'prev' ? 'prev_question' : 'next_question' });
+      setShowUnsavedConfirm(true);
+      return;
+    }
+
+    executeNavigation({ type: direction === 'prev' ? 'prev_question' : 'next_question' });
   };
 
   const handleAddOption = () => {
@@ -896,13 +947,10 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     }
   };
 
-  const handleSaveQuestion = (e: React.FormEvent, afterSave: 'continue' | 'finish' = 'continue') => {
-    e.preventDefault();
-    playClick();
-
+  const validateAndBuildCurrentQuestion = (): QuizQuestion | null => {
     if (!qText.trim()) {
       showToast('Pertanyaan soal tidak boleh kosong.');
-      return;
+      return null;
     }
 
     let finalOptions = qOptions;
@@ -913,7 +961,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
       const validPairs = qMatchingPairs.filter((p) => p.left.trim() && p.right.trim());
       if (validPairs.length < 2) {
         showToast('Minimal harus mengisi 2 pasangan kartu yang lengkap (kiri dan kanan).');
-        return;
+        return null;
       }
       finalPairs = validPairs.map((p) => ({ left: p.left.trim(), right: p.right.trim() }));
       finalOptions = finalPairs.map((p) => `${p.left} -> ${p.right}`);
@@ -921,7 +969,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
       const parts = qAcceptableAnswers.split(',').map((s) => s.trim()).filter(Boolean);
       if (parts.length === 0) {
         showToast('Mohon masukkan minimal satu kata kunci jawaban.');
-        return;
+        return null;
       }
       finalAcceptable = parts;
     } else if (qType === 'true_false') {
@@ -929,14 +977,14 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
       const opt1 = (qOptions[1] || '').trim();
       if (!opt0 || !opt1) {
         showToast('Kedua pilihan Benar / Salah tidak boleh kosong.');
-        return;
+        return null;
       }
       finalOptions = [opt0, opt1];
     } else if (qType === 'multiple_choice') {
       const emptyOptIndex = qOptions.findIndex((opt) => !opt.trim());
       if (emptyOptIndex !== -1) {
         showToast(`Pilihan ${String.fromCharCode(65 + emptyOptIndex)} tidak boleh kosong.`);
-        return;
+        return null;
       }
     }
 
@@ -958,6 +1006,62 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
       customDurationSec: !isNaN(durationNum) && durationNum > 0 ? durationNum : undefined,
     };
 
+    return questionObj;
+  };
+
+  const handleSaveAndProceed = () => {
+    playClick();
+    const questionObj = validateAndBuildCurrentQuestion();
+    if (!questionObj) {
+      setShowUnsavedConfirm(false);
+      return;
+    }
+
+    let updatedQuestions: QuizQuestion[];
+    if (editingQuestionId) {
+      updatedQuestions = questions.map((q) => (q.id === editingQuestionId ? questionObj : q));
+      setQuestions(updatedQuestions);
+      showToast('💾 Perubahan butir soal berhasil disimpan!');
+    } else {
+      updatedQuestions = [...questions, questionObj];
+      setQuestions(updatedQuestions);
+      showToast('💾 Butir soal baru berhasil disimpan!');
+    }
+
+    const nav = pendingNavigation;
+    setShowUnsavedConfirm(false);
+    setPendingNavigation(null);
+
+    if (nav) {
+      executeNavigation(nav, updatedQuestions);
+    }
+  };
+
+  const handleDiscardAndProceed = () => {
+    playClick();
+    showToast('Perubahan butir soal dibuang.');
+    const nav = pendingNavigation;
+    setShowUnsavedConfirm(false);
+    setPendingNavigation(null);
+
+    if (nav) {
+      executeNavigation(nav, questions);
+    }
+  };
+
+  const handleCancelConfirmation = () => {
+    playClick();
+    setShowUnsavedConfirm(false);
+    setPendingNavigation(null);
+  };
+
+  const handleSaveQuestion = (e: React.FormEvent, afterSave: 'continue' | 'finish' = 'continue') => {
+    e.preventDefault();
+    playClick();
+
+    const questionObj = validateAndBuildCurrentQuestion();
+    if (!questionObj) return;
+
     if (editingQuestionId) {
       setQuestions((prev) => prev.map((q) => (q.id === editingQuestionId ? questionObj : q)));
       showToast('Soal berhasil diperbarui.');
@@ -971,7 +1075,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
       setEditingQuestionId(null);
       setIsAddingQuestion(true);
     } else {
-      handleCancelEdit();
+      handleCancelEditImmediate();
     }
   };
 
@@ -1241,15 +1345,15 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                     type="button"
                     onClick={() => handleNavigateQuestion('prev')}
                     disabled={currentEditingIndex <= 0}
-                    className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center gap-1 disabled:opacity-30 disabled:pointer-events-none transition-all shadow-2xs active:scale-95 btn-press min-h-[36px]"
-                    title="Simpan & Beralih ke Soal Sebelumnya"
+                    className="px-2.5 sm:px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center justify-center gap-1 disabled:opacity-30 disabled:pointer-events-none transition-all shadow-2xs active:scale-95 btn-press min-h-[44px] min-w-[44px]"
+                    title="Beralih ke Soal Sebelumnya (Konfirmasi jika ada perubahan)"
                     aria-label="Soal Sebelumnya"
                   >
                     <ChevronLeft className="w-4 h-4 text-slate-500 dark:text-slate-400" />
                     <span className="hidden sm:inline">Sebelumnya</span>
                   </button>
 
-                  <div className="px-2.5 py-1 text-xs font-extrabold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xs shrink-0">
+                  <div className="px-2.5 py-1 text-xs font-extrabold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xs shrink-0 min-h-[44px] flex items-center justify-center">
                     {currentQuestionNumber} / {questions.length}
                   </div>
 
@@ -1257,8 +1361,8 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                     type="button"
                     onClick={() => handleNavigateQuestion('next')}
                     disabled={currentEditingIndex >= questions.length - 1}
-                    className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center gap-1 disabled:opacity-30 disabled:pointer-events-none transition-all shadow-2xs active:scale-95 btn-press min-h-[36px]"
-                    title="Simpan & Beralih ke Soal Berikutnya"
+                    className="px-2.5 sm:px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center justify-center gap-1 disabled:opacity-30 disabled:pointer-events-none transition-all shadow-2xs active:scale-95 btn-press min-h-[44px] min-w-[44px]"
+                    title="Beralih ke Soal Berikutnya (Konfirmasi jika ada perubahan)"
                     aria-label="Soal Berikutnya"
                   >
                     <span className="hidden sm:inline">Berikutnya</span>
@@ -1576,6 +1680,78 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
               >
                 <Sparkles className="w-4 h-4" />
                 <span>Ya, Racik Ulang</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Konfirmasi Perubahan Soal Belum Disimpan */}
+      {showUnsavedConfirm && (
+        <div 
+          className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-3.5 sm:p-4 animate-fade-in"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="unsaved-modal-title"
+        >
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-6 max-w-md w-full border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4 animate-scale-up">
+            <div className="flex items-start gap-3.5">
+              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 shadow-xs">
+                <AlertTriangle className="w-5 h-5 sm:w-6 sm:h-6" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3 id="unsaved-modal-title" className="text-base sm:text-lg font-black text-slate-900 dark:text-white leading-tight">
+                  Simpan Perubahan Soal?
+                </h3>
+                <p className="text-xs text-amber-600 dark:text-amber-400 font-semibold mt-0.5">
+                  {editingQuestionId 
+                    ? `Perubahan pada Butir Soal #${currentQuestionNumber} belum disimpan`
+                    : 'Butir soal baru belum disimpan ke bank soal'}
+                </p>
+              </div>
+            </div>
+
+            <div className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-1.5">
+              <p>
+                Anda terdeteksi telah memodifikasi butir soal ini. Simpan perubahan sebelum {
+                  pendingNavigation?.type === 'prev_question'
+                    ? 'berpindah ke Soal Sebelumnya'
+                    : pendingNavigation?.type === 'next_question'
+                    ? 'berpindah ke Soal Berikutnya'
+                    : 'kembali ke Bank Soal'
+                }, buang perubahan untuk mengembalikan data awal, atau tetap lanjutkan mengedit.
+              </p>
+            </div>
+
+            {/* Action Buttons: Stacked on mobile for easy reach, touch-friendly min-h-[44px] */}
+            <div className="flex flex-col sm:flex-row-reverse items-stretch sm:items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              {/* Primary: Simpan & Lanjutkan */}
+              <button
+                type="button"
+                onClick={handleSaveAndProceed}
+                className="w-full sm:w-auto px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 active:scale-95 transition-all shadow-sm flex items-center justify-center gap-2 min-h-[44px] btn-press order-1 sm:order-none"
+              >
+                <Save className="w-4 h-4 shrink-0" />
+                <span>Simpan & Lanjutkan</span>
+              </button>
+
+              {/* Secondary Warning: Buang Perubahan */}
+              <button
+                type="button"
+                onClick={handleDiscardAndProceed}
+                className="w-full sm:w-auto px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 border border-rose-200 dark:border-rose-900/50 transition-colors flex items-center justify-center gap-2 min-h-[44px] btn-press order-2 sm:order-none"
+              >
+                <Trash2 className="w-4 h-4 shrink-0" />
+                <span>Buang Perubahan</span>
+              </button>
+
+              {/* Tertiary: Batal (Tetap Mengedit) */}
+              <button
+                type="button"
+                onClick={handleCancelConfirmation}
+                className="w-full sm:w-auto px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center justify-center min-h-[44px] order-3 sm:order-none"
+              >
+                Tetap Mengedit
               </button>
             </div>
           </div>
@@ -2894,6 +3070,49 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                     className="min-h-[75px]"
                   />
                 </div>
+                {/* Bottom Form Action Buttons */}
+                <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+                  <button
+                    type="button"
+                    onClick={handleCancelEdit}
+                    className="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs sm:text-sm font-bold min-h-[44px] transition-colors btn-press flex items-center justify-center gap-1.5"
+                  >
+                    <span>Batal / Kembali</span>
+                  </button>
+
+                  <div className="w-full sm:w-auto flex items-stretch sm:items-center gap-2">
+                    {editingQuestionId ? (
+                      <button
+                        type="button"
+                        onClick={(e) => handleSaveQuestion(e, 'finish')}
+                        className="w-full sm:w-auto px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-sm hover:shadow active:scale-95 transition-all min-h-[44px] flex items-center justify-center gap-2 btn-press"
+                      >
+                        <Save className="w-4 h-4" />
+                        <span>Simpan Perubahan</span>
+                      </button>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          onClick={(e) => handleSaveQuestion(e, 'continue')}
+                          className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-900/40 transition-colors min-h-[44px] flex items-center justify-center gap-1.5"
+                        >
+                          <Plus className="w-4 h-4" />
+                          <span>Simpan & Tambah Lagi</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => handleSaveQuestion(e, 'finish')}
+                          className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-sm hover:shadow active:scale-95 transition-all min-h-[44px] flex items-center justify-center gap-1.5"
+                        >
+                          <Save className="w-4 h-4" />
+                          <span>Simpan</span>
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+
                 {/* Hidden submit trigger for Enter key accessibility */}
                 <button type="submit" className="sr-only" tabIndex={-1} aria-hidden="true">
                   Simpan

@@ -1,6 +1,29 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.25] - 2026-09-11
+### Safeguard Konfirmasi Perubahan Soal Belum Disimpan pada Navigasi & Kembali
+
+#### 1. Masalah yang Diselesaikan
+- **Risiko Kehilangan Data Input Soal**: Saat guru sedang mengedit butir soal atau menambah soal baru, menekan tombol navigasi soal sebelumnya (`<`), soal berikutnya (`>`), tombol kembali di *header* (`←`), tombol "Batal", atau gestur mundur fisik Android berisiko menghilangkan modifikasi yang baru saja diketik akibat ketidaksengajaan tanpa peringatan konfirmasi.
+- **Ketiadaan Pilihan Pengendalian Modifikasi**: Sebelumnya alur navigasi berpindah atau membatalkan tanpa memberikan opsi bagi pengguna untuk memutuskan apakah perubahan ingin disimpan terlebih dahulu atau sengaja dibuang.
+
+#### 2. Implementasi & Desain Perlindungan Data (`QuizCreator.tsx`)
+- **Deteksi Presisi Perubahan Formulir (*Zero-Friction Dirty Check*)**:
+  - Melacak perbandingan mendalam antara data butir soal aktif dengan data asal di bank soal (mencakup teks pertanyaan, jenis soal, bobot poin, durasi khusus, pembahasan, ilustrasi/keterangan gambar, opsi ganda, jawaban singkat, atau pasangan kartu).
+  - Jika tidak ada perubahan yang dibuat oleh guru, navigasi antar-soal dan pembatalan berjalan instan tanpa menampilkan dialog konfirmasi (*zero friction*).
+- **Dialog Intersepsi Konfirmasi Pintar (*Unsaved Changes Safety Modal*)**:
+  - Muncul secara otomatis saat ada perubahan yang belum disimpan ketika pengguna menavigasi ke soal sebelumnya, soal berikutnya, kembali ke bank soal, atau menekan tombol mundur Android/Escape.
+  - Menyediakan 3 opsi aksi jelas dan aman:
+    1. **💾 Simpan & Lanjutkan**: Menyimpan modifikasi butir soal secara aman ke bank soal, lalu melanjutkan navigasi ke tujuan target.
+    2. **🗑️ Buang Perubahan**: Membatalkan modifikasi yang belum disimpan (mengembalikan ke kondisi semula), lalu melanjutkan navigasi.
+    3. **Tetap Mengedit**: Menutup dialog konfirmasi dan mempertahankan posisi kursor di formulir soal tanpa menghilangkan ketikan apa pun.
+  - Teks dialog adaptif secara kontekstual menjelaskan tujuan navigasi (misal "berpindah ke Soal Sebelumnya", "berpindah ke Soal Berikutnya", atau "kembali ke Bank Soal").
+- **Kepatuhan Ergonomi & Aksesibilitas (Rule 1, Rule 2, & Rule 8)**:
+  - Seluruh tombol aksi pada dialog memenuhi standar tinggi target sentuh minimal 44×44 px dengan susunan *mobile-first* bertumpuk ramah jempol.
+  - Terintegrasi dengan `useBackHandler` prioritas tinggi (82) sehingga tombol fisik mundur Android maupun tombol `Escape` pada keyboard menutup modal konfirmasi secara aman (*cancel/stay*).
+  - Ditambahkan tombol aksi di bagian bawah formulir soal (*Batal / Kembali* dan *Simpan*) untuk kenyamanan akses pada perangkat sentuh.
+
 ## [2.3.24] - 2026-09-11
 ### Redesain Ramping Editor Soal Benar / Salah: Mode Pilihan Cepat Tanpa Tumpukan Teks & Mode Kustom On-Demand
 
