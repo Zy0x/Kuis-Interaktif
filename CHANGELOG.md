@@ -1,6 +1,25 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.9] - 2026-09-11
+### Diferensiasi Visual & Hierarki Warna: Tombol Tambah Soal Bertema Indigo Studio
+
+#### 1. Masalah yang Diselesaikan
+- **Dominasi Warna Biru Monoton (*Blue Overload*)**: Sebelumnya tombol *"Edit Soal"*, *"Tambah Soal"*, *"Lanjut ke Pengaturan Kuis"*, dan tab aktif semuanya memakai warna biru (`blue-600`). Hal ini menyulitkan pengguna membedakan secara instan antara aksi mengubah butir soal yang sudah ada (*Edit*), aksi membuat konten baru (*Create/Add*), dan aksi navigasi alur (*Next*).
+
+#### 2. Penerapan Identitas Warna Indigo Studio (`QuizCreator.tsx`)
+- **Diferensiasi Tombol Tambah Soal**:
+  - Mengubah warna tombol `[+ Tambah Soal]` di kartu header Bank Soal menjadi **Indigo Kreatif** (`bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs`).
+  - Tombol melayang FAB `+` (trigger utama dan tombol anak) juga diselaraskan menjadi Indigo (`bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/35`).
+  - Tombol kartu putus-putus (*dashed*) di bawah soal terakhir kini menggunakan highlight Indigo saat disentuh/di-hover (`hover:border-indigo-400 hover:bg-indigo-50/50 hover:text-indigo-600`).
+  - Tombol pada status kosong (*empty state*) `"Buat Butir Soal Pertama"` diselaraskan ke Indigo (`bg-indigo-600 hover:bg-indigo-700`).
+- **Hierarki Visual Jernih & Anti-Benturan**:
+  - **Indigo (`indigo-600`)**: Penambahan butir soal baru (*Content Creation*).
+  - **Biru (`blue-600`)**: Pengeditan butir soal & navigasi langkah (*Primary Flow*).
+  - **Hijau (`emerald-600`)**: Kunci jawaban benar (*Success/Validation*).
+  - **Merah (`rose-600`)**: Hapus butir soal (*Destructive*).
+  - **Kuning (`amber-500`)**: Poin nilai & bintang (*Reward*).
+
 ## [2.3.8] - 2026-09-11
 ### Harmonisasi Navigasi Studio: Tombol Simpan Draf di Bawah, Racik Ulang Terpadu via Header Back, & Eliminasi Benturan FAB
 

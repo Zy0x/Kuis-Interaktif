@@ -1481,7 +1481,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
 
               {/* Item 1: Tambah Soal */}
               <div className="flex items-center gap-2">
-                <span className="px-2.5 py-1 rounded-xl text-xs font-bold text-blue-900 dark:text-blue-200 bg-white dark:bg-slate-800 shadow-md border border-blue-200/80 dark:border-blue-800/80 whitespace-nowrap">
+                <span className="px-2.5 py-1 rounded-xl text-xs font-bold text-indigo-900 dark:text-indigo-200 bg-white dark:bg-slate-800 shadow-md border border-indigo-200/80 dark:border-indigo-800/80 whitespace-nowrap">
                   Tambah Soal
                 </span>
                 <button
@@ -1491,7 +1491,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                     setIsSpeedDialOpen(false);
                     handleOpenNewQuestion();
                   }}
-                  className="w-11 h-11 rounded-full flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/25 transition-all active:scale-95 btn-press min-h-[44px] min-w-[44px]"
+                  className="w-11 h-11 rounded-full flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-600/25 transition-all active:scale-95 btn-press min-h-[44px] min-w-[44px]"
                   title="Tambah Butir Soal Baru"
                   aria-label="Tambah Butir Soal Baru"
                 >
@@ -1510,7 +1510,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
               className={`w-12 h-12 sm:w-13 sm:h-13 rounded-full flex items-center justify-center text-white shadow-xl transition-all duration-200 active:scale-90 btn-press min-h-[48px] min-w-[48px] ${
                 isSpeedDialOpen
                   ? 'bg-slate-800 dark:bg-slate-700 shadow-slate-900/40'
-                  : 'bg-blue-600 hover:bg-blue-700 shadow-blue-600/35 hover:scale-105'
+                  : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/35 hover:scale-105'
               }`}
               title={isSpeedDialOpen ? 'Tutup menu' : 'Menu tambah soal & aksi'}
               aria-label={isSpeedDialOpen ? 'Tutup menu aksi' : 'Buka menu aksi melayang'}
@@ -1590,7 +1590,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                   <button
                     type="button"
                     onClick={handleOpenNewQuestion}
-                    className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 min-h-[44px] transition-colors shadow-xs active:scale-95 btn-press"
+                    className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 min-h-[44px] transition-colors shadow-xs active:scale-95 btn-press"
                   >
                     <Plus className="w-4 h-4 shrink-0 stroke-[2.5]" />
                     <span>Tambah Soal</span>
@@ -1623,7 +1623,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                   <button
                     type="button"
                     onClick={handleOpenNewQuestion}
-                    className="px-4 py-2.5 rounded-xl bg-blue-600 text-white text-xs font-bold inline-flex items-center gap-2 min-h-[44px] shadow-sm"
+                    className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold inline-flex items-center gap-2 min-h-[44px] shadow-sm active:scale-95 btn-press"
                   >
                     <Plus className="w-4 h-4" /> Buat Butir Soal Pertama
                   </button>
@@ -1886,9 +1886,9 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                   <button
                     type="button"
                     onClick={handleOpenNewQuestion}
-                    className="w-full py-3.5 px-4 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-blue-400 dark:hover:border-blue-500 bg-white/60 dark:bg-slate-900/60 hover:bg-blue-50/50 dark:hover:bg-blue-950/20 text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all min-h-[48px] active:scale-99 shadow-2xs"
+                    className="w-full py-3.5 px-4 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-indigo-400 dark:hover:border-indigo-500 bg-white/60 dark:bg-slate-900/60 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/20 text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all min-h-[48px] active:scale-99 shadow-2xs group"
                   >
-                    <Plus className="w-4 h-4" />
+                    <Plus className="w-4 h-4 text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors stroke-[2.5]" />
                     <span>Tambah Butir Soal Baru</span>
                   </button>
                 </div>
