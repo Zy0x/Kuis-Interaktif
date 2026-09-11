@@ -30,25 +30,29 @@ import {
   Send,
   Lightbulb,
   Puzzle,
-  Star
+  Star,
+  Edit3
 } from 'lucide-react';
 import { QuizIllustration } from '../shared/QuizIllustration';
 
-interface QuizArenaProps {
+export interface QuizArenaProps {
   quiz: Quiz;
   initialMode?: GameMode;
   onFinishQuiz: (answers: QuizAttemptAnswer[], totalTimeSpent: number) => void;
   onExit: () => void;
-  isMuted: boolean;
-  onToggleMute: () => void;
-  playClick: () => void;
-  playCorrect: (streak?: number) => void;
-  playWrong: () => void;
+  isMuted?: boolean;
+  onToggleMute?: () => void;
+  playClick?: () => void;
+  playCorrect?: (streak?: number) => void;
+  playWrong?: () => void;
   playTick?: () => void;
   playReveal?: () => void;
   playApplause?: () => void;
   isDark?: boolean;
   onToggleTheme?: () => void;
+  isPreview?: boolean;
+  initialQuestionIndex?: number;
+  onEditQuestion?: (question: QuizQuestion) => void;
 }
 
 export const QuizArena: React.FC<QuizArenaProps> = ({
@@ -56,16 +60,19 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   initialMode,
   onFinishQuiz,
   onExit,
-  isMuted,
-  onToggleMute,
-  playClick,
-  playCorrect,
-  playWrong,
-  playTick,
-  playReveal,
-  playApplause,
+  isMuted = false,
+  onToggleMute = () => {},
+  playClick = () => {},
+  playCorrect = () => {},
+  playWrong = () => {},
+  playTick = () => {},
+  playReveal = () => {},
+  playApplause = () => {},
   isDark = false,
   onToggleTheme = () => {},
+  isPreview = false,
+  initialQuestionIndex = 0,
+  onEditQuestion,
 }) => {
   const STORAGE_KEY = `kuis_arena_progress_${quiz.id}`;
 
@@ -73,9 +80,9 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   const [hearts, setHearts] = useState<number>(3);
   const [isGameOver, setIsGameOver] = useState(false);
 
-  // Active Questions (support shuffleQuestions)
+  // Active Questions (support shuffleQuestions - disabled in preview mode)
   const [activeQuestions] = useState<QuizQuestion[]>(() => {
-    if (quiz.shuffleQuestions) {
+    if (!isPreview && quiz.shuffleQuestions) {
       const arr = [...quiz.questions];
       for (let i = arr.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -87,48 +94,62 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   });
 
   const [currentIndex, setCurrentIndex] = useState<number>(() => {
-    try {
-      const saved = sessionStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (typeof parsed.currentIndex === 'number' && parsed.currentIndex < quiz.questions.length) {
-          return parsed.currentIndex;
+    if (typeof initialQuestionIndex === 'number' && initialQuestionIndex >= 0 && initialQuestionIndex < quiz.questions.length) {
+      return initialQuestionIndex;
+    }
+    if (!isPreview) {
+      try {
+        const saved = sessionStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (typeof parsed.currentIndex === 'number' && parsed.currentIndex < quiz.questions.length) {
+            return parsed.currentIndex;
+          }
         }
-      }
-    } catch {}
+      } catch {}
+    }
     return 0;
   });
 
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isAnswerConfirmed, setIsAnswerConfirmed] = useState(false);
   const [answersList, setAnswersList] = useState<QuizAttemptAnswer[]>(() => {
-    try {
-      const saved = sessionStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed.answersList)) return parsed.answersList;
-      }
-    } catch {}
+    if (!isPreview) {
+      try {
+        const saved = sessionStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed.answersList)) return parsed.answersList;
+        }
+      } catch {}
+    }
     return [];
   });
   const [timeLeft, setTimeLeft] = useState<number>(() => {
-    try {
-      const saved = sessionStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (typeof parsed.timeLeft === 'number' && parsed.timeLeft > 0) return parsed.timeLeft;
-      }
-    } catch {}
-    return activeQuestions[0]?.customDurationSec || quiz.durationPerQuestionSec;
+    const targetIdx = typeof initialQuestionIndex === 'number' && initialQuestionIndex >= 0 && initialQuestionIndex < quiz.questions.length
+      ? initialQuestionIndex
+      : 0;
+    if (!isPreview) {
+      try {
+        const saved = sessionStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (typeof parsed.timeLeft === 'number' && parsed.timeLeft > 0) return parsed.timeLeft;
+        }
+      } catch {}
+    }
+    return activeQuestions[targetIdx]?.customDurationSec || quiz.durationPerQuestionSec;
   });
   const [totalTimeSpent, setTotalTimeSpent] = useState<number>(() => {
-    try {
-      const saved = sessionStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (typeof parsed.totalTimeSpent === 'number') return parsed.totalTimeSpent;
-      }
-    } catch {}
+    if (!isPreview) {
+      try {
+        const saved = sessionStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (typeof parsed.totalTimeSpent === 'number') return parsed.totalTimeSpent;
+        }
+      } catch {}
+    }
     return 0;
   });
   const [showExitConfirm, setShowExitConfirm] = useState(false);
@@ -183,8 +204,9 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   const [isPollOpen, setIsPollOpen] = useState(false);
   const [pollVotes, setPollVotes] = useState<{ [key: number]: number }>({ 0: 0, 1: 0, 2: 0, 3: 0 });
 
-  // Simpan progres kuis saat ini ke sessionStorage agar aman dari reload tidak disengaja
+  // Simpan progres kuis saat ini ke sessionStorage agar aman dari reload tidak disengaja (hanya jika bukan mode pratinjau)
   useEffect(() => {
+    if (isPreview) return;
     try {
       sessionStorage.setItem(
         STORAGE_KEY,
@@ -197,7 +219,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
         })
       );
     } catch {}
-  }, [currentIndex, answersList, timeLeft, totalTimeSpent, streak, STORAGE_KEY]);
+  }, [currentIndex, answersList, timeLeft, totalTimeSpent, streak, STORAGE_KEY, isPreview]);
 
   // Procedural BGM (In-Game Backsound)
   const {
@@ -265,6 +287,10 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 
   useBackHandler('arena-prompt-exit-confirm', 80, () => {
     if (!showExitConfirm && !isPollOpen && !isMobileToolsOpen && !isGameOver) {
+      if (isPreview) {
+        onExit();
+        return true;
+      }
       setIsPaused(true);
       setShowExitConfirm(true);
       return true;
@@ -612,11 +638,16 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
           <div className="flex items-center gap-1 sm:gap-2 min-w-0 flex-shrink">
             <button
               onClick={() => {
-                playClick();
-                setShowExitConfirm(true);
+                if (playClick) playClick();
+                if (isPreview) {
+                  onExit();
+                } else {
+                  setShowExitConfirm(true);
+                }
               }}
               className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors flex-shrink-0"
-              aria-label="Keluar Kuis"
+              aria-label={isPreview ? "Tutup Pratinjau Kuis" : "Keluar Kuis"}
+              title={isPreview ? "Tutup Pratinjau Kuis" : "Keluar Kuis"}
             >
               <X className="w-5 h-5" />
             </button>
@@ -626,6 +657,11 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                 <span className="text-[11px] sm:text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/50 px-2 py-0.5 rounded-md inline-block whitespace-nowrap self-start">
                   Soal {currentIndex + 1}/{activeQuestions.length}
                 </span>
+                {isPreview && (
+                  <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-indigo-600 text-white shadow-xs">
+                    Pratinjau
+                  </span>
+                )}
                 <span className="text-[10px] sm:text-[11px] font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/50 border border-amber-200/60 dark:border-amber-800/60 px-1.5 py-0.5 rounded-md inline-flex items-center gap-0.5">
                   <Star className="w-3 h-3 text-amber-500 fill-amber-500" /> {question.points || 10} Poin
                 </span>
@@ -681,8 +717,23 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
             )}
           </div>
 
-          {/* Right: Pause & Desktop Full Toolbar / Mobile Tools Trigger */}
+          {/* Right: Edit Button (in preview), Pause & Desktop Full Toolbar / Mobile Tools Trigger */}
           <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
+            {isPreview && onEditQuestion && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (playClick) playClick();
+                  onEditQuestion(question);
+                }}
+                className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-all btn-press min-h-[44px]"
+                title="Edit Butir Soal Ini di Studio"
+              >
+                <Edit3 className="w-3.5 h-3.5 shrink-0" />
+                <span className="hidden sm:inline">Edit Soal</span>
+              </button>
+            )}
+
             {/* Play/Pause Button (Always available for immediate teacher/student control) */}
             <button
               onClick={() => {
@@ -1231,6 +1282,21 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
             </div>
 
             <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+              {/* Tombol Edit Soal (Khusus Mode Pratinjau Guru) */}
+              {isPreview && onEditQuestion && (
+                <button
+                  onClick={() => {
+                    if (playClick) playClick();
+                    setIsMobileToolsOpen(false);
+                    onEditQuestion(question);
+                  }}
+                  className="w-full p-3 rounded-2xl flex items-center gap-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm min-h-[50px] transition-colors shadow-xs btn-press"
+                >
+                  <Edit3 className="w-4 h-4 shrink-0" />
+                  <span>Edit Butir Soal Ini di Studio</span>
+                </button>
+              )}
+
               {/* Toggle Tema */}
               <button
                 onClick={() => {

@@ -1,6 +1,22 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.48] - 2026-09-12
+### Penyatuan Arsitektur Pratinjau Guru & Arena Siswa 2 Arah (Unified Single Source of Truth via QuizArena)
+
+#### 1. Penyatuan Penuh Antarmuka & Logika Pratinjau (`QuizArena.tsx` & `QuizCreator.tsx`)
+- **Single Source of Truth (Satu Kesatuan Dua Arah)**:
+  - Mengeliminasi komponen terpisah `SingleQuestionPreviewModal.tsx` sehingga tidak ada lagi divergensi tampilan atau logika antara layar pengerjaan siswa dengan pratinjau guru.
+  - Tombol `[👁️ Lihat]` pada butir kartu soal Bank Soal dan tombol coba kuis di Langkah Simpan sekarang langsung merender komponen resmi `QuizArena` dengan mode pratinjau interaktif (`isPreview={true}`).
+  - Setiap modifikasi desain kartu, opsi pilihan ganda, kunci jawaban, timer, animasi, atau tata letak di arena bermain siswa akan secara otomatis identik 100% pada saat diuji oleh guru di Studio Kuis.
+- **Peralatan Khusus Mode Pratinjau**:
+  - Menampilkan lencana identitas `[PRATINJAU]` di sebelah indikator nomor soal.
+  - Menyediakan tombol aksi cepat `[✏️ Edit Butir Soal Ini di Studio]` langsung di header atas agar guru dapat merevisi soal dengan segera saat mendapati koreksi.
+  - Tombol keluar `[X]` yang kembali ke draf pembuatan kuis secara instan tanpa dialog peringatan keluar bermain.
+  - Mematikan pengacakan butir soal (*no-shuffle*) agar guru dapat langsung menguji soal yang dipilih secara presisi, serta mengisolasi penyimpanan riwayat pengerjaan lokal agar tidak memengaruhi data permainan siswa sesungguhnya.
+- **Integrasi Audio Responsif**:
+  - Mengalirkan efek suara (jawaban benar, salah, detak timer, pembukaan kunci jawaban, dan tepuk tangan) dari `App.tsx` ke dalam pratinjau agar guru merasakan sensasi bermain yang autentik saat meracik kuis.
+
 ## [2.3.47] - 2026-09-12
 ### Refaktor Simetris Footer Kartu Bank Soal & Perbaikan Modal Pratinjau Nyata ("Lihat")
 

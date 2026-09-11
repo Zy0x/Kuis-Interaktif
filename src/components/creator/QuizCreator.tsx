@@ -32,7 +32,7 @@ import { ImageSelectorModal } from './ImageSelectorModal';
 import { AiGeneratorStep, clearAiGeneratorDraft } from './AiGeneratorStep';
 import { InfoKuisStep } from './InfoKuisStep';
 import { PublishQuizModal } from './PublishQuizModal';
-import { SingleQuestionPreviewModal } from './SingleQuestionPreviewModal';
+import { QuizArena } from '../arena/QuizArena';
 import { QuestionJumpModal } from './QuestionJumpModal';
 import { QuestionTypeDropdown } from './QuestionTypeDropdown';
 import { TrueFalsePresetDropdown } from './TrueFalsePresetDropdown';
@@ -43,6 +43,11 @@ interface QuizCreatorProps {
   onBack: () => void;
   onSaveQuiz: (newQuiz: Quiz) => void;
   playClick: () => void;
+  playCorrect?: (streak?: number) => void;
+  playWrong?: () => void;
+  playTick?: () => void;
+  playReveal?: () => void;
+  playApplause?: () => void;
   isDark?: boolean;
   onToggleTheme?: () => void;
   editingQuiz?: Quiz | null;
@@ -113,6 +118,11 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   onBack,
   onSaveQuiz,
   playClick,
+  playCorrect,
+  playWrong,
+  playTick,
+  playReveal,
+  playApplause,
   isDark = false,
   onToggleTheme = () => {},
   editingQuiz = null,
@@ -267,8 +277,40 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   const [showUnsavedConfirm, setShowUnsavedConfirm] = useState(false);
   const [showDistributePointsConfirm, setShowDistributePointsConfirm] = useState(false);
   const [showQuestionJumpModal, setShowQuestionJumpModal] = useState(false);
-  const [previewQuestionData, setPreviewQuestionData] = useState<{ question: QuizQuestion; index: number } | null>(null);
+  const [previewArenaConfig, setPreviewArenaConfig] = useState<{ initialIndex: number } | null>(null);
   const [pendingNavigation, setPendingNavigation] = useState<{ type: 'prev_question' } | { type: 'next_question' } | { type: 'cancel_edit' } | { type: 'jump_to_question'; targetIndex: number } | null>(null);
+
+  // Kuis virtual yang disinkronkan langsung 2-arah untuk Pratinjau Siswa Nyata (QuizArena)
+  const previewQuiz: Quiz = useMemo(() => {
+    return {
+      id: editingQuiz?.id || 'preview_draft_quiz',
+      title: title.trim() || 'Kuis Baru (Pratinjau)',
+      description: description.trim() || '',
+      subject: subject,
+      grade: grade,
+      educationLevel: educationLevel,
+      coverEmoji: coverEmoji,
+      questions: questions.length > 0 ? questions : [
+        {
+          id: 'preview_temp_q1',
+          text: 'Pertanyaan contoh untuk pratinjau kuis.',
+          type: 'multiple_choice',
+          options: ['Opsi A', 'Opsi B', 'Opsi C', 'Opsi D'],
+          correctIndex: 0,
+          points: 10,
+          explanation: 'Pembahasan materi terkait soal contoh ini.',
+        }
+      ],
+      durationPerQuestionSec: durationPerQuestionSec,
+      defaultGameMode: defaultGameMode,
+      visibility: visibility,
+      themeColor: editingQuiz?.themeColor || 'blue',
+      badgeTitle: badgeTitle || 'Bintang Pintar',
+      shuffleQuestions: false,
+      shuffleOptions: false,
+      createdAt: new Date().toISOString(),
+    };
+  }, [editingQuiz?.id, editingQuiz?.themeColor, badgeTitle, title, description, subject, grade, educationLevel, coverEmoji, questions, durationPerQuestionSec, defaultGameMode, visibility]);
 
   // Akumulasi Bobot Poin & Status Timer
   const totalQuizPoints = useMemo(() => {
@@ -2110,19 +2152,36 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
         playClick={playClick}
       />
 
-      {/* Modal Pratinjau Nyata Butir Soal untuk Siswa */}
-      <SingleQuestionPreviewModal
-        isOpen={Boolean(previewQuestionData)}
-        onClose={() => setPreviewQuestionData(null)}
-        question={previewQuestionData?.question || null}
-        questionIndex={previewQuestionData?.index ?? 0}
-        totalQuestions={questions.length}
-        durationPerQuestionSec={durationPerQuestionSec}
-        onEditQuestion={(q) => {
-          handleStartEditQuestion(q);
-        }}
-        playClick={playClick}
-      />
+      {/* Pratinjau Kuis Nyata Menggunakan QuizArena (Satu Kesatuan 2 Arah dengan Tampilan Siswa) */}
+      {previewArenaConfig !== null && (
+        <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col animate-fade-in overflow-hidden">
+          <QuizArena
+            quiz={previewQuiz}
+            initialMode="standard"
+            isPreview={true}
+            initialQuestionIndex={previewArenaConfig.initialIndex}
+            onExit={() => setPreviewArenaConfig(null)}
+            onFinishQuiz={() => {
+              setPreviewArenaConfig(null);
+              showToast('Pratinjau kuis selesai!');
+            }}
+            onEditQuestion={(q) => {
+              setPreviewArenaConfig(null);
+              handleStartEditQuestion(q);
+            }}
+            isMuted={false}
+            onToggleMute={() => {}}
+            playClick={playClick}
+            playCorrect={playCorrect}
+            playWrong={playWrong}
+            playTick={playTick}
+            playReveal={playReveal}
+            playApplause={playApplause}
+            isDark={isDark}
+            onToggleTheme={onToggleTheme}
+          />
+        </div>
+      )}
 
       {/* Smart Compact Speed Dial FAB (Melayang compact 48×48px di sudut kanan bawah) */}
       {!aiFunnelActive && (isAiMode ? currentStep === 1 : currentStep === 2) && !isAddingQuestion && (
@@ -2723,10 +2782,10 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                             type="button"
                             onClick={() => {
                               playClick();
-                              setPreviewQuestionData({ question: q, index: idx });
+                              setPreviewArenaConfig({ initialIndex: idx });
                             }}
                             className="w-full sm:w-auto h-11 px-3.5 sm:px-4 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-950/40 text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all border border-slate-200/60 dark:border-slate-700/60 active:scale-95 shrink-0 min-w-[44px]"
-                            title="Pratinjau nyata tampilan kartu soal bagi siswa"
+                            title="Pratinjau kuis siswa sesungguhnya pada butir soal ini"
                             aria-label="Lihat Pratinjau Soal"
                           >
                             <Eye className="w-4 h-4 text-blue-500 shrink-0" />
@@ -3717,9 +3776,24 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                             <Star className="w-2.5 h-2.5 text-amber-500 fill-amber-400" /> {q.points || 10} Poin
                           </span>
                         </div>
-                        <div className="flex items-center gap-1 text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 shrink-0 text-xs font-bold">
-                          <span className="text-[11px] hidden xs:inline">Edit</span>
-                          <Edit3 className="w-3.5 h-3.5" />
+                        <div className="flex items-center gap-1.5 shrink-0 text-xs font-bold">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              playClick();
+                              setPreviewArenaConfig({ initialIndex: idx });
+                            }}
+                            className="px-2 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-600 dark:text-blue-400 flex items-center gap-1 text-[11px] border border-blue-200/60 dark:border-blue-800/50 min-h-[32px] transition-colors"
+                            title="Pratinjau butir soal ini di arena kuis siswa"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>Lihat</span>
+                          </button>
+                          <div className="flex items-center gap-1 text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400">
+                            <span className="text-[11px] hidden xs:inline">Edit</span>
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </div>
                         </div>
                       </div>
 
@@ -3797,7 +3871,20 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
             </div>
 
             {/* Action Buttons */}
-            <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200 dark:border-slate-800 shadow-xs space-y-2.5">
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setPreviewArenaConfig({ initialIndex: 0 });
+                }}
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-3 px-5 rounded-2xl shadow-sm flex items-center justify-center gap-2 min-h-[46px] btn-press text-xs sm:text-sm transition-all"
+                title="Coba mainkan seluruh kuis dari awal dalam tampilan siswa yang sesungguhnya"
+              >
+                <Eye className="w-4 h-4" />
+                <span>Coba Mainkan Kuis (Pratinjau Siswa)</span>
+              </button>
+
               <button
                 type="button"
                 onClick={handleFinalPublish}

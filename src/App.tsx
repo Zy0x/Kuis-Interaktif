@@ -392,6 +392,11 @@ export const App: React.FC = () => {
           isDark={isDark}
           onToggleTheme={toggleTheme}
           playClick={playClick}
+          playCorrect={playCorrect}
+          playWrong={playWrong}
+          playTick={playTick}
+          playReveal={playReveal}
+          playApplause={playApplause}
         />
       )}
 
