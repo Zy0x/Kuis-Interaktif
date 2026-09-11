@@ -202,15 +202,31 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   const [expandedExplanations, setExpandedExplanations] = useState<Record<string, boolean>>({});
   const [showAllExplanations, setShowAllExplanations] = useState(false);
   const [showFloatingActions, setShowFloatingActions] = useState(false);
+  const [isSpeedDialOpen, setIsSpeedDialOpen] = useState(false);
 
   // Monitor scroll untuk memunculkan Smart Floating Action Capsule ketika melewati header card Bank Soal
   useEffect(() => {
     const handleScroll = () => {
-      setShowFloatingActions(window.scrollY > 180);
+      const shouldShow = window.scrollY > 180;
+      setShowFloatingActions(shouldShow);
+      if (!shouldShow) {
+        setIsSpeedDialOpen(false);
+      }
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Tutup menu speed dial saat tombol Escape ditekan
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsSpeedDialOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
   const handleScrollToTop = () => {
@@ -1319,56 +1335,127 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
 
       </main>
 
-      {/* Smart Floating Action Capsule (Muncul otomatis saat scroll ke bawah di Bank Soal) */}
+      {/* Smart Compact Speed Dial FAB (Melayang compact 48×48px di sudut kanan bawah) */}
       {!aiFunnelActive && (isAiMode ? currentStep === 1 : currentStep === 2) && !isAddingQuestion && (
-        <div
-          className={`fixed bottom-[calc(1.25rem+env(safe-area-inset-bottom,0px))] sm:bottom-6 right-3 xs:right-4 sm:right-6 lg:right-12 z-40 transition-all duration-200 ease-out ${
-            showFloatingActions
-              ? 'opacity-100 translate-y-0 scale-100 pointer-events-auto'
-              : 'opacity-0 translate-y-6 scale-95 pointer-events-none'
-          }`}
-        >
-          <div className="flex items-center gap-1.5 sm:gap-2 p-1.5 sm:p-2 rounded-2xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200/80 dark:border-slate-800/80 shadow-xl shadow-slate-900/10 dark:shadow-black/40">
-            {/* Tombol Pintas: Kembali ke Atas */}
-            <button
-              type="button"
-              onClick={handleScrollToTop}
-              className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors btn-press min-h-[44px] min-w-[44px]"
-              title="Gulir kembali ke paling atas"
-              aria-label="Kembali ke atas"
+        <>
+          {/* Backdrop Transparan / Samar (Mengetuk area luar akan otomatis menutup menu) */}
+          {isSpeedDialOpen && (
+            <div
+              onClick={() => setIsSpeedDialOpen(false)}
+              className="fixed inset-0 z-40 bg-slate-950/20 dark:bg-slate-950/40 backdrop-blur-[1px] transition-opacity animate-fade-in"
+              aria-hidden="true"
+            />
+          )}
+
+          <div
+            className={`fixed bottom-[calc(1.25rem+env(safe-area-inset-bottom,0px))] sm:bottom-6 right-4 sm:right-6 lg:right-10 z-40 flex flex-col items-end gap-2.5 transition-all duration-200 ease-out ${
+              showFloatingActions
+                ? 'opacity-100 translate-y-0 scale-100 pointer-events-auto'
+                : 'opacity-0 translate-y-6 scale-95 pointer-events-none'
+            }`}
+            onMouseEnter={() => {
+              if (window.matchMedia('(hover: hover)').matches) {
+                setIsSpeedDialOpen(true);
+              }
+            }}
+            onMouseLeave={() => {
+              if (window.matchMedia('(hover: hover)').matches) {
+                setIsSpeedDialOpen(false);
+              }
+            }}
+          >
+            {/* Speed Dial Menu Items (Mengalir ke atas) */}
+            <div
+              className={`flex flex-col items-end gap-2.5 transition-all duration-200 origin-bottom ${
+                isSpeedDialOpen
+                  ? 'opacity-100 translate-y-0 scale-100 pointer-events-auto'
+                  : 'opacity-0 translate-y-3 scale-90 pointer-events-none'
+              }`}
             >
-              <ChevronUp className="w-5 h-5" />
-            </button>
+              {/* Item 3: Ke Atas */}
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-1 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 shadow-md border border-slate-200/80 dark:border-slate-700/80 whitespace-nowrap">
+                  Ke Atas
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsSpeedDialOpen(false);
+                    handleScrollToTop();
+                  }}
+                  className="w-11 h-11 rounded-full flex items-center justify-center bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white shadow-lg border border-slate-200/80 dark:border-slate-700/80 hover:bg-slate-50 dark:hover:bg-slate-750 transition-all active:scale-95 btn-press min-h-[44px] min-w-[44px]"
+                  title="Gulir ke paling atas"
+                  aria-label="Gulir ke paling atas"
+                >
+                  <ChevronUp className="w-5 h-5" />
+                </button>
+              </div>
 
-            <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 mx-0.5" />
+              {/* Item 2: Asisten AI */}
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-1 rounded-xl text-xs font-bold text-indigo-900 dark:text-indigo-200 bg-white dark:bg-slate-800 shadow-md border border-indigo-200/80 dark:border-indigo-800/80 whitespace-nowrap">
+                  Asisten AI
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    setIsSpeedDialOpen(false);
+                    setIsAiModalOpen(true);
+                  }}
+                  className="w-11 h-11 rounded-full flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-600/25 transition-all active:scale-95 btn-press min-h-[44px] min-w-[44px]"
+                  title="Buka Asisten AI"
+                  aria-label="Buka Asisten AI"
+                >
+                  <Sparkles className="w-5 h-5" />
+                </button>
+              </div>
 
-            {/* Tombol Sekunder: Asisten AI */}
+              {/* Item 1: Tambah Soal */}
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-1 rounded-xl text-xs font-bold text-blue-900 dark:text-blue-200 bg-white dark:bg-slate-800 shadow-md border border-blue-200/80 dark:border-blue-800/80 whitespace-nowrap">
+                  Tambah Soal
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    setIsSpeedDialOpen(false);
+                    handleOpenNewQuestion();
+                  }}
+                  className="w-11 h-11 rounded-full flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/25 transition-all active:scale-95 btn-press min-h-[44px] min-w-[44px]"
+                  title="Tambah Butir Soal Baru"
+                  aria-label="Tambah Butir Soal Baru"
+                >
+                  <Plus className="w-5 h-5 stroke-[2.5]" />
+                </button>
+              </div>
+            </div>
+
+            {/* Trigger FAB Utama (Bulat 48×48px di mobile, 52×52px di sm) */}
             <button
               type="button"
               onClick={() => {
                 playClick();
-                setIsAiModalOpen(true);
+                setIsSpeedDialOpen((prev) => !prev);
               }}
-              className="px-3 sm:px-3.5 py-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/70 text-indigo-700 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800/60 font-bold text-xs flex items-center gap-1.5 transition-colors btn-press min-h-[44px]"
-              title="Buka Asisten AI untuk membuat soal otomatis"
+              className={`w-12 h-12 sm:w-13 sm:h-13 rounded-full flex items-center justify-center text-white shadow-xl transition-all duration-200 active:scale-90 btn-press min-h-[48px] min-w-[48px] ${
+                isSpeedDialOpen
+                  ? 'bg-slate-800 dark:bg-slate-700 shadow-slate-900/40'
+                  : 'bg-blue-600 hover:bg-blue-700 shadow-blue-600/35 hover:scale-105'
+              }`}
+              title={isSpeedDialOpen ? 'Tutup menu' : 'Menu tambah soal & aksi'}
+              aria-label={isSpeedDialOpen ? 'Tutup menu aksi' : 'Buka menu aksi melayang'}
+              aria-expanded={isSpeedDialOpen}
             >
-              <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
-              <span className="hidden xs:inline">Asisten </span>
-              <span>AI</span>
-            </button>
-
-            {/* Tombol Utama: Tambah Soal */}
-            <button
-              type="button"
-              onClick={handleOpenNewQuestion}
-              className="px-3.5 sm:px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm hover:shadow transition-all btn-press min-h-[44px]"
-              title="Tambah Butir Soal Baru"
-            >
-              <Plus className="w-4 h-4 shrink-0 stroke-[2.5]" />
-              <span>Tambah Soal</span>
+              <Plus
+                className={`w-6 h-6 stroke-[2.5] transition-transform duration-200 ${
+                  isSpeedDialOpen ? 'rotate-45' : 'rotate-0'
+                }`}
+              />
             </button>
           </div>
-        </div>
+        </>
       )}
 
       {/* Asisten Soal AI Modal */}

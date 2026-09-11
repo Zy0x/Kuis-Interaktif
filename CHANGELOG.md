@@ -1,6 +1,28 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.6] - 2026-09-11
+### Rombak FAB Melayang Menjadi Compact Speed Dial (48×48px) Hemat Ruang Mobile dengan Ekspansi Vertikal ke Atas
+
+#### 1. Masalah yang Diselesaikan
+- **Penutupan Konten Kartu Soal pada Layar Smartphone (*Mobile Screen Blockage*)**: Pada versi sebelumnya, kapsul melayang horizontal membentang selebar ~70–80% layar ponsel, menutupi tautan *"Lihat Pembahasan Edukatif"* dan baris tombol aksi kartu soal di bawahnya.
+
+#### 2. Arsitektur Compact Speed Dial FAB (`QuizCreator.tsx`)
+- **Default Super Kompak (48×48px)**:
+  - Tombol melayang dikurangi secara drastis menjadi hanya satu tombol bulat/squircle kompak (48×48px di mobile / 52×52px di desktop) di sudut kanan bawah:
+    `bottom-[calc(1.25rem+env(safe-area-inset-bottom,0px))] sm:bottom-6 right-4 sm:right-6 lg:right-10 z-40`.
+  - Jejak visual (*footprint*) sangat minim sehingga 100% konten kartu soal di layar smartphone tetap terlihat dan dapat disentuh tanpa terhalang.
+- **Ekspansi Menu Vertikal ke Atas (*Upward Speed Dial*)**:
+  - **Mekanisme Trigger**: Mengetuk tombol `+` di ponsel atau hover/klik di desktop memutar ikon `+` menjadi tanda silang `✕` (`rotate-45`) dan membuka daftar aksi yang mengalir rapi ke atas.
+  - **Item Menu Berlabel Jelas di Sisi Kiri**:
+    1. **`Tambah Soal`**: Tombol bulat biru (44×44px) dengan badge teks `[ Tambah Soal ]` di sebelah kiri.
+    2. **`Asisten AI`**: Tombol bulat indigo (44×44px) dengan badge teks `[ Asisten AI ]` di sebelah kiri.
+    3. **`Ke Atas`**: Tombol bulat netral (44×44px) dengan badge teks `[ Ke Atas ]` di sebelah kiri.
+- **Backdrop Perlindungan Cerdas (*Tap-Outside to Close*)**:
+  - Saat menu Speed Dial terbuka, lapisan transparan samar (`bg-slate-950/20 dark:bg-slate-950/40 backdrop-blur-[1px]`) aktif. Mengetuk area mana pun di luar menu atau menekan tombol `Escape` otomatis menutup menu kembali ke status 1 tombol.
+  - Memilih salah satu aksi langsung menutup menu dan menjalankan fungsinya secara instan.
+- **Standar Aksesibilitas**: Seluruh tombol memenuhi target sentuh ergonomis minimum `≥ 44×44 px` (Rule 1 & Rule 2).
+
 ## [2.3.5] - 2026-09-11
 ### Implementasi Smart Floating Action Capsule (FAB Modern) pada Studio Bank Soal
 
