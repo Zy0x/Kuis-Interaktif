@@ -261,6 +261,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   const [isSpeedDialOpen, setIsSpeedDialOpen] = useState(false);
   const [showRacikUlangConfirm, setShowRacikUlangConfirm] = useState(false);
   const [showUnsavedConfirm, setShowUnsavedConfirm] = useState(false);
+  const [showDistributePointsConfirm, setShowDistributePointsConfirm] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<{ type: 'prev_question' } | { type: 'next_question' } | { type: 'cancel_edit' } | null>(null);
 
   // Akumulasi Bobot Poin & Status Timer
@@ -1742,6 +1743,121 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
         </div>
       )}
 
+      {/* Modal Konfirmasi Anti-Slop: Bagi Rata 100 Poin */}
+      {showDistributePointsConfirm && (
+        <div 
+          className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-3.5 sm:p-4 animate-fade-in"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="distribute-modal-title"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowDistributePointsConfirm(false);
+          }}
+        >
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-6 max-w-md w-full border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4 animate-scale-up">
+            {/* Header Dialog */}
+            <div className="flex items-start gap-3.5">
+              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/50 flex items-center justify-center shrink-0 shadow-2xs">
+                <Scale className="w-5 h-5 sm:w-6 sm:h-6" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3 id="distribute-modal-title" className="text-base sm:text-lg font-black text-slate-900 dark:text-white leading-tight">
+                  Bagi Rata Bobot ke 100 Poin?
+                </h3>
+                <p className="text-xs text-indigo-600 dark:text-indigo-400 font-semibold mt-0.5">
+                  Penyesuaian nilai otomatis untuk {questions.length} butir soal aktif
+                </p>
+              </div>
+            </div>
+
+            {/* Visual Perbandingan: Sebelum vs Sesudah */}
+            <div className="grid grid-cols-2 gap-2.5 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-800">
+              <div className="space-y-0.5">
+                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
+                  Bobot Saat Ini
+                </span>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-lg sm:text-xl font-black text-amber-600 dark:text-amber-400">
+                    {totalQuizPoints}
+                  </span>
+                  <span className="text-xs font-semibold text-slate-500">Poin</span>
+                </div>
+                <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 block">
+                  {totalQuizPoints < 100 
+                    ? `Kurang ${100 - totalQuizPoints} Poin` 
+                    : `Lebih ${totalQuizPoints - 100} Poin`}
+                </span>
+              </div>
+              <div className="space-y-0.5 border-l border-slate-200 dark:border-slate-700/80 pl-3">
+                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
+                  Target Sempurna
+                </span>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-lg sm:text-xl font-black text-emerald-600 dark:text-emerald-400">
+                    100
+                  </span>
+                  <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">Poin</span>
+                </div>
+                <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 block">
+                  🎯 Pas 100 Poin
+                </span>
+              </div>
+            </div>
+
+            {/* Rincian Alokasi Nilai Transparan */}
+            {questions.length > 0 && (
+              <div className="p-3 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/50 space-y-1 text-xs text-indigo-950 dark:text-indigo-200">
+                <div className="font-bold flex items-center gap-1.5 text-indigo-700 dark:text-indigo-300 text-[11px] uppercase tracking-wide">
+                  <Scale className="w-3.5 h-3.5" />
+                  <span>Rincian Pembagian Nilai:</span>
+                </div>
+                <p className="leading-relaxed text-slate-700 dark:text-slate-300">
+                  {100 % questions.length === 0 ? (
+                    <>
+                      Setiap butir dari total <strong>{questions.length} soal</strong> akan mendapatkan bobot tepat <strong>{Math.floor(100 / questions.length)} Poin</strong>.
+                    </>
+                  ) : (
+                    <>
+                      Sebanyak <strong>{100 % questions.length} soal</strong> pertama akan bernilai <strong>{Math.floor(100 / questions.length) + 1} Poin</strong>, dan <strong>{questions.length - (100 % questions.length)} soal</strong> berikutnya bernilai <strong>{Math.floor(100 / questions.length)} Poin</strong> agar pas 100.
+                    </>
+                  )}
+                </p>
+              </div>
+            )}
+
+            {/* Catatan Penting */}
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed bg-amber-50/50 dark:bg-amber-950/20 p-2.5 rounded-xl border border-amber-200/50 dark:border-amber-900/30">
+              ⚠️ <em>Perhatian:</em> Penyesuaian ini akan menimpa seluruh bobot nilai butir soal yang telah Anda tentukan secara manual sebelumnya.
+            </p>
+
+            {/* Action Buttons: Stacked on mobile, touch-friendly min-h-[44px] */}
+            <div className="flex flex-col sm:flex-row-reverse items-stretch sm:items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              {/* Primary: Ya, Bagi Rata 100 Poin */}
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDistributePointsConfirm(false);
+                  handleDistribute100Points();
+                }}
+                className="w-full sm:w-auto px-4.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 active:scale-95 transition-all shadow-md shadow-indigo-600/25 flex items-center justify-center gap-2 min-h-[44px] btn-press order-1 sm:order-none"
+              >
+                <Scale className="w-4 h-4 shrink-0" />
+                <span>Ya, Bagi Rata 100 Poin</span>
+              </button>
+
+              {/* Secondary: Batal */}
+              <button
+                type="button"
+                onClick={() => setShowDistributePointsConfirm(false)}
+                className="w-full sm:w-auto px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center justify-center min-h-[44px] order-2 sm:order-none"
+              >
+                Batal
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modal Konfirmasi Perubahan Soal Belum Disimpan */}
       {showUnsavedConfirm && (
         <div 
@@ -2244,16 +2360,20 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                     {questions.length > 0 && totalQuizPoints !== 100 && (
                       <button
                         type="button"
-                        onClick={handleDistribute100Points}
+                        onClick={() => {
+                          playClick();
+                          setShowDistributePointsConfirm(true);
+                        }}
                         className={`text-[10px] font-extrabold px-2.5 py-1.5 rounded-lg border transition-all inline-flex items-center gap-1 shrink-0 btn-press min-h-[32px] ${
                           totalQuizPoints < 100
                             ? 'text-amber-800 dark:text-amber-200 bg-amber-100/90 hover:bg-amber-200 dark:bg-amber-900/60 dark:hover:bg-amber-800 border-amber-300 dark:border-amber-700'
                             : 'text-indigo-800 dark:text-indigo-200 bg-indigo-100/90 hover:bg-indigo-200 dark:bg-indigo-900/60 dark:hover:bg-indigo-800 border-indigo-300 dark:border-indigo-700'
                         }`}
-                        title="Bagi rata bobot poin ke seluruh soal agar pas 100 poin"
+                        title="Buka dialog konfirmasi bagi rata 100 poin"
+                        aria-label="Buka dialog konfirmasi bagi rata 100 poin"
                       >
                         <Scale className="w-3 h-3" />
-                        <span>Bagi Rata 100 Poin</span>
+                        <span>Ingin Bagi Rata?</span>
                       </button>
                     )}
                   </div>

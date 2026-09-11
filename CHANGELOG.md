@@ -1,6 +1,25 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.37] - 2026-09-11
+### Tombol Kontekstual "Ingin Bagi Rata?" & Dialog Konfirmasi Presisi Anti-Slop Bagi Rata 100 Poin
+
+#### 1. Masalah & Kebutuhan yang Diselesaikan
+- **Risiko Penimpaan Nilai Tanpa Konfirmasi**: Aksi bagi rata bobot nilai merupakan perubahan massal (*bulk overwrite*). Mengeksekusinya tanpa dialog konfirmasi berisiko merusak pengaturan bobot spesifik yang telah disusun guru dengan cermat.
+- **Penyelarasan Nada Komunikasi Tombol**: Guru menginginkan pendekatan komunikasi yang ramah dan menawarkan bantuan (*assistive tone*) alih-alih perintah imperatif yang kaku.
+
+#### 2. Implementasi Desain & Fungsionalitas
+- **Tombol Ramah Kontekstual (`QuizCreator.tsx`)**:
+  - Mengubah tombol bobot pada Card 2 menjadi **`[ ⚖️ Ingin Bagi Rata? ]`** yang ringkas, bersahabat, dan pas di kartu mini stat.
+- **Overlay Dialog Konfirmasi Anti-Slop**:
+  - Menghadirkan modal konfirmasi dengan desain mendalam (*anti-slop, zero generic boilerplate*):
+    1. **Widget Komparasi Dua Kolom**: Menampilkan perbandingan visual real-time antara `Bobot Saat Ini` (lengkap dengan selisih kurang/lebih) terhadap `Target Sempurna (100 Poin)`.
+    2. **Transparansi Perhitungan Matematis**: Menjelaskan alokasi poin per soal secara gamblang, termasuk skenario sisa pembagian (contoh: untuk 3 soal dijelaskan `2 soal @ 33 Poin & 1 soal @ 34 Poin`).
+    3. **Peringatan Santun Pendidik**: Catatan ramah yang mengingatkan dampak penimpaan bobot manual.
+- **Proteksi Integritas Data & Presisi Sentuh (Rule 1, Rule 2 & Rule 9)**:
+  - Target sentuh tombol $\ge 44\text{px}$ dengan penataan vertikal yang nyaman di mobile dan horizontal di desktop.
+  - Backdrop blur lembut dengan perlindungan klik luar aman.
+
 ## [2.3.36] - 2026-09-11
 ### Standarisasi Penulisan Satuan Bobot Nilai "X Poin" & Eliminasi Tombol Global Pembahasan untuk Kemandirian Kartu Soal
 
