@@ -711,12 +711,12 @@ export const QuizDetail: React.FC<QuizDetailProps> = ({
                   )}
 
                   {q.type === 'true_false' && (
-                    <div className="flex gap-2 pt-1">
-                      {['Benar', 'Salah'].map((val, bIdx) => {
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      {(q.options && q.options.length >= 2 ? q.options : ['Benar', 'Salah']).map((val, bIdx) => {
                         const isCorrect = bIdx === q.correctIndex;
                         return (
                           <div
-                            key={val}
+                            key={`${val}-${bIdx}`}
                             className={`px-4 py-2 rounded-xl border text-xs font-bold flex items-center gap-1.5 ${
                               isCorrect
                                 ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-800 dark:text-emerald-200'

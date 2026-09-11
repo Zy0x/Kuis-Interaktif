@@ -737,6 +737,11 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
       setQAcceptableAnswers(q.acceptableAnswers ? q.acceptableAnswers.join(', ') : (q.options[0] || ''));
       setQOptions([q.options[0] || '']);
       setQCorrectIndex(0);
+    } else if (q.type === 'true_false') {
+      const opt0 = q.options && q.options[0] ? q.options[0] : 'Benar';
+      const opt1 = q.options && q.options[1] ? q.options[1] : 'Salah';
+      setQOptions([opt0, opt1]);
+      setQCorrectIndex(q.correctIndex === 1 ? 1 : 0);
     } else {
       setQOptions([...q.options]);
       setQCorrectIndex(q.correctIndex);
@@ -811,6 +816,10 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
           finalAcceptable = parts;
           finalOptions = [parts[0]];
         }
+      } else if (qType === 'true_false') {
+        const opt0 = (qOptions[0] || 'Benar').trim() || 'Benar';
+        const opt1 = (qOptions[1] || 'Salah').trim() || 'Salah';
+        finalOptions = [opt0, opt1];
       }
 
       const durationNum = parseInt(qCustomDurationSec);
@@ -883,7 +892,14 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
         return;
       }
       finalAcceptable = parts;
-      finalOptions = [parts[0]];
+    } else if (qType === 'true_false') {
+      const opt0 = (qOptions[0] || '').trim();
+      const opt1 = (qOptions[1] || '').trim();
+      if (!opt0 || !opt1) {
+        showToast('Kedua pilihan Benar / Salah tidak boleh kosong.');
+        return;
+      }
+      finalOptions = [opt0, opt1];
     } else if (qType === 'multiple_choice') {
       const emptyOptIndex = qOptions.findIndex((opt) => !opt.trim());
       if (emptyOptIndex !== -1) {
@@ -2010,20 +2026,20 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
 
                         {q.type === 'true_false' && (
                           <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
-                            {['Benar', 'Salah'].map((label, oIdx) => {
+                            {(q.options && q.options.length >= 2 ? q.options : ['Benar', 'Salah']).map((label, oIdx) => {
                               const isCorrect = q.correctIndex === oIdx;
                               return (
                                 <div
-                                  key={label}
+                                  key={`${label}-${oIdx}`}
                                   className={`px-3 py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 border font-bold ${
                                     isCorrect
                                       ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700 text-emerald-900 dark:text-emerald-200'
                                       : 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 opacity-60'
                                   }`}
                                 >
-                                  {isCorrect && <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />}
-                                  <span>{label}</span>
-                                  {isCorrect && <span className="text-[10px] text-emerald-600 font-normal">(Kunci)</span>}
+                                  {isCorrect && <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />}
+                                  <span className="truncate">{label}</span>
+                                  {isCorrect && <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-normal shrink-0">(Kunci)</span>}
                                 </div>
                               );
                             })}
@@ -2513,25 +2529,117 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                 )}
 
                 {qType === 'true_false' && (
-                  <div className="space-y-2">
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                      Kunci Jawaban
-                    </label>
-                    <div className="grid grid-cols-2 gap-3">
-                      {['Benar', 'Salah'].map((val, oIdx) => (
-                        <button
-                          key={val}
-                          type="button"
-                          onClick={() => setQCorrectIndex(oIdx)}
-                          className={`py-3 rounded-xl border font-bold text-xs sm:text-sm flex items-center justify-center gap-2 min-h-[44px] transition-all btn-press ${
-                            qCorrectIndex === oIdx
-                              ? 'border-emerald-500 bg-emerald-500 text-white shadow-xs'
-                              : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50'
-                          }`}
-                        >
-                          {val}
-                        </button>
-                      ))}
+                  <div className="space-y-3.5">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
+                        Kustomisasi Opsi & Kunci Jawaban
+                      </label>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                        Sesuaikan teks pilihan di bawah atau pilih preset instan, lalu tentukan opsi mana yang menjadi kunci jawaban benar.
+                      </p>
+                    </div>
+
+                    {/* Quick Preset Chips */}
+                    <div className="p-2.5 rounded-2xl bg-slate-50/80 dark:bg-slate-850/60 border border-slate-200/80 dark:border-slate-800">
+                      <div className="text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-2 flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                        <span>Preset Pilihan Cepat:</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {[
+                          { label: 'Benar / Salah', opt0: 'Benar', opt1: 'Salah' },
+                          { label: 'Sesuai / Tidak Sesuai', opt0: 'Sesuai', opt1: 'Tidak Sesuai' },
+                          { label: 'Ya / Tidak', opt0: 'Ya', opt1: 'Tidak' },
+                          { label: 'Fakta / Opini', opt0: 'Fakta', opt1: 'Opini' },
+                          { label: 'Setuju / Tidak Setuju', opt0: 'Setuju', opt1: 'Tidak Setuju' },
+                        ].map((preset) => {
+                          const isPresetActive =
+                            (qOptions[0] || '').trim().toLowerCase() === preset.opt0.toLowerCase() &&
+                            (qOptions[1] || '').trim().toLowerCase() === preset.opt1.toLowerCase();
+                          return (
+                            <button
+                              key={preset.label}
+                              type="button"
+                              onClick={() => {
+                                playClick();
+                                setQOptions([preset.opt0, preset.opt1]);
+                              }}
+                              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all btn-press flex items-center gap-1.5 min-h-[38px] ${
+                                isPresetActive
+                                  ? 'bg-emerald-600 text-white shadow-2xs'
+                                  : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-750'
+                              }`}
+                            >
+                              {isPresetActive && <Check className="w-3.5 h-3.5 text-white shrink-0" />}
+                              <span>{preset.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Option 1 & Option 2 Cards */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {[0, 1].map((oIdx) => {
+                        const isCorrect = qCorrectIndex === oIdx;
+                        const defaultLabel = oIdx === 0 ? 'Benar' : 'Salah';
+                        const optVal = qOptions[oIdx] !== undefined ? qOptions[oIdx] : defaultLabel;
+                        return (
+                          <div
+                            key={oIdx}
+                            className={`p-3 sm:p-3.5 rounded-2xl border transition-all duration-200 flex flex-col gap-2.5 ${
+                              isCorrect
+                                ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20 ring-1 ring-emerald-500/20 shadow-xs'
+                                : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 hover:border-slate-300 dark:hover:border-slate-600'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-slate-600/40">
+                                Opsi {oIdx === 0 ? 'Pertama (A)' : 'Kedua (B)'}
+                              </span>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  playClick();
+                                  setQCorrectIndex(oIdx);
+                                }}
+                                className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all min-h-[44px] btn-press ${
+                                  isCorrect
+                                    ? 'bg-emerald-600 text-white shadow-xs'
+                                    : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-650 border border-slate-200 dark:border-slate-700'
+                                }`}
+                                title={isCorrect ? 'Kunci Jawaban Benar (Aktif)' : 'Pilih sebagai Kunci Jawaban Benar'}
+                              >
+                                {isCorrect ? (
+                                  <>
+                                    <Check className="w-4 h-4 text-white shrink-0" />
+                                    <span>Kunci Benar</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <span className="w-3.5 h-3.5 rounded-full border-2 border-slate-400 dark:border-slate-500 shrink-0 inline-block" />
+                                    <span>Jadikan Kunci</span>
+                                  </>
+                                )}
+                              </button>
+                            </div>
+
+                            <div>
+                              <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">
+                                Teks Pilihan {oIdx === 0 ? '1' : '2'}
+                              </label>
+                              <input
+                                type="text"
+                                value={optVal}
+                                onChange={(e) => handleOptionChange(oIdx, e.target.value)}
+                                placeholder={oIdx === 0 ? 'Contoh: Benar / Sesuai / Ya / Fakta' : 'Contoh: Salah / Tidak Sesuai / Tidak / Opini'}
+                                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs sm:text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none min-h-[44px] transition-all"
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 )}

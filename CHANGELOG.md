@@ -1,6 +1,28 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.21] - 2026-09-11
+### Kustomisasi Opsi Teks Benar / Salah & Preset Cepat Satu Sentuhan
+
+#### 1. Masalah yang Diselesaikan
+- **Ketiadaan Kolom Input Teks Opsi Benar / Salah**: Pada editor butir soal, tipe soal Benar / Salah sebelumnya hanya menampilkan dua tombol pill statis dengan teks terkunci ("Benar" dan "Salah"). Pendidik tidak dapat mengkustomisasi pilihan kata ke pasangan dikotomi edukatif lain (seperti "Sesuai / Tidak Sesuai", "Ya / Tidak", "Fakta / Opini", atau "Setuju / Tidak Setuju") sebagaimana yang tersedia pada generator AI.
+- **Inkonsistensi Pratinjau Kartu Bank Soal & Tinjauan**: Kartu butir soal pada Bank Soal dan pratinjau rincian kuis sebelumnya masih menampilkan label keras statis Benar/Salah alih-alih membaca array opsi aktual (`question.options`).
+
+#### 2. Implementasi & Desain Clean (`QuizCreator.tsx` & `QuizDetail.tsx`)
+- **Kolom Input Teks Kustom Mandiri**:
+  - Menyediakan dua kartu opsi terpisah (Opsi Pertama / A dan Opsi Kedua / B) dengan kolom input teks yang dapat diedit bebas tanpa batasan istilah kaku.
+  - Dilengkapi *placeholder* kontekstual yang informatif dan cincin fokus modern (`ring-2 ring-emerald-500/20`).
+- **Toolbar Chip Preset Cepat Satu Sentuhan (*One-Tap Quick Chips*)**:
+  - Disediakan bilah preset instan: **`[Benar / Salah]`**, **`[Sesuai / Tidak Sesuai]`**, **`[Ya / Tidak]`**, **`[Fakta / Opini]`**, dan **`[Setuju / Tidak Setuju]`**.
+  - Sekali ketuk langsung mengisi kedua teks pilihan secara serentak.
+  - Status chip otomatis aktif (*highlight emerald*) jika teks pilihan cocok dengan salah satu preset.
+- **Tombol Pemilih Kunci Jawaban Benar (*Touch-Friendly Key Selector*)**:
+  - Setiap kartu opsi dilengkapi tombol pemicu kunci jawaban dengan target sentuh standar mobile-first (tinggi minimal 44 px).
+  - Status aktif ditandai dengan lencana hijau zamrud tegas, ikon centang putih (`✓`), dan teks `Kunci Benar`.
+- **Sinkronisasi Data Menyeluruh & Pratinjau Dinamis**:
+  - Terhubung langsung ke penyimpanan draf lokal (`CreatorDraft`), fungsi auto-save saat navigasi butir soal, dan validasi simpan.
+  - Kartu butir soal Bank Soal (`QuizCreator.tsx`) dan pratinjau soal (`QuizDetail.tsx`) kini membaca teks dinamis dari `question.options` secara konsisten.
+
 ## [2.3.20] - 2026-09-11
 ### Komponen Custom Dropdown Tipe Soal: Desain Modern, Berikon, & Konsisten dengan Sistem Web
 
