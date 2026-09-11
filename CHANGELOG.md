@@ -1,6 +1,32 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.50] - 2026-09-12
+### Tombol "Mainkan Sekarang" & Modal Pengaturan Sesi Bermain Siswa (PlayQuizModal)
+
+#### 1. Transformasi Tombol Aksi Kartu Kuis (`TeacherDashboard.tsx` & `QuizDetail.tsx`)
+- **Tombol Utama "Mainkan Sekarang"**:
+  - Menggantikan tombol `[📺 Mode IFP]` yang kaku pada setiap kartu kuis di Dashboard Guru dan toolbar Halaman Detail Kuis dengan tombol utama **`[ ▶️ Mainkan Sekarang ]`** berbalut gradien biru-indigo yang memikat dan *touch target* ergonomis $\ge 44 \times 44\text{ px}$.
+  - Tombol ini menjadi pintu gerbang interaktif bagi guru untuk memulai kuis bersama siswa dengan kendali penuh terhadap parameter sesi bermain.
+
+#### 2. Modal Pengaturan Sesi Bermain Siswa (`PlayQuizModal.tsx`)
+- **Komponen Pengaturan Sesi Mandiri & Terpadu**:
+  - **Identitas & PIN Ruang Kuis**: Menampilkan cover, judul kuis, jenjang, mata pelajaran, jumlah butir soal, estimasi durasi total, serta kode PIN 4-digit besar yang dapat disalin dengan satu klik.
+  - **Pilihan Mode Permainan (`GameMode`)**: Mendukung 3 mode pengerjaan:
+    1. *🌟 Standar*: Timer aktif dan skor dihitung dari kecepatan serta ketepatan.
+    2. *❤️ 3 Nyawa (Survival)*: Tantangan seru 3 hati di mana 3 kesalahan mengakhiri kuis.
+    3. *🧘 Santai (Untimed)*: Mode tanpa batas waktu untuk diskusi kelas yang mendalam tanpa tekanan timer.
+  - **Durasi Waktu Fleksibel**: Pilihan chip cepat durasi per soal (`10s`, `15s`, `20s`, `30s`, `45s`, `60s`).
+  - **Fitur Anti-Mencontek**: *Toggle* interaktif untuk acak urutan soal (*shuffle questions*) dan acak pilihan opsi jawaban (*shuffle options*).
+  - **Pilihan Target Presentasi**:
+    1. *📺 Layar Smartboard (Mode IFP)*: Guru memandu kuis langsung di TV Interaktif/Proyektor depan kelas.
+    2. *📱 Lobi Siswa / Gawai*: Membuka persiapan lobi untuk siswa yang bergabung menggunakan gawai mandiri.
+  - **Eksekusi Seketika**: Tombol **`[ 🚀 Mulai Kuis Sekarang ]`** yang langsung meluncurkan kuis ke arena sesuai parameter yang dipilih, serta tombol **`[ 🔗 Bagi Tautan ]`** untuk membagikan PIN dan tautan langsung ke siswa.
+
+#### 3. Integrasi Navigasi & Siklus Hidup Sesi (`App.tsx`)
+- Menyalurkan konfigurasi sesi kuis kustom ke arena pengerjaan tanpa merusak data asli draf kuis.
+- Memperbaiki alur tombol keluar kuis (`onExit`) pada saat guru selesai atau keluar dari kuis agar kembali secara bersih dan aman ke Dashboard Guru.
+
 ## [2.3.49] - 2026-09-12
 ### Perbaikan Alur Masuk Dashboard Guru: Pencegahan Auto-Open Modal Pembuatan Kuis
 

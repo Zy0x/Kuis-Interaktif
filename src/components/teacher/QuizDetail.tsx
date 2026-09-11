@@ -5,10 +5,11 @@ import { useBackHandler } from '../../lib/navigationHistory';
 import { copyTextToClipboard } from '../../lib/aiQuestionParser';
 import { ConfirmDeleteModal } from '../common/ConfirmDeleteModal';
 import { QuizCoverDisplay } from '../common/QuizCoverDisplay';
+import { PlayQuizModal, type PlayQuizSessionOptions } from './PlayQuizModal';
 import { 
   ArrowLeft, 
   Pencil, 
-  Tv, 
+  Play,
   Printer, 
   Copy, 
   Check, 
@@ -23,7 +24,6 @@ import {
   Download, 
   BarChart3, 
   CheckCircle2, 
-  Calendar, 
   BookOpen, 
   CopyPlus,
   Share2
@@ -36,6 +36,7 @@ interface QuizDetailProps {
   onEditQuiz: (quiz: Quiz) => void;
   onLaunchSmartboard: (quiz: Quiz) => void;
   onPrintWorksheet: (quiz: Quiz) => void;
+  onStartQuiz?: (quiz: Quiz, options: PlayQuizSessionOptions) => void;
   onDuplicateQuiz: (quiz: Quiz) => Promise<void> | void;
   onDeleteQuiz: (quiz: Quiz) => Promise<void> | void;
   onUpdateQuizSettings: (quizId: string, updates: Partial<Quiz>) => Promise<void>;
@@ -59,10 +60,12 @@ const getSubjectBadge = (subject: string) => {
 
 export const QuizDetail: React.FC<QuizDetailProps> = ({
   quiz,
+  teacher,
   onBack,
   onEditQuiz,
   onLaunchSmartboard,
   onPrintWorksheet,
+  onStartQuiz,
   onDuplicateQuiz,
   onDeleteQuiz,
   onUpdateQuizSettings,
@@ -85,6 +88,7 @@ export const QuizDetail: React.FC<QuizDetailProps> = ({
   const [isUpdatingVis, setIsUpdatingVis] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isPlayModalOpen, setIsPlayModalOpen] = useState(false);
   const [noticeMessage, setNoticeMessage] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
@@ -311,8 +315,8 @@ export const QuizDetail: React.FC<QuizDetailProps> = ({
                   </span>
                   <span>•</span>
                   <span className="flex items-center gap-1">
-                    <Calendar className="w-3.5 h-3.5 text-emerald-500" />
-                    Dibuat {quiz.createdAt ? new Date(quiz.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Baru saja'}
+                    <Users className="w-3.5 h-3.5 text-indigo-500" />
+                    Pendidik: {quiz.creatorName || teacher.fullName}
                   </span>
                 </div>
               </div>
@@ -383,12 +387,13 @@ export const QuizDetail: React.FC<QuizDetailProps> = ({
                 type="button"
                 onClick={() => {
                   playClick();
-                  onLaunchSmartboard(quiz);
+                  setIsPlayModalOpen(true);
                 }}
-                className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-sm min-h-[42px] transition-all btn-press"
+                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black text-xs sm:text-sm flex items-center gap-2 shadow-sm min-h-[42px] transition-all btn-press tracking-wide"
+                title="Mainkan Kuis Bersama Siswa (Buka Pengaturan Sesi Bermain)"
               >
-                <Tv className="w-4 h-4" />
-                <span>Buka Mode IFP / Smartboard</span>
+                <Play className="w-4 h-4 fill-white text-white" />
+                <span>Mainkan Sekarang</span>
               </button>
 
               <button
@@ -780,6 +785,22 @@ export const QuizDetail: React.FC<QuizDetailProps> = ({
         isLoading={isDeleting}
         onConfirm={handleConfirmDelete}
         onCancel={() => setShowDeleteModal(false)}
+      />
+
+      {/* Modal Pengaturan Sesi Bermain & Mulai Kuis Siswa */}
+      <PlayQuizModal
+        isOpen={isPlayModalOpen}
+        onClose={() => setIsPlayModalOpen(false)}
+        quiz={quiz}
+        onStartQuiz={(q, opts) => {
+          setIsPlayModalOpen(false);
+          if (onStartQuiz) {
+            onStartQuiz(q, opts);
+          } else {
+            onLaunchSmartboard(q);
+          }
+        }}
+        playClick={playClick}
       />
     </div>
   );

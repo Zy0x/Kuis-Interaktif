@@ -10,10 +10,11 @@ import { QuizSettingsModal } from '../common/QuizSettingsModal';
 import { QuizCoverDisplay } from '../common/QuizCoverDisplay';
 import { QuizDetail } from './QuizDetail';
 import { CreateQuizMethodModal } from './CreateQuizMethodModal';
+import { PlayQuizModal, type PlayQuizSessionOptions } from './PlayQuizModal';
 import { 
   GraduationCap, 
   Plus, 
-  Tv, 
+  Play,
   Copy, 
   Check, 
   LogOut, 
@@ -53,6 +54,7 @@ interface TeacherDashboardProps {
   onOpenCreator: (quizToEdit?: Quiz, mode?: 'ai' | 'manual') => void;
   onLaunchSmartboard: (quiz: Quiz) => void;
   onPrintWorksheet: (quiz: Quiz) => void;
+  onStartQuiz?: (quiz: Quiz, options: PlayQuizSessionOptions) => void;
   playClick: () => void;
   isDark?: boolean;
   onToggleTheme?: () => void;
@@ -65,6 +67,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   onOpenCreator,
   onLaunchSmartboard,
   onPrintWorksheet,
+  onStartQuiz,
   playClick,
   isDark = false,
   onToggleTheme = () => {},
@@ -72,6 +75,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [selectedQuizForDetail, setSelectedQuizForDetail] = useState<Quiz | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [quizToPlay, setQuizToPlay] = useState<Quiz | null>(null);
 
   // Search, Filter & Sort States
   const [searchQuery, setSearchQuery] = useState('');
@@ -134,6 +138,29 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
       setSelectedQuizForDetail(updated);
     }
     setSelectedQuizForSettings(updated);
+  };
+
+  const handleStartQuizFromModal = async (quiz: Quiz, options: PlayQuizSessionOptions) => {
+    setQuizToPlay(null);
+    if (options.saveAsDefault) {
+      await handleSaveQuizSettings(quiz.id, {
+        defaultGameMode: options.mode,
+        durationPerQuestionSec: options.durationPerQuestionSec,
+        shuffleQuestions: options.shuffleQuestions,
+        shuffleOptions: options.shuffleOptions,
+      });
+    }
+    if (onStartQuiz) {
+      onStartQuiz(quiz, options);
+    } else {
+      onLaunchSmartboard({
+        ...quiz,
+        defaultGameMode: options.mode,
+        durationPerQuestionSec: options.durationPerQuestionSec,
+        shuffleQuestions: options.shuffleQuestions,
+        shuffleOptions: options.shuffleOptions,
+      });
+    }
   };
 
   const handleDuplicateQuiz = async (quiz: Quiz) => {
@@ -254,6 +281,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
         }}
         onLaunchSmartboard={onLaunchSmartboard}
         onPrintWorksheet={onPrintWorksheet}
+        onStartQuiz={handleStartQuizFromModal}
         onDuplicateQuiz={handleDuplicateQuiz}
         onDeleteQuiz={async (q) => {
           await DataManager.deleteCustomQuiz(q.id);
@@ -645,13 +673,13 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                       onClick={(e) => {
                         e.stopPropagation();
                         playClick();
-                        onLaunchSmartboard(quiz);
+                        setQuizToPlay(quiz);
                       }}
-                      className="w-full py-2.5 px-3 rounded-xl font-bold text-xs sm:text-sm text-white bg-indigo-600 hover:bg-indigo-700 shadow-xs flex items-center justify-center gap-2 min-h-[44px] btn-press transition-all"
-                      title="Buka Kuis di Smartboard / TV Interaktif (Mode IFP)"
+                      className="w-full py-2.5 px-3.5 rounded-xl font-black text-xs sm:text-sm text-white bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 hover:from-blue-700 hover:to-indigo-700 shadow-sm flex items-center justify-center gap-2 min-h-[44px] btn-press transition-all tracking-wide"
+                      title="Mainkan Kuis Bersama Siswa (Buka Pengaturan Sesi Bermain)"
                     >
-                      <Tv className="w-4 h-4" />
-                      <span>Mode IFP</span>
+                      <Play className="w-4 h-4 fill-white text-white" />
+                      <span>Mainkan Sekarang</span>
                     </button>
 
                     <div className="grid grid-cols-2 gap-2">
@@ -731,6 +759,15 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
           setQuizToDelete(q);
         }}
         canDelete={true}
+        playClick={playClick}
+      />
+
+      {/* Modal Pengaturan Sesi Bermain & Mulai Kuis Siswa */}
+      <PlayQuizModal
+        isOpen={Boolean(quizToPlay)}
+        onClose={() => setQuizToPlay(null)}
+        quiz={quizToPlay}
+        onStartQuiz={handleStartQuizFromModal}
         playClick={playClick}
       />
 

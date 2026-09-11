@@ -10,6 +10,7 @@ import { QuizCreator } from './components/creator/QuizCreator';
 import { StudentLobby } from './components/lobby/StudentLobby';
 import { UnifiedAuthModal, type AuthModalTab } from './components/auth/UnifiedAuthModal';
 import { TeacherDashboard } from './components/teacher/TeacherDashboard';
+import type { PlayQuizSessionOptions } from './components/teacher/PlayQuizModal';
 import { WorksheetPrintView } from './components/print/WorksheetPrintView';
 import { DataManager } from './lib/supabaseClient';
 import { useSoundEffects } from './hooks/useSoundEffects';
@@ -254,6 +255,26 @@ export const App: React.FC = () => {
     saveNavigationState({ screen: 'arena', quiz, replace: false });
   };
 
+  const handleStartQuizWithSettings = (quiz: Quiz, options: PlayQuizSessionOptions) => {
+    const sessionQuiz: Quiz = {
+      ...quiz,
+      defaultGameMode: options.mode,
+      durationPerQuestionSec: options.durationPerQuestionSec,
+      shuffleQuestions: options.shuffleQuestions,
+      shuffleOptions: options.shuffleOptions,
+    };
+    setActiveQuiz(sessionQuiz);
+    setActiveGameMode(options.mode);
+
+    if (options.presentationTarget === 'student-lobby') {
+      setCurrentScreen('student-lobby');
+      saveNavigationState({ screen: 'student-lobby', quiz: sessionQuiz, replace: false });
+    } else {
+      setCurrentScreen('arena');
+      saveNavigationState({ screen: 'arena', quiz: sessionQuiz, replace: false });
+    }
+  };
+
   const handlePrintWorksheet = (quiz: Quiz) => {
     setActiveQuiz(quiz);
     setCurrentScreen('worksheet-print');
@@ -364,7 +385,14 @@ export const App: React.FC = () => {
             setCurrentScreen('arena');
             saveNavigationState({ screen: 'arena', quiz: activeQuiz, replace: false });
           }}
-          onBackToHome={handleGoHome}
+          onBackToHome={() => {
+            if (teacher) {
+              setCurrentScreen('teacher-dashboard');
+              saveNavigationState({ screen: 'teacher-dashboard', replace: false });
+            } else {
+              handleGoHome();
+            }
+          }}
           isDark={isDark}
           onToggleTheme={toggleTheme}
           playClick={playClick}
@@ -405,6 +433,7 @@ export const App: React.FC = () => {
           }}
           onLaunchSmartboard={handleLaunchSmartboard}
           onPrintWorksheet={handlePrintWorksheet}
+          onStartQuiz={handleStartQuizWithSettings}
           isDark={isDark}
           onToggleTheme={toggleTheme}
           playClick={playClick}
@@ -430,7 +459,14 @@ export const App: React.FC = () => {
           quiz={activeQuiz}
           initialMode={activeGameMode}
           onFinishQuiz={handleFinishQuiz}
-          onExit={handleGoHome}
+          onExit={() => {
+            if (teacher) {
+              setCurrentScreen('teacher-dashboard');
+              saveNavigationState({ screen: 'teacher-dashboard', replace: false });
+            } else {
+              handleGoHome();
+            }
+          }}
           isDark={isDark}
           onToggleTheme={toggleTheme}
           isMuted={isMuted}
