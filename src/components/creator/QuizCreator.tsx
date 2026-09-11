@@ -32,6 +32,7 @@ import { ImageSelectorModal } from './ImageSelectorModal';
 import { AiGeneratorStep, clearAiGeneratorDraft } from './AiGeneratorStep';
 import { InfoKuisStep } from './InfoKuisStep';
 import { QuestionTypeDropdown } from './QuestionTypeDropdown';
+import { TrueFalsePresetDropdown } from './TrueFalsePresetDropdown';
 import { ResizableTextarea } from '../common/ResizableTextarea';
 
 interface QuizCreatorProps {
@@ -2621,67 +2622,62 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
 
                 {qType === 'true_false' && (
                   <div className="space-y-3">
-                    <div className="space-y-0.5">
-                      <label className="block text-xs sm:text-sm font-black text-slate-900 dark:text-white">
-                        Pilihan & Kunci Jawaban
-                      </label>
-                      <p className="text-[11px] font-normal text-slate-400 dark:text-slate-500">
-                        {isCustomTrueFalse
-                          ? 'Tentukan dua teks pilihan kustom dan tandai kunci yang benar.'
-                          : 'Pilih preset pasangan di bawah, lalu ketuk salah satu kartu untuk menetapkan kunci benar.'}
-                      </p>
-                    </div>
+                    {/* Header Pilihan & Kunci Jawaban dengan Dropdown Preset Ramping */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                      <div className="space-y-0.5">
+                        <label className="block text-xs sm:text-sm font-black text-slate-900 dark:text-white">
+                          Pilihan & Kunci Jawaban
+                        </label>
+                        <p className="text-[11px] font-normal text-slate-400 dark:text-slate-500">
+                          {isCustomTrueFalse
+                            ? 'Tentukan dua teks pilihan kustom dan tandai kunci yang benar.'
+                            : 'Pilih preset pasangan atau kustom, lalu ketuk salah satu kartu untuk kunci benar.'}
+                        </p>
+                      </div>
 
-                    {/* Bilah Preset Pilihan Cepat & Tombol Kustom */}
-                    <div className="flex flex-wrap items-center gap-1.5 p-2 rounded-2xl bg-slate-50/80 dark:bg-slate-850/60 border border-slate-200/80 dark:border-slate-800">
-                      {[
-                        { label: 'Benar / Salah', opt0: 'Benar', opt1: 'Salah' },
-                        { label: 'Sesuai / Tidak Sesuai', opt0: 'Sesuai', opt1: 'Tidak Sesuai' },
-                        { label: 'Ya / Tidak', opt0: 'Ya', opt1: 'Tidak' },
-                        { label: 'Fakta / Opini', opt0: 'Fakta', opt1: 'Opini' },
-                        { label: 'Setuju / Tidak Setuju', opt0: 'Setuju', opt1: 'Tidak Setuju' },
-                      ].map((preset) => {
-                        const isPresetActive =
-                          !isCustomTrueFalse &&
-                          (qOptions[0] || '').trim().toLowerCase() === preset.opt0.toLowerCase() &&
-                          (qOptions[1] || '').trim().toLowerCase() === preset.opt1.toLowerCase();
-                        return (
+                      {/* Bilah Kontrol Preset Ramping */}
+                      <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+                        <TrueFalsePresetDropdown
+                          currentOptions={qOptions}
+                          isCustom={isCustomTrueFalse}
+                          onSelectPreset={(preset) => {
+                            setIsCustomTrueFalse(false);
+                            setQOptions([preset.opt0, preset.opt1]);
+                          }}
+                          onSelectCustom={() => {
+                            setIsCustomTrueFalse(true);
+                          }}
+                          playClick={playClick}
+                        />
+
+                        {!isCustomTrueFalse ? (
                           <button
-                            key={preset.label}
+                            type="button"
+                            onClick={() => {
+                              playClick();
+                              setIsCustomTrueFalse(true);
+                            }}
+                            className="px-3 py-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 bg-white dark:bg-slate-850 border border-dashed border-slate-300 dark:border-slate-700 hover:border-blue-500 flex items-center gap-1.5 min-h-[44px] transition-all btn-press shadow-2xs"
+                            title="Tulis teks pilihan kustom sendiri"
+                          >
+                            <Edit3 className="w-3.5 h-3.5 shrink-0" />
+                            <span>Kustom</span>
+                          </button>
+                        ) : (
+                          <button
                             type="button"
                             onClick={() => {
                               playClick();
                               setIsCustomTrueFalse(false);
-                              setQOptions([preset.opt0, preset.opt1]);
+                              setQOptions(['Benar', 'Salah']);
                             }}
-                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all btn-press flex items-center gap-1.5 min-h-[44px] ${
-                              isPresetActive
-                                ? 'bg-emerald-600 text-white shadow-xs'
-                                : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-750'
-                            }`}
+                            className="px-3 py-2 rounded-xl text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-900/60 flex items-center gap-1.5 min-h-[44px] transition-all btn-press shadow-2xs"
+                            title="Kembali menggunakan preset standar"
                           >
-                            {isPresetActive && <Check className="w-3.5 h-3.5 text-white shrink-0" />}
-                            <span>{preset.label}</span>
+                            <span>Kembali ke Preset</span>
                           </button>
-                        );
-                      })}
-
-                      {/* Tombol Kustom Teks */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          playClick();
-                          setIsCustomTrueFalse((prev) => !prev);
-                        }}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all btn-press flex items-center gap-1.5 min-h-[44px] ${
-                          isCustomTrueFalse
-                            ? 'bg-blue-600 text-white shadow-xs font-black'
-                            : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-dashed border-slate-300 dark:border-slate-700 hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400'
-                        }`}
-                      >
-                        <Edit3 className="w-3.5 h-3.5 shrink-0" />
-                        <span>Kustom Teks</span>
-                      </button>
+                        )}
+                      </div>
                     </div>
 
                     {/* MODE PRESET: Hanya Tampilkan 2 Tombol Pilihan Interaktif Bersih */}

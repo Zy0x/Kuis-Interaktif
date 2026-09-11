@@ -1,6 +1,26 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.28] - 2026-09-11
+### Redesain Bersih Pemilih Preset Benar / Salah: Dropdown Ramping Terintegrasi Tanpa Tumpukan Tombol Multi-Baris
+
+#### 1. Masalah yang Diselesaikan
+- **Tumpukan Tombol Berserakan (*Button Soup*)**: Sebelumnya 6 tombol pilihan preset (`Benar/Salah`, `Sesuai/Tidak Sesuai`, `Ya/Tidak`, `Fakta/Opini`, `Setuju/Tidak Setuju`, `Kustom Teks`) dibungkus dalam wadah abu-abu tebal yang melipat menjadi 3 baris tidak beraturan pada layar ponsel, memakan ruang vertikal $\sim 130\text{ px}$.
+- **Redundansi Visual**: Terjadi pengulangan visual ganda antara tombol preset di bagian atas dengan dua kartu pilihan jawaban di bagian bawah.
+- **Kepadatan Formulir**: Guru terdistraksi oleh tumpukan tombol sebelum mencapai interaksi inti butir soal.
+
+#### 2. Implementasi & Desain Komponen `TrueFalsePresetDropdown.tsx`
+- **Dropdown Preset Ramping di Baris Judul**:
+  - Menggantikan 6 tombol bertumpuk dengan satu kontrol pemilih preset kustom `[ 🎚️ Benar / Salah ▾ ]` yang elegan dan terpadu.
+  - Membuka menu melayang (*floating popover*) berdesain rapi dengan indikator centang hijau pada preset yang sedang aktif.
+  - Menghemat $\sim 90\text{ px}$ ruang layar vertikal pada perangkat seluler.
+- **Aksi Kustom Teks Terpadu**:
+  - Tombol `[ ✎ Kustom ]` bersanding rapi di samping dropdown; saat diklik, beralih instan menjadi `[ Kembali ke Preset ]` dengan kolom input kustom yang bersih.
+- **Fokus Langsung ke Kartu Jawaban**:
+  - Dua kartu pilihan jawaban (`Benar` & `Salah` atau teks kustom) langsung tampil bersih tepat di bawah judul tanpa terhalang tumpukan tombol perantara.
+- **Presisi Responsif Mobile (Rule 1 & Rule 2)**:
+  - Penempatan popover teruji presisi di dalam batas layar ponsel 375px (`left-0`), dilengkapi target sentuh $\ge 44\times 44\text{ px}$ dan penutupan otomatis saat klik di luar atau tombol `Escape`.
+
 ## [2.3.27] - 2026-09-11
 ### Penataan Hierarki Tipografi Micro-Header Formulir: Penonjolan Teks Utama & Penempatan Vertikal Teks Pendamping Anti-Squish
 
