@@ -1,6 +1,27 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.35] - 2026-09-11
+### Eliminasi Redundansi Header Bank Soal & Penyatuan Tombol Compact Buka/Tutup Pembahasan ke Dalam Card Jumlah Soal (Opsi A)
+
+#### 1. Masalah & Kebutuhan yang Diselesaikan
+- **Redundansi Informasi Tiga Tingkat**: Informasi butir soal sebelumnya diulang hingga tiga kali dalam jarak vertikal yang sangat dekat: (1) Tab navigasi `2. Soal (2)`, (2) Judul seksi `Daftar Butir Soal (2)`, dan (3) Kartu mini stat `Jumlah Soal: 2 Butir Aktif`.
+- **Pemborosan Ruang Vertikal Layar**: Baris judul seksi `Daftar Butir Soal` memakan satu baris penuh tersendiri hanya untuk memuat judul dan tombol `Buka Pembahasan`, mendorong kartu soal pertama ke bawah dan mengurangi fokus visual di layar seluler maupun desktop.
+
+#### 2. Implementasi Desain & Fungsionalitas
+- **Penghapusan Header Seksi Redundan (`QuizCreator.tsx`)**:
+  - Mengeliminasi baris judul `Daftar Butir Soal ({questions.length})` dan subteks pengantarnya. Halaman langsung diawali dengan 3 Mini Stat Cards Dashboard yang padat fungsi.
+- **Penyatuan Tombol Aksi Compact pada Card 1**:
+  - Tombol aksi `Buka / Tutup Pembahasan` kini terintegrasi langsung di dalam **Card 1 (Jumlah Soal)** sebagai tombol mini yang ringkas (*compact action button*).
+  - Teks tombol beradaptasi secara cerdas antar-resolusi: menampilkan teks lengkap `Buka Pembahasan` / `Tutup Pembahasan` pada desktop, dan teks ringkas `Buka Bahas` / `Tutup Bahas` pada layar mobile.
+  - Ketika pembahasan dibuka, status `Kunci Terbuka 💡` muncul di sudut kanan atas Card 1, harmonis dengan status `Pas 100 🎯` pada Card 2.
+- **Konsistensi Visual & Ergonomi Antar-Kartu (Rule 1 & Rule 2)**:
+  - Ketiga kartu mini stat kini memiliki peran dan aksi yang seimbang:
+    1. **Card 1**: Menampilkan jumlah butir + tombol aksi compact `[ 👁️ Buka Pembahasan ]`.
+    2. **Card 2**: Menampilkan total bobot poin + tombol aksi compact `[ ⚖️ Bagi Rata 100p ]` (jika belum 100).
+    3. **Card 3**: Menampilkan estimasi durasi waktu pengerjaan kuis.
+  - Menghasilkan ruang pandang yang lebih lega, modern, dan bebas distraksi.
+
 ## [2.3.34] - 2026-09-11
 ### Penambahan 3 Tools Cepat pada Floating Action Button (FAB) Speed Dial Overlay: Pratinjau Kuis, Racik Soal AI, dan Tambah Soal
 
