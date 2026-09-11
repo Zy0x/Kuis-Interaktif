@@ -44,6 +44,8 @@ interface InfoKuisStepProps {
   shuffleOptions: boolean;
   setShuffleOptions: (v: boolean) => void;
   questionsCount: number;
+  customDurationCount?: number;
+  onResetAllCustomDuration?: () => void;
   isAiMode: boolean;
   onNext: () => void;
   onBack: () => void;
@@ -76,6 +78,8 @@ export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
   shuffleOptions,
   setShuffleOptions,
   questionsCount,
+  customDurationCount,
+  onResetAllCustomDuration,
   isAiMode,
   onNext,
   onBack,
@@ -339,7 +343,7 @@ export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
             {/* Durasi Waktu Menjawab */}
             <div>
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                Waktu Menjawab Per Soal
+                Waktu Menjawab Per Soal (Waktu Standar)
               </label>
               <div className="flex items-center gap-1.5">
                 {[15, 20, 30, 45, 60].map((dur) => (
@@ -360,6 +364,26 @@ export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
                   </button>
                 ))}
               </div>
+
+              {/* Status Soal Waktu Khusus & Opsi Sinkronisasi */}
+              {Boolean(customDurationCount && customDurationCount > 0) && (
+                <div className="mt-2.5 p-3 rounded-2xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/40 flex flex-col xs:flex-row xs:items-center justify-between gap-2 text-xs">
+                  <div className="text-slate-600 dark:text-slate-300">
+                    <span className="font-bold text-blue-600 dark:text-blue-400">💡 Info Waktu: </span>
+                    <span>{questionsCount - (customDurationCount || 0)} soal standar, {customDurationCount} soal memiliki waktu khusus.</span>
+                  </div>
+                  {onResetAllCustomDuration && (
+                    <button
+                      type="button"
+                      onClick={onResetAllCustomDuration}
+                      className="px-3 py-1.5 rounded-xl font-bold text-xs text-blue-700 dark:text-blue-300 bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/40 transition-colors shrink-0 self-start xs:self-auto shadow-2xs btn-press"
+                      title="Samakan seluruh durasi butir soal mengikuti waktu standar kuis"
+                    >
+                      Terapkan ke Semua ({customDurationCount} Soal)
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Gelar Hadiah Kuis */}

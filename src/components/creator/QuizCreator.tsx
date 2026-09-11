@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import type { Quiz, QuizQuestion, Subject, QuestionType, GameMode, EducationLevel } from '../../types/quiz';
 import { useBackHandler } from '../../lib/navigationHistory';
 import { ThemeToggle } from '../common/ThemeToggle';
@@ -23,7 +23,8 @@ import {
   AlertCircle,
   Check,
   CheckCircle2,
-  Clock
+  Clock,
+  Scale
 } from 'lucide-react';
 import { AiQuestionModal } from './AiQuestionModal';
 import { ImageSelectorModal } from './ImageSelectorModal';
@@ -225,6 +226,53 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   const [showFloatingActions, setShowFloatingActions] = useState(true);
   const [isSpeedDialOpen, setIsSpeedDialOpen] = useState(false);
   const [showRacikUlangConfirm, setShowRacikUlangConfirm] = useState(false);
+
+  // Akumulasi Bobot Poin & Status Timer
+  const totalQuizPoints = useMemo(() => {
+    return questions.reduce((sum, q) => sum + (q.points || 10), 0);
+  }, [questions]);
+
+  const customDurationQuestionsCount = useMemo(() => {
+    return questions.filter((q) => Boolean(q.customDurationSec && q.customDurationSec > 0)).length;
+  }, [questions]);
+
+  // Proyeksi akumulasi total poin saat mengedit butir soal aktif
+  const otherQuestionsPoints = useMemo(() => {
+    return questions
+      .filter((q) => q.id !== editingQuestionId)
+      .reduce((sum, q) => sum + (q.points || 10), 0);
+  }, [questions, editingQuestionId]);
+
+  const projectedTotalPoints = otherQuestionsPoints + (Number(qPoints) || 0);
+
+  // Aksi Bagi Rata 100 Poin Presisi
+  const handleDistribute100Points = () => {
+    playClick();
+    if (questions.length === 0) {
+      showToast('⚠️ Belum ada butir soal untuk dibagi rata.');
+      return;
+    }
+    const n = questions.length;
+    const base = Math.floor(100 / n);
+    const remainder = 100 % n;
+    const updated = questions.map((q, idx) => ({
+      ...q,
+      points: idx < remainder ? base + 1 : base,
+    }));
+    setQuestions(updated);
+    showToast(`⚖️ Berhasil membagi rata 100 poin untuk ${n} butir soal!`);
+  };
+
+  // Aksi Sinkronisasi Seluruh Soal Mengikuti Waktu Standar Kuis
+  const handleResetAllCustomDuration = () => {
+    playClick();
+    const updated = questions.map((q) => ({
+      ...q,
+      customDurationSec: undefined,
+    }));
+    setQuestions(updated);
+    showToast(`⏱️ Seluruh soal kini mengikuti waktu standar kuis (${durationPerQuestionSec} detik).`);
+  };
 
   // Monitor scroll untuk Smart Floating Action FAB:
   // Selalu tampil untuk menambah soal instan dan otomatis sembunyi saat mendekati dasar halaman agar tidak menutupi tombol navigasi
@@ -1570,6 +1618,8 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                 shuffleOptions={shuffleOptions}
                 setShuffleOptions={setShuffleOptions}
                 questionsCount={questions.length}
+                customDurationCount={customDurationQuestionsCount}
+                onResetAllCustomDuration={handleResetAllCustomDuration}
                 isAiMode={true}
                 onNext={() => setCurrentStep(3)}
                 onBack={() => setCurrentStep(1)}
@@ -1611,6 +1661,8 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                 shuffleOptions={shuffleOptions}
                 setShuffleOptions={setShuffleOptions}
                 questionsCount={questions.length}
+                customDurationCount={customDurationQuestionsCount}
+                onResetAllCustomDuration={handleResetAllCustomDuration}
                 isAiMode={false}
                 onNext={() => setCurrentStep(2)}
                 onBack={onBack}
@@ -1767,30 +1819,60 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
         {!isAddingQuestion ? (
           /* ================= 1-KOLOM DAFTAR BANK SOAL (KE BAWAH RESPONSIV) ================= */
           <div className="space-y-4 sm:space-y-5 pb-6 sm:pb-8">
-            {/* Slim Control Bar Bank Soal (Compact, Informatif & Ramping - Tombol Tambah Mengandalkan FAB Melayang) */}
-            <div className="flex items-center justify-between gap-2.5 sm:gap-4 px-3.5 sm:px-5 py-2.5 sm:py-3 bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
-              {/* Sisi Kiri: Status & Counter Butir Soal Informatif */}
-              <div className="flex items-center gap-2 min-w-0">
+            {/* Slim Control Bar Bank Soal (Compact, Informatif & Ramping) */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-4 px-3.5 sm:px-5 py-2.5 sm:py-3 bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
+              {/* Sisi Kiri: Status & Counter Butir Soal + Akumulasi Bobot Poin Real-Time */}
+              <div className="flex items-center flex-wrap gap-2 min-w-0">
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-100 dark:border-blue-900/40 shrink-0">
                   <Layers className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                   <span>{questions.length} Butir Soal</span>
                 </span>
-                <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate hidden sm:inline">
-                  Periksa butir pertanyaan, opsi jawaban, dan skor nilai
-                </span>
+
+                {questions.length > 0 && (
+                  totalQuizPoints === 100 ? (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 shrink-0" title="Total bobot kuis tepat 100 poin (Skala Rapor Standar)">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                      <span>Total: 100 Poin (Pas 🎯)</span>
+                    </span>
+                  ) : totalQuizPoints < 100 ? (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 shrink-0" title={`Kurang ${100 - totalQuizPoints} poin dari target standar 100 poin (nilai rapor tetap dinormalkan otomatis)`}>
+                      <AlertCircle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                      <span>Total: {totalQuizPoints}p (Kurang {100 - totalQuizPoints}p)</span>
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60 shrink-0" title="Skala dinamis. Nilai rapor siswa tetap otomatis dinormalkan ke skala 100">
+                      <Star className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                      <span>Total: {totalQuizPoints}p (Dinamis)</span>
+                    </span>
+                  )
+                )}
               </div>
 
-              {/* Sisi Kanan: Toggle Buka/Tutup Semua Pembahasan Edukatif */}
-              {questions.length > 0 && (
-                <button
-                  type="button"
-                  onClick={handleToggleAllExplanations}
-                  className="text-[11px] sm:text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 bg-slate-50 hover:bg-blue-50/80 dark:bg-slate-800/70 dark:hover:bg-blue-950/50 px-3 py-1.5 rounded-xl border border-slate-200/80 dark:border-slate-700/60 hover:border-blue-200 dark:hover:border-blue-800/60 transition-colors inline-flex items-center gap-1.5 min-h-[38px] shrink-0 btn-press"
-                  title="Buka atau sembunyikan semua pembahasan soal sekaligus"
-                >
-                  <span>💡 {showAllExplanations ? 'Tutup Semua Pembahasan' : 'Buka Semua Pembahasan'}</span>
-                </button>
-              )}
+              {/* Sisi Kanan: Aksi Cerdas (Bagi Rata 100 Poin & Toggle Pembahasan) */}
+              <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                {questions.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleDistribute100Points}
+                    className="text-[11px] sm:text-xs font-bold text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 bg-slate-50 hover:bg-blue-50/80 dark:bg-slate-800/70 dark:hover:bg-blue-950/50 px-2.5 sm:px-3 py-1.5 rounded-xl border border-slate-200/80 dark:border-slate-700/60 hover:border-blue-200 dark:hover:border-blue-800/60 transition-colors inline-flex items-center gap-1.5 min-h-[38px] shrink-0 btn-press"
+                    title="Bagi rata bobot poin ke seluruh butir soal agar pas 100 poin"
+                  >
+                    <Scale className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                    <span>Bagi Rata 100p</span>
+                  </button>
+                )}
+
+                {questions.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleToggleAllExplanations}
+                    className="text-[11px] sm:text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 bg-slate-50 hover:bg-blue-50/80 dark:bg-slate-800/70 dark:hover:bg-blue-950/50 px-2.5 sm:px-3 py-1.5 rounded-xl border border-slate-200/80 dark:border-slate-700/60 hover:border-blue-200 dark:hover:border-blue-800/60 transition-colors inline-flex items-center gap-1.5 min-h-[38px] shrink-0 btn-press"
+                    title="Buka atau sembunyikan semua pembahasan soal sekaligus"
+                  >
+                    <span>💡 {showAllExplanations ? 'Tutup Pembahasan' : 'Buka Pembahasan'}</span>
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Questions List (Mengalir ke bawah alami dan lega) */}
@@ -1840,12 +1922,16 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                         </div>
 
                         <div className="flex items-center gap-1.5 shrink-0">
-                          <span className="text-[11px] font-bold px-2 py-0.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/50 inline-flex items-center gap-1">
+                          <span className="text-[11px] font-bold px-2 py-0.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/50 inline-flex items-center gap-1" title="Bobot nilai butir soal">
                             <Star className="w-3 h-3 text-amber-500 fill-amber-400" /> {q.points || 10}p
                           </span>
-                          {q.customDurationSec && (
-                            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/50 inline-flex items-center gap-1">
-                              <Clock className="w-3 h-3" /> {q.customDurationSec}s
+                          {q.customDurationSec ? (
+                            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/50 inline-flex items-center gap-1" title="Durasi kustom khusus butir soal ini">
+                              <Clock className="w-3 h-3" /> {q.customDurationSec}s <span className="text-[9px] opacity-75">(Khusus)</span>
+                            </span>
+                          ) : (
+                            <span className="text-[11px] font-medium px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700/50 inline-flex items-center gap-1" title="Mengikuti durasi standar kuis">
+                              <Clock className="w-3 h-3 opacity-60" /> {durationPerQuestionSec}s <span className="text-[9px] opacity-75">(Kuis)</span>
                             </span>
                           )}
                           {q.imageUrl && (
@@ -2111,8 +2197,8 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
           <form onSubmit={(e) => handleSaveQuestion(e, 'finish')} className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-7 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4 sm:space-y-5 animate-fade-in">
             {/* Tipe Soal, Bobot Poin, & Waktu Jawab (Proporsional & Rapi) */}
             <div className="grid grid-cols-1 sm:grid-cols-12 gap-3.5 items-start">
-              {/* Tipe Soal: 6 kolom pada desktop */}
-              <div className="sm:col-span-6">
+              {/* Tipe Soal: 4 kolom pada desktop */}
+              <div className="sm:col-span-4">
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                   Tipe Soal
                 </label>
@@ -2128,11 +2214,25 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                 </select>
               </div>
 
-              {/* Bobot Poin: 3 kolom pada desktop */}
-              <div className="sm:col-span-3">
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Bobot Poin
-                </label>
+              {/* Bobot Poin: 4 kolom pada desktop */}
+              <div className="sm:col-span-4">
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Bobot Poin
+                  </label>
+                  {questions.length > 0 && (
+                    <span 
+                      className={`text-[10px] font-bold ${
+                        projectedTotalPoints === 100 
+                          ? 'text-emerald-600 dark:text-emerald-400' 
+                          : 'text-slate-500 dark:text-slate-400'
+                      }`}
+                      title="Proyeksi total bobot kuis jika butir soal ini disimpan"
+                    >
+                      Total: {projectedTotalPoints}p {projectedTotalPoints === 100 ? '🎯' : ''}
+                    </span>
+                  )}
+                </div>
                 <div className="relative">
                   <input
                     type="number"
@@ -2165,54 +2265,93 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                 </div>
               </div>
 
-              {/* Waktu Jawab Kustom: 3 kolom pada desktop */}
-              <div className="sm:col-span-3">
+              {/* Waktu Jawab Kustom: 4 kolom pada desktop */}
+              <div className="sm:col-span-4">
                 <div className="flex items-center justify-between mb-1">
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
                     Waktu Jawab
                   </label>
-                  {qCustomDurationSec && (
+                  {/* Mode Selector Pill: Auto vs Khusus */}
+                  <div className="inline-flex p-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 text-[10px] font-bold">
                     <button
                       type="button"
                       onClick={() => setQCustomDurationSec('')}
-                      className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 hover:underline"
-                      title="Kembali ke durasi default kuis"
-                    >
-                      Reset
-                    </button>
-                  )}
-                </div>
-                <div className="relative">
-                  <input
-                    type="number"
-                    min="5"
-                    max="300"
-                    value={qCustomDurationSec}
-                    onChange={(e) => setQCustomDurationSec(e.target.value)}
-                    placeholder={`${durationPerQuestionSec}s (Default)`}
-                    className="w-full pl-3 pr-12 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none min-h-[44px]"
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none">
-                    Detik
-                  </span>
-                </div>
-                {/* Preset Cepat Waktu */}
-                <div className="flex items-center gap-1 mt-1.5">
-                  {[15, 30, 45, 60].map((sec) => (
-                    <button
-                      key={sec}
-                      type="button"
-                      onClick={() => setQCustomDurationSec(String(sec))}
-                      className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-colors ${
-                        qCustomDurationSec === String(sec)
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                      className={`px-2 py-0.5 rounded-md transition-all ${
+                        !qCustomDurationSec
+                          ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-2xs font-black'
+                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
                       }`}
+                      title={`Otomatis mengikuti durasi standar kuis (${durationPerQuestionSec} detik)`}
                     >
-                      {sec}s
+                      Auto
                     </button>
-                  ))}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!qCustomDurationSec) setQCustomDurationSec(String(durationPerQuestionSec));
+                      }}
+                      className={`px-2 py-0.5 rounded-md transition-all ${
+                        qCustomDurationSec
+                          ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-2xs font-black'
+                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                      }`}
+                      title="Atur waktu khusus terkunci untuk butir soal ini saja"
+                    >
+                      Khusus
+                    </button>
+                  </div>
                 </div>
+
+                {!qCustomDurationSec ? (
+                  /* Mode Auto: Mengikuti Durasi Standar Kuis */
+                  <div>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        disabled
+                        value={`${durationPerQuestionSec}s (Ikuti Kuis)`}
+                        className="w-full pl-3 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100/70 dark:bg-slate-800/60 text-xs font-bold text-slate-500 dark:text-slate-400 cursor-not-allowed min-h-[44px]"
+                      />
+                    </div>
+                    <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium mt-1 truncate">
+                      Sinkron otomatis dengan Pengaturan Kuis ({durationPerQuestionSec}s).
+                    </p>
+                  </div>
+                ) : (
+                  /* Mode Khusus: Durasi Terkunci Mandiri */
+                  <div>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min="5"
+                        max="300"
+                        value={qCustomDurationSec}
+                        onChange={(e) => setQCustomDurationSec(e.target.value)}
+                        className="w-full pl-3 pr-12 py-2.5 rounded-xl border border-blue-300 dark:border-blue-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none min-h-[44px]"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none">
+                        Detik
+                      </span>
+                    </div>
+                    {/* Preset Cepat Waktu */}
+                    <div className="flex items-center gap-1 mt-1.5">
+                      {[15, 30, 45, 60].map((sec) => (
+                        <button
+                          key={sec}
+                          type="button"
+                          onClick={() => setQCustomDurationSec(String(sec))}
+                          className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-colors ${
+                            qCustomDurationSec === String(sec)
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                          }`}
+                        >
+                          {sec}s
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 

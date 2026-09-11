@@ -1,6 +1,34 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.19] - 2026-09-11
+### Sistem Bobot Poin Terpadu & Arsitektur Sinkronisasi Durasi Waktu Transparan
+
+#### 1. Masalah yang Diselesaikan
+- **Ketidakjelasan Akumulasi Bobot Poin**: Ketiadaan indikator akumulasi skor membuat guru kesulitan mengetahui apakah seluruh butir soal sudah mencapai bobot standar 100 poin atau belum.
+- **Kekhawatiran Konflik & Override Durasi Waktu**: Tidak adanya pembeda status antara waktu umum kuis (*global timer*) dan waktu khusus per soal menimbulkan keraguan apakah perubahan durasi kuis akan menimpa (*override*) soal yang diatur khusus secara tidak sengaja.
+- **Ketiadaan Otomatisasi Pembagian Poin**: Guru harus menghitung dan membagi bobot poin per butir soal satu per satu secara manual.
+
+#### 2. Implementasi & Desain Clean (`QuizCreator.tsx` & `InfoKuisStep.tsx`)
+- **Live Counter Akumulasi Bobot Poin Real-Time**:
+  - Tampilan indikator status cerdas di bilah kontrol Bank Soal:
+    - Hijau: `Total: 100 Poin (Pas 🎯)` saat tepat 100 poin.
+    - Amber: `Total: Xp (Kurang Yp)` saat di bawah 100 poin.
+    - Indigo: `Total: Xp (Dinamis)` saat melebihi 100 poin.
+  - Proyeksi akumulasi langsung di atas kolom input Bobot Poin formulir editor saat guru sedang mengubah nilai soal aktif.
+- **Fitur Cerdas `[⚖️ Bagi Rata 100p]`**:
+  - Tombol satu-ketukan di bilah kontrol Bank Soal yang membagi 100 poin secara proporsional dan presisi matematis ke seluruh butir soal tanpa menyisakan desimal.
+- **Segmented Control Mode Waktu di Editor Soal**:
+  - Pilihan mode tegas tanpa ambiguitas: **`[Auto (Xs)]`** vs **`[Khusus]`**.
+  - **Mode Auto**: Input durasi terkunci dengan label rapi `Xs (Ikuti Kuis)` dan keterangan sinkronisasi otomatis.
+  - **Mode Khusus**: Membuka kolom input detik mandiri dengan tombol preset `[15s] [30s] [45s] [60s]` yang terkunci eksklusif untuk butir soal tersebut.
+- **Pembeda Visual Status Timer di Kartu Bank Soal**:
+  - Badge waktu kustom: `⏱️ Xs (Khusus)` berlatar biru tegas.
+  - Badge waktu standar: `⏱️ Xs (Kuis)` berlatar netral halus.
+- **Panel Sinkronisasi Cerdas di Pengaturan Kuis (`InfoKuisStep.tsx`)**:
+  - Mendeteksi dan menampilkan jumlah soal standar vs soal waktu khusus.
+  - Menyediakan tombol aksi `[Terapkan ke Semua]` untuk menyelaraskan seluruh soal jika guru ingin menyeragamkan waktu secara menyeluruh.
+
 ## [2.3.18] - 2026-09-11
 ### Arsitektur Two-Tier Sticky Header & Sub-Panel Ramping Navigasi Butir Soal
 
