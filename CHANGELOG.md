@@ -1,6 +1,23 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.5] - 2026-09-11
+### Implementasi Smart Floating Action Capsule (FAB Modern) pada Studio Bank Soal
+
+#### 1. Masalah yang Diselesaikan
+- **Kehilangan Akses Tombol Tambah Soal saat Menggulir (*Scroll Loss*)**: Ketika guru meninjau daftar butir soal yang panjang (5–20+ butir soal), tombol `+ Tambah Soal` dan `✨ Asisten AI` di header atas tergulir keluar layar (*out of view*). Pengguna terpaksa harus terus menggulir bolak-balik ke paling atas hanya untuk menambah butir soal baru atau memanggil asisten AI.
+
+#### 2. Implementasi Smart Floating Action Capsule (`QuizCreator.tsx`)
+- **Deteksi Scroll Pintar (*Smart Trigger*)**: Memasang listener gulir layar (`scrollY > 180px`) yang secara otomatis memunculkan kapsul melayang hanya saat pengguna telah melewati header kartu Bank Soal. Saat kembali ke paling atas, kapsul melayang menghilang secara anggun (`opacity-0 translate-y-6 scale-95`) untuk mencegah redundansi visual.
+- **Komponen Kapsul Bersih & Anti-AI Slop**:
+  - **Tombol Pintas Kembali ke Atas (`ChevronUp`)**: Memungkinkan pengguna melompat kembali ke header dengan mulus (*smooth scroll to top*).
+  - **Tombol Sekunder Asisten AI (`Sparkles`)**: Tombol indigo lembut untuk memicu generator soal instan tanpa harus mencari tombol di atas.
+  - **Tombol Utama Tambah Soal (`Plus`)**: Tombol biru tegas dengan kontras tinggi untuk langsung membuka editor pembuatan butir soal baru.
+- **Standar Aksesibilitas & Ergonomi (Rule 1 & Rule 2)**:
+  - Seluruh target interaktif memenuhi ukuran sentuh ergonomis minimum `44×44 px`.
+  - Menggunakan posisi *thumb-friendly* di pojok kanan bawah dengan adaptasi safe-area perangkat seluler: `bottom-[calc(1.25rem+env(safe-area-inset-bottom,0px))] sm:bottom-6 right-3 xs:right-4 sm:right-6 lg:right-12 z-40`.
+  - Otomatis tersembunyi saat pengguna sedang membuka formulir editor soal (`isAddingQuestion === true`) sehingga tidak menutupi area pengisian form.
+
 ## [2.3.4] - 2026-09-11
 ### Eliminasi Celah Samping Layar Lebar & Penyelarasan Kontainer Penuh `max-w-[2000px]` dengan Grid Opsi 4-Kolom
 
