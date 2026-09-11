@@ -1,6 +1,36 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.1] - 2026-09-11
+### Redesain Studio Bank Soal: Anti-AI Slop, Pratinjau Opsi & Kunci Jawaban Lengkap, dan Ergonomi Mobile-First
+
+#### 1. Masalah & Temuan Audit Tampilan Sebelumnya
+- **Teks Soal Terpotong (`line-clamp-2`)**: Teks soal dipotong paksa sehingga guru tidak dapat membaca stimulus dan esensi pertanyaan secara utuh tanpa mengklik edit terlebih dahulu.
+- **Opsi Jawaban & Kunci Tidak Terlihat**: Guru tidak dapat melihat pilihan ganda (A, B, C, D), status benar/salah, maupun kunci jawaban langsung dari daftar soal.
+- **Tombol Aksi Sangat Mungil & Rawan Salah Tekan**: 5 tombol ikon mikro (`↑`, `↓`, `Edit`, `Salin`, `Hapus`) berukuran ~22×22 px berjejer rapat di pojok kanan atas kartu, melanggar standar ergonomi sentuh mobile (minimal 44×44 px).
+- **Alur Pengeditan Terputus di Mobile**: Pada layar HP, menekan tombol edit menampilkan formulir di bagian bawah daftar panjang soal, sehingga layar tidak berpindah fokus dan pengguna bingung di mana formulir pengeditan berada.
+- **Tampilan Padat & "AI Slop"**: Kesan tampilan padat dan kaku dengan kontras warna yang kurang berjenjang.
+
+#### 2. Redesain Kartu Soal & Pratinjau Komprehensif (`QuizCreator.tsx`)
+- **Teks Soal Utuh**: Menghapus pembatasan baris (`line-clamp-2`) dengan tipografi yang jernih, lega, dan kontras tinggi (`text-slate-800 dark:text-slate-100`).
+- **Pratinjau Opsi Lengkap Berdasarkan Tipe Soal**:
+  - **Pilihan Ganda**: Menampilkan seluruh opsi (A, B, C, D) dengan badge huruf tegas. Opsi kunci jawaban disorot otomatis dengan palet hijau emerald cerah (`bg-emerald-50 border-emerald-300 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200`) dan lencana centang `✓ (Kunci)`.
+  - **Benar / Salah**: Menampilkan kartu pilihan Benar dan Salah dengan penanda kunci jawaban aktif.
+  - **Isian Singkat**: Menampilkan kunci kata kunci jawaban yang diterima dalam badge hijau berlatar rapi.
+  - **Menjodohkan**: Menampilkan pasangan premis dan target secara berdampingan dengan panah penghubung (`↔`).
+- **Akordeon Pembahasan Interaktif**: Penjelasan materi (`explanation`) disajikan dalam akordeon lipat yang rapi dengan ikon `💡`, plus tombol global *"Buka/Tutup Semua Pembahasan"* di header daftar soal.
+- **Pratinjau Gambar / Stimulus**: Thumbnail gambar ilustrasi soal ditampilkan proporsional di sisi soal tanpa merusak tata letak.
+
+#### 3. Ergonomi Sentuh Mobile-First & Tombol Aksi Nyaman (≥ 44×44 px)
+- **Bar Aksi Bawah Mandiri**: Tombol aksi dipindahkan ke bar bawah setiap kartu soal dengan tata letak yang lega:
+  - Tombol urutan naik/turun (`↑`, `↓`) berukuran presisi `44×44 px` (`w-11 h-11`).
+  - Tombol *"✏️ Edit Soal"* berlabel jelas dengan aksen primer yang mudah dijangkau satu jempol.
+  - Tombol *"📋 Salin"* dan *"🗑️ Hapus"* dengan target sentuh lega dan dialog konfirmasi proteksi penghapusan tidak sengaja.
+- **Master-Detail Flow Khusus Mobile**:
+  - Saat menekan edit soal atau tambah soal baru di perangkat smartphone (`< lg`), tampilan secara cerdas beralih penuh ke fokus Editor Soal dengan tombol navigasi jelas `← Kembali ke Daftar Soal` di bagian atas.
+  - Pada layar tablet dan desktop (`≥ lg`), tata letak berdampingan (side-by-side) tetap dipertahankan untuk produktivitas maksimal.
+- **Floating Bottom Bar Adaptif**: Tombol navigasi langkah wizard otomatis disembunyikan saat sedang fokus mengedit butir soal di HP agar layar bersih dan tidak membingungkan.
+
 ## [2.3.0] - 2026-09-11
 ### Auto-Generate Informasi Dasar & Identitas Kuis Lengkap via AI
 

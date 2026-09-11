@@ -21,7 +21,10 @@ import {
   Star, 
   Loader2,
   ArrowRight,
-  AlertCircle
+  AlertCircle,
+  Check,
+  CheckCircle2,
+  Clock
 } from 'lucide-react';
 import { AiQuestionModal } from './AiQuestionModal';
 import { ImageSelectorModal } from './ImageSelectorModal';
@@ -196,6 +199,24 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   const [qCustomDurationSec, setQCustomDurationSec] = useState<string>(() => draft?.activeQuestionDraft?.qCustomDurationSec ?? '');
   const [isAddingQuestion, setIsAddingQuestion] = useState(() => draft?.activeQuestionDraft?.isAddingQuestion ?? false);
   const [isGeneratingAiImage, setIsGeneratingAiImage] = useState(false);
+  const [expandedExplanations, setExpandedExplanations] = useState<Record<string, boolean>>({});
+  const [showAllExplanations, setShowAllExplanations] = useState(false);
+
+  const toggleExplanation = (id: string) => {
+    playClick();
+    setExpandedExplanations((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const handleToggleAllExplanations = () => {
+    playClick();
+    const nextState = !showAllExplanations;
+    setShowAllExplanations(nextState);
+    const updated: Record<string, boolean> = {};
+    questions.forEach((q) => {
+      updated[q.id] = nextState;
+    });
+    setExpandedExplanations(updated);
+  };
 
   // Persist draft automatically (only if creating new quiz)
   useEffect(() => {
@@ -415,6 +436,10 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
 
   useBackHandler('creator-step-1', 55, () => {
     if (!aiFunnelActive && currentStep === 1) {
+      if (isAiMode && (editingQuestionId || (isAddingQuestion && questions.length > 0))) {
+        handleCancelEdit();
+        return true;
+      }
       if (isAiMode) {
         setAiFunnelActive(true);
         return true;
@@ -626,6 +651,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
 
   const handleDeleteQuestion = (id: string) => {
     playClick();
+    if (!window.confirm('Hapus butir soal ini dari bank soal?')) return;
     setQuestions((prev) => prev.filter((q) => q.id !== id));
     if (editingQuestionId === id) {
       handleCancelEdit();
@@ -1312,123 +1338,316 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
       <div className="w-full max-w-6xl 2xl:max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 space-y-5 animate-fade-in">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 2xl:gap-8 items-start">
           
-          {/* Question Bank List */}
-          <div className="lg:col-span-5 2xl:col-span-4 bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
-            <div className="flex items-center justify-between gap-2 flex-wrap">
-              <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                <Layers className="w-4 h-4 text-blue-600 dark:text-blue-400" /> Bank Soal ({questions.length})
-              </h3>
-              <div className="flex items-center gap-1.5">
+          {/* Question Bank List Column */}
+          <div className={`lg:col-span-6 2xl:col-span-6 bg-white dark:bg-slate-900 rounded-3xl p-4 sm:p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4 ${
+            isAddingQuestion ? 'hidden lg:block' : 'block'
+          }`}>
+            {/* Header Bank Soal */}
+            <div className="flex items-center justify-between gap-2 pb-3 border-b border-slate-100 dark:border-slate-800 flex-wrap">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold shadow-xs">
+                  <Layers className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
+                    <span>Bank Soal</span>
+                    <span className="px-2 py-0.5 rounded-full text-xs bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-bold">
+                      {questions.length} Butir
+                    </span>
+                  </h3>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                    Periksa pertanyaan, opsi pilihan, dan kunci jawaban
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => {
                     playClick();
                     setIsAiModalOpen(true);
                   }}
-                  className="px-2.5 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 font-bold text-xs flex items-center gap-1.5 min-h-[36px] transition-colors border border-indigo-200/60 dark:border-indigo-800/60"
+                  className="px-3 py-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 font-bold text-xs flex items-center gap-1.5 min-h-[44px] transition-colors border border-indigo-200/60 dark:border-indigo-800/60 active:scale-95"
                   title="Asisten AI & Tambah Soal Cepat"
                 >
-                  <Sparkles className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" /> Asisten AI
+                  <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                  <span className="hidden xs:inline">Asisten AI</span>
                 </button>
-                {(!isAddingQuestion || editingQuestionId) && (
-                  <button
-                    type="button"
-                    onClick={handleOpenNewQuestion}
-                    className="px-2.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1 min-h-[36px] transition-colors shadow-xs"
-                  >
-                    <Plus className="w-3.5 h-3.5" /> Tambah Soal
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={handleOpenNewQuestion}
+                  className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 min-h-[44px] transition-colors shadow-xs active:scale-95"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Tambah Soal</span>
+                </button>
               </div>
             </div>
 
+            {/* Quick toggle all explanations if questions exist */}
+            {questions.length > 0 && (
+              <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 px-1">
+                <span>Menampilkan {questions.length} butir soal</span>
+                <button
+                  type="button"
+                  onClick={handleToggleAllExplanations}
+                  className="text-blue-600 dark:text-blue-400 font-bold hover:underline inline-flex items-center gap-1 min-h-[36px]"
+                >
+                  <span>💡 {showAllExplanations ? 'Tutup Semua Pembahasan' : 'Buka Semua Pembahasan'}</span>
+                </button>
+              </div>
+            )}
+
             {/* Questions List */}
-            <div className="space-y-2 max-h-[calc(100vh-280px)] overflow-y-auto pr-1">
+            <div className="space-y-4 max-h-[calc(100vh-280px)] overflow-y-auto pr-1">
               {questions.length === 0 ? (
                 <div className="text-center py-12 px-4 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 text-slate-400 space-y-3">
-                  <p className="text-xs">Belum ada butir soal di kuis ini.</p>
+                  <p className="text-sm font-semibold text-slate-600 dark:text-slate-400">Belum ada butir soal di kuis ini.</p>
                   <button
                     type="button"
                     onClick={handleOpenNewQuestion}
-                    className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1"
+                    className="px-4 py-2.5 rounded-xl bg-blue-600 text-white text-xs font-bold inline-flex items-center gap-2 min-h-[44px] shadow-sm"
                   >
-                    <Plus className="w-3.5 h-3.5" /> Buat Butir Soal Pertama
+                    <Plus className="w-4 h-4" /> Buat Butir Soal Pertama
                   </button>
                 </div>
               ) : (
                 questions.map((q, idx) => {
                   const isEditingThis = editingQuestionId === q.id;
+                  const isExplanationOpen = Boolean(expandedExplanations[q.id]);
                   return (
                     <div
                       key={q.id}
-                      className={`p-3.5 rounded-2xl border transition-all ${
+                      id={`question-card-${q.id}`}
+                      className={`p-4 sm:p-5 rounded-2xl sm:rounded-3xl border transition-all ${
                         isEditingThis
-                          ? 'border-blue-500 bg-blue-50/40 dark:bg-blue-950/30 ring-2 ring-blue-400/20 shadow-xs'
+                          ? 'border-blue-500 bg-blue-50/40 dark:bg-blue-950/30 ring-2 ring-blue-500/30 shadow-md'
                           : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 hover:border-slate-300 dark:hover:border-slate-700 shadow-xs'
                       }`}
                     >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-start gap-2 min-w-0 flex-1">
-                          <span className="w-6 h-6 rounded-lg bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 font-extrabold text-xs flex items-center justify-center flex-shrink-0">
-                            {idx + 1}
+                      {/* 1. Header Kartu: Nomor, Tipe, Poin, Durasi & Indikator */}
+                      <div className="flex items-center justify-between gap-2 pb-2.5 border-b border-slate-100 dark:border-slate-800/80 flex-wrap">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="px-2.5 py-1 rounded-xl bg-blue-600 text-white font-black text-xs shadow-xs">
+                            Soal #{idx + 1}
                           </span>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-1 mb-1 flex-wrap">
-                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 flex items-center gap-0.5">
-                                <Star className="w-2.5 h-2.5 text-amber-500" /> {q.points || 10}p
-                              </span>
-                              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-                                {q.type === 'multiple_choice' ? 'Pilihan Ganda' : q.type === 'true_false' ? 'Benar / Salah' : q.type === 'short_answer' ? 'Isian' : q.type === 'matching_pairs' ? 'Pasangan' : 'Tebak Gambar'}
-                              </span>
-                            </div>
-                            <p className="text-xs font-bold text-slate-900 dark:text-white line-clamp-2 leading-snug">
-                              {q.text}
-                            </p>
-                          </div>
+                          <span className="text-[11px] font-bold px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                            {q.type === 'multiple_choice'
+                              ? 'Pilihan Ganda'
+                              : q.type === 'true_false'
+                              ? 'Benar / Salah'
+                              : q.type === 'short_answer'
+                              ? 'Isian Singkat'
+                              : q.type === 'matching_pairs'
+                              ? 'Menjodohkan'
+                              : 'Tebak Gambar'}
+                          </span>
+                          <span className="text-[11px] font-bold px-2 py-0.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/50 inline-flex items-center gap-1">
+                            <Star className="w-3 h-3 text-amber-500 fill-amber-400" /> {q.points || 10} Poin
+                          </span>
+                          {q.customDurationSec && (
+                            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/50 inline-flex items-center gap-1">
+                              <Clock className="w-3 h-3" /> {q.customDurationSec}d
+                            </span>
+                          )}
                         </div>
 
-                        <div className="flex items-center gap-1 flex-shrink-0">
+                        {q.imageUrl && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border border-purple-200/60 dark:border-purple-800/50 inline-flex items-center gap-1 shrink-0">
+                            <ImageIcon className="w-3 h-3" /> Bergambar
+                          </span>
+                        )}
+                      </div>
+
+                      {/* 2. Teks Pertanyaan Soal (Utuh, Keterbacaan Tinggi, Bebas Truncate Kasar) */}
+                      <div className="pt-3 pb-2">
+                        <p className="text-sm sm:text-base font-bold text-slate-900 dark:text-white leading-relaxed select-text">
+                          {q.text}
+                        </p>
+                      </div>
+
+                      {/* 2b. Pratinjau Ilustrasi Gambar jika ada */}
+                      {q.imageUrl && (
+                        <div className="my-2 flex items-center gap-3 p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60">
+                          <img
+                            src={q.imageUrl}
+                            alt={q.imageCaption || 'Ilustrasi Soal'}
+                            className="w-14 h-14 sm:w-16 sm:h-16 object-contain rounded-xl bg-white dark:bg-slate-900 p-1 border border-slate-200 dark:border-slate-700 shrink-0"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
+                              {q.imageCaption || 'Ilustrasi Pendukung'}
+                            </p>
+                            <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                              Gambar ini akan ditampilkan kepada siswa saat menjawab
+                            </span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 3. Pratinjau Pilihan Jawaban & Kunci Benar */}
+                      <div className="mt-2 space-y-1.5">
+                        {q.type === 'multiple_choice' && (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {q.options.map((opt, oIdx) => {
+                              const isCorrect = q.correctIndex === oIdx;
+                              const letter = String.fromCharCode(65 + oIdx);
+                              return (
+                                <div
+                                  key={oIdx}
+                                  className={`px-3 py-2 rounded-xl text-xs flex items-start gap-2 border transition-all ${
+                                    isCorrect
+                                      ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700/80 text-emerald-900 dark:text-emerald-200 font-bold shadow-xs'
+                                      : 'bg-slate-50/70 dark:bg-slate-800/40 border-slate-200/80 dark:border-slate-700/60 text-slate-700 dark:text-slate-300'
+                                  }`}
+                                >
+                                  <span
+                                    className={`w-5 h-5 rounded-md flex items-center justify-center font-bold text-[11px] shrink-0 ${
+                                      isCorrect
+                                        ? 'bg-emerald-600 text-white'
+                                        : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
+                                    }`}
+                                  >
+                                    {isCorrect ? '✓' : letter}
+                                  </span>
+                                  <span className="leading-snug break-words flex-1">
+                                    {opt}
+                                    {isCorrect && (
+                                      <span className="ml-1.5 text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold uppercase tracking-wide">
+                                        (Kunci)
+                                      </span>
+                                    )}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        {q.type === 'true_false' && (
+                          <div className="grid grid-cols-2 gap-2">
+                            {['Benar', 'Salah'].map((label, oIdx) => {
+                              const isCorrect = q.correctIndex === oIdx;
+                              return (
+                                <div
+                                  key={label}
+                                  className={`px-3 py-2 rounded-xl text-xs flex items-center justify-center gap-2 border font-bold ${
+                                    isCorrect
+                                      ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700 text-emerald-900 dark:text-emerald-200'
+                                      : 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 opacity-60'
+                                  }`}
+                                >
+                                  {isCorrect && <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />}
+                                  <span>{label}</span>
+                                  {isCorrect && <span className="text-[10px] text-emerald-600 font-normal">(Kunci)</span>}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        {q.type === 'short_answer' && (
+                          <div className="p-2.5 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 text-xs">
+                            <div className="text-[11px] font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5 mb-1">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Kunci Jawaban Diterima:
+                            </div>
+                            <p className="font-semibold text-emerald-900 dark:text-emerald-200 pl-5">
+                              {q.acceptableAnswers && q.acceptableAnswers.length > 0
+                                ? q.acceptableAnswers.join(', ')
+                                : q.options[0] || '-'}
+                            </p>
+                          </div>
+                        )}
+
+                        {q.type === 'matching_pairs' && q.matchingPairs && (
+                          <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 space-y-1.5 text-xs">
+                            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">
+                              Pasangan Kartu Menjodohkan:
+                            </span>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                              {q.matchingPairs.map((pair, pIdx) => (
+                                <div key={pIdx} className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/60 text-[11px]">
+                                  <span className="font-semibold text-slate-800 dark:text-slate-200">{pair.left}</span>
+                                  <span className="text-blue-500 font-bold">➔</span>
+                                  <span className="font-bold text-emerald-700 dark:text-emerald-300">{pair.right}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* 4. Pembahasan Edukatif (Buka / Tutup Accordion) */}
+                      {q.explanation && (
+                        <div className="mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800">
+                          <button
+                            type="button"
+                            onClick={() => toggleExplanation(q.id)}
+                            className="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 min-h-[36px] py-1"
+                          >
+                            <span>💡 {isExplanationOpen ? 'Sembunyikan Pembahasan' : 'Lihat Pembahasan Edukatif'}</span>
+                            {isExplanationOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                          </button>
+                          {isExplanationOpen && (
+                            <div className="mt-1.5 p-3 rounded-xl bg-blue-50/50 dark:bg-blue-950/25 border border-blue-100 dark:border-blue-900/40 text-xs text-slate-700 dark:text-slate-300 leading-relaxed animate-fade-in">
+                              <span className="font-bold text-blue-800 dark:text-blue-300 block mb-0.5">Penjelasan Konsep:</span>
+                              {q.explanation}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* 5. Ergonomic Action Footer: Tombol Sentuh Lega & Jelas (≥ 44×44 px) */}
+                      <div className="mt-3.5 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-2 flex-wrap">
+                        {/* Reordering */}
+                        <div className="flex items-center gap-1.5">
                           <button
                             type="button"
                             disabled={idx === 0}
                             onClick={() => handleMoveQuestion(idx, 'up')}
-                            className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed"
-                            title="Pindah ke Atas"
+                            className="w-11 h-11 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center transition-colors disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 shadow-2xs"
+                            title="Pindahkan Soal ke Atas"
                           >
-                            <ChevronUp className="w-3.5 h-3.5" />
+                            <ChevronUp className="w-5 h-5" />
                           </button>
                           <button
                             type="button"
                             disabled={idx === questions.length - 1}
                             onClick={() => handleMoveQuestion(idx, 'down')}
-                            className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed"
-                            title="Pindah ke Bawah"
+                            className="w-11 h-11 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center transition-colors disabled:opacity-30 disabled:cursor-not-allowed active:scale-95 shadow-2xs"
+                            title="Pindahkan Soal ke Bawah"
                           >
-                            <ChevronDown className="w-3.5 h-3.5" />
+                            <ChevronDown className="w-5 h-5" />
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => handleStartEditQuestion(q)}
-                            className="p-1 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 text-blue-600 dark:text-blue-400"
-                            title="Edit Soal"
-                          >
-                            <Edit3 className="w-3.5 h-3.5" />
-                          </button>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex items-center gap-2">
                           <button
                             type="button"
                             onClick={() => handleDuplicateQuestion(q)}
-                            className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600"
-                            title="Duplikasi Soal"
+                            className="h-11 px-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs flex items-center gap-1.5 transition-colors active:scale-95"
+                            title="Duplikasi Butir Soal Ini"
                           >
-                            <Copy className="w-3.5 h-3.5" />
+                            <Copy className="w-4 h-4" />
+                            <span className="hidden xs:inline">Salin</span>
                           </button>
                           <button
                             type="button"
                             onClick={() => handleDeleteQuestion(q.id)}
-                            className="p-1 rounded-lg hover:bg-rose-100 dark:hover:bg-rose-950/40 text-rose-500 hover:text-rose-700"
-                            title="Hapus Soal"
+                            className="w-11 h-11 rounded-xl bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-600 dark:text-rose-400 border border-rose-200/60 dark:border-rose-800/50 flex items-center justify-center transition-colors active:scale-95"
+                            title="Hapus Butir Soal Ini"
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleStartEditQuestion(q)}
+                            className="h-11 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm flex items-center gap-2 shadow-xs hover:shadow transition-all active:scale-95"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                            <span>Edit Soal</span>
                           </button>
                         </div>
                       </div>
@@ -1440,21 +1659,46 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
           </div>
 
           {/* Question Editor Form Column */}
-          <div className="lg:col-span-7 2xl:col-span-8">
+          <div className={`lg:col-span-6 2xl:col-span-6 ${
+            isAddingQuestion ? 'block' : 'hidden lg:block'
+          }`}>
             {isAddingQuestion ? (
-              <form onSubmit={(e) => handleSaveQuestion(e, 'finish')} className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+              <form onSubmit={(e) => handleSaveQuestion(e, 'finish')} className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-7 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4 sm:space-y-5 animate-fade-in">
                 
+                {/* Header Editor: Mobile Back + Desktop Title */}
                 <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-                  <h3 className="font-extrabold text-slate-900 dark:text-white text-sm sm:text-base flex items-center gap-2">
-                    <Edit3 className="w-4 h-4 text-blue-600" />
-                    {editingQuestionId ? 'Edit Butir Soal' : 'Tambah Butir Soal Baru'}
-                  </h3>
+                  <div className="flex items-center gap-2.5">
+                    <button
+                      type="button"
+                      onClick={handleCancelEdit}
+                      className="lg:hidden px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs flex items-center gap-1.5 min-h-[44px] transition-colors"
+                      title="Kembali ke Daftar Soal"
+                    >
+                      <ArrowLeft className="w-4 h-4" />
+                      <span>Daftar Soal</span>
+                    </button>
+                    <div className="flex items-center gap-2">
+                      <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold shadow-xs">
+                        <Edit3 className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h3 className="font-extrabold text-slate-900 dark:text-white text-sm sm:text-base">
+                          {editingQuestionId ? 'Edit Butir Soal' : 'Tambah Butir Soal Baru'}
+                        </h3>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                          {editingQuestionId ? 'Sesuaikan pertanyaan, opsi, dan kunci jawaban' : 'Lengkapi detail soal baru Kurikulum Merdeka'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
                   <button
                     type="button"
                     onClick={handleCancelEdit}
-                    className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+                    className="w-10 h-10 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 flex items-center justify-center transition-colors"
+                    title="Tutup Editor"
                   >
-                    <X className="w-4 h-4" />
+                    <X className="w-5 h-5" />
                   </button>
                 </div>
 
@@ -1467,7 +1711,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                     <select
                       value={qType}
                       onChange={(e) => handleTypeChange(e.target.value as QuestionType)}
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold focus:border-blue-500 focus:outline-none"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold focus:border-blue-500 focus:outline-none min-h-[44px]"
                     >
                       <option value="multiple_choice">Pilihan Ganda (4 Opsi)</option>
                       <option value="true_false">Benar / Salah</option>
@@ -1486,7 +1730,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                       max="100"
                       value={qPoints}
                       onChange={(e) => setQPoints(parseInt(e.target.value) || 10)}
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold focus:border-blue-500 focus:outline-none"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold focus:border-blue-500 focus:outline-none min-h-[44px]"
                     />
                   </div>
                 </div>
@@ -1555,7 +1799,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                             value={qImageCaption}
                             onChange={(e) => setQImageCaption(e.target.value)}
                             placeholder="Keterangan gambar (misal: Proses Evaporasi)"
-                            className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white font-medium"
+                            className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white font-medium min-h-[40px]"
                           />
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <button
@@ -1628,7 +1872,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                 {qType === 'multiple_choice' && (
                   <div className="space-y-2">
                     <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                      Pilihan Jawaban & Kunci Benar (Klik lingkaran untuk memilih kunci)
+                      Pilihan Jawaban & Kunci Benar (Klik huruf atau centang untuk memilih kunci benar)
                     </label>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                       {qOptions.map((opt, oIdx) => (
@@ -1643,20 +1887,21 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                           <button
                             type="button"
                             onClick={() => setQCorrectIndex(oIdx)}
-                            className={`w-6 h-6 rounded-full font-bold text-xs flex items-center justify-center shrink-0 ${
+                            className={`w-7 h-7 rounded-lg font-bold text-xs flex items-center justify-center shrink-0 min-h-[28px] ${
                               qCorrectIndex === oIdx
                                 ? 'bg-emerald-600 text-white shadow-xs'
                                 : 'bg-slate-100 dark:bg-slate-700 text-slate-500 hover:bg-slate-200'
                             }`}
+                            title={qCorrectIndex === oIdx ? 'Kunci Jawaban Benar' : 'Jadikan Kunci Jawaban'}
                           >
-                            {String.fromCharCode(65 + oIdx)}
+                            {qCorrectIndex === oIdx ? '✓' : String.fromCharCode(65 + oIdx)}
                           </button>
                           <input
                             type="text"
                             value={opt}
                             onChange={(e) => handleOptionChange(oIdx, e.target.value)}
                             placeholder={`Pilihan ${String.fromCharCode(65 + oIdx)}`}
-                            className="flex-1 bg-transparent text-xs font-medium focus:outline-none"
+                            className="flex-1 bg-transparent text-xs font-medium focus:outline-none min-h-[36px]"
                           />
                         </div>
                       ))}
@@ -1698,7 +1943,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                       value={qAcceptableAnswers}
                       onChange={(e) => setQAcceptableAnswers(e.target.value)}
                       placeholder="Contoh: paru-paru, pulmo, paru paru"
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold focus:border-blue-500 focus:outline-none"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold focus:border-blue-500 focus:outline-none min-h-[44px]"
                     />
                   </div>
                 )}
@@ -1712,7 +1957,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                       <button
                         type="button"
                         onClick={handleAddMatchingPair}
-                        className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline"
+                        className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline min-h-[36px] flex items-center"
                       >
                         + Tambah Pasangan
                       </button>
@@ -1726,7 +1971,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                             value={pair.left}
                             onChange={(e) => handleMatchingPairChange(idx, 'left', e.target.value)}
                             placeholder={`Kartu Kiri #${idx + 1}`}
-                            className="flex-1 px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium"
+                            className="flex-1 px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium min-h-[40px]"
                           />
                           <span className="text-slate-400 font-bold">➔</span>
                           <input
@@ -1734,15 +1979,16 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                             value={pair.right}
                             onChange={(e) => handleMatchingPairChange(idx, 'right', e.target.value)}
                             placeholder={`Kartu Kanan #${idx + 1}`}
-                            className="flex-1 px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium"
+                            className="flex-1 px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium min-h-[40px]"
                           />
                           {qMatchingPairs.length > 2 && (
                             <button
                               type="button"
                               onClick={() => handleRemoveMatchingPair(idx)}
-                              className="p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg"
+                              className="w-9 h-9 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl flex items-center justify-center shrink-0"
+                              title="Hapus Pasangan Kartu Ini"
                             >
-                              <Trash2 className="w-3.5 h-3.5" />
+                              <Trash2 className="w-4 h-4" />
                             </button>
                           )}
                         </div>
@@ -1771,24 +2017,24 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                 </div>
 
                 {/* Tombol Simpan Butir Soal */}
-                <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100 dark:border-slate-800 flex-wrap">
                   <button
                     type="button"
                     onClick={handleCancelEdit}
-                    className="px-4 py-2.5 rounded-xl font-semibold text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    className="px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 min-h-[44px] transition-colors"
                   >
                     Batal
                   </button>
                   <button
                     type="button"
                     onClick={(e) => handleSaveQuestion(e, 'continue')}
-                    className="px-4 py-2.5 rounded-xl font-bold text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800"
+                    className="px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800 min-h-[44px] transition-colors"
                   >
                     Simpan & Tambah Lagi
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2.5 rounded-xl font-bold text-xs text-white bg-blue-600 hover:bg-blue-700 shadow-sm btn-press"
+                    className="px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-sm hover:shadow btn-press min-h-[44px] transition-all"
                   >
                     Simpan & Selesai
                   </button>
@@ -1796,22 +2042,23 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
 
               </form>
             ) : (
-              <div className="text-center py-16 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 space-y-3 shadow-xs">
-                <div className="w-14 h-14 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto shadow-xs">
-                  <Layers className="w-7 h-7" />
+              <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-8 space-y-4 shadow-xs">
+                <div className="w-16 h-16 rounded-3xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto shadow-xs">
+                  <Layers className="w-8 h-8" />
                 </div>
-                <div>
-                  <p className="font-extrabold text-slate-900 dark:text-white text-base">Editor Soal Siap Digunakan</p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto leading-relaxed">
-                    Pilih butir soal di samping untuk mengoreksi teks/jawaban, atau klik tombol di bawah untuk menyusun butir soal baru.
+                <div className="space-y-1">
+                  <p className="font-extrabold text-slate-900 dark:text-white text-lg">Editor Soal Siap Digunakan</p>
+                  <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
+                    Pilih tombol <strong className="text-blue-600 dark:text-blue-400">"Edit Soal"</strong> pada butir soal di samping untuk merevisi teks dan kunci, atau klik tombol di bawah untuk menambah butir soal baru.
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={handleOpenNewQuestion}
-                  className="px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm inline-flex items-center gap-2 min-h-[44px] shadow-sm btn-press transition-colors"
+                  className="px-6 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm inline-flex items-center gap-2 min-h-[48px] shadow-sm btn-press transition-colors"
                 >
-                  <Plus className="w-4 h-4" /> Tambah Butir Soal Baru
+                  <Plus className="w-5 h-5" />
+                  <span>Tambah Butir Soal Baru</span>
                 </button>
               </div>
             )}
@@ -1819,8 +2066,10 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
 
         </div>
 
-        {/* Bottom Bar: Bank Soal Navigation */}
-        <div className="flex justify-between items-center pt-4 border-t border-slate-200 dark:border-slate-800">
+        {/* Bottom Bar: Bank Soal Navigation (Hanya tampil di mobile jika tidak sedang mengedit soal) */}
+        <div className={`flex justify-between items-center pt-4 border-t border-slate-200 dark:border-slate-800 ${
+          isAddingQuestion ? 'hidden lg:flex' : 'flex'
+        }`}>
           {isAi ? (
             <button
               type="button"
