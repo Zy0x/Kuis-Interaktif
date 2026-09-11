@@ -65,7 +65,6 @@ export const App: React.FC = () => {
     if (initialNav.creatorMode) return initialNav.creatorMode;
     return 'manual';
   });
-  const [reopenMethodModal, setReopenMethodModal] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authInitialTab, setAuthInitialTab] = useState<AuthModalTab>('student');
 
@@ -378,13 +377,6 @@ export const App: React.FC = () => {
           initialMode={creatorInitialMode}
           onBack={() => {
             setEditingQuiz(null);
-            setReopenMethodModal(false);
-            setCurrentScreen('teacher-dashboard');
-            saveNavigationState({ screen: 'teacher-dashboard', replace: false });
-          }}
-          onBackToMethodSelection={() => {
-            setEditingQuiz(null);
-            setReopenMethodModal(true);
             setCurrentScreen('teacher-dashboard');
             saveNavigationState({ screen: 'teacher-dashboard', replace: false });
           }}
@@ -408,7 +400,6 @@ export const App: React.FC = () => {
           onOpenCreator={(quizToEdit?: Quiz, mode?: 'ai' | 'manual') => {
             setEditingQuiz(quizToEdit || null);
             setCreatorInitialMode(mode || (quizToEdit ? 'manual' : 'manual'));
-            setReopenMethodModal(false);
             setCurrentScreen('creator');
             saveNavigationState({ screen: 'creator', quiz: quizToEdit, creatorMode: mode || (quizToEdit ? 'manual' : 'manual'), replace: false });
           }}
@@ -417,7 +408,6 @@ export const App: React.FC = () => {
           isDark={isDark}
           onToggleTheme={toggleTheme}
           playClick={playClick}
-          initialOpenMethodModal={reopenMethodModal}
         />
       )}
 

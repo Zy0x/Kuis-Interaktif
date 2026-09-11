@@ -52,7 +52,6 @@ interface QuizCreatorProps {
   onToggleTheme?: () => void;
   editingQuiz?: Quiz | null;
   initialMode?: 'ai' | 'manual';
-  onBackToMethodSelection?: () => void;
 }
 
 const DRAFT_STORAGE_KEY = 'kuis_creator_draft_v1';
@@ -127,7 +126,6 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   onToggleTheme = () => {},
   editingQuiz = null,
   initialMode = 'manual',
-  onBackToMethodSelection,
 }) => {
   const [draft] = useState<CreatorDraft | null>(() => (editingQuiz ? null : loadDraft()));
   
@@ -770,11 +768,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
 
   useBackHandler('creator-ai-funnel', 60, () => {
     if (aiFunnelActive && aiFunnelStage === 1) {
-      if (onBackToMethodSelection) {
-        onBackToMethodSelection();
-      } else {
-        onBack();
-      }
+      onBack();
       return true;
     }
     return false;
@@ -1246,11 +1240,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
       if (aiFunnelStage > 1) {
         setAiFunnelStage((prev) => (prev - 1) as 1 | 2 | 3 | 4);
       } else {
-        if (onBackToMethodSelection) {
-          onBackToMethodSelection();
-        } else {
-          onBack();
-        }
+        onBack();
       }
       return;
     }
@@ -1264,11 +1254,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     if (currentStep > 1) {
       setCurrentStep((prev) => prev - 1);
     } else {
-      if (onBackToMethodSelection) {
-        onBackToMethodSelection();
-      } else {
-        onBack();
-      }
+      onBack();
     }
   };
 
@@ -2037,13 +2023,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
               setCurrentStep(1); // Enters Studio Step 1: Bank Soal
               showToast(`✨ Kuis "${generatedTitle}" (${data.questions.length} butir soal) berhasil diracik lengkap dengan identitas kuis!`);
             }}
-            onBack={() => {
-              if (onBackToMethodSelection) {
-                onBackToMethodSelection();
-              } else {
-                onBack();
-              }
-            }}
+            onBack={onBack}
             playClick={playClick}
             initialSubject={subject}
             initialGrade={grade}

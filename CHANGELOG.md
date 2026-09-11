@@ -1,6 +1,18 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.49] - 2026-09-12
+### Perbaikan Alur Masuk Dashboard Guru: Pencegahan Auto-Open Modal Pembuatan Kuis
+
+#### 1. Perbaikan Navigasi & Siklus Hidup Dashboard Guru (`TeacherDashboard.tsx`, `App.tsx`, `QuizCreator.tsx`)
+- **Eliminasi Auto-Open Modal Pembuatan Kuis**:
+  - Memperbaiki bug di mana guru yang baru saja masuk ke Dashboard Guru (baik setelah login maupun saat menavigasi dari Beranda) langsung dihadapkan dengan pop-up modal pemilihan metode pembuatan kuis (`CreateQuizMethodModal`).
+  - Menginisialisasi status `isCreateModalOpen` di `TeacherDashboard.tsx` secara murni `false` tanpa ketergantungan `initialOpenMethodModal` yang sebelumnya memicu pembukaan otomatis yang tidak diinginkan.
+  - Menghapus variabel `reopenMethodModal` pada tingkat `App.tsx` yang sebelumnya tertahan aktif dan terus memaksa modal terbuka setiap kali layar dashboard dirender atau dimuat ulang.
+- **Standarisasi Alur Kembali (*Return Flow*) Studio Kuis**:
+  - Tombol kembali (`onBack`) di Studio Kuis (`QuizCreator.tsx`) kini mengembalikan guru secara bersih dan langsung ke Dashboard Guru utama tanpa memunculkan kembali pop-up pembuatan kuis.
+  - Memastikan modal pembuatan kuis (`CreateQuizMethodModal`) hanya akan muncul secara terarah ketika guru secara sengaja menekan tombol `[+ Buat Kuis Baru]` di navbar atas atau tombol `[+ Buat Kuis Baru Sekarang]` pada status kosong (*empty state*).
+
 ## [2.3.48] - 2026-09-12
 ### Penyatuan Arsitektur Pratinjau Guru & Arena Siswa 2 Arah (Unified Single Source of Truth via QuizArena)
 

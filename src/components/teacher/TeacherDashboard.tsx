@@ -56,7 +56,6 @@ interface TeacherDashboardProps {
   playClick: () => void;
   isDark?: boolean;
   onToggleTheme?: () => void;
-  initialOpenMethodModal?: boolean;
 }
 
 export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
@@ -69,17 +68,10 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   playClick,
   isDark = false,
   onToggleTheme = () => {},
-  initialOpenMethodModal = false,
 }) => {
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [selectedQuizForDetail, setSelectedQuizForDetail] = useState<Quiz | null>(null);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(Boolean(initialOpenMethodModal));
-
-  useEffect(() => {
-    if (initialOpenMethodModal) {
-      setIsCreateModalOpen(true);
-    }
-  }, [initialOpenMethodModal]);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   // Search, Filter & Sort States
   const [searchQuery, setSearchQuery] = useState('');
