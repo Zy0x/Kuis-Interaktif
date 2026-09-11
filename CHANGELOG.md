@@ -1,6 +1,27 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.2] - 2026-09-11
+### Optimasi Presisi Mobile-First Studio Bank Soal: Action Bar 1-Baris Utuh & Perapian Header Metadata
+
+#### 1. Masalah yang Diselesaikan
+- **Action Bar Bawah Patah Menjadi 2 Baris**: Di layar smartphone (360–390px), tombol panah urutan dan grup tombol aksi terpisah menjadi 2 baris asimetris karena keterbatasan lebar dan pemakaian `flex-wrap`, menyisakan ruang kosong besar di baris pertama dan memboroskan ruang vertikal.
+- **Badge Metadata Header Patah**: Lencana durasi (`[🕒 30d]`) terlempar sendirian ke baris kedua persis di bawah lencana nomor soal.
+- **Nested Scrollbar Mengganggu di Layar HP**: Pembatasan `max-h-[calc(100vh-280px)]` dengan `overflow-y-auto` memunculkan scrollbar ganda yang tidak nyaman bagi gestur usap layar sentuh ponsel.
+
+#### 2. Implementasi Rekomendasi A (Action Bar 1-Baris Presisi) (`QuizCreator.tsx`)
+- **Segmented Control Panah Urutan**: Tombol `↑` dan `↓` disatukan dalam satu grup kapsul kompak (`inline-flex rounded-xl bg-slate-100 p-0.5`) dengan target sentuh lega dan proporsional.
+- **Tombol Utilitas Ikonik Mobile**: Tombol Salin dan Hapus tampil dalam bentuk tombol ikonik minimalis berbingkai di layar HP (`< sm`), dengan teks label otomatis muncul di layar lebih lebar (`sm:` ke atas).
+- **Tombol Utama "Edit Soal" Fleksibel (`flex-1`)**: Tombol aksi utama melebar mengisi sisa ruang secara proporsional dan simetris di sisi kanan, menjadi target jempol yang paling dominan dan mudah diakses.
+- **Bebas Wrapping**: Seluruh 4 tombol aksi kini terkunci dalam 1 baris horizontal rapi pada resolusi 320px–420px.
+
+#### 3. Header Metadata Simetris & Scroll Alami Mobile
+- **Header 2 Zona Seimbang**:
+  - Zona Kiri: Nomor soal (`Soal #X`) dan tipe soal.
+  - Zona Kanan: Poin nilai (`⭐ 10p`), durasi (`🕒 30s`), dan indikator gambar. Keduanya berhadapan rapi dalam 1 baris tanpa pembungkusan yang canggung.
+- **Tombol Pembahasan Bergaya Soft Pill**: Tombol toggle pembahasan materi kini dibungkus latar pil lembut (`bg-blue-50/60 text-blue-600`) yang ramah sentuhan.
+- **Scroll Alami pada Ponsel**: Menghilangkan batas `max-h` kaku pada mobile (`lg:max-h-[calc(100vh-280px)] lg:overflow-y-auto`) sehingga daftar soal mengalir alami bersama guliran halaman tanpa memunculkan scrollbar ganda.
+
 ## [2.3.1] - 2026-09-11
 ### Redesain Studio Bank Soal: Anti-AI Slop, Pratinjau Opsi & Kunci Jawaban Lengkap, dan Ergonomi Mobile-First
 
