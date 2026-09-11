@@ -88,6 +88,53 @@ interface AiGeneratorStepProps {
   onTopicChange: (topic: string) => void;
 }
 
+export const AI_GENERATOR_DRAFT_KEY = 'kuis_ai_generator_draft_v1';
+
+export interface AiGeneratorDraft {
+  contextNotes?: string;
+  questionCount?: number;
+  customCountStr?: string;
+  selectedQuestionTypes?: SupportedFormat[];
+  proportionMode?: 'balanced' | 'custom';
+  proportions?: {
+    multiple_choice: number;
+    true_false: number;
+    short_answer: number;
+    matching_pairs: number;
+  };
+  includeAiImages?: boolean;
+  mcOptionCount?: 3 | 4 | 5;
+  trueFalseStyle?: 'benar_salah' | 'sesuai_tidak' | 'ya_tidak';
+  matchingPairCount?: 3 | 4 | 5;
+  cognitiveFocus?: 'auto' | 'balanced' | 'hots' | 'lots' | 'custom';
+  cognitiveCustomLevels?: Array<'c1' | 'c2' | 'c3' | 'c4' | 'c5' | 'c6'>;
+  cognitiveProportions?: Partial<Record<'c1' | 'c2' | 'c3' | 'c4' | 'c5' | 'c6', number>>;
+  showCognitiveProportions?: boolean;
+  kurmerContext?: 'auto' | 'daily_life' | 'science_nature' | 'literacy_numeracy' | 'general';
+  selectedEngine?: 'auto' | 'local' | 'deepseek' | 'groq' | 'gemini' | 'prompt';
+  rawInputText?: string;
+  inputMethodTab?: 'paste' | 'file';
+  aiGradeCp?: string | null;
+}
+
+export function loadAiGeneratorDraft(): AiGeneratorDraft | null {
+  try {
+    const raw = localStorage.getItem(AI_GENERATOR_DRAFT_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+export function clearAiGeneratorDraft(): void {
+  try {
+    localStorage.removeItem(AI_GENERATOR_DRAFT_KEY);
+  } catch {
+    // noop
+  }
+}
+
 const EMOJI_BY_SUBJECT: Record<Subject, string> = {
   // SD & Umum
   'Matematika': '📐',
@@ -1074,7 +1121,9 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
     return educationLevel === 'SMA' ? 10 : educationLevel === 'SMP' ? 7 : 3;
   });
 
-  const [contextNotes, setContextNotes] = useState('');
+  const [aiDraft] = useState<AiGeneratorDraft | null>(() => loadAiGeneratorDraft());
+
+  const [contextNotes, setContextNotes] = useState(() => aiDraft?.contextNotes || '');
   const [randomSeed, setRandomSeed] = useState(0);
 
   // Switcher Jenjang Pendidikan (SD, SMP, SMA)
@@ -1123,7 +1172,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
   }, [subjectSearchQuery, subjectCatalogGroups]);
 
   // Capaian Pembelajaran (CP) AI
-  const [aiGradeCp, setAiGradeCp] = useState<string | null>(null);
+  const [aiGradeCp, setAiGradeCp] = useState<string | null>(() => aiDraft?.aiGradeCp || null);
   const [isGeneratingAiCp, setIsGeneratingAiCp] = useState(false);
   const [cpVariantIndex, setCpVariantIndex] = useState(0);
 
@@ -1180,34 +1229,52 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
   };
 
   // Soal & Format Tipe Soal
-  const [questionCount, setQuestionCount] = useState<number>(5);
-  const [customCountStr, setCustomCountStr] = useState<string>('');
-  const [selectedQuestionTypes, setSelectedQuestionTypes] = useState<SupportedFormat[]>([
-    'multiple_choice',
-  ]);
-  const [proportionMode, setProportionMode] = useState<'balanced' | 'custom'>('balanced');
-  const [proportions, setProportions] = useState({
-    multiple_choice: 5,
-    true_false: 0,
-    short_answer: 0,
-    matching_pairs: 0,
-  });
-  const [includeAiImages, setIncludeAiImages] = useState(false);
-  const [mcOptionCount, setMcOptionCount] = useState<3 | 4 | 5>(4);
-  const [trueFalseStyle, setTrueFalseStyle] = useState<'benar_salah' | 'sesuai_tidak' | 'ya_tidak'>('benar_salah');
-  const [matchingPairCount, setMatchingPairCount] = useState<3 | 4 | 5>(4);
+  const [questionCount, setQuestionCount] = useState<number>(() => aiDraft?.questionCount ?? 5);
+  const [customCountStr, setCustomCountStr] = useState<string>(() => aiDraft?.customCountStr || '');
+  const [selectedQuestionTypes, setSelectedQuestionTypes] = useState<SupportedFormat[]>(
+    () => aiDraft?.selectedQuestionTypes || ['multiple_choice']
+  );
+  const [proportionMode, setProportionMode] = useState<'balanced' | 'custom'>(
+    () => aiDraft?.proportionMode || 'balanced'
+  );
+  const [proportions, setProportions] = useState(
+    () => aiDraft?.proportions || {
+      multiple_choice: 5,
+      true_false: 0,
+      short_answer: 0,
+      matching_pairs: 0,
+    }
+  );
+  const [includeAiImages, setIncludeAiImages] = useState(() => aiDraft?.includeAiImages ?? false);
+  const [mcOptionCount, setMcOptionCount] = useState<3 | 4 | 5>(() => aiDraft?.mcOptionCount || 4);
+  const [trueFalseStyle, setTrueFalseStyle] = useState<'benar_salah' | 'sesuai_tidak' | 'ya_tidak'>(
+    () => aiDraft?.trueFalseStyle || 'benar_salah'
+  );
+  const [matchingPairCount, setMatchingPairCount] = useState<3 | 4 | 5>(() => aiDraft?.matchingPairCount || 4);
 
   // Karakteristik Kognitif HOTS & Stimulus Kurikulum Merdeka (BSKAP)
-  const [cognitiveFocus, setCognitiveFocus] = useState<'auto' | 'balanced' | 'hots' | 'lots' | 'custom'>('auto');
+  const [cognitiveFocus, setCognitiveFocus] = useState<'auto' | 'balanced' | 'hots' | 'lots' | 'custom'>(
+    () => aiDraft?.cognitiveFocus || 'auto'
+  );
   // Custom C-level selection (multi-select C1-C6)
-  const [cognitiveCustomLevels, setCognitiveCustomLevels] = useState<Set<'c1' | 'c2' | 'c3' | 'c4' | 'c5' | 'c6'>>(new Set(['c4', 'c5']));
+  const [cognitiveCustomLevels, setCognitiveCustomLevels] = useState<Set<'c1' | 'c2' | 'c3' | 'c4' | 'c5' | 'c6'>>(
+    () => new Set(aiDraft?.cognitiveCustomLevels || ['c4', 'c5'])
+  );
   // Custom proportions per C-level (angka butir soal)
-  const [cognitiveProportions, setCognitiveProportions] = useState<Partial<Record<'c1' | 'c2' | 'c3' | 'c4' | 'c5' | 'c6', number>>>({});
-  const [showCognitiveProportions, setShowCognitiveProportions] = useState(false);
-  const [kurmerContext, setKurmerContext] = useState<'auto' | 'daily_life' | 'science_nature' | 'literacy_numeracy' | 'general'>('auto');
+  const [cognitiveProportions, setCognitiveProportions] = useState<Partial<Record<'c1' | 'c2' | 'c3' | 'c4' | 'c5' | 'c6', number>>>(
+    () => aiDraft?.cognitiveProportions || {}
+  );
+  const [showCognitiveProportions, setShowCognitiveProportions] = useState(
+    () => aiDraft?.showCognitiveProportions ?? false
+  );
+  const [kurmerContext, setKurmerContext] = useState<'auto' | 'daily_life' | 'science_nature' | 'literacy_numeracy' | 'general'>(
+    () => aiDraft?.kurmerContext || 'auto'
+  );
 
   // Pilihan Mesin AI (default 'auto' untuk memilih mesin terbaik secara otomatis)
-  const [selectedEngine, setSelectedEngine] = useState<'auto' | 'local' | 'deepseek' | 'groq' | 'gemini' | 'prompt'>('auto');
+  const [selectedEngine, setSelectedEngine] = useState<'auto' | 'local' | 'deepseek' | 'groq' | 'gemini' | 'prompt'>(
+    () => aiDraft?.selectedEngine || 'auto'
+  );
   const [showSpecificCloudModels, setShowSpecificCloudModels] = useState(false);
 
   // Modal Pengaturan Kunci API Mandiri (BYOK)
@@ -1223,9 +1290,59 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
   const [keySaveMessage, setKeySaveMessage] = useState<string | null>(null);
 
   // Input Teks Salin Prompt / Dokumen
-  const [rawInputText, setRawInputText] = useState('');
-  const [inputMethodTab, setInputMethodTab] = useState<'paste' | 'file'>('paste');
+  const [rawInputText, setRawInputText] = useState(() => aiDraft?.rawInputText || '');
+  const [inputMethodTab, setInputMethodTab] = useState<'paste' | 'file'>(() => aiDraft?.inputMethodTab || 'paste');
   const [copiedPrompt, setCopiedPrompt] = useState(false);
+
+  // Simpan konfigurasi form AI Generator secara otomatis saat berubah
+  useEffect(() => {
+    const draftData: AiGeneratorDraft = {
+      contextNotes,
+      questionCount,
+      customCountStr,
+      selectedQuestionTypes,
+      proportionMode,
+      proportions,
+      includeAiImages,
+      mcOptionCount,
+      trueFalseStyle,
+      matchingPairCount,
+      cognitiveFocus,
+      cognitiveCustomLevels: Array.from(cognitiveCustomLevels),
+      cognitiveProportions,
+      showCognitiveProportions,
+      kurmerContext,
+      selectedEngine,
+      rawInputText,
+      inputMethodTab,
+      aiGradeCp,
+    };
+    try {
+      localStorage.setItem(AI_GENERATOR_DRAFT_KEY, JSON.stringify(draftData));
+    } catch {
+      // noop
+    }
+  }, [
+    contextNotes,
+    questionCount,
+    customCountStr,
+    selectedQuestionTypes,
+    proportionMode,
+    proportions,
+    includeAiImages,
+    mcOptionCount,
+    trueFalseStyle,
+    matchingPairCount,
+    cognitiveFocus,
+    cognitiveCustomLevels,
+    cognitiveProportions,
+    showCognitiveProportions,
+    kurmerContext,
+    selectedEngine,
+    rawInputText,
+    inputMethodTab,
+    aiGradeCp,
+  ]);
 
   // Status & Indikator
   const [isLoading, setIsLoading] = useState(false);
@@ -1265,6 +1382,43 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
       }
     };
   }, []);
+
+  // Notifikasi draf AI generator dipulihkan otomatis
+  const restoredAiDraftRef = useRef(false);
+  useEffect(() => {
+    if (aiDraft && !restoredAiDraftRef.current) {
+      restoredAiDraftRef.current = true;
+      const hasCustomConfig = 
+        Boolean(aiDraft.contextNotes) || 
+        Boolean(aiDraft.rawInputText) || 
+        (aiDraft.questionCount && aiDraft.questionCount !== 5) || 
+        (aiDraft.selectedQuestionTypes && aiDraft.selectedQuestionTypes.length > 1) ||
+        (aiDraft.cognitiveFocus && aiDraft.cognitiveFocus !== 'auto');
+      if (hasCustomConfig) {
+        showToast('✨ Pengaturan AI Generator sebelumnya telah dipulihkan otomatis.', 'info');
+      }
+    }
+  }, [aiDraft]);
+
+  // Peringatkan pengguna jika ada progres belum disimpan saat me-reload halaman
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      const hasActiveWork = 
+        stage > 1 || 
+        Boolean(topic.trim()) || 
+        Boolean(contextNotes.trim()) || 
+        Boolean(rawInputText.trim()) ||
+        isLoading;
+
+      if (hasActiveWork) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [stage, topic, contextNotes, rawInputText, isLoading]);
 
   const [supabaseAi, setSupabaseAi] = useState<SupabaseAiStatus>(() => getSupabaseAiStatusSync());
   const [isCheckingCloudAi, setIsCheckingCloudAi] = useState(false);
@@ -1657,6 +1811,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
       const badge = educationLevel === 'SMA' ? 'Bintang Cendekia' : educationLevel === 'SMP' ? 'Bintang Mandiri' : 'Bintang Pintar';
 
       // Langsung buka Studio Bank Soal
+      clearAiGeneratorDraft();
       onGenerated({
         questions: result.questions,
         topic: topic.trim(),
@@ -1713,6 +1868,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
       const badge = educationLevel === 'SMA' ? 'Bintang Cendekia' : educationLevel === 'SMP' ? 'Bintang Mandiri' : 'Bintang Pintar';
       const levelLabel = educationLevel === 'SMA' ? 'SMA' : educationLevel === 'SMP' ? 'SMP' : 'SD';
 
+      clearAiGeneratorDraft();
       onGenerated({
         questions: validQuestions,
         topic: topic.trim() || `Kuis ${subject} Kelas ${grade} ${levelLabel}`,

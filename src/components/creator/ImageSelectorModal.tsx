@@ -7,13 +7,11 @@ import {
   Upload, 
   RefreshCw, 
   Check, 
-  Loader2,
-  ExternalLink
+  Loader2
 } from 'lucide-react';
 import { 
   searchAllEducationalImages, 
   generateRefinedAiImageUrl, 
-  buildBingDallePrompt,
   type EducationalImageResult 
 } from '../../lib/imageService';
 
@@ -38,7 +36,7 @@ export const ImageSelectorModal: React.FC<ImageSelectorModalProps> = ({
   subject = '',
   topic = '',
 }) => {
-  const [activeTab, setActiveTab] = useState<'wiki' | 'ai' | 'bing' | 'upload'>('wiki');
+  const [activeTab, setActiveTab] = useState<'wiki' | 'ai' | 'upload'>('wiki');
   
   // Tab Ensiklopedia State
   const [searchQuery, setSearchQuery] = useState('');
@@ -52,11 +50,6 @@ export const ImageSelectorModal: React.FC<ImageSelectorModalProps> = ({
   const [aiSeed, setAiSeed] = useState(() => Math.floor(Math.random() * 999999));
   const [aiPreviewUrl, setAiPreviewUrl] = useState('');
   const [isAiLoading, setIsAiLoading] = useState(false);
-
-  // Tab Bing Image Creator State
-  const [bingPrompt, setBingPrompt] = useState('');
-  const [copiedBingPrompt, setCopiedBingPrompt] = useState(false);
-  const [bingImageUrl, setBingImageUrl] = useState('');
 
   // Tab Upload / URL State
   const [manualUrl, setManualUrl] = useState('');
@@ -82,10 +75,6 @@ export const ImageSelectorModal: React.FC<ImageSelectorModalProps> = ({
     if (bestAiPrompt) {
       setAiPreviewUrl(generateRefinedAiImageUrl(bestAiPrompt, { style: 'diagram', seed }));
     }
-
-    // Tentukan prompt awal untuk Bing Image Creator / DALL-E 3
-    const targetConcept = initialCaption.trim() || topic.trim() || bestKeyword;
-    setBingPrompt(buildBingDallePrompt(targetConcept, topic, subject));
 
     // Auto-search Wikipedia jika ada keyword
     if (bestKeyword && bestKeyword.length >= 2) {
@@ -123,17 +112,6 @@ export const ImageSelectorModal: React.FC<ImageSelectorModalProps> = ({
     setAiPreviewUrl(newUrl);
   };
 
-  const handleOpenBingCreator = async () => {
-    try {
-      await navigator.clipboard.writeText(bingPrompt);
-      setCopiedBingPrompt(true);
-      setTimeout(() => setCopiedBingPrompt(false), 4000);
-    } catch {
-      // Fallback
-    }
-    window.open('https://www.bing.com/images/create/ai-image-generator/', '_blank', 'noopener,noreferrer');
-  };
-
   const handleApplyImage = (url: string, caption?: string) => {
     const resolvedCaption = caption || initialCaption || searchQuery.slice(0, 45);
     onSelectImage(url, resolvedCaption);
@@ -158,34 +136,8 @@ export const ImageSelectorModal: React.FC<ImageSelectorModalProps> = ({
     reader.readAsDataURL(file);
   };
 
-  // Tangani Paste langsung dari clipboard (Ctrl+V gambar atau URL)
-  const handlePaste = (e: React.ClipboardEvent) => {
-    const items = e.clipboardData?.items;
-    if (!items) return;
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i];
-      if (item.type.indexOf('image') !== -1) {
-        const blob = item.getAsFile();
-        if (blob) {
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            if (typeof reader.result === 'string') {
-              handleApplyImage(reader.result, searchQuery || initialCaption);
-            }
-          };
-          reader.readAsDataURL(blob);
-          e.preventDefault();
-        }
-        return;
-      }
-    }
-  };
-
   return (
-    <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-fade-in"
-      onPaste={handlePaste}
-    >
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
       <div 
         className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-2xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-scale-up"
         onClick={(e) => e.stopPropagation()}
@@ -201,7 +153,7 @@ export const ImageSelectorModal: React.FC<ImageSelectorModalProps> = ({
                 Pilih Ilustrasi Edukasi
               </h3>
               <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                Media akurat dari Ensiklopedia, AI Flux, atau Bing Image Creator (DALL-E 3)
+                Media akurat dari Ensiklopedia atau racikan AI diagram presisi
               </p>
             </div>
           </div>
@@ -215,18 +167,18 @@ export const ImageSelectorModal: React.FC<ImageSelectorModalProps> = ({
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex border-b border-slate-100 dark:border-slate-800 px-4 pt-2 gap-1.5 sm:gap-2 bg-slate-50/50 dark:bg-slate-850/50 overflow-x-auto">
+        <div className="flex border-b border-slate-100 dark:border-slate-800 px-4 pt-2 gap-2 bg-slate-50/50 dark:bg-slate-850/50 overflow-x-auto">
           <button
             type="button"
             onClick={() => setActiveTab('wiki')}
-            className={`px-3 py-2.5 text-xs font-extrabold border-b-2 transition-all flex items-center gap-1.5 whitespace-nowrap btn-press min-h-[44px] ${
+            className={`px-3.5 py-2.5 text-xs font-extrabold border-b-2 transition-all flex items-center gap-1.5 whitespace-nowrap btn-press min-h-[44px] ${
               activeTab === 'wiki'
                 ? 'border-blue-600 text-blue-600 dark:text-blue-400'
                 : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
             }`}
           >
             <Globe className="w-4 h-4" />
-            <span>Ensiklopedia</span>
+            <span>Ensiklopedia & Media Nyata</span>
             {searchResults.length > 0 && (
               <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 font-black">
                 {searchResults.length}
@@ -236,31 +188,19 @@ export const ImageSelectorModal: React.FC<ImageSelectorModalProps> = ({
           <button
             type="button"
             onClick={() => setActiveTab('ai')}
-            className={`px-3 py-2.5 text-xs font-extrabold border-b-2 transition-all flex items-center gap-1.5 whitespace-nowrap btn-press min-h-[44px] ${
+            className={`px-3.5 py-2.5 text-xs font-extrabold border-b-2 transition-all flex items-center gap-1.5 whitespace-nowrap btn-press min-h-[44px] ${
               activeTab === 'ai'
                 ? 'border-blue-600 text-blue-600 dark:text-blue-400'
                 : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
             }`}
           >
             <Sparkles className="w-4 h-4 text-purple-500" />
-            <span>AI Flux (In-App)</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('bing')}
-            className={`px-3 py-2.5 text-xs font-extrabold border-b-2 transition-all flex items-center gap-1.5 whitespace-nowrap btn-press min-h-[44px] ${
-              activeTab === 'bing'
-                ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-                : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
-            }`}
-          >
-            <span className="w-4 h-4 rounded-full bg-blue-600 text-white text-[9px] font-black flex items-center justify-center">b</span>
-            <span>Bing DALL-E 3</span>
+            <span>Generator AI (Flux Model)</span>
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('upload')}
-            className={`px-3 py-2.5 text-xs font-extrabold border-b-2 transition-all flex items-center gap-1.5 whitespace-nowrap btn-press min-h-[44px] ${
+            className={`px-3.5 py-2.5 text-xs font-extrabold border-b-2 transition-all flex items-center gap-1.5 whitespace-nowrap btn-press min-h-[44px] ${
               activeTab === 'upload'
                 ? 'border-blue-600 text-blue-600 dark:text-blue-400'
                 : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
@@ -499,119 +439,7 @@ export const ImageSelectorModal: React.FC<ImageSelectorModalProps> = ({
             </div>
           )}
 
-          {/* TAB 3: BING IMAGE CREATOR (DALL-E 3) */}
-          {activeTab === 'bing' && (
-            <div className="space-y-4 animate-fade-in">
-              {/* Info Header Card */}
-              <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/40 border border-blue-200/80 dark:border-blue-800/60 flex items-start gap-3">
-                <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center font-black text-sm shrink-0 shadow-xs">
-                  b
-                </div>
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white">
-                      Microsoft Bing Image Creator
-                    </h4>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 font-extrabold uppercase tracking-wider">
-                      DALL-E 3 Resmi
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
-                    Hasilkan diagram dan ilustrasi sains super presisi menggunakan kecerdasan OpenAI DALL-E 3 gratis dari Microsoft.
-                  </p>
-                </div>
-              </div>
-
-              {/* Prompt Editor */}
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                    Formula Prompt Khusus DALL-E 3 (Buku Pelajaran):
-                  </label>
-                  <span className="text-[10px] text-slate-400">Otomatis diformulasikan</span>
-                </div>
-                <textarea
-                  value={bingPrompt}
-                  onChange={(e) => setBingPrompt(e.target.value)}
-                  rows={3}
-                  className="w-full p-3 rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white leading-relaxed outline-none focus:ring-2 focus:ring-blue-500 font-medium"
-                />
-              </div>
-
-              {/* Action Button: Salin & Buka Bing */}
-              <button
-                type="button"
-                onClick={handleOpenBingCreator}
-                className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md btn-press min-h-[48px] transition-all"
-              >
-                {copiedBingPrompt ? (
-                  <>
-                    <Check className="w-4 h-4 text-emerald-300" />
-                    <span>✓ Prompt Disalin! Membuka Bing Image Creator...</span>
-                  </>
-                ) : (
-                  <>
-                    <ExternalLink className="w-4 h-4" />
-                    <span>Salin Prompt & Buka Bing Image Creator</span>
-                  </>
-                )}
-              </button>
-
-              {/* Panduan 3 Langkah Cepat */}
-              <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-800 space-y-2">
-                <span className="text-xs font-extrabold text-slate-800 dark:text-slate-200 block">
-                  3 Langkah Mudah Penggunaan:
-                </span>
-                <ol className="space-y-1.5 text-[11px] text-slate-600 dark:text-slate-400 list-decimal list-inside leading-relaxed">
-                  <li>
-                    Di tab Bing Image Creator yang terbuka, tekan <kbd className="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 font-mono text-[10px]">Ctrl + V</kbd> (Tempel) di kotak teks lalu klik <strong>Join & Create</strong> atau <strong>Buat</strong>.
-                  </li>
-                  <li>
-                    Pilih gambar hasil terbaik, klik kanan lalu pilih <strong>"Salin tautan gambar"</strong> (Copy image link).
-                  </li>
-                  <li>
-                    Kembali ke tab ini, tempel tautan gambar pada kotak di bawah atau langsung tekan <kbd className="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 font-mono text-[10px]">Ctrl + V</kbd>!
-                  </li>
-                </ol>
-              </div>
-
-              {/* Input Tempel URL Gambar dari Bing */}
-              <div className="p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 space-y-2.5">
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                  Tempel Tautan Gambar dari Bing (URL):
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="url"
-                    value={bingImageUrl}
-                    onChange={(e) => setBingImageUrl(e.target.value)}
-                    placeholder="https://th.bing.com/... atau tautan gambar langsung"
-                    className="flex-1 px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-medium"
-                  />
-                  <button
-                    type="button"
-                    disabled={!bingImageUrl.trim().startsWith('http')}
-                    onClick={() => handleApplyImage(bingImageUrl.trim())}
-                    className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold disabled:opacity-50 btn-press min-h-[40px] shrink-0"
-                  >
-                    Gunakan Gambar
-                  </button>
-                </div>
-                {bingImageUrl && (
-                  <div className="relative aspect-video max-h-48 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-900 flex items-center justify-center border border-slate-200 dark:border-slate-700">
-                    <img
-                      src={bingImageUrl}
-                      alt="Pratinjau Gambar Bing"
-                      className="w-full h-full object-contain mx-auto"
-                      onError={() => setBingImageUrl('')}
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* TAB 4: UNGGAH / TAUTAN URL */}
+          {/* TAB 3: UNGGAH / TAUTAN URL */}
           {activeTab === 'upload' && (
             <div className="space-y-4">
               {/* Upload Local File */}

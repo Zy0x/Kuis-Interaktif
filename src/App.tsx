@@ -61,7 +61,10 @@ export const App: React.FC = () => {
   // Unified Auth State
   const [teacher, setTeacher] = useState<TeacherProfile | null>(initialTeacher);
   const [editingQuiz, setEditingQuiz] = useState<Quiz | null>(null);
-  const [creatorInitialMode, setCreatorInitialMode] = useState<'ai' | 'manual'>('manual');
+  const [creatorInitialMode, setCreatorInitialMode] = useState<'ai' | 'manual'>(() => {
+    if (initialNav.creatorMode) return initialNav.creatorMode;
+    return 'manual';
+  });
   const [reopenMethodModal, setReopenMethodModal] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authInitialTab, setAuthInitialTab] = useState<AuthModalTab>('student');
@@ -401,7 +404,7 @@ export const App: React.FC = () => {
             setCreatorInitialMode(mode || (quizToEdit ? 'manual' : 'manual'));
             setReopenMethodModal(false);
             setCurrentScreen('creator');
-            saveNavigationState({ screen: 'creator', quiz: quizToEdit, replace: false });
+            saveNavigationState({ screen: 'creator', quiz: quizToEdit, creatorMode: mode || (quizToEdit ? 'manual' : 'manual'), replace: false });
           }}
           onLaunchSmartboard={handleLaunchSmartboard}
           onPrintWorksheet={handlePrintWorksheet}

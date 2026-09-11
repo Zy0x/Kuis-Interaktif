@@ -26,7 +26,7 @@ import {
 import { AiQuestionModal } from './AiQuestionModal';
 import { ImageSelectorModal } from './ImageSelectorModal';
 import { generateRefinedAiImageUrl } from '../../lib/imageService';
-import { AiGeneratorStep } from './AiGeneratorStep';
+import { AiGeneratorStep, clearAiGeneratorDraft } from './AiGeneratorStep';
 import { InfoKuisStep } from './InfoKuisStep';
 import { ResizableTextarea } from '../common/ResizableTextarea';
 
@@ -48,6 +48,7 @@ interface CreatorDraft {
   aiFunnelActive?: boolean;
   aiFunnelStage?: 1 | 2 | 3 | 4;
   funnelTopic?: string;
+  creatorMode?: 'ai' | 'manual';
   title: string;
   description: string;
   subject: Subject;
@@ -61,6 +62,22 @@ interface CreatorDraft {
   shuffleQuestions?: boolean;
   shuffleOptions?: boolean;
   questions: QuizQuestion[];
+  activeQuestionDraft?: {
+    editingQuestionId?: string | null;
+    isAddingQuestion?: boolean;
+    qText?: string;
+    qType?: QuestionType;
+    qImageCaption?: string;
+    qImagePrompt?: string;
+    qImageUrl?: string;
+    qOptions?: string[];
+    qCorrectIndex?: number;
+    qExplanation?: string;
+    qAcceptableAnswers?: string;
+    qMatchingPairs?: { left: string; right: string }[];
+    qPoints?: number;
+    qCustomDurationSec?: string;
+  };
 }
 
 const loadDraft = (): CreatorDraft | null => {
@@ -83,10 +100,9 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   initialMode = 'manual',
   onBackToMethodSelection,
 }) => {
-  const isAiMode = initialMode === 'ai' && !editingQuiz;
-  const totalSteps = 3;
-
   const [draft] = useState<CreatorDraft | null>(() => (editingQuiz ? null : loadDraft()));
+  const isAiMode = (initialMode === 'ai' || draft?.creatorMode === 'ai' || Boolean(draft?.aiFunnelActive)) && !editingQuiz;
+  const totalSteps = 3;
 
   // AI Creation Funnel state:
   const [aiFunnelActive, setAiFunnelActive] = useState<boolean>(() => {
@@ -94,7 +110,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     if (draft && typeof draft.aiFunnelActive === 'boolean') {
       return draft.aiFunnelActive;
     }
-    if (initialMode === 'ai') {
+    if (initialMode === 'ai' || draft?.creatorMode === 'ai') {
       return true;
     }
     return false;
@@ -157,15 +173,58 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     }
   }, [noticeMessage]);
 
+  // Active Question Form State (restored from draft if page reloaded during edit)
+  const [editingQuestionId, setEditingQuestionId] = useState<string | null>(() => draft?.activeQuestionDraft?.editingQuestionId ?? null);
+  const [qText, setQText] = useState(() => draft?.activeQuestionDraft?.qText ?? '');
+  const [qType, setQType] = useState<QuestionType>(() => draft?.activeQuestionDraft?.qType ?? 'multiple_choice');
+  const [qImageCaption, setQImageCaption] = useState(() => draft?.activeQuestionDraft?.qImageCaption ?? '');
+  const [qImagePrompt, setQImagePrompt] = useState(() => draft?.activeQuestionDraft?.qImagePrompt ?? '');
+  const [qImageUrl, setQImageUrl] = useState<string | undefined>(() => draft?.activeQuestionDraft?.qImageUrl);
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [qOptions, setQOptions] = useState<string[]>(() => draft?.activeQuestionDraft?.qOptions ?? ['', '', '', '']);
+  const [qCorrectIndex, setQCorrectIndex] = useState<number>(() => draft?.activeQuestionDraft?.qCorrectIndex ?? 0);
+  const [qExplanation, setQExplanation] = useState(() => draft?.activeQuestionDraft?.qExplanation ?? '');
+  const [qAcceptableAnswers, setQAcceptableAnswers] = useState(() => draft?.activeQuestionDraft?.qAcceptableAnswers ?? '');
+  const [qMatchingPairs, setQMatchingPairs] = useState<{ left: string; right: string }[]>(
+    () => draft?.activeQuestionDraft?.qMatchingPairs ?? [
+      { left: '', right: '' },
+      { left: '', right: '' },
+      { left: '', right: '' },
+    ]
+  );
+  const [qPoints, setQPoints] = useState<number>(() => draft?.activeQuestionDraft?.qPoints ?? 10);
+  const [qCustomDurationSec, setQCustomDurationSec] = useState<string>(() => draft?.activeQuestionDraft?.qCustomDurationSec ?? '');
+  const [isAddingQuestion, setIsAddingQuestion] = useState(() => draft?.activeQuestionDraft?.isAddingQuestion ?? false);
+  const [isGeneratingAiImage, setIsGeneratingAiImage] = useState(false);
+
   // Persist draft automatically (only if creating new quiz)
   useEffect(() => {
     if (editingQuiz) return;
-    if (title.trim() || description.trim() || questions.length > 0 || funnelTopic.trim()) {
+    const hasActiveQuestion = Boolean(
+      editingQuestionId ||
+      isAddingQuestion ||
+      qText.trim() ||
+      qExplanation.trim() ||
+      qAcceptableAnswers.trim() ||
+      qOptions.some((opt) => opt.trim()) ||
+      qMatchingPairs.some((p) => p.left.trim() || p.right.trim())
+    );
+
+    const hasAnyContent = 
+      title.trim() || 
+      description.trim() || 
+      questions.length > 0 || 
+      funnelTopic.trim() ||
+      hasActiveQuestion ||
+      aiFunnelActive;
+
+    if (hasAnyContent) {
       const data: CreatorDraft = {
         currentStep,
         aiFunnelActive,
         aiFunnelStage,
         funnelTopic,
+        creatorMode: isAiMode ? 'ai' : 'manual',
         title,
         description,
         subject,
@@ -179,6 +238,22 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
         shuffleQuestions,
         shuffleOptions,
         questions,
+        activeQuestionDraft: hasActiveQuestion ? {
+          editingQuestionId,
+          isAddingQuestion,
+          qText,
+          qType,
+          qImageCaption,
+          qImagePrompt,
+          qImageUrl,
+          qOptions,
+          qCorrectIndex,
+          qExplanation,
+          qAcceptableAnswers,
+          qMatchingPairs,
+          qPoints,
+          qCustomDurationSec,
+        } : undefined,
       };
       try {
         localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(data));
@@ -186,7 +261,75 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
         // quota fallback
       }
     }
-  }, [currentStep, aiFunnelActive, aiFunnelStage, funnelTopic, title, description, subject, grade, educationLevel, durationPerQuestionSec, coverEmoji, badgeTitle, visibility, defaultGameMode, shuffleQuestions, shuffleOptions, questions, editingQuiz]);
+  }, [
+    currentStep, 
+    aiFunnelActive, 
+    aiFunnelStage, 
+    funnelTopic, 
+    title, 
+    description, 
+    subject, 
+    grade, 
+    educationLevel, 
+    durationPerQuestionSec, 
+    coverEmoji, 
+    badgeTitle, 
+    visibility, 
+    defaultGameMode, 
+    shuffleQuestions, 
+    shuffleOptions, 
+    questions, 
+    editingQuiz,
+    isAiMode,
+    editingQuestionId,
+    isAddingQuestion,
+    qText,
+    qType,
+    qImageCaption,
+    qImagePrompt,
+    qImageUrl,
+    qOptions,
+    qCorrectIndex,
+    qExplanation,
+    qAcceptableAnswers,
+    qMatchingPairs,
+    qPoints,
+    qCustomDurationSec
+  ]);
+
+  // Inform user if a draft was restored upon mount
+  const restoredDraftRef = useRef(false);
+  useEffect(() => {
+    if (!editingQuiz && draft && !restoredDraftRef.current) {
+      restoredDraftRef.current = true;
+      const questionCount = draft.questions?.length || 0;
+      const hasDraftContent = draft.title || draft.funnelTopic || questionCount > 0 || draft.activeQuestionDraft;
+      if (hasDraftContent) {
+        showToast('✨ Draf kuis Anda sebelumnya telah dipulihkan secara otomatis.');
+      }
+    }
+  }, [draft, editingQuiz]);
+
+  // Warn before accidental page reload / close if there is unsaved progress
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      const hasProgress = 
+        Boolean(title.trim()) || 
+        Boolean(funnelTopic.trim()) || 
+        questions.length > 0 || 
+        Boolean(qText.trim()) ||
+        Boolean(editingQuestionId) ||
+        isAddingQuestion;
+
+      if (hasProgress) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [title, funnelTopic, questions.length, qText, editingQuestionId, isAddingQuestion]);
 
   const mainContentRef = useRef<HTMLElement>(null);
 
@@ -215,6 +358,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   const handleResetDraft = () => {
     try {
       localStorage.removeItem(DRAFT_STORAGE_KEY);
+      clearAiGeneratorDraft();
     } catch {
       // ignore
     }
@@ -234,6 +378,8 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     setShuffleOptions(false);
     setQuestions([]);
     setEditingQuestionId(null);
+    setIsAddingQuestion(false);
+    resetFormFields();
     setCurrentStep(1);
     if (isAiMode) {
       setAiFunnelActive(true);
@@ -241,28 +387,6 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     setShowResetConfirm(false);
     showToast('Draf pembuatan kuis telah direset.');
   };
-
-  // Active Question Form State
-  const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
-  const [qText, setQText] = useState('');
-  const [qType, setQType] = useState<QuestionType>('multiple_choice');
-  const [qImageCaption, setQImageCaption] = useState('');
-  const [qImagePrompt, setQImagePrompt] = useState('');
-  const [qImageUrl, setQImageUrl] = useState<string | undefined>(undefined);
-  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
-  const [qOptions, setQOptions] = useState<string[]>(['', '', '', '']);
-  const [qCorrectIndex, setQCorrectIndex] = useState<number>(0);
-  const [qExplanation, setQExplanation] = useState('');
-  const [qAcceptableAnswers, setQAcceptableAnswers] = useState('');
-  const [qMatchingPairs, setQMatchingPairs] = useState<{ left: string; right: string }[]>([
-    { left: '', right: '' },
-    { left: '', right: '' },
-    { left: '', right: '' },
-  ]);
-  const [qPoints, setQPoints] = useState<number>(10);
-  const [qCustomDurationSec, setQCustomDurationSec] = useState<string>('');
-  const [isAddingQuestion, setIsAddingQuestion] = useState(false);
-  const [isGeneratingAiImage, setIsGeneratingAiImage] = useState(false);
 
   // Back Handlers
   useBackHandler('creator-step-preview', 40, () => {
@@ -631,6 +755,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
 
     try {
       localStorage.removeItem(DRAFT_STORAGE_KEY);
+      clearAiGeneratorDraft();
     } catch {
       // ignore
     }

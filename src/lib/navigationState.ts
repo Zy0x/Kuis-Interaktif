@@ -5,6 +5,7 @@ export interface SavedNavigationState {
   quizId?: string;
   pin?: string;
   teacherTab?: 'quizzes' | 'submissions' | 'generator';
+  creatorMode?: 'ai' | 'manual';
   lastAnswers?: QuizAttemptAnswer[];
   lastTimeSpent?: number;
   timestamp: number;
@@ -21,6 +22,7 @@ export function saveNavigationState(state: {
   quiz?: Quiz | null;
   quizId?: string;
   teacherTab?: 'quizzes' | 'submissions' | 'generator';
+  creatorMode?: 'ai' | 'manual';
   lastAnswers?: QuizAttemptAnswer[];
   lastTimeSpent?: number;
   replace?: boolean;
@@ -50,11 +52,32 @@ export function saveNavigationState(state: {
     }
   }
 
+  // Pertahankan creatorMode jika sedang di layar creator
+  let resolvedCreatorMode = state.creatorMode;
+  if (!resolvedCreatorMode && state.screen === 'creator' && typeof window !== 'undefined') {
+    const params = new URLSearchParams(window.location.search);
+    const urlMode = params.get('mode') as 'ai' | 'manual' | null;
+    if (urlMode === 'ai' || urlMode === 'manual') {
+      resolvedCreatorMode = urlMode;
+    } else {
+      try {
+        const raw = sessionStorage.getItem(NAV_SESSION_KEY);
+        if (raw) {
+          const s = JSON.parse(raw);
+          if (s.creatorMode === 'ai' || s.creatorMode === 'manual') {
+            resolvedCreatorMode = s.creatorMode;
+          }
+        }
+      } catch {}
+    }
+  }
+
   const payload: SavedNavigationState = {
     screen: state.screen,
     quizId,
     pin,
     teacherTab: resolvedTab || undefined,
+    creatorMode: resolvedCreatorMode || undefined,
     lastAnswers: state.lastAnswers,
     lastTimeSpent: state.lastTimeSpent,
     timestamp: Date.now(),
@@ -74,6 +97,7 @@ export function saveNavigationState(state: {
       url.searchParams.delete('screen');
       url.searchParams.delete('quiz');
       url.searchParams.delete('tab');
+      url.searchParams.delete('mode');
       if (!pin) url.searchParams.delete('pin');
     } else {
       url.searchParams.set('screen', state.screen);
@@ -86,6 +110,12 @@ export function saveNavigationState(state: {
         url.searchParams.set('tab', resolvedTab);
       } else {
         url.searchParams.delete('tab');
+      }
+
+      if (state.screen === 'creator' && resolvedCreatorMode) {
+        url.searchParams.set('mode', resolvedCreatorMode);
+      } else {
+        url.searchParams.delete('mode');
       }
     }
 
@@ -108,6 +138,7 @@ export function restoreNavigationState(): {
   quizId?: string;
   pin?: string;
   teacherTab?: 'quizzes' | 'submissions' | 'generator';
+  creatorMode?: 'ai' | 'manual';
   lastAnswers?: QuizAttemptAnswer[];
   lastTimeSpent?: number;
   isRestored: boolean;
@@ -122,6 +153,7 @@ export function restoreNavigationState(): {
     const quizParam = params.get('quiz');
     const pinParam = params.get('pin');
     const tabParam = params.get('tab') as 'quizzes' | 'submissions' | 'generator' | null;
+    const modeParam = params.get('mode') as 'ai' | 'manual' | null;
 
     let sessionData: SavedNavigationState | null = null;
     try {
@@ -141,6 +173,7 @@ export function restoreNavigationState(): {
         quizId: quizParam || sessionData?.quizId,
         pin: pinParam || sessionData?.pin,
         teacherTab: tabParam || sessionData?.teacherTab || 'quizzes',
+        creatorMode: (modeParam === 'ai' || modeParam === 'manual') ? modeParam : sessionData?.creatorMode,
         lastAnswers: sessionData?.lastAnswers || [],
         lastTimeSpent: sessionData?.lastTimeSpent || 0,
         isRestored: true,

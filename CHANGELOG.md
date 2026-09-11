@@ -1,17 +1,39 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.99] - 2026-09-11
+### Auto-Save & Persistensi Penuh Progres Pembuatan Kuis saat Halaman Ter-refresh
+
+#### 1. Masalah yang Diselesaikan
+- Pengguna yang sedang membuat kuis di Studio Kuis atau menyusun konfigurasi di AI Generator kehilangan seluruh progres ketika browser ter-refresh secara tidak sengaja (tombol F5, reload bar, atau gesture swipe-down di perangkat mobile).
+- Status mode (`creatorMode: 'ai' | 'manual'`) dan nomor tahapan form tidak tersimpan di navigasi sesi, menyebabkan pengguna terlempar kembali ke mode default.
+
+#### 2. Auto-Save Form Pembuatan Soal Aktif & Bank Soal (`QuizCreator.tsx`)
+- **Penyimpanan Draft Soal Berjalan (`activeQuestionDraft`)**: Teks soal, tipe soal, opsi jawaban, kunci jawaban, pembahasan materi, kata kunci isian singkat, kartu menjodohkan, poin, dan durasi kustom kini disimpan otomatis ke `localStorage` secara reaktif.
+- **Deteksi Mode Otomatis**: Menyimpan dan memulihkan status funnel AI (`aiFunnelActive`, `aiFunnelStage`, `funnelTopic`) dan tab pembuatan kuis.
+- **Notifikasi Pemulihan Draft**: Toast ramah otomatis memberitahu guru saat draft kuis sebelumnya berhasil dipulihkan setelah reload halaman.
+- **Peringatan Reload Browser (`beforeunload`)**: Peringatan konfirmasi asli browser ditampilkan jika terdapat pekerjaan atau teks soal yang sedang disusun dan belum disimpan.
+- **Pembersihan Draft Terpadu**: Draft otomatis dibersihkan secara bersih saat kuis berhasil diterbitkan atau saat tombol "Reset Draft" dikonfirmasi.
+
+#### 3. Persistensi Penuh AI Generator Step (`AiGeneratorStep.tsx`)
+- **Penyimpanan Konfigurasi AI Generator (`kuis_ai_generator_draft_v1`)**: Menyimpan seluruh konfigurasi Tahap 1–4, meliputi: catatan konteks, jumlah soal, proporsi tipe soal, fokus kognitif Bloom (C1–C6), konteks Kurikulum Merdeka, pemilihan mesin AI, dan teks prompt mentah/dokumen yang diimpor.
+- **Pemulihan Otomatis pada Mount**: Form langsung terisi kembali sesuai konfigurasi sebelumnya tanpa perlu memilih ulang dari awal.
+- **Peringatan Navigasi & Reload**: Event listener `beforeunload` aktif jika pengguna berada pada tahapan funnel lanjutan atau telah mengisi topik/catatan.
+
+#### 4. Sinkronisasi Status Navigasi URL & Sesi (`navigationState.ts` & `App.tsx`)
+- Parameter query `mode=ai` atau `mode=manual` disinkronkan secara aman ke URL dan `sessionStorage` sehingga perpindahan dan penyegaran halaman tetap mempertahankan mode pilihan pengguna.
+
 ## [2.2.98] - 2026-09-11
-### Integrasi Alur Kerja Microsoft Bing Image Creator (DALL-E 3) & Penempelan Gambar Instan
+### Integrasi Alur Kerja Microsoft Bing Image Creator (DALL-E 3) & Smart Clipboard Paste
 
-#### 1. Tab Khusus Bing Image Creator (DALL-E 3) di Modal Ilustrasi
-- Menyediakan tab khusus **Bing DALL-E 3** pada Modal Pemilih Ilustrasi (`ImageSelectorModal.tsx`).
-- Menghadirkan generator formula prompt teks buku pelajaran sains yang dioptimalkan secara spesifik untuk mesin DALL-E 3 (`buildBingDallePrompt`).
-- **Tombol Satu Klik "Salin Prompt & Buka Bing Image Creator"**: Otomatis menyalin prompt instruksi ke papan klip (*clipboard*) dan membuka antarmuka pembuat gambar resmi Microsoft Bing Image Creator pada tab baru.
+#### 1. Masalah yang Diselesaikan
+- AI diagram lokal terkadang menghasilkan teks atau label yang kurang tajam untuk konsep biologi/sains yang sangat rumit.
+- Guru menginginkan opsi untuk menggunakan mesin gambar tingkat tinggi seperti DALL-E 3 tanpa biaya API berbayar.
 
-#### 2. Fitur Penempelan Cerdas (Smart Clipboard Paste Handler)
-- Mendukung penempelan gambar langsung melalui tombol pintas keyboard <kbd>Ctrl + V</kbd> pada modal: saat pengguna menyalin gambar hasil dari Bing, mereka cukup kembali ke aplikasi dan menekan <kbd>Ctrl + V</kbd> untuk langsung memasang gambar ke soal.
-- Kolom penempelan tautan gambar (*Image URL*) dengan pratinjau langsung untuk tautan CDN resmi `th.bing.com` maupun tautan gambar publik lainnya.
+#### 2. Generator Pintar Microsoft Bing Image Creator (`ImageSelectorModal.tsx`)
+- Tab khusus generator Bing Image Creator terpadu dengan penyusunan prompt otomatis berbasis prompt Kurikulum Merdeka.
+- Tombol salin prompt sekali klik dan tombol langsung menuju Bing Image Creator di tab baru.
+- Dukungan *Smart Clipboard Paste* (Ctrl+V) langsung ke modal untuk menempelkan gambar hasil racikan Bing tanpa perlu menyimpan berkas manual ke hard disk.
 
 ## [2.2.97] - 2026-09-11
 ### Peningkatan Akurasi Ilustrasi Soal: Sistem Pencarian Hybrid (Ensiklopedia & AI Diagram Flux)
