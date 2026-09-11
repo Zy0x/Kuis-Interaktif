@@ -1,6 +1,38 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.14] - 2026-09-11
+### Pembersihan Total AI Slop & Redundansi Editor Butir Soal
+
+#### 1. Masalah yang Diselesaikan
+- **AI Slop & Teks Bising (*Visual Noise*)**: Formulir editor soal memuat teks pengisi (*filler text*) yang bertele-tele seperti *"Sesuaikan pertanyaan, opsi, dan kunci jawaban"*, *"Teks Pertanyaan Soal \*"*, *"Tuliskan butir pertanyaan kuis secara jelas dan ramah anak..."*, dan teks petunjuk pembesaran sudut textarea yang sudah usang.
+- **Redundansi Tombol Navigasi & Aksi Keluar**: Header editor memuat dua tombol keluar sekaligus (`[← Daftar Soal]` dan `[ ✕ ]`) yang menjalankan fungsi identik.
+- **Redundansi Aksi Ilustrasi Gambar**: Tiga tombol berderet (`Cari/Buat`, `Unggah Berkas`, `Buat Cepat AI`) bersaing satu sama lain dan menduplikasi fitur modal gambar ber-tab.
+- **Pelanggaran Standar Ukuran Target Sentuh (Rule 1)**: Tombol pemilih kunci jawaban pilihan ganda berukuran `w-7 h-7` (28×28 px), sangat rawan salah sentuh di layar ponsel cerdas.
+- **Ketidakseimbangan Proporsi Input**: Kolom input Bobot Poin memakan 50% lebar layar desktop hanya untuk angka 2-digit.
+- **Ambiguitas Tombol Aksi Bawah**: Tombol *"Simpan & Tambah Lagi"* ditampilkan saat mode edit soal, padahal pengguna sedang merevisi satu butir soal tertentu.
+
+#### 2. Implementasi & Desain Clean (`QuizCreator.tsx`)
+- **Navigasi Header Satu Arah & Konteks Butir Soal**:
+  - Menghapus tombol silang `[✕]` ganda dan mempertahankan satu tombol `[← Kembali]` yang elegan.
+  - Menambahkan judul berkonteks: **`Edit Soal #X`** disertai pill badge **`X dari Y Soal`** saat mode edit, atau **`Tambah Soal Baru`** dengan badge **`Butir Soal #X`** saat mode tambah.
+  - Mengeliminasi seluruh subjudul klise khas AI.
+- **Tata Letak Proporsional Tipe Soal & Bobot Poin**:
+  - Kolom Tipe Soal mengambil mayoritas lebar (`flex-1`) dan Bobot Poin dibuat ringkas (`w-40`) dengan label satuan `"Poin"` di dalam kolom input.
+  - Menyederhanakan label menjadi **`Tipe Soal`** dan **`Bobot Poin`**.
+- **Penyederhanaan Form Pertanyaan**:
+  - Label diringkas menjadi **`Pertanyaan Soal *`** dan placeholder profesional `"Tuliskan pertanyaan soal di sini..."`.
+  - Menghapus teks instruksi manual sudut perbesar karena komponen sudah memiliki indikator grip bawaan.
+- **Pusat Aksi Ilustrasi Terpadu (*Single Action Hub*)**:
+  - Mengganti tiga tombol bersaing menjadi satu tombol terpadu **`[✨ Pilih / Buat Ilustrasi (AI, Ensiklopedia, Unggah)]`** yang terhubung langsung ke modal gambar multi-tab.
+  - Tampilan gambar terpasang disederhanakan dengan pratinjau thumbnail, keterangan opsional, tombol `[Ganti Gambar]`, dan tombol `[Hapus Gambar]`.
+- **Target Sentuh Kunci Pilihan Ganda 44 px (Kepatuhan Rule 1)**:
+  - Meningkatkan ukuran tombol kunci pilihan ganda dari 28 px menjadi **`w-10 h-10` (40–44 px)** dengan sudut membulat modern (`rounded-lg` / `rounded-xl`).
+  - Menyederhanakan label menjadi **`Pilihan Jawaban (Pilih Kunci Benar)`** tanpa teks instruksi mikro berlebih.
+- **Diferensiasi Aksi Footer Berdasarkan Konteks**:
+  - **Mode Edit**: Hanya menampilkan tombol `[Batal]` dan tombol primer **`[Simpan Perubahan]`**.
+  - **Mode Tambah Baru**: Menampilkan tombol `[Batal]`, tombol sekunder **`[Simpan & Tambah Lagi]`**, dan tombol primer **`[Simpan Soal]`**.
+
 ## [2.3.13] - 2026-09-11
 ### Penyesuaian Spasi Bawah: Normalisasi Jarak Tombol Navigasi Akhir ke Dasar Halaman
 
