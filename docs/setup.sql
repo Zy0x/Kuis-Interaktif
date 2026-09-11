@@ -499,3 +499,63 @@ VALUES
   ('q6-3', 'sd6-pancasila-wawasan', 'Musyawarah untuk mufakat dalam menyelesaikan masalah mencerminkan pengamalan Pancasila sila ke...', 'multiple_choice', NULL, '["Sila ke-2", "Sila ke-3", "Sila ke-4", "Sila ke-5"]'::jsonb, 2, 'Sila ke-4 (Kerakyatan yang Dipimpin oleh Hikmat Kebijaksanaan dalam Permusyawaratan/Perwakilan).', 3)
 ON CONFLICT (id) DO NOTHING;
 
+-- ==========================================================
+-- 13. TABEL SESI KUIS AKTIF (QUIZ_SESSIONS) & PESERTA
+-- ==========================================================
+CREATE TABLE IF NOT EXISTS public.quiz_sessions (
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    quiz_id TEXT NOT NULL REFERENCES public.quizzes(id) ON DELETE CASCADE,
+    quiz_title VARCHAR(255) NOT NULL,
+    pin_code VARCHAR(8) NOT NULL,
+    teacher_id TEXT,
+    teacher_email VARCHAR(255),
+    teacher_name VARCHAR(120),
+    status VARCHAR(32) NOT NULL DEFAULT 'active' CHECK (status IN ('waiting', 'active', 'paused', 'finished')),
+    settings JSONB NOT NULL DEFAULT '{}'::jsonb,
+    total_questions SMALLINT NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    started_at TIMESTAMPTZ DEFAULT NOW(),
+    ended_at TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS idx_quiz_sessions_quiz_id ON public.quiz_sessions(quiz_id);
+CREATE INDEX IF NOT EXISTS idx_quiz_sessions_pin ON public.quiz_sessions(pin_code);
+CREATE INDEX IF NOT EXISTS idx_quiz_sessions_status ON public.quiz_sessions(status);
+CREATE INDEX IF NOT EXISTS idx_quiz_sessions_teacher ON public.quiz_sessions(teacher_email);
+
+CREATE TABLE IF NOT EXISTS public.quiz_session_participants (
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    session_id TEXT NOT NULL REFERENCES public.quiz_sessions(id) ON DELETE CASCADE,
+    student_name VARCHAR(64) NOT NULL,
+    avatar_id VARCHAR(32) NOT NULL DEFAULT 'lion',
+    current_question_index SMALLINT NOT NULL DEFAULT 0,
+    score SMALLINT NOT NULL DEFAULT 0,
+    stars SMALLINT NOT NULL DEFAULT 0,
+    correct_count SMALLINT NOT NULL DEFAULT 0,
+    incorrect_count SMALLINT NOT NULL DEFAULT 0,
+    streak SMALLINT NOT NULL DEFAULT 0,
+    finished BOOLEAN NOT NULL DEFAULT FALSE,
+    time_spent_sec INT NOT NULL DEFAULT 0,
+    answers JSONB NOT NULL DEFAULT '{}'::jsonb,
+    joined_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    last_active_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_session_participants_session ON public.quiz_session_participants(session_id);
+CREATE INDEX IF NOT EXISTS idx_session_participants_score ON public.quiz_session_participants(session_id, score DESC, time_spent_sec ASC);
+
+ALTER TABLE public.quiz_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.quiz_session_participants ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Allow All Read Quiz Sessions" ON public.quiz_sessions;
+CREATE POLICY "Allow All Read Quiz Sessions" ON public.quiz_sessions FOR SELECT USING (TRUE);
+
+DROP POLICY IF EXISTS "Allow Manage Quiz Sessions" ON public.quiz_sessions;
+CREATE POLICY "Allow Manage Quiz Sessions" ON public.quiz_sessions FOR ALL USING (TRUE) WITH CHECK (TRUE);
+
+DROP POLICY IF EXISTS "Allow All Read Session Participants" ON public.quiz_session_participants;
+CREATE POLICY "Allow All Read Session Participants" ON public.quiz_session_participants FOR SELECT USING (TRUE);
+
+DROP POLICY IF EXISTS "Allow Manage Session Participants" ON public.quiz_session_participants;
+CREATE POLICY "Allow Manage Session Participants" ON public.quiz_session_participants FOR ALL USING (TRUE) WITH CHECK (TRUE);
+

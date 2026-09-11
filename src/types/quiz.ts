@@ -237,3 +237,63 @@ export const canManageQuizzes = (teacher: TeacherProfile | null | undefined): bo
   return Boolean(teacher && teacher.id && teacher.id.trim() !== '');
 };
 
+// ==========================================================
+// ACTIVE QUIZ SESSION & WAYGROUND HOST DEFINITIONS
+// ==========================================================
+export type QuizSessionStatus = 'waiting' | 'active' | 'paused' | 'finished';
+
+export interface QuizSessionParticipantAnswer {
+  questionId: string;
+  questionIndex: number;
+  selectedOption?: number;
+  textAnswer?: string;
+  isCorrect: boolean;
+  timeSpentSec: number;
+  pointsEarned: number;
+}
+
+export interface QuizSessionParticipant {
+  id: string;
+  name: string;
+  avatarId: string;
+  currentQuestionIndex: number; // 0-based
+  totalQuestions: number;
+  score: number;
+  stars: number;
+  correctCount: number;
+  incorrectCount: number;
+  streak: number;
+  finished: boolean;
+  timeSpentSec: number;
+  answers: Record<string, QuizSessionParticipantAnswer>;
+  joinedAt: string;
+  lastActiveAt: string;
+}
+
+export interface QuizSessionSettings {
+  mode: GameMode;
+  durationPerQuestionSec: number;
+  shuffleQuestions: boolean;
+  shuffleOptions: boolean;
+  presentationTarget: 'smartboard' | 'student-lobby';
+}
+
+export interface QuizSession {
+  id: string;
+  quizId: string;
+  quizTitle: string;
+  quizCover?: string;
+  subject: Subject;
+  grade: number;
+  pinCode: string;
+  teacherId?: string;
+  teacherEmail?: string;
+  teacherName?: string;
+  status: QuizSessionStatus;
+  createdAt: string;
+  startedAt?: string;
+  endedAt?: string;
+  settings: QuizSessionSettings;
+  participants: QuizSessionParticipant[];
+  totalQuestions: number;
+}

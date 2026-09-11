@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import type { Quiz, TeacherProfile, Subject } from '../../types/quiz';
+import type { Quiz, TeacherProfile, Subject, QuizSession } from '../../types/quiz';
 import { MASTER_TEACHER_EMAIL } from '../../types/quiz';
 import { DataManager } from '../../lib/supabaseClient';
 import { useBackHandler } from '../../lib/navigationHistory';
@@ -11,25 +11,34 @@ import { QuizCoverDisplay } from '../common/QuizCoverDisplay';
 import { QuizDetail } from './QuizDetail';
 import { CreateQuizMethodModal } from './CreateQuizMethodModal';
 import { PlayQuizModal, type PlayQuizSessionOptions } from './PlayQuizModal';
+import { WaygroundHostView } from './WaygroundHostView';
+import { QuizSessionRecapView } from './QuizSessionRecapView';
 import { 
   GraduationCap, 
   Plus, 
-  Play,
+  Play, 
   Copy, 
   Check, 
   LogOut, 
-  ArrowLeft,
-  Share2,
-  Lock,
-  Globe,
-  RotateCcw,
-  MoreVertical,
-  HelpCircle,
-  Clock,
-  Search,
-  X,
-  BookOpen,
-  BarChart3
+  ArrowLeft, 
+  Share2, 
+  Lock, 
+  Globe, 
+  RotateCcw, 
+  MoreVertical, 
+  HelpCircle, 
+  Clock, 
+  Search, 
+  X, 
+  BookOpen, 
+  BarChart3,
+  Radio,
+  Trash2,
+  Users,
+  CheckCircle2,
+  Pause,
+  FileSpreadsheet,
+  Tv
 } from 'lucide-react';
 
 const getSubjectBadge = (subject: string) => {
@@ -67,7 +76,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   onOpenCreator,
   onLaunchSmartboard,
   onPrintWorksheet,
-  onStartQuiz,
+  onStartQuiz: _onStartQuiz,
   playClick,
   isDark = false,
   onToggleTheme = () => {},
@@ -76,6 +85,17 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   const [selectedQuizForDetail, setSelectedQuizForDetail] = useState<Quiz | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [quizToPlay, setQuizToPlay] = useState<Quiz | null>(null);
+
+  // Main Tab Navigation State: 'collection' | 'live_sessions'
+  const [activeMainTab, setActiveMainTab] = useState<'collection' | 'live_sessions'>('collection');
+
+  // Active Sessions States
+  const [sessions, setSessions] = useState<QuizSession[]>([]);
+  const [sessionFilter, setSessionFilter] = useState<'all' | 'active' | 'finished'>('all');
+  const [selectedSessionForHost, setSelectedSessionForHost] = useState<QuizSession | null>(null);
+  const [selectedSessionForRecap, setSelectedSessionForRecap] = useState<QuizSession | null>(null);
+  const [sessionToDelete, setSessionToDelete] = useState<QuizSession | null>(null);
+  const [isDeletingSession, setIsDeletingSession] = useState(false);
 
   // Search, Filter & Sort States
   const [searchQuery, setSearchQuery] = useState('');
@@ -95,6 +115,14 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
 
   // Navigation back handler
   useBackHandler('teacher-dashboard-main', 30, () => {
+    if (selectedSessionForHost) {
+      setSelectedSessionForHost(null);
+      return true;
+    }
+    if (selectedSessionForRecap) {
+      setSelectedSessionForRecap(null);
+      return true;
+    }
     if (selectedQuizForDetail) {
       setSelectedQuizForDetail(null);
       return true;
@@ -112,6 +140,9 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
     const all = DataManager.getAllQuizzes({ teacherEmail: teacher.email, teacherId: teacher.id });
     setQuizzes(all);
     setDeletedCount(DataManager.getDeletedQuizIds().length);
+
+    const mySessions = DataManager.getActiveSessions({ teacherEmail: teacher.email });
+    setSessions(mySessions);
 
     // 2. Query Supabase health and fetch live cloud data
     try {
@@ -142,6 +173,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
 
   const handleStartQuizFromModal = async (quiz: Quiz, options: PlayQuizSessionOptions) => {
     setQuizToPlay(null);
+    setSelectedQuizForDetail(null);
     if (options.saveAsDefault) {
       await handleSaveQuizSettings(quiz.id, {
         defaultGameMode: options.mode,
@@ -150,17 +182,13 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
         shuffleOptions: options.shuffleOptions,
       });
     }
-    if (onStartQuiz) {
-      onStartQuiz(quiz, options);
-    } else {
-      onLaunchSmartboard({
-        ...quiz,
-        defaultGameMode: options.mode,
-        durationPerQuestionSec: options.durationPerQuestionSec,
-        shuffleQuestions: options.shuffleQuestions,
-        shuffleOptions: options.shuffleOptions,
-      });
-    }
+
+    // Register active session only when teacher completes config and starts!
+    const newSession = await DataManager.createActiveSession(quiz, options, teacher);
+    await loadData();
+
+    // Open Wayground Host View directly
+    setSelectedSessionForHost(newSession);
   };
 
   const handleDuplicateQuiz = async (quiz: Quiz) => {
@@ -203,6 +231,45 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
       setIsDeletingQuiz(false);
     }
   };
+
+  const handleConfirmDeleteSession = async () => {
+    if (!sessionToDelete) return;
+    setIsDeletingSession(true);
+    try {
+      await DataManager.deleteActiveSession(sessionToDelete.id);
+      await loadData();
+      setSessionToDelete(null);
+    } finally {
+      setIsDeletingSession(false);
+    }
+  };
+
+  const handleEndSessionDirectly = async (sessionId: string) => {
+    playClick();
+    const updated = await DataManager.updateSessionStatus(sessionId, 'finished');
+    await loadData();
+    if (updated) {
+      setSelectedSessionForRecap(updated);
+    }
+  };
+
+  const liveSessionsCount = useMemo(
+    () => sessions.filter((s) => s.status === 'active' || s.status === 'paused').length,
+    [sessions]
+  );
+  const finishedSessionsCount = useMemo(
+    () => sessions.filter((s) => s.status === 'finished').length,
+    [sessions]
+  );
+  const filteredSessions = useMemo(() => {
+    if (sessionFilter === 'active') {
+      return sessions.filter((s) => s.status === 'active' || s.status === 'paused');
+    }
+    if (sessionFilter === 'finished') {
+      return sessions.filter((s) => s.status === 'finished');
+    }
+    return sessions;
+  }, [sessions, sessionFilter]);
 
   // Filtered & Sorted Quizzes Calculation
   const filteredQuizzes = useMemo(() => {
@@ -294,6 +361,73 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
     );
   }
 
+  // If host view is open:
+  if (selectedSessionForHost) {
+    const matchingQuiz: Quiz = quizzes.find((q) => q.id === selectedSessionForHost.quizId) || {
+      id: selectedSessionForHost.quizId,
+      title: selectedSessionForHost.quizTitle,
+      description: '',
+      subject: selectedSessionForHost.subject,
+      grade: selectedSessionForHost.grade,
+      durationPerQuestionSec: 30,
+      coverEmoji: selectedSessionForHost.quizCover || '⭐',
+      themeColor: 'from-blue-500 to-indigo-600',
+      badgeTitle: 'Bintang Kuis',
+      visibility: 'public',
+      questions: [],
+    };
+
+    return (
+      <WaygroundHostView
+        session={selectedSessionForHost}
+        quiz={matchingQuiz}
+        onBack={() => {
+          setSelectedSessionForHost(null);
+          loadData();
+        }}
+        onEndSession={(updatedSession) => {
+          loadData();
+          setSelectedSessionForHost(null);
+          setSelectedSessionForRecap(updatedSession);
+        }}
+        onViewRecap={(s) => {
+          setSelectedSessionForHost(null);
+          setSelectedSessionForRecap(s);
+        }}
+        playClick={playClick}
+      />
+    );
+  }
+
+  // If recap view is open:
+  if (selectedSessionForRecap) {
+    const matchingQuiz: Quiz = quizzes.find((q) => q.id === selectedSessionForRecap.quizId) || {
+      id: selectedSessionForRecap.quizId,
+      title: selectedSessionForRecap.quizTitle,
+      description: '',
+      subject: selectedSessionForRecap.subject,
+      grade: selectedSessionForRecap.grade,
+      durationPerQuestionSec: 30,
+      coverEmoji: selectedSessionForRecap.quizCover || '⭐',
+      themeColor: 'from-blue-500 to-indigo-600',
+      badgeTitle: 'Bintang Kuis',
+      visibility: 'public',
+      questions: [],
+    };
+
+    return (
+      <QuizSessionRecapView
+        session={selectedSessionForRecap}
+        quiz={matchingQuiz}
+        onBack={() => {
+          setSelectedSessionForRecap(null);
+          loadData();
+        }}
+        playClick={playClick}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-20 flex flex-col animate-fade-in">
       {/* Top Navbar */}
@@ -368,16 +502,68 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
         </div>
       </header>
 
+      {/* Main Tab Navigation: Koleksi Kuis vs Kuis Aktif */}
+      <nav className="w-full bg-white dark:bg-slate-900 border-b border-slate-200/90 dark:border-slate-800 px-3 sm:px-8 lg:px-12 transition-colors">
+        <div className="w-full max-w-[2000px] mx-auto flex items-center gap-2 sm:gap-4 overflow-x-auto py-2.5">
+          <button
+            type="button"
+            onClick={() => {
+              playClick();
+              setActiveMainTab('collection');
+            }}
+            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all min-h-[44px] whitespace-nowrap ${
+              activeMainTab === 'collection'
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
+            }`}
+          >
+            <BookOpen className="w-4 h-4" />
+            <span>Koleksi Kuis ({quizzes.length})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              playClick();
+              setActiveMainTab('live_sessions');
+            }}
+            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all min-h-[44px] whitespace-nowrap relative ${
+              activeMainTab === 'live_sessions'
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
+            }`}
+          >
+            {liveSessionsCount > 0 ? (
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span>
+              </span>
+            ) : (
+              <Radio className="w-4 h-4 text-slate-400" />
+            )}
+            <span>Kuis Aktif & Sesi Live</span>
+            {liveSessionsCount > 0 && (
+              <span className="px-2 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-black tracking-wider animate-pulse">
+                {liveSessionsCount} LIVE
+              </span>
+            )}
+          </button>
+        </div>
+      </nav>
+
       {/* Main Container */}
       <main className="w-full max-w-[2000px] mx-auto px-3 xs:px-4 sm:px-8 lg:px-12 pt-5 sm:pt-6 space-y-6 flex-1">
         
-        {/* Section Header & Subtitle */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <BookOpen className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-              <span>Koleksi Kuis Saya ({quizzes.length})</span>
-            </h2>
+        {/* TAB 1: KOLEKSI KUIS */}
+        {activeMainTab === 'collection' && (
+          <div className="space-y-6">
+            {/* Section Header & Subtitle */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <BookOpen className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  <span>Koleksi Kuis Saya ({quizzes.length})</span>
+                </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400">
               Pilih kuis untuk melihat detail, memeriksa rekap nilai siswa, atau menyajikan di Smartboard.
             </p>
@@ -725,6 +911,280 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
             ))}
           </div>
         )}
+      </div>
+      )}
+
+      {/* TAB 2: KUIS AKTIF & SESI LIVE (WAYGROUND) */}
+      {activeMainTab === 'live_sessions' && (
+        <div className="space-y-6">
+          {/* Section Header & Subtitle */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Radio className="w-5 h-5 text-rose-500 animate-pulse" />
+                <span>Kuis Aktif & Sesi Bermain Siswa ({sessions.length})</span>
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Pantau interaksi siswa secara langsung ala Quizizz Wayground, kendalikan sesi live, atau buka rekapan hasil kuis.
+              </p>
+            </div>
+
+            {/* Sub-Filter Pills */}
+            <div className="flex items-center gap-1.5 p-1 bg-slate-200/70 dark:bg-slate-800/80 rounded-2xl self-start sm:self-auto text-xs font-bold">
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setSessionFilter('all');
+                }}
+                className={`px-3 py-1.5 rounded-xl transition-all ${
+                  sessionFilter === 'all'
+                    ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                Semua ({sessions.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setSessionFilter('active');
+                }}
+                className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 ${
+                  sessionFilter === 'active'
+                    ? 'bg-white dark:bg-slate-900 text-rose-600 dark:text-rose-400 shadow-xs'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <span className="w-2 h-2 rounded-full bg-rose-500" />
+                <span>Sedang Berjalan ({liveSessionsCount})</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setSessionFilter('finished');
+                }}
+                className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 ${
+                  sessionFilter === 'finished'
+                    ? 'bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-xs'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <span>✓ Selesai ({finishedSessionsCount})</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Sessions Grid */}
+          {filteredSessions.length === 0 ? (
+            <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 sm:p-12 text-center border border-slate-200 dark:border-slate-800 space-y-4 max-w-lg mx-auto shadow-xs">
+              <div className="w-16 h-16 rounded-3xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center text-3xl mx-auto shadow-sm">
+                <Radio className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div className="space-y-1.5">
+                <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
+                  {sessionFilter === 'active'
+                    ? 'Tidak Ada Kuis yang Sedang Berjalan'
+                    : sessionFilter === 'finished'
+                    ? 'Belum Ada Riwayat Kuis Selesai'
+                    : 'Belum Ada Sesi Kuis Aktif'}
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+                  {sessionFilter === 'all'
+                    ? 'Mulai sesi kuis untuk memantau nilai dan jawaban murid secara langsung ala Quizizz Wayground.'
+                    : 'Pilih salah satu kuis dari Koleksi Kuis dan tekan "Mainkan Sekarang" untuk memulai sesi baru.'}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setActiveMainTab('collection');
+                }}
+                className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs min-h-[44px]"
+              >
+                Buka Koleksi Kuis & Mulai
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {filteredSessions.map((s) => {
+                const isLive = s.status === 'active' || s.status === 'paused';
+                const partCount = s.participants.length;
+                const finishedCount = s.participants.filter((p) => p.finished).length;
+
+                return (
+                  <div
+                    key={s.id}
+                    className={`bg-white dark:bg-slate-900 rounded-3xl p-5 border transition-all flex flex-col justify-between gap-4 shadow-xs hover:shadow-md ${
+                      isLive
+                        ? 'border-rose-400/80 dark:border-rose-500/50 ring-1 ring-rose-400/30'
+                        : 'border-slate-200 dark:border-slate-800'
+                    }`}
+                  >
+                    {/* Top status & PIN */}
+                    <div className="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black tracking-wider uppercase border ${
+                          s.status === 'active'
+                            ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-300 border-rose-200 dark:border-rose-800'
+                            : s.status === 'paused'
+                            ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-300 border-amber-200 dark:border-amber-800'
+                            : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
+                        }`}
+                      >
+                        {s.status === 'active' ? (
+                          <>
+                            <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
+                            <span>LIVE WAYGROUND</span>
+                          </>
+                        ) : s.status === 'paused' ? (
+                          <>
+                            <Pause className="w-2.5 h-2.5" />
+                            <span>DIJEDA</span>
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle2 className="w-2.5 h-2.5" />
+                            <span>SELESAI</span>
+                          </>
+                        )}
+                      </span>
+
+                      {/* PIN Code with quick copy */}
+                      <button
+                        type="button"
+                        onClick={() => handleCopyPin(s.pinCode)}
+                        className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-xs font-bold transition-colors min-h-[36px]"
+                        title="Klik untuk salin PIN"
+                      >
+                        <span className="text-slate-400 text-[10px]">PIN:</span>
+                        <span className="font-mono text-slate-800 dark:text-slate-200 tracking-wider">
+                          {s.pinCode}
+                        </span>
+                        {copiedPin === s.pinCode ? (
+                          <Check className="w-3.5 h-3.5 text-emerald-500" />
+                        ) : (
+                          <Copy className="w-3.5 h-3.5 text-slate-400" />
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Content */}
+                    <div className="space-y-2.5">
+                      <div className="flex items-center gap-2 text-xs flex-wrap">
+                        <span className={`px-2 py-0.5 rounded-md font-bold text-[10px] border ${getSubjectBadge(s.subject)}`}>
+                          {s.subject}
+                        </span>
+                        <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-[10px]">
+                          Kelas {s.grade}
+                        </span>
+                        <span className="text-slate-400 text-[10px]">•</span>
+                        <span className="text-slate-500 dark:text-slate-400 text-[10px]">
+                          {s.totalQuestions} Soal
+                        </span>
+                      </div>
+
+                      <h3 className="text-base font-black text-slate-900 dark:text-white leading-tight">
+                        {s.quizTitle}
+                      </h3>
+
+                      {/* Metric Bar */}
+                      <div className="bg-slate-50 dark:bg-slate-800/60 rounded-2xl p-3 border border-slate-100 dark:border-slate-800/80 space-y-1.5">
+                        <div className="flex justify-between items-center text-xs font-bold">
+                          <span className="text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                            <Users className="w-3.5 h-3.5 text-blue-500" />
+                            {partCount} Siswa Tergabung
+                          </span>
+                          <span className="text-slate-700 dark:text-slate-300">
+                            {finishedCount} / {partCount} Selesai
+                          </span>
+                        </div>
+                        <div className="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-blue-500 transition-all duration-300"
+                            style={{ width: `${partCount > 0 ? Math.min(100, (finishedCount / partCount) * 100) : 0}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="space-y-2 pt-1 border-t border-slate-100 dark:border-slate-800">
+                      {isLive ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              playClick();
+                              setSelectedSessionForHost(s);
+                            }}
+                            className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-black flex items-center justify-center gap-2 shadow-xs transition-all btn-press min-h-[44px]"
+                          >
+                            <Tv className="w-4 h-4" />
+                            <span>Buka Layar Pantau (Wayground)</span>
+                          </button>
+
+                          <div className="grid grid-cols-2 gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                playClick();
+                                setSelectedSessionForRecap(s);
+                              }}
+                              className="py-2 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold flex items-center justify-center gap-1.5 min-h-[40px] transition-colors"
+                            >
+                              <BarChart3 className="w-3.5 h-3.5 text-blue-500" />
+                              <span>Rekap Sesi</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleEndSessionDirectly(s.id)}
+                              className="py-2 px-3 rounded-xl bg-rose-50 dark:bg-rose-950/30 hover:bg-rose-100 dark:hover:bg-rose-900/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/40 text-xs font-bold flex items-center justify-center gap-1.5 min-h-[40px] transition-colors"
+                            >
+                              <span>Akhiri Sesi</span>
+                            </button>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              playClick();
+                              setSelectedSessionForRecap(s);
+                            }}
+                            className="flex-1 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black flex items-center justify-center gap-2 shadow-xs transition-all btn-press min-h-[44px]"
+                          >
+                            <FileSpreadsheet className="w-4 h-4" />
+                            <span>Lihat Rekap Lengkap & Analisis</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              playClick();
+                              setSessionToDelete(s);
+                            }}
+                            className="p-2.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-slate-200 dark:border-slate-800 min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors flex-shrink-0"
+                            title="Hapus Sesi Kuis Ini"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
       </main>
 
       {/* Modal Pemilihan Metode Buat Kuis Baru */}
@@ -780,6 +1240,17 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
         isLoading={isDeletingQuiz}
         onConfirm={handleConfirmDeleteQuiz}
         onCancel={() => setQuizToDelete(null)}
+      />
+
+      {/* Modal Konfirmasi Hapus Sesi Kuis */}
+      <ConfirmDeleteModal
+        isOpen={Boolean(sessionToDelete)}
+        title="Hapus Riwayat Sesi Kuis Ini?"
+        quizTitle={sessionToDelete?.quizTitle}
+        description={`Apakah Anda yakin ingin menghapus arsip sesi kuis "${sessionToDelete?.quizTitle}" (PIN: ${sessionToDelete?.pinCode})? Seluruh rekapan dan riwayat pengerjaan murid dalam sesi ini akan dihapus.`}
+        isLoading={isDeletingSession}
+        onConfirm={handleConfirmDeleteSession}
+        onCancel={() => setSessionToDelete(null)}
       />
     </div>
   );

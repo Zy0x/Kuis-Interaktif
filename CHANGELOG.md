@@ -1,6 +1,42 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.51] - 2026-09-12
+### Tab Kuis Aktif di Dashboard Guru, Ruang Pantau Wayground Live Host (Quizizz-Style), dan Rekapan Nilai Mendalam
+
+#### 1. Arsitektur Tab Ganda Dashboard Guru (`TeacherDashboard.tsx`)
+- **Navigasi Tab Terpadu**:
+  - Menyediakan 2 tab utama yang bersih dan ergonomis:
+    1. **📚 Koleksi Kuis**: Berisi seluruh katalog kuis milik guru, pencarian, filter mapel/kelas, dan tombol *"Mainkan Sekarang"*.
+    2. **🔴 Kuis Aktif & Sesi Live**: Tab khusus pemantauan sesi permainan murid yang sedang berlangsung secara langsung (*live session tracking*) dengan indikator badge denyut (*pulse animation*) penanda sesi aktif.
+- **Pendaftaran Sesi Terverifikasi**:
+  - Sesi kuis aktif hanya didaftarkan ketika guru mengonfirmasi konfigurasi dan menekan tombol *"Mulai Kuis Sekarang"*. Jika dibatalkan (*cancel*), sesi tidak akan dibuat.
+- **Pengelompokan Status & Kartu Sesi Kuis**:
+  - Filter sub-kategori: *Semua Sesi*, *🔴 Sedang Berjalan*, dan *✓ Selesai (Arsip)*.
+  - Kartu sesi interaktif: Menampilkan PIN 4-digit dengan tombol salin instan, status live/jeda/selesai, jumlah siswa terhubung, progress bar pengerjaan kelas, serta tombol aksi cepat untuk membuka Ruang Pantau Wayground, melihat Rekapan, atau mengakhiri sesi.
+
+#### 2. Ruang Kendali Host Langsung (Wayground Live Host ala Quizizz) (`WaygroundHostView.tsx`)
+- **Antarmuka Pemantau Layar Penuh (Immersive Fullscreen)**:
+  - Header interaktif: Kode PIN besar, status sesi (LIVE / DIJEDA / SELESAI), kontrol Jeda/Lanjut, tombol salin tautan kuis, dan tombol *"Akhiri Kuis & Buka Rekap"*.
+  - **3 Sub-Tampilan Terintegrasi**:
+    1. *🏆 Leaderboard Siswa Real-Time*: Memantau urutan peringkat, skor langsung, bintang, jumlah benar/salah, streak jawaban berturut-turut, dan progress bar nomor soal yang sedang dijawab siswa saat itu juga.
+    2. *📊 Matriks Akurasi Soal*: Grid analisis instan per butir soal untuk mendeteksi soal mana yang mudah dikerjakan kelas ($\ge 80\%$) dan soal mana yang paling menantang ($< 50\%$).
+    3. *📺 Layar Bersama / Proyektor*: Tampilan presentasi soal aktif ke layar besar proyektor/Smartboard lengkap dengan opsi jawaban dan kunci jawaban.
+- **Fitur Simulasi Siswa (Tes Kelas)**:
+  - Tombol `[+3 Siswa Tes]` untuk menyimulasikan murid yang bergabung dan menjawab secara realistis, memungkinkan guru menguji dan mendemonstrasikan ruang kendali tanpa perlu banyak gawai fisik.
+
+#### 3. Laporan Rekapitulasi Nilai & Analisis Butir Soal Komprehensif (`QuizSessionRecapView.tsx`)
+- **3 Sub-Tab Analisis Mendalam Pasca-Kuis**:
+  1. *📈 Ringkasan Metrik Kelas*: Rata-rata akurasi kelas (%), rata-rata nilai skor, tingkat ketuntasan KKM $\ge 70$, rata-rata waktu penyelesaian, podium 3 besar siswa terbaik, serta evaluasi butir soal tersulit & termudah.
+  2. *📋 Tabel Nilai Lengkap Siswa*: Daftar peringkat siswa dengan pencarian cepat, rincian skor, waktu pengerjaan, status tuntas/remedial, dan fitur *modal detail* untuk memeriksa lembar jawaban individual per siswa.
+  3. *🔍 Analisis Butir Soal (Item Analysis)*: Menampilkan teks soal, kunci jawaban, penjelasan guru, serta diagram batang persentase distribusi siswa yang memilih opsi A, B, C, dan D untuk mendeteksi opsi pengecoh yang mengecoh kelas.
+- **Fitur Ekspor & Cetak Rapor**:
+  - Tombol **Unduh Rekap (CSV)** untuk ekspor ke spreadsheet / Excel.
+  - Tombol **Cetak Rapor** yang kompatibel langsung dengan dialog cetak browser / simpan ke PDF.
+
+#### 4. Model Data & Manajemen Sesi (`quiz.ts`, `supabaseClient.ts`, `setup.sql`)
+- Menambahkan entitas `QuizSession`, `QuizSessionParticipant`, `QuizSessionStatus` dengan penyimpanan *local-first* di `localStorage` dan sinkronisasi opsional ke database Supabase (`quiz_sessions` & `quiz_session_participants`) dengan RLS ketat.
+
 ## [2.3.50] - 2026-09-12
 ### Tombol "Mainkan Sekarang" & Modal Pengaturan Sesi Bermain Siswa (PlayQuizModal)
 

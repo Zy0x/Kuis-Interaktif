@@ -11,6 +11,10 @@ export const AVATAR_LIST = [
   { id: 'koala', emoji: '🐨', name: 'Koala Pintar', color: 'bg-cyan-100 border-cyan-400' },
 ];
 
+export const AVATAR_MAP: Record<string, string> = Object.fromEntries(
+  AVATAR_LIST.map((a) => [a.id, a.emoji])
+);
+
 export const INITIAL_QUIZZES: Quiz[] = [
   {
     id: 'sd1-mtk-hitung',

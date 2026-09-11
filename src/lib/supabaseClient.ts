@@ -8,7 +8,10 @@ import type {
   StudentSubmission,
   PlayerProfile,
   GameMode,
-  EducationLevel
+  EducationLevel,
+  QuizSession,
+  QuizSessionParticipant,
+  QuizSessionStatus
 } from '../types/quiz';
 import { MASTER_TEACHER_EMAIL } from '../types/quiz';
 import { INITIAL_QUIZZES } from '../data/seedQuizzes';
@@ -33,6 +36,7 @@ const STORAGE_KEY_PLAYER = 'kuis_sd_player_profile';
 const STORAGE_KEY_CUSTOM_QUIZZES = 'kuis_sd_custom_quizzes_v1';
 const STORAGE_KEY_TEACHER_PROFILE = 'kuis_sd_teacher_profile_v1';
 const STORAGE_KEY_DELETED_QUIZZES = 'kuis_sd_deleted_quizzes_v1';
+const STORAGE_KEY_QUIZ_SESSIONS = 'kuis_sd_quiz_sessions_v1';
 
 // 4-Digit PIN Helper
 export function generateRandomPin(): string {
@@ -1446,5 +1450,274 @@ export const DataManager = {
     };
 
     return newQuiz;
+  },
+
+  // 12. Active Quiz Sessions & Wayground Host Manager
+  getActiveSessions(filter?: { teacherEmail?: string; status?: QuizSessionStatus }): QuizSession[] {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY_QUIZ_SESSIONS);
+      let sessions: QuizSession[] = raw ? JSON.parse(raw) : [];
+      if (filter?.teacherEmail) {
+        sessions = sessions.filter(
+          (s) => !s.teacherEmail || s.teacherEmail.trim().toLowerCase() === filter.teacherEmail!.trim().toLowerCase()
+        );
+      }
+      if (filter?.status) {
+        sessions = sessions.filter((s) => s.status === filter.status);
+      }
+      return sessions.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    } catch {
+      return [];
+    }
+  },
+
+  getActiveSessionById(sessionId: string): QuizSession | null {
+    const all = this.getActiveSessions();
+    return all.find((s) => s.id === sessionId) || null;
+  },
+
+  getActiveSessionByPin(pin: string): QuizSession | null {
+    const cleanPin = pin.trim().toUpperCase();
+    const all = this.getActiveSessions();
+    return all.find((s) => s.pinCode === cleanPin && (s.status === 'active' || s.status === 'waiting' || s.status === 'paused')) || null;
+  },
+
+  async createActiveSession(
+    quiz: Quiz,
+    options: {
+      mode: GameMode;
+      durationPerQuestionSec: number;
+      shuffleQuestions: boolean;
+      shuffleOptions: boolean;
+      presentationTarget: 'smartboard' | 'student-lobby';
+    },
+    teacher?: TeacherProfile
+  ): Promise<QuizSession> {
+    const sessionId = 'sess_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
+    const pin = quiz.pinCode || generateRandomPin();
+
+    const newSession: QuizSession = {
+      id: sessionId,
+      quizId: quiz.id,
+      quizTitle: quiz.title,
+      quizCover: quiz.coverEmoji,
+      subject: quiz.subject,
+      grade: quiz.grade,
+      pinCode: pin,
+      teacherId: teacher?.id,
+      teacherEmail: teacher?.email,
+      teacherName: teacher?.fullName,
+      status: 'active',
+      createdAt: new Date().toISOString(),
+      startedAt: new Date().toISOString(),
+      settings: {
+        mode: options.mode,
+        durationPerQuestionSec: options.durationPerQuestionSec,
+        shuffleQuestions: options.shuffleQuestions,
+        shuffleOptions: options.shuffleOptions,
+        presentationTarget: options.presentationTarget,
+      },
+      participants: [],
+      totalQuestions: quiz.questions?.length || 0,
+    };
+
+    // Save locally
+    const existing = this.getActiveSessions();
+    const updated = [newSession, ...existing];
+    try {
+      localStorage.setItem(STORAGE_KEY_QUIZ_SESSIONS, JSON.stringify(updated));
+    } catch (e) {
+      console.warn('Failed to cache quiz session locally:', e);
+    }
+
+    // Try cloud sync if Supabase configured
+    if (supabase) {
+      try {
+        await supabase.from('quiz_sessions').insert({
+          id: newSession.id,
+          quiz_id: newSession.quizId,
+          quiz_title: newSession.quizTitle,
+          pin_code: newSession.pinCode,
+          teacher_id: newSession.teacherId,
+          teacher_email: newSession.teacherEmail,
+          teacher_name: newSession.teacherName,
+          status: newSession.status,
+          settings: newSession.settings,
+          total_questions: newSession.totalQuestions,
+          created_at: newSession.createdAt,
+          started_at: newSession.startedAt,
+        });
+      } catch (err) {
+        console.warn('Supabase createActiveSession notice:', err);
+      }
+    }
+
+    return newSession;
+  },
+
+  async updateSessionStatus(sessionId: string, status: QuizSessionStatus): Promise<QuizSession | null> {
+    const existing = this.getActiveSessions();
+    const idx = existing.findIndex((s) => s.id === sessionId);
+    if (idx === -1) return null;
+
+    existing[idx].status = status;
+    if (status === 'finished') {
+      existing[idx].endedAt = new Date().toISOString();
+    }
+
+    try {
+      localStorage.setItem(STORAGE_KEY_QUIZ_SESSIONS, JSON.stringify(existing));
+    } catch (e) {
+      console.warn('Failed to save session status:', e);
+    }
+
+    if (supabase) {
+      try {
+        await supabase
+          .from('quiz_sessions')
+          .update({
+            status,
+            ended_at: existing[idx].endedAt,
+          })
+          .eq('id', sessionId);
+      } catch (err) {
+        console.warn('Supabase updateSessionStatus notice:', err);
+      }
+    }
+
+    return existing[idx];
+  },
+
+  async addOrUpdateSessionParticipant(
+    sessionId: string,
+    participant: Partial<QuizSessionParticipant> & { name: string; avatarId: string }
+  ): Promise<QuizSessionParticipant | null> {
+    const existing = this.getActiveSessions();
+    const sIdx = existing.findIndex((s) => s.id === sessionId);
+    if (sIdx === -1) return null;
+
+    const session = existing[sIdx];
+    const now = new Date().toISOString();
+    const partId = participant.id || 'part_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
+
+    const pIdx = session.participants.findIndex((p) => p.id === partId || p.name.trim().toLowerCase() === participant.name.trim().toLowerCase());
+
+    let finalParticipant: QuizSessionParticipant;
+
+    if (pIdx >= 0) {
+      // Update existing participant
+      finalParticipant = {
+        ...session.participants[pIdx],
+        ...participant,
+        lastActiveAt: now,
+      };
+      session.participants[pIdx] = finalParticipant;
+    } else {
+      // Insert new participant
+      finalParticipant = {
+        id: partId,
+        name: participant.name,
+        avatarId: participant.avatarId || 'lion',
+        currentQuestionIndex: participant.currentQuestionIndex ?? 0,
+        totalQuestions: session.totalQuestions,
+        score: participant.score ?? 0,
+        stars: participant.stars ?? 0,
+        correctCount: participant.correctCount ?? 0,
+        incorrectCount: participant.incorrectCount ?? 0,
+        streak: participant.streak ?? 0,
+        finished: participant.finished ?? false,
+        timeSpentSec: participant.timeSpentSec ?? 0,
+        answers: participant.answers ?? {},
+        joinedAt: now,
+        lastActiveAt: now,
+      };
+      session.participants.push(finalParticipant);
+    }
+
+    try {
+      localStorage.setItem(STORAGE_KEY_QUIZ_SESSIONS, JSON.stringify(existing));
+    } catch (e) {
+      console.warn('Failed to save session participant:', e);
+    }
+
+    return finalParticipant;
+  },
+
+  async deleteActiveSession(sessionId: string): Promise<boolean> {
+    const existing = this.getActiveSessions();
+    const filtered = existing.filter((s) => s.id !== sessionId);
+    try {
+      localStorage.setItem(STORAGE_KEY_QUIZ_SESSIONS, JSON.stringify(filtered));
+    } catch {
+      return false;
+    }
+
+    if (supabase) {
+      try {
+        await supabase.from('quiz_sessions').delete().eq('id', sessionId);
+      } catch (err) {
+        console.warn('Supabase deleteActiveSession notice:', err);
+      }
+    }
+
+    return true;
+  },
+
+  // Generates simulated student responses for testing and classroom demonstration
+  async simulateAddStudentsToSession(sessionId: string, count = 3): Promise<QuizSession | null> {
+    const session = this.getActiveSessionById(sessionId);
+    if (!session) return null;
+
+    const sampleNames = [
+      'Budi Santoso', 'Siti Rahma', 'Ahmad Dani', 'Citra Lestari', 
+      'Rizky Pratama', 'Putri Ayu', 'Bayu Saputra', 'Dewi Anggraini', 
+      'Fajar Nugraha', 'Nabila Zahra', 'Dimas Arya', 'Tiara Maharani'
+    ];
+    const sampleAvatars = ['lion', 'rabbit', 'fox', 'panda', 'tiger', 'cat', 'bear', 'koala'];
+
+    // Pick names not already in session
+    const existingNames = new Set(session.participants.map((p) => p.name.toLowerCase()));
+    const availableNames = sampleNames.filter((n) => !existingNames.has(n.toLowerCase()));
+    const namesToUse = (availableNames.length >= count ? availableNames : sampleNames).slice(0, count);
+
+    for (const name of namesToUse) {
+      const avatar = sampleAvatars[Math.floor(Math.random() * sampleAvatars.length)];
+      const totalQ = session.totalQuestions || 5;
+      const correctCount = Math.floor(Math.random() * (totalQ + 1));
+      const incorrectCount = totalQ - correctCount;
+      const score = Math.round((correctCount / totalQ) * 100);
+      const stars = score >= 85 ? 3 : score >= 60 ? 2 : score > 0 ? 1 : 0;
+      const timeSpentSec = Math.floor(totalQ * (10 + Math.random() * 15));
+
+      const answers: Record<string, any> = {};
+      for (let q = 0; q < totalQ; q++) {
+        const isCorrect = q < correctCount;
+        answers[`q_${q}`] = {
+          questionId: `q_${q}`,
+          questionIndex: q,
+          selectedOption: isCorrect ? 0 : Math.floor(1 + Math.random() * 3),
+          isCorrect,
+          timeSpentSec: Math.floor(5 + Math.random() * 15),
+          pointsEarned: isCorrect ? 10 : 0,
+        };
+      }
+
+      await this.addOrUpdateSessionParticipant(sessionId, {
+        name,
+        avatarId: avatar,
+        currentQuestionIndex: totalQ,
+        totalQuestions: totalQ,
+        score,
+        stars,
+        correctCount,
+        incorrectCount,
+        streak: Math.min(correctCount, 4),
+        finished: true,
+        timeSpentSec,
+        answers,
+      });
+    }
+
+    return this.getActiveSessionById(sessionId);
   },
 };
