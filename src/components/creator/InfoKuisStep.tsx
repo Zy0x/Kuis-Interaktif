@@ -16,7 +16,9 @@ import {
   Shuffle,
   Dice5,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Smile,
+  Settings
 } from 'lucide-react';
 import { ResizableTextarea } from '../common/ResizableTextarea';
 
@@ -178,6 +180,12 @@ export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
   const titleTextareaRef = useRef<HTMLTextAreaElement>(null);
   const [isGeneratingAiInfo, setIsGeneratingAiInfo] = useState(false);
   
+  // State Collapsible untuk Kebersihan Tampilan
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showDescriptionSuggestions, setShowDescriptionSuggestions] = useState(false);
+  const [showBadgeSuggestions, setShowBadgeSuggestions] = useState(false);
+  const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
+
   // Tab Kategori Emoji & Custom Input Emoji
   const [activeEmojiCategory, setActiveEmojiCategory] = useState('sains');
   const [customEmojiInput, setCustomEmojiInput] = useState('');
@@ -334,25 +342,25 @@ export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
         <div className="flex items-center gap-2.5">
           <CheckCircle2 className={`w-4 h-4 shrink-0 ${isTitleFilled ? 'text-emerald-500' : 'text-slate-300 dark:text-slate-600'}`} />
           <span className={isTitleFilled ? 'text-slate-800 dark:text-slate-200 font-semibold' : 'text-slate-400'}>
-            Judul kuis telah diisi ({title.length}/100 karakter)
+            Judul kuis telah diisi ({title.length}/100)
           </span>
         </div>
         <div className="flex items-center gap-2.5">
           <CheckCircle2 className={`w-4 h-4 shrink-0 ${isSubjectReady ? 'text-emerald-500' : 'text-slate-300 dark:text-slate-600'}`} />
           <span className="text-slate-800 dark:text-slate-200 font-semibold">
-            {subject} (Kelas {grade} {currentFaseInfo.levelLabel} • {currentFaseInfo.fase})
+            {subject} (Kls {grade} • {currentFaseInfo.fase})
           </span>
         </div>
         <div className="flex items-center gap-2.5">
           <CheckCircle2 className={`w-4 h-4 shrink-0 ${isDurationReady ? 'text-emerald-500' : 'text-slate-300 dark:text-slate-600'}`} />
           <span className="text-slate-800 dark:text-slate-200 font-semibold">
-            Durasi {durationPerQuestionSec} detik / soal
+            Durasi {durationPerQuestionSec}s / soal
           </span>
         </div>
         <div className="flex items-center gap-2.5">
           <CheckCircle2 className={`w-4 h-4 shrink-0 ${isQuestionsReady ? 'text-emerald-500' : 'text-amber-500'}`} />
           <span className={isQuestionsReady ? 'text-slate-800 dark:text-slate-200 font-semibold' : 'text-amber-600 dark:text-amber-400 font-semibold'}>
-            {isQuestionsReady ? `${questionsCount} butir soal tersedia` : 'Belum ada butir soal di Bank Soal'}
+            {isQuestionsReady ? `${questionsCount} butir soal tersedia` : 'Belum ada butir soal'}
           </span>
         </div>
       </div>
@@ -364,177 +372,118 @@ export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
         {/* ================= KOLOM KIRI: FORMULIR UTAMA (8 KOLOM DESKTOP) ================= */}
-        <div className="lg:col-span-8 bg-white dark:bg-slate-900 rounded-3xl p-4 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-card space-y-6">
+        <div className="lg:col-span-8 bg-white dark:bg-slate-900 rounded-3xl p-4 sm:p-7 border border-slate-200 dark:border-slate-800 shadow-card space-y-5">
           
-          {/* Header Kartu Info */}
-          <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
+          {/* Header Kartu Info dengan Quick Action AI Ringkas */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold shadow-xs shrink-0">
                 <BookOpen className="w-5 h-5" />
               </div>
               <div className="min-w-0">
-                <h2 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white leading-tight">
+                <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white leading-tight">
                   Informasi Dasar Kuis
                 </h2>
                 <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
-                  {isAiMode ? 'Sesuaikan identitas pedagogis dan preferensi kuis' : 'Lengkapi detail identitas kuis sebelum menyusun butir soal'}
+                  Lengkapi identitas utama dan preferensi kuis Kurikulum Merdeka
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-extrabold px-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 shrink-0">
+            {/* Quick Action AI & Badge Soal */}
+            <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+              <button
+                type="button"
+                onClick={handleAutoGenerateInfo}
+                disabled={isGeneratingAiInfo}
+                className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 active:scale-95 text-white font-extrabold text-xs shadow-xs transition-all flex items-center gap-1.5 min-h-[40px] btn-press disabled:opacity-50"
+                title="Hasilkan judul, deskripsi, emoji tema, dan gelar otomatis via AI"
+              >
+                {isGeneratingAiInfo ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Meracik AI...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>{title.trim() ? 'Segarkan via AI' : 'Racik Kilat via AI'}</span>
+                  </>
+                )}
+              </button>
+              <span className="text-xs font-black px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 min-h-[40px] flex items-center">
                 {questionsCount} Soal
               </span>
             </div>
           </div>
 
-          {/* Quick Action: Racik Identitas via AI (Desain Ringkas & Bebas Slop) */}
-          <div className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-blue-50/90 via-indigo-50/70 to-purple-50/90 dark:from-blue-950/40 dark:via-indigo-950/30 dark:to-purple-950/40 border border-blue-200/70 dark:border-blue-800/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3.5 shadow-xs">
-            <div className="flex items-start gap-3 min-w-0">
-              <div className="w-10 h-10 rounded-xl bg-blue-600 dark:bg-blue-500 text-white flex items-center justify-center shrink-0 shadow-xs">
-                {isGeneratingAiInfo ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <Sparkles className="w-5 h-5" />
-                )}
-              </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
-                    Racik Identitas Kuis via AI
-                  </h4>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300">
-                    Kurikulum Merdeka 🇮🇩
+          {/* ================= SEKSI 1: IDENTITAS INTI KUIS (WAJIB) ================= */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider">
+              <span className="w-2 h-2 rounded-full bg-blue-600 dark:bg-blue-400" />
+              <span>1. Identitas Inti Kuis</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              
+              {/* Judul Kuis */}
+              <div className="sm:col-span-2 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300">
+                    Judul Kuis <span className="text-rose-500">*</span>
+                  </label>
+                  <span className={`text-[11px] font-bold ${title.length > 90 ? 'text-amber-500' : 'text-slate-400 dark:text-slate-500'}`}>
+                    {title.length}/100 karakter
                   </span>
                 </div>
-                <p className="text-[11px] sm:text-xs text-slate-600 dark:text-slate-400 mt-0.5 leading-relaxed">
-                  Hasilkan judul kontekstual, deskripsi instruksional, emoji tema, dan gelar prestasi siswa secara instan.
-                </p>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={handleAutoGenerateInfo}
-              disabled={isGeneratingAiInfo}
-              className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold text-xs sm:text-sm shadow-sm transition-all flex items-center justify-center gap-2 shrink-0 disabled:opacity-50 min-h-[44px] btn-press"
-            >
-              {isGeneratingAiInfo ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Meracik Identitas...</span>
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4" />
-                  <span>{title.trim() ? 'Segarkan via AI' : 'Buat Otomatis'}</span>
-                </>
-              )}
-            </button>
-          </div>
-
-          {/* Grid Formulir */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
-            
-            {/* 1. Judul Kuis */}
-            <div className="sm:col-span-2 space-y-1.5">
-              <div className="flex items-center justify-between">
-                <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300">
-                  Judul Kuis <span className="text-rose-500">*</span>
-                </label>
-                <span className={`text-[11px] font-bold ${title.length > 90 ? 'text-amber-500' : 'text-slate-400 dark:text-slate-500'}`}>
-                  {title.length}/100 karakter
-                </span>
-              </div>
-              <textarea
-                ref={titleTextareaRef}
-                rows={1}
-                maxLength={100}
-                spellCheck={false}
-                value={title}
-                onChange={(e) => setTitle(e.target.value.replace(/\r?\n/g, ' '))}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') e.preventDefault();
-                }}
-                placeholder="Contoh: Kuis IPAS: Sistem Pencernaan & Nutrisi Tubuh"
-                className="w-full px-4 py-2.5 sm:py-3 rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-bold text-sm sm:text-base focus:border-blue-500 focus:ring-2 focus:ring-blue-400/20 focus:outline-none min-h-[46px] resize-none overflow-hidden leading-relaxed transition-all"
-                required
-              />
-            </div>
-
-            {/* 2. Deskripsi & Petunjuk Siswa */}
-            <div className="sm:col-span-2 space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300">
-                  Deskripsi / Petunjuk untuk Siswa <span className="text-slate-400 font-normal text-xs">(Opsional)</span>
-                </label>
+                <textarea
+                  ref={titleTextareaRef}
+                  rows={1}
+                  maxLength={100}
+                  spellCheck={false}
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value.replace(/\r?\n/g, ' '))}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') e.preventDefault();
+                  }}
+                  placeholder="Contoh: Kuis IPAS: Sistem Pencernaan & Nutrisi Tubuh"
+                  className="w-full px-4 py-2.5 sm:py-3 rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-bold text-sm sm:text-base focus:border-blue-500 focus:ring-2 focus:ring-blue-400/20 focus:outline-none min-h-[46px] resize-none overflow-hidden leading-relaxed transition-all"
+                  required
+                />
               </div>
 
-              <ResizableTextarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={2}
-                placeholder="Berikan arahan atau motivasi singkat kepada siswa sebelum mereka memulai kuis..."
-                minHeight={72}
-                maxHeight={240}
-                className="min-h-[72px] rounded-2xl"
-              />
+              {/* Jenjang & Target Kelas (Fase Kurikulum Merdeka) */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300">
+                    Jenjang & Kelas <span className="text-rose-500">*</span>
+                  </label>
+                  <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border border-purple-200/60 dark:border-purple-900/50">
+                    {currentFaseInfo.fase}
+                  </span>
+                </div>
 
-              {/* Template Cepat Deskripsi */}
-              <div className="space-y-1.5 pt-1">
-                <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 block">
-                  💡 Rekomendasi Instruksi Cepat:
-                </span>
-                <div className="flex flex-wrap gap-1.5">
-                  {DESCRIPTION_TEMPLATES.map((tmpl, idx) => (
+                <div className="grid grid-cols-3 gap-1.5 mb-1.5">
+                  {[
+                    { level: 'SD' as EducationLevel, label: 'SD / MI' },
+                    { level: 'SMP' as EducationLevel, label: 'SMP / MTs' },
+                    { level: 'SMA' as EducationLevel, label: 'SMA / SMK' },
+                  ].map((item) => (
                     <button
-                      key={idx}
+                      key={item.level}
                       type="button"
-                      onClick={() => {
-                        playClick();
-                        setDescription(tmpl);
-                      }}
-                      className="text-left text-[11px] font-medium px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-blue-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 hover:text-blue-700 dark:hover:text-blue-300 border border-slate-200 dark:border-slate-700 transition-colors btn-press min-h-[32px] flex items-center"
+                      onClick={() => handleLevelChange(item.level)}
+                      className={`py-1.5 px-1 rounded-xl border text-center transition-all min-h-[38px] flex items-center justify-center btn-press ${
+                        currentEducationLevel === item.level
+                          ? 'border-blue-500 bg-blue-50/80 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-extrabold ring-1 ring-blue-400/50 shadow-2xs text-xs'
+                          : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs'
+                      }`}
                     >
-                      {tmpl}
+                      {item.label}
                     </button>
                   ))}
                 </div>
-              </div>
-            </div>
 
-            {/* 3. Jenjang Pendidikan & Target Kelas (Fase Kurikulum Merdeka) */}
-            <div className="sm:col-span-2 space-y-2">
-              <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300">
-                Jenjang & Target Kelas <span className="text-rose-500">*</span>
-              </label>
-
-              {/* Tab Pemilih Jenjang */}
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { level: 'SD' as EducationLevel, label: 'SD / MI', fase: 'Fase A - C' },
-                  { level: 'SMP' as EducationLevel, label: 'SMP / MTs', fase: 'Fase D' },
-                  { level: 'SMA' as EducationLevel, label: 'SMA / SMK', fase: 'Fase E - F' },
-                ].map((item) => (
-                  <button
-                    key={item.level}
-                    type="button"
-                    onClick={() => handleLevelChange(item.level)}
-                    className={`p-2.5 rounded-2xl border text-center transition-all min-h-[48px] flex flex-col items-center justify-center btn-press ${
-                      currentEducationLevel === item.level
-                        ? 'border-blue-500 bg-blue-50/80 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-extrabold ring-2 ring-blue-400/50 shadow-xs'
-                        : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    <span className="text-xs sm:text-sm font-extrabold">{item.label}</span>
-                    <span className="text-[10px] font-semibold opacity-75">{item.fase}</span>
-                  </button>
-                ))}
-              </div>
-
-              {/* Dropdown Kelas Terfilter */}
-              <div className="pt-1">
                 <select
                   value={grade}
                   onChange={(e) => {
@@ -546,576 +495,628 @@ export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
                       else setEducationLevel('SD');
                     }
                   }}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-bold text-sm focus:border-blue-500 focus:outline-none min-h-[44px]"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-bold text-xs sm:text-sm focus:border-blue-500 focus:outline-none min-h-[44px]"
                 >
                   {currentEducationLevel === 'SD' && (
                     <optgroup label="Sekolah Dasar (SD / MI)">
-                      <option value={1}>Kelas 1 SD (Fase A - Awal Membaca & Berhitung)</option>
-                      <option value={2}>Kelas 2 SD (Fase A - Penguatan Literasi & Numerasi)</option>
-                      <option value={3}>Kelas 3 SD (Fase B - Pemahaman Konsep)</option>
-                      <option value={4}>Kelas 4 SD (Fase B - Eksplorasi IPAS & Kritis)</option>
-                      <option value={5}>Kelas 5 SD (Fase C - Analisis Konseptual)</option>
-                      <option value={6}>Kelas 6 SD (Fase C - Pemantapan Kelulusan)</option>
+                      <option value={1}>Kelas 1 SD (Fase A)</option>
+                      <option value={2}>Kelas 2 SD (Fase A)</option>
+                      <option value={3}>Kelas 3 SD (Fase B)</option>
+                      <option value={4}>Kelas 4 SD (Fase B)</option>
+                      <option value={5}>Kelas 5 SD (Fase C)</option>
+                      <option value={6}>Kelas 6 SD (Fase C)</option>
                     </optgroup>
                   )}
 
                   {currentEducationLevel === 'SMP' && (
                     <optgroup label="Sekolah Menengah Pertama (SMP / MTs)">
-                      <option value={7}>Kelas 7 SMP (Fase D - Transisi Menengah)</option>
-                      <option value={8}>Kelas 8 SMP (Fase D - Pendalaman Materi)</option>
-                      <option value={9}>Kelas 9 SMP (Fase D - Pemantapan Asesmen Akhir)</option>
+                      <option value={7}>Kelas 7 SMP (Fase D)</option>
+                      <option value={8}>Kelas 8 SMP (Fase D)</option>
+                      <option value={9}>Kelas 9 SMP (Fase D)</option>
                     </optgroup>
                   )}
 
                   {currentEducationLevel === 'SMA' && (
                     <optgroup label="Sekolah Menengah Atas / Kejuruan (SMA / SMK)">
-                      <option value={10}>Kelas 10 SMA / SMK (Fase E - Pengenalan Peminatan)</option>
-                      <option value={11}>Kelas 11 SMA / SMK (Fase F - Pendalaman Bidang Keahlian)</option>
-                      <option value={12}>Kelas 12 SMA / SMK (Fase F - Persiapan Ujian & Karir)</option>
+                      <option value={10}>Kelas 10 SMA / SMK (Fase E)</option>
+                      <option value={11}>Kelas 11 SMA / SMK (Fase F)</option>
+                      <option value={12}>Kelas 12 SMA / SMK (Fase F)</option>
                     </optgroup>
                   )}
                 </select>
               </div>
-            </div>
 
-            {/* 4. Mata Pelajaran */}
-            <div className="sm:col-span-2 space-y-1.5">
-              <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300">
-                Mata Pelajaran <span className="text-rose-500">*</span>
-              </label>
-              <select
-                value={subject}
-                onChange={(e) => setSubject(e.target.value as Subject)}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-bold text-sm focus:border-blue-500 focus:outline-none min-h-[44px]"
-              >
-                {/* Mapel Utama Berdasarkan Jenjang */}
-                {currentEducationLevel === 'SD' && (
-                  <optgroup label="Mata Pelajaran Utama SD / MI">
-                    <option value="Matematika">Matematika</option>
-                    <option value="IPAS">IPAS (Ilmu Pengetahuan Alam dan Sosial)</option>
-                    <option value="Bahasa Indonesia">Bahasa Indonesia</option>
-                    <option value="Pendidikan Pancasila">Pendidikan Pancasila</option>
-                    <option value="Bahasa Inggris">Bahasa Inggris</option>
-                    <option value="PJOK">PJOK (Pendidikan Jasmani & Olahraga)</option>
-                    <option value="Pengetahuan Umum">Pengetahuan Umum</option>
-                  </optgroup>
-                )}
-
-                {currentEducationLevel === 'SMP' && (
-                  <optgroup label="Mata Pelajaran Utama SMP / MTs">
-                    <option value="Matematika">Matematika</option>
-                    <option value="IPA Terpadu">IPA Terpadu</option>
-                    <option value="IPS Terpadu">IPS Terpadu</option>
-                    <option value="Bahasa Indonesia">Bahasa Indonesia</option>
-                    <option value="Pendidikan Pancasila">Pendidikan Pancasila</option>
-                    <option value="Bahasa Inggris">Bahasa Inggris</option>
-                    <option value="Informatika">Informatika / Komputer</option>
-                    <option value="Prakarya">Prakarya & Kewirausahaan</option>
-                    <option value="PJOK">PJOK</option>
-                  </optgroup>
-                )}
-
-                {currentEducationLevel === 'SMA' && (
-                  <>
-                    <optgroup label="Peminatan MIPA (SMA / SMK)">
-                      <option value="Fisika">Fisika</option>
-                      <option value="Kimia">Kimia</option>
-                      <option value="Biologi">Biologi</option>
-                      <option value="Matematika Tingkat Lanjut">Matematika Tingkat Lanjut</option>
-                      <option value="Informatika">Informatika / Pemrograman</option>
-                    </optgroup>
-                    <optgroup label="Peminatan IPS & Humaniora (SMA / SMK)">
-                      <option value="Ekonomi">Ekonomi</option>
-                      <option value="Sosiologi">Sosiologi</option>
-                      <option value="Geografi">Geografi</option>
-                      <option value="Sejarah">Sejarah</option>
-                      <option value="Antropologi">Antropologi</option>
-                    </optgroup>
-                    <optgroup label="Mata Pelajaran Wajib Umum (SMA / SMK)">
-                      <option value="Matematika">Matematika (Wajib)</option>
-                      <option value="Bahasa Indonesia">Bahasa Indonesia</option>
-                      <option value="Bahasa Inggris">Bahasa Inggris</option>
-                      <option value="Pendidikan Pancasila">Pendidikan Pancasila</option>
-                      <option value="PJOK">PJOK</option>
-                    </optgroup>
-                  </>
-                )}
-
-                {/* Seni & Bahasa */}
-                <optgroup label="Seni & Bahasa Daerah">
-                  <option value="Seni Rupa">Seni Rupa</option>
-                  <option value="Seni Musik">Seni Musik</option>
-                  <option value="Seni Tari">Seni Tari</option>
-                  <option value="Seni Teater">Seni Teater</option>
-                  <option value="Bahasa Daerah">Bahasa Daerah / Mulok</option>
-                </optgroup>
-
-                {/* Pendidikan Agama */}
-                <optgroup label="Pendidikan Agama & Budi Pekerti">
-                  <option value="Pendidikan Agama Islam">Pendidikan Agama Islam (PAI)</option>
-                  <option value="Pendidikan Agama Kristen">Pendidikan Agama Kristen</option>
-                  <option value="Pendidikan Agama Katolik">Pendidikan Agama Katolik</option>
-                  <option value="Pendidikan Agama Hindu">Pendidikan Agama Hindu</option>
-                  <option value="Pendidikan Agama Buddha">Pendidikan Agama Buddha</option>
-                  <option value="Pendidikan Agama Konghucu">Pendidikan Agama Konghucu</option>
-                </optgroup>
-
-                {/* Mapel Lintas Lainnya */}
-                <optgroup label="Pilihan Mapel Lainnya">
-                  <option value="IPA">IPA (Sains)</option>
-                  <option value="IPS">IPS (Sosial)</option>
-                  <option value="Pengetahuan Umum">Pengetahuan Umum</option>
-                </optgroup>
-              </select>
-            </div>
-
-            {/* 5. Waktu Menjawab Per Soal (Waktu Standar) */}
-            <div className="sm:col-span-2 space-y-2">
-              <div className="flex items-center justify-between">
+              {/* Mata Pelajaran */}
+              <div className="space-y-1.5">
                 <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300">
-                  Waktu Menjawab Standar Per Soal <span className="text-rose-500">*</span>
+                  Mata Pelajaran <span className="text-rose-500">*</span>
                 </label>
-                <button
-                  type="button"
-                  onClick={() => setShowCustomDurationInput((prev) => !prev)}
-                  className="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
-                >
-                  <Clock className="w-3.5 h-3.5" />
-                  <span>{showCustomDurationInput ? 'Sembunyikan Kustom' : 'Atur Detik Kustom'}</span>
-                </button>
+                <div className="pt-0.5 sm:pt-[44px]">
+                  <select
+                    value={subject}
+                    onChange={(e) => setSubject(e.target.value as Subject)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-bold text-xs sm:text-sm focus:border-blue-500 focus:outline-none min-h-[44px]"
+                  >
+                    {currentEducationLevel === 'SD' && (
+                      <optgroup label="Mapel Utama SD / MI">
+                        <option value="Matematika">Matematika</option>
+                        <option value="IPAS">IPAS (Sains & Sosial)</option>
+                        <option value="Bahasa Indonesia">Bahasa Indonesia</option>
+                        <option value="Pendidikan Pancasila">Pendidikan Pancasila</option>
+                        <option value="Bahasa Inggris">Bahasa Inggris</option>
+                        <option value="PJOK">PJOK</option>
+                        <option value="Pengetahuan Umum">Pengetahuan Umum</option>
+                      </optgroup>
+                    )}
+
+                    {currentEducationLevel === 'SMP' && (
+                      <optgroup label="Mapel Utama SMP / MTs">
+                        <option value="Matematika">Matematika</option>
+                        <option value="IPA Terpadu">IPA Terpadu</option>
+                        <option value="IPS Terpadu">IPS Terpadu</option>
+                        <option value="Bahasa Indonesia">Bahasa Indonesia</option>
+                        <option value="Pendidikan Pancasila">Pendidikan Pancasila</option>
+                        <option value="Bahasa Inggris">Bahasa Inggris</option>
+                        <option value="Informatika">Informatika / Komputer</option>
+                        <option value="Prakarya">Prakarya & Kewirausahaan</option>
+                        <option value="PJOK">PJOK</option>
+                      </optgroup>
+                    )}
+
+                    {currentEducationLevel === 'SMA' && (
+                      <>
+                        <optgroup label="Peminatan MIPA (SMA / SMK)">
+                          <option value="Fisika">Fisika</option>
+                          <option value="Kimia">Kimia</option>
+                          <option value="Biologi">Biologi</option>
+                          <option value="Matematika Tingkat Lanjut">Matematika Tingkat Lanjut</option>
+                          <option value="Informatika">Informatika</option>
+                        </optgroup>
+                        <optgroup label="Peminatan IPS & Humaniora (SMA / SMK)">
+                          <option value="Ekonomi">Ekonomi</option>
+                          <option value="Sosiologi">Sosiologi</option>
+                          <option value="Geografi">Geografi</option>
+                          <option value="Sejarah">Sejarah</option>
+                          <option value="Antropologi">Antropologi</option>
+                        </optgroup>
+                        <optgroup label="Mata Pelajaran Umum (SMA / SMK)">
+                          <option value="Matematika">Matematika (Wajib)</option>
+                          <option value="Bahasa Indonesia">Bahasa Indonesia</option>
+                          <option value="Bahasa Inggris">Bahasa Inggris</option>
+                          <option value="Pendidikan Pancasila">Pendidikan Pancasila</option>
+                          <option value="PJOK">PJOK</option>
+                        </optgroup>
+                      </>
+                    )}
+
+                    <optgroup label="Seni & Bahasa">
+                      <option value="Seni Rupa">Seni Rupa</option>
+                      <option value="Seni Musik">Seni Musik</option>
+                      <option value="Seni Tari">Seni Tari</option>
+                      <option value="Seni Teater">Seni Teater</option>
+                      <option value="Bahasa Daerah">Bahasa Daerah / Mulok</option>
+                    </optgroup>
+
+                    <optgroup label="Pendidikan Agama">
+                      <option value="Pendidikan Agama Islam">Pendidikan Agama Islam (PAI)</option>
+                      <option value="Pendidikan Agama Kristen">Pendidikan Agama Kristen</option>
+                      <option value="Pendidikan Agama Katolik">Pendidikan Agama Katolik</option>
+                      <option value="Pendidikan Agama Hindu">Pendidikan Agama Hindu</option>
+                      <option value="Pendidikan Agama Buddha">Pendidikan Agama Buddha</option>
+                      <option value="Pendidikan Agama Konghucu">Pendidikan Agama Konghucu</option>
+                    </optgroup>
+
+                    <optgroup label="Mapel Lintas Lainnya">
+                      <option value="IPA">IPA (Sains)</option>
+                      <option value="IPS">IPS (Sosial)</option>
+                      <option value="Pengetahuan Umum">Pengetahuan Umum</option>
+                    </optgroup>
+                  </select>
+                </div>
               </div>
 
-              {/* Preset Tombol Waktu (min-h-[44px] Wajib Standar Sentuh Mobile) */}
-              <div className="grid grid-cols-4 sm:grid-cols-8 gap-1.5 sm:gap-2">
-                {DURATION_PRESETS.map((dur) => (
+              {/* Sampul Kuis: Compact Avatar Picker (Hemat Ruang 200px) */}
+              <div className="sm:col-span-2">
+                <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-800">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-800 flex items-center justify-center text-3xl shadow-xs border border-slate-200 dark:border-slate-700 shrink-0">
+                      {coverEmoji || '📝'}
+                    </div>
+                    <div>
+                      <div className="text-xs font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
+                        <span>Ikon Sampul Kuis</span>
+                        <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300">
+                          {coverEmoji || '📝'}
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                        Tampil di kartu katalog dan lobi siswa
+                      </div>
+                    </div>
+                  </div>
+
                   <button
                     type="button"
-                    key={dur}
                     onClick={() => {
                       playClick();
-                      setDurationPerQuestionSec(dur);
+                      setShowEmojiPicker((prev) => !prev);
                     }}
-                    className={`py-2 rounded-xl font-extrabold text-xs min-h-[44px] transition-all flex items-center justify-center btn-press ${
-                      durationPerQuestionSec === dur
-                        ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-400/50'
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-750'
-                    }`}
+                    className="px-3.5 py-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 text-xs font-extrabold transition-all min-h-[40px] flex items-center gap-1.5 btn-press shadow-2xs"
                   >
-                    {dur}s
+                    <Smile className="w-4 h-4 text-amber-500" />
+                    <span>{showEmojiPicker ? 'Tutup Pilihan' : 'Ganti Ikon'}</span>
+                    {showEmojiPicker ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                   </button>
-                ))}
+                </div>
+
+                {/* Tray Pilihan Emoji (Hanya Terbuka Saat Diklik) */}
+                {showEmojiPicker && (
+                  <div className="mt-2.5 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-800 space-y-3 animate-scale-up">
+                    <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+                      {EMOJI_CATEGORIES.map((cat) => (
+                        <button
+                          key={cat.id}
+                          type="button"
+                          onClick={() => {
+                            playClick();
+                            setActiveEmojiCategory(cat.id);
+                          }}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition-all min-h-[36px] flex items-center ${
+                            activeEmojiCategory === cat.id
+                              ? 'bg-blue-600 text-white shadow-2xs'
+                              : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700'
+                          }`}
+                        >
+                          {cat.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      {EMOJI_CATEGORIES.find((c) => c.id === activeEmojiCategory)?.emojis.map((em) => (
+                        <button
+                          type="button"
+                          key={em}
+                          onClick={() => {
+                            playClick();
+                            setCoverEmoji(em);
+                          }}
+                          className={`w-11 h-11 rounded-2xl text-2xl flex items-center justify-center border transition-all min-h-[44px] min-w-[44px] btn-press ${
+                            coverEmoji === em
+                              ? 'bg-blue-50 dark:bg-blue-900/40 border-blue-500 ring-2 ring-blue-400 shadow-sm scale-105'
+                              : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-750'
+                          }`}
+                        >
+                          {em}
+                        </button>
+                      ))}
+                    </div>
+
+                    <form onSubmit={handleApplyCustomEmoji} className="pt-2 border-t border-slate-200/80 dark:border-slate-750/80 flex items-center gap-2">
+                      <input
+                        type="text"
+                        maxLength={4}
+                        value={customEmojiInput}
+                        onChange={(e) => setCustomEmojiInput(e.target.value)}
+                        placeholder="Ketik emoji bebas..."
+                        className="flex-1 max-w-[200px] px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-bold text-xs focus:border-blue-500 focus:outline-none min-h-[38px]"
+                      />
+                      <button
+                        type="submit"
+                        className="px-3 py-1.5 rounded-xl bg-slate-200 hover:bg-blue-600 hover:text-white dark:bg-slate-750 dark:hover:bg-blue-600 text-slate-700 dark:text-slate-200 font-bold text-xs transition-colors min-h-[38px] btn-press"
+                      >
+                        Gunakan
+                      </button>
+                    </form>
+                  </div>
+                )}
               </div>
 
-              {/* Input Detik Kustom */}
-              {showCustomDurationInput && (
-                <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 flex items-center gap-3 animate-fade-in">
-                  <div className="text-xs font-bold text-slate-700 dark:text-slate-300 shrink-0">
-                    Durasi Khusus:
-                  </div>
-                  <input
-                    type="number"
-                    min={5}
-                    max={300}
-                    value={durationPerQuestionSec}
-                    onChange={(e) => {
-                      const val = Math.max(5, Math.min(300, Number(e.target.value) || 30));
-                      setDurationPerQuestionSec(val);
-                    }}
-                    className="w-24 px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-extrabold text-xs focus:border-blue-500 focus:outline-none min-h-[38px]"
-                  />
-                  <span className="text-xs text-slate-500 dark:text-slate-400">
-                    detik per butir soal (rentang 5 - 300 dtk)
-                  </span>
-                </div>
-              )}
+            </div>
+          </div>
 
-              {/* Status Soal Durasi Khusus & Opsi Samakan */}
-              {Boolean(customDurationCount && customDurationCount > 0) && (
-                <div className="p-3 rounded-2xl bg-blue-50/80 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/40 flex flex-col xs:flex-row xs:items-center justify-between gap-2.5 text-xs">
-                  <div className="text-slate-600 dark:text-slate-300">
-                    <span className="font-extrabold text-blue-600 dark:text-blue-400">💡 Waktu Khusus: </span>
-                    <span>{customDurationCount} dari {questionsCount} soal menggunakan durasi berbeda.</span>
-                  </div>
-                  {onResetAllCustomDuration && (
-                    <button
-                      type="button"
-                      onClick={onResetAllCustomDuration}
-                      className="px-3 py-2 rounded-xl font-bold text-xs text-blue-700 dark:text-blue-300 bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/40 transition-colors shrink-0 min-h-[44px] flex items-center justify-center btn-press shadow-2xs"
-                      title="Samakan seluruh durasi butir soal mengikuti waktu standar kuis"
-                    >
-                      Terapkan {durationPerQuestionSec}s ke Semua Soal
-                    </button>
-                  )}
-                </div>
-              )}
+          {/* ================= SEKSI 2: ATURAN WAKTU & PANDUAN SISWA ================= */}
+          <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+            <div className="flex items-center gap-2 text-xs font-black text-slate-800 dark:text-slate-200 uppercase tracking-wider">
+              <span className="w-2 h-2 rounded-full bg-indigo-600 dark:bg-indigo-400" />
+              <span>2. Aturan Waktu & Panduan Siswa</span>
             </div>
 
-            {/* 6. Gelar Hadiah Kuis (Lencana Prestasi Siswa) */}
-            <div className="sm:col-span-2 space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300">
-                  Gelar Hadiah Kuis (Lencana Siswa)
-                </label>
-                <span className="text-[11px] text-slate-400 dark:text-slate-500">
-                  Dianugerahkan saat siswa tuntas
-                </span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              
+              {/* Waktu Menjawab Per Soal */}
+              <div className="sm:col-span-2 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300">
+                    Durasi Waktu Standar Per Soal <span className="text-rose-500">*</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowCustomDurationInput((prev) => !prev)}
+                    className="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                  >
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>{showCustomDurationInput ? 'Sembunyikan Kustom' : 'Atur Detik Kustom'}</span>
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-4 sm:grid-cols-8 gap-1.5 sm:gap-2">
+                  {DURATION_PRESETS.map((dur) => (
+                    <button
+                      type="button"
+                      key={dur}
+                      onClick={() => {
+                        playClick();
+                        setDurationPerQuestionSec(dur);
+                      }}
+                      className={`py-2 rounded-xl font-extrabold text-xs min-h-[44px] transition-all flex items-center justify-center btn-press ${
+                        durationPerQuestionSec === dur
+                          ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-400/50'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-750'
+                      }`}
+                    >
+                      {dur}s
+                    </button>
+                  ))}
+                </div>
+
+                {showCustomDurationInput && (
+                  <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 flex items-center gap-3 animate-fade-in">
+                    <div className="text-xs font-bold text-slate-700 dark:text-slate-300 shrink-0">
+                      Durasi Bebas:
+                    </div>
+                    <input
+                      type="number"
+                      min={5}
+                      max={300}
+                      value={durationPerQuestionSec}
+                      onChange={(e) => {
+                        const val = Math.max(5, Math.min(300, Number(e.target.value) || 30));
+                        setDurationPerQuestionSec(val);
+                      }}
+                      className="w-24 px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-extrabold text-xs focus:border-blue-500 focus:outline-none min-h-[38px]"
+                    />
+                    <span className="text-xs text-slate-500 dark:text-slate-400">
+                      detik (rentang 5 - 300 dtk)
+                    </span>
+                  </div>
+                )}
+
+                {Boolean(customDurationCount && customDurationCount > 0) && (
+                  <div className="p-3 rounded-2xl bg-blue-50/80 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/40 flex flex-col xs:flex-row xs:items-center justify-between gap-2.5 text-xs">
+                    <div className="text-slate-600 dark:text-slate-300">
+                      <span className="font-extrabold text-blue-600 dark:text-blue-400">💡 Waktu Khusus: </span>
+                      <span>{customDurationCount} dari {questionsCount} soal menggunakan durasi berbeda.</span>
+                    </div>
+                    {onResetAllCustomDuration && (
+                      <button
+                        type="button"
+                        onClick={onResetAllCustomDuration}
+                        className="px-3 py-2 rounded-xl font-bold text-xs text-blue-700 dark:text-blue-300 bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/40 transition-colors shrink-0 min-h-[44px] flex items-center justify-center btn-press shadow-2xs"
+                      >
+                        Terapkan {durationPerQuestionSec}s ke Semua Soal
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={badgeTitle}
-                  onChange={(e) => setBadgeTitle(e.target.value)}
-                  placeholder="Contoh: Juara Pancasila, Peneliti Cilik, Master Logika"
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-bold text-sm focus:border-blue-500 focus:outline-none min-h-[44px]"
+
+              {/* Deskripsi / Petunjuk untuk Siswa */}
+              <div className="sm:col-span-2 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300">
+                    Petunjuk / Deskripsi untuk Siswa <span className="text-slate-400 font-normal text-xs">(Opsional)</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setShowDescriptionSuggestions((prev) => !prev);
+                    }}
+                    className="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                  >
+                    <span>💡 {showDescriptionSuggestions ? 'Tutup Saran' : 'Saran Instruksi (3)'}</span>
+                    {showDescriptionSuggestions ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                  </button>
+                </div>
+
+                <ResizableTextarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={2}
+                  placeholder="Berikan arahan singkat kepada siswa sebelum mereka memulai kuis..."
+                  minHeight={68}
+                  maxHeight={200}
+                  className="min-h-[68px] rounded-2xl"
                 />
-                <Award className="w-4 h-4 text-amber-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+
+                {/* Collapsible Saran Deskripsi */}
+                {showDescriptionSuggestions && (
+                  <div className="flex flex-wrap gap-1.5 pt-1 animate-fade-in">
+                    {DESCRIPTION_TEMPLATES.map((tmpl, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => {
+                          playClick();
+                          setDescription(tmpl);
+                        }}
+                        className="text-left text-[11px] font-medium px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-blue-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 hover:text-blue-700 dark:hover:text-blue-300 border border-slate-200 dark:border-slate-700 transition-colors btn-press min-h-[34px] flex items-center"
+                      >
+                        {tmpl}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
-              {/* Chips Rekomendasi Gelar Kontekstual Sesuai Mapel */}
-              <div className="space-y-1 pt-0.5">
-                <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 block">
-                  Pilihan Gelar Cepat ({subject}):
-                </span>
-                <div className="flex flex-wrap gap-1.5">
-                  {badgeSuggestions.map((sug, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => {
-                        playClick();
-                        setBadgeTitle(sug);
-                      }}
-                      className={`text-[11px] font-bold px-2.5 py-1.5 rounded-xl transition-all min-h-[36px] flex items-center gap-1 btn-press ${
-                        badgeTitle === sug
-                          ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700 shadow-2xs'
-                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700'
-                      }`}
-                    >
-                      <Award className="w-3 h-3 text-amber-500 shrink-0" />
-                      <span>{sug}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* 7. Pilihan Ikon Sampul Kuis (Kategori Tematik + Input Kustom Bebas) */}
-            <div className="sm:col-span-2 space-y-2.5">
-              <div className="flex items-center justify-between">
-                <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300">
-                  Ikon Sampul Kuis <span className="text-rose-500">*</span>
-                </label>
-                <span className="text-[11px] font-bold px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center gap-1">
-                  <span>Terpilih:</span>
-                  <span className="text-base leading-none">{coverEmoji || '📝'}</span>
-                </span>
-              </div>
-
-              {/* Tab Kategori Emoji */}
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-                {EMOJI_CATEGORIES.map((cat) => (
+              {/* Gelar Hadiah Kuis (Lencana Siswa) */}
+              <div className="sm:col-span-2 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300">
+                    Gelar Hadiah Kuis (Lencana Prestasi)
+                  </label>
                   <button
-                    key={cat.id}
                     type="button"
                     onClick={() => {
                       playClick();
-                      setActiveEmojiCategory(cat.id);
+                      setShowBadgeSuggestions((prev) => !prev);
                     }}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition-all min-h-[38px] flex items-center ${
-                      activeEmojiCategory === cat.id
-                        ? 'bg-blue-600 text-white shadow-2xs'
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-750'
-                    }`}
+                    className="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
                   >
-                    {cat.label}
+                    <span>💡 {showBadgeSuggestions ? 'Tutup Pilihan' : `Pilihan Gelar Cepat (${badgeSuggestions.length})`}</span>
+                    {showBadgeSuggestions ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                   </button>
-                ))}
-              </div>
-
-              {/* Grid Emoji Terpilih */}
-              <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-800">
-                <div className="flex flex-wrap gap-2">
-                  {EMOJI_CATEGORIES.find((c) => c.id === activeEmojiCategory)?.emojis.map((em) => (
-                    <button
-                      type="button"
-                      key={em}
-                      onClick={() => {
-                        playClick();
-                        setCoverEmoji(em);
-                      }}
-                      className={`w-11 h-11 rounded-2xl text-2xl flex items-center justify-center border transition-all min-h-[44px] min-w-[44px] btn-press ${
-                        coverEmoji === em
-                          ? 'bg-blue-50 dark:bg-blue-900/40 border-blue-500 ring-2 ring-blue-400 shadow-sm scale-105'
-                          : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-750'
-                      }`}
-                    >
-                      {em}
-                    </button>
-                  ))}
                 </div>
 
-                {/* Input Emoji Kustom Bebas */}
-                <form onSubmit={handleApplyCustomEmoji} className="mt-3 pt-3 border-t border-slate-200/80 dark:border-slate-755/80 flex items-center gap-2">
+                <div className="relative">
                   <input
                     type="text"
-                    maxLength={4}
-                    value={customEmojiInput}
-                    onChange={(e) => setCustomEmojiInput(e.target.value)}
-                    placeholder="Ketik emoji sendiri..."
-                    className="flex-1 max-w-[200px] px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-bold text-xs focus:border-blue-500 focus:outline-none min-h-[38px]"
+                    value={badgeTitle}
+                    onChange={(e) => setBadgeTitle(e.target.value)}
+                    placeholder="Contoh: Juara Pancasila, Peneliti Cilik, Master Logika"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-bold text-sm focus:border-blue-500 focus:outline-none min-h-[44px]"
                   />
-                  <button
-                    type="submit"
-                    className="px-3.5 py-1.5 rounded-xl bg-slate-200 hover:bg-blue-600 hover:text-white dark:bg-slate-750 dark:hover:bg-blue-600 text-slate-700 dark:text-slate-200 font-bold text-xs transition-colors min-h-[38px] btn-press"
-                  >
-                    Gunakan
-                  </button>
-                  <span className="text-[11px] text-slate-400 dark:text-slate-500 hidden xs:inline">
-                    (Mendukung seluruh emoji keyboard)
-                  </span>
-                </form>
-              </div>
-            </div>
+                  <Award className="w-4 h-4 text-amber-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
 
-            {/* 8. Visibilitas & Akses Kuis */}
-            <div className="sm:col-span-2 space-y-1.5">
-              <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300">
-                Visibilitas & Akses Kuis <span className="text-rose-500">*</span>
-              </label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <label
-                  className={`flex items-start gap-3.5 p-3.5 sm:p-4 rounded-2xl border cursor-pointer transition-all min-h-[64px] ${
-                    visibility === 'public'
-                      ? 'border-blue-500 bg-blue-50/60 dark:bg-blue-950/30 ring-2 ring-blue-400/40 shadow-xs'
-                      : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:bg-slate-100/60'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="visibility"
-                    value="public"
-                    checked={visibility === 'public'}
-                    onChange={() => {
-                      playClick();
-                      setVisibility('public');
-                    }}
-                    className="mt-1 w-4 h-4 text-blue-600 focus:ring-blue-500"
-                  />
-                  <div className="space-y-0.5 min-w-0">
-                    <span className="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
-                      <Globe className="w-4 h-4 text-blue-600 shrink-0" />
-                      <span>Publik di Beranda Siswa</span>
-                    </span>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                      Kuis otomatis tampil di katalog siswa dan dapat dimainkan langsung tanpa perlu memasukkan PIN.
-                    </p>
+                {/* Collapsible Saran Gelar */}
+                {showBadgeSuggestions && (
+                  <div className="flex flex-wrap gap-1.5 pt-1 animate-fade-in">
+                    {badgeSuggestions.map((sug, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => {
+                          playClick();
+                          setBadgeTitle(sug);
+                        }}
+                        className={`text-[11px] font-bold px-2.5 py-1.5 rounded-xl transition-all min-h-[36px] flex items-center gap-1 btn-press ${
+                          badgeTitle === sug
+                            ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700 shadow-2xs'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700'
+                        }`}
+                      >
+                        <Award className="w-3 h-3 text-amber-500 shrink-0" />
+                        <span>{sug}</span>
+                      </button>
+                    ))}
                   </div>
-                </label>
-
-                <label
-                  className={`flex items-start gap-3.5 p-3.5 sm:p-4 rounded-2xl border cursor-pointer transition-all min-h-[64px] ${
-                    visibility === 'private'
-                      ? 'border-amber-500 bg-amber-50/60 dark:bg-amber-950/30 ring-2 ring-amber-400/40 shadow-xs'
-                      : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:bg-slate-100/60'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="visibility"
-                    value="private"
-                    checked={visibility === 'private'}
-                    onChange={() => {
-                      playClick();
-                      setVisibility('private');
-                    }}
-                    className="mt-1 w-4 h-4 text-amber-600 focus:ring-amber-500"
-                  />
-                  <div className="space-y-0.5 min-w-0">
-                    <span className="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
-                      <Lock className="w-4 h-4 text-amber-600 shrink-0" />
-                      <span>Privat (Khusus Ruang PIN)</span>
-                    </span>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                      Disembunyikan dari katalog umum, hanya siswa yang menerima PIN dari guru yang dapat bergabung.
-                    </p>
-                  </div>
-                </label>
+                )}
               </div>
+
             </div>
+          </div>
 
-            {/* 9. Mode Permainan Bawaan */}
-            <div className="sm:col-span-2 space-y-1.5">
-              <div className="flex items-center justify-between">
-                <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300">
-                  Mode Permainan Bawaan
-                </label>
-                <span className="text-[11px] text-slate-400 dark:text-slate-500">
-                  Dapat diganti siswa saat berada di lobi kuis
-                </span>
+          {/* ================= SEKSI 3: PENGATURAN LANJUTAN (COLLAPSIBLE ACCORDION) ================= */}
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                setShowAdvancedSettings((prev) => !prev);
+              }}
+              className="w-full p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-850 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 flex items-center justify-between text-left transition-colors min-h-[56px] btn-press"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-9 h-9 rounded-xl bg-slate-200 dark:bg-slate-750 text-slate-700 dark:text-slate-200 flex items-center justify-center shrink-0">
+                  <Settings className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <span className="text-xs sm:text-sm font-black text-slate-900 dark:text-white block">
+                    3. Pengaturan Lanjutan & Integritas Kuis
+                  </span>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 block truncate mt-0.5">
+                    Visibilitas: {visibility === 'public' ? 'Publik' : 'Privat PIN'} • Mode: {defaultGameMode === 'standard' ? 'Standar' : defaultGameMode === 'survival_3hearts' ? '3 Hati' : 'Santai'} • Acak: {shuffleQuestions ? 'Aktif' : 'Nonaktif'}
+                  </span>
+                </div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    playClick();
-                    setDefaultGameMode('standard');
-                  }}
-                  className={`p-3 sm:p-3.5 rounded-2xl border text-left transition-all min-h-[72px] btn-press ${
-                    defaultGameMode === 'standard'
-                      ? 'border-blue-500 bg-blue-50/60 dark:bg-blue-950/30 ring-2 ring-blue-400/40 shadow-xs'
-                      : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:bg-slate-100/60'
-                  }`}
-                >
-                  <span className="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white block">
-                    Standar ⏱️
-                  </span>
-                  <span className="text-[11px] text-slate-500 dark:text-slate-400 block mt-1 leading-snug">
-                    Timer tiap soal dengan tantangan skor kecepatan & akurasi.
-                  </span>
-                </button>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    playClick();
-                    setDefaultGameMode('survival_3hearts');
-                  }}
-                  className={`p-3 sm:p-3.5 rounded-2xl border text-left transition-all min-h-[72px] btn-press ${
-                    defaultGameMode === 'survival_3hearts'
-                      ? 'border-rose-500 bg-rose-50/60 dark:bg-rose-950/30 ring-2 ring-rose-400/40 shadow-xs'
-                      : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:bg-slate-100/60'
-                  }`}
-                >
-                  <span className="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white block">
-                    3 Hati (Survival) ❤️
-                  </span>
-                  <span className="text-[11px] text-slate-500 dark:text-slate-400 block mt-1 leading-snug">
-                    3 kesempatan. Jawaban salah atau waktu habis memotong 1 hati.
-                  </span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    playClick();
-                    setDefaultGameMode('untimed');
-                  }}
-                  className={`p-3 sm:p-3.5 rounded-2xl border text-left transition-all min-h-[72px] btn-press ${
-                    defaultGameMode === 'untimed'
-                      ? 'border-emerald-500 bg-emerald-50/60 dark:bg-emerald-950/30 ring-2 ring-emerald-400/40 shadow-xs'
-                      : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:bg-slate-100/60'
-                  }`}
-                >
-                  <span className="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white block">
-                    Santai (Tanpa Timer) 🧘
-                  </span>
-                  <span className="text-[11px] text-slate-500 dark:text-slate-400 block mt-1 leading-snug">
-                    Waktu bebas tanpa tekanan waktu, optimal untuk pemahaman mendalam.
-                  </span>
-                </button>
+              <div className="w-7 h-7 rounded-lg bg-white dark:bg-slate-800 flex items-center justify-center border border-slate-200 dark:border-slate-700 shrink-0 ml-2">
+                {showAdvancedSettings ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
               </div>
-            </div>
+            </button>
 
-            {/* 10. Opsi Pengacakan Modern (Card Toggle Switch Mobile-First) */}
-            <div className="sm:col-span-2 pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2.5">
-              <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300">
-                Integritas Asesmen & Pengacakan
-              </label>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {/* Switch 1: Acak Urutan Soal */}
-                <div
-                  onClick={() => {
-                    playClick();
-                    setShuffleQuestions(!shuffleQuestions);
-                  }}
-                  role="switch"
-                  aria-checked={shuffleQuestions}
-                  className={`p-3.5 rounded-2xl border cursor-pointer transition-all flex items-center justify-between gap-3 min-h-[56px] btn-press ${
-                    shuffleQuestions
-                      ? 'border-blue-500 bg-blue-50/60 dark:bg-blue-950/40 ring-1 ring-blue-400/50'
-                      : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:bg-slate-100/60'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
-                      shuffleQuestions 
-                        ? 'bg-blue-600 text-white shadow-2xs' 
-                        : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
-                    }`}>
-                      <Shuffle className="w-4 h-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <span className="text-xs font-bold text-slate-900 dark:text-white block">
-                        Acak Urutan Butir Soal
-                      </span>
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400 block leading-tight">
-                        Tiap siswa menerima urutan nomor berbeda
-                      </span>
-                    </div>
-                  </div>
+            {/* Isi Pengaturan Lanjutan */}
+            {showAdvancedSettings && (
+              <div className="p-4 sm:p-5 mt-2 rounded-2xl bg-slate-50/50 dark:bg-slate-850/50 border border-slate-200 dark:border-slate-800 space-y-4 animate-scale-up">
+                
+                {/* Visibilitas & Akses Kuis */}
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300">
+                    Akses Masuk Siswa
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <label
+                      className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                        visibility === 'public'
+                          ? 'border-blue-500 bg-blue-50/60 dark:bg-blue-950/30 ring-1 ring-blue-400/50 shadow-2xs'
+                          : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="visibility"
+                        value="public"
+                        checked={visibility === 'public'}
+                        onChange={() => {
+                          playClick();
+                          setVisibility('public');
+                        }}
+                        className="mt-1 w-4 h-4 text-blue-600"
+                      />
+                      <div className="min-w-0">
+                        <span className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                          <Globe className="w-3.5 h-3.5 text-blue-600" />
+                          <span>Publik di Beranda Siswa</span>
+                        </span>
+                        <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
+                          Kuis langsung muncul di katalog tanpa perlu PIN.
+                        </p>
+                      </div>
+                    </label>
 
-                  {/* iOS Style Toggle */}
-                  <div className={`w-11 h-6 rounded-full transition-colors relative shrink-0 ${
-                    shuffleQuestions ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-750'
-                  }`}>
-                    <div className={`w-5 h-5 rounded-full bg-white shadow-md transform transition-transform absolute top-0.5 ${
-                      shuffleQuestions ? 'translate-x-5.5' : 'translate-x-0.5'
-                    }`} />
+                    <label
+                      className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                        visibility === 'private'
+                          ? 'border-amber-500 bg-amber-50/60 dark:bg-amber-950/30 ring-1 ring-amber-400/50 shadow-2xs'
+                          : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="visibility"
+                        value="private"
+                        checked={visibility === 'private'}
+                        onChange={() => {
+                          playClick();
+                          setVisibility('private');
+                        }}
+                        className="mt-1 w-4 h-4 text-amber-600"
+                      />
+                      <div className="min-w-0">
+                        <span className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                          <Lock className="w-3.5 h-3.5 text-amber-600" />
+                          <span>Privat (Khusus Ruang PIN)</span>
+                        </span>
+                        <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
+                          Hanya siswa yang menerima PIN yang dapat bergabung.
+                        </p>
+                      </div>
+                    </label>
                   </div>
                 </div>
 
-                {/* Switch 2: Acak Opsi Jawaban */}
-                <div
-                  onClick={() => {
-                    playClick();
-                    setShuffleOptions(!shuffleOptions);
-                  }}
-                  role="switch"
-                  aria-checked={shuffleOptions}
-                  className={`p-3.5 rounded-2xl border cursor-pointer transition-all flex items-center justify-between gap-3 min-h-[56px] btn-press ${
-                    shuffleOptions
-                      ? 'border-blue-500 bg-blue-50/60 dark:bg-blue-950/40 ring-1 ring-blue-400/50'
-                      : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:bg-slate-100/60'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
-                      shuffleOptions 
-                        ? 'bg-blue-600 text-white shadow-2xs' 
-                        : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
-                    }`}>
-                      <Dice5 className="w-4 h-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <span className="text-xs font-bold text-slate-900 dark:text-white block">
-                        Acak Pilihan Opsi Jawaban
-                      </span>
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400 block leading-tight">
-                        Posisi opsi A, B, C, D diacak otomatis
-                      </span>
-                    </div>
+                {/* Mode Permainan Bawaan */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300">
+                      Mode Permainan Bawaan
+                    </label>
+                    <span className="text-[10px] text-slate-400">Dapat diganti di lobi</span>
                   </div>
-
-                  {/* iOS Style Toggle */}
-                  <div className={`w-11 h-6 rounded-full transition-colors relative shrink-0 ${
-                    shuffleOptions ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-750'
-                  }`}>
-                    <div className={`w-5 h-5 rounded-full bg-white shadow-md transform transition-transform absolute top-0.5 ${
-                      shuffleOptions ? 'translate-x-5.5' : 'translate-x-0.5'
-                    }`} />
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    {[
+                      { mode: 'standard' as GameMode, label: 'Standar ⏱️', desc: 'Timer per butir soal' },
+                      { mode: 'survival_3hearts' as GameMode, label: '3 Hati ❤️', desc: '3 kesempatan nyawa' },
+                      { mode: 'untimed' as GameMode, label: 'Santai 🧘', desc: 'Waktu bebas tanpa batas' },
+                    ].map((item) => (
+                      <button
+                        key={item.mode}
+                        type="button"
+                        onClick={() => {
+                          playClick();
+                          setDefaultGameMode(item.mode);
+                        }}
+                        className={`p-2.5 rounded-xl border text-left transition-all min-h-[56px] btn-press ${
+                          defaultGameMode === item.mode
+                            ? 'border-blue-500 bg-blue-50/60 dark:bg-blue-950/40 ring-1 ring-blue-400/50 shadow-2xs'
+                            : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-750'
+                        }`}
+                      >
+                        <span className="text-xs font-bold text-slate-900 dark:text-white block">{item.label}</span>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-0.5">{item.desc}</span>
+                      </button>
+                    ))}
                   </div>
                 </div>
-              </div>
-            </div>
 
+                {/* Integritas Asesmen (Switch Cards) */}
+                <div className="space-y-1.5 pt-1">
+                  <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300">
+                    Opsi Pengacakan
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div
+                      onClick={() => {
+                        playClick();
+                        setShuffleQuestions(!shuffleQuestions);
+                      }}
+                      role="switch"
+                      aria-checked={shuffleQuestions}
+                      className={`p-3 rounded-xl border cursor-pointer transition-all flex items-center justify-between gap-3 min-h-[50px] btn-press ${
+                        shuffleQuestions
+                          ? 'border-blue-500 bg-blue-50/60 dark:bg-blue-950/40 ring-1 ring-blue-400/50'
+                          : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Shuffle className="w-4 h-4 text-blue-600 shrink-0" />
+                        <span className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                          Acak Urutan Soal
+                        </span>
+                      </div>
+                      <div className={`w-10 h-5 rounded-full transition-colors relative shrink-0 ${
+                        shuffleQuestions ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-700'
+                      }`}>
+                        <div className={`w-4 h-4 rounded-full bg-white shadow-md transform transition-transform absolute top-0.5 ${
+                          shuffleQuestions ? 'translate-x-5' : 'translate-x-0.5'
+                        }`} />
+                      </div>
+                    </div>
+
+                    <div
+                      onClick={() => {
+                        playClick();
+                        setShuffleOptions(!shuffleOptions);
+                      }}
+                      role="switch"
+                      aria-checked={shuffleOptions}
+                      className={`p-3 rounded-xl border cursor-pointer transition-all flex items-center justify-between gap-3 min-h-[50px] btn-press ${
+                        shuffleOptions
+                          ? 'border-blue-500 bg-blue-50/60 dark:bg-blue-950/40 ring-1 ring-blue-400/50'
+                          : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Dice5 className="w-4 h-4 text-blue-600 shrink-0" />
+                        <span className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                          Acak Pilihan Opsi
+                        </span>
+                      </div>
+                      <div className={`w-10 h-5 rounded-full transition-colors relative shrink-0 ${
+                        shuffleOptions ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-700'
+                      }`}>
+                        <div className={`w-4 h-4 rounded-full bg-white shadow-md transform transition-transform absolute top-0.5 ${
+                          shuffleOptions ? 'translate-x-5' : 'translate-x-0.5'
+                        }`} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            )}
           </div>
 
           {/* ================= KHUSUS MOBILE: PRATINJAU KARTU SISWA & STATUS KESIAPAN ================= */}
-          <div className="lg:hidden pt-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
+          <div className="lg:hidden pt-3 border-t border-slate-100 dark:border-slate-800 space-y-3">
             <button
               type="button"
-              onClick={() => setShowMobilePreview((prev) => !prev)}
+              onClick={() => {
+                playClick();
+                setShowMobilePreview((prev) => !prev);
+              }}
               className="w-full py-2.5 px-3.5 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 text-xs font-extrabold flex items-center justify-between min-h-[44px] transition-colors btn-press"
             >
               <span className="flex items-center gap-2">

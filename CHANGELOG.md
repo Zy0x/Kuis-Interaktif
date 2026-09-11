@@ -1,6 +1,28 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.39] - 2026-09-11
+### Restrukturisasi Hierarki Visual Tab Info Kuis: 3-Seksi Terpadu, Collapsible Suggestions, Compact Emoji Picker & Accordion Pengaturan Lanjutan
+
+#### 1. Masalah & Kebutuhan yang Diselesaikan
+- **Beban Kognitif Berlebih (*Cognitive Overload*)**: 11 elemen formulir sebelumnya ditumpuk secara datar tanpa hierarki yang jelas, membuat tampilan terasa padat dan melelahkan (*overwhelming*).
+- **Pemborosan Ruang oleh Saran Permanen**: Chip rekomendasi deskripsi instruksi dan chip saran gelar hadiah tampil terbuka secara permanen, menyita ruang berlebih.
+- **Tray Emoji Terlalu Rakus Ruang**: Area pemilih emoji sebelumnya memakan > 220px tinggi vertikal di layar utama.
+- **Banner AI Mengalihkan Fokus**: Banner AI di bagian atas mengambil ruang besar sebelum guru sempat melihat kolom judul kuis.
+
+#### 2. Implementasi Desain & Fungsionalitas
+- **3 Tingkatan Hierarki Visual yang Tegas & Bersih (`InfoKuisStep.tsx`)**:
+  1. **Seksi 1: Identitas Inti Kuis (Wajib)**: Judul kuis dengan counter karakter, Jenjang & Target Kelas Fase Kurikulum Merdeka, Mata Pelajaran, dan Compact Emoji Avatar Picker.
+  2. **Seksi 2: Aturan Waktu & Panduan Siswa**: Durasi per soal, Deskripsi instruksi dengan tombol collapsible saran `[ 💡 Saran Instruksi (3) ˅ ]`, dan Gelar Lencana Siswa dengan tombol collapsible `[ 💡 Pilihan Gelar Cepat (4) ˅ ]`.
+  3. **Seksi 3: Pengaturan Lanjutan & Integritas Kuis (Collapsible Accordion)**: Accordion bersih dengan ringkasan status satu baris (Visibilitas Publik/Privat, Mode Permainan, dan Switch Acak Soal/Opsi).
+- **Compact Emoji Avatar Picker**:
+  - Mengganti puluhan tombol emoji permanen dengan avatar preview ringkas berlabel emoji aktif dan tombol `[ Ganti Ikon ]`.
+  - Menghemat lebih dari 200px tinggi layar utama.
+- **Integrasi Tombol AI ke Header Bar**:
+  - Menghilangkan banner besar di bagian atas dan memindahkan aksi racik AI menjadi tombol elegan `[ ✨ Racik Kilat via AI ]` di barisan header kartu.
+- **Pengurangan Ketinggian Formulir > 55%**:
+  - Halaman terasa sangat lega, rapi, bernafas (*spacious*), dan ramah sentuh di seluruh perangkat desktop, tablet, dan ponsel.
+
 ## [2.3.38] - 2026-09-11
 ### Audit Total & Rekayasa Ulang Tab Info Kuis: Mobile-First, Anti-Slop, Fase Kurikulum Merdeka, Durasi Kustom & Pratinjau Terpadu
 
