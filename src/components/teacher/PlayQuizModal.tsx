@@ -11,6 +11,7 @@ import { useDrawerSwipeDown } from '../../hooks/useDrawerSwipeDown';
 import { DrawerHandle } from '../common/DrawerHandle';
 import { QuizCoverDisplay } from '../common/QuizCoverDisplay';
 import { copyTextToClipboard } from '../../lib/aiQuestionParser';
+import { DataManager } from '../../lib/supabaseClient';
 import { 
   X, 
   Play, 
@@ -135,9 +136,69 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
     ? 'Fleksibel' 
     : `${Math.ceil((totalQuestions * selectedDuration) / 60)} mnt`;
 
+  // Helper untuk memastikan sesi aktif terdaftar dan menyinkronkan seluruh pengaturan real-time
+  const ensureSessionAndSyncSettings = async (overrides?: Partial<PlayQuizSessionOptions>) => {
+    const opts: PlayQuizSessionOptions = {
+      mode: overrides?.mode ?? selectedMode,
+      durationPerQuestionSec: overrides?.durationPerQuestionSec ?? selectedDuration,
+      shuffleQuestions: overrides?.shuffleQuestions ?? shuffleQuestions,
+      shuffleOptions: overrides?.shuffleOptions ?? shuffleOptions,
+      presentationTarget: overrides?.presentationTarget ?? presentationTarget,
+      showAnswersMode: overrides?.showAnswersMode ?? showAnswersMode,
+      showExplanationMode: overrides?.showExplanationMode ?? showExplanationMode,
+      showLeaderboardToStudents: overrides?.showLeaderboardToStudents ?? showLeaderboardToStudents,
+      maxAttempts: overrides?.maxAttempts ?? maxAttempts,
+      tabSwitchDetection: overrides?.tabSwitchDetection ?? tabSwitchDetection,
+    };
+
+    let existing = DataManager.getActiveSessionByQuizId(quiz.id) || DataManager.getActiveSessionByPin(quiz.pinCode || '');
+    if (existing) {
+      await DataManager.updateActiveSessionSettings(existing.id, opts);
+    } else {
+      existing = await DataManager.createActiveSession(quiz, opts, DataManager.getTeacherProfile() || undefined);
+    }
+    return existing;
+  };
+
+  // Sinkronisasi otomatis ke siswa jika guru mengubah opsi saat sesi sudah aktif
+  useEffect(() => {
+    if (isOpen && quiz) {
+      const existing = DataManager.getActiveSessionByQuizId(quiz.id) || DataManager.getActiveSessionByPin(quiz.pinCode || '');
+      if (existing) {
+        DataManager.updateActiveSessionSettings(existing.id, {
+          mode: selectedMode,
+          durationPerQuestionSec: selectedDuration,
+          shuffleQuestions,
+          shuffleOptions,
+          presentationTarget,
+          showAnswersMode,
+          showExplanationMode,
+          showLeaderboardToStudents,
+          maxAttempts,
+          tabSwitchDetection,
+        });
+      }
+    }
+  }, [
+    isOpen,
+    quiz?.id,
+    selectedMode,
+    selectedDuration,
+    shuffleQuestions,
+    shuffleOptions,
+    presentationTarget,
+    showAnswersMode,
+    showExplanationMode,
+    showLeaderboardToStudents,
+    maxAttempts,
+    tabSwitchDetection,
+  ]);
+
   const handleCopyPin = async (e: React.MouseEvent) => {
     e.stopPropagation();
     playClick();
+    // Pastikan sesi kuis sudah terdaftar dengan konfigurasi terbaru guru sebelum PIN disalin
+    await ensureSessionAndSyncSettings();
     const success = await copyTextToClipboard(pin);
     if (success) {
       setIsCopiedPin(true);
@@ -148,6 +209,8 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
   const handleCopyLink = async (e: React.MouseEvent) => {
     e.stopPropagation();
     playClick();
+    // Pastikan sesi kuis sudah terdaftar dengan konfigurasi terbaru guru sebelum tautan disalin
+    await ensureSessionAndSyncSettings();
     const url = `${window.location.origin}${window.location.pathname}?pin=${pin}`;
     const success = await copyTextToClipboard(url);
     if (success) {
@@ -157,7 +220,7 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
   };
 
   // 1-Click Quick Presets
-  const applyExamStrictPreset = () => {
+  const applyExamStrictPreset = async () => {
     playClick();
     setSelectedMode('standard');
     setShowAnswersMode('exam_strict');
@@ -167,9 +230,19 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
     setTabSwitchDetection(true);
     setShuffleQuestions(true);
     setShuffleOptions(true);
+    await ensureSessionAndSyncSettings({
+      mode: 'standard',
+      showAnswersMode: 'exam_strict',
+      showExplanationMode: 'end_only',
+      showLeaderboardToStudents: false,
+      maxAttempts: 1,
+      tabSwitchDetection: true,
+      shuffleQuestions: true,
+      shuffleOptions: true,
+    });
   };
 
-  const applyCasualPracticePreset = () => {
+  const applyCasualPracticePreset = async () => {
     playClick();
     setSelectedMode('standard');
     setShowAnswersMode('immediate');
@@ -179,6 +252,16 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
     setTabSwitchDetection(false);
     setShuffleQuestions(false);
     setShuffleOptions(false);
+    await ensureSessionAndSyncSettings({
+      mode: 'standard',
+      showAnswersMode: 'immediate',
+      showExplanationMode: 'immediate',
+      showLeaderboardToStudents: true,
+      maxAttempts: 0,
+      tabSwitchDetection: false,
+      shuffleQuestions: false,
+      shuffleOptions: false,
+    });
   };
 
   const handleLaunch = () => {

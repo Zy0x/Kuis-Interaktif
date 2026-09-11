@@ -182,6 +182,68 @@ export const App: React.FC = () => {
     return () => window.removeEventListener('popstate', handlePopState);
   }, [teacher, activeQuiz]);
 
+  // Real-time Session Synchronization (BroadcastChannel, CustomEvent, and Cross-Window Storage)
+  useEffect(() => {
+    const handleRealtimeSync = (session: QuizSession) => {
+      if (!session) return;
+      // Periksa apakah sesi ini cocok dengan kuis aktif atau sesi aktif saat ini
+      const matchesActiveQuiz = activeQuiz && (activeQuiz.id === session.quizId || (activeQuiz.pinCode && activeQuiz.pinCode === session.pinCode));
+      const matchesActiveSession = activeSession && activeSession.id === session.id;
+
+      if (matchesActiveQuiz || matchesActiveSession) {
+        setActiveSession(session);
+        const resolved = resolveSettings(session, activeQuiz);
+        setActiveSessionSettings(resolved);
+        setActiveGameMode(resolved.mode);
+      }
+    };
+
+    let channel: BroadcastChannel | null = null;
+    try {
+      if ('BroadcastChannel' in window) {
+        channel = new BroadcastChannel('kuis_realtime_session_sync');
+        channel.onmessage = (event) => {
+          if (event.data?.type === 'SESSION_UPDATED' && event.data.session) {
+            handleRealtimeSync(event.data.session);
+          }
+        };
+      }
+    } catch (e) {
+      console.warn('BroadcastChannel error in App:', e);
+    }
+
+    const handleCustom = (e: Event) => {
+      const evt = e as CustomEvent;
+      if (evt.detail?.session) {
+        handleRealtimeSync(evt.detail.session);
+      }
+    };
+    window.addEventListener('kuis_session_updated', handleCustom);
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'kuis_sd_quiz_sessions_v1' && e.newValue) {
+        try {
+          const sessions: QuizSession[] = JSON.parse(e.newValue);
+          const currentPin = activeQuiz?.pinCode || activeSession?.pinCode;
+          const currentQuizId = activeQuiz?.id || activeSession?.quizId;
+          const matching = sessions.find(
+            (s) => (currentPin && s.pinCode === currentPin) || (currentQuizId && s.quizId === currentQuizId)
+          );
+          if (matching) {
+            handleRealtimeSync(matching);
+          }
+        } catch {}
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      if (channel) channel.close();
+      window.removeEventListener('kuis_session_updated', handleCustom);
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [activeQuiz, activeSession]);
+
   const handleSelectQuiz = (quiz: Quiz, mode?: GameMode) => {
     setActiveQuiz(quiz);
     setActiveGameMode(mode || quiz.defaultGameMode || 'standard');
@@ -529,6 +591,7 @@ export const App: React.FC = () => {
           initialMode={activeGameMode}
           sessionSettings={activeSessionSettings || (activeQuiz.defaultSettings as QuizSessionSettings)}
           activeSessionId={activeSession?.id}
+          isTeacher={Boolean(teacher)}
           onFinishQuiz={handleFinishQuiz}
           onExit={() => {
             if (teacher) {

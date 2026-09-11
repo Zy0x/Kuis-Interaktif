@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import type { Quiz, QuizSession, QuizSessionSettings } from '../../types/quiz';
 import { AVATAR_LIST } from '../../data/seedQuizzes';
 import { DataManager } from '../../lib/supabaseClient';
@@ -51,11 +51,61 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
   const [nickname, setNickname] = useState(isCustom ? profile.nickname : '');
   const [selectedAvatar, setSelectedAvatar] = useState(profile.avatarId || 'lion');
 
-  // Konfigurasi aktif yang ditetapkan oleh Guru
+  // Real-time live session & settings state
+  const [liveSession, setLiveSession] = useState<QuizSession | null>(activeSession || null);
+  const [liveSettings, setLiveSettings] = useState<QuizSessionSettings | undefined>(sessionSettings);
+
+  useEffect(() => {
+    if (activeSession) setLiveSession(activeSession);
+  }, [activeSession]);
+
+  useEffect(() => {
+    if (sessionSettings) setLiveSettings(sessionSettings);
+  }, [sessionSettings]);
+
+  useEffect(() => {
+    const handleSync = (session: QuizSession) => {
+      if (
+        (quiz.pinCode && session.pinCode === quiz.pinCode) ||
+        session.quizId === quiz.id ||
+        (liveSession && session.id === liveSession.id)
+      ) {
+        setLiveSession(session);
+        setLiveSettings(session.settings);
+      }
+    };
+
+    let channel: BroadcastChannel | null = null;
+    try {
+      if ('BroadcastChannel' in window) {
+        channel = new BroadcastChannel('kuis_realtime_session_sync');
+        channel.onmessage = (event) => {
+          if (event.data?.type === 'SESSION_UPDATED' && event.data.session) {
+            handleSync(event.data.session);
+          }
+        };
+      }
+    } catch {}
+
+    const handleCustom = (e: Event) => {
+      const evt = e as CustomEvent;
+      if (evt.detail?.session) {
+        handleSync(evt.detail.session);
+      }
+    };
+    window.addEventListener('kuis_session_updated', handleCustom);
+
+    return () => {
+      if (channel) channel.close();
+      window.removeEventListener('kuis_session_updated', handleCustom);
+    };
+  }, [quiz.id, quiz.pinCode, liveSession]);
+
+  // Konfigurasi aktif yang ditetapkan oleh Guru (Real-Time)
   const effectiveSettings: QuizSessionSettings = useMemo(() => {
     return (
-      sessionSettings ||
-      activeSession?.settings ||
+      liveSettings ||
+      liveSession?.settings ||
       (quiz.defaultSettings as QuizSessionSettings) || {
         mode: quiz.defaultGameMode || 'standard',
         durationPerQuestionSec: quiz.durationPerQuestionSec || 30,
@@ -69,7 +119,7 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
         tabSwitchDetection: false,
       }
     );
-  }, [sessionSettings, activeSession?.settings, quiz.defaultSettings, quiz.defaultGameMode, quiz.durationPerQuestionSec, quiz.shuffleQuestions, quiz.shuffleOptions]);
+  }, [liveSettings, liveSession?.settings, quiz.defaultSettings, quiz.defaultGameMode, quiz.durationPerQuestionSec, quiz.shuffleQuestions, quiz.shuffleOptions]);
 
   const effectiveMode = effectiveSettings.mode || quiz.defaultGameMode || 'standard';
   const effectiveDuration = effectiveSettings.durationPerQuestionSec || quiz.durationPerQuestionSec || 30;
@@ -109,12 +159,12 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
     if (effectiveSettings.maxAttempts !== 1) return false;
     const cleanNick = nickname.trim().toLowerCase();
     if (!cleanNick) return false;
-    if (!activeSession?.participants) return false;
+    if (!liveSession?.participants) return false;
 
-    return activeSession.participants.some(
+    return liveSession.participants.some(
       (p) => p.name.trim().toLowerCase() === cleanNick && p.finished
     );
-  }, [effectiveSettings.maxAttempts, nickname, activeSession?.participants]);
+  }, [effectiveSettings.maxAttempts, nickname, liveSession?.participants]);
 
   const handleStart = (e: React.FormEvent) => {
     e.preventDefault();

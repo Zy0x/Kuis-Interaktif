@@ -51,6 +51,7 @@ export interface QuizArenaProps {
   initialMode?: GameMode;
   sessionSettings?: QuizSessionSettings;
   activeSessionId?: string;
+  isTeacher?: boolean;
   onFinishQuiz: (answers: QuizAttemptAnswer[], totalTimeSpent: number) => void;
   onExit: () => void;
   isMuted?: boolean;
@@ -73,6 +74,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   initialMode,
   sessionSettings,
   activeSessionId,
+  isTeacher = false,
   onFinishQuiz,
   onExit,
   isMuted = false,
@@ -91,13 +93,103 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 }) => {
   const STORAGE_KEY = `kuis_arena_progress_${quiz.id}`;
 
-  // Read active session settings or quiz default settings
-  const activeSettings = sessionSettings || quiz.defaultSettings || {};
+  const defaultSettingsFallback: QuizSessionSettings = {
+    mode: quiz.defaultGameMode || 'standard',
+    durationPerQuestionSec: quiz.durationPerQuestionSec || 30,
+    shuffleQuestions: quiz.shuffleQuestions ?? true,
+    shuffleOptions: quiz.shuffleOptions ?? true,
+    presentationTarget: 'student-lobby',
+    showAnswersMode: 'immediate',
+    showExplanationMode: 'immediate',
+    showLeaderboardToStudents: true,
+    maxAttempts: 0,
+    tabSwitchDetection: false,
+  };
+
+  // Read active session settings with real-time reactive sync
+  const [currentSettings, setCurrentSettings] = useState<QuizSessionSettings>({
+    ...defaultSettingsFallback,
+    ...(quiz.defaultSettings || {}),
+    ...(sessionSettings || {}),
+  });
+
+  useEffect(() => {
+    if (sessionSettings) {
+      setCurrentSettings((prev) => ({
+        ...prev,
+        ...sessionSettings,
+      }));
+    }
+  }, [sessionSettings]);
+
+  // Real-time listener for settings changes dispatched by teacher
+  useEffect(() => {
+    const handleBroadcastMsg = (event: MessageEvent) => {
+      const data = event.data;
+      if (data?.type === 'SESSION_UPDATED' && data.session) {
+        const sess = data.session;
+        if (
+          (activeSessionId && sess.id === activeSessionId) ||
+          (quiz.pinCode && sess.pinCode === quiz.pinCode) ||
+          sess.quizId === quiz.id
+        ) {
+          setCurrentSettings((prev) => ({
+            ...prev,
+            ...sess.settings,
+          }));
+        }
+      }
+    };
+
+    let bc: BroadcastChannel | null = null;
+    try {
+      if ('BroadcastChannel' in window) {
+        bc = new BroadcastChannel('kuis_realtime_session_sync');
+        bc.addEventListener('message', handleBroadcastMsg);
+      }
+    } catch (e) {
+      console.warn('BroadcastChannel error in QuizArena:', e);
+    }
+
+    const handleCustomSync = (e: Event) => {
+      const customEvt = e as CustomEvent;
+      const sess = customEvt.detail?.session;
+      if (sess) {
+        if (
+          (activeSessionId && sess.id === activeSessionId) ||
+          (quiz.pinCode && sess.pinCode === quiz.pinCode) ||
+          sess.quizId === quiz.id
+        ) {
+          setCurrentSettings((prev) => ({
+            ...prev,
+            ...sess.settings,
+          }));
+        }
+      }
+    };
+    window.addEventListener('kuis_session_updated', handleCustomSync);
+
+    return () => {
+      if (bc) {
+        bc.removeEventListener('message', handleBroadcastMsg);
+        bc.close();
+      }
+      window.removeEventListener('kuis_session_updated', handleCustomSync);
+    };
+  }, [activeSessionId, quiz.id, quiz.pinCode]);
+
+  const activeSettings = currentSettings;
   const showAnswersMode: AnswerVisibilityMode = activeSettings.showAnswersMode || 'immediate';
   const showExplanationMode: ExplanationVisibilityMode = activeSettings.showExplanationMode || 'immediate';
   const showLeaderboardToStudents = activeSettings.showLeaderboardToStudents ?? true;
   const isTabSwitchDetectionEnabled = Boolean(activeSettings.tabSwitchDetection);
   const defaultDurationSec = activeSettings.durationPerQuestionSec || quiz.durationPerQuestionSec || 30;
+
+  // Keamanan Ketat: Tombol reveal jawaban HANYA boleh diakses Guru pada pratinjau studio atau presentasi Smartboard IFP.
+  // SISWA TIDAK PERNAH DIBERIKAN TOMBOL INI PADA MODE APAPUN!
+  const canTeacherReveal = Boolean(
+    (isTeacher || isPreview) && (isPreview || activeSettings.presentationTarget === 'smartboard')
+  );
 
   // Tab switch / anti-cheat violation tracking
   const [tabSwitchCount, setTabSwitchCount] = useState<number>(0);
@@ -608,7 +700,8 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   };
 
   const handleTeacherReveal = () => {
-    if (isAnswerConfirmed) return;
+    // Keamanan tingkat tinggi: tolak eksekusi jika bukan guru terverifikasi
+    if (!canTeacherReveal || isAnswerConfirmed) return;
     if (playReveal) playReveal();
     if (question.type === 'short_answer') {
       const primaryAns = question.acceptableAnswers?.[0] || question.options[question.correctIndex] || 'Jawaban Tepat';
@@ -1125,9 +1218,9 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                 ) : null}
               </div>
 
-              {/* First-Letter Hint Pill (Hanya jika bukan mode ujian ketat) */}
+              {/* First-Letter Hint Pill (Hanya untuk latihan bebas casual mandiri - disembunyikan total pada sesi aktif guru & mode ujian) */}
               <div className="flex items-center justify-between gap-2 flex-wrap pt-1">
-                {!isAnswerConfirmed && showAnswersMode !== 'exam_strict' && (
+                {!isAnswerConfirmed && showAnswersMode === 'immediate' && !activeSessionId && (
                   <button
                     type="button"
                     onClick={() => {
@@ -1141,7 +1234,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                   </button>
                 )}
 
-                {showFirstLetterHint && showAnswersMode !== 'exam_strict' && (
+                {showFirstLetterHint && showAnswersMode === 'immediate' && !activeSessionId && (
                   <div className="px-3 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 font-mono font-bold text-xs sm:text-sm border border-blue-200 dark:border-blue-800">
                     Petunjuk: {getFirstLetterHint(question)}
                   </div>
@@ -1417,21 +1510,31 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
       <footer className="w-full bg-white dark:bg-slate-900 border-t border-slate-200/80 dark:border-slate-800 px-3 sm:px-6 py-2.5 sm:py-3 pb-[max(env(safe-area-inset-bottom),0.625rem)] flex-shrink-0 z-20 shadow-sm">
         <div className="w-full max-w-2xl lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl 3xl:max-w-6xl 4k:max-w-7xl mx-auto flex items-center justify-between gap-3">
           
-          {/* Teacher Reveal Button (Smartboard superpower - disembunyikan pada mode ujian siswa) */}
-          {!isAnswerConfirmed && (isPreview || showAnswersMode !== 'exam_strict') ? (
+          {/* Teacher Reveal Button (HANYA untuk Guru pada Smartboard atau Pratinjau Studio - 100% Bebas Kebocoran Siswa) */}
+          {canTeacherReveal && !isAnswerConfirmed ? (
             <button
+              type="button"
               onClick={handleTeacherReveal}
-              className="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-blue-700 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 min-h-[46px] sm:min-h-[50px] transition-colors"
-              title="Buka Kunci Jawaban untuk Pembahasan Bersama"
+              className="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-blue-700 dark:text-blue-300 hover:text-blue-800 dark:hover:text-blue-200 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800 min-h-[46px] sm:min-h-[50px] transition-colors"
+              title="Buka Kunci Jawaban untuk Pembahasan Bersama (Khusus Guru / Smartboard)"
             >
               <Eye className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400" />
-              <span className="hidden sm:inline">Buka Kunci Jawaban</span>
-              <span className="sm:hidden">Kunci</span>
+              <span className="hidden sm:inline">Buka Kunci Jawaban (Guru)</span>
+              <span className="sm:hidden">Kunci Guru</span>
             </button>
           ) : !isAnswerConfirmed ? (
-            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 text-xs font-semibold">
-              <ShieldAlert className="w-3.5 h-3.5 text-indigo-500" />
-              <span className="hidden sm:inline">Mode Ujian Ketat</span>
+            <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-xs font-bold border border-slate-200/80 dark:border-slate-700">
+              {showAnswersMode === 'exam_strict' ? (
+                <>
+                  <ShieldAlert className="w-4 h-4 text-indigo-500 flex-shrink-0" />
+                  <span>Mode Ujian Terproteksi</span>
+                </>
+              ) : (
+                <>
+                  <Clock className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                  <span>Pilih satu jawaban terbaik</span>
+                </>
+              )}
             </div>
           ) : (
             <span className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium hidden sm:block">

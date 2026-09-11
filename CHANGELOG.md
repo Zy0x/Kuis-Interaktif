@@ -1,6 +1,33 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.54] - 2026-09-12
+### Eliminasi Mutlak Kebocoran Tombol Kunci Jawaban Siswa & Sinkronisasi Konfigurasi Sesi Real-Time Antar Guru-Siswa
+
+#### 1. Eliminasi Mutlak Kebocoran Tombol "Kunci" / "Buka Kunci Jawaban" (`QuizArena.tsx`)
+- **Penghapusan Akses Buka Kunci Jawaban pada Perangkat Siswa**:
+  - Tombol pengintip dan pengungkap kunci jawaban (`handleTeacherReveal`) yang sebelumnya dapat muncul pada footer pengerjaan siswa kini dihapus 100% dari seluruh mode pengerjaan siswa.
+  - Tombol ini dikunci secara ketat dan hanya boleh dirender khusus untuk akun Guru yang terverifikasi saat mempresentasikan kuis di layar Smartboard IFP (`isTeacher && presentationTarget === 'smartboard'`) atau saat pratinjau studio guru di Quiz Creator (`isPreview === true`).
+- **Penyematan Indikator Status Netral pada Footer Siswa**:
+  - Pada layar siswa, tombol kunci jawaban digantikan dengan badge informatif: *"Mode Ujian Terproteksi"* (pada mode ujian resmi ketat) atau *"Pilih satu jawaban terbaik"* (pada mode casual/standar) yang rapi, ergonomis, dan tidak memicu interaksi kebocoran.
+- **Proteksi Komponen & Guard Eksekusi**:
+  - Menambahkan guard keamanan berlapis pada fungsi `handleTeacherReveal()`: jika pemicu aksi bukan guru terverifikasi (`!canTeacherReveal`) atau jawaban butir soal sudah dikonfirmasi, fungsi langsung membatalkan eksekusi secara diam-diam.
+- **Pengamanan Bantuan Huruf Pertama pada Soal Isian Singkat**:
+  - Tombol *"Bantuan Huruf Pertama"* otomatis disembunyikan sepenuhnya jika kuis berjalan dalam sesi aktif guru atau ketika mode visibilitas jawaban bukan mode latihan instan mandiri.
+
+#### 2. Sinkronisasi Konfigurasi Kuis Real-Time Tanpa Jeda (`BroadcastChannel` & `supabaseClient.ts`)
+- **Komunikasi Instan Lintas-Tab/Jendela (`BroadcastChannel('kuis_realtime_session_sync')`)**:
+  - Mengimplementasikan kanal siaran `BroadcastChannel` dan custom DOM event listener di `supabaseClient.ts`, `App.tsx`, `QuizArena.tsx`, dan `StudentLobby.tsx`.
+  - Setiap perubahan konfigurasi yang dilakukan oleh guru (durasi, mode jawaban, anti-mencontek, batasan pengerjaan, dsb) langsung disiarkan dan disinkronkan ke seluruh tab siswa dalam hitungan milidetik tanpa perlu memuat ulang (*refresh*) browser.
+- **Metode Sinkronisasi Sesi Baru**:
+  - Menambahkan `DataManager.updateActiveSessionSettings(sessionIdOrPin, settings)` untuk memperbarui konfigurasi di penyimpanan lokal dan cloud Supabase, diikuti dengan penyiaran instan ke seluruh tab aktif.
+  - Menambahkan `DataManager.fetchActiveSessionByPin(pin)` yang cerdas dengan fallback lokal dan pengecekan cloud Supabase.
+
+#### 3. Sinkronisasi Otomatis Sejak Pemilihan Preset & Berbagi Tautan (`PlayQuizModal.tsx`)
+- **Penyimpanan & Penyiaran Pra-Mulai**:
+  - Saat guru memilih preset (misalnya *"Mode Ujian Resmi"* atau *"Latihan Bebas"*), konfigurasi langsung disinkronkan ke sesi aktif kuis terkait.
+  - Saat guru menekan tombol *"Salin PIN"* atau *"Bagi Tautan"*, sistem secara otomatis mendaftarkan dan memperbarui sesi aktif dengan seluruh parameter modal saat itu (`ensureSessionAndSyncSettings()`). Dengan demikian, siswa yang membuka tautan atau memasukkan PIN dijamin selalu mendapatkan konfigurasi terbaru yang sudah ditentukan guru tanpa risiko ketidaksinkronan default.
+
 ## [2.3.53] - 2026-09-12
 ### Tampilan Siswa Terpadu Sesuai Konfigurasi Guru (Tautan Langsung & PIN), Eliminasi Pemilih Mode Bebas, dan Sinkronisasi Sesi
 

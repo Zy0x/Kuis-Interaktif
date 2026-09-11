@@ -12,6 +12,7 @@ import type {
   QuizSession,
   QuizSessionParticipant,
   QuizSessionStatus,
+  QuizSessionSettings,
   AnswerVisibilityMode,
   ExplanationVisibilityMode,
 } from '../types/quiz';
@@ -51,6 +52,43 @@ INITIAL_QUIZZES.forEach((q, idx) => {
     q.pinCode = (1001 + idx).toString();
   }
 });
+
+// Real-time Session Broadcast Channel & Event Sync
+let sessionBroadcastChannel: BroadcastChannel | null = null;
+try {
+  if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+    sessionBroadcastChannel = new BroadcastChannel('kuis_realtime_session_sync');
+  }
+} catch (e) {
+  console.warn('BroadcastChannel initialization notice:', e);
+}
+
+export function broadcastSessionUpdate(session: QuizSession) {
+  try {
+    if (sessionBroadcastChannel) {
+      sessionBroadcastChannel.postMessage({
+        type: 'SESSION_UPDATED',
+        sessionId: session.id,
+        pinCode: session.pinCode,
+        quizId: session.quizId,
+        session,
+        timestamp: Date.now(),
+      });
+    }
+  } catch (err) {
+    console.warn('BroadcastChannel postMessage error:', err);
+  }
+
+  if (typeof window !== 'undefined') {
+    try {
+      window.dispatchEvent(
+        new CustomEvent('kuis_session_updated', {
+          detail: { session },
+        })
+      );
+    } catch {}
+  }
+}
 
 export const DataManager = {
   // Deleted Quizzes Tracking (Supports deleting seed quizzes & custom quizzes for testing & admin control)
@@ -1548,6 +1586,9 @@ export const DataManager = {
       console.warn('Failed to cache quiz session locally:', e);
     }
 
+    // Broadcast session update in real time across browser tabs
+    broadcastSessionUpdate(newSession);
+
     // Try cloud sync if Supabase configured
     if (supabase) {
       try {
@@ -1573,6 +1614,106 @@ export const DataManager = {
     return newSession;
   },
 
+  async updateActiveSessionSettings(
+    sessionIdOrPinOrQuizId: string,
+    settings: Partial<QuizSessionSettings>
+  ): Promise<QuizSession | null> {
+    const cleanKey = sessionIdOrPinOrQuizId.trim();
+    const existing = this.getActiveSessions();
+    const idx = existing.findIndex(
+      (s) =>
+        s.id === cleanKey ||
+        s.pinCode.toUpperCase() === cleanKey.toUpperCase() ||
+        s.quizId === cleanKey
+    );
+
+    if (idx === -1) return null;
+
+    existing[idx].settings = {
+      ...existing[idx].settings,
+      ...settings,
+    };
+
+    try {
+      localStorage.setItem(STORAGE_KEY_QUIZ_SESSIONS, JSON.stringify(existing));
+    } catch (e) {
+      console.warn('Failed to persist session settings update:', e);
+    }
+
+    const updatedSession = existing[idx];
+
+    // Broadcast update across tabs and windows
+    broadcastSessionUpdate(updatedSession);
+
+    if (supabase) {
+      try {
+        await supabase
+          .from('quiz_sessions')
+          .update({
+            settings: updatedSession.settings,
+          })
+          .eq('id', updatedSession.id);
+      } catch (err) {
+        console.warn('Supabase updateActiveSessionSettings notice:', err);
+      }
+    }
+
+    return updatedSession;
+  },
+
+  async fetchActiveSessionByPin(pin: string): Promise<QuizSession | null> {
+    const cleanPin = pin.trim().toUpperCase();
+    const local = this.getActiveSessionByPin(cleanPin);
+    if (local) return local;
+
+    if (supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('quiz_sessions')
+          .select('*')
+          .eq('pin_code', cleanPin)
+          .in('status', ['active', 'waiting', 'paused'])
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (data && !error) {
+          const session: QuizSession = {
+            id: data.id,
+            quizId: data.quiz_id,
+            quizTitle: data.quiz_title,
+            quizCover: data.quiz_cover || '⭐',
+            subject: data.subject || 'Umum',
+            grade: data.grade || 'Semua Kelas',
+            pinCode: data.pin_code,
+            teacherId: data.teacher_id,
+            teacherEmail: data.teacher_email,
+            teacherName: data.teacher_name,
+            status: data.status,
+            createdAt: data.created_at,
+            startedAt: data.started_at,
+            endedAt: data.ended_at,
+            settings: data.settings || {},
+            participants: data.participants || [],
+            totalQuestions: data.total_questions || 0,
+          };
+
+          const existing = this.getActiveSessions();
+          const filtered = existing.filter((s) => s.id !== session.id);
+          try {
+            localStorage.setItem(STORAGE_KEY_QUIZ_SESSIONS, JSON.stringify([session, ...filtered]));
+          } catch {}
+
+          return session;
+        }
+      } catch (err) {
+        console.warn('fetchActiveSessionByPin Supabase notice:', err);
+      }
+    }
+
+    return null;
+  },
+
   async updateSessionStatus(sessionId: string, status: QuizSessionStatus): Promise<QuizSession | null> {
     const existing = this.getActiveSessions();
     const idx = existing.findIndex((s) => s.id === sessionId);
@@ -1588,6 +1729,9 @@ export const DataManager = {
     } catch (e) {
       console.warn('Failed to save session status:', e);
     }
+
+    // Broadcast session update
+    broadcastSessionUpdate(existing[idx]);
 
     if (supabase) {
       try {
@@ -1658,16 +1802,24 @@ export const DataManager = {
       console.warn('Failed to save session participant:', e);
     }
 
+    // Broadcast participant update in real time
+    broadcastSessionUpdate(existing[sIdx]);
+
     return finalParticipant;
   },
 
   async deleteActiveSession(sessionId: string): Promise<boolean> {
     const existing = this.getActiveSessions();
+    const toDelete = existing.find((s) => s.id === sessionId);
     const filtered = existing.filter((s) => s.id !== sessionId);
     try {
       localStorage.setItem(STORAGE_KEY_QUIZ_SESSIONS, JSON.stringify(filtered));
     } catch {
       return false;
+    }
+
+    if (toDelete) {
+      broadcastSessionUpdate({ ...toDelete, status: 'finished' });
     }
 
     if (supabase) {
