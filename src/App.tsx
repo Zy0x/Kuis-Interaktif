@@ -113,10 +113,11 @@ export const App: React.FC = () => {
     saveNavigationState({
       screen: currentScreen,
       quiz: activeQuiz,
+      creatorMode: currentScreen === 'creator' ? creatorInitialMode : undefined,
       lastAnswers,
       lastTimeSpent,
     });
-  }, [currentScreen, activeQuiz?.id, lastAnswers, lastTimeSpent]);
+  }, [currentScreen, activeQuiz?.id, creatorInitialMode, lastAnswers, lastTimeSpent]);
 
   // Selalu reset posisi scroll ke 0 dan atur scrollRestoration manual saat pergantian layar
   useEffect(() => {

@@ -1,6 +1,32 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.10] - 2026-09-11
+### Penyelarasan Alur Tab Pasca-Generasi AI: Langsung Masuk ke Bank Soal (Step 1 AI)
+
+#### 1. Masalah yang Diselesaikan
+- **Urutan Tab Tidak Tepat Pasca AI Generator**: Setelah AI selesai meracik kuis, layar studio kuis malah menampilkan tab awal *"1. Info"* (*Pengaturan Kuis*) dan header *"Studio Kuis Guru 🧑‍🏫"*. Padahal setelah kuis diracik oleh asisten AI, guru seharusnya langsung ditunjukkan butir-butir soal yang baru saja di-generate pada tab *"1. Bank Soal"* untuk langsung diperiksa dan divalidasi, baru kemudian beralih ke *"2. Pengaturan Kuis"* dan *"3. Pratinjau & Simpan"*.
+- **Penyebab Teknis (*Root Cause*)**:
+  - Variabel penentu mode `isAiMode` sebelumnya bukan berupa React State dinamis melainkan variabel statis hasil kalkulasi awal `initialMode` dan status draf lama di `localStorage`.
+  - Jika sesi draf sebelumnya tersimpan dalam mode manual, atau jika halaman dimuat ulang (*refresh*) tanpa mempertahankan query navigasi, `isAiMode` tetap bernilai `false`.
+  - Akibatnya saat callback generator AI `onGenerated` selesai dan memanggil `setCurrentStep(1)`, komponen jatuh ke percabangan mode manual (di mana Step 1 manual adalah *"Pengaturan Kuis"* dan Step 2 adalah *"Bank Soal"*).
+
+#### 2. Implementasi & Penyelarasan Alur (`QuizCreator.tsx` & `App.tsx`)
+- **State Dinamis `creatorMode` (`useState<'ai' | 'manual'>`)**:
+  - Mengonversi `creatorMode` menjadi state terkelola penuh dalam React.
+  - Memastikan inisialisasi cerdas: jika pengguna memilih opsi *Generator Kilat AI*, sistem langsung mengunci mode sebagai `'ai'` dan mengaktifkan funnel AI.
+- **Transisi Otomatis ke Studio Kuis AI pada Callback `onGenerated`**:
+  - Begitu AI menyelesaikan pembuatan soal, `setCreatorMode('ai')` dipanggil secara eksplisit bersamaan dengan `setAiFunnelActive(false)` dan `setCurrentStep(1)`.
+  - Header studio secara konsisten menampilkan identitas *"Studio Kuis AI ⚡"* dengan subjudul *"Langkah 1 dari 3: Bank Soal"*.
+  - Tab navigasi atas tersusun rapi sesuai alur AI:
+    - **Tab 1**: `1. Bank Soal (X)` (Aktif & langsung menampilkan butir-butir soal hasil generasi AI).
+    - **Tab 2**: `2. Pengaturan Kuis` (Informasi dasar kuis, durasi timer, opsi acak, dll).
+    - **Tab 3**: `3. Pratinjau & Simpan` (Pratinjau lengkap sebelum disimpan ke penyimpanan).
+- **Penanganan Kembali (*Back Handler*) & Racik Ulang Terpadu**:
+  - Tombol kembali (hardware/gesture Android maupun header `←`) pada Step 1 Mode AI langsung memunculkan modal konfirmasi *"Racik Ulang Kuis AI?"* untuk mencegah hilangnya draf secara tidak sengaja.
+- **Sinkronisasi Navigasi Browser (*Navigation State Persistence*)**:
+  - Menyimpan `creatorMode` ke dalam `sessionStorage` melalui `saveNavigationState` di `App.tsx`, sehingga jika browser di-reload (F5), status mode AI tetap bertahan utuh.
+
 ## [2.3.9] - 2026-09-11
 ### Diferensiasi Visual & Hierarki Warna: Tombol Tambah Soal Bertema Indigo Studio
 

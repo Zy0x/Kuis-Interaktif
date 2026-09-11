@@ -104,16 +104,35 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   onBackToMethodSelection,
 }) => {
   const [draft] = useState<CreatorDraft | null>(() => (editingQuiz ? null : loadDraft()));
-  const isAiMode = (initialMode === 'ai' || draft?.creatorMode === 'ai' || Boolean(draft?.aiFunnelActive)) && !editingQuiz;
+  
+  // Mode pembuatan kuis: dinamis dan terkelola dengan React State
+  const [creatorMode, setCreatorMode] = useState<'ai' | 'manual'>(() => {
+    if (editingQuiz) return 'manual';
+    if (initialMode === 'ai') return 'ai';
+    if (draft?.creatorMode) return draft.creatorMode;
+    if (Boolean(draft?.aiFunnelActive)) return 'ai';
+    return initialMode || 'manual';
+  });
+
+  const isAiMode = creatorMode === 'ai' && !editingQuiz;
   const totalSteps = 3;
 
   // AI Creation Funnel state:
   const [aiFunnelActive, setAiFunnelActive] = useState<boolean>(() => {
     if (editingQuiz) return false;
+    // Jika user secara eksplisit memilih mode AI saat membuka creator
+    if (initialMode === 'ai') {
+      // Jika ada draf yang sudah berstatus AI, funnel sudah selesai (false), dan sudah ada soal yang digenerate:
+      if (draft?.creatorMode === 'ai' && draft.aiFunnelActive === false && draft.questions && draft.questions.length > 0) {
+        return false;
+      }
+      return true;
+    }
+    // Jika ada draf dengan status funnel spesifik
     if (draft && typeof draft.aiFunnelActive === 'boolean') {
       return draft.aiFunnelActive;
     }
-    if (initialMode === 'ai' || draft?.creatorMode === 'ai') {
+    if (draft?.creatorMode === 'ai') {
       return true;
     }
     return false;
@@ -474,7 +493,13 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     resetFormFields();
     setCurrentStep(1);
     if (isAiMode) {
+      setCreatorMode('ai');
       setAiFunnelActive(true);
+      setAiFunnelStage(1);
+      setFunnelTopic('');
+    } else {
+      setCreatorMode('manual');
+      setAiFunnelActive(false);
     }
     setShowResetConfirm(false);
     showToast('Draf pembuatan kuis telah direset.');
@@ -512,7 +537,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
         return true;
       }
       if (isAiMode) {
-        setAiFunnelActive(true);
+        setShowRacikUlangConfirm(true);
         return true;
       }
       onBack();
@@ -1269,6 +1294,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                 onClick={() => {
                   playClick();
                   setShowRacikUlangConfirm(false);
+                  setCreatorMode('ai');
                   setAiFunnelActive(true);
                 }}
                 className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-sm flex items-center gap-1.5 min-h-[44px]"
@@ -1315,6 +1341,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
               if (data.defaultGameMode) {
                 setDefaultGameMode(data.defaultGameMode);
               }
+              setCreatorMode('ai');
               setAiFunnelActive(false);
               setCurrentStep(1); // Enters Studio Step 1: Bank Soal
               showToast(`✨ Kuis "${generatedTitle}" (${data.questions.length} butir soal) berhasil diracik lengkap dengan identitas kuis!`);
