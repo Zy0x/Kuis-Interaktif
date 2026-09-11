@@ -2665,8 +2665,8 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                         </div>
                       )}
 
-                      {/* 5. Ergonomic Action Footer: 1-Row Compact & Balanced (≥ 44×44 px) */}
-                      <div className="mt-3.5 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between gap-1.5 sm:gap-2">
+                      {/* 5. Ergonomic Action Footer: Responsive & Balanced (≥ 44×44 px) */}
+                      <div className="mt-3.5 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex flex-wrap items-center justify-between gap-2">
                         {/* Left: Reordering & Utilities (Touch Targets >= 44x44px) */}
                         <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
                           <div className="inline-flex rounded-xl bg-slate-100 dark:bg-slate-800 p-0.5 border border-slate-200/60 dark:border-slate-700/60">
@@ -2715,14 +2715,14 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                         </div>
 
                         {/* Right Actions: Lihat (Pratinjau Siswa Nyata) & Edit Soal */}
-                        <div className="flex items-center gap-1.5 sm:gap-2 flex-1 sm:flex-initial justify-end">
+                        <div className="flex items-center gap-1.5 sm:gap-2 grow sm:grow-0 justify-end">
                           <button
                             type="button"
                             onClick={() => {
                               playClick();
                               setPreviewQuestionData({ question: q, index: idx });
                             }}
-                            className="h-11 px-3 sm:px-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-950/40 text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 font-bold text-xs flex items-center justify-center gap-1.5 transition-all border border-slate-200/60 dark:border-slate-700/60 active:scale-95 shrink-0"
+                            className="h-11 px-3 sm:px-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-950/40 text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 font-bold text-xs flex items-center justify-center gap-1.5 transition-all border border-slate-200/60 dark:border-slate-700/60 active:scale-95 shrink-0 min-w-[44px]"
                             title="Pratinjau nyata tampilan kartu soal bagi siswa"
                             aria-label="Lihat Pratinjau Soal"
                           >
@@ -2733,10 +2733,10 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                           <button
                             type="button"
                             onClick={() => handleStartEditQuestion(q)}
-                            className="flex-1 sm:flex-initial h-11 px-3.5 sm:px-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs hover:shadow transition-all active:scale-95 min-w-0 shrink-0"
+                            className="h-11 px-4 sm:px-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-xs hover:shadow transition-all active:scale-95 shrink-0"
                           >
                             <Edit3 className="w-4 h-4 shrink-0" />
-                            <span className="truncate">Edit Soal</span>
+                            <span>Edit Soal</span>
                           </button>
                         </div>
                       </div>
@@ -3675,39 +3675,68 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
             {/* Questions Summary List */}
             <div className="space-y-2">
               <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
-                {questions.map((q, idx) => (
-                  <div
-                    key={q.id}
-                    onClick={() => {
-                      handleStartEditQuestion(q);
-                      setCurrentStep(isAi ? 1 : 2); // Kembali ke Bank Soal
-                    }}
-                    className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/90 hover:bg-blue-50/60 dark:hover:bg-blue-950/30 border border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-700 flex items-center justify-between text-xs cursor-pointer transition-all group"
-                    title="Klik untuk mengedit butir soal ini di Bank Soal"
-                  >
-                    <div className="truncate mr-3 min-w-0">
-                      <span className="font-extrabold text-blue-600 dark:text-blue-400 mr-2 flex-shrink-0">#{idx + 1}</span>
-                      <span className="font-semibold text-slate-800 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                {questions.map((q, idx) => {
+                  const answerText =
+                    q.type === 'short_answer'
+                      ? (q.acceptableAnswers?.[0] || q.options[0] || '-')
+                      : q.type === 'matching_pairs'
+                      ? `${q.matchingPairs?.length || q.options.length} Pasang Cocok`
+                      : (q.options[q.correctIndex] || '-');
+
+                  return (
+                    <div
+                      key={q.id}
+                      onClick={() => {
+                        handleStartEditQuestion(q);
+                        setCurrentStep(isAi ? 1 : 2); // Kembali ke Bank Soal
+                      }}
+                      className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-850 hover:bg-blue-50/70 dark:hover:bg-blue-950/40 border border-slate-200 dark:border-slate-750 hover:border-blue-400 dark:hover:border-blue-700 transition-all cursor-pointer group space-y-2"
+                      title="Klik untuk mengedit butir soal ini di Bank Soal"
+                    >
+                      {/* Baris 1: Nomor, Tipe, Poin, & Action Indicator */}
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                          <span className="font-black text-xs px-2.5 py-0.5 rounded-lg bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 shrink-0">
+                            Soal #{idx + 1}
+                          </span>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-200/70 dark:bg-slate-700/80 text-slate-700 dark:text-slate-300 shrink-0">
+                            {q.type === 'multiple_choice'
+                              ? 'Pilihan Ganda'
+                              : q.type === 'true_false'
+                              ? 'Benar / Salah'
+                              : q.type === 'short_answer'
+                              ? 'Isian Singkat'
+                              : q.type === 'matching_pairs'
+                              ? 'Menjodohkan'
+                              : 'Tebak Gambar'}
+                          </span>
+                          <span className="text-[10px] font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-md flex items-center gap-1 shrink-0 border border-amber-200/60 dark:border-amber-800/50">
+                            <Star className="w-2.5 h-2.5 text-amber-500 fill-amber-400" /> {q.points || 10} Poin
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1 text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 shrink-0 text-xs font-bold">
+                          <span className="text-[11px] hidden xs:inline">Edit</span>
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </div>
+                      </div>
+
+                      {/* Baris 2: Teks Pertanyaan (Utuh & Terbaca Jelas) */}
+                      <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-relaxed line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                         {q.text}
-                      </span>
+                      </p>
+
+                      {/* Baris 3: Kunci Jawaban */}
+                      <div className="flex items-center gap-1.5 pt-1 border-t border-slate-200/60 dark:border-slate-750/60 text-xs">
+                        <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500 shrink-0">
+                          Kunci:
+                        </span>
+                        <span className="font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-md text-[11px] truncate max-w-full">
+                          {answerText}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <span className="text-[10px] font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-lg flex items-center gap-1">
-                        <Star className="w-3 h-3 text-amber-500" /> {q.points || 10} Poin
-                      </span>
-                      <span className="font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2.5 py-1 rounded-lg text-xs">
-                        {q.type === 'short_answer'
-                          ? (q.acceptableAnswers?.[0] || q.options[0] || '-')
-                          : q.type === 'matching_pairs'
-                          ? `${q.matchingPairs?.length || q.options.length} Pasang`
-                          : (q.options[q.correctIndex] || '-')}
-                      </span>
-                      <span className="p-1 text-slate-400 group-hover:text-blue-600 rounded">
-                        <Edit3 className="w-4 h-4" />
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>

@@ -168,15 +168,12 @@ export const SubjectDropdown: React.FC<SubjectDropdownProps> = ({
           <div className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 flex items-center justify-center font-bold shrink-0 border border-blue-200/60 dark:border-blue-900/50">
             <BookOpen className="w-3.5 h-3.5" />
           </div>
-          <div className="min-w-0">
-            <div className="text-xs font-black truncate flex items-center gap-1.5">
-              <span>{currentOption.subject}</span>
-              <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded ${currentOption.badgeClass}`}>
-                {currentOption.categoryLabel}
-              </span>
+          <div className="min-w-0 flex-1">
+            <div className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate leading-tight">
+              {currentOption.subject}
             </div>
-            <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
-              Mata Pelajaran Kuis
+            <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
+              {currentOption.categoryLabel}
             </div>
           </div>
         </div>

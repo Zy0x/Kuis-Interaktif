@@ -7,7 +7,6 @@ import {
   Check,
   RefreshCw,
   Trash2,
-  Sparkles,
   Link2,
   AlertCircle
 } from 'lucide-react';
@@ -23,31 +22,30 @@ interface QuizCoverModalProps {
   playClick: () => void;
 }
 
-// Kategori Emoji Edukatif Terstruktur
 const COVER_EMOJI_CATEGORIES = [
   {
     id: 'sains',
-    label: '🔬 Sains & Alam',
+    label: '🔬 Sains',
     emojis: ['🔬', '🌱', '🐸', '🪐', '🫀', '🌋', '⚡', '🦅', '🌊', '☀️', '🌸', '🍄', '🧪', '🔭', '🧬', '☄️'],
   },
   {
     id: 'matematika',
-    label: '📐 Matematika & Logika',
+    label: '📐 Matematika',
     emojis: ['📐', '📊', '🧮', '🧩', '💡', '🎯', '⚙️', '🔍', '🎲', '🧠', '📏', '📉', '🔢', '⏳'],
   },
   {
     id: 'literasi',
-    label: '📚 Bahasa & Humaniora',
+    label: '📚 Bahasa',
     emojis: ['📚', '📖', '🎨', '🎭', '✍️', '🌍', '🏛️', '🎵', '📜', '🎙️', '🗺️', '🖌️', '🎻', '📝'],
   },
   {
     id: 'prestasi',
-    label: '🏆 Karakter & Prestasi',
+    label: '🏆 Karakter',
     emojis: ['⭐', '🏆', '🥇', '👑', '🚀', '🇮🇩', '🤝', '🛡️', '🌟', '🏅', '🎖️', '🔥', '💎', '🚩'],
   },
   {
     id: 'fauna',
-    label: '🎒 Sekolah & Fauna',
+    label: '🎒 Sekolah',
     emojis: ['🎒', '🍎', '🎓', '🦁', '🐯', '🐼', '🦉', '⚽', '🐬', '🐝', '🦊', '🦒', '🐘', '🏀'],
   },
 ];
@@ -199,58 +197,35 @@ export const QuizCoverModal: React.FC<QuizCoverModalProps> = ({
         className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-t-3xl sm:rounded-3xl w-full max-w-lg max-h-[92dvh] sm:max-h-[85vh] flex flex-col shadow-2xl overflow-hidden animate-scale-up overscroll-contain"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header Modal */}
-        <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/70 dark:bg-slate-850/70 shrink-0">
-          <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
-              <Sparkles className="w-5 h-5" />
+        {/* Header Modal Compact dengan Live Preview Terintegrasi */}
+        <div className="px-4 py-3 sm:px-5 sm:py-3.5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/80 dark:bg-slate-850/80 shrink-0 gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-800 flex items-center justify-center shadow-xs border-2 border-blue-500/40 dark:border-blue-400/40 shrink-0 overflow-hidden text-2xl sm:text-3xl">
+              <QuizCoverDisplay
+                cover={selectedCover}
+                className="w-12 h-12 flex items-center justify-center"
+              />
             </div>
-            <div>
-              <h3 className="text-sm sm:text-base font-black text-slate-900 dark:text-white">
-                Pilih Sampul Kuis
-              </h3>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                Gunakan emoji tematik atau unggah foto sampul sendiri
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <h3 className="text-sm font-black text-slate-900 dark:text-white truncate">
+                  Pilih Sampul Kuis
+                </h3>
+                <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-md ${
+                  isCurrentAnImage
+                    ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/60 dark:text-purple-300'
+                    : 'bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300'
+                }`}>
+                  {isCurrentAnImage ? 'Gambar Kustom' : 'Emoji'}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                {isCurrentAnImage ? 'Foto sampul aktif' : `Sampul aktif: ${selectedCover}`}
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-750 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 flex items-center justify-center transition-colors btn-press min-h-[44px] min-w-[44px]"
-            aria-label="Tutup modal"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
 
-        {/* Live Preview Card */}
-        <div className="p-4 bg-slate-100/70 dark:bg-slate-850/50 border-b border-slate-200/80 dark:border-slate-800 shrink-0">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-16 h-16 rounded-2xl bg-white dark:bg-slate-800 flex items-center justify-center shadow-xs border-2 border-blue-500/40 dark:border-blue-400/40 shrink-0 overflow-hidden">
-                <QuizCoverDisplay
-                  cover={selectedCover}
-                  className="w-16 h-16 flex items-center justify-center text-4xl"
-                />
-              </div>
-              <div>
-                <div className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                  <span>Pratinjau Sampul Aktif</span>
-                  <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
-                    isCurrentAnImage
-                      ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/60 dark:text-purple-300'
-                      : 'bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300'
-                  }`}>
-                    {isCurrentAnImage ? 'Gambar Kustom' : 'Koleksi Emoji'}
-                  </span>
-                </div>
-                <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                  Tampil di kartu katalog, lobi siswa, dan sertifikat
-                </div>
-              </div>
-            </div>
-
+          <div className="flex items-center gap-1.5 shrink-0">
             {isCurrentAnImage && (
               <button
                 type="button"
@@ -259,9 +234,17 @@ export const QuizCoverModal: React.FC<QuizCoverModalProps> = ({
                 title="Ganti ke emoji standar"
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                <span className="hidden xs:inline">Reset Emoji</span>
+                <span className="hidden xs:inline">Reset</span>
               </button>
             )}
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-9 h-9 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-750 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 flex items-center justify-center transition-colors btn-press min-h-[44px] min-w-[44px]"
+              aria-label="Tutup modal"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
         </div>
 
@@ -306,7 +289,7 @@ export const QuizCoverModal: React.FC<QuizCoverModalProps> = ({
           {activeTab === 'emoji' && (
             <div className="space-y-3.5">
               {/* Kategori Nav Buttons */}
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 scrollbar-none touch-pan-x">
                 {COVER_EMOJI_CATEGORIES.map((cat) => (
                   <button
                     key={cat.id}

@@ -1,6 +1,30 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.45] - 2026-09-11
+### Audit Total: Eliminasi AI Slop, Redundansi, Overlap & Perbaikan Layout Responsif
+
+#### 1. Perbaikan SubjectDropdown (`SubjectDropdown.tsx`)
+- Mengatasi teks badge `Wajib Semua Jenjang` yang terpotong dan menabrak judul mata pelajaran pada layar sempit.
+- Nama mata pelajaran kini tampil utuh di baris utama (`text-sm font-bold`), sedangkan deskripsi kategori diletakkan rapi sebagai sub-teks di bawahnya.
+- Menghilangkan teks redundan `"Mata Pelajaran Kuis"` di dalam tombol pemicu dropdown.
+
+#### 2. Perbaikan & Pembersihan Modal Sampul (`QuizCoverModal.tsx`)
+- Menyederhanakan label tab kategori emoji agar tidak terpotong (misal `🔬 Sains`, `📐 Matematika`, `📚 Bahasa`, `🏆 Karakter`, `🎒 Sekolah`).
+- Mengintegrasikan pratinjau sampul aktif langsung ke dalam header modal secara ringkas, menghemat >100px ruang vertikal.
+- Menghilangkan kartu pratinjau ganda dan teks redundan `"Tampil di kartu katalog, lobi siswa, dan sertifikat"`.
+- Wadah tab kategori kini memiliki dukungan sentuh halus (`touch-pan-x`) dan bebas pemotongan kata.
+
+#### 3. Perbaikan Kritis Pratinjau Butir Soal Step 3 (`QuizCreator.tsx`)
+- Mengatasi bug kritis di mana teks pertanyaan sebelumnya hilang/tertekan menjadi 0px di layar mobile akibat teks kunci jawaban yang panjang.
+- Redesain ringkasan butir soal menjadi kartu terstruktur:
+  - Baris 1: Nomor soal (`#1`), badge tipe soal, bobot poin, dan indikator edit.
+  - Baris 2: Teks pertanyaan tampil penuh dan nyaman dibaca (readability-first).
+  - Baris 3: Kunci jawaban disajikan sebagai sub-baris tersendiri tanpa menekan teks soal.
+
+#### 4. Ergonomi Footer Aksi Kartu Soal Bank Soal (`QuizCreator.tsx`)
+- Tombol aksi kartu soal (`Reorder`, `Salin`, `Hapus`, `Lihat`, `Edit Soal`) kini menggunakan `flex-wrap` dan tata letak proporsional sehingga tidak mengalami overflow atau kompresi paksa pada layar sempit (seperti Infinix Note 50s / lebar ~360-393px).
+
 ## [2.3.44] - 2026-09-11
 ### Overlay Navigator Nomor Soal ("1/4") & Pratinjau Nyata Kartu Soal Siswa ("Lihat")
 
