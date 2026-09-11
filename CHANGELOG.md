@@ -1,6 +1,18 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.46] - 2026-09-11
+### Filter Terarah Jenjang (SD, SMP, SMA, Semua) pada Dropdown Mata Pelajaran
+
+- **Pembaruan Tab Filter Dropdown (`SubjectDropdown.tsx`)**:
+  - Mengganti filter dua tombol sebelumnya (`Relevan (SD)` & `Semua Mapel`) menjadi 4 tombol filter eksplisit: **`SD`**, **`SMP`**, **`SMA`**, dan **`Semua`**.
+  - **Terarah & Terfokus Sesuai Kurikulum**:
+    - **SD**: Menampilkan mata pelajaran fase SD (Matematika, IPAS, Bahasa Indonesia, Pendidikan Pancasila, Bahasa Inggris, PJOK, Pengetahuan Umum, Seni, Agama, dan Lintas).
+    - **SMP**: Menyaring mata pelajaran khusus SMP (IPA Terpadu, IPS Terpadu, Informatika, Prakarya) serta mata pelajaran inti lainnya, mengecualikan materi SMA/SD tertentu.
+    - **SMA**: Menampilkan peminatan MIPA (Fisika, Kimia, Biologi, MTK Lanjut), peminatan IPS (Ekonomi, Sosiologi, Geografi, Sejarah, Antropologi), Informatika, dan mata pelajaran umum SMA.
+    - **Semua**: Menampilkan keseluruhan 33 mata pelajaran.
+  - **Sinkronisasi Otomatis**: Saat dropdown pertama kali dibuka, tab aktif langsung menyesuaikan dengan jenjang kuis yang sedang dipilih oleh guru, namun guru tetap leluasa beralih antar-jenjang kapan saja.
+
 ## [2.3.45] - 2026-09-11
 ### Audit Total: Eliminasi AI Slop, Redundansi, Overlap & Perbaikan Layout Responsif
 

@@ -75,29 +75,43 @@ export const SubjectDropdown: React.FC<SubjectDropdownProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<'prioritas' | 'semua'>('prioritas');
+  const [activeTab, setActiveTab] = useState<'SD' | 'SMP' | 'SMA' | 'semua'>(educationLevel || 'SD');
   const containerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Sinkronkan tab aktif saat dropdown dibuka atau educationLevel berubah
+  useEffect(() => {
+    if (educationLevel) {
+      setActiveTab(educationLevel);
+    }
+  }, [educationLevel, isOpen]);
 
   // Cari opsi aktif saat ini
   const currentOption = ALL_SUBJECT_OPTIONS.find((s) => s.subject === subject) || ALL_SUBJECT_OPTIONS[0];
 
-  // Filter daftar mapel berdasarkan query pencarian dan jenjang aktif
+  // Filter daftar mapel berdasarkan query pencarian dan tab jenjang aktif
   const filteredSubjects = useMemo(() => {
     let list = ALL_SUBJECT_OPTIONS;
 
-    // Filter tab prioritas jenjang jika sedang dalam mode 'prioritas' dan tidak ada search query
-    if (activeTab === 'prioritas' && !searchQuery.trim()) {
-      if (educationLevel === 'SD') {
+    // Filter tab jenjang terarah jika tidak ada pencarian kata kunci
+    if (!searchQuery.trim()) {
+      if (activeTab === 'SD') {
         list = list.filter((s) => ['utama_sd', 'seni_bahasa', 'agama', 'lintas'].includes(s.category));
-      } else if (educationLevel === 'SMP') {
-        list = list.filter((s) => ['utama_smp', 'utama_sd', 'seni_bahasa', 'agama'].includes(s.category));
-      } else if (educationLevel === 'SMA') {
-        list = list.filter((s) => ['mipa_sma', 'ips_sma', 'umum_sma', 'utama_sd', 'seni_bahasa', 'agama'].includes(s.category));
+      } else if (activeTab === 'SMP') {
+        list = list.filter(
+          (s) =>
+            s.subject !== 'IPAS' &&
+            ['utama_smp', 'utama_sd', 'seni_bahasa', 'agama', 'lintas'].includes(s.category)
+        );
+      } else if (activeTab === 'SMA') {
+        list = list.filter(
+          (s) =>
+            !['IPAS', 'IPA Terpadu', 'IPS Terpadu'].includes(s.subject) &&
+            ['mipa_sma', 'ips_sma', 'utama_smp', 'utama_sd', 'seni_bahasa', 'agama'].includes(s.category)
+        );
       }
-    }
-
-    if (searchQuery.trim()) {
+      // Jika 'semua', tampilkan seluruh 33 mata pelajaran
+    } else {
       const q = searchQuery.toLowerCase();
       list = list.filter(
         (s) =>
@@ -107,7 +121,7 @@ export const SubjectDropdown: React.FC<SubjectDropdownProps> = ({
     }
 
     return list;
-  }, [educationLevel, activeTab, searchQuery]);
+  }, [activeTab, searchQuery]);
 
   // Tutup dropdown saat klik di luar elemen atau tombol Escape
   useEffect(() => {
@@ -204,31 +218,30 @@ export const SubjectDropdown: React.FC<SubjectDropdownProps> = ({
             />
           </div>
 
-          {/* Filter Tab Jenjang */}
+          {/* Filter Tab Jenjang: SD, SMP, SMA, Semua */}
           {!searchQuery.trim() && (
-            <div className="flex items-center gap-1 border-b border-slate-100 dark:border-slate-750 pb-1.5 shrink-0">
-              <button
-                type="button"
-                onClick={() => setActiveTab('prioritas')}
-                className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition-all ${
-                  activeTab === 'prioritas'
-                    ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
-                    : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
-                }`}
-              >
-                Relevan ({educationLevel})
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('semua')}
-                className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition-all ${
-                  activeTab === 'semua'
-                    ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
-                    : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
-                }`}
-              >
-                Semua Mapel ({ALL_SUBJECT_OPTIONS.length})
-              </button>
+            <div className="flex items-center gap-1 border-b border-slate-100 dark:border-slate-750 pb-1.5 shrink-0 overflow-x-auto scrollbar-none">
+              {(['SD', 'SMP', 'SMA', 'semua'] as const).map((tab) => {
+                const isActive = activeTab === tab;
+                const label = tab === 'semua' ? 'Semua' : tab;
+                return (
+                  <button
+                    key={tab}
+                    type="button"
+                    onClick={() => {
+                      if (playClick) playClick();
+                      setActiveTab(tab);
+                    }}
+                    className={`px-3 py-1 rounded-lg text-[11px] font-extrabold transition-all min-h-[30px] btn-press ${
+                      isActive
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-750'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
             </div>
           )}
 
