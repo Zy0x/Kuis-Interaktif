@@ -1,6 +1,26 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.24] - 2026-09-11
+### Redesain Ramping Editor Soal Benar / Salah: Mode Pilihan Cepat Tanpa Tumpukan Teks & Mode Kustom On-Demand
+
+#### 1. Masalah yang Diselesaikan
+- **Tumpukan Teks & Formulir Terlalu Padat**: Pada konfigurasi opsi soal Benar / Salah sebelumnya, dua kartu besar berisi kolom input teks ("Teks Pilihan 1" & "Teks Pilihan 2") beserta lencana berjenjang dan tombol jadikan kunci selalu ditampilkan secara terbuka secara permanen, bahkan saat guru hanya ingin memilih opsi standar (Benar/Salah atau Sesuai/Tidak Sesuai).
+- **Pengalaman Pengguna (*User Flow*) Kurang Praktis**: Guru harus menatap formulir panjang berlapis-lapis padahal mayoritas kebutuhan pembuatan soal Benar/Salah hanya membutuhkan satu ketukan untuk menentukan kunci jawaban yang benar.
+
+#### 2. Implementasi & Desain Clean (`QuizCreator.tsx`)
+- **Mode Pilihan Cepat Bersih (*Streamlined Preset Mode*)**:
+  - Kolom input teks kini **disembunyikan secara otomatis** saat menggunakan preset standar.
+  - Menggantikan kartu input yang padat dengan **Dua Kartu Pilihan Interaktif Sentuh-Cepat** (`min-h-[80px]`):
+    - Sekali ketuk langsung menetapkan kunci jawaban benar secara instan dengan lencana hijau zamrud (`✓ Kunci Benar`) dan cincin fokus lembut.
+    - Menghilangkan redundansi label berulang ("OPSI PERTAMA (A)", "Teks Pilihan 1", dll.) sehingga tampilan sangat lega, bersih, dan estetis.
+- **Mode Kustom Fleksibel Sesuai Kebutuhan (*On-Demand Custom Mode*)**:
+  - Kolom teks kustom kini **hanya muncul jika pengguna secara eksplisit memilih tombol chip `[✏️ Kustom Teks]`** atau jika soal memiliki pasangan teks non-standar.
+  - Menampilkan panel editor kustom ramping dengan kolom input ringkas dan tombol penentu kunci terintegrasi dalam satu baris kartu horizontal.
+  - Dilengkapi tautan instan `[Kembali ke Preset]` untuk kembali ke mode bersih kapan saja.
+- **Kepatuhan Ergonomi & Aksesibilitas (Rule 1 & Rule 2)**:
+  - Seluruh chip preset, tombol kustom, dan kartu pilihan sentuh memenuhi standar target minimum 44×44 px.
+
 ## [2.3.23] - 2026-09-11
 ### Redesain Responsif Modal "Pilih Ilustrasi Edukasi": Mobile-First Bottom Sheet, Segmented Switcher & Layout Ergonomis
 

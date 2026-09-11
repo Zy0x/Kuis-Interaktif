@@ -210,6 +210,24 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [qOptions, setQOptions] = useState<string[]>(() => draft?.activeQuestionDraft?.qOptions ?? ['', '', '', '']);
   const [qCorrectIndex, setQCorrectIndex] = useState<number>(() => draft?.activeQuestionDraft?.qCorrectIndex ?? 0);
+  const [isCustomTrueFalse, setIsCustomTrueFalse] = useState<boolean>(() => {
+    const opts = draft?.activeQuestionDraft?.qOptions;
+    if (draft?.activeQuestionDraft?.qType === 'true_false' && opts && opts.length >= 2) {
+      const isPreset = [
+        { opt0: 'Benar', opt1: 'Salah' },
+        { opt0: 'Sesuai', opt1: 'Tidak Sesuai' },
+        { opt0: 'Ya', opt1: 'Tidak' },
+        { opt0: 'Fakta', opt1: 'Opini' },
+        { opt0: 'Setuju', opt1: 'Tidak Setuju' },
+      ].some(
+        (p) =>
+          (opts[0] || '').trim().toLowerCase() === p.opt0.toLowerCase() &&
+          (opts[1] || '').trim().toLowerCase() === p.opt1.toLowerCase()
+      );
+      return !isPreset;
+    }
+    return false;
+  });
   const [qExplanation, setQExplanation] = useState(() => draft?.activeQuestionDraft?.qExplanation ?? '');
   const [qAcceptableAnswers, setQAcceptableAnswers] = useState(() => draft?.activeQuestionDraft?.qAcceptableAnswers ?? '');
   const [qMatchingPairs, setQMatchingPairs] = useState<{ left: string; right: string }[]>(
@@ -650,6 +668,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     setQCustomDurationSec('');
     if (targetType === 'true_false') {
       setQOptions(['Benar', 'Salah']);
+      setIsCustomTrueFalse(false);
     } else if (targetType === 'short_answer') {
       setQOptions(['']);
     } else if (targetType === 'matching_pairs') {
@@ -695,6 +714,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     if (type === 'true_false') {
       setQOptions(['Benar', 'Salah']);
       setQCorrectIndex(0);
+      setIsCustomTrueFalse(false);
     } else if (type === 'short_answer') {
       setQOptions(['']);
       setQCorrectIndex(0);
@@ -742,6 +762,18 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
       const opt1 = q.options && q.options[1] ? q.options[1] : 'Salah';
       setQOptions([opt0, opt1]);
       setQCorrectIndex(q.correctIndex === 1 ? 1 : 0);
+      const isPreset = [
+        { opt0: 'Benar', opt1: 'Salah' },
+        { opt0: 'Sesuai', opt1: 'Tidak Sesuai' },
+        { opt0: 'Ya', opt1: 'Tidak' },
+        { opt0: 'Fakta', opt1: 'Opini' },
+        { opt0: 'Setuju', opt1: 'Tidak Setuju' },
+      ].some(
+        (p) =>
+          opt0.trim().toLowerCase() === p.opt0.toLowerCase() &&
+          opt1.trim().toLowerCase() === p.opt1.toLowerCase()
+      );
+      setIsCustomTrueFalse(!isPreset);
     } else {
       setQOptions([...q.options]);
       setQCorrectIndex(q.correctIndex);
@@ -2529,118 +2561,182 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                 )}
 
                 {qType === 'true_false' && (
-                  <div className="space-y-3.5">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
-                        Kustomisasi Opsi & Kunci Jawaban
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-xs font-black text-slate-800 dark:text-slate-200">
+                        Pilihan & Kunci Jawaban
                       </label>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                        Sesuaikan teks pilihan di bawah atau pilih preset instan, lalu tentukan opsi mana yang menjadi kunci jawaban benar.
-                      </p>
+                      <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                        {isCustomTrueFalse ? 'Ketik teks opsi kustom Anda' : 'Ketuk pilihan untuk kunci jawaban'}
+                      </span>
                     </div>
 
-                    {/* Quick Preset Chips */}
-                    <div className="p-2.5 rounded-2xl bg-slate-50/80 dark:bg-slate-850/60 border border-slate-200/80 dark:border-slate-800">
-                      <div className="text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-2 flex items-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                        <span>Preset Pilihan Cepat:</span>
-                      </div>
-                      <div className="flex flex-wrap gap-1.5">
-                        {[
-                          { label: 'Benar / Salah', opt0: 'Benar', opt1: 'Salah' },
-                          { label: 'Sesuai / Tidak Sesuai', opt0: 'Sesuai', opt1: 'Tidak Sesuai' },
-                          { label: 'Ya / Tidak', opt0: 'Ya', opt1: 'Tidak' },
-                          { label: 'Fakta / Opini', opt0: 'Fakta', opt1: 'Opini' },
-                          { label: 'Setuju / Tidak Setuju', opt0: 'Setuju', opt1: 'Tidak Setuju' },
-                        ].map((preset) => {
-                          const isPresetActive =
-                            (qOptions[0] || '').trim().toLowerCase() === preset.opt0.toLowerCase() &&
-                            (qOptions[1] || '').trim().toLowerCase() === preset.opt1.toLowerCase();
+                    {/* Bilah Preset Pilihan Cepat & Tombol Kustom */}
+                    <div className="flex flex-wrap items-center gap-1.5 p-2 rounded-2xl bg-slate-50/80 dark:bg-slate-850/60 border border-slate-200/80 dark:border-slate-800">
+                      {[
+                        { label: 'Benar / Salah', opt0: 'Benar', opt1: 'Salah' },
+                        { label: 'Sesuai / Tidak Sesuai', opt0: 'Sesuai', opt1: 'Tidak Sesuai' },
+                        { label: 'Ya / Tidak', opt0: 'Ya', opt1: 'Tidak' },
+                        { label: 'Fakta / Opini', opt0: 'Fakta', opt1: 'Opini' },
+                        { label: 'Setuju / Tidak Setuju', opt0: 'Setuju', opt1: 'Tidak Setuju' },
+                      ].map((preset) => {
+                        const isPresetActive =
+                          !isCustomTrueFalse &&
+                          (qOptions[0] || '').trim().toLowerCase() === preset.opt0.toLowerCase() &&
+                          (qOptions[1] || '').trim().toLowerCase() === preset.opt1.toLowerCase();
+                        return (
+                          <button
+                            key={preset.label}
+                            type="button"
+                            onClick={() => {
+                              playClick();
+                              setIsCustomTrueFalse(false);
+                              setQOptions([preset.opt0, preset.opt1]);
+                            }}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all btn-press flex items-center gap-1.5 min-h-[44px] ${
+                              isPresetActive
+                                ? 'bg-emerald-600 text-white shadow-xs'
+                                : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-750'
+                            }`}
+                          >
+                            {isPresetActive && <Check className="w-3.5 h-3.5 text-white shrink-0" />}
+                            <span>{preset.label}</span>
+                          </button>
+                        );
+                      })}
+
+                      {/* Tombol Kustom Teks */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          playClick();
+                          setIsCustomTrueFalse((prev) => !prev);
+                        }}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all btn-press flex items-center gap-1.5 min-h-[44px] ${
+                          isCustomTrueFalse
+                            ? 'bg-blue-600 text-white shadow-xs font-black'
+                            : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-dashed border-slate-300 dark:border-slate-700 hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400'
+                        }`}
+                      >
+                        <Edit3 className="w-3.5 h-3.5 shrink-0" />
+                        <span>Kustom Teks</span>
+                      </button>
+                    </div>
+
+                    {/* MODE PRESET: Hanya Tampilkan 2 Tombol Pilihan Interaktif Bersih */}
+                    {!isCustomTrueFalse ? (
+                      <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
+                        {[0, 1].map((oIdx) => {
+                          const isCorrect = qCorrectIndex === oIdx;
+                          const defaultLabel = oIdx === 0 ? 'Benar' : 'Salah';
+                          const optLabel = qOptions[oIdx] || defaultLabel;
                           return (
                             <button
-                              key={preset.label}
+                              key={oIdx}
                               type="button"
                               onClick={() => {
                                 playClick();
-                                setQOptions([preset.opt0, preset.opt1]);
+                                setQCorrectIndex(oIdx);
                               }}
-                              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all btn-press flex items-center gap-1.5 min-h-[38px] ${
-                                isPresetActive
-                                  ? 'bg-emerald-600 text-white shadow-2xs'
-                                  : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-750'
+                              className={`p-3.5 sm:p-4 rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-2 btn-press min-h-[80px] ${
+                                isCorrect
+                                  ? 'border-emerald-500 bg-emerald-50/70 dark:bg-emerald-950/30 text-emerald-950 dark:text-emerald-200 ring-2 ring-emerald-500/20 shadow-xs font-black'
+                                  : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700'
                               }`}
                             >
-                              {isPresetActive && <Check className="w-3.5 h-3.5 text-white shrink-0" />}
-                              <span>{preset.label}</span>
+                              <span className="text-sm sm:text-base font-black truncate max-w-full">
+                                {optLabel}
+                              </span>
+                              {isCorrect ? (
+                                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-emerald-600 text-white flex items-center gap-1 shadow-xs">
+                                  <Check className="w-3.5 h-3.5" />
+                                  <span>Kunci Benar</span>
+                                </span>
+                              ) : (
+                                <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 flex items-center gap-1">
+                                  <span className="w-2.5 h-2.5 rounded-full border border-slate-300 dark:border-slate-600 inline-block" />
+                                  <span>Jadikan Kunci</span>
+                                </span>
+                              )}
                             </button>
                           );
                         })}
                       </div>
-                    </div>
-
-                    {/* Option 1 & Option 2 Cards */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {[0, 1].map((oIdx) => {
-                        const isCorrect = qCorrectIndex === oIdx;
-                        const defaultLabel = oIdx === 0 ? 'Benar' : 'Salah';
-                        const optVal = qOptions[oIdx] !== undefined ? qOptions[oIdx] : defaultLabel;
-                        return (
-                          <div
-                            key={oIdx}
-                            className={`p-3 sm:p-3.5 rounded-2xl border transition-all duration-200 flex flex-col gap-2.5 ${
-                              isCorrect
-                                ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20 ring-1 ring-emerald-500/20 shadow-xs'
-                                : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 hover:border-slate-300 dark:hover:border-slate-600'
-                            }`}
+                    ) : (
+                      /* MODE KUSTOM: Hanya Muncul Jika Pengguna Memilih Kustom */
+                      <div className="p-3 sm:p-3.5 rounded-2xl bg-blue-50/30 dark:bg-blue-950/20 border border-blue-200/80 dark:border-blue-900/50 space-y-2.5 animate-fade-in">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-black text-blue-950 dark:text-blue-200 flex items-center gap-1.5">
+                            <Edit3 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                            <span>Tulis Teks Pilihan Kustom</span>
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              playClick();
+                              setIsCustomTrueFalse(false);
+                              setQOptions(['Benar', 'Salah']);
+                            }}
+                            className="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline min-h-[36px] flex items-center"
                           >
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200/60 dark:border-slate-600/40">
-                                Opsi {oIdx === 0 ? 'Pertama (A)' : 'Kedua (B)'}
-                              </span>
+                            Kembali ke Preset
+                          </button>
+                        </div>
 
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  playClick();
-                                  setQCorrectIndex(oIdx);
-                                }}
-                                className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all min-h-[44px] btn-press ${
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                          {[0, 1].map((oIdx) => {
+                            const isCorrect = qCorrectIndex === oIdx;
+                            const defaultLabel = oIdx === 0 ? 'Benar' : 'Salah';
+                            const optVal = qOptions[oIdx] !== undefined ? qOptions[oIdx] : defaultLabel;
+                            return (
+                              <div
+                                key={oIdx}
+                                className={`p-2.5 sm:p-3 rounded-xl border transition-all flex items-center gap-2 ${
                                   isCorrect
-                                    ? 'bg-emerald-600 text-white shadow-xs'
-                                    : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-650 border border-slate-200 dark:border-slate-700'
+                                    ? 'border-emerald-500 bg-white dark:bg-slate-900 ring-2 ring-emerald-500/20 shadow-xs'
+                                    : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900'
                                 }`}
-                                title={isCorrect ? 'Kunci Jawaban Benar (Aktif)' : 'Pilih sebagai Kunci Jawaban Benar'}
                               >
-                                {isCorrect ? (
-                                  <>
-                                    <Check className="w-4 h-4 text-white shrink-0" />
-                                    <span>Kunci Benar</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <span className="w-3.5 h-3.5 rounded-full border-2 border-slate-400 dark:border-slate-500 shrink-0 inline-block" />
+                                <div className="flex-1 min-w-0">
+                                  <span className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">
+                                    Opsi {oIdx === 0 ? 'Pertama (A)' : 'Kedua (B)'}
+                                  </span>
+                                  <input
+                                    type="text"
+                                    value={optVal}
+                                    onChange={(e) => handleOptionChange(oIdx, e.target.value)}
+                                    placeholder={oIdx === 0 ? 'Contoh: Fakta / Setuju / Sesuai' : 'Contoh: Opini / Menolak / Keliru'}
+                                    className="w-full text-xs sm:text-sm font-bold text-slate-900 dark:text-white bg-transparent outline-none placeholder:text-slate-400"
+                                  />
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    playClick();
+                                    setQCorrectIndex(oIdx);
+                                  }}
+                                  className={`px-3 py-2 rounded-xl text-xs font-bold shrink-0 flex items-center gap-1.5 transition-all btn-press min-h-[44px] ${
+                                    isCorrect
+                                      ? 'bg-emerald-600 text-white shadow-xs'
+                                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                                  }`}
+                                  title={isCorrect ? 'Kunci Benar' : 'Jadikan Kunci'}
+                                >
+                                  {isCorrect ? (
+                                    <>
+                                      <Check className="w-4 h-4 text-white" />
+                                      <span>Kunci Benar</span>
+                                    </>
+                                  ) : (
                                     <span>Jadikan Kunci</span>
-                                  </>
-                                )}
-                              </button>
-                            </div>
-
-                            <div>
-                              <label className="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">
-                                Teks Pilihan {oIdx === 0 ? '1' : '2'}
-                              </label>
-                              <input
-                                type="text"
-                                value={optVal}
-                                onChange={(e) => handleOptionChange(oIdx, e.target.value)}
-                                placeholder={oIdx === 0 ? 'Contoh: Benar / Sesuai / Ya / Fakta' : 'Contoh: Salah / Tidak Sesuai / Tidak / Opini'}
-                                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs sm:text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none min-h-[44px] transition-all"
-                              />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+                                  )}
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
