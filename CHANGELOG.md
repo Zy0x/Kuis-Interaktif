@@ -1,6 +1,19 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.13] - 2026-09-11
+### Penyesuaian Spasi Bawah: Normalisasi Jarak Tombol Navigasi Akhir ke Dasar Halaman
+
+#### 1. Masalah yang Diselesaikan
+- **Jarak Kosong Berlebih di Bawah Tombol Akhir**: Jarak antara baris tombol akhir navigasi (`[Simpan Draf]` dan `[Lanjut ke Pengaturan Kuis]`) ke batas paling bawah halaman (*page bottom edge*) sebelumnya terlalu renggang (`pb-20 sm:pb-24` atau mencapai 80–96px). Hal ini menyisakan ruang kosong putih/gelap yang terlalu besar dan tampak tidak proporsional saat pengguna menggulir ke akhir daftar soal.
+
+#### 2. Implementasi & Penyelarasan Spasi (`QuizCreator.tsx`)
+- **Normalisasi Padding Bawah Kontainer Bank Soal**:
+  - Mengurangi padding bawah dari `pb-20 sm:pb-24` (80–96px) menjadi **`pb-6 sm:pb-8` (24px di ponsel, 32px di desktop)**.
+  - Spasi antara tombol navigasi akhir dan dasar layar kini proporsional, rapi, dan estetis sesuai standar desain modern.
+- **Penyelarasan Threshold Sensor Sembunyi Otomatis FAB**:
+  - Menyesuaikan batas sensor `isNearBottom` dari 180px menjadi **110px**, sehingga tombol melayang (FAB) tetap bersembunyi halus secara tepat waktu sebelum kursor atau layar mencapai area tombol navigasi akhir tanpa meninggalkan ruang kosong berlebih.
+
 ## [2.3.12] - 2026-09-11
 ### Presisi Area Interaksi: Eliminasi Phantom Hover pada Tombol Melayang FAB
 

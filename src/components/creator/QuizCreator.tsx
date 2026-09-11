@@ -236,8 +236,8 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
       const scrollY = window.scrollY;
       const scrollHeight = document.documentElement.scrollHeight;
       const clientHeight = window.innerHeight;
-      // Cek apakah mendekati dasar halaman (kurang dari 180px dari batas bawah)
-      const isNearBottom = scrollHeight - (scrollY + clientHeight) < 180;
+      // Cek apakah mendekati dasar halaman (kurang dari 110px dari batas bawah)
+      const isNearBottom = scrollHeight - (scrollY + clientHeight) < 110;
 
       const shouldShow = !isNearBottom;
       setShowFloatingActions(shouldShow);
@@ -1594,7 +1594,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
       <div className="w-full max-w-[2000px] mx-auto px-3 xs:px-4 sm:px-8 lg:px-12 space-y-5 animate-fade-in">
         {!isAddingQuestion ? (
           /* ================= 1-KOLOM DAFTAR BANK SOAL (KE BAWAH RESPONSIV) ================= */
-          <div className="space-y-4 sm:space-y-5 pb-20 sm:pb-24">
+          <div className="space-y-4 sm:space-y-5 pb-6 sm:pb-8">
             {/* Slim Control Bar Bank Soal (Compact, Informatif & Ramping - Tombol Tambah Mengandalkan FAB Melayang) */}
             <div className="flex items-center justify-between gap-2.5 sm:gap-4 px-3.5 sm:px-5 py-2.5 sm:py-3 bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
               {/* Sisi Kiri: Status & Counter Butir Soal Informatif */}
