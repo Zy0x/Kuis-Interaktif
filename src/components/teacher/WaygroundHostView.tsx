@@ -220,6 +220,32 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                 <span className="text-xs text-slate-300 font-semibold truncate hidden sm:inline max-w-[220px]">
                   {quiz.title}
                 </span>
+
+                {/* Session Settings Badges */}
+                {session.settings?.showAnswersMode === 'exam_strict' && (
+                  <span className="px-2 py-0.5 rounded-md bg-indigo-950/80 border border-indigo-500/50 text-indigo-300 text-[10px] font-bold flex items-center gap-1">
+                    <span>🔒</span>
+                    <span className="hidden md:inline">Kunci Dirahasiakan</span>
+                  </span>
+                )}
+                {session.settings?.showAnswersMode === 'status_only' && (
+                  <span className="px-2 py-0.5 rounded-md bg-amber-950/80 border border-amber-500/50 text-amber-300 text-[10px] font-bold flex items-center gap-1">
+                    <span>🟡</span>
+                    <span className="hidden md:inline">Hanya Status</span>
+                  </span>
+                )}
+                {session.settings?.tabSwitchDetection && (
+                  <span className="px-2 py-0.5 rounded-md bg-rose-950/80 border border-rose-500/50 text-rose-300 text-[10px] font-bold flex items-center gap-1">
+                    <span>👁️</span>
+                    <span className="hidden md:inline">Anti-Mencontek</span>
+                  </span>
+                )}
+                {session.settings?.maxAttempts === 1 && (
+                  <span className="px-2 py-0.5 rounded-md bg-purple-950/80 border border-purple-500/50 text-purple-300 text-[10px] font-bold flex items-center gap-1">
+                    <span>🚫</span>
+                    <span className="hidden md:inline">1x Percobaan</span>
+                  </span>
+                )}
               </div>
               <h1 className="text-sm sm:text-base font-black text-white truncate max-w-[260px] sm:max-w-md">
                 Ruang Kendali Host

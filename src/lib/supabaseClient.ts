@@ -11,7 +11,9 @@ import type {
   EducationLevel,
   QuizSession,
   QuizSessionParticipant,
-  QuizSessionStatus
+  QuizSessionStatus,
+  AnswerVisibilityMode,
+  ExplanationVisibilityMode,
 } from '../types/quiz';
 import { MASTER_TEACHER_EMAIL } from '../types/quiz';
 import { INITIAL_QUIZZES } from '../data/seedQuizzes';
@@ -1490,6 +1492,11 @@ export const DataManager = {
       shuffleQuestions: boolean;
       shuffleOptions: boolean;
       presentationTarget: 'smartboard' | 'student-lobby';
+      showAnswersMode?: AnswerVisibilityMode;
+      showExplanationMode?: ExplanationVisibilityMode;
+      showLeaderboardToStudents?: boolean;
+      maxAttempts?: number;
+      tabSwitchDetection?: boolean;
     },
     teacher?: TeacherProfile
   ): Promise<QuizSession> {
@@ -1516,6 +1523,11 @@ export const DataManager = {
         shuffleQuestions: options.shuffleQuestions,
         shuffleOptions: options.shuffleOptions,
         presentationTarget: options.presentationTarget,
+        showAnswersMode: options.showAnswersMode || 'immediate',
+        showExplanationMode: options.showExplanationMode || 'immediate',
+        showLeaderboardToStudents: options.showLeaderboardToStudents ?? true,
+        maxAttempts: options.maxAttempts ?? 0,
+        tabSwitchDetection: options.tabSwitchDetection ?? false,
       },
       participants: [],
       totalQuestions: quiz.questions?.length || 0,

@@ -96,6 +96,7 @@ export interface Quiz {
   shuffleQuestions?: boolean;
   shuffleOptions?: boolean;
   defaultGameMode?: GameMode;
+  defaultSettings?: Partial<QuizSessionSettings>;
 }
 
 export interface AiQuizMetadata {
@@ -270,12 +271,20 @@ export interface QuizSessionParticipant {
   lastActiveAt: string;
 }
 
+export type AnswerVisibilityMode = 'immediate' | 'status_only' | 'exam_strict';
+export type ExplanationVisibilityMode = 'immediate' | 'end_only' | 'never';
+
 export interface QuizSessionSettings {
   mode: GameMode;
   durationPerQuestionSec: number;
   shuffleQuestions: boolean;
   shuffleOptions: boolean;
   presentationTarget: 'smartboard' | 'student-lobby';
+  showAnswersMode?: AnswerVisibilityMode;
+  showExplanationMode?: ExplanationVisibilityMode;
+  showLeaderboardToStudents?: boolean;
+  maxAttempts?: number; // 0 = Bebas/Unlimited, 1 = 1x Ujian Resmi
+  tabSwitchDetection?: boolean; // Deteksi dan peringatan jika berpindah tab/layar
 }
 
 export interface QuizSession {

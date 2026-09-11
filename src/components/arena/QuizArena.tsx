@@ -1,5 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import type { Quiz, QuizAttemptAnswer, QuizQuestion, GameMode } from '../../types/quiz';
+import type { 
+  Quiz, 
+  QuizAttemptAnswer, 
+  QuizQuestion, 
+  GameMode,
+  AnswerVisibilityMode,
+  ExplanationVisibilityMode,
+  QuizSessionSettings
+} from '../../types/quiz';
 import { useBackHandler } from '../../lib/navigationHistory';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 import { ThemeToggle } from '../common/ThemeToggle';
@@ -11,6 +19,7 @@ import {
   Volume2, 
   VolumeX, 
   Music,
+  Check,
   CheckCircle, 
   XCircle, 
   ArrowRight, 
@@ -31,13 +40,15 @@ import {
   Lightbulb,
   Puzzle,
   Star,
-  Edit3
+  Edit3,
+  ShieldAlert
 } from 'lucide-react';
 import { QuizIllustration } from '../shared/QuizIllustration';
 
 export interface QuizArenaProps {
   quiz: Quiz;
   initialMode?: GameMode;
+  sessionSettings?: QuizSessionSettings;
   onFinishQuiz: (answers: QuizAttemptAnswer[], totalTimeSpent: number) => void;
   onExit: () => void;
   isMuted?: boolean;
@@ -58,6 +69,7 @@ export interface QuizArenaProps {
 export const QuizArena: React.FC<QuizArenaProps> = ({
   quiz,
   initialMode,
+  sessionSettings,
   onFinishQuiz,
   onExit,
   isMuted = false,
@@ -76,9 +88,37 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 }) => {
   const STORAGE_KEY = `kuis_arena_progress_${quiz.id}`;
 
+  // Read active session settings or quiz default settings
+  const activeSettings = sessionSettings || quiz.defaultSettings || {};
+  const showAnswersMode: AnswerVisibilityMode = activeSettings.showAnswersMode || 'immediate';
+  const showExplanationMode: ExplanationVisibilityMode = activeSettings.showExplanationMode || 'immediate';
+  const showLeaderboardToStudents = activeSettings.showLeaderboardToStudents ?? true;
+  const isTabSwitchDetectionEnabled = Boolean(activeSettings.tabSwitchDetection);
+
+  // Tab switch / anti-cheat violation tracking
+  const [tabSwitchCount, setTabSwitchCount] = useState<number>(0);
+  const [showTabSwitchWarning, setShowTabSwitchWarning] = useState<boolean>(false);
+
   const gameMode: GameMode = initialMode || quiz.defaultGameMode || 'standard';
   const [hearts, setHearts] = useState<number>(3);
   const [isGameOver, setIsGameOver] = useState(false);
+
+  // Anti-cheat tab switch listener
+  useEffect(() => {
+    if (isPreview || !isTabSwitchDetectionEnabled || isGameOver) return;
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        setTabSwitchCount((c) => c + 1);
+        setShowTabSwitchWarning(true);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isPreview, isTabSwitchDetectionEnabled, isGameOver]);
 
   // Active Questions (support shuffleQuestions - disabled in preview mode)
   const [activeQuestions] = useState<QuizQuestion[]>(() => {
@@ -185,8 +225,8 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   const [wrongPairAttempt, setWrongPairAttempt] = useState<{ left: number; right: number } | null>(null);
   const [shuffledRightItems, setShuffledRightItems] = useState<{ originalIndex: number; text: string; isDistractor?: boolean }[]>([]);
 
-  // Kunci scroll body saat dialog konfirmasi keluar atau menu alat mobile aktif
-  useBodyScrollLock(showExitConfirm || isMobileToolsOpen || isGameOver);
+  // Kunci scroll body saat dialog konfirmasi keluar, peringatan ganti tab, atau menu alat mobile aktif
+  useBodyScrollLock(showExitConfirm || isMobileToolsOpen || isGameOver || showTabSwitchWarning);
   
   // Smartboard / Teacher IFP Features
   const [isPaused, setIsPaused] = useState(false);
@@ -452,27 +492,32 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
       earnedPoints = isCorrect ? (question.points || 10) : 0;
     }
 
-    if (isCorrect) {
-      const nextStreak = streak + 1;
-      setStreak(nextStreak);
-      playCorrect(nextStreak);
-      if (nextStreak >= 3 && playApplause) {
-        playApplause();
-      }
-    } else if (question.type === 'matching_pairs' && (earnedPoints || 0) > 0) {
-      // Apresiasi pencapaian sebagian pasangan yang benar
-      playCorrect();
+    if (showAnswersMode === 'exam_strict') {
+      // Pada mode ujian ketat, jangan bocorkan status benar/salah via audio atau combo
+      playClick();
     } else {
-      setStreak(0);
-      playWrong();
-      if (gameMode === 'survival_3hearts') {
-        setHearts((h) => {
-          const next = Math.max(0, h - 1);
-          if (next === 0) {
-            setIsGameOver(true);
-          }
-          return next;
-        });
+      if (isCorrect) {
+        const nextStreak = streak + 1;
+        setStreak(nextStreak);
+        playCorrect(nextStreak);
+        if (nextStreak >= 3 && playApplause) {
+          playApplause();
+        }
+      } else if (question.type === 'matching_pairs' && (earnedPoints || 0) > 0) {
+        // Apresiasi pencapaian sebagian pasangan yang benar
+        playCorrect();
+      } else {
+        setStreak(0);
+        playWrong();
+        if (gameMode === 'survival_3hearts') {
+          setHearts((h) => {
+            const next = Math.max(0, h - 1);
+            if (next === 0) {
+              setIsGameOver(true);
+            }
+            return next;
+          });
+        }
       }
     }
 
@@ -708,7 +753,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
               </span>
             </span>
 
-            {streak >= 2 && (
+            {streak >= 2 && showLeaderboardToStudents && showAnswersMode !== 'exam_strict' && (
               <span className="inline-flex items-center gap-1 text-xs font-extrabold px-2 sm:px-2.5 py-1 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-sm animate-bounce">
                 <Flame className="w-3.5 h-3.5 fill-white flex-shrink-0" />
                 <span className="hidden xs:inline">{streak}x Kombo!</span>
@@ -987,9 +1032,9 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                 ) : null}
               </div>
 
-              {/* First-Letter Hint Pill */}
+              {/* First-Letter Hint Pill (Hanya jika bukan mode ujian ketat) */}
               <div className="flex items-center justify-between gap-2 flex-wrap pt-1">
-                {!isAnswerConfirmed && (
+                {!isAnswerConfirmed && showAnswersMode !== 'exam_strict' && (
                   <button
                     type="button"
                     onClick={() => {
@@ -1003,7 +1048,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                   </button>
                 )}
 
-                {showFirstLetterHint && (
+                {showFirstLetterHint && showAnswersMode !== 'exam_strict' && (
                   <div className="px-3 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 font-mono font-bold text-xs sm:text-sm border border-blue-200 dark:border-blue-800">
                     Petunjuk: {getFirstLetterHint(question)}
                   </div>
@@ -1013,14 +1058,26 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
               {/* Status Feedback After Answer Confirmed */}
               {isAnswerConfirmed && (
                 <div className={`p-3 rounded-xl border flex items-center gap-2 text-xs sm:text-sm font-bold ${
-                  answersList[currentIndex]?.isCorrect
+                  showAnswersMode === 'exam_strict'
+                    ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-blue-200 border-blue-300 dark:border-blue-800'
+                    : answersList[currentIndex]?.isCorrect
                     ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200 border-emerald-300 dark:border-emerald-800'
                     : 'bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-200 border-rose-300 dark:border-rose-800'
                 }`}>
-                  {answersList[currentIndex]?.isCorrect ? (
+                  {showAnswersMode === 'exam_strict' ? (
+                    <>
+                      <CheckCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                      <span>Jawaban berhasil disimpan: <strong>{shortAnswerInput}</strong></span>
+                    </>
+                  ) : answersList[currentIndex]?.isCorrect ? (
                     <>
                       <CheckCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
                       <span>Luar biasa! Jawabanmu tepat: <strong>{shortAnswerInput}</strong></span>
+                    </>
+                  ) : showAnswersMode === 'status_only' ? (
+                    <>
+                      <XCircle className="w-5 h-5 text-rose-500 dark:text-rose-400 flex-shrink-0" />
+                      <span>Jawaban belum tepat. (Kunci jawaban dirahasiakan guru)</span>
                     </>
                   ) : (
                     <>
@@ -1131,12 +1188,32 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
               let btnStyle = 'bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 hover:border-blue-300 dark:hover:border-blue-500/60 hover:bg-slate-50 dark:hover:bg-slate-750';
 
               if (isAnswerConfirmed) {
-                if (isCorrectOpt) {
-                  btnStyle = 'bg-emerald-50 dark:bg-emerald-950/40 border-2 border-emerald-500 dark:border-emerald-400 text-emerald-900 dark:text-emerald-100 font-bold';
-                } else if (isSelected && !isCorrectOpt) {
-                  btnStyle = 'bg-rose-50 dark:bg-rose-950/40 border-2 border-rose-400 dark:border-rose-500 text-rose-900 dark:text-rose-100 font-bold';
+                if (showAnswersMode === 'immediate') {
+                  if (isCorrectOpt) {
+                    btnStyle = 'bg-emerald-50 dark:bg-emerald-950/40 border-2 border-emerald-500 dark:border-emerald-400 text-emerald-900 dark:text-emerald-100 font-bold';
+                  } else if (isSelected && !isCorrectOpt) {
+                    btnStyle = 'bg-rose-50 dark:bg-rose-950/40 border-2 border-rose-400 dark:border-rose-500 text-rose-900 dark:text-rose-100 font-bold';
+                  } else {
+                    btnStyle = 'bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-600 opacity-60';
+                  }
+                } else if (showAnswersMode === 'status_only') {
+                  // Hanya beri warna status pada tombol yang dipilih siswa. KUNCI BENAR TIDAK DIBOCORKAN jika siswa salah!
+                  if (isSelected) {
+                    if (isCorrectOpt) {
+                      btnStyle = 'bg-emerald-50 dark:bg-emerald-950/40 border-2 border-emerald-500 dark:border-emerald-400 text-emerald-900 dark:text-emerald-100 font-bold';
+                    } else {
+                      btnStyle = 'bg-rose-50 dark:bg-rose-950/40 border-2 border-rose-400 dark:border-rose-500 text-rose-900 dark:text-rose-100 font-bold';
+                    }
+                  } else {
+                    btnStyle = 'bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-600 opacity-60';
+                  }
                 } else {
-                  btnStyle = 'bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-600 opacity-60';
+                  // exam_strict: konfirmasi netral tersimpan, tidak membocorkan benar/salah maupun kunci
+                  if (isSelected) {
+                    btnStyle = 'bg-blue-50 dark:bg-blue-950/40 border-2 border-blue-500 dark:border-blue-400 text-blue-900 dark:text-blue-100 font-bold shadow-xs';
+                  } else {
+                    btnStyle = 'bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-600 opacity-60';
+                  }
                 }
               }
 
@@ -1152,10 +1229,22 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                   <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
                     <span
                       className={`w-8 h-8 sm:w-9 sm:h-9 xl:w-11 xl:h-11 3xl:w-14 3xl:h-14 rounded-xl flex items-center justify-center font-bold text-xs sm:text-sm xl:text-base 3xl:text-xl flex-shrink-0 ${
-                        isAnswerConfirmed && isCorrectOpt
-                          ? 'bg-emerald-600 text-white'
-                          : isAnswerConfirmed && isSelected
-                          ? 'bg-rose-600 text-white'
+                        isAnswerConfirmed
+                          ? showAnswersMode === 'immediate'
+                            ? isCorrectOpt
+                              ? 'bg-emerald-600 text-white'
+                              : isSelected
+                              ? 'bg-rose-600 text-white'
+                              : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200'
+                            : showAnswersMode === 'status_only'
+                            ? isSelected
+                              ? isCorrectOpt
+                                ? 'bg-emerald-600 text-white'
+                                : 'bg-rose-600 text-white'
+                              : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200'
+                            : isSelected
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200'
                           : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200'
                       }`}
                     >
@@ -1178,11 +1267,27 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                       </span>
                     )}
 
-                    {isAnswerConfirmed && isCorrectOpt && (
+                    {/* Feedback Icons / Badges */}
+                    {isAnswerConfirmed && showAnswersMode === 'immediate' && isCorrectOpt && (
                       <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600 dark:text-emerald-400 ml-1.5" />
                     )}
-                    {isAnswerConfirmed && isSelected && !isCorrectOpt && (
+                    {isAnswerConfirmed && showAnswersMode === 'immediate' && isSelected && !isCorrectOpt && (
                       <XCircle className="w-5 h-5 sm:w-6 sm:h-6 text-rose-500 dark:text-rose-400 ml-1.5" />
+                    )}
+
+                    {isAnswerConfirmed && showAnswersMode === 'status_only' && isSelected && (
+                      isCorrectOpt ? (
+                        <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600 dark:text-emerald-400 ml-1.5" />
+                      ) : (
+                        <XCircle className="w-5 h-5 sm:w-6 sm:h-6 text-rose-500 dark:text-rose-400 ml-1.5" />
+                      )
+                    )}
+
+                    {isAnswerConfirmed && showAnswersMode === 'exam_strict' && isSelected && (
+                      <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400 px-2.5 py-1 rounded-lg bg-blue-100 dark:bg-blue-950/80 border border-blue-200 dark:border-blue-900 ml-1.5 flex items-center gap-1">
+                        <Check className="w-3.5 h-3.5" />
+                        <span>Tersimpan</span>
+                      </span>
                     )}
                   </div>
                 </button>
@@ -1192,7 +1297,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
           )}
 
           {/* Explanation Callout */}
-          {isAnswerConfirmed && (
+          {isAnswerConfirmed && showExplanationMode === 'immediate' && question.explanation && (
             <div className="bg-blue-50/90 dark:bg-slate-800/90 border-l-4 border-blue-600 dark:border-blue-400 p-3 sm:p-4 xl:p-5 rounded-r-2xl space-y-1 sm:space-y-1.5 animate-fade-in flex-shrink-0">
               <div className="flex items-center gap-1.5 sm:gap-2 text-blue-900 dark:text-blue-200 font-bold text-xs sm:text-sm xl:text-base">
                 <HelpCircle className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
@@ -1204,6 +1309,14 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
             </div>
           )}
 
+          {isAnswerConfirmed && showExplanationMode === 'end_only' && (
+            <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-850 text-center flex-shrink-0 animate-fade-in border border-slate-200/80 dark:border-slate-800">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                🔒 Pembahasan butir soal ini akan ditampilkan pada rekapan akhir pengerjaan.
+              </p>
+            </div>
+          )}
+
         </div>
       </main>
 
@@ -1211,8 +1324,8 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
       <footer className="w-full bg-white dark:bg-slate-900 border-t border-slate-200/80 dark:border-slate-800 px-3 sm:px-6 py-2.5 sm:py-3 pb-[max(env(safe-area-inset-bottom),0.625rem)] flex-shrink-0 z-20 shadow-sm">
         <div className="w-full max-w-2xl lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl 3xl:max-w-6xl 4k:max-w-7xl mx-auto flex items-center justify-between gap-3">
           
-          {/* Teacher Reveal Button (Smartboard superpower) */}
-          {!isAnswerConfirmed ? (
+          {/* Teacher Reveal Button (Smartboard superpower - disembunyikan pada mode ujian siswa) */}
+          {!isAnswerConfirmed && (isPreview || showAnswersMode !== 'exam_strict') ? (
             <button
               onClick={handleTeacherReveal}
               className="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-300 hover:text-blue-700 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 min-h-[46px] sm:min-h-[50px] transition-colors"
@@ -1222,6 +1335,11 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
               <span className="hidden sm:inline">Buka Kunci Jawaban</span>
               <span className="sm:hidden">Kunci</span>
             </button>
+          ) : !isAnswerConfirmed ? (
+            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 text-xs font-semibold">
+              <ShieldAlert className="w-3.5 h-3.5 text-indigo-500" />
+              <span className="hidden sm:inline">Mode Ujian Ketat</span>
+            </div>
           ) : (
             <span className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium hidden sm:block">
               Tekan lanjut untuk soal berikutnya
@@ -1513,6 +1631,42 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                 Lihat Rekap Nilai Sekarang
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Anti-Cheating Tab Switch Warning Modal */}
+      {showTabSwitchWarning && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xs animate-fade-in"
+          role="alertdialog"
+          aria-modal="true"
+        >
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-sm w-full border border-amber-400 dark:border-amber-600 shadow-2xl space-y-4 text-center animate-scale-up">
+            <div className="w-14 h-14 mx-auto rounded-2xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center text-2xl font-black shadow-inner">
+              ⚠️
+            </div>
+            <div>
+              <h3 className="text-lg font-black text-slate-900 dark:text-white">
+                Peringatan Anti-Mencontek!
+              </h3>
+              <p className="text-xs text-slate-600 dark:text-slate-300 mt-1.5 leading-relaxed">
+                Anda terdeteksi berpindah tab atau meninggalkan jendela kuis saat ujian aktif.
+              </p>
+              <div className="mt-2.5 py-1.5 px-3 bg-amber-50 dark:bg-amber-950/40 rounded-xl border border-amber-200 dark:border-amber-800 text-xs font-bold text-amber-800 dark:text-amber-300">
+                Peringatan ke-{tabSwitchCount} tercatat oleh guru
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                if (playClick) playClick();
+                setShowTabSwitchWarning(false);
+              }}
+              className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-black text-sm transition-colors shadow-md btn-press min-h-[44px]"
+            >
+              Saya Mengerti & Kembali
+            </button>
           </div>
         </div>
       )}

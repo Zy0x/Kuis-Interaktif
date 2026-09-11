@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import type { Quiz, QuizAttemptAnswer, TeacherProfile, ScreenState, GameMode } from './types/quiz';
+import type { Quiz, QuizAttemptAnswer, TeacherProfile, ScreenState, GameMode, QuizSessionSettings } from './types/quiz';
 import { SplashScreen } from './components/pwa/SplashScreen';
 import { InstallPrompt } from './components/pwa/InstallPrompt';
 import { ReorientationOverlay } from './components/pwa/ReorientationOverlay';
@@ -56,6 +56,7 @@ export const App: React.FC = () => {
 
   const [activeQuiz, setActiveQuiz] = useState<Quiz | null>(null);
   const [activeGameMode, setActiveGameMode] = useState<GameMode>('standard');
+  const [activeSessionSettings, setActiveSessionSettings] = useState<QuizSessionSettings | undefined>(undefined);
   const [lastAnswers, setLastAnswers] = useState<QuizAttemptAnswer[]>(() => initialNav.lastAnswers || []);
   const [lastTimeSpent, setLastTimeSpent] = useState<number>(() => initialNav.lastTimeSpent || 0);
 
@@ -256,15 +257,30 @@ export const App: React.FC = () => {
   };
 
   const handleStartQuizWithSettings = (quiz: Quiz, options: PlayQuizSessionOptions) => {
+    const settings: QuizSessionSettings = {
+      mode: options.mode,
+      durationPerQuestionSec: options.durationPerQuestionSec,
+      shuffleQuestions: options.shuffleQuestions,
+      shuffleOptions: options.shuffleOptions,
+      presentationTarget: options.presentationTarget,
+      showAnswersMode: options.showAnswersMode,
+      showExplanationMode: options.showExplanationMode,
+      showLeaderboardToStudents: options.showLeaderboardToStudents,
+      maxAttempts: options.maxAttempts,
+      tabSwitchDetection: options.tabSwitchDetection,
+    };
+
     const sessionQuiz: Quiz = {
       ...quiz,
       defaultGameMode: options.mode,
       durationPerQuestionSec: options.durationPerQuestionSec,
       shuffleQuestions: options.shuffleQuestions,
       shuffleOptions: options.shuffleOptions,
+      defaultSettings: settings,
     };
     setActiveQuiz(sessionQuiz);
     setActiveGameMode(options.mode);
+    setActiveSessionSettings(settings);
 
     if (options.presentationTarget === 'student-lobby') {
       setCurrentScreen('student-lobby');
@@ -458,6 +474,7 @@ export const App: React.FC = () => {
         <QuizArena
           quiz={activeQuiz}
           initialMode={activeGameMode}
+          sessionSettings={activeSessionSettings || (activeQuiz.defaultSettings as QuizSessionSettings)}
           onFinishQuiz={handleFinishQuiz}
           onExit={() => {
             if (teacher) {

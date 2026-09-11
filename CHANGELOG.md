@@ -1,6 +1,47 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.52] - 2026-09-12
+### Pengaturan Kuis Super Fleksibel (Wayground/Quizizz-Style), Proteksi Visibilitas Kunci Jawaban & Deteksi Anti-Mencontek
+
+#### 1. Preset Konfigurasi 1-Klik Instan (`PlayQuizModal.tsx`)
+- **Mode Ujian Resmi (Strict Exam)**:
+  - Satu klik langsung mengaktifkan pengaturan ketat: Sembunyi Total jawaban & kunci, penjelasan disimpan hingga akhir, acak urutan soal & opsi diaktifkan, deteksi ganti tab anti-mencontek aktif, sembunyikan papan peringkat ke siswa, dan batasi hanya 1x percobaan.
+- **Mode Latihan Bebas (Casual Practice)**:
+  - Satu klik mengaktifkan pengalaman belajar terbuka: Tampilkan kunci jawaban langsung, penjelasan muncul instan, papan peringkat murid aktif, dan percobaan pengerjaan tanpa batas.
+
+#### 2. Kontrol Visibilitas Jawaban & Kunci Soal (`types/quiz.ts` & `QuizArena.tsx`)
+- **3 Tingkat Visibilitas Respon Jawaban (`showAnswersMode`)**:
+  1. *Langsung Buka Kunci (Standar Latihan)*: Umpan balik langsung hijau (benar) dan merah (salah), lengkap dengan penunjuk kunci jawaban yang tepat.
+  2. *Hanya Status Benar/Salah (Kunci Dirahasiakan)*: Siswa diberitahu status benar/salah dari pilihan mereka sendiri, namun opsi kunci jawaban yang benar tetap dirahasiakan sehingga siswa tidak dapat membagikan bocoran jawaban ke teman sekelas.
+  3. *Sembunyi Total (Mode Ujian Resmi / Ketat)*: Pilihan murid dicatat secara netral ("Jawaban Tersimpan") tanpa indikator warna hijau/merah, efek audio dinonaktifkan dari nada benar/salah menjadi klik netral, dan efek combo streak dinonaktifkan agar tidak ada kebocoran status saat ujian berlangsung.
+- **Penyembunyian Tombol Guru "Buka Kunci Jawaban"**:
+  - Tombol pengintip kunci jawaban otomatis disembunyikan pada perangkat siswa ketika sesi ujian resmi berlangsung.
+
+#### 3. Waktu Penayangan Pembahasan & Penjelasan Guru (`showExplanationMode`)
+- **3 Opsi Penayangan Penjelasan**:
+  1. *Langsung Muncul*: Pembahasan dan tips guru segera tampil begitu soal terjawab untuk evaluasi mandiri seketika.
+  2. *Hanya di Akhir Kuis*: Pembahasan disimpan dan ditampilkan pada layar rekapitulasi akhir sesi pengerjaan.
+  3. *Jangan Pernah Tampilkan*: Menyembunyikan modul penjelasan sepenuhnya selama sesi berlangsung.
+
+#### 4. Deteksi Anti-Mencontek & Peringatan Ganti Tab (`QuizArena.tsx`)
+- **Pemantauan Fokus Layar Aktif**:
+  - Mengintegrasikan event listener `visibilitychange` pada dokumen browser. Jika siswa berpindah aplikasi, membuka tab baru, atau meminimalkan browser, sistem langsung mendeteksi perpindahan fokus tersebut.
+- **Dialog Peringatan Etika Ujian**:
+  - Memunculkan dialog modal peringatan ramah namun tegas: *"⚠️ Peringatan: Kamu terdeteksi berpindah tab atau meninggalkan layar kuis!"* serta mencatat akumulasi jumlah pelanggaran ganti layar.
+
+#### 5. Kontrol Papan Peringkat Siswa & Batas Percobaan Ujian
+- **Privasi Papan Peringkat Murid (`showLeaderboardToStudents`)**:
+  - Opsi untuk menonaktifkan klasemen ranking pada gawai siswa guna mengurangi kecemasan atau distraksi kompetitif saat ujian formatif/sumatif.
+- **Batasan Percobaan (`maxAttempts`)**:
+  - Pengaturan antara *1x Percobaan (Ujian Resmi)* atau *Bebas (Latihan Tanpa Batas)*.
+
+#### 6. Integrasi Ruang Pantau Wayground Host & Supabase (`WaygroundHostView.tsx`, `supabaseClient.ts`)
+- **Indikator Parameter Sesi pada Host**:
+  - Bar status Wayground Host menampilkan lencana (*badge*) parameter aktif: `[🔒 Kunci Dirahasiakan]`, `[🟡 Hanya Status]`, `[👁️ Anti-Mencontek]`, dan `[🚫 1x Percobaan]`.
+- **Sinkronisasi Database**:
+  - Skema dan payload sesi kuis aktif mencakup seluruh konfigurasi fleksibel baru sehingga konsisten antara panel host guru dan gawai murid.
+
 ## [2.3.51] - 2026-09-12
 ### Tab Kuis Aktif di Dashboard Guru, Ruang Pantau Wayground Live Host (Quizizz-Style), dan Rekapan Nilai Mendalam
 
