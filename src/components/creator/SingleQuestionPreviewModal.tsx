@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import type { QuizQuestion } from '../../types/quiz';
 import {
   X,
@@ -54,16 +54,28 @@ export const SingleQuestionPreviewModal: React.FC<SingleQuestionPreviewModalProp
       setShowExplanation(false);
       setShowKeyDirectly(false);
       document.body.style.overflow = 'hidden';
+
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          onClose();
+        }
+      };
+      window.addEventListener('keydown', handleKeyDown);
+      return () => {
+        window.removeEventListener('keydown', handleKeyDown);
+        document.body.style.overflow = '';
+      };
     } else {
       document.body.style.overflow = '';
     }
     return () => {
       document.body.style.overflow = '';
     };
-  }, [isOpen, question?.id]);
+  }, [isOpen, question?.id, onClose]);
 
+  // All hooks MUST be declared unconditionally before any early returns (Rule of Hooks)
   const shuffledRightItems = useMemo(() => {
-    if (!question || question.type !== 'matching_pairs' || !question.matchingPairs) return [];
+    if (!isOpen || !question || question.type !== 'matching_pairs' || !question.matchingPairs) return [];
     const items: { originalIndex: number; text: string; isDistractor?: boolean }[] = [];
     question.matchingPairs.forEach((p, idx) => {
       items.push({ originalIndex: idx, text: p.right, isDistractor: false });
@@ -76,7 +88,18 @@ export const SingleQuestionPreviewModal: React.FC<SingleQuestionPreviewModalProp
       [items[i], items[j]] = [items[j], items[i]];
     }
     return items;
-  }, [question]);
+  }, [isOpen, question]);
+
+  const isShortAnswerCorrect = useMemo(() => {
+    if (!isOpen || !question || !isAnswerConfirmed || question.type !== 'short_answer') return false;
+    const cleanInput = shortAnswerInput.trim().toLowerCase();
+    const primaryAnswer = (question.options?.[0] || '').trim().toLowerCase();
+    if (cleanInput === primaryAnswer) return true;
+    if (question.acceptableAnswers && question.acceptableAnswers.length > 0) {
+      return question.acceptableAnswers.some((ans) => ans.trim().toLowerCase() === cleanInput);
+    }
+    return false;
+  }, [isOpen, isAnswerConfirmed, shortAnswerInput, question]);
 
   if (!isOpen || !question) return null;
 
@@ -137,17 +160,6 @@ export const SingleQuestionPreviewModal: React.FC<SingleQuestionPreviewModalProp
     }
   };
 
-  const isShortAnswerCorrect = useMemo(() => {
-    if (!isAnswerConfirmed || question.type !== 'short_answer') return false;
-    const cleanInput = shortAnswerInput.trim().toLowerCase();
-    const primaryAnswer = (question.options[0] || '').trim().toLowerCase();
-    if (cleanInput === primaryAnswer) return true;
-    if (question.acceptableAnswers && question.acceptableAnswers.length > 0) {
-      return question.acceptableAnswers.some((ans) => ans.trim().toLowerCase() === cleanInput);
-    }
-    return false;
-  }, [isAnswerConfirmed, shortAnswerInput, question]);
-
   const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
 
   const typeLabels: Record<string, string> = {
@@ -164,8 +176,12 @@ export const SingleQuestionPreviewModal: React.FC<SingleQuestionPreviewModalProp
       role="dialog"
       aria-modal="true"
       aria-labelledby="preview-modal-title"
+      onClick={onClose}
     >
-      <div className="relative w-full max-w-2xl bg-slate-900 text-white rounded-3xl shadow-2xl border border-slate-750 flex flex-col max-h-[92vh] overflow-hidden animate-scale-up">
+      <div
+        className="relative w-full max-w-2xl bg-slate-900 text-white rounded-3xl shadow-2xl border border-slate-750 flex flex-col max-h-[92vh] overflow-hidden animate-scale-up"
+        onClick={(e) => e.stopPropagation()}
+      >
 
         {/* Top Bar */}
         <div className="px-4 sm:px-6 py-3.5 bg-slate-850 border-b border-slate-750/80 flex items-center justify-between gap-2 shrink-0">
@@ -263,7 +279,7 @@ export const SingleQuestionPreviewModal: React.FC<SingleQuestionPreviewModalProp
 
           {(question.type === 'multiple_choice' || question.type === 'true_false' || question.type === 'image_guess') && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 pt-1">
-              {question.options.map((opt, idx) => {
+              {(question.options || []).map((opt, idx) => {
                 const isSelected = selectedOption === idx;
                 const isCorrect = question.correctIndex === idx;
 
@@ -347,7 +363,7 @@ export const SingleQuestionPreviewModal: React.FC<SingleQuestionPreviewModalProp
               {showKeyDirectly && (
                 <div className="p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 text-xs">
                   <span className="font-bold block mb-0.5">Kunci Jawaban Tepat:</span>
-                  <span>{question.options[0] || question.acceptableAnswers?.[0] || '-'}</span>
+                  <span>{question.options?.[0] || question.acceptableAnswers?.[0] || '-'}</span>
                   {question.acceptableAnswers && question.acceptableAnswers.length > 1 && (
                     <span className="text-slate-400 block mt-1">
                       Variasi lain: {question.acceptableAnswers.slice(1).join(', ')}
@@ -436,7 +452,7 @@ export const SingleQuestionPreviewModal: React.FC<SingleQuestionPreviewModalProp
           {isAnswerConfirmed && (
             <div className="mt-3 p-3.5 rounded-2xl bg-slate-850 border border-slate-750 space-y-2 animate-fade-in">
               <div className="flex items-center gap-2 text-xs font-bold">
-                {question.type === 'multiple_choice' || question.type === 'true_false' ? (
+                {question.type === 'multiple_choice' || question.type === 'true_false' || question.type === 'image_guess' ? (
                   selectedOption === question.correctIndex ? (
                     <>
                       <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
@@ -445,7 +461,7 @@ export const SingleQuestionPreviewModal: React.FC<SingleQuestionPreviewModalProp
                   ) : (
                     <>
                       <XCircle className="w-4 h-4 text-rose-400 shrink-0" />
-                      <span className="text-rose-300">Jawaban Salah. Kunci: {question.options[question.correctIndex]}</span>
+                      <span className="text-rose-300">Jawaban Salah. Kunci: {question.options?.[question.correctIndex] ?? '-'}</span>
                     </>
                   )
                 ) : question.type === 'short_answer' ? (
@@ -457,7 +473,7 @@ export const SingleQuestionPreviewModal: React.FC<SingleQuestionPreviewModalProp
                   ) : (
                     <>
                       <XCircle className="w-4 h-4 text-rose-400 shrink-0" />
-                      <span className="text-rose-300">Jawaban Belum Tepat. Kunci: {question.options[0]}</span>
+                      <span className="text-rose-300">Jawaban Belum Tepat. Kunci: {question.options?.[0] || question.acceptableAnswers?.[0] || '-'}</span>
                     </>
                   )
                 ) : (

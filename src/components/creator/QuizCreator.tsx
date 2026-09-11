@@ -2665,64 +2665,67 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                         </div>
                       )}
 
-                      {/* 5. Ergonomic Action Footer: Responsive & Balanced (≥ 44×44 px) */}
-                      <div className="mt-3.5 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex flex-wrap items-center justify-between gap-2">
-                        {/* Left: Reordering & Utilities (Touch Targets >= 44x44px) */}
-                        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-                          <div className="inline-flex rounded-xl bg-slate-100 dark:bg-slate-800 p-0.5 border border-slate-200/60 dark:border-slate-700/60">
+                      {/* 5. Ergonomic Action Footer: Responsive, Symmetrical & Balanced (Touch Targets >= 44x44px) */}
+                      <div className="mt-3.5 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5">
+                        {/* Utilities: Reordering & Duplication & Deletion */}
+                        <div className="flex items-center justify-between sm:justify-start gap-1.5 w-full sm:w-auto">
+                          <div className="flex items-center gap-1.5">
+                            <div className="inline-flex rounded-xl bg-slate-100 dark:bg-slate-800 p-0.5 border border-slate-200/60 dark:border-slate-700/60">
+                              <button
+                                type="button"
+                                disabled={idx === 0}
+                                onClick={() => handleMoveQuestion(idx, 'up')}
+                                className="w-10 sm:w-11 h-10 sm:h-11 rounded-lg hover:bg-white dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center transition-colors disabled:opacity-30 disabled:cursor-not-allowed active:scale-95"
+                                title="Pindahkan Soal ke Atas"
+                                aria-label="Pindahkan Soal ke Atas"
+                              >
+                                <ChevronUp className="w-5 h-5" />
+                              </button>
+                              <button
+                                type="button"
+                                disabled={idx === questions.length - 1}
+                                onClick={() => handleMoveQuestion(idx, 'down')}
+                                className="w-10 sm:w-11 h-10 sm:h-11 rounded-lg hover:bg-white dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center transition-colors disabled:opacity-30 disabled:cursor-not-allowed active:scale-95"
+                                title="Pindahkan Soal ke Bawah"
+                                aria-label="Pindahkan Soal ke Bawah"
+                              >
+                                <ChevronDown className="w-5 h-5" />
+                              </button>
+                            </div>
+
                             <button
                               type="button"
-                              disabled={idx === 0}
-                              onClick={() => handleMoveQuestion(idx, 'up')}
-                              className="w-10 sm:w-11 h-10 sm:h-11 rounded-lg hover:bg-white dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center transition-colors disabled:opacity-30 disabled:cursor-not-allowed active:scale-95"
-                              title="Pindahkan Soal ke Atas"
-                              aria-label="Pindahkan Soal ke Atas"
+                              onClick={() => handleDuplicateQuestion(q)}
+                              className="h-10 sm:h-11 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors active:scale-95 border border-slate-200/60 dark:border-slate-700/60 shrink-0"
+                              title="Duplikasi Butir Soal Ini"
+                              aria-label="Duplikasi Soal"
                             >
-                              <ChevronUp className="w-5 h-5" />
-                            </button>
-                            <button
-                              type="button"
-                              disabled={idx === questions.length - 1}
-                              onClick={() => handleMoveQuestion(idx, 'down')}
-                              className="w-10 sm:w-11 h-10 sm:h-11 rounded-lg hover:bg-white dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center transition-colors disabled:opacity-30 disabled:cursor-not-allowed active:scale-95"
-                              title="Pindahkan Soal ke Bawah"
-                              aria-label="Pindahkan Soal ke Bawah"
-                            >
-                              <ChevronDown className="w-5 h-5" />
+                              <Copy className="w-4 h-4" />
+                              <span>Salin</span>
                             </button>
                           </div>
 
                           <button
                             type="button"
-                            onClick={() => handleDuplicateQuestion(q)}
-                            className="w-10 sm:w-auto h-11 px-0 sm:px-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors active:scale-95 border border-slate-200/60 dark:border-slate-700/60 shrink-0"
-                            title="Duplikasi Butir Soal Ini"
-                            aria-label="Duplikasi Soal"
-                          >
-                            <Copy className="w-4 h-4" />
-                            <span className="hidden sm:inline">Salin</span>
-                          </button>
-
-                          <button
-                            type="button"
                             onClick={() => handleDeleteQuestion(q.id)}
-                            className="w-10 sm:w-11 h-11 rounded-xl bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-600 dark:text-rose-400 border border-rose-200/60 dark:border-rose-800/50 flex items-center justify-center transition-colors active:scale-95 shrink-0"
+                            className="h-10 sm:h-11 px-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-rose-600 dark:text-rose-400 border border-rose-200/60 dark:border-rose-800/50 flex items-center justify-center gap-1.5 transition-colors active:scale-95 shrink-0"
                             title="Hapus Butir Soal Ini"
                             aria-label="Hapus Soal"
                           >
                             <Trash2 className="w-4 h-4" />
+                            <span className="sm:hidden text-xs font-bold">Hapus</span>
                           </button>
                         </div>
 
-                        {/* Right Actions: Lihat (Pratinjau Siswa Nyata) & Edit Soal */}
-                        <div className="flex items-center gap-1.5 sm:gap-2 grow sm:grow-0 justify-end">
+                        {/* Main Actions: Lihat (Pratinjau Siswa Nyata) & Edit Soal */}
+                        <div className="grid grid-cols-2 sm:flex items-center gap-2 w-full sm:w-auto">
                           <button
                             type="button"
                             onClick={() => {
                               playClick();
                               setPreviewQuestionData({ question: q, index: idx });
                             }}
-                            className="h-11 px-3 sm:px-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-950/40 text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 font-bold text-xs flex items-center justify-center gap-1.5 transition-all border border-slate-200/60 dark:border-slate-700/60 active:scale-95 shrink-0 min-w-[44px]"
+                            className="w-full sm:w-auto h-11 px-3.5 sm:px-4 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-950/40 text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all border border-slate-200/60 dark:border-slate-700/60 active:scale-95 shrink-0 min-w-[44px]"
                             title="Pratinjau nyata tampilan kartu soal bagi siswa"
                             aria-label="Lihat Pratinjau Soal"
                           >
@@ -2733,7 +2736,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                           <button
                             type="button"
                             onClick={() => handleStartEditQuestion(q)}
-                            className="h-11 px-4 sm:px-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-xs hover:shadow transition-all active:scale-95 shrink-0"
+                            className="w-full sm:w-auto h-11 px-4 sm:px-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-xs hover:shadow transition-all active:scale-95 shrink-0"
                           >
                             <Edit3 className="w-4 h-4 shrink-0" />
                             <span>Edit Soal</span>

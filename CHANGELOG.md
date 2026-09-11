@@ -1,6 +1,26 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.47] - 2026-09-12
+### Refaktor Simetris Footer Kartu Bank Soal & Perbaikan Modal Pratinjau Nyata ("Lihat")
+
+#### 1. Perbaikan Kritis Modal Pratinjau Nyata Siswa (`SingleQuestionPreviewModal.tsx`)
+- **Fix Pelanggaran Aturan Hook React (Order of Hooks Violation)**:
+  - Memindahkan pemanggilan seluruh Hook (`useMemo` untuk `isShortAnswerCorrect` dan `shuffledRightItems`) ke tingkat teratas komponen secara tanpa syarat sebelum evaluasi pengembalian bersyarat (`if (!isOpen || !question) return null;`).
+  - Menghilangkan bug di mana modal tidak bisa terbuka atau melempar crash unhandled saat tombol `"Lihat"` diklik oleh guru.
+- **Dukungan Tipe Soal & Keamanan Akses Objek (Null-Safety)**:
+  - Memperbaiki penanganan `question.options` dengan optional chaining dan fallback `(question.options || [])` agar aman dari kesalahan runtime pada tipe soal tanpa opsi tetap (seperti `matching_pairs`).
+  - Menambahkan dukungan penanganan hasil untuk tipe soal `image_guess` (Tebak Gambar) di samping `multiple_choice` dan `true_false`.
+  - Menambahkan penutupan modal via tombol Keyboard `Escape` serta interaksi klik pada area luar modal (backdrop click).
+
+#### 2. Penataan Ulang Responsif & Simetris Footer Kartu Soal (`QuizCreator.tsx`)
+- **Eliminasi Tata Letak Tangga / Patah (*Staggered / Stepped Zigzag*)**:
+  - Mengganti tata letak `flex-wrap justify-between` yang sebelumnya patah menjadi dua baris canggung menjorok ke kanan pada layar sempit/non-reguler (seperti Infinix Note 50s lebar ~360–393px).
+  - Merestrukturisasi footer kartu soal pada layar mobile menjadi dua baris simetris dan teratur:
+    - **Baris 1 (Peralatan & Utilitas)**: Tombol Pindah Atas/Bawah (`[^] [v]`) dan tombol Duplikasi (`[Salin]`) tertata rapi di sebelah kiri, sedangkan tombol Hapus (`[Hapus]`) ditempatkan aman dan jelas di sebelah kanan.
+    - **Baris 2 (Aksi Utama)**: Tombol `[👁️ Lihat]` dan `[✏️ Edit Soal]` disusun berdampingan seimbang (*grid 2 kolom 50/50*) membentang penuh dengan target sentuh ergonomis $\ge 44 \times 44\text{ px}$.
+  - Pada layar tablet/desktop ($\ge 640\text{px}$), kedua baris secara otomatis menyatu menjadi satu baris horizontal yang elegan dan proporsional.
+
 ## [2.3.46] - 2026-09-11
 ### Filter Terarah Jenjang (SD, SMP, SMA, Semua) pada Dropdown Mata Pelajaran
 
