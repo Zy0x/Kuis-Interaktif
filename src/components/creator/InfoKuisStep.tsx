@@ -1,24 +1,18 @@
 import React, { useRef, useEffect, useState, useMemo } from 'react';
-import type { Subject, GameMode, EducationLevel } from '../../types/quiz';
+import type { Subject, EducationLevel } from '../../types/quiz';
 import { generateAiQuizMetadata } from '../../lib/geminiApi';
 import { 
   BookOpen, 
   ArrowLeft, 
   ArrowRight, 
-  Globe, 
-  Lock,
   CheckCircle2, 
   Clock, 
-  Award, 
   Sliders, 
   Sparkles, 
   Loader2,
-  Shuffle,
-  Dice5,
   ChevronDown,
   ChevronUp,
   Palette,
-  Settings
 } from 'lucide-react';
 import { ResizableTextarea } from '../common/ResizableTextarea';
 import { QuizCoverDisplay, isImageCover } from '../common/QuizCoverDisplay';
@@ -51,37 +45,6 @@ const GRADE_FASE_MAP: Record<number, { fase: string; level: EducationLevel; leve
   12: { fase: 'Fase F', level: 'SMA', levelLabel: 'SMA / SMK' },
 };
 
-// Rekomendasi Gelar Hadiah / Lencana Siswa berdasarkan Mapel
-const getBadgeSuggestions = (subj: Subject): string[] => {
-  if (subj === 'Matematika' || subj === 'Matematika Tingkat Lanjut') {
-    return ['Master Logika', 'Pakar Berhitung', 'Juara Aljabar', 'Bintang Angka'];
-  }
-  if (['IPA', 'IPAS', 'IPA Terpadu', 'Biologi', 'Fisika', 'Kimia'].includes(subj)) {
-    return ['Peneliti Sains Cilik', 'Ahli Ekosistem', 'Saintis Muda', 'Penjelajah Alam'];
-  }
-  if (['Bahasa Indonesia', 'Bahasa Daerah'].includes(subj)) {
-    return ['Pujangga Muda', 'Penutur Hebat', 'Kampiun Literasi', 'Bintang Bahasa'];
-  }
-  if (subj === 'Bahasa Inggris') {
-    return ['Vocabulary Champion', 'English Explorer', 'Global Communicator', 'Master Linguis'];
-  }
-  if (['Pendidikan Pancasila', 'IPS', 'IPS Terpadu', 'Sejarah', 'Sosiologi', 'Geografi', 'Antropologi'].includes(subj)) {
-    return ['Duta Karakter Bangsa', 'Sahabat Pancasila', 'Penjelajah Nusantara', 'Warga Teladan'];
-  }
-  if (subj.startsWith('Pendidikan Agama')) {
-    return ['Bintang Akhlak Mulia', 'Teladan Kebaikan', 'Anak Berbudi Luhur'];
-  }
-  if (subj === 'PJOK') {
-    return ['Atlet Tangguh', 'Juara Bugar', 'Sportif Sejati'];
-  }
-  if (['Seni Musik', 'Seni Rupa', 'Seni Tari', 'Seni Teater', 'Prakarya'].includes(subj)) {
-    return ['Seniman Berbakat', 'Maestro Karya', 'Kreator Inspiratif'];
-  }
-  if (subj === 'Informatika') {
-    return ['Programmer Cilik', 'Master Digital', 'Cyber Explorer'];
-  }
-  return ['Bintang Pintar', 'Juara Kelas', 'Pakar Pengetahuan', 'Pembelajar Hebat'];
-};
 
 interface InfoKuisStepProps {
   title: string;
@@ -96,18 +59,8 @@ interface InfoKuisStepProps {
   setSubject: (v: Subject) => void;
   durationPerQuestionSec: number;
   setDurationPerQuestionSec: (v: number) => void;
-  badgeTitle: string;
-  setBadgeTitle: (v: string) => void;
   coverEmoji: string;
   setCoverEmoji: (v: string) => void;
-  visibility: 'public' | 'private';
-  setVisibility: (v: 'public' | 'private') => void;
-  defaultGameMode: GameMode;
-  setDefaultGameMode: (v: GameMode) => void;
-  shuffleQuestions: boolean;
-  setShuffleQuestions: (v: boolean) => void;
-  shuffleOptions: boolean;
-  setShuffleOptions: (v: boolean) => void;
   questionsCount: number;
   customDurationCount?: number;
   onResetAllCustomDuration?: () => void;
@@ -116,6 +69,7 @@ interface InfoKuisStepProps {
   onBack: () => void;
   playClick: () => void;
 }
+
 
 export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
   title,
@@ -130,18 +84,8 @@ export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
   setSubject,
   durationPerQuestionSec,
   setDurationPerQuestionSec,
-  badgeTitle,
-  setBadgeTitle,
   coverEmoji,
   setCoverEmoji,
-  visibility,
-  setVisibility,
-  defaultGameMode,
-  setDefaultGameMode,
-  shuffleQuestions,
-  setShuffleQuestions,
-  shuffleOptions,
-  setShuffleOptions,
   questionsCount,
   customDurationCount,
   onResetAllCustomDuration,
@@ -158,8 +102,6 @@ export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
   const [showCoverModal, setShowCoverModal] = useState(false);
   const [showResetDurationConfirm, setShowResetDurationConfirm] = useState(false);
   const [showDescriptionSuggestions, setShowDescriptionSuggestions] = useState(false);
-  const [showBadgeSuggestions, setShowBadgeSuggestions] = useState(false);
-  const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
 
   // Toggle Pratinjau di Mobile
   const [showMobilePreview, setShowMobilePreview] = useState(false);
@@ -176,11 +118,6 @@ export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
   const currentFaseInfo = useMemo(() => {
     return GRADE_FASE_MAP[grade] || { fase: 'Fase A-C', level: 'SD', levelLabel: 'SD / MI' };
   }, [grade]);
-
-  // Saran Gelar / Lencana
-  const badgeSuggestions = useMemo(() => {
-    return getBadgeSuggestions(subject);
-  }, [subject]);
 
   // Otomatis sesuaikan tinggi textarea judul kuis
   useEffect(() => {
@@ -218,7 +155,6 @@ export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
           title: title.trim() || undefined,
           description: description.trim() || undefined,
           coverEmoji: coverEmoji || undefined,
-          badgeTitle: badgeTitle || undefined,
           durationPerQuestionSec: durationPerQuestionSec || undefined,
         },
       });
@@ -226,7 +162,6 @@ export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
       setTitle(meta.title);
       setDescription(meta.description);
       setCoverEmoji(meta.coverEmoji);
-      setBadgeTitle(meta.badgeTitle);
       setDurationPerQuestionSec(meta.durationPerQuestionSec);
     } catch (e) {
       console.warn('Auto-generate info kuis fallback handled:', e);
@@ -269,15 +204,11 @@ export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
         </div>
       </div>
 
-      <div className="pt-2.5 border-t border-slate-200/70 dark:border-slate-750/70 flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 font-semibold">
-        <span className="flex items-center gap-1.5">
-          <Clock className="w-3.5 h-3.5 text-blue-500" />
-          <span>{durationPerQuestionSec} dtk / soal</span>
-        </span>
-        <span className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
-          <Award className="w-3.5 h-3.5" />
-          <span className="truncate max-w-[140px]">{badgeTitle.trim() || 'Bintang Pintar'}</span>
-        </span>
+      <div className="pt-2.5 border-t border-slate-200/70 dark:border-slate-750/70 flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400 font-semibold">
+        <Clock className="w-3.5 h-3.5 text-blue-500" />
+        <span>{durationPerQuestionSec} dtk / soal</span>
+        <span className="text-slate-300 dark:text-slate-600 mx-1">·</span>
+        <span>{questionsCount} soal</span>
       </div>
     </div>
   );
@@ -567,263 +498,7 @@ export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
                 )}
               </div>
 
-              {/* Gelar Hadiah Kuis (Lencana Siswa) */}
-              <div className="sm:col-span-2 space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300">
-                    Gelar Hadiah Kuis (Lencana Prestasi)
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      playClick();
-                      setShowBadgeSuggestions((prev) => !prev);
-                    }}
-                    className="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
-                  >
-                    <span>💡 {showBadgeSuggestions ? 'Tutup Pilihan' : `Pilihan Gelar Cepat (${badgeSuggestions.length})`}</span>
-                    {showBadgeSuggestions ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                  </button>
-                </div>
-
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={badgeTitle}
-                    onChange={(e) => setBadgeTitle(e.target.value)}
-                    placeholder="Contoh: Juara Pancasila, Peneliti Cilik, Master Logika"
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-bold text-sm focus:border-blue-500 focus:outline-none min-h-[44px]"
-                  />
-                  <Award className="w-4 h-4 text-amber-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                </div>
-
-                {/* Collapsible Saran Gelar */}
-                {showBadgeSuggestions && (
-                  <div className="flex flex-wrap gap-1.5 pt-1 animate-fade-in">
-                    {badgeSuggestions.map((sug, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => {
-                          playClick();
-                          setBadgeTitle(sug);
-                        }}
-                        className={`text-[11px] font-bold px-2.5 py-1.5 rounded-xl transition-all min-h-[36px] flex items-center gap-1 btn-press ${
-                          badgeTitle === sug
-                            ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700 shadow-2xs'
-                            : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700'
-                        }`}
-                      >
-                        <Award className="w-3 h-3 text-amber-500 shrink-0" />
-                        <span>{sug}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
             </div>
-          </div>
-
-          {/* ================= SEKSI 3: PENGATURAN LANJUTAN (COLLAPSIBLE ACCORDION) ================= */}
-          <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-            <button
-              type="button"
-              onClick={() => {
-                playClick();
-                setShowAdvancedSettings((prev) => !prev);
-              }}
-              className="w-full p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-850 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 flex items-center justify-between text-left transition-colors min-h-[56px] btn-press"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-9 h-9 rounded-xl bg-slate-200 dark:bg-slate-750 text-slate-700 dark:text-slate-200 flex items-center justify-center shrink-0">
-                  <Settings className="w-4 h-4" />
-                </div>
-                <div className="min-w-0">
-                  <span className="text-xs sm:text-sm font-black text-slate-900 dark:text-white block">
-                    3. Pengaturan Lanjutan & Integritas Kuis
-                  </span>
-                  <span className="text-[11px] text-slate-500 dark:text-slate-400 block truncate mt-0.5">
-                    Visibilitas: {visibility === 'public' ? 'Publik' : 'Privat PIN'} • Mode: {defaultGameMode === 'standard' ? 'Standar' : defaultGameMode === 'survival_3hearts' ? '3 Hati' : 'Santai'} • Acak: {shuffleQuestions ? 'Aktif' : 'Nonaktif'}
-                  </span>
-                </div>
-              </div>
-
-              <div className="w-7 h-7 rounded-lg bg-white dark:bg-slate-800 flex items-center justify-center border border-slate-200 dark:border-slate-700 shrink-0 ml-2">
-                {showAdvancedSettings ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-              </div>
-            </button>
-
-            {/* Isi Pengaturan Lanjutan */}
-            {showAdvancedSettings && (
-              <div className="p-4 sm:p-5 mt-2 rounded-2xl bg-slate-50/50 dark:bg-slate-850/50 border border-slate-200 dark:border-slate-800 space-y-4 animate-scale-up">
-                
-                {/* Visibilitas & Akses Kuis */}
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300">
-                    Akses Masuk Siswa
-                  </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    <label
-                      className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
-                        visibility === 'public'
-                          ? 'border-blue-500 bg-blue-50/60 dark:bg-blue-950/30 ring-1 ring-blue-400/50 shadow-2xs'
-                          : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800'
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="visibility"
-                        value="public"
-                        checked={visibility === 'public'}
-                        onChange={() => {
-                          playClick();
-                          setVisibility('public');
-                        }}
-                        className="mt-1 w-4 h-4 text-blue-600"
-                      />
-                      <div className="min-w-0">
-                        <span className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                          <Globe className="w-3.5 h-3.5 text-blue-600" />
-                          <span>Publik di Beranda Siswa</span>
-                        </span>
-                        <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
-                          Kuis langsung muncul di katalog tanpa perlu PIN.
-                        </p>
-                      </div>
-                    </label>
-
-                    <label
-                      className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
-                        visibility === 'private'
-                          ? 'border-amber-500 bg-amber-50/60 dark:bg-amber-950/30 ring-1 ring-amber-400/50 shadow-2xs'
-                          : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800'
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="visibility"
-                        value="private"
-                        checked={visibility === 'private'}
-                        onChange={() => {
-                          playClick();
-                          setVisibility('private');
-                        }}
-                        className="mt-1 w-4 h-4 text-amber-600"
-                      />
-                      <div className="min-w-0">
-                        <span className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                          <Lock className="w-3.5 h-3.5 text-amber-600" />
-                          <span>Privat (Khusus Ruang PIN)</span>
-                        </span>
-                        <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
-                          Hanya siswa yang menerima PIN yang dapat bergabung.
-                        </p>
-                      </div>
-                    </label>
-                  </div>
-                </div>
-
-                {/* Mode Permainan Bawaan */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300">
-                      Mode Permainan Bawaan
-                    </label>
-                    <span className="text-[10px] text-slate-400">Dapat diganti di lobi</span>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    {[
-                      { mode: 'standard' as GameMode, label: 'Standar ⏱️', desc: 'Timer per butir soal' },
-                      { mode: 'survival_3hearts' as GameMode, label: '3 Hati ❤️', desc: '3 kesempatan nyawa' },
-                      { mode: 'untimed' as GameMode, label: 'Santai 🧘', desc: 'Waktu bebas tanpa batas' },
-                    ].map((item) => (
-                      <button
-                        key={item.mode}
-                        type="button"
-                        onClick={() => {
-                          playClick();
-                          setDefaultGameMode(item.mode);
-                        }}
-                        className={`p-2.5 rounded-xl border text-left transition-all min-h-[56px] btn-press ${
-                          defaultGameMode === item.mode
-                            ? 'border-blue-500 bg-blue-50/60 dark:bg-blue-950/40 ring-1 ring-blue-400/50 shadow-2xs'
-                            : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-750'
-                        }`}
-                      >
-                        <span className="text-xs font-bold text-slate-900 dark:text-white block">{item.label}</span>
-                        <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-0.5">{item.desc}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Integritas Asesmen (Switch Cards) */}
-                <div className="space-y-1.5 pt-1">
-                  <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300">
-                    Opsi Pengacakan
-                  </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    <div
-                      onClick={() => {
-                        playClick();
-                        setShuffleQuestions(!shuffleQuestions);
-                      }}
-                      role="switch"
-                      aria-checked={shuffleQuestions}
-                      className={`p-3 rounded-xl border cursor-pointer transition-all flex items-center justify-between gap-3 min-h-[50px] btn-press ${
-                        shuffleQuestions
-                          ? 'border-blue-500 bg-blue-50/60 dark:bg-blue-950/40 ring-1 ring-blue-400/50'
-                          : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <Shuffle className="w-4 h-4 text-blue-600 shrink-0" />
-                        <span className="text-xs font-bold text-slate-900 dark:text-white truncate">
-                          Acak Urutan Soal
-                        </span>
-                      </div>
-                      <div className={`w-10 h-5 rounded-full transition-colors relative shrink-0 ${
-                        shuffleQuestions ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-700'
-                      }`}>
-                        <div className={`w-4 h-4 rounded-full bg-white shadow-md transform transition-transform absolute top-0.5 ${
-                          shuffleQuestions ? 'translate-x-5' : 'translate-x-0.5'
-                        }`} />
-                      </div>
-                    </div>
-
-                    <div
-                      onClick={() => {
-                        playClick();
-                        setShuffleOptions(!shuffleOptions);
-                      }}
-                      role="switch"
-                      aria-checked={shuffleOptions}
-                      className={`p-3 rounded-xl border cursor-pointer transition-all flex items-center justify-between gap-3 min-h-[50px] btn-press ${
-                        shuffleOptions
-                          ? 'border-blue-500 bg-blue-50/60 dark:bg-blue-950/40 ring-1 ring-blue-400/50'
-                          : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <Dice5 className="w-4 h-4 text-blue-600 shrink-0" />
-                        <span className="text-xs font-bold text-slate-900 dark:text-white truncate">
-                          Acak Pilihan Opsi
-                        </span>
-                      </div>
-                      <div className={`w-10 h-5 rounded-full transition-colors relative shrink-0 ${
-                        shuffleOptions ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-700'
-                      }`}>
-                        <div className={`w-4 h-4 rounded-full bg-white shadow-md transform transition-transform absolute top-0.5 ${
-                          shuffleOptions ? 'translate-x-5' : 'translate-x-0.5'
-                        }`} />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-              </div>
-            )}
           </div>
 
           {/* ================= KHUSUS MOBILE: PRATINJAU KARTU SISWA & STATUS KESIAPAN ================= */}

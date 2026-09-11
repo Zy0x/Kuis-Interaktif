@@ -1,6 +1,34 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.42] - 2026-09-11
+### Redesain Tab Info — Alur Publikasi Quizizz/Kahoot Style (`PublishQuizModal`)
+
+#### 1. Tab Info Kuis — Lebih Bersih & Fokus pada Konten
+- Tab "Info Kuis" (sebelumnya "Pengaturan Kuis") kini **hanya berisi hal-hal yang relevan dengan identitas dan cara pengerjaan kuis**: Judul, Jenjang & Kelas, Mata Pelajaran, Sampul, Durasi per Soal, dan Petunjuk Siswa.
+- Seksi "Pengaturan Lanjutan" (accordion visibilitas, mode permainan, acak soal/pilihan) **dihapus sepenuhnya** dari Tab Info.
+- Field "Gelar Hadiah Siswa" **dipindahkan** ke modal publikasi.
+- Nama tab di navigasi diperbarui: **"1. Info Kuis"** (manual) dan **"2. Info Kuis"** (AI) — tidak lagi menggunakan label "Pengaturan Kuis".
+
+#### 2. Komponen Baru `PublishQuizModal` — Modal Publikasi Bergaya Quizizz/Kahoot
+- Modal ini muncul **hanya saat guru klik "Terbitkan Kuis"** di halaman Pratinjau, setelah semua soal selesai dibuat.
+- **Alur baru (ala Quizizz):** Info Kuis → Bank Soal → Pratinjau → *klik Terbitkan* → **Modal Publikasi** → Terbitkan Sekarang.
+- Konten modal (4 seksi bersih):
+  1. **Akses Siswa** — Publik (muncul di katalog) vs Privat PIN (hanya dengan kode guru), card toggle visual.
+  2. **Mode Permainan** — 3 pills: Standar ⚡, 3 Hati ❤️, Santai 😊 — dengan deskripsi singkat dan warna aktif berbeda per mode.
+  3. **Pengacakan** — 2 toggle card: Acak Soal & Acak Pilihan (desain toggle switch konsisten).
+  4. **Gelar Hadiah Siswa** — Input dengan chips saran collapsible (berdasarkan mapel).
+- **Mobile**: bottom sheet slide-up dari bawah (`rounded-t-3xl`), max-height 92vh scrollable.
+- **Desktop**: dialog terpusat `max-w-lg rounded-3xl`, animasi scale-in.
+- Summary kartu kuis (sampul, judul, jumlah soal, mapel) tampil di header modal sebagai konfirmasi visual.
+- Tombol aksi: **"Terbitkan Sekarang 🚀"** (biru, full-width di mobile) + "Batalkan" (sekunder).
+- Mode edit kuis: tombol berubah menjadi **"Simpan Perubahan"** (`isEditMode` prop).
+- Kontras dark/light mode terjamin penuh.
+
+#### 3. Validasi Sebelum Modal Terbuka
+- `handleFinalPublish` kini **memvalidasi** terlebih dahulu (judul tidak kosong, minimal 1 soal) sebelum membuka modal — gagal validasi langsung redirect ke tab terkait dengan toast notifikasi.
+- `handleConfirmPublish` adalah handler baru yang dipanggil dari modal untuk menyimpan kuis sesungguhnya.
+
 ## [2.3.41] - 2026-09-11
 ### Modal Sampul Kuis Kustom, Durasi Waktu Compact, Konfirmasi Berlapis & Textarea Petunjuk yang Lega
 

@@ -31,6 +31,7 @@ import { AiQuestionModal } from './AiQuestionModal';
 import { ImageSelectorModal } from './ImageSelectorModal';
 import { AiGeneratorStep, clearAiGeneratorDraft } from './AiGeneratorStep';
 import { InfoKuisStep } from './InfoKuisStep';
+import { PublishQuizModal } from './PublishQuizModal';
 import { QuestionTypeDropdown } from './QuestionTypeDropdown';
 import { TrueFalsePresetDropdown } from './TrueFalsePresetDropdown';
 import { ResizableTextarea } from '../common/ResizableTextarea';
@@ -194,6 +195,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   // Notice & Reset states
   const [noticeMessage, setNoticeMessage] = useState<string | null>(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [showPublishModal, setShowPublishModal] = useState(false);
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
 
   const showToast = (msg: string) => {
@@ -1136,6 +1138,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     }
   };
 
+  // Buka modal Publikasi (validasi dulu, baru tampilkan modal)
   const handleFinalPublish = () => {
     playClick();
 
@@ -1151,6 +1154,11 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
       return;
     }
 
+    setShowPublishModal(true);
+  };
+
+  // Aksi simpan sesungguhnya setelah konfirmasi di PublishQuizModal
+  const handleConfirmPublish = () => {
     const finalQuiz: Quiz = {
       id: editingQuiz?.id || ('quiz_' + Date.now()),
       title: title.trim(),
@@ -1181,6 +1189,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
       // ignore
     }
 
+    setShowPublishModal(false);
     onSaveQuiz(finalQuiz);
   };
 
@@ -1590,7 +1599,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                       : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
                   }`}
                 >
-                  <span className="hidden sm:inline">2. Pengaturan Kuis</span>
+                  <span className="hidden sm:inline">2. Info Kuis</span>
                   <span className="sm:hidden">2. Info</span>
                 </button>
                 <button
@@ -1621,7 +1630,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                       : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
                   }`}
                 >
-                  <span className="hidden sm:inline">1. Pengaturan Kuis</span>
+                  <span className="hidden sm:inline">1. Info Kuis</span>
                   <span className="sm:hidden">1. Info</span>
                 </button>
                 <button
@@ -1987,7 +1996,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
             {/* Step 1 in AI Mode: Bank Soal */}
             {currentStep === 1 && renderBankSoalView(true)}
 
-            {/* Step 2 in AI Mode: Pengaturan Kuis */}
+            {/* Step 2 in AI Mode: Info Kuis */}
             {currentStep === 2 && (
               <InfoKuisStep
                 title={title}
@@ -2002,18 +2011,8 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                 setSubject={setSubject}
                 durationPerQuestionSec={durationPerQuestionSec}
                 setDurationPerQuestionSec={setDurationPerQuestionSec}
-                badgeTitle={badgeTitle}
-                setBadgeTitle={setBadgeTitle}
                 coverEmoji={coverEmoji}
                 setCoverEmoji={setCoverEmoji}
-                visibility={visibility}
-                setVisibility={setVisibility}
-                defaultGameMode={defaultGameMode}
-                setDefaultGameMode={setDefaultGameMode}
-                shuffleQuestions={shuffleQuestions}
-                setShuffleQuestions={setShuffleQuestions}
-                shuffleOptions={shuffleOptions}
-                setShuffleOptions={setShuffleOptions}
                 questionsCount={questions.length}
                 customDurationCount={customDurationQuestionsCount}
                 onResetAllCustomDuration={handleResetAllCustomDuration}
@@ -2045,18 +2044,8 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                 setSubject={setSubject}
                 durationPerQuestionSec={durationPerQuestionSec}
                 setDurationPerQuestionSec={setDurationPerQuestionSec}
-                badgeTitle={badgeTitle}
-                setBadgeTitle={setBadgeTitle}
                 coverEmoji={coverEmoji}
                 setCoverEmoji={setCoverEmoji}
-                visibility={visibility}
-                setVisibility={setVisibility}
-                defaultGameMode={defaultGameMode}
-                setDefaultGameMode={setDefaultGameMode}
-                shuffleQuestions={shuffleQuestions}
-                setShuffleQuestions={setShuffleQuestions}
-                shuffleOptions={shuffleOptions}
-                setShuffleOptions={setShuffleOptions}
                 questionsCount={questions.length}
                 customDurationCount={customDurationQuestionsCount}
                 onResetAllCustomDuration={handleResetAllCustomDuration}
@@ -2076,6 +2065,29 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
         )}
 
       </main>
+
+      {/* Modal Publikasi Kuis — Quizizz/Kahoot style */}
+      <PublishQuizModal
+        isOpen={showPublishModal}
+        onClose={() => setShowPublishModal(false)}
+        coverEmoji={coverEmoji}
+        title={title}
+        questionsCount={questions.length}
+        subject={subject}
+        visibility={visibility}
+        setVisibility={setVisibility}
+        defaultGameMode={defaultGameMode}
+        setDefaultGameMode={setDefaultGameMode}
+        shuffleQuestions={shuffleQuestions}
+        setShuffleQuestions={setShuffleQuestions}
+        shuffleOptions={shuffleOptions}
+        setShuffleOptions={setShuffleOptions}
+        badgeTitle={badgeTitle}
+        setBadgeTitle={setBadgeTitle}
+        isEditMode={Boolean(editingQuiz)}
+        onConfirmPublish={handleConfirmPublish}
+        playClick={playClick}
+      />
 
       {/* Smart Compact Speed Dial FAB (Melayang compact 48×48px di sudut kanan bawah) */}
       {!aiFunnelActive && (isAiMode ? currentStep === 1 : currentStep === 2) && !isAddingQuestion && (
