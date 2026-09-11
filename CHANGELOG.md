@@ -1,6 +1,29 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.17] - 2026-09-11
+### Peningkatan Komprehensif Editor Butir Soal: Navigasi Cepat, Opsi Fleksibel, & Timer Kustom
+
+#### 1. Masalah yang Diselesaikan
+- **Ketiadaan Navigasi Antar-Soal Langsung**: Guru harus keluar ke Bank Soal dan menggulir daftar setiap kali ingin mengedit butir soal lain.
+- **Kekakuan Jumlah Pilihan Ganda**: Pilihan ganda terkunci 4 opsi, tidak mendukung kurikulum fase SD awal (3 opsi) ataupun jenjang SMP/SMA (5 opsi).
+- **Pengaturan Waktu Kustom Tersembunyi**: Fitur durasi waktu kustom per butir soal belum memiliki antarmuka kendali.
+- **Ketiadaan Preset Cepat Poin**: Pengisian bobot nilai mengharuskan membuka keyboard numerik di layar sentuh ponsel.
+
+#### 2. Implementasi & Desain Clean (`QuizCreator.tsx`)
+- **Navigasi Cepat Antar-Butir Soal (`[‹]` dan `[›]`)**:
+  - Pager navigasi tersemat langsung di Header Utama samping indikator nomor soal.
+  - Perubahan data butir soal aktif otomatis tersimpan secara aman sebelum beralih ke butir soal sebelumnya/berikutnya.
+- **Fleksibilitas Pilihan Ganda (3 hingga 5 Opsi)**:
+  - Tombol **`+ Tambah Opsi`** untuk menambah hingga opsi E.
+  - Tombol hapus **`[✕]`** pada setiap butir opsi (minimal 2 opsi) dengan penyesuaian otomatis indeks kunci jawaban yang aman.
+- **Aktivasi Waktu Jawab Kustom per Soal & Preset Cepat**:
+  - Kolom input **Waktu Jawab** (detik) terintegrasi pada bilah konfigurasi atas berdampingan dengan Bobot Poin.
+  - Chip preset satu-ketukan: **`[5p] [10p] [15p] [20p]`** untuk poin, serta **`[15s] [30s] [45s] [60s]`** untuk durasi waktu.
+- **Umpan Balik Visual & Microcopy Anti-AI Slop**:
+  - Indikator focus-within border glow pada kartu opsi jawaban saat kursor aktif.
+  - Petunjuk rasio gambar optimal (16:9 / 4:3) tanpa kalimat bertele-tele.
+
 ## [2.3.16] - 2026-09-11
 ### Eliminasi Redundansi Tombol Simpan & Optimalisasi Alur Aksi Tunggal
 

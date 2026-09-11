@@ -15,6 +15,8 @@ import {
   Copy, 
   ChevronUp, 
   ChevronDown, 
+  ChevronLeft,
+  ChevronRight,
   Sparkles, 
   Star, 
   ArrowRight,
@@ -732,6 +734,78 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     setQuestions(reordered);
   };
 
+  const handleNavigateQuestion = (direction: 'prev' | 'next') => {
+    if (!editingQuestionId) return;
+    const currentIdx = questions.findIndex((q) => q.id === editingQuestionId);
+    if (currentIdx === -1) return;
+
+    const targetIndex = direction === 'prev' ? currentIdx - 1 : currentIdx + 1;
+    if (targetIndex < 0 || targetIndex >= questions.length) return;
+
+    playClick();
+
+    // Auto-save perubahan butir soal aktif jika pertanyaan terisi
+    if (qText.trim()) {
+      let finalOptions = qOptions;
+      let finalAcceptable: string[] | undefined = undefined;
+      let finalPairs = undefined;
+
+      if (qType === 'matching_pairs') {
+        const validPairs = qMatchingPairs.filter((p) => p.left.trim() && p.right.trim());
+        if (validPairs.length >= 2) {
+          finalPairs = validPairs.map((p) => ({ left: p.left.trim(), right: p.right.trim() }));
+          finalOptions = finalPairs.map((p) => `${p.left} -> ${p.right}`);
+        }
+      } else if (qType === 'short_answer') {
+        const parts = qAcceptableAnswers.split(',').map((s) => s.trim()).filter(Boolean);
+        if (parts.length > 0) {
+          finalAcceptable = parts;
+          finalOptions = [parts[0]];
+        }
+      }
+
+      const durationNum = parseInt(qCustomDurationSec);
+      const questionObj: QuizQuestion = {
+        id: editingQuestionId,
+        text: qText.trim(),
+        type: qType,
+        options: finalOptions,
+        correctIndex: qType === 'matching_pairs' || qType === 'short_answer' ? 0 : qCorrectIndex,
+        explanation: qExplanation.trim() || 'Pembahasan materi terkait konsep pertanyaan ini.',
+        imageUrl: qImageUrl,
+        imageCaption: qImageCaption.trim() || undefined,
+        imagePrompt: qImagePrompt.trim() || undefined,
+        acceptableAnswers: finalAcceptable,
+        matchingPairs: finalPairs,
+        points: Number(qPoints) || 10,
+        customDurationSec: !isNaN(durationNum) && durationNum > 0 ? durationNum : undefined,
+      };
+
+      setQuestions((prev) => prev.map((q) => (q.id === editingQuestionId ? questionObj : q)));
+    }
+
+    const targetQ = questions[targetIndex];
+    handleStartEditQuestion(targetQ);
+  };
+
+  const handleAddOption = () => {
+    if (qOptions.length >= 5) return;
+    playClick();
+    setQOptions((prev) => [...prev, '']);
+  };
+
+  const handleRemoveOption = (index: number) => {
+    if (qOptions.length <= 2) return;
+    playClick();
+    const updated = qOptions.filter((_, i) => i !== index);
+    setQOptions(updated);
+    if (qCorrectIndex === index) {
+      setQCorrectIndex(0);
+    } else if (qCorrectIndex > index) {
+      setQCorrectIndex((prev) => prev - 1);
+    }
+  };
+
   const handleSaveQuestion = (e: React.FormEvent, afterSave: 'continue' | 'finish' = 'continue') => {
     e.preventDefault();
     playClick();
@@ -912,8 +986,8 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                   <Edit3 className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-                    <h1 className="text-sm sm:text-base font-black text-slate-900 dark:text-white whitespace-nowrap">
+                  <div className="flex items-center gap-1.5 sm:gap-2">
+                    <h1 className="text-xs sm:text-base font-black text-slate-900 dark:text-white whitespace-nowrap">
                       {editingQuestionId ? `Edit Soal #${currentQuestionNumber}` : 'Tambah Soal Baru'}
                     </h1>
                     <span className="hidden sm:inline-flex px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60 shrink-0">
@@ -921,12 +995,63 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                         ? `${currentQuestionNumber} dari ${questions.length} Soal`
                         : `Butir Soal #${currentQuestionNumber}`}
                     </span>
+                    {editingQuestionId && questions.length > 1 && (
+                      <div className="hidden sm:inline-flex items-center gap-0.5 bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 border border-slate-200/80 dark:border-slate-700/80 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => handleNavigateQuestion('prev')}
+                          disabled={currentEditingIndex <= 0}
+                          className="w-7 h-7 rounded-md flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-white dark:hover:bg-slate-700 disabled:opacity-25 disabled:pointer-events-none transition-colors"
+                          title="Soal Sebelumnya"
+                          aria-label="Soal Sebelumnya"
+                        >
+                          <ChevronLeft className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleNavigateQuestion('next')}
+                          disabled={currentEditingIndex >= questions.length - 1}
+                          className="w-7 h-7 rounded-md flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-white dark:hover:bg-slate-700 disabled:opacity-25 disabled:pointer-events-none transition-colors"
+                          title="Soal Berikutnya"
+                          aria-label="Soal Berikutnya"
+                        >
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
                   </div>
-                  <p className="sm:hidden text-[10px] font-bold text-blue-600 dark:text-blue-400 leading-tight">
-                    {editingQuestionId && currentEditingIndex !== -1
-                      ? `${currentQuestionNumber} dari ${questions.length} Soal`
-                      : `Butir Soal #${currentQuestionNumber}`}
-                  </p>
+                  {/* Tampilan Baris ke-2 khusus Mobile (< sm) */}
+                  <div className="sm:hidden flex items-center gap-1.5 mt-0.5">
+                    <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 leading-tight">
+                      {editingQuestionId && currentEditingIndex !== -1
+                        ? `${currentQuestionNumber} dari ${questions.length} Soal`
+                        : `Butir Soal #${currentQuestionNumber}`}
+                    </span>
+                    {editingQuestionId && questions.length > 1 && (
+                      <div className="inline-flex items-center gap-0.5 bg-slate-100 dark:bg-slate-800 rounded-md p-0.5 border border-slate-200/80 dark:border-slate-700/80 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => handleNavigateQuestion('prev')}
+                          disabled={currentEditingIndex <= 0}
+                          className="w-5 h-5 rounded flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-white dark:hover:bg-slate-700 disabled:opacity-25 disabled:pointer-events-none transition-colors"
+                          title="Soal Sebelumnya"
+                          aria-label="Soal Sebelumnya"
+                        >
+                          <ChevronLeft className="w-3 h-3" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleNavigateQuestion('next')}
+                          disabled={currentEditingIndex >= questions.length - 1}
+                          className="w-5 h-5 rounded flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-white dark:hover:bg-slate-700 disabled:opacity-25 disabled:pointer-events-none transition-colors"
+                          title="Soal Berikutnya"
+                          aria-label="Soal Berikutnya"
+                        >
+                          <ChevronRight className="w-3 h-3" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -1984,43 +2109,112 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
         ) : (
           /* ================= MODE EDITOR SOAL TERFOKUS ================= */
           <form onSubmit={(e) => handleSaveQuestion(e, 'finish')} className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-7 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4 sm:space-y-5 animate-fade-in">
-            {/* Tipe Soal & Bobot Poin (Proporsional & Rapi) */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                  <div className="flex-1 min-w-0">
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                      Tipe Soal
-                    </label>
-                    <select
-                      value={qType}
-                      onChange={(e) => handleTypeChange(e.target.value as QuestionType)}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none min-h-[44px]"
-                    >
-                      <option value="multiple_choice">Pilihan Ganda (4 Opsi)</option>
-                      <option value="true_false">Benar / Salah</option>
-                      <option value="short_answer">Isian Singkat</option>
-                      <option value="matching_pairs">Menjodohkan Kartu</option>
-                    </select>
-                  </div>
+            {/* Tipe Soal, Bobot Poin, & Waktu Jawab (Proporsional & Rapi) */}
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-3.5 items-start">
+              {/* Tipe Soal: 6 kolom pada desktop */}
+              <div className="sm:col-span-6">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Tipe Soal
+                </label>
+                <select
+                  value={qType}
+                  onChange={(e) => handleTypeChange(e.target.value as QuestionType)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none min-h-[44px]"
+                >
+                  <option value="multiple_choice">Pilihan Ganda ({qOptions.length} Opsi)</option>
+                  <option value="true_false">Benar / Salah</option>
+                  <option value="short_answer">Isian Singkat</option>
+                  <option value="matching_pairs">Menjodohkan Kartu</option>
+                </select>
+              </div>
 
-                  <div className="w-full sm:w-40 shrink-0">
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                      Bobot Poin
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        min="1"
-                        max="100"
-                        value={qPoints}
-                        onChange={(e) => setQPoints(parseInt(e.target.value) || 10)}
-                        className="w-full pl-3.5 pr-14 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none min-h-[44px]"
-                      />
-                      <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none">
-                        Poin
-                      </span>
-                    </div>
-                  </div>
+              {/* Bobot Poin: 3 kolom pada desktop */}
+              <div className="sm:col-span-3">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Bobot Poin
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="1"
+                    max="100"
+                    value={qPoints}
+                    onChange={(e) => setQPoints(parseInt(e.target.value) || 10)}
+                    className="w-full pl-3 pr-11 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none min-h-[44px]"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none">
+                    Poin
+                  </span>
                 </div>
+                {/* Preset Cepat Bobot Poin */}
+                <div className="flex items-center gap-1 mt-1.5">
+                  {[5, 10, 15, 20].map((p) => (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => setQPoints(p)}
+                      className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-colors ${
+                        qPoints === p
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                      }`}
+                    >
+                      {p}p
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Waktu Jawab Kustom: 3 kolom pada desktop */}
+              <div className="sm:col-span-3">
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Waktu Jawab
+                  </label>
+                  {qCustomDurationSec && (
+                    <button
+                      type="button"
+                      onClick={() => setQCustomDurationSec('')}
+                      className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                      title="Kembali ke durasi default kuis"
+                    >
+                      Reset
+                    </button>
+                  )}
+                </div>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="5"
+                    max="300"
+                    value={qCustomDurationSec}
+                    onChange={(e) => setQCustomDurationSec(e.target.value)}
+                    placeholder={`${durationPerQuestionSec}s (Default)`}
+                    className="w-full pl-3 pr-12 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none min-h-[44px]"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none">
+                    Detik
+                  </span>
+                </div>
+                {/* Preset Cepat Waktu */}
+                <div className="flex items-center gap-1 mt-1.5">
+                  {[15, 30, 45, 60].map((sec) => (
+                    <button
+                      key={sec}
+                      type="button"
+                      onClick={() => setQCustomDurationSec(String(sec))}
+                      className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-colors ${
+                        qCustomDurationSec === String(sec)
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                      }`}
+                    >
+                      {sec}s
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
 
                 {/* Pertanyaan Soal */}
                 <div className="space-y-1.5">
@@ -2099,7 +2293,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                       </div>
                     </div>
                   ) : (
-                    <div>
+                    <div className="space-y-2">
                       <button
                         type="button"
                         onClick={() => setIsImageModalOpen(true)}
@@ -2108,21 +2302,36 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                         <Sparkles className="w-4 h-4 text-blue-600 group-hover:scale-110 transition-transform" />
                         <span>Pilih / Buat Ilustrasi (AI, Ensiklopedia, Unggah)</span>
                       </button>
+                      <p className="text-[11px] text-slate-400 dark:text-slate-500">
+                        Format JPG, PNG, WebP (Rasio 16:9 atau 4:3 disarankan agar pas di layar siswa).
+                      </p>
                     </div>
                   )}
                 </div>
 
                 {/* Form Input Opsi berdasarkan Tipe */}
                 {qType === 'multiple_choice' && (
-                  <div className="space-y-2">
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                      Pilihan Jawaban (Pilih Kunci Benar)
-                    </label>
+                  <div className="space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                        Pilihan Jawaban (Pilih Kunci Benar)
+                      </label>
+                      {qOptions.length < 5 && (
+                        <button
+                          type="button"
+                          onClick={handleAddOption}
+                          className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:underline min-h-[36px] flex items-center gap-1 transition-colors"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>Tambah Opsi ({String.fromCharCode(65 + qOptions.length)})</span>
+                        </button>
+                      )}
+                    </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
                       {qOptions.map((opt, oIdx) => (
                         <div
                           key={oIdx}
-                          className={`p-2 rounded-xl border flex items-center gap-2.5 transition-colors ${
+                          className={`p-2 rounded-xl border flex items-center gap-2 transition-all focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100 dark:focus-within:ring-blue-900/30 ${
                             qCorrectIndex === oIdx
                               ? 'border-emerald-500 bg-emerald-50/60 dark:bg-emerald-950/30'
                               : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800'
@@ -2144,9 +2353,24 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                             type="text"
                             value={opt}
                             onChange={(e) => handleOptionChange(oIdx, e.target.value)}
-                            placeholder={`Pilihan ${String.fromCharCode(65 + oIdx)}`}
+                            placeholder={
+                              qCorrectIndex === oIdx
+                                ? `Kunci Benar (${String.fromCharCode(65 + oIdx)})`
+                                : `Pilihan ${String.fromCharCode(65 + oIdx)}`
+                            }
                             className="flex-1 bg-transparent text-xs font-medium text-slate-900 dark:text-white focus:outline-none min-h-[40px]"
                           />
+                          {qOptions.length > 2 && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveOption(oIdx)}
+                              className="p-1.5 text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 rounded-lg transition-colors shrink-0"
+                              title={`Hapus Pilihan ${String.fromCharCode(65 + oIdx)}`}
+                              aria-label={`Hapus Pilihan ${String.fromCharCode(65 + oIdx)}`}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                         </div>
                       ))}
                     </div>
