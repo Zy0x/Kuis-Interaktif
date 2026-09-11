@@ -271,10 +271,6 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     return questions.reduce((sum, q) => sum + (q.points || 10), 0);
   }, [questions]);
 
-  const customDurationQuestionsCount = useMemo(() => {
-    return questions.filter((q) => Boolean(q.customDurationSec && q.customDurationSec > 0)).length;
-  }, [questions]);
-
   // Estimasi total durasi pengerjaan kuis
   const totalEstimatedSeconds = useMemo(() => {
     return questions.reduce((sum, q) => {
@@ -381,17 +377,6 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     }));
     setQuestions(updated);
     showToast(`⚖️ Berhasil membagi rata 100 poin untuk ${n} butir soal!`);
-  };
-
-  // Aksi Sinkronisasi Seluruh Soal Mengikuti Waktu Standar Kuis
-  const handleResetAllCustomDuration = () => {
-    playClick();
-    const updated = questions.map((q) => ({
-      ...q,
-      customDurationSec: undefined,
-    }));
-    setQuestions(updated);
-    showToast(`⏱️ Seluruh soal kini mengikuti waktu standar kuis (${durationPerQuestionSec} detik).`);
   };
 
   // Monitor scroll untuk Smart Floating Action FAB:
@@ -2009,13 +1994,9 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                 setEducationLevel={setEducationLevel}
                 subject={subject}
                 setSubject={setSubject}
-                durationPerQuestionSec={durationPerQuestionSec}
-                setDurationPerQuestionSec={setDurationPerQuestionSec}
                 coverEmoji={coverEmoji}
                 setCoverEmoji={setCoverEmoji}
                 questionsCount={questions.length}
-                customDurationCount={customDurationQuestionsCount}
-                onResetAllCustomDuration={handleResetAllCustomDuration}
                 isAiMode={true}
                 onNext={() => setCurrentStep(3)}
                 onBack={() => setCurrentStep(1)}
@@ -2042,13 +2023,9 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                 setEducationLevel={setEducationLevel}
                 subject={subject}
                 setSubject={setSubject}
-                durationPerQuestionSec={durationPerQuestionSec}
-                setDurationPerQuestionSec={setDurationPerQuestionSec}
                 coverEmoji={coverEmoji}
                 setCoverEmoji={setCoverEmoji}
                 questionsCount={questions.length}
-                customDurationCount={customDurationQuestionsCount}
-                onResetAllCustomDuration={handleResetAllCustomDuration}
                 isAiMode={false}
                 onNext={() => setCurrentStep(2)}
                 onBack={onBack}
@@ -2074,6 +2051,8 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
         title={title}
         questionsCount={questions.length}
         subject={subject}
+        durationPerQuestionSec={durationPerQuestionSec}
+        setDurationPerQuestionSec={setDurationPerQuestionSec}
         visibility={visibility}
         setVisibility={setVisibility}
         defaultGameMode={defaultGameMode}

@@ -1,6 +1,15 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.43] - 2026-09-11
+### Tab Info — Bersih, Ringkas & Urutan Logis
+
+- **Hapus section headers** ("1. Identitas Inti Kuis", "2. Aturan Waktu & Panduan Siswa") — form kini mengalir tanpa divider label besar.
+- **Hapus Aturan Waktu (DurationSelector)** dari Tab Info; durasi per soal kini diatur di **PublishQuizModal** saat menerbitkan kuis.
+- **Urutan field diubah**: Judul → Jenjang & Kelas → Mata Pelajaran → Petunjuk Siswa → Sampul Kuis.
+- **Perbaikan responsivitas** untuk layar Infinix Note 50s dan perangkat tall-narrow (20:9): padding, font, dan grid disesuaikan agar tidak overflow di lebar ~393px logical.
+- `PublishQuizModal` kini menerima props `durationPerQuestionSec` + `setDurationPerQuestionSec` dengan preset pills (10d–2m) dan input kustom (5–300 detik).
+
 ## [2.3.42] - 2026-09-11
 ### Redesain Tab Info — Alur Publikasi Quizizz/Kahoot Style (`PublishQuizModal`)
 
