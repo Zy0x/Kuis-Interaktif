@@ -1,6 +1,26 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.11] - 2026-09-11
+### Penerapan Slim Control Bar Bank Soal & Penguatan Deteksi Mode AI
+
+#### 1. Masalah yang Diselesaikan
+- **Pemborosan Ruang Layar Atas Bank Soal**: Kartu header Bank Soal sebelumnya memakan ~40% tinggi layar ponsel karena memuat ikon besar, judul, deskripsi, tombol besar *"+ Tambah Soal"*, dan baris counter. Hal ini mendorong butir Soal #1 ke bawah layar.
+- **Redundansi Tombol Tambah Soal**: Keberadaan tombol tambah soal selebar 100% layar di kartu atas bersifat redundan dengan tombol melayang (*Smart Speed Dial FAB*) yang sudah ada di sudut kanan bawah dan kartu putus-putus di akhir daftar soal.
+- **Deteksi Mode AI pada Draf Lama**: Draf kuis yang tersimpan di penyimpanan lokal dari sesi sebelumnya terkunci pada status `'manual'` meskipun kontennya nyata-nyata berasal dari AI Generator.
+
+#### 2. Implementasi & Penyempurnaan Antarmuka (`QuizCreator.tsx`)
+- **Penerapan Slim Control Bar (Opsi A)**:
+  - Mengganti kartu tebal dengan baris kontrol ramping horizontal (*height ~44px*).
+  - Sisi kiri: status counter informatif `[Layers] X Butir Soal` dan deskripsi singkat di layar besar.
+  - Sisi kanan: toggle cepat `💡 Buka/Tutup Semua Pembahasan`.
+  - Menghilangkan tombol *Tambah Soal* dari baris atas, sehingga **Soal #1 langsung terlihat 100% utuh di layar ponsel tanpa perlu scroll**.
+- **Pemanfaatan Penuh Smart FAB Melayang**:
+  - Tombol melayang (*Floating Action Button*) kini selalu aktif sejak awal halaman (`scrollY === 0`) untuk memfasilitasi penambahan soal instan dengan satu ibu jari (*thumb zone*).
+  - FAB otomatis bersembunyi dengan halus saat mendekati dasar halaman (`< 180px`) agar tidak pernah menutupi tombol navigasi bawah.
+- **Deteksi Otomatis Konten Hasil AI**:
+  - `creatorMode` secara cerdas mengenali tanda khas AI (seperti keberadaan `funnelTopic`, judul eksplorasi, atau deskripsi bertema Kurikulum Merdeka) sehingga draf AI selalu membuka alur AI (Step 1 = Bank Soal, Step 2 = Pengaturan Kuis).
+
 ## [2.3.10] - 2026-09-11
 ### Penyelarasan Alur Tab Pasca-Generasi AI: Langsung Masuk ke Bank Soal (Step 1 AI)
 

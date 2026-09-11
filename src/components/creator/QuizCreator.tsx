@@ -109,8 +109,13 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   const [creatorMode, setCreatorMode] = useState<'ai' | 'manual'>(() => {
     if (editingQuiz) return 'manual';
     if (initialMode === 'ai') return 'ai';
-    if (draft?.creatorMode) return draft.creatorMode;
+    if (draft?.creatorMode === 'ai') return 'ai';
+    // Draf dari AI Funnel memiliki funnelTopic atau format deskripsi/judul khas generator AI
+    if (draft?.funnelTopic && draft.funnelTopic.trim().length > 0) return 'ai';
+    if (draft?.description && draft.description.includes('Kurikulum Merdeka')) return 'ai';
+    if (draft?.title && (draft.title.startsWith('Eksplorasi') || draft.title.startsWith('Kuis '))) return 'ai';
     if (Boolean(draft?.aiFunnelActive)) return 'ai';
+    if (draft?.creatorMode) return draft.creatorMode;
     return initialMode || 'manual';
   });
 
@@ -220,12 +225,12 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   const [isGeneratingAiImage, setIsGeneratingAiImage] = useState(false);
   const [expandedExplanations, setExpandedExplanations] = useState<Record<string, boolean>>({});
   const [showAllExplanations, setShowAllExplanations] = useState(false);
-  const [showFloatingActions, setShowFloatingActions] = useState(false);
+  const [showFloatingActions, setShowFloatingActions] = useState(true);
   const [isSpeedDialOpen, setIsSpeedDialOpen] = useState(false);
   const [showRacikUlangConfirm, setShowRacikUlangConfirm] = useState(false);
 
-  // Monitor scroll untuk memunculkan Smart Floating Action Capsule ketika melewati header card Bank Soal
-  // dan otomatis sembunyi saat mendekati dasar halaman agar tidak menutupi tombol navigasi
+  // Monitor scroll untuk Smart Floating Action FAB:
+  // Selalu tampil untuk menambah soal instan dan otomatis sembunyi saat mendekati dasar halaman agar tidak menutupi tombol navigasi
   useEffect(() => {
     const handleScroll = () => {
       const scrollY = window.scrollY;
@@ -234,13 +239,14 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
       // Cek apakah mendekati dasar halaman (kurang dari 180px dari batas bawah)
       const isNearBottom = scrollHeight - (scrollY + clientHeight) < 180;
 
-      const shouldShow = scrollY > 180 && !isNearBottom;
+      const shouldShow = !isNearBottom;
       setShowFloatingActions(shouldShow);
       if (!shouldShow) {
         setIsSpeedDialOpen(false);
       }
     };
 
+    handleScroll();
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -1589,56 +1595,29 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
         {!isAddingQuestion ? (
           /* ================= 1-KOLOM DAFTAR BANK SOAL (KE BAWAH RESPONSIV) ================= */
           <div className="space-y-4 sm:space-y-5 pb-20 sm:pb-24">
-            {/* Header Card Bank Soal */}
-            <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3.5 sm:space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
-                {/* Judul & Ikon */}
-                <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-                  <div className="w-10 h-10 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold shadow-xs shrink-0">
-                    <Layers className="w-5 h-5" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white truncate">
-                        Bank Soal
-                      </h3>
-                      <span className="px-2 py-0.5 rounded-full text-[11px] sm:text-xs bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-bold shrink-0">
-                        {questions.length} Butir
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate sm:whitespace-normal">
-                      Periksa pertanyaan, opsi pilihan, dan kunci jawaban
-                    </p>
-                  </div>
-                </div>
-
-                {/* Tombol Aksi: Tambah Soal */}
-                <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-                  <button
-                    type="button"
-                    onClick={handleOpenNewQuestion}
-                    className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 min-h-[44px] transition-colors shadow-xs active:scale-95 btn-press"
-                  >
-                    <Plus className="w-4 h-4 shrink-0 stroke-[2.5]" />
-                    <span>Tambah Soal</span>
-                  </button>
-                </div>
+            {/* Slim Control Bar Bank Soal (Compact, Informatif & Ramping - Tombol Tambah Mengandalkan FAB Melayang) */}
+            <div className="flex items-center justify-between gap-2.5 sm:gap-4 px-3.5 sm:px-5 py-2.5 sm:py-3 bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
+              {/* Sisi Kiri: Status & Counter Butir Soal Informatif */}
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-100 dark:border-blue-900/40 shrink-0">
+                  <Layers className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                  <span>{questions.length} Butir Soal</span>
+                </span>
+                <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate hidden sm:inline">
+                  Periksa butir pertanyaan, opsi jawaban, dan skor nilai
+                </span>
               </div>
 
-              {/* Quick toggle all explanations if questions exist */}
+              {/* Sisi Kanan: Toggle Buka/Tutup Semua Pembahasan Edukatif */}
               {questions.length > 0 && (
-                <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 gap-2">
-                  <span className="text-[11px] sm:text-xs font-medium text-slate-600 dark:text-slate-400 truncate">
-                    Menampilkan <strong className="text-slate-900 dark:text-white font-bold">{questions.length}</strong> butir soal
-                  </span>
-                  <button
-                    type="button"
-                    onClick={handleToggleAllExplanations}
-                    className="text-[11px] sm:text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 bg-blue-50/80 dark:bg-blue-950/50 hover:bg-blue-100 dark:hover:bg-blue-900/60 px-2.5 sm:px-3 py-1.5 rounded-xl border border-blue-100 dark:border-blue-900/40 transition-colors inline-flex items-center gap-1 min-h-[36px] shrink-0 btn-press"
-                  >
-                    <span>💡 {showAllExplanations ? 'Tutup Semua Pembahasan' : 'Buka Semua Pembahasan'}</span>
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={handleToggleAllExplanations}
+                  className="text-[11px] sm:text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 bg-slate-50 hover:bg-blue-50/80 dark:bg-slate-800/70 dark:hover:bg-blue-950/50 px-3 py-1.5 rounded-xl border border-slate-200/80 dark:border-slate-700/60 hover:border-blue-200 dark:hover:border-blue-800/60 transition-colors inline-flex items-center gap-1.5 min-h-[38px] shrink-0 btn-press"
+                  title="Buka atau sembunyikan semua pembahasan soal sekaligus"
+                >
+                  <span>💡 {showAllExplanations ? 'Tutup Semua Pembahasan' : 'Buka Semua Pembahasan'}</span>
+                </button>
               )}
             </div>
 
