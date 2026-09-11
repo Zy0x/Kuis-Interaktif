@@ -32,6 +32,8 @@ import { ImageSelectorModal } from './ImageSelectorModal';
 import { AiGeneratorStep, clearAiGeneratorDraft } from './AiGeneratorStep';
 import { InfoKuisStep } from './InfoKuisStep';
 import { PublishQuizModal } from './PublishQuizModal';
+import { SingleQuestionPreviewModal } from './SingleQuestionPreviewModal';
+import { QuestionJumpModal } from './QuestionJumpModal';
 import { QuestionTypeDropdown } from './QuestionTypeDropdown';
 import { TrueFalsePresetDropdown } from './TrueFalsePresetDropdown';
 import { ResizableTextarea } from '../common/ResizableTextarea';
@@ -264,7 +266,9 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   const [showRacikUlangConfirm, setShowRacikUlangConfirm] = useState(false);
   const [showUnsavedConfirm, setShowUnsavedConfirm] = useState(false);
   const [showDistributePointsConfirm, setShowDistributePointsConfirm] = useState(false);
-  const [pendingNavigation, setPendingNavigation] = useState<{ type: 'prev_question' } | { type: 'next_question' } | { type: 'cancel_edit' } | null>(null);
+  const [showQuestionJumpModal, setShowQuestionJumpModal] = useState(false);
+  const [previewQuestionData, setPreviewQuestionData] = useState<{ question: QuizQuestion; index: number } | null>(null);
+  const [pendingNavigation, setPendingNavigation] = useState<{ type: 'prev_question' } | { type: 'next_question' } | { type: 'cancel_edit' } | { type: 'jump_to_question'; targetIndex: number } | null>(null);
 
   // Akumulasi Bobot Poin & Status Timer
   const totalQuizPoints = useMemo(() => {
@@ -935,7 +939,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   };
 
   const executeNavigation = (
-    nav: { type: 'prev_question' } | { type: 'next_question' } | { type: 'cancel_edit' },
+    nav: { type: 'prev_question' } | { type: 'next_question' } | { type: 'cancel_edit' } | { type: 'jump_to_question'; targetIndex: number },
     questionsList: QuizQuestion[] = questions
   ) => {
     if (nav.type === 'cancel_edit') {
@@ -947,12 +951,28 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     const currentIdx = questionsList.findIndex((q) => q.id === editingQuestionId);
     if (currentIdx === -1) return;
 
-    const targetIndex = nav.type === 'prev_question' ? currentIdx - 1 : currentIdx + 1;
+    let targetIndex: number;
+    if (nav.type === 'jump_to_question') {
+      targetIndex = nav.targetIndex;
+    } else {
+      targetIndex = nav.type === 'prev_question' ? currentIdx - 1 : currentIdx + 1;
+    }
     if (targetIndex < 0 || targetIndex >= questionsList.length) return;
 
     playClick();
     const targetQ = questionsList[targetIndex];
     handleStartEditQuestion(targetQ);
+  };
+
+  const handleJumpToQuestion = (targetIndex: number) => {
+    if (isCurrentQuestionDirty) {
+      playClick();
+      setPendingNavigation({ type: 'jump_to_question', targetIndex });
+      setShowUnsavedConfirm(true);
+      return;
+    }
+
+    executeNavigation({ type: 'jump_to_question', targetIndex });
   };
 
   const handleNavigateQuestion = (direction: 'prev' | 'next') => {
@@ -1404,9 +1424,19 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                     <span className="hidden sm:inline">Sebelumnya</span>
                   </button>
 
-                  <div className="px-2.5 py-1 text-xs font-extrabold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xs shrink-0 min-h-[44px] flex items-center justify-center">
-                    {currentQuestionNumber} / {questions.length}
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setShowQuestionJumpModal(true);
+                    }}
+                    className="px-2.5 sm:px-3 py-1 text-xs font-extrabold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-slate-750 hover:border-blue-400 dark:hover:border-blue-500 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xs shrink-0 min-h-[44px] flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95 btn-press group"
+                    title="Ketuk untuk melihat daftar nomor soal dan melompat langsung"
+                    aria-label="Pilih nomor soal untuk melompat"
+                  >
+                    <span>{currentQuestionNumber} / {questions.length}</span>
+                    <span className="text-[9px] text-blue-500 dark:text-blue-400 group-hover:translate-y-0.5 transition-transform">▼</span>
+                  </button>
 
                   <button
                     type="button"
@@ -1884,6 +1914,8 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                     ? 'berpindah ke Soal Sebelumnya'
                     : pendingNavigation?.type === 'next_question'
                     ? 'berpindah ke Soal Berikutnya'
+                    : pendingNavigation?.type === 'jump_to_question'
+                    ? `berpindah ke Soal #${(pendingNavigation.targetIndex ?? 0) + 1}`
                     : 'kembali ke Bank Soal'
                 }, buang perubahan untuk mengembalikan data awal, atau tetap lanjutkan mengedit.
               </p>
@@ -2065,6 +2097,30 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
         setBadgeTitle={setBadgeTitle}
         isEditMode={Boolean(editingQuiz)}
         onConfirmPublish={handleConfirmPublish}
+        playClick={playClick}
+      />
+
+      {/* Modal Lompat ke Nomor Soal (saat mengetuk 1 / 4) */}
+      <QuestionJumpModal
+        isOpen={showQuestionJumpModal}
+        onClose={() => setShowQuestionJumpModal(false)}
+        questions={questions}
+        currentIndex={currentEditingIndex}
+        onSelectQuestion={handleJumpToQuestion}
+        playClick={playClick}
+      />
+
+      {/* Modal Pratinjau Nyata Butir Soal untuk Siswa */}
+      <SingleQuestionPreviewModal
+        isOpen={Boolean(previewQuestionData)}
+        onClose={() => setPreviewQuestionData(null)}
+        question={previewQuestionData?.question || null}
+        questionIndex={previewQuestionData?.index ?? 0}
+        totalQuestions={questions.length}
+        durationPerQuestionSec={durationPerQuestionSec}
+        onEditQuestion={(q) => {
+          handleStartEditQuestion(q);
+        }}
         playClick={playClick}
       />
 
@@ -2658,15 +2714,31 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                           </button>
                         </div>
 
-                        {/* Right: Primary Action (Flex-1 on Mobile, fills remaining space with prominent target) */}
-                        <button
-                          type="button"
-                          onClick={() => handleStartEditQuestion(q)}
-                          className="flex-1 sm:flex-initial h-11 px-3 sm:px-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs hover:shadow transition-all active:scale-95 min-w-0 shrink-0"
-                        >
-                          <Edit3 className="w-4 h-4 shrink-0" />
-                          <span className="truncate">Edit Soal</span>
-                        </button>
+                        {/* Right Actions: Lihat (Pratinjau Siswa Nyata) & Edit Soal */}
+                        <div className="flex items-center gap-1.5 sm:gap-2 flex-1 sm:flex-initial justify-end">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              playClick();
+                              setPreviewQuestionData({ question: q, index: idx });
+                            }}
+                            className="h-11 px-3 sm:px-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-950/40 text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 font-bold text-xs flex items-center justify-center gap-1.5 transition-all border border-slate-200/60 dark:border-slate-700/60 active:scale-95 shrink-0"
+                            title="Pratinjau nyata tampilan kartu soal bagi siswa"
+                            aria-label="Lihat Pratinjau Soal"
+                          >
+                            <Eye className="w-4 h-4 text-blue-500 shrink-0" />
+                            <span>Lihat</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleStartEditQuestion(q)}
+                            className="flex-1 sm:flex-initial h-11 px-3.5 sm:px-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs hover:shadow transition-all active:scale-95 min-w-0 shrink-0"
+                          >
+                            <Edit3 className="w-4 h-4 shrink-0" />
+                            <span className="truncate">Edit Soal</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );

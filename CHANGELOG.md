@@ -1,6 +1,30 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.44] - 2026-09-11
+### Overlay Navigator Nomor Soal ("1/4") & Pratinjau Nyata Kartu Soal Siswa ("Lihat")
+
+#### 1. Overlay Navigator Nomor Soal (`QuestionJumpModal`)
+- Indikator pager nomor soal `1 / 4` kini **interaktif** (dapat diketuk dengan ikon chevron indikator) dengan touch target >= 44x44px.
+- Mengetuk nomor soal memicu overlay/bottom-sheet `QuestionJumpModal` yang menampilkan seluruh nomor soal:
+  - **Pilih Cepat Nomor**: Grid tombol nomor soal (1, 2, 3, ...) dengan highlight aktif pada butir soal yang sedang diedit.
+  - **Daftar Rinci Soal**: Kartu setiap butir soal lengkap dengan tipe soal (Pilihan Ganda, Benar/Salah, dll), bobot poin, durasi kustom, badge gambar pendukung, dan cuplikan teks soal.
+  - **Proteksi Perubahan**: Jika soal yang sedang diedit memiliki perubahan yang belum disimpan, sistem secara otomatis menampilkan dialog konfirmasi proteksi data sebelum melompat ke soal tujuan.
+
+#### 2. Tombol "Lihat" Pratinjau Nyata Siswa (`SingleQuestionPreviewModal`)
+- Setiap kartu soal pada Bank Soal kini dilengkapi tombol **"Lihat"** dengan ikon mata (`Eye`) sejajar dengan tombol "Edit Soal".
+- Mengetuk tombol "Lihat" membuka modal **SingleQuestionPreviewModal** yang mensimulasikan tampilan NYATA (real) kartu kuis sebagaimana siswa akan melihat dan memainkannya:
+  - Header arena kuis: nomor soal, tipe soal, bobot poin, dan sisa durasi timer per butir soal.
+  - Tampilan gambar ilustrasi pendukung resolusi tinggi dengan keterangan gambar.
+  - Teks pertanyaan dan pilihan jawaban interaktif sesuai tipe soal:
+    - **Pilihan Ganda / Benar Salah / Tebak Gambar**: Guru dapat mengetuk pilihan untuk menguji interaksi dan melihat langsung umpan balik visual (warna hijau untuk kunci/jawaban benar, merah untuk salah).
+    - **Isian Singkat**: Kolom input nyata siswa dengan validasi jawaban langsung.
+    - **Menjodohkan**: Interaksi kartu Kolom A dan Kolom B dengan efek getar saat salah dan centang hijau saat cocok.
+  - Fitur **"Intip Kunci"** untuk langsung melihat kunci jawaban tanpa perlu menjawab.
+  - Fitur **"Coba Lagi"** untuk mengulang simulasi jawaban.
+  - Tombol **"Edit Soal Ini"** untuk langsung beralih ke mode pengeditan soal tersebut.
+  - Pembahasan edukatif interaktif dengan kartu konsep siswa.
+
 ## [2.3.43] - 2026-09-11
 ### Tab Info — Bersih, Ringkas & Urutan Logis
 
