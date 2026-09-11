@@ -1469,28 +1469,23 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
           )}
 
           <div
-            className={`fixed bottom-[calc(1.25rem+env(safe-area-inset-bottom,0px))] sm:bottom-6 right-4 sm:right-6 lg:right-10 z-40 flex flex-col items-end gap-2.5 transition-all duration-200 ease-out ${
+            className={`fixed bottom-[calc(1.25rem+env(safe-area-inset-bottom,0px))] sm:bottom-6 right-4 sm:right-6 lg:right-10 z-40 transition-all duration-200 ease-out ${
               showFloatingActions
                 ? 'opacity-100 translate-y-0 scale-100 pointer-events-auto'
                 : 'opacity-0 translate-y-6 scale-95 pointer-events-none'
             }`}
-            onMouseEnter={() => {
-              if (window.matchMedia('(hover: hover)').matches) {
-                setIsSpeedDialOpen(true);
-              }
-            }}
             onMouseLeave={() => {
-              if (window.matchMedia('(hover: hover)').matches) {
+              if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
                 setIsSpeedDialOpen(false);
               }
             }}
           >
-            {/* Speed Dial Menu Items (Mengalir ke atas) */}
+            {/* Speed Dial Menu Items (Position Absolute melayang ke atas, TIDAK memperlebar area hit-test saat tertutup) */}
             <div
-              className={`flex flex-col items-end gap-2.5 transition-all duration-200 origin-bottom ${
+              className={`absolute bottom-full right-0 pb-3 flex flex-col items-end gap-2.5 transition-all duration-200 origin-bottom ${
                 isSpeedDialOpen
-                  ? 'opacity-100 translate-y-0 scale-100 pointer-events-auto'
-                  : 'opacity-0 translate-y-3 scale-90 pointer-events-none'
+                  ? 'visible opacity-100 translate-y-0 scale-100 pointer-events-auto'
+                  : 'invisible opacity-0 translate-y-3 scale-90 pointer-events-none'
               }`}
             >
               {/* Item 2: Ke Atas */}
@@ -1533,12 +1528,17 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
               </div>
             </div>
 
-            {/* Trigger FAB Utama (Bulat 48×48px di mobile, 52×52px di sm) */}
+            {/* Trigger FAB Utama (Ukuran presisi 48×48px di mobile, 52×52px di sm, hover hanya aktif tepat di atas tombol) */}
             <button
               type="button"
               onClick={() => {
                 playClick();
                 setIsSpeedDialOpen((prev) => !prev);
+              }}
+              onMouseEnter={() => {
+                if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+                  setIsSpeedDialOpen(true);
+                }
               }}
               className={`w-12 h-12 sm:w-13 sm:h-13 rounded-full flex items-center justify-center text-white shadow-xl transition-all duration-200 active:scale-90 btn-press min-h-[48px] min-w-[48px] ${
                 isSpeedDialOpen

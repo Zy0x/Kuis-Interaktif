@@ -1,6 +1,24 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.12] - 2026-09-11
+### Presisi Area Interaksi: Eliminasi Phantom Hover pada Tombol Melayang FAB
+
+#### 1. Masalah yang Diselesaikan
+- **Area Hover Tidak Presisi (*Phantom Hover Hit-Box*)**: Menu anak Speed Dial sebelumnya berada di dalam alur tata letak normal (`flex-col`) dari kontainer tombol melayang (FAB). Meskipun menu anak disembunyikan (`opacity-0 pointer-events-none`), ia tetap menyumbang tinggi dan lebar fisik (~150px × ~170px) pada pembungkus luar.
+- Akibatnya, kursor mouse yang berjarak jauh (hingga 120px di atas atau di samping tombol) secara tidak sengaja memicu *hover* dan membuka menu Speed Dial (*unintended trigger*).
+
+#### 2. Implementasi & Presisi Interaksi (`QuizCreator.tsx`)
+- **Isolasi Penuh Menu Anak dengan `position: absolute`**:
+  - Menu anak Speed Dial dipindahkan menjadi `position: absolute; bottom: 100%; right: 0;`.
+  - Ketika tertutup (`isSpeedDialOpen === false`), menu anak diberi status `invisible opacity-0 pointer-events-none scale-90 translate-y-3`.
+  - Ukuran pembungkus luar saat tertutup kini **100% presisi identik dengan ukuran tombol bulat itu sendiri (48×48px di ponsel, 52×52px di desktop)**.
+- **Pemicu Hover Eksklusif pada Tombol Pemicu**:
+  - Listener `onMouseEnter` dipindahkan langsung ke elemen tombol bulat (`<button>`), bukan pada kontainer luar yang luas.
+  - Hover kini hanya akan aktif jika kursor mouse secara fisik dan nyata menyentuh permukaan tombol bulat FAB.
+- **Transisi Halus Tanpa Celah (*Zero Gap Transition*)**:
+  - Menu anak dilengkapi bantalan bawah `pb-3` yang menjembatani tombol dan menu tanpa celah kosong, sehingga pergerakan kursor ke atas untuk memilih *"Tambah Soal"* atau *"Ke Atas"* tetap stabil dan tidak terputus.
+
 ## [2.3.11] - 2026-09-11
 ### Penerapan Slim Control Bar Bank Soal & Penguatan Deteksi Mode AI
 
