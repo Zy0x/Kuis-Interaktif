@@ -48,6 +48,15 @@ interface QuizCreatorProps {
 
 const DRAFT_STORAGE_KEY = 'kuis_creator_draft_v1';
 
+const PAIR_PLACEHOLDERS = [
+  { left: 'Contoh: Indonesia', right: 'Contoh: Ibu Kota Nusantara' },
+  { left: 'Contoh: Fotosintesis', right: 'Contoh: Memasak makanan pada tumbuhan' },
+  { left: 'Contoh: Oksigen', right: 'Contoh: Gas untuk bernapas' },
+  { left: 'Contoh: Jantung', right: 'Contoh: Memompa darah ke seluruh tubuh' },
+  { left: 'Contoh: Herbivora', right: 'Contoh: Hewan pemakan tumbuhan' },
+  { left: 'Contoh: Metamorfosis', right: 'Contoh: Perubahan bentuk tubuh' },
+];
+
 interface CreatorDraft {
   currentStep: number;
   aiFunnelActive?: boolean;
@@ -80,6 +89,7 @@ interface CreatorDraft {
     qExplanation?: string;
     qAcceptableAnswers?: string;
     qMatchingPairs?: { left: string; right: string }[];
+    qDistractors?: string[];
     qPoints?: number;
     qCustomDurationSec?: string;
   };
@@ -239,6 +249,9 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
       { left: '', right: '' },
     ]
   );
+  const [qDistractors, setQDistractors] = useState<string[]>(
+    () => draft?.activeQuestionDraft?.qDistractors ?? []
+  );
   const [qPoints, setQPoints] = useState<number>(() => draft?.activeQuestionDraft?.qPoints ?? 10);
   const [qCustomDurationSec, setQCustomDurationSec] = useState<string>(() => draft?.activeQuestionDraft?.qCustomDurationSec ?? '');
   const [isAddingQuestion, setIsAddingQuestion] = useState(() => draft?.activeQuestionDraft?.isAddingQuestion ?? false);
@@ -296,6 +309,9 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
         const origPairs = orig.matchingPairs || [];
         if (qMatchingPairs.length !== origPairs.length) return true;
         if (qMatchingPairs.some((p, idx) => p.left.trim() !== (origPairs[idx]?.left || '').trim() || p.right.trim() !== (origPairs[idx]?.right || '').trim())) return true;
+        const origDistractors = orig.distractors || [];
+        if (qDistractors.length !== origDistractors.length) return true;
+        if (qDistractors.some((d, idx) => d.trim() !== (origDistractors[idx] || '').trim())) return true;
       }
 
       return false;
@@ -307,7 +323,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     if (qImageUrl) return true;
     if (qType === 'multiple_choice' && qOptions.some((opt) => opt.trim())) return true;
     if (qType === 'short_answer' && qAcceptableAnswers.trim()) return true;
-    if (qType === 'matching_pairs' && qMatchingPairs.some((p) => p.left.trim() || p.right.trim())) return true;
+    if (qType === 'matching_pairs' && (qMatchingPairs.some((p) => p.left.trim() || p.right.trim()) || qDistractors.some((d) => d.trim()))) return true;
     if (qType === 'true_false' && (qCorrectIndex !== 0 || (qOptions[0] && qOptions[0] !== 'Benar') || (qOptions[1] && qOptions[1] !== 'Salah'))) return true;
 
     return false;
@@ -325,7 +341,8 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     qCorrectIndex,
     qOptions,
     qAcceptableAnswers,
-    qMatchingPairs
+    qMatchingPairs,
+    qDistractors
   ]);
 
   // Aksi Bagi Rata 100 Poin Presisi
@@ -452,7 +469,8 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
       qExplanation.trim() ||
       qAcceptableAnswers.trim() ||
       qOptions.some((opt) => opt.trim()) ||
-      qMatchingPairs.some((p) => p.left.trim() || p.right.trim())
+      qMatchingPairs.some((p) => p.left.trim() || p.right.trim()) ||
+      qDistractors.some((d) => d.trim())
     );
 
     const hasAnyContent = 
@@ -496,6 +514,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
           qExplanation,
           qAcceptableAnswers,
           qMatchingPairs,
+          qDistractors,
           qPoints,
           qCustomDurationSec,
         } : undefined,
@@ -538,6 +557,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     qExplanation,
     qAcceptableAnswers,
     qMatchingPairs,
+    qDistractors,
     qPoints,
     qCustomDurationSec
   ]);
@@ -732,6 +752,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
       { left: '', right: '' },
       { left: '', right: '' },
     ]);
+    setQDistractors([]);
     setQPoints(10);
     setQCustomDurationSec('');
     if (targetType === 'true_false') {
@@ -777,6 +798,26 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     setQMatchingPairs((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const handleAddDistractor = () => {
+    if (qDistractors.length >= 2) {
+      showToast('Maksimal 2 kartu pengecoh agar tidak membingungkan siswa.');
+      return;
+    }
+    setQDistractors((prev) => [...prev, '']);
+  };
+
+  const handleRemoveDistractor = (index: number) => {
+    setQDistractors((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleDistractorChange = (index: number, val: string) => {
+    setQDistractors((prev) => {
+      const next = [...prev];
+      next[index] = val;
+      return next;
+    });
+  };
+
   const handleTypeChange = (type: QuestionType) => {
     setQType(type);
     if (type === 'true_false') {
@@ -819,6 +860,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
         { left: '', right: '' },
         { left: '', right: '' },
       ]);
+      setQDistractors(q.distractors || []);
       setQOptions([]);
       setQCorrectIndex(0);
     } else if (q.type === 'short_answer') {
@@ -958,6 +1000,8 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     let finalAcceptable: string[] | undefined = undefined;
     let finalPairs = undefined;
 
+    let finalDistractors: string[] | undefined = undefined;
+
     if (qType === 'matching_pairs') {
       const validPairs = qMatchingPairs.filter((p) => p.left.trim() && p.right.trim());
       if (validPairs.length < 2) {
@@ -966,6 +1010,10 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
       }
       finalPairs = validPairs.map((p) => ({ left: p.left.trim(), right: p.right.trim() }));
       finalOptions = finalPairs.map((p) => `${p.left} -> ${p.right}`);
+      const validDistractors = qDistractors.map((d) => d.trim()).filter(Boolean);
+      if (validDistractors.length > 0) {
+        finalDistractors = validDistractors;
+      }
     } else if (qType === 'short_answer') {
       const parts = qAcceptableAnswers.split(',').map((s) => s.trim()).filter(Boolean);
       if (parts.length === 0) {
@@ -1003,6 +1051,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
       imagePrompt: qImagePrompt.trim() || undefined,
       acceptableAnswers: finalAcceptable,
       matchingPairs: finalPairs,
+      distractors: finalDistractors,
       points: Number(qPoints) || 10,
       customDurationSec: !isNaN(durationNum) && durationNum > 0 ? durationNum : undefined,
     };
@@ -2269,19 +2318,31 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                         )}
 
                         {q.type === 'matching_pairs' && q.matchingPairs && (
-                          <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 space-y-1.5 text-xs">
-                            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">
-                              Pasangan Kartu Menjodohkan:
-                            </span>
+                          <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-750 space-y-2 text-xs">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">
+                                Pasangan Kartu Menjodohkan ({q.matchingPairs.length} Pasang):
+                              </span>
+                            </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
                               {q.matchingPairs.map((pair, pIdx) => (
                                 <div key={pIdx} className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/60 text-[11px]">
                                   <span className="font-semibold text-slate-800 dark:text-slate-200 min-w-0 break-words flex-1">{pair.left}</span>
-                                  <span className="text-purple-600 dark:text-purple-400 font-bold px-1 shrink-0">➔</span>
+                                  <span className="text-purple-600 dark:text-purple-400 font-bold px-1 shrink-0">↔</span>
                                   <span className="font-bold text-emerald-700 dark:text-emerald-300 min-w-0 break-words flex-1 text-right">{pair.right}</span>
                                 </div>
                               ))}
                             </div>
+                            {q.distractors && q.distractors.length > 0 && (
+                              <div className="flex items-center gap-1.5 flex-wrap pt-1 border-t border-slate-200/60 dark:border-slate-700/60">
+                                <span className="text-[10px] font-bold text-amber-700 dark:text-amber-300">Pengecoh Sisi Kanan:</span>
+                                {q.distractors.map((d, dIdx) => (
+                                  <span key={dIdx} className="px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-800/80 text-[10px] font-medium text-amber-800 dark:text-amber-300">
+                                    {d}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
@@ -2827,11 +2888,11 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                             Pasangan Kartu Menjodohkan
                           </label>
                           <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200/80 dark:border-purple-800/60">
-                            {qMatchingPairs.length} / 6 Pasang
+                            {qMatchingPairs.length} Pasang Aktif
                           </span>
                         </div>
                         <p className="text-[11px] font-normal text-slate-400 dark:text-slate-500 mt-0.5">
-                          Tuliskan konsep pada sisi kiri dan pasangan jawaban yang tepat pada sisi kanan (minimal 2 pasang).
+                          Ideal 3–4 pasang (minimal 2, maksimal 6 pasang agar nyaman di layar ponsel siswa).
                         </p>
                       </div>
 
@@ -2861,7 +2922,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                                 {idx + 1}
                               </span>
                               <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                                Pasangan Kartu #{idx + 1}
+                                Pasangan #{idx + 1}
                               </span>
                             </div>
 
@@ -2869,25 +2930,25 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                               <button
                                 type="button"
                                 onClick={() => handleRemoveMatchingPair(idx)}
-                                className="px-2.5 py-1.5 text-xs font-bold text-rose-600 dark:text-rose-400 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-xl flex items-center gap-1.5 transition-all min-h-[44px] btn-press"
-                                title={`Hapus Pasangan Kartu #${idx + 1}`}
-                                aria-label={`Hapus Pasangan Kartu #${idx + 1}`}
+                                className="px-2.5 py-1 text-xs font-bold text-rose-600 dark:text-rose-400 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-lg flex items-center gap-1.5 transition-all min-h-[44px] btn-press"
+                                title={`Hapus Pasangan #${idx + 1}`}
+                                aria-label={`Hapus Pasangan #${idx + 1}`}
                               >
-                                <Trash2 className="w-4 h-4 shrink-0" />
-                                <span className="text-xs">Hapus Pasangan</span>
+                                <Trash2 className="w-3.5 h-3.5 shrink-0" />
+                                <span className="text-xs whitespace-nowrap">Hapus</span>
                               </button>
                             )}
                           </div>
 
-                          {/* Inputs: 1 Column on Mobile, 2 Columns on Tablet/Desktop */}
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
+                          {/* Inputs: 1 Column on Mobile, Grid on Tablet/Desktop with visual connector */}
+                          <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-2.5 md:gap-3 items-center">
                             {/* Left Card (Question / Concept) */}
                             <div className="space-y-1.5 min-w-0">
                               <div className="flex items-center justify-between">
-                                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                                  Sisi Kiri (Soal / Konsep)
+                                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                                  Konsep / Soal (Sisi Kiri)
                                 </label>
-                                <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+                                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-200/60 dark:bg-slate-750 text-slate-600 dark:text-slate-400">
                                   Kolom A
                                 </span>
                               </div>
@@ -2895,19 +2956,26 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                                 type="text"
                                 value={pair.left}
                                 onChange={(e) => handleMatchingPairChange(idx, 'left', e.target.value)}
-                                placeholder={`Contoh: Fotosintesis / Ibu Kota Indonesia`}
+                                placeholder={PAIR_PLACEHOLDERS[idx]?.left || `Contoh: Konsep #${idx + 1}`}
                                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs sm:text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 focus:outline-none min-h-[44px] transition-all"
                               />
+                            </div>
+
+                            {/* Middle Connector Arrow (visible on desktop md:flex, hidden on mobile) */}
+                            <div className="hidden md:flex flex-col items-center justify-center pt-5 text-purple-500 dark:text-purple-400">
+                              <span className="text-sm font-black px-1.5 py-1 rounded-md bg-purple-100/70 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-800">
+                                ↔
+                              </span>
                             </div>
 
                             {/* Right Card (Correct Match / Answer) */}
                             <div className="space-y-1.5 min-w-0">
                               <div className="flex items-center justify-between">
-                                <label className="block text-[11px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
-                                  <span>Sisi Kanan (Pasangan Tepat)</span>
+                                <label className="block text-xs font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
+                                  <span>Pasangan Tepat (Sisi Kanan)</span>
                                   <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                                 </label>
-                                <span className="text-[10px] text-emerald-600/80 dark:text-emerald-400/80 font-medium">
+                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100/70 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
                                   Kunci Benar
                                 </span>
                               </div>
@@ -2915,7 +2983,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                                 type="text"
                                 value={pair.right}
                                 onChange={(e) => handleMatchingPairChange(idx, 'right', e.target.value)}
-                                placeholder={`Contoh: Pembuatan makanan / Nusantara`}
+                                placeholder={PAIR_PLACEHOLDERS[idx]?.right || `Contoh: Pasangan #${idx + 1}`}
                                 className="w-full px-3.5 py-2.5 rounded-xl border border-emerald-300 dark:border-emerald-800/80 bg-white dark:bg-slate-900 text-xs sm:text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none min-h-[44px] transition-all"
                               />
                             </div>
@@ -2924,17 +2992,68 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                       ))}
                     </div>
 
-                    {/* Bottom Add Pair Button */}
-                    {qMatchingPairs.length < 6 && (
-                      <button
-                        type="button"
-                        onClick={handleAddMatchingPair}
-                        className="w-full py-3 rounded-2xl border-2 border-dashed border-purple-200 dark:border-purple-800/70 hover:border-purple-400 dark:hover:border-purple-600 bg-purple-50/40 dark:bg-purple-950/20 hover:bg-purple-50 dark:hover:bg-purple-950/40 text-purple-700 dark:text-purple-300 text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all min-h-[48px] btn-press"
-                      >
-                        <Plus className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" />
-                        <span>Tambah Pasangan Kartu Baru ({qMatchingPairs.length + 1}/6)</span>
-                      </button>
-                    )}
+                    {/* Panel Kartu Pengecoh Sisi Kanan (Opsional) */}
+                    <div className="p-3.5 sm:p-4 rounded-2xl border border-dashed border-amber-300 dark:border-amber-750/70 bg-amber-50/40 dark:bg-amber-950/20 space-y-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs sm:text-sm font-bold text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
+                              <span>Kartu Pengecoh Sisi Kanan</span>
+                              <span className="text-[10px] font-semibold text-amber-700 dark:text-amber-300 px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/40">
+                                Opsional
+                              </span>
+                            </span>
+                            {qDistractors.length > 0 && (
+                              <span className="text-[11px] font-bold text-amber-700 dark:text-amber-300">
+                                ({qDistractors.length}/2)
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-amber-800/80 dark:text-amber-300/70 mt-0.5 leading-relaxed">
+                            Pilihan palsu di Kolom B tanpa pasangan di Kolom A untuk mencegah siswa menebak dengan cara eliminasi sisa kartu.
+                          </p>
+                        </div>
+
+                        {qDistractors.length < 2 && (
+                          <button
+                            type="button"
+                            onClick={handleAddDistractor}
+                            className="self-start sm:self-auto px-3 py-2 rounded-xl text-xs font-bold text-amber-800 dark:text-amber-200 bg-amber-100/70 dark:bg-amber-900/40 hover:bg-amber-200/70 dark:hover:bg-amber-850 border border-amber-300 dark:border-amber-700 flex items-center gap-1.5 transition-all btn-press min-h-[44px]"
+                          >
+                            <Plus className="w-3.5 h-3.5 shrink-0 text-amber-700 dark:text-amber-300" />
+                            <span>Tambah Pengecoh</span>
+                          </button>
+                        )}
+                      </div>
+
+                      {qDistractors.length > 0 && (
+                        <div className="space-y-2 pt-1">
+                          {qDistractors.map((distractor, dIdx) => (
+                            <div key={dIdx} className="flex items-center gap-2">
+                              <div className="relative flex-1">
+                                <input
+                                  type="text"
+                                  value={distractor}
+                                  onChange={(e) => handleDistractorChange(dIdx, e.target.value)}
+                                  placeholder={dIdx === 0 ? 'Contoh pengecoh: Karbondioksida' : 'Contoh pengecoh: Gas Nitrogen'}
+                                  className="w-full px-3.5 py-2.5 rounded-xl border border-amber-200 dark:border-amber-800 bg-white dark:bg-slate-900 text-xs sm:text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none min-h-[44px]"
+                                />
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveDistractor(dIdx)}
+                                className="px-2.5 py-2 text-xs font-bold text-rose-600 dark:text-rose-400 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-xl flex items-center gap-1 transition-all min-h-[44px] btn-press shrink-0"
+                                title={`Hapus Pengecoh #${dIdx + 1}`}
+                                aria-label={`Hapus Pengecoh #${dIdx + 1}`}
+                              >
+                                <Trash2 className="w-3.5 h-3.5 shrink-0" />
+                                <span className="text-xs">Hapus</span>
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
 

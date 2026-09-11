@@ -281,20 +281,29 @@ export const DataManager = {
             shuffleQuestions: Boolean(row.shuffle_questions),
             shuffleOptions: Boolean(row.shuffle_options),
             createdAt: row.created_at,
-            questions: rawQuestions.map((q) => ({
-              id: q.id,
-              text: q.question_text,
-              type: q.question_type as QuizQuestion['type'],
-              imageUrl: q.image_url || undefined,
-              imageCaption: q.image_caption || undefined,
-              options: Array.isArray(q.options) ? q.options : (typeof q.options === 'string' ? JSON.parse(q.options || '[]') : []),
-              correctIndex: q.correct_index,
-              explanation: q.explanation || '',
-              acceptableAnswers: q.acceptable_answers || undefined,
-              matchingPairs: q.matching_pairs || undefined,
-              customDurationSec: q.custom_duration_sec || undefined,
-              points: q.points ?? 10,
-            })),
+            questions: rawQuestions.map((q) => {
+              const rawOpts = Array.isArray(q.options) ? q.options : (typeof q.options === 'string' ? JSON.parse(q.options || '[]') : []);
+              const distractors = rawOpts
+                .filter((opt: string) => typeof opt === 'string' && opt.startsWith('__distractor__:'))
+                .map((opt: string) => opt.replace('__distractor__:', ''));
+              const cleanOptions = rawOpts.filter((opt: string) => typeof opt !== 'string' || !opt.startsWith('__distractor__:'));
+
+              return {
+                id: q.id,
+                text: q.question_text,
+                type: q.question_type as QuizQuestion['type'],
+                imageUrl: q.image_url || undefined,
+                imageCaption: q.image_caption || undefined,
+                options: cleanOptions,
+                correctIndex: q.correct_index,
+                explanation: q.explanation || '',
+                acceptableAnswers: q.acceptable_answers || undefined,
+                matchingPairs: q.matching_pairs || undefined,
+                distractors: distractors.length > 0 ? distractors : undefined,
+                customDurationSec: q.custom_duration_sec || undefined,
+                points: q.points ?? 10,
+              };
+            }),
           };
         });
 
@@ -419,20 +428,29 @@ export const DataManager = {
             defaultGameMode: (data.default_game_mode as GameMode) || 'standard',
             shuffleQuestions: Boolean(data.shuffle_questions),
             shuffleOptions: Boolean(data.shuffle_options),
-            questions: rawQuestions.map((q) => ({
-              id: q.id,
-              text: q.question_text,
-              type: q.question_type as QuizQuestion['type'],
-              imageUrl: q.image_url || undefined,
-              imageCaption: q.image_caption || undefined,
-              options: Array.isArray(q.options) ? q.options : JSON.parse(q.options || '[]'),
-              correctIndex: q.correct_index,
-              explanation: q.explanation || '',
-              acceptableAnswers: q.acceptable_answers || undefined,
-              matchingPairs: q.matching_pairs || undefined,
-              customDurationSec: q.custom_duration_sec || undefined,
-              points: q.points ?? 10,
-            })),
+            questions: rawQuestions.map((q) => {
+              const rawOpts = Array.isArray(q.options) ? q.options : (typeof q.options === 'string' ? JSON.parse(q.options || '[]') : []);
+              const distractors = rawOpts
+                .filter((opt: string) => typeof opt === 'string' && opt.startsWith('__distractor__:'))
+                .map((opt: string) => opt.replace('__distractor__:', ''));
+              const cleanOptions = rawOpts.filter((opt: string) => typeof opt !== 'string' || !opt.startsWith('__distractor__:'));
+
+              return {
+                id: q.id,
+                text: q.question_text,
+                type: q.question_type as QuizQuestion['type'],
+                imageUrl: q.image_url || undefined,
+                imageCaption: q.image_caption || undefined,
+                options: cleanOptions,
+                correctIndex: q.correct_index,
+                explanation: q.explanation || '',
+                acceptableAnswers: q.acceptable_answers || undefined,
+                matchingPairs: q.matching_pairs || undefined,
+                distractors: distractors.length > 0 ? distractors : undefined,
+                customDurationSec: q.custom_duration_sec || undefined,
+                points: q.points ?? 10,
+              };
+            }),
           };
 
           return formattedQuiz;
@@ -531,20 +549,29 @@ export const DataManager = {
             defaultGameMode: (data.default_game_mode as GameMode) || 'standard',
             shuffleQuestions: Boolean(data.shuffle_questions),
             shuffleOptions: Boolean(data.shuffle_options),
-            questions: rawQuestions.map((q) => ({
-              id: q.id,
-              text: q.question_text,
-              type: q.question_type as QuizQuestion['type'],
-              imageUrl: q.image_url || undefined,
-              imageCaption: q.image_caption || undefined,
-              options: Array.isArray(q.options) ? q.options : JSON.parse(q.options || '[]'),
-              correctIndex: q.correct_index,
-              explanation: q.explanation || '',
-              acceptableAnswers: q.acceptable_answers || undefined,
-              matchingPairs: q.matching_pairs || undefined,
-              customDurationSec: q.custom_duration_sec || undefined,
-              points: q.points ?? 10,
-            })),
+            questions: rawQuestions.map((q) => {
+              const rawOpts = Array.isArray(q.options) ? q.options : (typeof q.options === 'string' ? JSON.parse(q.options || '[]') : []);
+              const distractors = rawOpts
+                .filter((opt: string) => typeof opt === 'string' && opt.startsWith('__distractor__:'))
+                .map((opt: string) => opt.replace('__distractor__:', ''));
+              const cleanOptions = rawOpts.filter((opt: string) => typeof opt !== 'string' || !opt.startsWith('__distractor__:'));
+
+              return {
+                id: q.id,
+                text: q.question_text,
+                type: q.question_type as QuizQuestion['type'],
+                imageUrl: q.image_url || undefined,
+                imageCaption: q.image_caption || undefined,
+                options: cleanOptions,
+                correctIndex: q.correct_index,
+                explanation: q.explanation || '',
+                acceptableAnswers: q.acceptable_answers || undefined,
+                matchingPairs: q.matching_pairs || undefined,
+                distractors: distractors.length > 0 ? distractors : undefined,
+                customDurationSec: q.custom_duration_sec || undefined,
+                points: q.points ?? 10,
+              };
+            }),
           };
         }
       } catch {
@@ -612,21 +639,27 @@ export const DataManager = {
         });
 
         // Insert questions
-        const formattedQuestions = quiz.questions.map((q, idx) => ({
-          quiz_id: quiz.id,
-          question_text: q.text,
-          question_type: q.type,
-          image_url: q.imageUrl || null,
-          image_caption: q.imageCaption || null,
-          options: q.options,
-          correct_index: q.correctIndex,
-          explanation: q.explanation,
-          order_number: idx + 1,
-          acceptable_answers: q.acceptableAnswers || null,
-          matching_pairs: q.matchingPairs || null,
-          custom_duration_sec: q.customDurationSec || null,
-          points: q.points ?? 10,
-        }));
+        const formattedQuestions = quiz.questions.map((q, idx) => {
+          let opts = q.options;
+          if (q.type === 'matching_pairs' && q.distractors && q.distractors.length > 0) {
+            opts = [...opts, ...q.distractors.map((d) => `__distractor__:${d}`)];
+          }
+          return {
+            quiz_id: quiz.id,
+            question_text: q.text,
+            question_type: q.type,
+            image_url: q.imageUrl || null,
+            image_caption: q.imageCaption || null,
+            options: opts,
+            correct_index: q.correctIndex,
+            explanation: q.explanation,
+            order_number: idx + 1,
+            acceptable_answers: q.acceptableAnswers || null,
+            matching_pairs: q.matchingPairs || null,
+            custom_duration_sec: q.customDurationSec || null,
+            points: q.points ?? 10,
+          };
+        });
         await supabase.from('quiz_questions').delete().eq('quiz_id', quiz.id);
         await supabase.from('quiz_questions').insert(formattedQuestions);
       } catch (err) {

@@ -47,6 +47,7 @@ export const QuizResult: React.FC<QuizResultProps> = ({
   const totalCount = quiz.questions.length;
   const maxPoints = quiz.questions.reduce((sum, q) => sum + (q.points || 10), 0);
   const earnedPoints = answers.reduce((sum, a) => {
+    if (a.earnedPoints !== undefined) return sum + a.earnedPoints;
     if (!a.isCorrect) return sum;
     const q = quiz.questions.find((item) => item.id === a.questionId);
     return sum + (q?.points || 10);
@@ -202,35 +203,48 @@ export const QuizResult: React.FC<QuizResultProps> = ({
               const studentAnswer = answers.find((a) => a.questionId === q.id);
               const isCorrect = studentAnswer?.isCorrect;
               const selectedIdx = studentAnswer?.selectedIndex ?? -1;
+              const qPoints = q.points || 10;
+              const earned = studentAnswer?.earnedPoints ?? (isCorrect ? qPoints : 0);
+              const isPartial = !isCorrect && earned > 0;
 
               return (
                 <div
                   key={q.id}
                   className={`bg-white dark:bg-slate-900 rounded-xl p-4 sm:p-5 border shadow-sm space-y-2.5 ${
-                    isCorrect ? 'border-emerald-200 dark:border-emerald-800/80' : 'border-rose-200 dark:border-rose-800/80'
+                    isCorrect
+                      ? 'border-emerald-200 dark:border-emerald-800/80'
+                      : isPartial
+                      ? 'border-amber-300 dark:border-amber-700/80'
+                      : 'border-rose-200 dark:border-rose-800/80'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="text-xs text-slate-400 dark:text-slate-500 font-semibold">Soal {idx + 1}</span>
                       <span className="text-[10px] font-bold bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/60 px-1.5 py-0.5 rounded inline-flex items-center gap-0.5">
-                        <Star className="w-2.5 h-2.5 text-amber-500 fill-amber-500" /> {q.points || 10} Poin
+                        <Star className="w-2.5 h-2.5 text-amber-500 fill-amber-500" /> {qPoints} Poin
                       </span>
                     </div>
                     <span
                       className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold ${
                         isCorrect
                           ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                          : isPartial
+                          ? 'bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
                           : 'bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800'
                       }`}
                     >
                       {isCorrect ? (
                         <>
-                          <CheckCircle className="w-3.5 h-3.5" /> Benar
+                          <CheckCircle className="w-3.5 h-3.5" /> Benar (+{earned} Poin)
+                        </>
+                      ) : isPartial ? (
+                        <>
+                          <CheckCircle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" /> Sebagian (+{earned} Poin)
                         </>
                       ) : (
                         <>
-                          <XCircle className="w-3.5 h-3.5" /> Belum Tepat
+                          <XCircle className="w-3.5 h-3.5" /> Belum Tepat (+0 Poin)
                         </>
                       )}
                     </span>
@@ -243,11 +257,17 @@ export const QuizResult: React.FC<QuizResultProps> = ({
                   <div className="text-xs space-y-1 bg-slate-50 dark:bg-slate-850 p-3 rounded-lg border border-slate-100 dark:border-slate-800">
                     <p className="text-slate-600 dark:text-slate-300">
                       Jawabanmu:{' '}
-                      <span className={isCorrect ? 'font-bold text-emerald-700 dark:text-emerald-400' : 'font-bold text-rose-600 dark:text-rose-400'}>
-                        {studentAnswer?.textAnswer 
+                      <span className={isCorrect ? 'font-bold text-emerald-700 dark:text-emerald-400' : isPartial ? 'font-bold text-amber-700 dark:text-amber-300' : 'font-bold text-rose-600 dark:text-rose-400'}>
+                        {q.type === 'matching_pairs'
+                          ? (studentAnswer?.matchedCount !== undefined && studentAnswer?.totalPairs !== undefined
+                            ? (studentAnswer.matchedCount === studentAnswer.totalPairs
+                              ? '🎯 Semua Pasangan Berhasil Cocok'
+                              : studentAnswer.matchedCount > 0
+                              ? `⚖️ ${studentAnswer.matchedCount} dari ${studentAnswer.totalPairs} Pasangan Cocok (${earned} Poin)`
+                              : 'Belum Ada Pasangan Cocok')
+                            : (isCorrect ? 'Semua Pasangan Tepat' : 'Belum Selesai'))
+                          : studentAnswer?.textAnswer 
                           ? studentAnswer.textAnswer 
-                          : q.type === 'matching_pairs'
-                          ? (isCorrect ? 'Semua Pasangan Tepat' : 'Belum Selesai')
                           : selectedIdx >= 0 && q.options?.[selectedIdx]
                           ? q.options[selectedIdx] 
                           : 'Waktu Habis'}

@@ -143,8 +143,12 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   // 3. Matching Pairs state
   const [selectedLeft, setSelectedLeft] = useState<number | null>(null);
   const [matchedPairs, setMatchedPairs] = useState<Set<number>>(new Set());
+  const matchedPairsRef = useRef<Set<number>>(matchedPairs);
+  useEffect(() => {
+    matchedPairsRef.current = matchedPairs;
+  }, [matchedPairs]);
   const [wrongPairAttempt, setWrongPairAttempt] = useState<{ left: number; right: number } | null>(null);
-  const [shuffledRightItems, setShuffledRightItems] = useState<{ originalIndex: number; text: string }[]>([]);
+  const [shuffledRightItems, setShuffledRightItems] = useState<{ originalIndex: number; text: string; isDistractor?: boolean }[]>([]);
 
   // Kunci scroll body saat dialog konfirmasi keluar atau menu alat mobile aktif
   useBodyScrollLock(showExitConfirm || isMobileToolsOpen || isGameOver);
@@ -258,10 +262,28 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   const isLastQuestion = currentIndex === activeQuestions.length - 1;
   const timerRef = useRef<number | null>(null);
 
-  // Initialize right column shuffle for matching pairs
+  // Initialize right column shuffle for matching pairs (termasuk kartu pengecoh opsional)
   useEffect(() => {
     if (question?.type === 'matching_pairs' && question.matchingPairs && question.matchingPairs.length > 0) {
-      const rights = question.matchingPairs.map((p, idx) => ({ originalIndex: idx, text: p.right }));
+      const rights: { originalIndex: number; text: string; isDistractor?: boolean }[] = question.matchingPairs.map((p, idx) => ({
+        originalIndex: idx,
+        text: p.right,
+        isDistractor: false,
+      }));
+
+      // Sisipkan kartu pengecoh sisi kanan jika ada
+      if (question.distractors && question.distractors.length > 0) {
+        question.distractors.forEach((d, dIdx) => {
+          if (d && d.trim()) {
+            rights.push({
+              originalIndex: -100 - dIdx,
+              text: d.trim(),
+              isDistractor: true,
+            });
+          }
+        });
+      }
+
       for (let i = rights.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [rights[i], rights[j]] = [rights[j], rights[i]];
@@ -339,7 +361,10 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   const handleAnswerSelect = (
     optionIndex: number,
     textAns?: string,
-    explicitIsCorrect?: boolean
+    explicitIsCorrect?: boolean,
+    customPoints?: number,
+    customMatchedCount?: number,
+    customTotalPairs?: number
   ) => {
     if (isAnswerConfirmed) return;
     if (timerRef.current) clearInterval(timerRef.current);
@@ -352,15 +377,39 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     setRevealedTiles(new Set([0, 1, 2, 3, 4, 5, 6, 7, 8]));
 
     let isCorrect = false;
-    if (explicitIsCorrect !== undefined) {
+    let earnedPoints: number | undefined = undefined;
+    let finalMatchedCount: number | undefined = undefined;
+    let finalTotalPairs: number | undefined = undefined;
+
+    if (question.type === 'matching_pairs') {
+      const totalPairs = question.matchingPairs?.length || 0;
+      finalTotalPairs = customTotalPairs !== undefined ? customTotalPairs : totalPairs;
+      finalMatchedCount = customMatchedCount !== undefined ? customMatchedCount : matchedPairsRef.current.size;
+      const qPoints = question.points || 10;
+
+      if (finalTotalPairs > 0 && finalMatchedCount >= finalTotalPairs) {
+        isCorrect = true;
+        earnedPoints = qPoints;
+      } else if (finalTotalPairs > 0 && finalMatchedCount > 0) {
+        // Sebagian Benar: berikan skor proporsional adil
+        isCorrect = false;
+        earnedPoints = Math.round((finalMatchedCount / finalTotalPairs) * qPoints);
+      } else {
+        isCorrect = false;
+        earnedPoints = 0;
+      }
+    } else if (explicitIsCorrect !== undefined) {
       isCorrect = explicitIsCorrect;
+      earnedPoints = isCorrect ? (customPoints !== undefined ? customPoints : (question.points || 10)) : 0;
     } else if (question.type === 'short_answer') {
       const clean = normalizeAnswer(textAns || shortAnswerInput);
       const acceptable = (question.acceptableAnswers || []).map(normalizeAnswer);
       const optMatch = question.options[question.correctIndex] ? normalizeAnswer(question.options[question.correctIndex]) : '';
       isCorrect = (Boolean(optMatch) && clean === optMatch) || acceptable.includes(clean);
+      earnedPoints = isCorrect ? (question.points || 10) : 0;
     } else {
       isCorrect = optionIndex === question.correctIndex;
+      earnedPoints = isCorrect ? (question.points || 10) : 0;
     }
 
     if (isCorrect) {
@@ -370,6 +419,9 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
       if (nextStreak >= 3 && playApplause) {
         playApplause();
       }
+    } else if (question.type === 'matching_pairs' && (earnedPoints || 0) > 0) {
+      // Apresiasi pencapaian sebagian pasangan yang benar
+      playCorrect();
     } else {
       setStreak(0);
       playWrong();
@@ -392,6 +444,9 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
       textAnswer: textAns || (question.type === 'short_answer' ? shortAnswerInput.trim() : undefined),
       isCorrect,
       timeSpentSec: Math.max(1, timeSpent),
+      earnedPoints,
+      matchedCount: finalMatchedCount,
+      totalPairs: finalTotalPairs,
     };
 
     setAnswersList((prev) => [...prev, recordedAnswer]);
@@ -405,10 +460,11 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
       setShortAnswerInput(primaryAns);
       handleAnswerSelect(0, primaryAns, true);
     } else if (question.type === 'matching_pairs') {
+      const totalPairs = question.matchingPairs?.length || 0;
       if (question.matchingPairs) {
         setMatchedPairs(new Set(question.matchingPairs.map((_, i) => i)));
       }
-      handleAnswerSelect(0, 'Semua Cocok', true);
+      handleAnswerSelect(0, 'Semua Pasangan Cocok', true, question.points || 10, totalPairs, totalPairs);
     } else {
       handleAnswerSelect(question.correctIndex);
     }
@@ -500,12 +556,12 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     setSelectedLeft(idx === selectedLeft ? null : idx);
   };
 
-  const handleRightPairClick = (item: { originalIndex: number; text: string }) => {
+  const handleRightPairClick = (item: { originalIndex: number; text: string; isDistractor?: boolean }) => {
     if (isAnswerConfirmed || matchedPairs.has(item.originalIndex) || selectedLeft === null) return;
     playClick();
 
-    if (item.originalIndex === selectedLeft) {
-      // Correct match
+    if (!item.isDistractor && item.originalIndex === selectedLeft) {
+      // Cocok benar
       const nextMatched = new Set(matchedPairs);
       nextMatched.add(selectedLeft);
       setMatchedPairs(nextMatched);
@@ -515,11 +571,11 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
       const totalPairs = question.matchingPairs?.length || 0;
       if (nextMatched.size === totalPairs) {
         setTimeout(() => {
-          handleAnswerSelect(0, 'Semua Pasangan Cocok', true);
+          handleAnswerSelect(0, 'Semua Pasangan Cocok', true, question.points || 10, totalPairs, totalPairs);
         }, 400);
       }
     } else {
-      // Wrong match
+      // Salah pasang (termasuk kartu pengecoh)
       playWrong();
       setWrongPairAttempt({ left: selectedLeft, right: item.originalIndex });
       setTimeout(() => {
@@ -916,12 +972,19 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
           {question.type === 'matching_pairs' && (
             <div className="w-full space-y-3">
               {/* Instructions banner */}
-              <div className="text-center p-2 rounded-xl bg-blue-50 dark:bg-blue-950/50 border border-blue-200/80 dark:border-blue-900 text-xs sm:text-sm font-bold text-blue-700 dark:text-blue-300">
-                {matchedPairs.size === (question.matchingPairs?.length || 0)
-                  ? '🎉 Semua Pasangan Berhasil Dijodohkan Sempurna!'
-                  : selectedLeft === null
-                  ? '👉 Ketuk satu kartu di Kolom A, lalu pilih pasangannya di Kolom B.'
-                  : '🎯 Sekarang ketuk kartu pasangannya di Kolom B!'}
+              <div className="text-center p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/50 border border-blue-200/80 dark:border-blue-900 text-xs sm:text-sm font-bold text-blue-700 dark:text-blue-300 flex items-center justify-center gap-2 flex-wrap">
+                <span>
+                  {matchedPairs.size === (question.matchingPairs?.length || 0)
+                    ? '🎉 Semua Pasangan Berhasil Dijodohkan Sempurna!'
+                    : selectedLeft === null
+                    ? '👉 Ketuk satu kartu di Kolom A, lalu pilih pasangannya di Kolom B.'
+                    : '🎯 Sekarang ketuk kartu pasangannya di Kolom B!'}
+                </span>
+                {question.distractors && question.distractors.length > 0 && matchedPairs.size < (question.matchingPairs?.length || 0) && (
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800">
+                    Ada Kartu Pengecoh
+                  </span>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
@@ -945,14 +1008,14 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                           isMatched
                             ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-800 dark:text-emerald-200 shadow-xs'
                             : isWrong
-                            ? 'bg-rose-50 border-rose-400 text-rose-700 animate-shake'
+                            ? 'bg-rose-50 dark:bg-rose-950/50 border-rose-400 text-rose-700 dark:text-rose-300 animate-shake'
                             : isSelected
-                            ? 'bg-blue-50 dark:bg-blue-950/60 border-2 border-blue-500 text-blue-900 dark:text-blue-100 ring-2 ring-blue-300'
+                            ? 'bg-blue-50 dark:bg-blue-950/60 border-2 border-blue-500 text-blue-900 dark:text-blue-100 ring-2 ring-blue-300 dark:ring-blue-800'
                             : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 hover:border-blue-300 hover:bg-slate-50 dark:hover:bg-slate-750'
                         }`}
                       >
                         <span className="truncate pr-1">{pair.left}</span>
-                        {isMatched && <CheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0" />}
+                        {isMatched && <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />}
                       </button>
                     );
                   })}
@@ -964,7 +1027,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                     Kolom B (Pasangan)
                   </span>
                   {shuffledRightItems.map((item, idx) => {
-                    const isMatched = matchedPairs.has(item.originalIndex);
+                    const isMatched = !item.isDistractor && matchedPairs.has(item.originalIndex);
                     const isWrong = wrongPairAttempt?.right === item.originalIndex;
 
                     return (
@@ -977,14 +1040,14 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                           isMatched
                             ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-800 dark:text-emerald-200 shadow-xs'
                             : isWrong
-                            ? 'bg-rose-50 border-rose-400 text-rose-700 animate-shake'
+                            ? 'bg-rose-50 dark:bg-rose-950/50 border-rose-400 text-rose-700 dark:text-rose-300 animate-shake'
                             : selectedLeft !== null
-                            ? 'bg-blue-50/50 dark:bg-blue-950/30 border-dashed border-blue-300 hover:bg-blue-100/60 text-slate-800 dark:text-slate-200'
+                            ? 'bg-blue-50/50 dark:bg-blue-950/30 border-dashed border-blue-300 dark:border-blue-700 hover:bg-blue-100/60 dark:hover:bg-blue-900/40 text-slate-800 dark:text-slate-200'
                             : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 opacity-80'
                         }`}
                       >
                         <span className="truncate pr-1">{item.text}</span>
-                        {isMatched && <CheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0" />}
+                        {isMatched && <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />}
                       </button>
                     );
                   })}

@@ -1,6 +1,36 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.29] - 2026-09-11
+### Redesain Bersih Editor Menjodohkan Pasangan Kartu, Dukungan Kartu Pengecoh Sisi Kanan, & Penilaian Proporsional Adil (Partial Credit Scoring)
+
+#### 1. Masalah & Kebutuhan yang Diselesaikan
+- **Teks Kuota Membingungkan (`3/6`)**: Tampilan sebelumnya membingungkan pengelola ("apakah ini halaman 3 dari 6 atau 3 pasang aktif?"), serta tata letak tombol hapus yang sempit dan berpotensi terpotong di layar seluler.
+- **Tebakan Siswa Secara Eliminasi (*Process of Elimination*)**: Pada soal menjodohkan standar dengan jumlah kartu kolom A dan B yang sama persis, pasangan terakhir selalu dapat ditebak secara otomatis tanpa berpikir kritis.
+- **Penilaian "Semua atau Tidak Sama Sekali" (*All-or-Nothing Penalty*)**: Jika soal memiliki bobot 10 poin dan siswa berhasil mencocokkan 2 dari 3 pasangan, sistem sebelumnya langsung menyalahkan 0 poin secara tidak adil.
+- **Redundansi dan AI-Slop Visual**: Tumpukan tombol tambah ganda dan placeholder kartu yang tidak kontekstual.
+
+#### 2. Implementasi Desain & Fungsionalitas
+- **Redesain Antarmuka Editor Menjodohkan Bersih & Ergonomis (`QuizCreator.tsx`)**:
+  - Menggantikan label kuota `3/6` dengan badge dinamis `[X Pasang Aktif]` yang jelas dan informatif.
+  - Menampilkan instruksi rekomendasi edukatif ("Ideal 3–4 pasang, maksimal 6 pasang") tepat di bawah judul secara vertikal (*anti-squish*).
+  - Tombol aksi `+ Tambah Pasangan` terintegrasi langsung di baris header; duplikasi tombol tambah di bagian bawah kartu dihapus.
+  - Setiap baris pasangan memiliki konektor visual `↔`, badge penanda kolom (`Kolom A` & `Kunci Benar`), serta tombol `Hapus` satu baris utuh dengan target sentuh responsif ($\ge 44\text{ px}$).
+  - Placeholder input kontekstual tematik (*Indonesia - Jakarta*, *Fotosintesis - Klorofil*, dll.) menggantikan teks acak.
+- **Modul Kartu Pengecoh Sisi Kanan (Distractor Cards Kolom B)**:
+  - Menyediakan panel kartu pengecoh opsional (maksimal 2 kartu) untuk meningkatkan daya uji soal dan mencegah tebakan acak.
+  - Menggunakan serialisasi internal yang menjaga kompatibilitas database (*non-breaking schema*).
+  - Dilengkapi indikator badge `Ada Kartu Pengecoh` pada arena bermain dan detail pratinjau Bank Soal.
+- **Sistem Penilaian Proporsional Adil (*Partial Credit Scoring*) (`QuizArena.tsx`)**:
+  - Menghitung nilai proporsional berbasis rasio keberhasilan: $\text{earnedPoints} = \text{Round}\left(\frac{\text{matchedCount}}{\text{totalPairs}} \times \text{points}\right)$.
+  - Jika siswa berhasil mencocokkan sebagian pasangan saat waktu habis atau submit, siswa mendapatkan poin proporsional yang adil tanpa langsung divonis nol.
+  - Interaksi kartu pengecoh di arena: kartu pengecoh yang diklik memicu animasi goyang penolakan (*shake feedback*), mereset kartu kiri yang dipilih, tanpa menghapus pasangan yang sudah berhasil dicocokkan sebelumnya.
+- **Ulasan Hasil Kuis yang Transparan & Memotivasi (`QuizResult.tsx`)**:
+  - Menampilkan status keberhasilan komprehensif: `🎯 Sempurna` atau `⚖️ Sebagian Benar (X dari Y Pasang Cocok)`.
+  - Dilengkapi badge perolehan poin parsial warna amber (`+X Poin`) yang transparan bagi siswa dan guru.
+- **Pratinjau Bank Soal Terperinci**:
+  - Menampilkan daftar pasangan kartu `↔` dan tag kartu pengecoh sisi kanan secara rapi pada kartu soal di Bank Soal.
+
 ## [2.3.28] - 2026-09-11
 ### Redesain Bersih Pemilih Preset Benar / Salah: Dropdown Ramping Terintegrasi Tanpa Tumpukan Tombol Multi-Baris
 

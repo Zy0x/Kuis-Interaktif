@@ -70,6 +70,7 @@ export interface QuizQuestion {
   explanation: string;
   acceptableAnswers?: string[]; // Variasi kunci jawaban benar untuk isian singkat
   matchingPairs?: { left: string; right: string }[]; // Pasangan kartu untuk menjodohkan
+  distractors?: string[]; // Pengecoh sisi kanan tanpa pasangan (opsional, maks 2)
   customDurationSec?: number; // Durasi waktu kustom khusus butir soal ini (opsional)
   points?: number; // Poin/bobot nilai butir soal (default 10)
 }
@@ -149,6 +150,9 @@ export interface QuizAttemptAnswer {
   textAnswer?: string;
   isCorrect: boolean;
   timeSpentSec: number;
+  earnedPoints?: number; // Poin aktual yang diraih (mendukung penilaian proporsional / partial credit scoring)
+  matchedCount?: number; // Jumlah pasangan yang berhasil dijodohkan (untuk tipe matching_pairs)
+  totalPairs?: number;   // Total pasangan yang harus dijodohkan
 }
 
 export interface QuizAttemptResult {

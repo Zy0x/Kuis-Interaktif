@@ -782,6 +782,9 @@ export const parseRawQuestionsText = (rawText: string): ParsedQuestionItem[] => 
                 options: pairs.map((p) => `${p.left} ↔ ${p.right}`),
                 correctIndex: 0,
                 matchingPairs: pairs,
+                distractors: Array.isArray(item.distractors)
+                  ? item.distractors.map((d: any) => cleanOptionText(String(d))).filter(Boolean).slice(0, 2)
+                  : undefined,
                 explanation,
                 imageCaption,
                 imagePrompt,
