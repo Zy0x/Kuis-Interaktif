@@ -12,6 +12,7 @@ import { useBackHandler } from '../../lib/navigationHistory';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 import { ThemeToggle } from '../common/ThemeToggle';
 import { useQuizBgm } from '../../hooks/useQuizBgm';
+import { DataManager } from '../../lib/supabaseClient';
 import { useDrawerSwipeDown } from '../../hooks/useDrawerSwipeDown';
 import { DrawerHandle } from '../common/DrawerHandle';
 import { 
@@ -49,6 +50,7 @@ export interface QuizArenaProps {
   quiz: Quiz;
   initialMode?: GameMode;
   sessionSettings?: QuizSessionSettings;
+  activeSessionId?: string;
   onFinishQuiz: (answers: QuizAttemptAnswer[], totalTimeSpent: number) => void;
   onExit: () => void;
   isMuted?: boolean;
@@ -70,6 +72,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   quiz,
   initialMode,
   sessionSettings,
+  activeSessionId,
   onFinishQuiz,
   onExit,
   isMuted = false,
@@ -94,12 +97,13 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   const showExplanationMode: ExplanationVisibilityMode = activeSettings.showExplanationMode || 'immediate';
   const showLeaderboardToStudents = activeSettings.showLeaderboardToStudents ?? true;
   const isTabSwitchDetectionEnabled = Boolean(activeSettings.tabSwitchDetection);
+  const defaultDurationSec = activeSettings.durationPerQuestionSec || quiz.durationPerQuestionSec || 30;
 
   // Tab switch / anti-cheat violation tracking
   const [tabSwitchCount, setTabSwitchCount] = useState<number>(0);
   const [showTabSwitchWarning, setShowTabSwitchWarning] = useState<boolean>(false);
 
-  const gameMode: GameMode = initialMode || quiz.defaultGameMode || 'standard';
+  const gameMode: GameMode = initialMode || activeSettings.mode || quiz.defaultGameMode || 'standard';
   const [hearts, setHearts] = useState<number>(3);
   const [isGameOver, setIsGameOver] = useState(false);
 
@@ -120,17 +124,42 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     };
   }, [isPreview, isTabSwitchDetectionEnabled, isGameOver]);
 
-  // Active Questions (support shuffleQuestions - disabled in preview mode)
+  // Active Questions (support shuffleQuestions & shuffleOptions - disabled in preview mode)
   const [activeQuestions] = useState<QuizQuestion[]>(() => {
-    if (!isPreview && quiz.shuffleQuestions) {
-      const arr = [...quiz.questions];
+    const shouldShuffleQuestions = !isPreview && (activeSettings.shuffleQuestions ?? quiz.shuffleQuestions);
+    const shouldShuffleOptions = !isPreview && (activeSettings.shuffleOptions ?? quiz.shuffleOptions);
+
+    let list = quiz.questions;
+    if (shouldShuffleQuestions) {
+      const arr = [...list];
       for (let i = arr.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [arr[i], arr[j]] = [arr[j], arr[i]];
       }
-      return arr;
+      list = arr;
     }
-    return quiz.questions;
+
+    if (shouldShuffleOptions) {
+      list = list.map((q) => {
+        if (q.type === 'multiple_choice' && q.options && q.options.length > 1) {
+          const paired = q.options.map((opt, i) => ({ opt, isCorrect: i === q.correctIndex }));
+          for (let i = paired.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [paired[i], paired[j]] = [paired[j], paired[i]];
+          }
+          const newOptions = paired.map((p) => p.opt);
+          const newCorrectIndex = paired.findIndex((p) => p.isCorrect);
+          return {
+            ...q,
+            options: newOptions,
+            correctIndex: newCorrectIndex >= 0 ? newCorrectIndex : q.correctIndex,
+          };
+        }
+        return q;
+      });
+    }
+
+    return list;
   });
 
   const [currentIndex, setCurrentIndex] = useState<number>(() => {
@@ -178,7 +207,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
         }
       } catch {}
     }
-    return activeQuestions[targetIdx]?.customDurationSec || quiz.durationPerQuestionSec;
+    return activeQuestions[targetIdx]?.customDurationSec || defaultDurationSec;
   });
   const [totalTimeSpent, setTotalTimeSpent] = useState<number>(() => {
     if (!isPreview) {
@@ -419,7 +448,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [currentIndex, isAnswerConfirmed, isPaused, isGameOver, gameMode, quiz.durationPerQuestionSec, playTick]);
+  }, [currentIndex, isAnswerConfirmed, isPaused, isGameOver, gameMode, defaultDurationSec, playTick]);
 
   const normalizeAnswer = (text: string) => {
     return text
@@ -521,7 +550,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
       }
     }
 
-    const currentDuration = question.customDurationSec || quiz.durationPerQuestionSec;
+    const currentDuration = question.customDurationSec || defaultDurationSec;
     const timeSpent = gameMode === 'untimed' ? 5 : (currentDuration - timeLeft);
     const recordedAnswer: QuizAttemptAnswer = {
       questionId: question.id,
@@ -534,7 +563,48 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
       totalPairs: finalTotalPairs,
     };
 
-    setAnswersList((prev) => [...prev, recordedAnswer]);
+    setAnswersList((prev) => {
+      const updated = [...prev, recordedAnswer];
+      if (activeSessionId) {
+        try {
+          const profile = DataManager.getPlayerProfile();
+          const correctCount = updated.filter((a) => a.isCorrect).length;
+          const incorrectCount = updated.length - correctCount;
+          const score = Math.round((correctCount / activeQuestions.length) * 100);
+          const stars = score >= 85 ? 3 : score >= 60 ? 2 : score > 0 ? 1 : 0;
+          const answersMap: Record<string, any> = {};
+          updated.forEach((ans, idx) => {
+            answersMap[ans.questionId || `q_${idx}`] = {
+              questionId: ans.questionId || `q_${idx}`,
+              questionIndex: idx,
+              selectedOption: ans.selectedIndex ?? -1,
+              textAnswer: ans.textAnswer,
+              isCorrect: ans.isCorrect,
+              timeSpentSec: ans.timeSpentSec,
+              pointsEarned: ans.earnedPoints,
+            };
+          });
+
+          DataManager.addOrUpdateSessionParticipant(activeSessionId, {
+            name: profile.nickname || 'Siswa',
+            avatarId: profile.avatarId || 'lion',
+            currentQuestionIndex: currentIndex + 1,
+            totalQuestions: activeQuestions.length,
+            score,
+            stars,
+            correctCount,
+            incorrectCount,
+            streak: isCorrect ? streak + 1 : 0,
+            finished: isLastQuestion,
+            timeSpentSec: totalTimeSpent + Math.max(1, timeSpent),
+            answers: answersMap,
+          });
+        } catch (err) {
+          console.warn('Session participant sync error:', err);
+        }
+      }
+      return updated;
+    });
   };
 
   const handleTeacherReveal = () => {
@@ -561,7 +631,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     setHearts(3);
     setCurrentIndex(0);
     setAnswersList([]);
-    const firstDuration = activeQuestions[0]?.customDurationSec || quiz.durationPerQuestionSec;
+    const firstDuration = activeQuestions[0]?.customDurationSec || defaultDurationSec;
     setTimeLeft(firstDuration);
     setTotalTimeSpent(0);
     setStreak(0);
@@ -585,12 +655,35 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
       try {
         sessionStorage.removeItem(STORAGE_KEY);
       } catch {}
+      if (activeSessionId) {
+        try {
+          const profile = DataManager.getPlayerProfile();
+          const correctCount = answersList.filter((a) => a.isCorrect).length;
+          const incorrectCount = answersList.length - correctCount;
+          const score = Math.round((correctCount / activeQuestions.length) * 100);
+          const stars = score >= 85 ? 3 : score >= 60 ? 2 : score > 0 ? 1 : 0;
+          DataManager.addOrUpdateSessionParticipant(activeSessionId, {
+            name: profile.nickname || 'Siswa',
+            avatarId: profile.avatarId || 'lion',
+            currentQuestionIndex: activeQuestions.length,
+            totalQuestions: activeQuestions.length,
+            score,
+            stars,
+            correctCount,
+            incorrectCount,
+            finished: true,
+            timeSpentSec: totalTimeSpent,
+          });
+        } catch (err) {
+          console.warn('Session participant finish sync error:', err);
+        }
+      }
       onFinishQuiz(answersList, totalTimeSpent);
     } else {
       setDucked(false);
       const nextIdx = currentIndex + 1;
       const nextQuestion = activeQuestions[nextIdx];
-      const nextDuration = nextQuestion?.customDurationSec || quiz.durationPerQuestionSec;
+      const nextDuration = nextQuestion?.customDurationSec || defaultDurationSec;
       setCurrentIndex(nextIdx);
       setSelectedOption(null);
       setIsAnswerConfirmed(false);

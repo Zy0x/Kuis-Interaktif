@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import type { Quiz, QuizAttemptAnswer, TeacherProfile, ScreenState, GameMode, QuizSessionSettings } from './types/quiz';
+import type { Quiz, QuizAttemptAnswer, TeacherProfile, ScreenState, GameMode, QuizSessionSettings, QuizSession } from './types/quiz';
 import { SplashScreen } from './components/pwa/SplashScreen';
 import { InstallPrompt } from './components/pwa/InstallPrompt';
 import { ReorientationOverlay } from './components/pwa/ReorientationOverlay';
@@ -56,6 +56,7 @@ export const App: React.FC = () => {
 
   const [activeQuiz, setActiveQuiz] = useState<Quiz | null>(null);
   const [activeGameMode, setActiveGameMode] = useState<GameMode>('standard');
+  const [activeSession, setActiveSession] = useState<QuizSession | null>(null);
   const [activeSessionSettings, setActiveSessionSettings] = useState<QuizSessionSettings | undefined>(undefined);
   const [lastAnswers, setLastAnswers] = useState<QuizAttemptAnswer[]>(() => initialNav.lastAnswers || []);
   const [lastTimeSpent, setLastTimeSpent] = useState<number>(() => initialNav.lastTimeSpent || 0);
@@ -82,12 +83,34 @@ export const App: React.FC = () => {
     playCelebration,
   } = useSoundEffects();
 
+  // Helper untuk menyelesaikan konfigurasi sesi atau fallback kuis
+  const resolveSettings = (session?: QuizSession | null, q?: Quiz | null): QuizSessionSettings => {
+    const base = session?.settings || q?.defaultSettings;
+    return {
+      mode: base?.mode || q?.defaultGameMode || 'standard',
+      durationPerQuestionSec: base?.durationPerQuestionSec || q?.durationPerQuestionSec || 30,
+      shuffleQuestions: base?.shuffleQuestions ?? q?.shuffleQuestions ?? true,
+      shuffleOptions: base?.shuffleOptions ?? q?.shuffleOptions ?? true,
+      presentationTarget: base?.presentationTarget || 'student-lobby',
+      showAnswersMode: base?.showAnswersMode || 'immediate',
+      showExplanationMode: base?.showExplanationMode || 'immediate',
+      showLeaderboardToStudents: base?.showLeaderboardToStudents ?? true,
+      maxAttempts: base?.maxAttempts ?? 0,
+      tabSwitchDetection: base?.tabSwitchDetection ?? false,
+    };
+  };
+
   // Memulihkan data kuis saat reload (F5) berdasarkan quizId atau pin
   useEffect(() => {
     if (initialNav.quizId) {
       DataManager.getQuizById(initialNav.quizId).then((q) => {
         if (q) {
+          const session = DataManager.getActiveSessionByQuizId(q.id) || (q.pinCode ? DataManager.getActiveSessionByPin(q.pinCode) : null);
+          const settings = resolveSettings(session, q);
           setActiveQuiz(q);
+          if (session) setActiveSession(session);
+          setActiveSessionSettings(settings);
+          setActiveGameMode(settings.mode);
         } else if (['arena', 'student-lobby', 'result', 'worksheet-print'].includes(currentScreen)) {
           console.warn('Kuis tidak ditemukan untuk sesi ini, kembali ke beranda.');
           setCurrentScreen('home');
@@ -95,8 +118,18 @@ export const App: React.FC = () => {
         }
       });
     } else if (initialNav.pin) {
-      DataManager.getQuizByPin(initialNav.pin).then((q) => {
+      const cleanPin = initialNav.pin.trim().toUpperCase();
+      const session = DataManager.getActiveSessionByPin(cleanPin);
+      if (session) {
+        setActiveSession(session);
+        setActiveSessionSettings(session.settings);
+        setActiveGameMode(session.settings.mode);
+      }
+      DataManager.getQuizByPin(cleanPin).then((q) => {
         if (q) {
+          const settings = resolveSettings(session, q);
+          setActiveSessionSettings(settings);
+          setActiveGameMode(settings.mode);
           setActiveQuiz(q);
           if (currentScreen === 'home') {
             setCurrentScreen('student-lobby');
@@ -156,9 +189,15 @@ export const App: React.FC = () => {
     saveNavigationState({ screen: 'arena', quiz, replace: false });
   };
 
-  const handleEnterPinLobby = (quiz: Quiz) => {
+  const handleEnterPinLobby = (quiz: Quiz, session?: QuizSession | null) => {
+    const pin = quiz.pinCode || '';
+    const resolvedSession = session || DataManager.getActiveSessionByPin(pin) || DataManager.getActiveSessionByQuizId(quiz.id);
+    const settings = resolveSettings(resolvedSession, quiz);
+
+    setActiveSession(resolvedSession || null);
+    setActiveSessionSettings(settings);
+    setActiveGameMode(settings.mode);
     setActiveQuiz(quiz);
-    setActiveGameMode(quiz.defaultGameMode || 'standard');
     setCurrentScreen('student-lobby');
     saveNavigationState({ screen: 'student-lobby', quiz, replace: false });
   };
@@ -281,6 +320,8 @@ export const App: React.FC = () => {
     setActiveQuiz(sessionQuiz);
     setActiveGameMode(options.mode);
     setActiveSessionSettings(settings);
+    const resolvedSession = DataManager.getActiveSessionByPin(quiz.pinCode || '') || DataManager.getActiveSessionByQuizId(quiz.id);
+    setActiveSession(resolvedSession || null);
 
     if (options.presentationTarget === 'student-lobby') {
       setCurrentScreen('student-lobby');
@@ -396,8 +437,20 @@ export const App: React.FC = () => {
       {currentScreen === 'student-lobby' && activeQuiz && (
         <StudentLobby
           quiz={activeQuiz}
-          onStartQuiz={(mode) => {
-            if (mode) setActiveGameMode(mode);
+          sessionSettings={activeSessionSettings || (activeQuiz.defaultSettings as QuizSessionSettings)}
+          activeSession={activeSession}
+          onStartQuiz={async () => {
+            if (activeSession) {
+              const profile = DataManager.getPlayerProfile();
+              try {
+                await DataManager.addOrUpdateSessionParticipant(activeSession.id, {
+                  name: profile.nickname || 'Siswa Pintar',
+                  avatarId: profile.avatarId || 'lion',
+                });
+              } catch (err) {
+                console.warn('Gagal mendaftarkan peserta ke sesi kuis:', err);
+              }
+            }
             setCurrentScreen('arena');
             saveNavigationState({ screen: 'arena', quiz: activeQuiz, replace: false });
           }}
@@ -475,6 +528,7 @@ export const App: React.FC = () => {
           quiz={activeQuiz}
           initialMode={activeGameMode}
           sessionSettings={activeSessionSettings || (activeQuiz.defaultSettings as QuizSessionSettings)}
+          activeSessionId={activeSession?.id}
           onFinishQuiz={handleFinishQuiz}
           onExit={() => {
             if (teacher) {

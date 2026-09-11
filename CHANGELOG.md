@@ -1,6 +1,31 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.53] - 2026-09-12
+### Tampilan Siswa Terpadu Sesuai Konfigurasi Guru (Tautan Langsung & PIN), Eliminasi Pemilih Mode Bebas, dan Sinkronisasi Sesi
+
+#### 1. Tampilan Lobi Siswa Fokus 4-Langkah (`StudentLobby.tsx`)
+- **Penyelarasan Mutlak dengan Konfigurasi Guru**:
+  - Siswa yang bergabung melalui tautan langsung (link dengan `?pin=...`) atau memasukkan 4-digit PIN di beranda kini 100% mengikuti konfigurasi yang telah dikunci oleh guru pada sesi aktif kuis tersebut.
+- **Hanya 4 Bagian Esensial bagi Siswa**:
+  1. **Info Kuis & Pengaturan Guru**: Menampilkan PIN sesi, cover kuis, judul, kelas, mapel, guru pembuat, deskripsi, serta kartu ringkasan parameter yang ditentukan guru (jumlah butir soal, durasi waktu per soal/santai, mode pengerjaan) dan badge aturan ujian (seperti *Kunci Jawaban Dirahasiakan*, *Anti-Mencontek Aktif*, *Batas 1x Pengerjaan*, dsb).
+  2. **Isi Nama**: Input nama lengkap atau nama panggilan siswa dengan validasi, min-height $\ge 48\text{ px}$, dan indikator wajib diisi.
+  3. **Pilih Maskot**: Grid pilihan avatar maskot ramah anak SD dengan indikator aktif yang jelas dan touch target ergonomis $\ge 48\text{ px}$.
+  4. **Mulai Mengerjakan**: Tombol aksi utama dengan gradien biru-indigo yang meluncurkan siswa langsung ke arena kuis.
+- **Eliminasi Pemilih Mode Permainan Bebas**:
+  - Menghapus komponen selector mode permainan (*Standar*, *3 Hati*, *Santai*) pada sisi siswa agar siswa tidak dapat mengubah mode atau parameter yang telah diatur oleh guru.
+
+#### 2. Proteksi Batas Percobaan Pengerjaan (`maxAttempts === 1`)
+- **Deteksi Otomatis Riwayat Pengerjaan**:
+  - Sistem memeriksa apakah siswa dengan nama tersebut sudah pernah menyelesaikan sesi ujian aktif ini.
+  - Jika sudah tuntas, tombol pengerjaan dinonaktifkan secara otomatis disertai pemberitahuan ramah: *"Kamu sudah menyelesaikan kuis ini! Sesi ini dibatasi 1x percobaan oleh guru."*
+
+#### 3. Sinkronisasi Real-Time Siswa ke Ruang Pantau Guru (`QuizArena.tsx` & `supabaseClient.ts`)
+- **Pendaftaran Peserta Otomatis**:
+  - Saat siswa menekan tombol *"Mulai Mengerjakan Kuis Sekarang"*, profil siswa langsung didaftarkan sebagai partisipan ke dalam sesi aktif (`QuizSession`).
+- **Live Progress & Skor**:
+  - Setiap kali siswa menjawab butir soal di arena kuis, kemajuan (nomor soal aktif, skor, streak, dan lembar jawaban) disinkronkan secara langsung ke sesi aktif sehingga layar pantau Wayground Host guru dapat memantau leaderboard dan matriks akurasi kelas secara langsung.
+
 ## [2.3.52] - 2026-09-12
 ### Pengaturan Kuis Super Fleksibel (Wayground/Quizizz-Style), Proteksi Visibilitas Kunci Jawaban & Deteksi Anti-Mencontek
 

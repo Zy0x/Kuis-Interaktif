@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import type { Quiz, GradeLevel, Subject, TeacherProfile, GameMode, EducationLevel } from '../../types/quiz';
+import type { Quiz, GradeLevel, Subject, TeacherProfile, GameMode, EducationLevel, QuizSession } from '../../types/quiz';
 import { MASTER_TEACHER_EMAIL } from '../../types/quiz';
 import { AVATAR_LIST } from '../../data/seedQuizzes';
 import { DataManager } from '../../lib/supabaseClient';
@@ -41,7 +41,7 @@ interface QuizHomeProps {
   onSelectQuiz: (quiz: Quiz, mode?: GameMode) => void;
   onOpenTeacherPortal: () => void;
   onOpenAuthModal?: (tab?: 'teacher' | 'student') => void;
-  onEnterPin: (quiz: Quiz) => void;
+  onEnterPin: (quiz: Quiz, session?: QuizSession | null) => void;
   teacher: TeacherProfile | null;
   onTeacherLogout?: () => void;
   onPrintWorksheet?: (quiz: Quiz) => void;
@@ -225,7 +225,8 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
     try {
       const match = await DataManager.getQuizByPin(cleanPin);
       if (match) {
-        onEnterPin(match);
+        const session = DataManager.getActiveSessionByPin(cleanPin);
+        onEnterPin(match, session);
       } else {
         setPinError('PIN Kuis tidak ditemukan. Silakan periksa kembali PIN dari gurumu.');
       }

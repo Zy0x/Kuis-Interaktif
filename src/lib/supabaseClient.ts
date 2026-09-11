@@ -1484,6 +1484,12 @@ export const DataManager = {
     return all.find((s) => s.pinCode === cleanPin && (s.status === 'active' || s.status === 'waiting' || s.status === 'paused')) || null;
   },
 
+  getActiveSessionByQuizId(quizId: string): QuizSession | null {
+    const cleanId = quizId.trim();
+    const all = this.getActiveSessions();
+    return all.find((s) => s.quizId === cleanId && (s.status === 'active' || s.status === 'waiting' || s.status === 'paused')) || null;
+  },
+
   async createActiveSession(
     quiz: Quiz,
     options: {
