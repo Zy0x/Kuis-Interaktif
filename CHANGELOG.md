@@ -1,6 +1,25 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.7] - 2026-09-11
+### Optimasi Presisi Mobile-First Header Card Bank Soal: Grid Aksi 50-50 Simetris & Sub-Bar Anti-Tabrakan
+
+#### 1. Masalah yang Diselesaikan
+- **Tombol Aksi Patah Asimetris pada Mobile**: Tombol `[🪄 Asisten AI]` dan `[+ Tambah Soal]` terlempar ke baris kedua karena judul Bank Soal memakan lebar penuh, menyisakan ruang kosong besar di sisi kanan dan terlihat menggantung tidak rapi.
+- **Tabrakan Teks di Baris Bawah**: Teks *"Menampilkan 5 butir soal"* dan *"💡 Buka Semua Pembahasan"* berdempetan dan hampir bertabrakan di layar ponsel dengan lebar 360–390px.
+- **Tautan Pembahasan Belum Berbentuk Tombol Sentuh yang Nyaman**: Teks buka pembahasan berupa tautan polos tanpa kontainer tombol.
+- **Pemborosan Ruang Vertikal**: Padding kartu yang terlalu tebal memakan ~40% tinggi layar sebelum kartu soal pertama terlihat.
+
+#### 2. Penataan Ulang Presisi Header Bank Soal (`QuizCreator.tsx`)
+- **Grid Aksi 50%-50% Simetris di Smartphone (`grid grid-cols-2 gap-2 w-full`)**:
+  - Pada layar ponsel (`< sm`), tombol `Asisten AI` dan `Tambah Soal` membagi baris secara seimbang (50% kiri, 50% kanan) dengan tinggi ergonomis 44px, mengisi baris secara presisi dan harmonis.
+  - Pada layar tablet/desktop (`sm:` ke atas), kedua tombol otomatis kembali sejajar ke sisi kanan judul secara horizontal (`sm:flex sm:w-auto`).
+- **Sub-Bar Anti-Tabrakan & Tombol Pil Lembut**:
+  - Teks counter disajikan rapi: `Menampilkan X butir soal` dengan pembatas `truncate` agar tidak pernah bertabrakan.
+  - Tombol pembahasan diubah menjadi pil lembut (*soft pill badge*): `bg-blue-50 text-blue-600 px-2.5 sm:px-3 py-1.5 rounded-xl border border-blue-100 font-bold text-xs` yang jelas sebagai elemen interaktif dan nyaman disentuh.
+- **Proporsi Padding Responsif**:
+  - Mengubah padding kartu menjadi `p-3.5 sm:p-6 rounded-2xl sm:rounded-3xl space-y-3.5 sm:space-y-4` guna menghemat ruang vertikal layar HP dan membuat butir soal pertama langsung terlihat tanpa menggulir banyak.
+
 ## [2.3.6] - 2026-09-11
 ### Rombak FAB Melayang Menjadi Compact Speed Dial (48×48px) Hemat Ruang Mobile dengan Ekspansi Vertikal ke Atas
 

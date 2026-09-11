@@ -1495,44 +1495,48 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
           /* ================= 1-KOLOM DAFTAR BANK SOAL (KE BAWAH RESPONSIV) ================= */
           <div className="space-y-4 sm:space-y-5">
             {/* Header Card Bank Soal */}
-            <div className="bg-white dark:bg-slate-900 rounded-3xl p-4 sm:p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-              <div className="flex items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800 flex-wrap">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-10 h-10 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold shadow-xs">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3.5 sm:space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+                {/* Judul & Ikon */}
+                <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                  <div className="w-10 h-10 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold shadow-xs shrink-0">
                     <Layers className="w-5 h-5" />
                   </div>
-                  <div>
-                    <h3 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-                      <span>Bank Soal</span>
-                      <span className="px-2 py-0.5 rounded-full text-xs bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-bold">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white truncate">
+                        Bank Soal
+                      </h3>
+                      <span className="px-2 py-0.5 rounded-full text-[11px] sm:text-xs bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-bold shrink-0">
                         {questions.length} Butir
                       </span>
-                    </h3>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                    </div>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate sm:whitespace-normal">
                       Periksa pertanyaan, opsi pilihan, dan kunci jawaban
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                {/* Tombol Aksi: 50%-50% grid di mobile, sejajar di desktop */}
+                <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
                   <button
                     type="button"
                     onClick={() => {
                       playClick();
                       setIsAiModalOpen(true);
                     }}
-                    className="px-3.5 py-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 font-bold text-xs flex items-center gap-1.5 min-h-[44px] transition-colors border border-indigo-200/60 dark:border-indigo-800/60 active:scale-95"
+                    className="px-3.5 py-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 font-bold text-xs flex items-center justify-center gap-1.5 min-h-[44px] transition-colors border border-indigo-200/60 dark:border-indigo-800/60 active:scale-95 btn-press shadow-2xs"
                     title="Asisten AI & Tambah Soal Cepat"
                   >
-                    <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                    <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
                     <span>Asisten AI</span>
                   </button>
                   <button
                     type="button"
                     onClick={handleOpenNewQuestion}
-                    className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 min-h-[44px] transition-colors shadow-xs active:scale-95"
+                    className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 min-h-[44px] transition-colors shadow-xs active:scale-95 btn-press"
                   >
-                    <Plus className="w-4 h-4" />
+                    <Plus className="w-4 h-4 shrink-0 stroke-[2.5]" />
                     <span>Tambah Soal</span>
                   </button>
                 </div>
@@ -1540,12 +1544,14 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
 
               {/* Quick toggle all explanations if questions exist */}
               {questions.length > 0 && (
-                <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 px-1 pt-1">
-                  <span>Menampilkan {questions.length} butir soal</span>
+                <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 gap-2">
+                  <span className="text-[11px] sm:text-xs font-medium text-slate-600 dark:text-slate-400 truncate">
+                    Menampilkan <strong className="text-slate-900 dark:text-white font-bold">{questions.length}</strong> butir soal
+                  </span>
                   <button
                     type="button"
                     onClick={handleToggleAllExplanations}
-                    className="text-blue-600 dark:text-blue-400 font-bold hover:underline inline-flex items-center gap-1 min-h-[36px]"
+                    className="text-[11px] sm:text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 bg-blue-50/80 dark:bg-blue-950/50 hover:bg-blue-100 dark:hover:bg-blue-900/60 px-2.5 sm:px-3 py-1.5 rounded-xl border border-blue-100 dark:border-blue-900/40 transition-colors inline-flex items-center gap-1 min-h-[36px] shrink-0 btn-press"
                   >
                     <span>💡 {showAllExplanations ? 'Tutup Semua Pembahasan' : 'Buka Semua Pembahasan'}</span>
                   </button>
