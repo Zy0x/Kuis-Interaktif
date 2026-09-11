@@ -2006,14 +2006,21 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                   : 'invisible opacity-0 translate-y-3 scale-90 pointer-events-none'
               }`}
             >
-              {/* Item 2: Ke Atas */}
-              <div className="flex items-center gap-2">
-                <span className="px-2.5 py-1 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 shadow-md border border-slate-200/80 dark:border-slate-700/80 whitespace-nowrap">
+              {/* Item 4: Ke Atas */}
+              <div 
+                onClick={() => {
+                  setIsSpeedDialOpen(false);
+                  handleScrollToTop();
+                }}
+                className="flex items-center gap-2 cursor-pointer group"
+              >
+                <span className="px-2.5 py-1 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 shadow-md border border-slate-200/80 dark:border-slate-700/80 whitespace-nowrap group-hover:bg-slate-50 dark:group-hover:bg-slate-750 transition-colors">
                   Ke Atas
                 </span>
                 <button
                   type="button"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     setIsSpeedDialOpen(false);
                     handleScrollToTop();
                   }}
@@ -2025,20 +2032,95 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                 </button>
               </div>
 
-              {/* Item 1: Tambah Soal */}
-              <div className="flex items-center gap-2">
-                <span className="px-2.5 py-1 rounded-xl text-xs font-bold text-indigo-900 dark:text-indigo-200 bg-white dark:bg-slate-800 shadow-md border border-indigo-200/80 dark:border-indigo-800/80 whitespace-nowrap">
+              {/* Item 3: Pratinjau Kuis */}
+              <div 
+                onClick={() => {
+                  playClick();
+                  setIsSpeedDialOpen(false);
+                  if (questions.length === 0) {
+                    showToast('Tambahkan minimal 1 butir soal untuk melihat pratinjau.');
+                    return;
+                  }
+                  setCurrentStep(3);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className="flex items-center gap-2 cursor-pointer group"
+              >
+                <span className="px-2.5 py-1 rounded-xl text-xs font-bold text-sky-800 dark:text-sky-200 bg-white dark:bg-slate-800 shadow-md border border-sky-200/80 dark:border-sky-800/80 whitespace-nowrap group-hover:bg-sky-50 dark:group-hover:bg-slate-750 transition-colors">
+                  Pratinjau Kuis
+                </span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    playClick();
+                    setIsSpeedDialOpen(false);
+                    if (questions.length === 0) {
+                      showToast('Tambahkan minimal 1 butir soal untuk melihat pratinjau.');
+                      return;
+                    }
+                    setCurrentStep(3);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  className="w-11 h-11 rounded-full flex items-center justify-center bg-sky-600 hover:bg-sky-700 text-white shadow-lg shadow-sky-600/25 transition-all active:scale-95 btn-press min-h-[44px] min-w-[44px]"
+                  title="Lihat simulasi pratinjau kuis siswa"
+                  aria-label="Lihat pratinjau kuis"
+                >
+                  <Eye className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Item 2: Racik Soal AI */}
+              <div 
+                onClick={() => {
+                  playClick();
+                  setIsSpeedDialOpen(false);
+                  setIsAiModalOpen(true);
+                }}
+                className="flex items-center gap-2 cursor-pointer group"
+              >
+                <span className="px-2.5 py-1 rounded-xl text-xs font-bold text-purple-900 dark:text-purple-200 bg-white dark:bg-slate-800 shadow-md border border-purple-200/80 dark:border-purple-800/80 whitespace-nowrap group-hover:bg-purple-50 dark:group-hover:bg-slate-750 transition-colors flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                  <span>Racik Soal AI</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    playClick();
+                    setIsSpeedDialOpen(false);
+                    setIsAiModalOpen(true);
+                  }}
+                  className="w-11 h-11 rounded-full flex items-center justify-center bg-purple-600 hover:bg-purple-700 text-white shadow-lg shadow-purple-600/25 transition-all active:scale-95 btn-press min-h-[44px] min-w-[44px]"
+                  title="Racik butir soal baru dengan asisten AI"
+                  aria-label="Racik Soal AI"
+                >
+                  <Sparkles className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Item 1: Tambah Soal Manual */}
+              <div 
+                onClick={() => {
+                  playClick();
+                  setIsSpeedDialOpen(false);
+                  handleOpenNewQuestion();
+                }}
+                className="flex items-center gap-2 cursor-pointer group"
+              >
+                <span className="px-2.5 py-1 rounded-xl text-xs font-bold text-indigo-900 dark:text-indigo-200 bg-white dark:bg-slate-800 shadow-md border border-indigo-200/80 dark:border-indigo-800/80 whitespace-nowrap group-hover:bg-indigo-50 dark:group-hover:bg-slate-750 transition-colors">
                   Tambah Soal
                 </span>
                 <button
                   type="button"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     playClick();
                     setIsSpeedDialOpen(false);
                     handleOpenNewQuestion();
                   }}
                   className="w-11 h-11 rounded-full flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-600/25 transition-all active:scale-95 btn-press min-h-[44px] min-w-[44px]"
-                  title="Tambah Butir Soal Baru"
+                  title="Tambah Butir Soal Baru Secara Manual"
                   aria-label="Tambah Butir Soal Baru"
                 >
                   <Plus className="w-5 h-5 stroke-[2.5]" />

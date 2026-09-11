@@ -1,6 +1,28 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.34] - 2026-09-11
+### Penambahan 3 Tools Cepat pada Floating Action Button (FAB) Speed Dial Overlay: Pratinjau Kuis, Racik Soal AI, dan Tambah Soal
+
+#### 1. Masalah & Kebutuhan yang Diselesaikan
+- **Potensi FAB Speed Dial yang Belum Optimal**: Tombol aksi melayang (`+`) di pojok kanan bawah sebelumnya hanya memuat satu utilitas tunggal ("Ke Atas"), sehingga pengguna harus menggulir jauh ke atas atau bawah halaman untuk melakukan tindakan esensial seperti pratinjau simulasi atau membuat butir soal.
+- **Kebutuhan Akses Seketika Fitur Utama Kuis**: Guru membutuhkan shortcut cepat yang selalu dapat dijangkau jempol di layar ponsel maupun desktop untuk:
+  1. Langsung membuka editor pembuatan soal baru (*Tambah Soal*).
+  2. Membuka generator soal otomatis berbantu kecerdasan buatan (*Racik Soal AI*).
+  3. Menguji tampilan kuis dari sudut pandang siswa (*Pratinjau Kuis*).
+
+#### 2. Implementasi Desain & Fungsionalitas
+- **Menu Speed Dial 4-in-1 Terpadu (`QuizCreator.tsx`)**:
+  - Menghadirkan 4 menu aksi vertikal bertingkat yang disusun dari bawah ke atas sesuai frekuensi penggunaan:
+    1. **Tambah Soal**: Ikon Lucide `Plus` dengan tema Indigo (`bg-indigo-600`), membuka drawer formulir penyusunan butir soal manual seketika.
+    2. **Racik Soal AI**: Ikon Lucide `Sparkles` dengan tema Ungu (`bg-purple-600`), mengaktifkan `<AiQuestionModal>` untuk meracik butir soal tematik Kurikulum Merdeka dengan dukungan multi-engine (DeepSeek Cloud, Groq Llama, dan Gemini).
+    3. **Pratinjau Kuis**: Ikon Lucide `Eye` dengan tema Sky (`bg-sky-600`), memvalidasi kelengkapan soal dan langsung mengarahkan tampilan ke Langkah 3 (Simulasi & Pratinjau Kuis Siswa).
+    4. **Ke Atas**: Ikon Lucide `ChevronUp` dengan kontainer adaptif (`bg-white dark:bg-slate-800`), menggulir halaman ke titik awal dengan transisi halus (*smooth scroll*).
+- **Interaksi Sentuh Presisi & Aksesibilitas (Rule 1, Rule 2 & Rule 5)**:
+  - Kontainer pill label teks dan tombol bundar kini menjadi satu kesatuan klik (*clickable group*) berukuran target sentuh $\ge 44\times 44\text{ px}$, memudahkan tap jempol pengguna tanpa risiko meleset.
+  - Dilengkapi backdrop overlay blur yang memfokuskan perhatian pada menu aksi dan menutup menu saat latar belakang disentuh.
+  - Animasi transisi masuk/keluar ringan (200ms) dengan rotasi ikon trigger utama (`+` menjadi `x`).
+
 ## [2.3.33] - 2026-09-11
 ### Redesain Dashboard Mini Stat Cards Bank Soal: Header Seksi Terstruktur & Metrik Interaktif Proporsional
 
