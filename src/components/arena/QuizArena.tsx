@@ -30,6 +30,7 @@ import {
   Puzzle,
   Star
 } from 'lucide-react';
+import { QuizIllustration } from '../shared/QuizIllustration';
 
 interface QuizArenaProps {
   quiz: Quiz;
@@ -804,10 +805,13 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
             </div>
           ) : question.imageUrl ? (
             <div className="rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 text-center max-h-36 sm:max-h-52 xl:max-h-64 flex items-center justify-center p-2 flex-shrink-0">
-              <img
-                src={question.imageUrl}
+              <QuizIllustration
+                imageUrl={question.imageUrl}
+                imageCaption={question.imageCaption}
+                imagePrompt={question.imagePrompt}
                 alt="Ilustrasi Soal"
-                className="max-h-32 sm:max-h-48 xl:max-h-60 w-auto rounded-xl object-contain mx-auto"
+                imgClassName="max-h-32 sm:max-h-48 xl:max-h-60 w-auto rounded-xl object-contain mx-auto"
+                enableWikipedia={true}
               />
             </div>
           ) : question.imageCaption ? (

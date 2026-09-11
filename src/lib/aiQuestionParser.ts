@@ -334,7 +334,7 @@ export const generateAiPrompt = (params: GeneratePromptParams): string => {
     : '';
 
   const imageBlock = params.includeImages
-    ? `- Kebutuhan Gambar: Karena opsi ilustrasi diaktifkan, pada SETIAP butir soal sertakan properti "imageCaption" (label singkat bahasa Indonesia) dan "imagePrompt" (deskripsi visual 1 kalimat bahasa Inggris untuk generator gambar).\n`
+    ? `- Kebutuhan Gambar (WAJIB): Pada SETIAP butir soal sertakan:\n  * "imageCaption": 1-4 kata Bahasa Indonesia singkat & spesifik (contoh: "Proses Evaporasi", "Siklus Air")\n  * "imagePrompt": Deskripsi visual SANGAT SPESIFIK dalam Bahasa Inggris. Format wajib: "[SUBJEK SPESIFIK], educational diagram, white background, labeled". Contoh BAIK: "Water evaporation process showing sun heating ocean with rising vapor arrows, educational textbook diagram, white background". DILARANG prompt generik seperti "educational illustration of the concept".\n`
     : '';
 
   const levelText = level === 'SMA'
@@ -610,6 +610,7 @@ export const parseRawQuestionsText = (rawText: string): ParsedQuestionItem[] => 
           const text = String(item.text || item.question || item.pertanyaan || item.soal || '').trim();
           const explanation = String(item.explanation || item.pembahasan || item.alasan || item.penjelasan || 'Jawaban ini benar sesuai konsep materi.').trim();
           const imageCaption = item.imageCaption || item.ilustrasi ? String(item.imageCaption || item.ilustrasi).trim() : undefined;
+          const imagePrompt = item.imagePrompt ? String(item.imagePrompt).trim() : undefined;
           const imageUrl = item.imageUrl || item.gambar ? String(item.imageUrl || item.gambar).trim() : undefined;
           const points = typeof item.points === 'number' && item.points > 0 ? item.points : (typeof item.poin === 'number' && item.poin > 0 ? item.poin : 10);
           const customDurationSec = typeof item.customDurationSec === 'number' && item.customDurationSec > 0 ? item.customDurationSec : undefined;
@@ -663,6 +664,7 @@ export const parseRawQuestionsText = (rawText: string): ParsedQuestionItem[] => 
                 correctIndex,
                 explanation,
                 imageCaption,
+                imagePrompt,
                 imageUrl,
                 points,
                 customDurationSec
@@ -710,6 +712,7 @@ export const parseRawQuestionsText = (rawText: string): ParsedQuestionItem[] => 
                 acceptableAnswers: acceptable,
                 explanation,
                 imageCaption,
+                imagePrompt,
                 imageUrl,
                 points,
                 customDurationSec
@@ -759,6 +762,7 @@ export const parseRawQuestionsText = (rawText: string): ParsedQuestionItem[] => 
                 matchingPairs: pairs,
                 explanation,
                 imageCaption,
+                imagePrompt,
                 imageUrl,
                 points: points || 15,
                 customDurationSec
@@ -793,6 +797,7 @@ export const parseRawQuestionsText = (rawText: string): ParsedQuestionItem[] => 
               correctIndex: validIndex,
               explanation,
               imageCaption,
+              imagePrompt,
               imageUrl,
               points,
               customDurationSec

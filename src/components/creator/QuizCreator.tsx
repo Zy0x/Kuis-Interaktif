@@ -24,7 +24,8 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { AiQuestionModal } from './AiQuestionModal';
-import { generateAiIllustrationUrl } from '../../lib/geminiApi';
+import { ImageSelectorModal } from './ImageSelectorModal';
+import { generateRefinedAiImageUrl } from '../../lib/imageService';
 import { AiGeneratorStep } from './AiGeneratorStep';
 import { InfoKuisStep } from './InfoKuisStep';
 import { ResizableTextarea } from '../common/ResizableTextarea';
@@ -246,7 +247,9 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   const [qText, setQText] = useState('');
   const [qType, setQType] = useState<QuestionType>('multiple_choice');
   const [qImageCaption, setQImageCaption] = useState('');
+  const [qImagePrompt, setQImagePrompt] = useState('');
   const [qImageUrl, setQImageUrl] = useState<string | undefined>(undefined);
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [qOptions, setQOptions] = useState<string[]>(['', '', '', '']);
   const [qCorrectIndex, setQCorrectIndex] = useState<number>(0);
   const [qExplanation, setQExplanation] = useState('');
@@ -337,6 +340,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   const resetFormFields = (targetType: QuestionType = qType) => {
     setQText('');
     setQImageCaption('');
+    setQImagePrompt('');
     setQImageUrl(undefined);
     setQExplanation('');
     setQAcceptableAnswers('');
@@ -419,7 +423,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
 
   const handleGenerateSingleAiImage = () => {
     playClick();
-    const promptText = qImageCaption.trim() || qText.trim() || `${subject} Kelas ${grade}`;
+    const promptText = qImagePrompt.trim() || qImageCaption.trim() || qText.trim() || `${subject} Kelas ${grade}`;
     if (!promptText) {
       showToast('Tulis deskripsi gambar atau pertanyaan terlebih dahulu untuk membuat ilustrasi AI.');
       return;
@@ -427,7 +431,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
 
     setIsGeneratingAiImage(true);
     try {
-      const generatedUrl = generateAiIllustrationUrl(promptText);
+      const generatedUrl = generateRefinedAiImageUrl(promptText, { style: 'diagram' });
       setQImageUrl(generatedUrl);
       if (!qImageCaption.trim()) {
         setQImageCaption(promptText.slice(0, 45));
@@ -453,6 +457,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     setQText(q.text);
     setQType(q.type);
     setQImageCaption(q.imageCaption || '');
+    setQImagePrompt(q.imagePrompt || '');
     setQImageUrl(q.imageUrl);
     setQExplanation(q.explanation || '');
     setQPoints(q.points || 10);
@@ -562,6 +567,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
       explanation: qExplanation.trim() || 'Pembahasan materi terkait konsep pertanyaan ini.',
       imageUrl: qImageUrl,
       imageCaption: qImageCaption.trim() || undefined,
+      imagePrompt: qImagePrompt.trim() || undefined,
       acceptableAnswers: finalAcceptable,
       matchingPairs: finalPairs,
       points: Number(qPoints) || 10,
@@ -1143,6 +1149,22 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
         playClick={playClick}
       />
 
+      {/* Modal Pencarian & Generator Gambar Edukasi Multi-Sumber */}
+      <ImageSelectorModal
+        isOpen={isImageModalOpen}
+        onClose={() => setIsImageModalOpen(false)}
+        onSelectImage={(url, caption) => {
+          setQImageUrl(url);
+          if (caption) setQImageCaption(caption);
+          showToast('🎨 Ilustrasi edukasi berhasil dipasang ke soal!');
+        }}
+        initialCaption={qImageCaption}
+        initialPrompt={qImagePrompt}
+        questionText={qText}
+        subject={subject}
+        topic={title}
+      />
+
     </div>
   );
 
@@ -1362,8 +1384,9 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                         onClick={() => {
                           setQImageUrl(undefined);
                           setQImageCaption('');
+                          setQImagePrompt('');
                         }}
-                        className="text-xs text-rose-500 hover:underline"
+                        className="text-xs font-bold text-rose-500 hover:text-rose-600 hover:underline min-h-[36px] px-2 flex items-center"
                       >
                         Hapus Gambar
                       </button>
@@ -1371,26 +1394,71 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                   </div>
 
                   {qImageUrl ? (
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={qImageUrl}
-                        alt="Ilustrasi Soal"
-                        className="w-20 h-20 rounded-xl object-cover border border-slate-200 dark:border-slate-700"
-                      />
-                      <div className="min-w-0 flex-1">
-                        <input
-                          type="text"
-                          value={qImageCaption}
-                          onChange={(e) => setQImageCaption(e.target.value)}
-                          placeholder="Keterangan gambar (misal: Organ Paru-Paru)"
-                          className="w-full px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs"
-                        />
+                    <div className="space-y-3">
+                      <div className="flex items-start gap-3">
+                        <div className="relative group w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shrink-0 flex items-center justify-center shadow-xs">
+                          <img
+                            src={qImageUrl}
+                            alt="Ilustrasi Soal"
+                            className="w-full h-full object-contain p-1"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setIsImageModalOpen(true)}
+                            className="absolute inset-0 bg-black/60 text-white text-[11px] font-bold opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
+                            title="Klik untuk mengganti gambar"
+                          >
+                            Ganti
+                          </button>
+                        </div>
+                        <div className="min-w-0 flex-1 space-y-2">
+                          <input
+                            type="text"
+                            value={qImageCaption}
+                            onChange={(e) => setQImageCaption(e.target.value)}
+                            placeholder="Keterangan gambar (misal: Proses Evaporasi)"
+                            className="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white font-medium"
+                          />
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <button
+                              type="button"
+                              onClick={() => setIsImageModalOpen(true)}
+                              className="px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 text-xs font-bold inline-flex items-center gap-1.5 min-h-[38px] btn-press"
+                            >
+                              <Sparkles className="w-3.5 h-3.5" />
+                              <span>Cari / Ganti Gambar</span>
+                            </button>
+                            <button
+                              type="button"
+                              disabled={isGeneratingAiImage}
+                              onClick={handleGenerateSingleAiImage}
+                              className="px-3 py-1.5 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800 hover:bg-purple-100 text-xs font-bold inline-flex items-center gap-1.5 min-h-[38px] btn-press disabled:opacity-50"
+                              title="Racik ulang gambar AI dengan diagram baru"
+                            >
+                              {isGeneratingAiImage ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                <RotateCcw className="w-3.5 h-3.5" />
+                              )}
+                              <span>Racik Ulang AI</span>
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   ) : (
                     <div className="flex items-center gap-2 flex-wrap">
-                      <label className="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-100 text-xs font-bold cursor-pointer inline-flex items-center gap-1.5 min-h-[36px]">
-                        <Upload className="w-3.5 h-3.5 text-slate-500" /> Unggah Berkas
+                      <button
+                        type="button"
+                        onClick={() => setIsImageModalOpen(true)}
+                        className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold inline-flex items-center gap-2 min-h-[44px] btn-press shadow-sm"
+                      >
+                        <Sparkles className="w-4 h-4 text-amber-300" />
+                        <span>Cari / Buat Gambar Edukasi</span>
+                      </button>
+                      <label className="px-3.5 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-750 text-xs font-bold cursor-pointer inline-flex items-center gap-1.5 min-h-[44px] btn-press text-slate-700 dark:text-slate-200">
+                        <Upload className="w-4 h-4 text-slate-500" />
+                        <span>Unggah Berkas</span>
                         <input
                           type="file"
                           accept="image/*"
@@ -1402,7 +1470,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                         type="button"
                         disabled={isGeneratingAiImage}
                         onClick={handleGenerateSingleAiImage}
-                        className="px-3 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 text-xs font-bold inline-flex items-center gap-1.5 min-h-[36px] disabled:opacity-50"
+                        className="px-3.5 py-2 rounded-xl bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 hover:bg-purple-100 text-xs font-bold inline-flex items-center gap-1.5 min-h-[44px] btn-press disabled:opacity-50"
                       >
                         {isGeneratingAiImage ? (
                           <>
@@ -1410,7 +1478,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                           </>
                         ) : (
                           <>
-                            <Sparkles className="w-3.5 h-3.5 text-indigo-500" /> Buat Gambar Edukasi AI
+                            <RotateCcw className="w-3.5 h-3.5" /> Buat Cepat AI
                           </>
                         )}
                       </button>

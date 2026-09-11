@@ -1043,10 +1043,22 @@ ${hasProportions ? '- Persentase di atas adalah target distribusi, usahakan sede
 Anda BUKAN pemandu kuis interaktif, BUKAN asisten obrolan, dan BUKAN lawan bermain kuis.`;
 
   const imageInstruction = params.includeAiImages
-    ? `\nFITUR ILUSTRASI GAMBAR EDUKASI (BETA):
-Karena opsi ilustrasi diaktifkan, sertakan pada butir soal konsep gambar visual yang BENAR-BENAR RELEVAN dan berkaitan langsung dengan isi pertanyaan (bukan sekadar ikon generik/stiker acak):
-- 'imageCaption': Nama konsep/objek visual dalam Bahasa Indonesia (contoh: "Diagram Organ Jantung Manusia", "Peta Benua Asia", "Pecahan 1/4 Kue").
-- 'imagePrompt': Deskripsi visual 1 kalimat dalam Bahasa Inggris yang spesifik dan realistis untuk mesin AI image (contoh: "clear educational scientific diagram of human heart anatomy, textbook style").\n`
+    ? `\nFITUR ILUSTRASI GAMBAR EDUKASI (AKTIF):
+WAJIB sertakan properti berikut pada setiap butir soal yang dihasilkan:
+- 'imageCaption': Nama objek/konsep visual dalam 1-4 kata Bahasa Indonesia yang singkat dan spesifik.
+  CONTOH BAIK: "Proses Evaporasi", "Organ Jantung Manusia", "Siklus Air", "Peta Benua Asia", "Pecahan 1 per 4"
+  CONTOH BURUK: "gambar yang relevan", "ilustrasi soal ini", "konsep materi"
+- 'imagePrompt': Deskripsi visual 1 kalimat dalam Bahasa Inggris yang SANGAT SPESIFIK dan teknis, cocok untuk mesin gambar AI.
+  Format wajib: "[SUBJEK UTAMA SPESIFIK], [GAYA VISUAL], [DETAIL TEKNIS], educational diagram, white background"
+  CONTOH BAIK:
+  - "Water evaporation process diagram showing sun heating ocean surface with water vapor rising and arrows, educational textbook illustration, white background, labeled"
+  - "Human heart anatomy cross-section diagram with labeled chambers, arteries and veins, medical textbook style, clean white background"
+  - "Water cycle diagram showing evaporation condensation precipitation labeled with arrows, elementary school science textbook style"
+  - "Fraction 1/4 visual with a circle divided into 4 equal parts with one part shaded blue, simple flat educational illustration"
+  CONTOH BURUK (DILARANG):
+  - "educational illustration of the concept" (terlalu generik)
+  - "diagram showing the material" (tidak spesifik)
+  - "image about this question" (tidak ada deskripsi visual)\n`
     : '';
 
   const contextBlock = params.contextNotes && params.contextNotes.trim()
@@ -1086,31 +1098,102 @@ ATURAN WAJIB OUTPUT:
   "customDurationSec": 30,
   "acceptableAnswers": ["Kunci", "Sinonim"],
   "matchingPairs": [{"left": "Konsep A", "right": "Definisi A"}],
-  "imageCaption": "Kata kunci objek visual relevan",
-  "imagePrompt": "Detailed clear educational illustration of the concept in English"
+  "imageCaption": "Siklus Air",
+  "imagePrompt": "Water cycle diagram showing evaporation from ocean, condensation forming clouds, precipitation as rain, labeled with arrows, elementary school science textbook style, clean white background"
 }`;
 }
 
 /**
- * Buat URL ilustrasi edukatif berbasis AI (100% Gratis, tanpa API Key atau kuota).
- * Menggunakan Pollinations AI Engine dengan parameter kurikulum ramah anak.
+ * Buat URL ilustrasi edukatif via Pollinations AI (Flux model) — Gratis, tanpa API Key.
+ * Prompt dioptimalkan khusus untuk ilustrasi edukasi anak Indonesia (diagram, visual sains, bukan art abstrak).
  */
-export function generateAiIllustrationUrl(prompt: string, options?: { width?: number; height?: number; seed?: number }): string {
+export function generateAiIllustrationUrl(
+  prompt: string,
+  options?: { width?: number; height?: number; seed?: number }
+): string {
   const width = options?.width || 600;
   const height = options?.height || 400;
-  const seed = options?.seed ?? Math.floor(Math.random() * 1000000);
+  const seed = options?.seed ?? Math.floor(Math.random() * 999999);
 
-  // Bersihkan teks prompt, hilangkan emoji dan karakter tidak baku
+  // Bersihkan emoji dan karakter non-alfanumerik
   const cleanPrompt = prompt
-    .replace(/[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, ' ')
-    .replace(/[^\w\s\u00C0-\u024F\u1E00-\u1EFF,-]/gi, ' ')
+    .replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}]/gu, ' ')
+    .replace(/[^\w\s\u00C0-\u024F\u1E00-\u1EFF,.()\-]/gi, ' ')
     .replace(/\s+/g, ' ')
-    .trim();
+    .trim()
+    .slice(0, 200); // Batasi panjang prompt
 
-  // Minta diagram/ilustrasi edukasi visual nyata yang relevan, hindari ikon generik
-  const educationalPrompt = `clear educational diagram or accurate realistic visual illustration of ${cleanPrompt || 'science nature learning'}, high quality, informative, no generic cartoon icons, realistic clean background`;
+  // Template prompt edukasi berkualitas tinggi — spesifik, terstruktur, tidak abstrak
+  const educationalPrompt = [
+    `educational textbook illustration of ${cleanPrompt || 'science concept'}`,
+    'accurate scientific diagram, labeled, clean white background',
+    'children educational book style, clear and informative',
+    'flat design vector illustration, no abstract art, no decorative borders',
+    'high resolution, school curriculum appropriate',
+  ].join(', ');
 
-  return `https://image.pollinations.ai/prompt/${encodeURIComponent(educationalPrompt)}?width=${width}&height=${height}&nologo=true&seed=${seed}`;
+  return `https://image.pollinations.ai/prompt/${encodeURIComponent(educationalPrompt)}?model=flux&width=${width}&height=${height}&nologo=true&private=true&seed=${seed}`;
+}
+
+/**
+ * Cari gambar relevan dari Wikipedia/Wikimedia Commons berdasarkan kata kunci.
+ * Mengembalikan URL gambar atau null jika tidak ditemukan.
+ * Menggunakan Wikipedia bahasa Indonesia sebagai prioritas, fallback ke bahasa Inggris.
+ */
+export async function fetchWikipediaImageUrl(
+  keyword: string,
+  thumbnailSize = 500
+): Promise<string | null> {
+  if (!keyword || keyword.trim().length < 3) return null;
+
+  const cleanKeyword = keyword
+    .replace(/[\u{1F000}-\u{1FFFF}]/gu, '')
+    .replace(/[^\w\s\u00C0-\u024F\u1E00-\u1EFF]/gi, ' ')
+    .trim()
+    .slice(0, 100);
+
+  const tryFetch = async (lang: 'id' | 'en'): Promise<string | null> => {
+    try {
+      const url = `https://${lang}.wikipedia.org/w/api.php?action=query&format=json&prop=pageimages&pithumbsize=${thumbnailSize}&titles=${encodeURIComponent(cleanKeyword)}&origin=*`;
+      const res = await fetch(url, {
+        headers: { 'User-Agent': 'KuisInteraktif/2.2 (educational quiz app; contact@kuis-seru.app)' },
+        signal: AbortSignal.timeout(4000),
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      const pages = data?.query?.pages;
+      if (!pages) return null;
+      const pageId = Object.keys(pages)[0];
+      const thumb = pages[pageId]?.thumbnail?.source;
+      return thumb || null;
+    } catch {
+      return null;
+    }
+  };
+
+  // Coba Wikipedia Indonesia dulu, fallback ke English
+  const idResult = await tryFetch('id');
+  if (idResult) return idResult;
+  return tryFetch('en');
+}
+
+/**
+ * Resolusi gambar hybrid: coba Wikipedia terlebih dahulu (gambar edukasi nyata),
+ * fallback ke Pollinations AI jika Wikipedia tidak menemukan gambar.
+ * Mengembalikan URL terbaik yang ditemukan.
+ */
+export async function resolveEducationalImageUrl(
+  imagePrompt: string,
+  imageCaption: string,
+  fallbackSeed?: number
+): Promise<string> {
+  // Gunakan imageCaption (lebih singkat & spesifik) untuk Wikipedia search
+  const wikiKeyword = imageCaption || imagePrompt.split(',')[0];
+  const wikiUrl = await fetchWikipediaImageUrl(wikiKeyword);
+  if (wikiUrl) return wikiUrl;
+
+  // Fallback: Pollinations Flux dengan imagePrompt yang spesifik
+  return generateAiIllustrationUrl(imagePrompt || imageCaption, { seed: fallbackSeed });
 }
 
 function cleanJsonResponse(rawResponse: string): string {
@@ -1171,6 +1254,7 @@ function normalizeQuestions(rawList: any[], providerPrefix: string, autoGenerate
       type: qType,
       imageUrl,
       imageCaption: rawCaption,
+      imagePrompt: rawImagePrompt,
       options,
       correctIndex,
       explanation: String(item.explanation || 'Pembahasan materi terkait konsep kurikulum.'),

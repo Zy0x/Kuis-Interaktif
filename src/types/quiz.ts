@@ -64,6 +64,7 @@ export interface QuizQuestion {
   type: QuestionType;
   imageUrl?: string;
   imageCaption?: string;
+  imagePrompt?: string; // Deskripsi visual terstruktur untuk generator AI
   options: string[];
   correctIndex: number;
   explanation: string;

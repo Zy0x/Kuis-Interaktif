@@ -1,6 +1,27 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.2.97] - 2026-09-11
+### Peningkatan Akurasi Ilustrasi Soal: Sistem Pencarian Hybrid (Ensiklopedia & AI Diagram Flux)
+
+#### 1. Masalah yang Diselesaikan
+- Sebelumnya, generator ilustrasi hanya bergantung pada generator gambar umum tanpa panduan diagram spesifik, sehingga menghasilkan gambar abstrak, kubus isometrik, atau bentuk teknologi yang tidak relevan dengan konsep pelajaran (misalnya soal evaporasi/air laut menghasilkan papan sirkuit).
+- Guru/pembuat soal tidak memiliki opsi untuk mengganti atau mencari diagram pendidikan nyata ketika hasil otomatis kurang akurat.
+
+#### 2. Layanan Gambar Edukasi Multi-Sumber (`imageService.ts`)
+- **Pencarian Ensiklopedia Terpadu**: Terintegrasi langsung dengan API Wikipedia Bahasa Indonesia, Wikipedia Bahasa Inggris, dan Wikimedia Commons secara gratis tanpa memerlukan kunci API pengguna.
+- **Generator AI Anti-Abstrak (Flux Model)**: Menggunakan formula prompt terstruktur khusus kurikulum sekolah (`educational 2D scientific textbook diagram, labeled, clean white background, no isometric 3D, no fantasy art`).
+- Menyediakan 3 gaya visual: Diagram Pelajaran (2D skematik), Kartun Edukatif (buku anak ceria), dan Foto Nyata (dokumentasi sains/alam).
+
+#### 3. Modal Pemilih & Peracik Ilustrasi Edukasi (`ImageSelectorModal.tsx`)
+- Tombol **"Cari / Ganti Gambar"** tersedia langsung pada setiap butir soal di Studio Kuis (`QuizCreator.tsx`).
+- **Tab 1 — Ensiklopedia**: Cari ribuan diagram dan foto sains/sejarah/geografi dari Wikipedia/Wikimedia dengan pratinjau thumbnail dan 1-klik terapkan.
+- **Tab 2 — Generator AI**: Kemampuan meracik ulang gambar dengan biji (*seed*) baru, menyesuaikan deskripsi prompt, dan memilih gaya visual.
+- **Tab 3 — Unggah & URL**: Dukungan unggah berkas dari perangkat lokal atau menempel tautan URL gambar eksternal.
+
+#### 4. Komponen Tampilan Ilustrasi Terpadu (`QuizIllustration.tsx`)
+- Menangani pemuatan gambar secara progresif, penanganan error cerdas, dan cadangan (*fallback*) otomatis agar tampilan kuis selalu rapi di semua perangkat.
+
 ## [2.2.96] - 2026-09-11
 ### Redesign Selektor Level Kognitif — Clean Minimal, Anti-AI-Slop
 
