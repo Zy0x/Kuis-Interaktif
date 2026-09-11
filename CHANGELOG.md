@@ -1,6 +1,26 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.40] - 2026-09-11
+### Eliminasi Dropdown Native Webview & Standarisasi Komponen Dropdown Kuis Seru (GradeDropdown & SubjectDropdown)
+
+#### 1. Masalah & Kebutuhan yang Diselesaikan
+- **Inkonsistensi Komponen Webview Native**: Penggunaan elemen `<select>` bawaan browser pada kolom *Target Kelas* dan *Mata Pelajaran* tidak sesuai dengan standar desain modern aplikasi (tampak kaku seperti form web lama dan membuka dialog OS native yang tidak estetik).
+- **Ketiadaan Fitur Pencarian pada Mata Pelajaran**: Dengan lebih dari 30 mata pelajaran, guru dipaksa men-scroll daftar native yang panjang tanpa opsi pencarian cepat.
+- **Keterbatasan Informasi Opsi Kelas**: Native select tidak dapat menampilkan ikon, badge Fase Kurikulum Merdeka yang kaya warna, serta penjelasan fase per kelas.
+
+#### 2. Implementasi Desain & Fungsionalitas
+- **Komponen Kustom `GradeDropdown.tsx`**:
+  - Tombol trigger elegan dengan ikon topi toga ungu (`GraduationCap`), badge nomor kelas, chip Fase Kurikulum Merdeka, dan chevron animasi rotasi 180°.
+  - Menu popover `rounded-2xl` dengan backdrop blur, border halus, bayangan mendalam, header kategori jenjang, deskripsi fase per kelas, dan indikator centang (`Check`) untuk opsi aktif.
+- **Komponen Kustom `SubjectDropdown.tsx`**:
+  - Tombol trigger berikon buku biru (`BookOpen`) dengan badge kategori mapel yang serasi.
+  - Menu popover cerdas dilengkapi **kolom pencarian real-time** (`Search`) dengan fokus otomatis.
+  - Tab pemfilteran cepat: `Relevan ([Jenjang])` vs `Semua Mapel (33)`.
+  - Dukungan penuh dark/light mode dan aksesibilitas keyboard (Escape untuk menutup, click outside listener).
+- **Touch Target Standar Mobile ($\ge 44\text{px}$)**:
+  - Seluruh tombol pemicu dan item opsi dropdown memiliki tinggi sentuh minimal $\ge 44\text{px}$ yang sangat nyaman bagi ibu jari di smartphone maupun tablet.
+
 ## [2.3.39] - 2026-09-11
 ### Restrukturisasi Hierarki Visual Tab Info Kuis: 3-Seksi Terpadu, Collapsible Suggestions, Compact Emoji Picker & Accordion Pengaturan Lanjutan
 

@@ -21,6 +21,8 @@ import {
   Settings
 } from 'lucide-react';
 import { ResizableTextarea } from '../common/ResizableTextarea';
+import { GradeDropdown } from './GradeDropdown';
+import { SubjectDropdown } from './SubjectDropdown';
 
 // Kategori Emoji Edukatif
 const EMOJI_CATEGORIES = [
@@ -484,46 +486,13 @@ export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
                   ))}
                 </div>
 
-                <select
-                  value={grade}
-                  onChange={(e) => {
-                    const g = Number(e.target.value);
-                    setGrade(g);
-                    if (setEducationLevel) {
-                      if (g >= 10) setEducationLevel('SMA');
-                      else if (g >= 7) setEducationLevel('SMP');
-                      else setEducationLevel('SD');
-                    }
-                  }}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-bold text-xs sm:text-sm focus:border-blue-500 focus:outline-none min-h-[44px]"
-                >
-                  {currentEducationLevel === 'SD' && (
-                    <optgroup label="Sekolah Dasar (SD / MI)">
-                      <option value={1}>Kelas 1 SD (Fase A)</option>
-                      <option value={2}>Kelas 2 SD (Fase A)</option>
-                      <option value={3}>Kelas 3 SD (Fase B)</option>
-                      <option value={4}>Kelas 4 SD (Fase B)</option>
-                      <option value={5}>Kelas 5 SD (Fase C)</option>
-                      <option value={6}>Kelas 6 SD (Fase C)</option>
-                    </optgroup>
-                  )}
-
-                  {currentEducationLevel === 'SMP' && (
-                    <optgroup label="Sekolah Menengah Pertama (SMP / MTs)">
-                      <option value={7}>Kelas 7 SMP (Fase D)</option>
-                      <option value={8}>Kelas 8 SMP (Fase D)</option>
-                      <option value={9}>Kelas 9 SMP (Fase D)</option>
-                    </optgroup>
-                  )}
-
-                  {currentEducationLevel === 'SMA' && (
-                    <optgroup label="Sekolah Menengah Atas / Kejuruan (SMA / SMK)">
-                      <option value={10}>Kelas 10 SMA / SMK (Fase E)</option>
-                      <option value={11}>Kelas 11 SMA / SMK (Fase F)</option>
-                      <option value={12}>Kelas 12 SMA / SMK (Fase F)</option>
-                    </optgroup>
-                  )}
-                </select>
+                <GradeDropdown
+                  grade={grade}
+                  setGrade={setGrade}
+                  educationLevel={currentEducationLevel}
+                  setEducationLevel={setEducationLevel}
+                  playClick={playClick}
+                />
               </div>
 
               {/* Mata Pelajaran */}
@@ -532,86 +501,12 @@ export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
                   Mata Pelajaran <span className="text-rose-500">*</span>
                 </label>
                 <div className="pt-0.5 sm:pt-[44px]">
-                  <select
-                    value={subject}
-                    onChange={(e) => setSubject(e.target.value as Subject)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-bold text-xs sm:text-sm focus:border-blue-500 focus:outline-none min-h-[44px]"
-                  >
-                    {currentEducationLevel === 'SD' && (
-                      <optgroup label="Mapel Utama SD / MI">
-                        <option value="Matematika">Matematika</option>
-                        <option value="IPAS">IPAS (Sains & Sosial)</option>
-                        <option value="Bahasa Indonesia">Bahasa Indonesia</option>
-                        <option value="Pendidikan Pancasila">Pendidikan Pancasila</option>
-                        <option value="Bahasa Inggris">Bahasa Inggris</option>
-                        <option value="PJOK">PJOK</option>
-                        <option value="Pengetahuan Umum">Pengetahuan Umum</option>
-                      </optgroup>
-                    )}
-
-                    {currentEducationLevel === 'SMP' && (
-                      <optgroup label="Mapel Utama SMP / MTs">
-                        <option value="Matematika">Matematika</option>
-                        <option value="IPA Terpadu">IPA Terpadu</option>
-                        <option value="IPS Terpadu">IPS Terpadu</option>
-                        <option value="Bahasa Indonesia">Bahasa Indonesia</option>
-                        <option value="Pendidikan Pancasila">Pendidikan Pancasila</option>
-                        <option value="Bahasa Inggris">Bahasa Inggris</option>
-                        <option value="Informatika">Informatika / Komputer</option>
-                        <option value="Prakarya">Prakarya & Kewirausahaan</option>
-                        <option value="PJOK">PJOK</option>
-                      </optgroup>
-                    )}
-
-                    {currentEducationLevel === 'SMA' && (
-                      <>
-                        <optgroup label="Peminatan MIPA (SMA / SMK)">
-                          <option value="Fisika">Fisika</option>
-                          <option value="Kimia">Kimia</option>
-                          <option value="Biologi">Biologi</option>
-                          <option value="Matematika Tingkat Lanjut">Matematika Tingkat Lanjut</option>
-                          <option value="Informatika">Informatika</option>
-                        </optgroup>
-                        <optgroup label="Peminatan IPS & Humaniora (SMA / SMK)">
-                          <option value="Ekonomi">Ekonomi</option>
-                          <option value="Sosiologi">Sosiologi</option>
-                          <option value="Geografi">Geografi</option>
-                          <option value="Sejarah">Sejarah</option>
-                          <option value="Antropologi">Antropologi</option>
-                        </optgroup>
-                        <optgroup label="Mata Pelajaran Umum (SMA / SMK)">
-                          <option value="Matematika">Matematika (Wajib)</option>
-                          <option value="Bahasa Indonesia">Bahasa Indonesia</option>
-                          <option value="Bahasa Inggris">Bahasa Inggris</option>
-                          <option value="Pendidikan Pancasila">Pendidikan Pancasila</option>
-                          <option value="PJOK">PJOK</option>
-                        </optgroup>
-                      </>
-                    )}
-
-                    <optgroup label="Seni & Bahasa">
-                      <option value="Seni Rupa">Seni Rupa</option>
-                      <option value="Seni Musik">Seni Musik</option>
-                      <option value="Seni Tari">Seni Tari</option>
-                      <option value="Seni Teater">Seni Teater</option>
-                      <option value="Bahasa Daerah">Bahasa Daerah / Mulok</option>
-                    </optgroup>
-
-                    <optgroup label="Pendidikan Agama">
-                      <option value="Pendidikan Agama Islam">Pendidikan Agama Islam (PAI)</option>
-                      <option value="Pendidikan Agama Kristen">Pendidikan Agama Kristen</option>
-                      <option value="Pendidikan Agama Katolik">Pendidikan Agama Katolik</option>
-                      <option value="Pendidikan Agama Hindu">Pendidikan Agama Hindu</option>
-                      <option value="Pendidikan Agama Buddha">Pendidikan Agama Buddha</option>
-                      <option value="Pendidikan Agama Konghucu">Pendidikan Agama Konghucu</option>
-                    </optgroup>
-
-                    <optgroup label="Mapel Lintas Lainnya">
-                      <option value="IPA">IPA (Sains)</option>
-                      <option value="IPS">IPS (Sosial)</option>
-                      <option value="Pengetahuan Umum">Pengetahuan Umum</option>
-                    </optgroup>
-                  </select>
+                  <SubjectDropdown
+                    subject={subject}
+                    setSubject={setSubject}
+                    educationLevel={currentEducationLevel}
+                    playClick={playClick}
+                  />
                 </div>
               </div>
 
