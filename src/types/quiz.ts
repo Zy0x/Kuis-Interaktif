@@ -97,6 +97,16 @@ export interface Quiz {
   defaultGameMode?: GameMode;
 }
 
+export interface AiQuizMetadata {
+  title?: string;
+  description?: string;
+  coverEmoji?: string;
+  badgeTitle?: string;
+  durationPerQuestionSec?: number;
+  themeColor?: string;
+  defaultGameMode?: GameMode;
+}
+
 export const MASTER_TEACHER_EMAIL = 'zy0x.noir@gmail.com';
 
 export interface PlayerProfile {

@@ -1,4 +1,4 @@
-import type { QuestionType, QuizQuestion, Subject, EducationLevel } from '../types/quiz';
+import type { QuestionType, QuizQuestion, Subject, EducationLevel, AiQuizMetadata } from '../types/quiz';
 import { generateCurriculumSeedQuestions } from './aiQuestionParser';
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 
@@ -96,10 +96,13 @@ export interface GenerateAiQuestionsParams {
   allowLocalFallback?: boolean; // false untuk mencegah silent fallback ke lokal saat cloud limit
 }
 
+export type { AiQuizMetadata };
+
 export interface HybridGenerateResult {
   questions: QuizQuestion[];
   source: 'gemini_api' | 'groq_api' | 'deepseek_api' | 'curriculum_seed';
   message: string;
+  metadata?: AiQuizMetadata;
 }
 
 /* =========================================================
@@ -511,6 +514,7 @@ export async function callSupabaseAiEdgeFunction(params: GenerateAiQuestionsPara
   questions: QuizQuestion[];
   provider: 'gemini' | 'groq' | 'deepseek';
   model?: string;
+  metadata?: AiQuizMetadata;
 }> {
   if (!supabase) {
     throw new Error('Supabase client tidak tersedia.');
@@ -556,6 +560,14 @@ export async function callSupabaseAiEdgeFunction(params: GenerateAiQuestionsPara
     questions: normalized,
     provider: data.provider || 'gemini',
     model: data.model,
+    metadata: {
+      title: data?.title || data?.quizTitle,
+      description: data?.description || data?.quizDescription,
+      coverEmoji: data?.coverEmoji || data?.emoji,
+      badgeTitle: data?.badgeTitle || data?.badge,
+      durationPerQuestionSec: typeof data?.durationPerQuestionSec === 'number' ? data.durationPerQuestionSec : undefined,
+      themeColor: typeof data?.themeColor === 'string' ? data.themeColor : undefined,
+    },
   };
 }
 
@@ -1087,19 +1099,29 @@ STANDAR KUALITAS BUTIR SOAL (ANTI-AI SLOP & HIGH-PEDAGOGY):
 
 ATURAN WAJIB OUTPUT:
 1. Kembalikan HANYA format JSON valid tanpa pembuka/penutup obrolan teks.
-2. Setiap butir soal harus memiliki struktur:
+2. Format objek JSON utama yang wajib dikembalikan:
 {
-  "text": "Pertanyaan soal yang diawali stimulus kontekstual yang jelas...",
-  "type": "${questionType === 'campuran' ? 'multiple_choice / true_false / short_answer / matching_pairs / image_guess' : questionType}",
-  "options": ["Opsi 1", "Opsi 2", "Opsi 3", "Opsi 4"],
-  "correctIndex": 0,
-  "explanation": "Penjelasan konsep mengapa kunci benar dan opsi lain keliru...",
-  "points": 10,
-  "customDurationSec": 30,
-  "acceptableAnswers": ["Kunci", "Sinonim"],
-  "matchingPairs": [{"left": "Konsep A", "right": "Definisi A"}],
-  "imageCaption": "Siklus Air",
-  "imagePrompt": "Water cycle diagram showing evaporation from ocean, condensation forming clouds, precipitation as rain, labeled with arrows, elementary school science textbook style, clean white background"
+  "title": "Judul kuis yang kreatif, memikat rasa ingin tahu siswa, dan relevan dengan materi (contoh: 'Petualangan Sains: Menguak Siklus Air')",
+  "description": "Deskripsi pedagogis 2-3 kalimat untuk siswa (menjelaskan tujuan belajar, stimulus kehidupan sehari-hari, dan pesan motivasi)",
+  "coverEmoji": "1 karakter emoji yang paling pas dengan topik kuis (contoh: 💧 untuk siklus air, 🪐 untuk tata surya, 🍕 untuk pecahan)",
+  "badgeTitle": "Gelar juara kuis yang membanggakan bertema topik ini (contoh: 'Ahli Hidrologi Cilik', 'Master Pecahan', 'Penjelajah Antariksa')",
+  "durationPerQuestionSec": 30,
+  "themeColor": "#0284c7",
+  "questions": [
+    {
+      "text": "Pertanyaan soal yang diawali stimulus kontekstual yang jelas...",
+      "type": "${questionType === 'campuran' ? 'multiple_choice / true_false / short_answer / matching_pairs / image_guess' : questionType}",
+      "options": ["Opsi 1", "Opsi 2", "Opsi 3", "Opsi 4"],
+      "correctIndex": 0,
+      "explanation": "Penjelasan konsep mengapa kunci benar dan opsi lain keliru...",
+      "points": 10,
+      "customDurationSec": 30,
+      "acceptableAnswers": ["Kunci", "Sinonim"],
+      "matchingPairs": [{"left": "Konsep A", "right": "Definisi A"}],
+      "imageCaption": "Siklus Air",
+      "imagePrompt": "Water cycle diagram showing evaporation from ocean, condensation forming clouds, precipitation as rain, labeled with arrows, elementary school science textbook style, clean white background"
+    }
+  ]
 }`;
 }
 
@@ -1266,11 +1288,357 @@ function normalizeQuestions(rawList: any[], providerPrefix: string, autoGenerate
   });
 }
 
+export const DEFAULT_EMOJI_BY_SUBJECT: Record<Subject, string> = {
+  // SD & Umum
+  'Matematika': '📐',
+  'IPA': '🔬',
+  'IPAS': '🌍',
+  'IPS': '🗺️',
+  'Bahasa Indonesia': '📚',
+  'Pendidikan Pancasila': '🇮🇩',
+  'Pengetahuan Umum': '💡',
+  'Bahasa Inggris': '🇬🇧',
+  'PJOK': '⚽',
+  'Seni Musik': '🎵',
+  'Seni Rupa': '🎨',
+  'Seni Tari': '💃',
+  'Seni Teater': '🎭',
+  'Pendidikan Agama Islam': '🕌',
+  'Pendidikan Agama Kristen': '✝️',
+  'Pendidikan Agama Katolik': '⛪',
+  'Pendidikan Agama Hindu': '🕉️',
+  'Pendidikan Agama Buddha': '☸️',
+  'Pendidikan Agama Konghucu': '⛩️',
+  'Bahasa Daerah': '🗣️',
+  'Informatika': '💻',
+  // SMP
+  'IPA Terpadu': '🔬',
+  'IPS Terpadu': '🌍',
+  'Prakarya': '✂️',
+  // SMA
+  'Fisika': '⚛️',
+  'Kimia': '🧪',
+  'Biologi': '🧬',
+  'Ekonomi': '📈',
+  'Sosiologi': '👥',
+  'Geografi': '🗺️',
+  'Sejarah': '🏛️',
+  'Matematika Tingkat Lanjut': '♾️',
+  'Antropologi': '🏺',
+};
+
+export interface GenerateCreativeQuizMetadataParams {
+  subject: Subject;
+  grade: number;
+  topic: string;
+  educationLevel?: EducationLevel;
+  cognitiveFocus?: 'auto' | 'balanced' | 'hots' | 'lots' | 'custom';
+  questionCount?: number;
+  existingMetadata?: Partial<AiQuizMetadata>;
+}
+
+/**
+ * Meracik identitas dasar kuis yang inspiratif, kaya pedagogi, dan kontekstual
+ * mencakup Judul, Deskripsi, Emoji Sampul, Gelar Lencana, Estimasi Waktu, dan Warna Tema.
+ */
+export function generateCreativeQuizMetadata(
+  params: GenerateCreativeQuizMetadataParams
+): Required<AiQuizMetadata> {
+  const { subject, grade } = params;
+  const rawTopic = (params.topic || '').trim();
+  const cleanTopic = rawTopic
+    .replace(/^(materi|bab|topik|konsep|tema|modul)\s*[:\-–—]?\s*/i, '')
+    .trim() || `Konsep ${subject} Kelas ${grade}`;
+
+  const level = params.educationLevel || (grade >= 10 ? 'SMA' : grade >= 7 ? 'SMP' : 'SD');
+  const levelText = level === 'SMA' ? `Kelas ${grade} SMA / SMK` : level === 'SMP' ? `Kelas ${grade} SMP` : `Kelas ${grade} SD`;
+  const topicLower = cleanTopic.toLowerCase();
+
+  // 1. Emoji Selection (Smart keyword lookup)
+  let emoji = params.existingMetadata?.coverEmoji?.trim();
+  if (!emoji || emoji.length > 4) {
+    if (/air|hujan|laut|sungai|danau|evaporasi|kondensasi|presipitasi|banjir|hidrologi/.test(topicLower)) emoji = '💧';
+    else if (/tumbuhan|tanaman|daun|akar|fotosintesis|bunga|pohon|hutan|klorofil|flora/.test(topicLower)) emoji = '🌿';
+    else if (/hewan|satwa|binatang|fauna|habitat|metamorfosis|kupu|burung|ikan|kucing/.test(topicLower)) emoji = '🐾';
+    else if (/jantung|darah|pembuluh/.test(topicLower)) emoji = '🫀';
+    else if (/paru|pernapasan|napas|oksigen/.test(topicLower)) emoji = '🫁';
+    else if (/tulang|rangka|otot|sendi/.test(topicLower)) emoji = '🦴';
+    else if (/otak|saraf|indra|mata|telinga|hidung/.test(topicLower)) emoji = '🧠';
+    else if (/organ|tubuh|pencernaan|makanan|gizi|nutrisi/.test(topicLower)) emoji = '🍎';
+    else if (/planet|tata surya|bumi|bulan|matahari|bintang|galaksi|angkasa|orbit|gerhana|astronomi/.test(topicLower)) emoji = '🪐';
+    else if (/listrik|magnet|energi|gaya|gerak|cahaya|bunyi|kalor|termodinamika/.test(topicLower)) emoji = '⚡';
+    else if (/pecahan|pembilang|penyebut|desimal|persen|senilai/.test(topicLower)) emoji = '🍕';
+    else if (/bangun datar|bangun ruang|kubus|balok|sudut|luas|keliling|lingkaran|segitiga|geometri/.test(topicLower)) emoji = '📐';
+    else if (/perkalian|pembagian|penjumlahan|pengurangan|fpb|kpk|aljabar|aritmetika|hitung/.test(topicLower)) emoji = '🔢';
+    else if (/pancasila|garuda|norma|uud|hukum|bhinneka|hak|kewajiban|toleransi|musyawarah/.test(topicLower)) emoji = '🇮🇩';
+    else if (/pahlawan|kemerdekaan|sejarah|proklamasi|perjuangan|kerajaan|penjajahan|bpupki|sumpah pemuda/.test(topicLower)) emoji = '🏛️';
+    else if (/peta|pulau|provinsi|negara|asean|benua|samudra|kenampakan alam|geografis/.test(topicLower)) emoji = '🗺️';
+    else if (/paragraf|puisi|pantun|cerita|dongeng|teks|kosakata|huruf|kata|membaca|fabel|sastra/.test(topicLower)) emoji = '📚';
+    else if (/english|greeting|family|vocabulary|dialogue|recount|narrative/.test(topicLower)) emoji = '🇬🇧';
+    else if (/olahraga|kebugaran|senam|bola|lari|atletik|renang|basket|sepak bola/.test(topicLower)) emoji = '⚽';
+    else if (/komputer|internet|algoritma|koding|digital|data|teknologi|ai|perangkat/.test(topicLower)) emoji = '💻';
+    else if (/musik|lagu|nada|alat musik|irama/.test(topicLower)) emoji = '🎵';
+    else if (/seni|lukis|rupa|warna|patung|kriya|gambar/.test(topicLower)) emoji = '🎨';
+    else if (/tari|koreografi|gerak tari/.test(topicLower)) emoji = '💃';
+    else {
+      emoji = DEFAULT_EMOJI_BY_SUBJECT[subject] || '🌟';
+    }
+  }
+
+  // 2. Badge Title Selection (Accomplishment Title)
+  let badgeTitle = params.existingMetadata?.badgeTitle?.trim();
+  if (!badgeTitle) {
+    if (/air|hujan|laut|sungai|hidrologi/.test(topicLower)) badgeTitle = 'Ahli Hidrologi Cilik';
+    else if (/planet|tata surya|bumi|angkasa|astronomi/.test(topicLower)) badgeTitle = 'Penjelajah Antariksa';
+    else if (/jantung|paru|organ|tubuh|pencernaan|anatomi/.test(topicLower)) badgeTitle = 'Dokter Cilik Berbakat';
+    else if (/hewan|fauna|satwa|ekosistem/.test(topicLower)) badgeTitle = 'Ranger Sahabat Satwa';
+    else if (/tumbuhan|tanaman|flora|fotosintesis/.test(topicLower)) badgeTitle = 'Botanist Pelindung Bumi';
+    else if (/pecahan|desimal|persen/.test(topicLower)) badgeTitle = 'Master Pecahan Cepat';
+    else if (/bangun datar|bangun ruang|geometri/.test(topicLower)) badgeTitle = 'Arsitek Geometri Unggul';
+    else if (/aljabar|fpb|kpk|aritmetika|matematika/.test(topicLower)) badgeTitle = 'Ksatria Logika Angka';
+    else if (/pancasila|norma|karakter/.test(topicLower)) badgeTitle = 'Duta Karakter Pancasila';
+    else if (/pahlawan|kemerdekaan|sejarah/.test(topicLower)) badgeTitle = 'Pewaris Semangat Pahlawan';
+    else if (/peta|pulau|asean|geografi/.test(topicLower)) badgeTitle = 'Penjelajah Wawasan Nusantara';
+    else if (/puisi|pantun|cerita|literasi|bahasa indonesia/.test(topicLower)) badgeTitle = 'Duta Literasi Hebat';
+    else if (/english|bahasa inggris/.test(topicLower)) badgeTitle = 'Star English Speaker';
+    else if (/olahraga|kebugaran|pjok/.test(topicLower)) badgeTitle = 'Juara Kebugaran Sejati';
+    else if (/komputer|koding|informatika/.test(topicLower)) badgeTitle = 'Inovator Digital Masa Depan';
+    else if (/seni|musik|rupa|kriya/.test(topicLower)) badgeTitle = 'Maestro Kreatif Nusantara';
+    else {
+      badgeTitle = level === 'SMA' ? 'Intelektual Cendekia' : level === 'SMP' ? 'Bintang Mandiri Berprestasi' : 'Bintang Pintar Juara';
+    }
+  }
+
+  // 3. Creative Title
+  let title = params.existingMetadata?.title?.trim();
+  if (!title) {
+    if (level === 'SD') {
+      if (grade <= 2) {
+        title = `Ayo Belajar ${cleanTopic}`;
+      } else if (grade <= 4) {
+        if (subject === 'Matematika') title = `Tantangan Logika: ${cleanTopic}`;
+        else if (subject === 'IPA' || subject === 'IPAS') title = `Petualangan Sains: ${cleanTopic}`;
+        else if (subject === 'Bahasa Indonesia') title = `Jelajah Kata: ${cleanTopic}`;
+        else if (subject === 'Pendidikan Pancasila') title = `Karakter Cilik: ${cleanTopic}`;
+        else title = `Petualangan Seru: ${cleanTopic}`;
+      } else {
+        if (subject === 'Matematika') title = `Masteri Nalar: ${cleanTopic}`;
+        else if (subject === 'IPA' || subject === 'IPAS') title = `Eksplorasi Sains: ${cleanTopic}`;
+        else if (subject === 'Bahasa Indonesia') title = `Literasi Hebat: ${cleanTopic}`;
+        else if (subject === 'IPS') title = `Jelajah Nusantara: ${cleanTopic}`;
+        else title = `Tantangan Cerdas: ${cleanTopic}`;
+      }
+    } else if (level === 'SMP') {
+      if (subject === 'Matematika') title = `Masteri Aljabar & Nalar: ${cleanTopic}`;
+      else if (subject === 'IPA Terpadu') title = `Investigasi Sains Terpadu: ${cleanTopic}`;
+      else if (subject === 'IPS Terpadu') title = `Dinamika Sosial & Geografi: ${cleanTopic}`;
+      else if (subject === 'Informatika') title = `Computational Thinking: ${cleanTopic}`;
+      else title = `Masteri Konsep: ${cleanTopic}`;
+    } else {
+      // SMA
+      if (subject === 'Fisika' || subject === 'Kimia' || subject === 'Biologi') title = `Kajian Sains Analitis: ${cleanTopic}`;
+      else if (subject.includes('Matematika')) title = `Penalaran Matematis Lanjut: ${cleanTopic}`;
+      else if (subject === 'Ekonomi' || subject === 'Sosiologi') title = `Analisis Sosio-Ekonomi: ${cleanTopic}`;
+      else title = `Kajian Komprehensif: ${cleanTopic}`;
+    }
+  }
+
+  // 4. Pedagogical Description
+  let description = params.existingMetadata?.description?.trim();
+  if (!description) {
+    description = `Uji dan perdalam pemahaman konsep ${cleanTopic} untuk mata pelajaran ${subject} ${levelText} berbasis Kurikulum Merdeka. Dilengkapi stimulus kontekstual nyata untuk mengasah nalar kritis dan pemecahan masalah secara mandiri.`;
+  }
+
+  // 5. Estimated Duration per Question
+  let duration = params.existingMetadata?.durationPerQuestionSec;
+  if (!duration || duration < 15 || duration > 120) {
+    if (level === 'SD') {
+      duration = grade <= 2 ? 30 : 35;
+      if (subject === 'Matematika' || params.cognitiveFocus === 'hots') duration = 40;
+    } else if (level === 'SMP') {
+      duration = 40;
+      if (subject === 'Matematika' || subject === 'IPA Terpadu') duration = 45;
+    } else {
+      duration = 45;
+      if (subject === 'Fisika' || subject === 'Kimia' || subject.includes('Matematika')) duration = 60;
+    }
+  }
+
+  // 6. Theme Color
+  let themeColor = params.existingMetadata?.themeColor;
+  if (!themeColor || !/^#[0-9a-fA-F]{6}$/.test(themeColor)) {
+    if (subject.includes('Matematika')) themeColor = '#4f46e5';
+    else if (subject === 'IPA' || subject === 'Biologi') themeColor = '#059669';
+    else if (subject === 'Fisika' || /air|hujan|laut/.test(topicLower)) themeColor = '#0284c7';
+    else if (subject === 'Kimia' || subject === 'IPA Terpadu') themeColor = '#0d9488';
+    else if (subject === 'Pendidikan Pancasila') themeColor = '#dc2626';
+    else if (subject.includes('IPS') || subject === 'Geografi') themeColor = '#ea580c';
+    else if (subject === 'Sejarah') themeColor = '#b45309';
+    else if (subject === 'Informatika') themeColor = '#6366f1';
+    else if (subject.includes('Seni')) themeColor = '#db2777';
+    else if (subject === 'PJOK') themeColor = '#16a34a';
+    else themeColor = '#2563eb';
+  }
+
+  return {
+    title,
+    description,
+    coverEmoji: emoji,
+    badgeTitle,
+    durationPerQuestionSec: duration,
+    themeColor,
+    defaultGameMode: 'standard',
+  };
+}
+
+/**
+ * Menghasilkan metadata identitas kuis menggunakan AI (DeepSeek / Groq / Gemini) secara dinamis,
+ * dengan fallback cerdas ke mesin metadata kurikulum lokal jika offline atau kuota habis.
+ */
+export async function generateAiQuizMetadata(params: {
+  subject: Subject;
+  grade: number;
+  topic: string;
+  educationLevel?: EducationLevel;
+  contextNotes?: string;
+  existingQuestionsCount?: number;
+  provider?: AiProvider;
+  existingMetadata?: Partial<AiQuizMetadata>;
+}): Promise<Required<AiQuizMetadata>> {
+  const { subject, grade } = params;
+  const level = params.educationLevel || (grade >= 10 ? 'SMA' : grade >= 7 ? 'SMP' : 'SD');
+  const levelText = level === 'SMA' ? `Kelas ${grade} SMA / SMK` : level === 'SMP' ? `Kelas ${grade} SMP` : `Kelas ${grade} SD`;
+  const topic = params.topic.trim() || `Konsep Inti ${subject} ${levelText}`;
+
+  const prompt = `Anda adalah Pakar Asesmen Kurikulum Merdeka Kemendikbudristek RI. Buatlah identitas kuis interaktif yang sangat menarik dan edukatif untuk mata pelajaran ${subject} ${levelText} dengan topik/materi: "${topic}".
+
+Kembalikan HANYA JSON objek valid dengan format:
+{
+  "title": "Judul kuis yang memikat rasa ingin tahu siswa dan edukatif (contoh: 'Petualangan Sains: Menguak Siklus Air')",
+  "description": "Deskripsi pedagogis 2-3 kalimat untuk siswa (menjelaskan tujuan belajar, materi esensial, dan stimulus nyata)",
+  "coverEmoji": "1 karakter emoji yang paling pas dan merepresentasikan topik materi",
+  "badgeTitle": "Gelar juara kuis yang membanggakan dan relevan (contoh: 'Ahli Hidrologi Cilik', 'Master Pecahan')",
+  "durationPerQuestionSec": 30,
+  "themeColor": "#0284c7"
+}`;
+
+  // 1. Coba via DeepSeek jika key tersedia
+  if (hasDeepSeekApiKey()) {
+    try {
+      const apiKey = getStoredDeepSeekApiKey();
+      const res = await fetch('https://api.deepseek.com/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+        body: JSON.stringify({
+          model: 'deepseek-chat',
+          messages: [{ role: 'user', content: prompt }],
+          response_format: { type: 'json_object' },
+          temperature: 0.7,
+          max_tokens: 400,
+        }),
+      });
+      if (res.ok) {
+        const d = await res.json();
+        const content = d?.choices?.[0]?.message?.content;
+        if (content) {
+          const parsed = JSON.parse(content);
+          return generateCreativeQuizMetadata({
+            subject,
+            grade,
+            topic,
+            educationLevel: level,
+            existingMetadata: parsed,
+          });
+        }
+      }
+    } catch {
+      // fallback
+    }
+  }
+
+  // 2. Coba via Groq jika key tersedia
+  if (hasGroqApiKey()) {
+    try {
+      const apiKey = getStoredGroqApiKey();
+      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+        body: JSON.stringify({
+          model: 'llama-3.1-8b-instant',
+          messages: [{ role: 'user', content: prompt }],
+          response_format: { type: 'json_object' },
+          temperature: 0.7,
+          max_tokens: 400,
+        }),
+      });
+      if (res.ok) {
+        const d = await res.json();
+        const content = d?.choices?.[0]?.message?.content;
+        if (content) {
+          const parsed = JSON.parse(content);
+          return generateCreativeQuizMetadata({
+            subject,
+            grade,
+            topic,
+            educationLevel: level,
+            existingMetadata: parsed,
+          });
+        }
+      }
+    } catch {
+      // fallback
+    }
+  }
+
+  // 3. Coba via Gemini jika key tersedia
+  if (hasGeminiApiKey()) {
+    try {
+      const apiKey = getStoredGeminiApiKey();
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.7, maxOutputTokens: 500, responseMimeType: 'application/json' },
+        }),
+      });
+      if (res.ok) {
+        const d = await res.json();
+        const rawText = d?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (rawText) {
+          const parsed = JSON.parse(cleanJsonResponse(rawText));
+          return generateCreativeQuizMetadata({
+            subject,
+            grade,
+            topic,
+            educationLevel: level,
+            existingMetadata: parsed,
+          });
+        }
+      }
+    } catch {
+      // fallback
+    }
+  }
+
+  // 4. Fallback instan ke mesin metadata kurikulum lokal
+  return generateCreativeQuizMetadata({
+    subject,
+    grade,
+    topic,
+    educationLevel: level,
+    existingMetadata: params.existingMetadata,
+  });
+}
+
 /* =========================================================
    CALL GOOGLE GEMINI API
 ========================================================= */
 
-export async function callGeminiApi(params: GenerateAiQuestionsParams): Promise<QuizQuestion[]> {
+export async function callGeminiApi(params: GenerateAiQuestionsParams): Promise<{
+  questions: QuizQuestion[];
+  metadata?: AiQuizMetadata;
+}> {
   const apiKey = params.apiKey || getStoredGeminiApiKey();
   if (!apiKey) {
     throw new Error('Kunci API Gemini belum diatur. Silakan masukkan API Key Gemini Anda.');
@@ -1279,7 +1647,7 @@ export async function callGeminiApi(params: GenerateAiQuestionsParams): Promise<
   const model = params.geminiModel || (params.model as GeminiModel) || getStoredGeminiModel();
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
-  const promptText = buildInstructionText(params) + `\nKembalikan array JSON murni: [ { ... }, { ... } ]`;
+  const promptText = buildInstructionText(params) + `\nKembalikan objek JSON murni dengan format { "title": "...", "description": "...", "coverEmoji": "...", "badgeTitle": "...", "durationPerQuestionSec": 30, "themeColor": "#0284c7", "questions": [ { ... } ] }`;
 
   const requestBody = {
     contents: [{ parts: [{ text: promptText }] }],
@@ -1287,7 +1655,7 @@ export async function callGeminiApi(params: GenerateAiQuestionsParams): Promise<
       temperature: 0.7,
       topK: 40,
       topP: 0.95,
-      maxOutputTokens: 2500,
+      maxOutputTokens: 3500,
       responseMimeType: 'application/json',
     },
   };
@@ -1330,7 +1698,19 @@ export async function callGeminiApi(params: GenerateAiQuestionsParams): Promise<
       throw new Error('Format balasan Gemini tidak memuat daftar soal.');
     }
 
-    return normalizeQuestions(list, 'gemini', params.includeAiImages, params.mcOptionCount);
+    const questions = normalizeQuestions(list, 'gemini', params.includeAiImages, params.mcOptionCount);
+    const metadata: AiQuizMetadata | undefined = (!Array.isArray(parsed) && parsed && typeof parsed === 'object')
+      ? {
+          title: parsed.title || parsed.quizTitle || parsed.judul,
+          description: parsed.description || parsed.quizDescription || parsed.deskripsi,
+          coverEmoji: parsed.coverEmoji || parsed.emoji,
+          badgeTitle: parsed.badgeTitle || parsed.badge || parsed.gelar,
+          durationPerQuestionSec: typeof parsed.durationPerQuestionSec === 'number' ? parsed.durationPerQuestionSec : undefined,
+          themeColor: typeof parsed.themeColor === 'string' ? parsed.themeColor : undefined,
+        }
+      : undefined;
+
+    return { questions, metadata };
   } catch (err: unknown) {
     clearTimeout(timeoutId);
     if (err instanceof Error) {
@@ -1347,7 +1727,10 @@ export async function callGeminiApi(params: GenerateAiQuestionsParams): Promise<
    CALL GROQ API (LPU Inference Engine - Super Cepat)
 ========================================================= */
 
-export async function callGroqApi(params: GenerateAiQuestionsParams): Promise<QuizQuestion[]> {
+export async function callGroqApi(params: GenerateAiQuestionsParams): Promise<{
+  questions: QuizQuestion[];
+  metadata?: AiQuizMetadata;
+}> {
   const apiKey = params.apiKey || getStoredGroqApiKey();
   if (!apiKey) {
     throw new Error('Kunci API Groq belum diatur. Silakan masukkan API Key Groq Anda.');
@@ -1359,6 +1742,12 @@ export async function callGroqApi(params: GenerateAiQuestionsParams): Promise<Qu
   const systemInstruction = buildInstructionText(params) + `
 Kembalikan objek JSON dengan format:
 {
+  "title": "Judul kuis yang memikat dan edukatif",
+  "description": "Deskripsi pedagogis 2-3 kalimat untuk siswa",
+  "coverEmoji": "1 karakter emoji topik materi",
+  "badgeTitle": "Gelar juara kuis",
+  "durationPerQuestionSec": 30,
+  "themeColor": "#0284c7",
   "questions": [ { ... }, { ... } ]
 }`;
 
@@ -1371,12 +1760,12 @@ Kembalikan objek JSON dengan format:
       },
       {
         role: 'user',
-        content: `Tolong buatkan ${params.count} butir soal ${params.subject} Kelas ${params.grade} SD tentang materi "${params.topic}" dalam format JSON yang telah ditentukan.`,
+        content: `Tolong buatkan ${params.count} butir soal ${params.subject} Kelas ${params.grade} tentang materi "${params.topic}" dalam format JSON yang telah ditentukan. Lengkapi juga dengan judul kuis, deskripsi motivatif, emoji sampul, dan gelar lencana prestasi.`,
       },
     ],
     response_format: { type: 'json_object' },
     temperature: 0.6,
-    max_tokens: 3000,
+    max_tokens: 3500,
   };
 
   const controller = new AbortController();
@@ -1422,7 +1811,19 @@ Kembalikan objek JSON dengan format:
       throw new Error('Format balasan Groq tidak memuat daftar soal yang valid.');
     }
 
-    return normalizeQuestions(list, 'groq', params.includeAiImages, params.mcOptionCount);
+    const questions = normalizeQuestions(list, 'groq', params.includeAiImages, params.mcOptionCount);
+    const metadata: AiQuizMetadata | undefined = (!Array.isArray(parsed) && parsed && typeof parsed === 'object')
+      ? {
+          title: parsed.title || parsed.quizTitle || parsed.judul,
+          description: parsed.description || parsed.quizDescription || parsed.deskripsi,
+          coverEmoji: parsed.coverEmoji || parsed.emoji,
+          badgeTitle: parsed.badgeTitle || parsed.badge || parsed.gelar,
+          durationPerQuestionSec: typeof parsed.durationPerQuestionSec === 'number' ? parsed.durationPerQuestionSec : undefined,
+          themeColor: typeof parsed.themeColor === 'string' ? parsed.themeColor : undefined,
+        }
+      : undefined;
+
+    return { questions, metadata };
   } catch (err: unknown) {
     clearTimeout(timeoutId);
     if (err instanceof Error) {
@@ -1439,7 +1840,10 @@ Kembalikan objek JSON dengan format:
    CALL DEEPSEEK API (DeepSeek-V3 & DeepSeek-R1)
 ========================================================= */
 
-export async function callDeepSeekApi(params: GenerateAiQuestionsParams): Promise<QuizQuestion[]> {
+export async function callDeepSeekApi(params: GenerateAiQuestionsParams): Promise<{
+  questions: QuizQuestion[];
+  metadata?: AiQuizMetadata;
+}> {
   const apiKey = params.apiKey || getStoredDeepSeekApiKey();
   if (!apiKey) {
     throw new Error('Kunci API DeepSeek belum diatur. Silakan masukkan API Key DeepSeek Anda.');
@@ -1451,6 +1855,12 @@ export async function callDeepSeekApi(params: GenerateAiQuestionsParams): Promis
   const systemInstruction = buildInstructionText(params) + `
 Kembalikan objek JSON dengan format:
 {
+  "title": "Judul kuis yang memikat dan edukatif",
+  "description": "Deskripsi pedagogis 2-3 kalimat untuk siswa",
+  "coverEmoji": "1 karakter emoji topik materi",
+  "badgeTitle": "Gelar juara kuis",
+  "durationPerQuestionSec": 30,
+  "themeColor": "#0284c7",
   "questions": [ { ... }, { ... } ]
 }`;
 
@@ -1465,10 +1875,10 @@ Kembalikan objek JSON dengan format:
       },
       {
         role: 'user',
-        content: `Tolong buatkan ${params.count} butir soal ${params.subject} Kelas ${params.grade} SD tentang materi "${params.topic}" dalam format JSON yang telah ditentukan. Pastikan bahasa ramah anak SD.`,
+        content: `Tolong buatkan ${params.count} butir soal ${params.subject} Kelas ${params.grade} tentang materi "${params.topic}" dalam format JSON yang telah ditentukan. Lengkapi juga dengan judul kuis, deskripsi motivatif, emoji sampul, dan gelar lencana prestasi.`,
       },
     ],
-    max_tokens: 3500,
+    max_tokens: 3800,
   };
 
   // deepseek-chat supports response_format and temperature; deepseek-reasoner restricts them in some versions
@@ -1536,7 +1946,19 @@ Kembalikan objek JSON dengan format:
       throw new Error('Format balasan DeepSeek tidak memuat daftar soal yang valid.');
     }
 
-    return normalizeQuestions(list, 'deepseek', params.includeAiImages, params.mcOptionCount);
+    const questions = normalizeQuestions(list, 'deepseek', params.includeAiImages, params.mcOptionCount);
+    const metadata: AiQuizMetadata | undefined = (!Array.isArray(parsed) && parsed && typeof parsed === 'object')
+      ? {
+          title: parsed.title || parsed.quizTitle || parsed.judul,
+          description: parsed.description || parsed.quizDescription || parsed.deskripsi,
+          coverEmoji: parsed.coverEmoji || parsed.emoji,
+          badgeTitle: parsed.badgeTitle || parsed.badge || parsed.gelar,
+          durationPerQuestionSec: typeof parsed.durationPerQuestionSec === 'number' ? parsed.durationPerQuestionSec : undefined,
+          themeColor: typeof parsed.themeColor === 'string' ? parsed.themeColor : undefined,
+        }
+      : undefined;
+
+    return { questions, metadata };
   } catch (err: unknown) {
     clearTimeout(timeoutId);
     if (err instanceof Error) {
@@ -1557,6 +1979,31 @@ export async function generateHybridQuizQuestions(
   params: GenerateAiQuestionsParams
 ): Promise<HybridGenerateResult> {
   const provider = params.provider || getStoredAiProvider();
+
+  // Helper pembangun output terpadu ber-metadata lengkap
+  const buildResult = (
+    questions: QuizQuestion[],
+    source: 'gemini_api' | 'groq_api' | 'deepseek_api' | 'curriculum_seed',
+    message: string,
+    rawMeta?: AiQuizMetadata
+  ): HybridGenerateResult => {
+    const metadata = generateCreativeQuizMetadata({
+      subject: params.subject,
+      grade: params.grade,
+      topic: params.topic,
+      educationLevel: params.educationLevel,
+      cognitiveFocus: params.cognitiveFocus,
+      questionCount: questions.length,
+      existingMetadata: rawMeta,
+    });
+
+    return {
+      questions,
+      source,
+      message,
+      metadata,
+    };
+  };
 
   // 1. Coba via Supabase Cloud Edge Function jika provider tersedia di Supabase Secrets (Rule 9 & Rule 10)
   let cloudStatus: SupabaseAiStatus | null = null;
@@ -1586,11 +2033,12 @@ export async function generateHybridQuizQuestions(
   if (provider === 'deepseek' && isCloudDeepSeek) {
     try {
       const result = await callSupabaseAiEdgeFunction({ ...params, provider: 'deepseek' });
-      return {
-        questions: result.questions,
-        source: 'deepseek_api',
-        message: `🐋 Berhasil meracik ${result.questions.length} butir soal materi "${params.topic}" via DeepSeek Cloud (${result.model || 'V3/R1'})!`,
-      };
+      return buildResult(
+        result.questions,
+        'deepseek_api',
+        `🐋 Berhasil meracik ${result.questions.length} butir soal materi "${params.topic}" via DeepSeek Cloud (${result.model || 'V3/R1'})!`,
+        result.metadata
+      );
     } catch (cloudDeepSeekErr: unknown) {
       recordEngineError('deepseek', cloudDeepSeekErr);
       console.warn('Panggilan DeepSeek via Supabase Edge Function gagal, mencoba cadangan:', cloudDeepSeekErr);
@@ -1598,11 +2046,12 @@ export async function generateHybridQuizQuestions(
   } else if (provider === 'groq' && isCloudGroq) {
     try {
       const result = await callSupabaseAiEdgeFunction({ ...params, provider: 'groq' });
-      return {
-        questions: result.questions,
-        source: 'groq_api',
-        message: `⚡ Berhasil meracik ${result.questions.length} butir soal materi "${params.topic}" via Groq Cloud (${result.model || 'LPU Engine'})!`,
-      };
+      return buildResult(
+        result.questions,
+        'groq_api',
+        `⚡ Berhasil meracik ${result.questions.length} butir soal materi "${params.topic}" via Groq Cloud (${result.model || 'LPU Engine'})!`,
+        result.metadata
+      );
     } catch (cloudGroqErr: unknown) {
       recordEngineError('groq', cloudGroqErr);
       console.warn('Panggilan Groq via Supabase Edge Function gagal, mencoba cadangan:', cloudGroqErr);
@@ -1610,11 +2059,12 @@ export async function generateHybridQuizQuestions(
   } else if (provider === 'gemini' && isCloudGemini) {
     try {
       const result = await callSupabaseAiEdgeFunction({ ...params, provider: 'gemini' });
-      return {
-        questions: result.questions,
-        source: 'gemini_api',
-        message: `✨ Berhasil meracik ${result.questions.length} butir soal materi "${params.topic}" via Google Gemini AI (${result.model || 'PRO'})!`,
-      };
+      return buildResult(
+        result.questions,
+        'gemini_api',
+        `✨ Berhasil meracik ${result.questions.length} butir soal materi "${params.topic}" via Google Gemini AI (${result.model || 'PRO'})!`,
+        result.metadata
+      );
     } catch (cloudGeminiErr: unknown) {
       recordEngineError('gemini', cloudGeminiErr);
       console.warn('Panggilan Gemini via Supabase Edge Function gagal, mencoba cadangan:', cloudGeminiErr);
@@ -1624,36 +2074,39 @@ export async function generateHybridQuizQuestions(
   // 2. Coba provider utama dengan API Key lokal jika tersedia di browser
   if (provider === 'deepseek' && hasDeepSeekApiKey()) {
     try {
-      const questions = await callDeepSeekApi(params);
-      return {
-        questions,
-        source: 'deepseek_api',
-        message: `🐋 Berhasil membuat ${questions.length} butir soal materi "${params.topic}" via DeepSeek AI Lokal (${params.deepseekModel || getStoredDeepSeekModel()})!`,
-      };
+      const res = await callDeepSeekApi(params);
+      return buildResult(
+        res.questions,
+        'deepseek_api',
+        `🐋 Berhasil membuat ${res.questions.length} butir soal materi "${params.topic}" via DeepSeek AI Lokal (${params.deepseekModel || getStoredDeepSeekModel()})!`,
+        res.metadata
+      );
     } catch (deepseekErr: unknown) {
       recordEngineError('deepseek', deepseekErr);
       console.warn('Panggilan DeepSeek lokal gagal, mencoba cadangan:', deepseekErr);
     }
   } else if (provider === 'groq' && hasGroqApiKey()) {
     try {
-      const questions = await callGroqApi(params);
-      return {
-        questions,
-        source: 'groq_api',
-        message: `⚡ Berhasil membuat ${questions.length} butir soal materi "${params.topic}" via Groq Cloud Lokal (${params.groqModel || getStoredGroqModel()})!`,
-      };
+      const res = await callGroqApi(params);
+      return buildResult(
+        res.questions,
+        'groq_api',
+        `⚡ Berhasil membuat ${res.questions.length} butir soal materi "${params.topic}" via Groq Cloud Lokal (${params.groqModel || getStoredGroqModel()})!`,
+        res.metadata
+      );
     } catch (groqErr: unknown) {
       recordEngineError('groq', groqErr);
       console.warn('Panggilan Groq lokal gagal, mencoba cadangan:', groqErr);
     }
   } else if (provider === 'gemini' && hasGeminiApiKey()) {
     try {
-      const questions = await callGeminiApi(params);
-      return {
-        questions,
-        source: 'gemini_api',
-        message: `✨ Berhasil membuat ${questions.length} butir soal materi "${params.topic}" via Google Gemini AI Lokal!`,
-      };
+      const res = await callGeminiApi(params);
+      return buildResult(
+        res.questions,
+        'gemini_api',
+        `✨ Berhasil membuat ${res.questions.length} butir soal materi "${params.topic}" via Google Gemini AI Lokal!`,
+        res.metadata
+      );
     } catch (geminiErr: unknown) {
       recordEngineError('gemini', geminiErr);
       console.warn('Panggilan Gemini lokal gagal, mencoba cadangan:', geminiErr);
@@ -1665,11 +2118,12 @@ export async function generateHybridQuizQuestions(
     if (isCloudGroq) {
       try {
         const result = await callSupabaseAiEdgeFunction({ ...params, provider: 'groq' });
-        return {
-          questions: result.questions,
-          source: 'groq_api',
-          message: `Beralih ke Groq Cloud: ${result.questions.length} butir soal materi "${params.topic}" berhasil dibuat.`,
-        };
+        return buildResult(
+          result.questions,
+          'groq_api',
+          `Beralih ke Groq Cloud: ${result.questions.length} butir soal materi "${params.topic}" berhasil dibuat.`,
+          result.metadata
+        );
       } catch {
         // lanjut
       }
@@ -1677,35 +2131,38 @@ export async function generateHybridQuizQuestions(
     if (isCloudGemini) {
       try {
         const result = await callSupabaseAiEdgeFunction({ ...params, provider: 'gemini' });
-        return {
-          questions: result.questions,
-          source: 'gemini_api',
-          message: `Beralih ke Google Gemini Cloud: ${result.questions.length} butir soal materi "${params.topic}" berhasil dibuat.`,
-        };
+        return buildResult(
+          result.questions,
+          'gemini_api',
+          `Beralih ke Google Gemini Cloud: ${result.questions.length} butir soal materi "${params.topic}" berhasil dibuat.`,
+          result.metadata
+        );
       } catch {
         // lanjut
       }
     }
     if (hasGroqApiKey()) {
       try {
-        const questions = await callGroqApi(params);
-        return {
-          questions,
-          source: 'groq_api',
-          message: `Beralih ke Groq: ${questions.length} butir soal materi "${params.topic}" berhasil dibuat.`,
-        };
+        const res = await callGroqApi(params);
+        return buildResult(
+          res.questions,
+          'groq_api',
+          `Beralih ke Groq: ${res.questions.length} butir soal materi "${params.topic}" berhasil dibuat.`,
+          res.metadata
+        );
       } catch {
         // lanjut
       }
     }
     if (hasGeminiApiKey()) {
       try {
-        const questions = await callGeminiApi(params);
-        return {
-          questions,
-          source: 'gemini_api',
-          message: `Beralih ke Google Gemini: ${questions.length} butir soal materi "${params.topic}" berhasil dibuat.`,
-        };
+        const res = await callGeminiApi(params);
+        return buildResult(
+          res.questions,
+          'gemini_api',
+          `Beralih ke Google Gemini: ${res.questions.length} butir soal materi "${params.topic}" berhasil dibuat.`,
+          res.metadata
+        );
       } catch {
         // lanjut
       }
@@ -1714,11 +2171,12 @@ export async function generateHybridQuizQuestions(
     if (isCloudDeepSeek) {
       try {
         const result = await callSupabaseAiEdgeFunction({ ...params, provider: 'deepseek' });
-        return {
-          questions: result.questions,
-          source: 'deepseek_api',
-          message: `Beralih ke DeepSeek Cloud: ${result.questions.length} butir soal materi "${params.topic}" berhasil dibuat.`,
-        };
+        return buildResult(
+          result.questions,
+          'deepseek_api',
+          `Beralih ke DeepSeek Cloud: ${result.questions.length} butir soal materi "${params.topic}" berhasil dibuat.`,
+          result.metadata
+        );
       } catch {
         // lanjut
       }
@@ -1726,48 +2184,52 @@ export async function generateHybridQuizQuestions(
     if (isCloudGemini) {
       try {
         const result = await callSupabaseAiEdgeFunction({ ...params, provider: 'gemini' });
-        return {
-          questions: result.questions,
-          source: 'gemini_api',
-          message: `Beralih ke Google Gemini Cloud: ${result.questions.length} butir soal materi "${params.topic}" berhasil dibuat.`,
-        };
+        return buildResult(
+          result.questions,
+          'gemini_api',
+          `Beralih ke Google Gemini Cloud: ${result.questions.length} butir soal materi "${params.topic}" berhasil dibuat.`,
+          result.metadata
+        );
       } catch {
         // lanjut
       }
     }
     if (hasDeepSeekApiKey()) {
       try {
-        const questions = await callDeepSeekApi(params);
-        return {
-          questions,
-          source: 'deepseek_api',
-          message: `Beralih ke DeepSeek: ${questions.length} butir soal materi "${params.topic}" berhasil dibuat.`,
-        };
+        const res = await callDeepSeekApi(params);
+        return buildResult(
+          res.questions,
+          'deepseek_api',
+          `Beralih ke DeepSeek: ${res.questions.length} butir soal materi "${params.topic}" berhasil dibuat.`,
+          res.metadata
+        );
       } catch {
         // lanjut
       }
     }
     if (hasGeminiApiKey()) {
       try {
-        const questions = await callGeminiApi(params);
-        return {
-          questions,
-          source: 'gemini_api',
-          message: `Beralih ke Google Gemini: ${questions.length} butir soal materi "${params.topic}" berhasil dibuat.`,
-        };
+        const res = await callGeminiApi(params);
+        return buildResult(
+          res.questions,
+          'gemini_api',
+          `Beralih ke Google Gemini: ${res.questions.length} butir soal materi "${params.topic}" berhasil dibuat.`,
+          res.metadata
+        );
       } catch {
-        // lanjut ke fallback lokal
+        // lanjut
       }
     }
   } else if (provider === 'gemini') {
     if (isCloudDeepSeek) {
       try {
         const result = await callSupabaseAiEdgeFunction({ ...params, provider: 'deepseek' });
-        return {
-          questions: result.questions,
-          source: 'deepseek_api',
-          message: `Beralih ke DeepSeek Cloud: ${result.questions.length} butir soal materi "${params.topic}" berhasil dibuat.`,
-        };
+        return buildResult(
+          result.questions,
+          'deepseek_api',
+          `Beralih ke DeepSeek Cloud: ${result.questions.length} butir soal materi "${params.topic}" berhasil dibuat.`,
+          result.metadata
+        );
       } catch {
         // lanjut
       }
@@ -1775,35 +2237,38 @@ export async function generateHybridQuizQuestions(
     if (isCloudGroq) {
       try {
         const result = await callSupabaseAiEdgeFunction({ ...params, provider: 'groq' });
-        return {
-          questions: result.questions,
-          source: 'groq_api',
-          message: `Beralih ke Groq Cloud: ${result.questions.length} butir soal materi "${params.topic}" berhasil dibuat.`,
-        };
+        return buildResult(
+          result.questions,
+          'groq_api',
+          `Beralih ke Groq Cloud: ${result.questions.length} butir soal materi "${params.topic}" berhasil dibuat.`,
+          result.metadata
+        );
       } catch {
         // lanjut
       }
     }
     if (hasDeepSeekApiKey()) {
       try {
-        const questions = await callDeepSeekApi(params);
-        return {
-          questions,
-          source: 'deepseek_api',
-          message: `Beralih ke DeepSeek: ${questions.length} butir soal materi "${params.topic}" berhasil dibuat.`,
-        };
+        const res = await callDeepSeekApi(params);
+        return buildResult(
+          res.questions,
+          'deepseek_api',
+          `Beralih ke DeepSeek: ${res.questions.length} butir soal materi "${params.topic}" berhasil dibuat.`,
+          res.metadata
+        );
       } catch {
         // lanjut
       }
     }
     if (hasGroqApiKey()) {
       try {
-        const questions = await callGroqApi(params);
-        return {
-          questions,
-          source: 'groq_api',
-          message: `Beralih ke Groq Cloud: ${questions.length} butir soal materi "${params.topic}" berhasil dibuat.`,
-        };
+        const res = await callGroqApi(params);
+        return buildResult(
+          res.questions,
+          'groq_api',
+          `Beralih ke Groq Cloud: ${res.questions.length} butir soal materi "${params.topic}" berhasil dibuat.`,
+          res.metadata
+        );
       } catch {
         // lanjut ke fallback lokal
       }
@@ -1832,11 +2297,11 @@ export async function generateHybridQuizQuestions(
   }
 
   const isFallback = Boolean(params.provider);
-  return {
-    questions: localQuestions,
-    source: 'curriculum_seed',
-    message: isFallback
+  return buildResult(
+    localQuestions,
+    'curriculum_seed',
+    isFallback
       ? `⚠️ Mesin ${provider.toUpperCase()} sedang sibuk atau mencapai limit. Otomatis dialihkan ke Generator Lokal (${localQuestions.length} butir soal siap)!`
-      : `Berhasil membuat ${localQuestions.length} butir soal materi "${params.topic}" via Generator Lokal!`,
-  };
+      : `Berhasil membuat ${localQuestions.length} butir soal materi "${params.topic}" via Generator Lokal!`
+  );
 }

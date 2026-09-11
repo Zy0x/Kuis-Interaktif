@@ -1,4 +1,4 @@
-import type { QuizQuestion, QuestionType, Subject, EducationLevel } from '../types/quiz';
+import type { QuizQuestion, QuestionType, Subject, EducationLevel, AiQuizMetadata } from '../types/quiz';
 
 export interface GeneratePromptParams {
   subject: Subject;
@@ -242,18 +242,30 @@ const extractJsonSubstring = (text: string): string | null => {
     }
   }
 
-  // Cari blok array [ ... ]
-  const firstBracket = clean.indexOf('[');
-  const lastBracket = clean.lastIndexOf(']');
-  if (firstBracket !== -1 && lastBracket > firstBracket) {
-    return clean.substring(firstBracket, lastBracket + 1);
-  }
-
-  // Cek apakah dibungkus objek { "questions": [ ... ] } atau { "soal": [ ... ] }
+  // Cari posisi kurung kurawal pembuka { dan siku [
   const firstBrace = clean.indexOf('{');
   const lastBrace = clean.lastIndexOf('}');
-  if (firstBrace !== -1 && lastBrace > firstBrace) {
+  const firstBracket = clean.indexOf('[');
+  const lastBracket = clean.lastIndexOf(']');
+
+  const hasValidBrace = firstBrace !== -1 && lastBrace > firstBrace;
+  const hasValidBracket = firstBracket !== -1 && lastBracket > firstBracket;
+
+  if (hasValidBrace && hasValidBracket) {
+    // Jika objek { dimulai lebih awal dari array [, prioritaskan objek (misal: { "title": "...", "questions": [...] })
+    if (firstBrace < firstBracket) {
+      return clean.substring(firstBrace, lastBrace + 1);
+    } else {
+      return clean.substring(firstBracket, lastBracket + 1);
+    }
+  }
+
+  if (hasValidBrace) {
     return clean.substring(firstBrace, lastBrace + 1);
+  }
+
+  if (hasValidBracket) {
+    return clean.substring(firstBracket, lastBracket + 1);
   }
 
   return null;
@@ -511,7 +523,8 @@ ${samplePairs}
   }`);
   }
 
-  const exampleJsonBlock = `[\n${sampleItems.join(',\n')}\n]`;
+  const indentedSampleItems = sampleItems.map(item => item.split('\n').map(line => '  ' + line).join('\n'));
+  const exampleJsonBlock = `{\n  "title": "Petualangan Sains: Menguak Siklus Air",\n  "description": "Uji pemahaman dan daya nalar kritis siswa mengenai tahapan siklus air di alam melalui skenario kontekstual dan bermakna.",\n  "coverEmoji": "💧",\n  "badgeTitle": "Ahli Hidrologi Cilik",\n  "durationPerQuestionSec": 30,\n  "questions": [\n${indentedSampleItems.join(',\n')}\n  ]\n}`;
 
   return `[SISTEM INSTRUKSI: GENERATOR DATA SOAL / HEADLESS JSON COMPILER]
 PERAN ANDA:
@@ -521,9 +534,9 @@ Anda bertindak murni sebagai ENGINE GENERATOR DATA SOAL berstandar resmi Kurikul
 PERINGATAN KERAS & ATURAN MUTLAK (WAJIB DIPATUHI 100%):
 1. DILARANG KERAS mengajak pengguna bermain kuis di dalam obrolan chat!
 2. JANGAN menyapa ("Halo!", "Tentu!", "Siap!"), JANGAN bertanya ("Apakah kamu siap?"), dan JANGAN menyajikan soal satu demi satu!
-3. WAJIB hasilkan SELURUH ${params.count} butir soal SEKALIGUS dalam SATU respons utuh!
+3. WAJIB hasilkan paket kuis lengkap berisi SELURUH ${params.count} butir soal SEKALIGUS dalam SATU respons utuh!
 4. DILARANG menyisipkan teks pengantar atau penutup apapun di luar blok kode JSON!
-5. Keluaran WAJIB diawali dengan karakter '[' dan diakhiri dengan karakter ']' (HANYA SATU BLOK KODE JSON MURNI).
+5. Keluaran WAJIB diawali dengan karakter '{' dan diakhiri dengan karakter '}' (HANYA SATU BLOK KODE JSON MURNI).
 
 SPESIFIKASI KURIKULUM MERDEKA & SASARAN BELAJAR:
 - Mata Pelajaran: ${params.subject}
@@ -545,23 +558,32 @@ STANDAR KUALITAS BUTIR SOAL (ANTI-AI SLOP & HIGH-PEDAGOGY):
 4. Pembahasan Edukatif Berbobot (Explanation): Properti "explanation" WAJIB menjelaskan konsep mengapa jawaban benar dan mengapa opsi lain keliru dengan bahasa santun dan menumbuhkan rasa percaya diri anak (1-3 kalimat).
 
 PANDUAN STRUKTUR JSON (ANTI-KESALAHAN FORMAT):
-1. Properti "type": Wajib bernilai salah satu dari: ${activeTypes.map((t) => `"${t}"`).join(', ')}.
-2. Properti "text": Teks pertanyaan yang diawali stimulus kontekstual yang jelas dan tidak ambigu.
-3. Properti "options": Array string berisi teks jawaban MURNI.
-   ⚠️ DILARANG MENYERTAKAN AWALAN HURUF SEPERTI "A. ", "B. ", "1. " DI DALAM ARRAY OPTIONS!
-   - Contoh BENAR: ["Jakarta", "Surabaya", "Bandung", "Medan"]
-   - Contoh SALAH: ["A. Jakarta", "B. Surabaya", "C. Bandung", "D. Medan"]
-4. Properti "correctIndex": WAJIB ANGKA BULAT INTEGER 0-BASED (0 untuk opsi pertama, 1 untuk opsi kedua, dst).
-   ⚠️ DILARANG MENGGUNAKAN HURUF ("A", "B") DAN DILARANG MENGGUNAKAN STRING ("0").
-5. Properti "explanation": Penjelasan konsep mendalam (1-3 kalimat edukatif).
-6. Properti "points": Nilai poin standar (10 untuk pilihan ganda/isian/benar-salah, 15 untuk menjodohkan).
-7. Validitas JSON: Wajib mematuhi RFC 8259. DILARANG menggunakan trailing comma (koma gantung sebelum '}' atau ']') dan DILARANG menyisipkan komentar (seperti // atau /* */).
+A. Metadata Identitas Kuis (Level Objek Akar):
+   1. "title": Judul kuis yang inspiratif, ramah anak, dan mencerminkan esensi materi belajar (BUKAN hanya nama topik mentah).
+   2. "description": 2-3 kalimat pengantar bermakna mengenai tujuan asesmen dan pesan motivasi siswa.
+   3. "coverEmoji": 1 emoji paling representatif dengan topik (contoh: 💧 untuk siklus air, 🪐 untuk tata surya, 🌿 untuk tumbuhan, 🍕 untuk pecahan, 🫀 untuk peredaran darah).
+   4. "badgeTitle": Gelar apresiatif pencapaian siswa sesuai materi (contoh: "Ahli Hidrologi Cilik", "Penjelajah Antariksa", "Master Pecahan Cepat").
+   5. "durationPerQuestionSec": Durasi ideal pengerjaan rata-rata per butir soal (misal: 30, 40, atau 45 detik).
+   6. "questions": Array berisi butir-butir soal di bawah.
+
+B. Butir-Butir Soal (Array "questions"):
+   1. Properti "type": Wajib bernilai salah satu dari: ${activeTypes.map((t) => `"${t}"`).join(', ')}.
+   2. Properti "text": Teks pertanyaan yang diawali stimulus kontekstual yang jelas dan tidak ambigu.
+   3. Properti "options": Array string berisi teks jawaban MURNI.
+      ⚠️ DILARANG MENYERTAKAN AWALAN HURUF SEPERTI "A. ", "B. ", "1. " DI DALAM ARRAY OPTIONS!
+      - Contoh BENAR: ["Jakarta", "Surabaya", "Bandung", "Medan"]
+      - Contoh SALAH: ["A. Jakarta", "B. Surabaya", "C. Bandung", "D. Medan"]
+   4. Properti "correctIndex": WAJIB ANGKA BULAT INTEGER 0-BASED (0 untuk opsi pertama, 1 untuk opsi kedua, dst).
+      ⚠️ DILARANG MENGGUNAKAN HURUF ("A", "B") DAN DILARANG MENGGUNAKAN STRING ("0").
+   5. Properti "explanation": Penjelasan konsep mendalam (1-3 kalimat edukatif).
+   6. Properti "points": Nilai poin standar (10 untuk pilihan ganda/isian/benar-salah, 15 untuk menjodohkan).
+   7. Validitas JSON: Wajib mematuhi RFC 8259. DILARANG menggunakan trailing comma (koma gantung sebelum '}' atau ']') dan DILARANG menyisipkan komentar (seperti // atau /* */).
 
 CONTOH FORMAT KELUARAN YANG DIWAJIBKAN:
 ${exampleJsonBlock}
 
 PENGINGAT TERAKHIR:
-Hasilkan TEPAT ${params.count} butir soal di atas SEKALIGUS sekarang juga. Mulai respons Anda langsung dengan karakter '[':`;
+Hasilkan paket kuis lengkap beserta TEPAT ${params.count} butir soal di atas SEKALIGUS sekarang juga. Mulai respons Anda langsung dengan karakter '{':`;
 };
 
 /**
@@ -1034,6 +1056,56 @@ const parseNaturalTextFormat = (text: string): ParsedQuestionItem[] => {
   });
 
   return results;
+};
+
+export interface ParseQuizPayloadResult {
+  items: ParsedQuestionItem[];
+  metadata?: AiQuizMetadata;
+}
+
+/**
+ * Mengurai paket kuis lengkap dari teks mentah AI:
+ * Mengekstrak butir-butir soal sekaligus metadata identitas kuis (judul, deskripsi, coverEmoji, lencana, durasi).
+ */
+export const parseRawQuizPayload = (rawText: string): ParseQuizPayloadResult => {
+  const items = parseRawQuestionsText(rawText);
+  let metadata: AiQuizMetadata | undefined = undefined;
+
+  const trimmed = rawText.trim();
+  const jsonCandidate = extractJsonSubstring(trimmed);
+  if (jsonCandidate) {
+    try {
+      const sanitized = sanitizeJsonString(jsonCandidate);
+      let parsed: any = null;
+      try {
+        parsed = JSON.parse(sanitized);
+      } catch {
+        try {
+          const fixedQuotes = sanitized
+            .replace(/'([^'\\]*(?:\\.[^'\\]*)*)'\s*:/g, '"$1":')
+            .replace(/:\s*'([^'\\]*(?:\\.[^'\\]*)*)'/g, ': "$1"');
+          parsed = JSON.parse(fixedQuotes);
+        } catch {
+          // ignore
+        }
+      }
+
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        metadata = {
+          title: typeof parsed.title === 'string' && parsed.title.trim() ? parsed.title.trim() : (typeof parsed.judul === 'string' && parsed.judul.trim() ? parsed.judul.trim() : undefined),
+          description: typeof parsed.description === 'string' && parsed.description.trim() ? parsed.description.trim() : (typeof parsed.deskripsi === 'string' && parsed.deskripsi.trim() ? parsed.deskripsi.trim() : undefined),
+          coverEmoji: typeof parsed.coverEmoji === 'string' && parsed.coverEmoji.trim() ? parsed.coverEmoji.trim() : (typeof parsed.emoji === 'string' && parsed.emoji.trim() ? parsed.emoji.trim() : undefined),
+          badgeTitle: typeof parsed.badgeTitle === 'string' && parsed.badgeTitle.trim() ? parsed.badgeTitle.trim() : (typeof parsed.lencana === 'string' && parsed.lencana.trim() ? parsed.lencana.trim() : undefined),
+          durationPerQuestionSec: typeof parsed.durationPerQuestionSec === 'number' && parsed.durationPerQuestionSec > 0 ? parsed.durationPerQuestionSec : (typeof parsed.durasi === 'number' && parsed.durasi > 0 ? parsed.durasi : undefined),
+          themeColor: typeof parsed.themeColor === 'string' && parsed.themeColor.trim() ? parsed.themeColor.trim() : undefined,
+        };
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  return { items, metadata };
 };
 
 /**

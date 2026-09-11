@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import type { Subject, QuizQuestion, EducationLevel } from '../../types/quiz';
+import type { Subject, QuizQuestion, EducationLevel, GameMode } from '../../types/quiz';
 import { 
   generateHybridQuizQuestions, 
+  generateCreativeQuizMetadata,
   checkSupabaseAiStatus, 
   getSupabaseAiStatusSync, 
   generateAiTopicIdeas,
@@ -32,7 +33,7 @@ import {
   type AiProvider
 } from '../../lib/geminiApi';
 import { 
-  parseRawQuestionsText, 
+  parseRawQuizPayload,
   generateAiPrompt, 
   getQuestionCsvTemplate,
   copyTextToClipboard
@@ -76,6 +77,11 @@ interface AiGeneratorStepProps {
     questionCount: number;
     coverEmoji: string;
     badgeTitle: string;
+    title?: string;
+    description?: string;
+    durationPerQuestionSec?: number;
+    themeColor?: string;
+    defaultGameMode?: GameMode;
   }) => void;
   onBack: () => void;
   playClick: () => void;
@@ -1808,19 +1814,30 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
         throw lastError || new Error('Tidak ada butir soal yang berhasil diracik. Silakan coba kembali.');
       }
 
-      const badge = educationLevel === 'SMA' ? 'Bintang Cendekia' : educationLevel === 'SMP' ? 'Bintang Mandiri' : 'Bintang Pintar';
+      const enrichedMeta = generateCreativeQuizMetadata({
+        subject,
+        grade,
+        topic: topic.trim(),
+        educationLevel,
+        existingMetadata: result.metadata,
+      });
 
       // Langsung buka Studio Bank Soal
       clearAiGeneratorDraft();
       onGenerated({
         questions: result.questions,
-        topic: topic.trim(),
+        topic: topic.trim() || enrichedMeta.title,
         subject,
         grade,
         educationLevel,
         questionCount: result.questions.length,
-        coverEmoji: EMOJI_BY_SUBJECT[subject] || '🌟',
-        badgeTitle: badge,
+        coverEmoji: enrichedMeta.coverEmoji,
+        badgeTitle: enrichedMeta.badgeTitle,
+        title: enrichedMeta.title,
+        description: enrichedMeta.description,
+        durationPerQuestionSec: enrichedMeta.durationPerQuestionSec,
+        themeColor: enrichedMeta.themeColor,
+        defaultGameMode: enrichedMeta.defaultGameMode,
       });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Terjadi kendala saat meracik soal AI.';
@@ -1857,27 +1874,37 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
     }
 
     try {
-      const parsed = parseRawQuestionsText(trimmed);
-      const validQuestions = parsed.filter((p) => p.valid).map((p) => p.question);
+      const parsedResult = parseRawQuizPayload(trimmed);
+      const validQuestions = parsedResult.items.filter((p) => p.valid).map((p) => p.question);
 
       if (validQuestions.length === 0) {
         showToast('Format soal tidak dapat dikenali. Pastikan teks berisi pertanyaan, opsi pilihan, dan kunci jawaban.', 'error');
         return;
       }
 
-      const badge = educationLevel === 'SMA' ? 'Bintang Cendekia' : educationLevel === 'SMP' ? 'Bintang Mandiri' : 'Bintang Pintar';
-      const levelLabel = educationLevel === 'SMA' ? 'SMA' : educationLevel === 'SMP' ? 'SMP' : 'SD';
+      const enrichedMeta = generateCreativeQuizMetadata({
+        subject,
+        grade,
+        topic: topic.trim() || `Kuis ${subject} Kelas ${grade}`,
+        educationLevel,
+        existingMetadata: parsedResult.metadata,
+      });
 
       clearAiGeneratorDraft();
       onGenerated({
         questions: validQuestions,
-        topic: topic.trim() || `Kuis ${subject} Kelas ${grade} ${levelLabel}`,
+        topic: topic.trim() || enrichedMeta.title,
         subject,
         grade,
         educationLevel,
         questionCount: validQuestions.length,
-        coverEmoji: EMOJI_BY_SUBJECT[subject] || '🌟',
-        badgeTitle: badge,
+        coverEmoji: enrichedMeta.coverEmoji,
+        badgeTitle: enrichedMeta.badgeTitle,
+        title: enrichedMeta.title,
+        description: enrichedMeta.description,
+        durationPerQuestionSec: enrichedMeta.durationPerQuestionSec,
+        themeColor: enrichedMeta.themeColor,
+        defaultGameMode: enrichedMeta.defaultGameMode,
       });
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Gagal mengurai teks soal.';

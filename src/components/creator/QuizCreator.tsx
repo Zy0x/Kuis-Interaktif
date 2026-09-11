@@ -1148,17 +1148,30 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
             onGenerated={(data) => {
               const lvl = data.educationLevel || (data.grade >= 10 ? 'SMA' : data.grade >= 7 ? 'SMP' : 'SD');
               const lvlLabel = lvl === 'SMA' ? 'SMA / SMK' : lvl === 'SMP' ? 'SMP' : 'SD';
+              const generatedTitle = data.title && data.title.trim()
+                ? data.title.trim()
+                : `Kuis ${data.subject}: ${data.topic.length > 40 ? data.topic.slice(0, 40) + '...' : data.topic}`;
+              const generatedDesc = data.description && data.description.trim()
+                ? data.description.trim()
+                : `Latihan kuis interaktif Kurikulum Merdeka mata pelajaran ${data.subject} Kelas ${data.grade} ${lvlLabel} topik ${data.topic}.`;
+
               setQuestions(data.questions);
-              setTitle(`Kuis ${data.subject}: ${data.topic.length > 40 ? data.topic.slice(0, 40) + '...' : data.topic}`);
-              setDescription(`Latihan kuis interaktif Kurikulum Merdeka mata pelajaran ${data.subject} Kelas ${data.grade} ${lvlLabel} topik ${data.topic}.`);
+              setTitle(generatedTitle);
+              setDescription(generatedDesc);
               setSubject(data.subject);
               setGrade(data.grade);
               setEducationLevel(lvl);
               setCoverEmoji(data.coverEmoji);
               setBadgeTitle(data.badgeTitle);
+              if (data.durationPerQuestionSec && data.durationPerQuestionSec > 0) {
+                setDurationPerQuestionSec(data.durationPerQuestionSec);
+              }
+              if (data.defaultGameMode) {
+                setDefaultGameMode(data.defaultGameMode);
+              }
               setAiFunnelActive(false);
               setCurrentStep(1); // Enters Studio Step 1: Bank Soal
-              showToast(`⚡ Berhasil meracik ${data.questions.length} butir soal! Silakan periksa di Bank Soal.`);
+              showToast(`✨ Kuis "${generatedTitle}" (${data.questions.length} butir soal) berhasil diracik lengkap dengan identitas kuis!`);
             }}
             onBack={() => {
               if (onBackToMethodSelection) {

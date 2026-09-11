@@ -1,5 +1,6 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import type { Subject, GameMode, EducationLevel } from '../../types/quiz';
+import { generateAiQuizMetadata } from '../../lib/geminiApi';
 import { 
   BookOpen, 
   ArrowLeft, 
@@ -9,7 +10,9 @@ import {
   CheckCircle2,
   Clock,
   Award,
-  Sliders
+  Sliders,
+  Sparkles,
+  Loader2
 } from 'lucide-react';
 import { ResizableTextarea } from '../common/ResizableTextarea';
 
@@ -80,6 +83,7 @@ export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
 }) => {
   const isTitleFilled = Boolean(title.trim());
   const titleTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const [isGeneratingAiInfo, setIsGeneratingAiInfo] = useState(false);
 
   // Otomatis sesuaikan tinggi textarea judul kuis agar teks panjang selalu wrap ke bawah dan terbaca utuh
   useEffect(() => {
@@ -88,6 +92,37 @@ export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
       titleTextareaRef.current.style.height = `${Math.max(46, titleTextareaRef.current.scrollHeight)}px`;
     }
   }, [title]);
+
+  const handleAutoGenerateInfo = async () => {
+    playClick();
+    setIsGeneratingAiInfo(true);
+    try {
+      const topicForAi = title.trim() || `Materi ${subject} Kelas ${grade}`;
+      const meta = await generateAiQuizMetadata({
+        subject,
+        grade,
+        topic: topicForAi,
+        educationLevel,
+        existingMetadata: {
+          title: title.trim() || undefined,
+          description: description.trim() || undefined,
+          coverEmoji: coverEmoji || undefined,
+          badgeTitle: badgeTitle || undefined,
+          durationPerQuestionSec: durationPerQuestionSec || undefined,
+        },
+      });
+
+      setTitle(meta.title);
+      setDescription(meta.description);
+      setCoverEmoji(meta.coverEmoji);
+      setBadgeTitle(meta.badgeTitle);
+      setDurationPerQuestionSec(meta.durationPerQuestionSec);
+    } catch (e) {
+      console.warn('Auto-generate info kuis fallback handled:', e);
+    } finally {
+      setIsGeneratingAiInfo(false);
+    }
+  };
 
   const handleNextClick = () => {
     playClick();
@@ -125,6 +160,48 @@ export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
           {/* Formulir Utama */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
             
+            {/* Quick Action: Racik / Segarkan Identitas Kuis dengan AI */}
+            <div className="sm:col-span-2 p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-blue-50/90 via-indigo-50/80 to-purple-50/90 dark:from-blue-950/40 dark:via-indigo-950/30 dark:to-purple-950/40 border border-blue-200/80 dark:border-blue-800/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+              <div className="flex items-start sm:items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-600 dark:bg-blue-500 text-white flex items-center justify-center shrink-0 shadow-xs">
+                  {isGeneratingAiInfo ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <Sparkles className="w-5 h-5" />
+                  )}
+                </div>
+                <div>
+                  <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white flex items-center gap-1.5 flex-wrap">
+                    <span>Racik Identitas Kuis Otomatis via AI</span>
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300">
+                      Pedagogis & Inspiratif
+                    </span>
+                  </h4>
+                  <p className="text-[11px] sm:text-xs text-slate-600 dark:text-slate-400 mt-0.5">
+                    Buat judul memotivasi, deskripsi pengantar, emoji topik, dan lencana prestasi Kurikulum Merdeka secara instan.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleAutoGenerateInfo}
+                disabled={isGeneratingAiInfo}
+                className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold text-xs sm:text-sm shadow-sm hover:shadow transition-all flex items-center justify-center gap-2 shrink-0 disabled:opacity-50 min-h-[44px]"
+              >
+                {isGeneratingAiInfo ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Meracik Identitas...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4" />
+                    <span>✨ {title.trim() ? 'Segarkan via AI' : 'Buat via AI'}</span>
+                  </>
+                )}
+              </button>
+            </div>
+
             {/* Judul Kuis */}
             <div className="sm:col-span-2">
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">

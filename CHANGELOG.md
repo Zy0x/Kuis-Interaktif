@@ -1,6 +1,31 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.0] - 2026-09-11
+### Auto-Generate Informasi Dasar & Identitas Kuis Lengkap via AI
+
+#### 1. Masalah yang Diselesaikan
+- Sebelumnya, saat pengguna meracik soal kuis dengan AI, informasi dasar kuis seperti Judul, Deskripsi, Emoji Sampul, Lencana Prestasi, dan Durasi Pengerjaan hanya diisi menggunakan template statis/generik (misalnya: `"Kuis Matematika: Pecahan"` dan deskripsi template biasa), sehingga belum mencerminkan esensi materi secara inspiratif dan pedagogis.
+- Guru masih harus mengetik atau mengedit judul dan deskripsi pengantar secara manual di formulir informasi kuis.
+
+#### 2. Engine Generator Identitas Kuis Cerdas (`geminiApi.ts` & `aiQuestionParser.ts`)
+- **Metadata Lengkap Terintegrasi**: Mesin AI kini mengompilasi metadata kuis bersamaan dengan butir-butir soal dalam satu respons JSON utuh:
+  - **Judul Kuis (`title`)**: Judul bertema petualangan atau eksplorasi konsep nyata yang ramah anak dan kurikuler (contoh: *"Petualangan Sains: Menguak Siklus Air"*, *"Master Pecahan Cepat: Logika & Hitung Tangkas"*).
+  - **Deskripsi Kuis (`description`)**: 2–3 kalimat pengantar bermakna mengenai capaian pembelajaran, pengenalan stimulus, dan kata-kata penyemangat bagi peserta didik.
+  - **Emoji Sampul (`coverEmoji`)**: Emoji representatif yang kontekstual dan presisi tinggi dengan materi (misal: 💧 untuk siklus air, 🪐 untuk tata surya, 🍕 untuk pecahan, 🫀 untuk peredaran darah, 🌿 untuk fotosintesis, 🏛️ untuk sejarah).
+  - **Lencana Prestasi (`badgeTitle`)**: Gelar juara apresiatif bertema materi (contoh: *"Ahli Hidrologi Cilik"*, *"Penjelajah Antariksa"*, *"Master Pecahan"*).
+  - **Durasi Pengerjaan Ideal (`durationPerQuestionSec`)**: Durasi rata-rata per butir soal disesuaikan dengan tingkat kesulitan dan jenjang kelas (30s, 35s, 40s, atau 45s).
+  - **Warna Tema (`themeColor`)**: Palet warna selaras dengan rumpun mata pelajaran.
+- **Dukungan Dua Arah (Engine Cloud & Ekstraksi Teks/Prompt)**: Mendukung eksekusi AI langsung (DeepSeek/Groq/Gemini), prompt salin-tempel mandiri dari AI eksternal (`parseRawQuizPayload`), serta fallback instan (`generateCreativeQuizMetadata`) yang menjamin metadata selalu terisi penuh tanpa gagal.
+
+#### 3. Penerapan Otomatis ke Studio & Form Pembuatan Kuis (`QuizCreator.tsx` & `AiGeneratorStep.tsx`)
+- Callback `onGenerated` langsung memetakan judul, deskripsi, emoji, lencana prestasi, durasi, dan tema warna ke state kuis aktif, sehingga ketika guru masuk ke tab Studio Bank Soal maupun Pengaturan Kuis, seluruh identitas kuis telah siap pakai.
+
+#### 4. Fitur On-Demand Racik/Segarkan Identitas di Formulir Kuis (`InfoKuisStep.tsx`)
+- Disediakan kartu aksi interaktif modern *"✨ Racik Identitas Kuis Otomatis via AI"* pada langkah pengaturan informasi dasar kuis.
+- Guru dapat membuat baru atau menyegarkan judul, deskripsi, emoji, dan lencana kuis kapan saja hanya dengan sekali klik tanpa perlu mengulang pembuatan butir soal.
+- Mematuhi standar desain mobile-first & touch-first (target sentuh ≥ 44×44 px) dengan indikator animasi pemuatan halus (150–350 ms).
+
 ## [2.2.99] - 2026-09-11
 ### Auto-Save & Persistensi Penuh Progres Pembuatan Kuis saat Halaman Ter-refresh
 
