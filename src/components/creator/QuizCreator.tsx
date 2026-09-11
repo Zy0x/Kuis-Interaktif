@@ -2420,253 +2420,127 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
         ) : (
           /* ================= MODE EDITOR SOAL TERFOKUS ================= */
           <form onSubmit={(e) => handleSaveQuestion(e, 'finish')} className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-7 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4 sm:space-y-5 animate-fade-in">
-            {/* Tipe Soal, Bobot Poin, & Waktu Jawab (Proporsional & Rapi) */}
-            <div className="grid grid-cols-1 sm:grid-cols-12 gap-3.5 items-start">
-              {/* Tipe Soal: 5 kolom pada desktop */}
-              <div className="sm:col-span-5">
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Tipe Soal
-                </label>
-                <QuestionTypeDropdown
-                  value={qType}
-                  onChange={handleTypeChange}
-                  optionsCount={qOptions.length}
+            {/* ================= ZONA 1: INTI BUTIR SOAL (WAJIB) ================= */}
+            <div className="space-y-4">
+              {/* Baris 1: Tipe Format Soal & Lencana Panduan Format */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+                <div className="flex-1 max-w-sm">
+                  <label className="block text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
+                    Tipe Format Soal
+                  </label>
+                  <QuestionTypeDropdown
+                    value={qType}
+                    onChange={handleTypeChange}
+                    optionsCount={qOptions.length}
+                  />
+                </div>
+
+                <div className="flex items-center gap-2 self-start sm:self-end text-xs text-slate-500 dark:text-slate-400 font-medium pb-1">
+                  <span className="px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-[11px] border border-slate-200/60 dark:border-slate-700/60">
+                    {qType === 'multiple_choice' ? 'Pilihan Ganda (1 Kunci Benar)' :
+                     qType === 'true_false' ? 'Dua Pilihan (Benar / Salah)' :
+                     qType === 'short_answer' ? 'Isian Singkat (Kata Kunci)' :
+                     'Menjodohkan Pasangan Kartu'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Baris 2: Pertanyaan Soal (Fokus Utama) */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-black text-slate-900 dark:text-white flex items-center gap-1">
+                    <span>Pertanyaan Soal</span>
+                    <span className="text-rose-500">*</span>
+                  </label>
+                  <span className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">
+                    Wajib diisi
+                  </span>
+                </div>
+                <ResizableTextarea
+                  rows={3}
+                  value={qText}
+                  onChange={(e) => setQText(e.target.value)}
+                  placeholder="Tuliskan butir pertanyaan kuis secara jelas di sini..."
+                  minHeight={75}
+                  maxHeight={350}
+                  className="min-h-[85px] text-sm font-semibold"
                 />
               </div>
 
-              {/* Bobot Poin: 3 kolom pada desktop */}
-              <div className="sm:col-span-3">
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                    Bobot Poin
-                  </label>
-                  {questions.length > 0 && (
-                    <span 
-                      className={`text-[10px] font-bold ${
-                        projectedTotalPoints === 100 
-                          ? 'text-emerald-600 dark:text-emerald-400' 
-                          : 'text-slate-500 dark:text-slate-400'
-                      }`}
-                      title="Proyeksi total bobot kuis jika butir soal ini disimpan"
-                    >
-                      Total: {projectedTotalPoints}p {projectedTotalPoints === 100 ? '🎯' : ''}
-                    </span>
-                  )}
-                </div>
-                <div className="relative">
-                  <input
-                    type="number"
-                    min="1"
-                    max="100"
-                    value={qPoints}
-                    onChange={(e) => setQPoints(parseInt(e.target.value) || 10)}
-                    className="w-full pl-3 pr-11 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none min-h-[44px]"
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none">
-                    Poin
-                  </span>
-                </div>
-                {/* Preset Cepat Bobot Poin */}
-                <div className="flex items-center gap-1 mt-1.5">
-                  {[5, 10, 15, 20].map((p) => (
-                    <button
-                      key={p}
-                      type="button"
-                      onClick={() => setQPoints(p)}
-                      className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-colors ${
-                        qPoints === p
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
-                      }`}
-                    >
-                      {p}p
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Waktu Jawab Kustom: 4 kolom pada desktop */}
-              <div className="sm:col-span-4">
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                    Waktu Jawab
-                  </label>
-                  {/* Mode Selector Pill: Auto vs Khusus */}
-                  <div className="inline-flex p-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 text-[10px] font-bold">
-                    <button
-                      type="button"
-                      onClick={() => setQCustomDurationSec('')}
-                      className={`px-2 py-0.5 rounded-md transition-all ${
-                        !qCustomDurationSec
-                          ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-2xs font-black'
-                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
-                      }`}
-                      title={`Otomatis mengikuti durasi standar kuis (${durationPerQuestionSec} detik)`}
-                    >
-                      Auto
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (!qCustomDurationSec) setQCustomDurationSec(String(durationPerQuestionSec));
-                      }}
-                      className={`px-2 py-0.5 rounded-md transition-all ${
-                        qCustomDurationSec
-                          ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-2xs font-black'
-                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
-                      }`}
-                      title="Atur waktu khusus terkunci untuk butir soal ini saja"
-                    >
-                      Khusus
-                    </button>
-                  </div>
-                </div>
-
-                {!qCustomDurationSec ? (
-                  /* Mode Auto: Mengikuti Durasi Standar Kuis */
-                  <div>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        disabled
-                        value={`${durationPerQuestionSec}s (Ikuti Kuis)`}
-                        className="w-full pl-3 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100/70 dark:bg-slate-800/60 text-xs font-bold text-slate-500 dark:text-slate-400 cursor-not-allowed min-h-[44px]"
+              {/* Baris 3: Ilustrasi Gambar (Kompak & On-Demand) */}
+              {qImageUrl ? (
+                <div className="p-3 sm:p-3.5 rounded-2xl bg-slate-50/80 dark:bg-slate-850/60 border border-slate-200/80 dark:border-slate-800 animate-fade-in">
+                  <div className="flex items-start gap-3">
+                    <div className="relative group w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shrink-0 flex items-center justify-center shadow-xs">
+                      <img
+                        src={qImageUrl}
+                        alt="Ilustrasi Soal"
+                        className="w-full h-full object-contain p-1"
                       />
-                    </div>
-                    <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium mt-1 truncate">
-                      Sinkron otomatis dengan Pengaturan Kuis ({durationPerQuestionSec}s).
-                    </p>
-                  </div>
-                ) : (
-                  /* Mode Khusus: Durasi Terkunci Mandiri */
-                  <div>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        min="5"
-                        max="300"
-                        value={qCustomDurationSec}
-                        onChange={(e) => setQCustomDurationSec(e.target.value)}
-                        className="w-full pl-3 pr-12 py-2.5 rounded-xl border border-blue-300 dark:border-blue-700 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none min-h-[44px]"
-                      />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none">
-                        Detik
-                      </span>
-                    </div>
-                    {/* Preset Cepat Waktu */}
-                    <div className="flex items-center gap-1 mt-1.5">
-                      {[15, 30, 45, 60].map((sec) => (
-                        <button
-                          key={sec}
-                          type="button"
-                          onClick={() => setQCustomDurationSec(String(sec))}
-                          className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition-colors ${
-                            qCustomDurationSec === String(sec)
-                              ? 'bg-blue-600 text-white'
-                              : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
-                          }`}
-                        >
-                          {sec}s
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-                {/* Pertanyaan Soal */}
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                    Pertanyaan Soal <span className="text-rose-500">*</span>
-                  </label>
-                  <ResizableTextarea
-                    rows={3}
-                    value={qText}
-                    onChange={(e) => setQText(e.target.value)}
-                    placeholder="Tuliskan pertanyaan soal di sini..."
-                    minHeight={75}
-                    maxHeight={350}
-                    className="min-h-[85px]"
-                  />
-                </div>
-
-                {/* Ilustrasi Gambar (Opsional - Terpadu ke Modal Gambar) */}
-                <div className="p-3.5 sm:p-4 rounded-2xl bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-800 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                      <ImageIcon className="w-4 h-4 text-blue-600" />
-                      <span>Ilustrasi Gambar (Opsional)</span>
-                    </span>
-                    {qImageUrl && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setQImageUrl(undefined);
-                          setQImageCaption('');
-                          setQImagePrompt('');
-                        }}
-                        className="text-xs font-bold text-rose-500 hover:text-rose-600 hover:underline min-h-[36px] px-2 flex items-center gap-1"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        <span>Hapus Gambar</span>
-                      </button>
-                    )}
-                  </div>
-
-                  {qImageUrl ? (
-                    <div className="flex items-start gap-3.5">
-                      <div className="relative group w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shrink-0 flex items-center justify-center shadow-xs">
-                        <img
-                          src={qImageUrl}
-                          alt="Ilustrasi Soal"
-                          className="w-full h-full object-contain p-1"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setIsImageModalOpen(true)}
-                          className="absolute inset-0 bg-black/60 text-white text-[11px] font-bold opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
-                          title="Klik untuk mengganti gambar"
-                        >
-                          Ganti
-                        </button>
-                      </div>
-                      <div className="min-w-0 flex-1 space-y-2">
-                        <input
-                          type="text"
-                          value={qImageCaption}
-                          onChange={(e) => setQImageCaption(e.target.value)}
-                          placeholder="Keterangan gambar (opsional)"
-                          className="w-full px-3.5 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white font-medium min-h-[40px] focus:border-blue-500 focus:outline-none"
-                        />
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setIsImageModalOpen(true)}
-                            className="px-3.5 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 text-xs font-bold inline-flex items-center gap-1.5 min-h-[38px] btn-press"
-                          >
-                            <Sparkles className="w-3.5 h-3.5" />
-                            <span>Ganti Gambar</span>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
                       <button
                         type="button"
                         onClick={() => setIsImageModalOpen(true)}
-                        className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-blue-50/50 dark:hover:bg-slate-750 border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-blue-500 text-slate-700 dark:text-slate-200 text-xs font-bold inline-flex items-center justify-center gap-2 min-h-[44px] btn-press transition-all group"
+                        className="absolute inset-0 bg-black/60 text-white text-[11px] font-bold opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
+                        title="Klik untuk mengganti gambar"
                       >
-                        <Sparkles className="w-4 h-4 text-blue-600 group-hover:scale-110 transition-transform" />
-                        <span>Pilih / Buat Ilustrasi (AI, Ensiklopedia, Unggah)</span>
+                        Ganti
                       </button>
-                      <p className="text-[11px] text-slate-400 dark:text-slate-500">
-                        Format JPG, PNG, WebP (Rasio 16:9 atau 4:3 disarankan agar pas di layar siswa).
-                      </p>
                     </div>
-                  )}
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                          <ImageIcon className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                          <span>Ilustrasi Terpasang</span>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setQImageUrl(undefined);
+                            setQImageCaption('');
+                            setQImagePrompt('');
+                          }}
+                          className="text-xs font-bold text-rose-500 hover:text-rose-600 hover:underline min-h-[36px] px-2 flex items-center gap-1"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Hapus</span>
+                        </button>
+                      </div>
+                      <input
+                        type="text"
+                        value={qImageCaption}
+                        onChange={(e) => setQImageCaption(e.target.value)}
+                        placeholder="Keterangan gambar (opsional, misal: Diagram Siklus Air)"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs text-slate-900 dark:text-white font-medium min-h-[40px] focus:border-blue-500 focus:outline-none"
+                      />
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setIsImageModalOpen(true)}
+                          className="px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 text-xs font-bold inline-flex items-center gap-1.5 min-h-[36px] btn-press"
+                        >
+                          <Sparkles className="w-3.5 h-3.5" />
+                          <span>Ganti Gambar</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={() => setIsImageModalOpen(true)}
+                    className="px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 hover:bg-blue-50/60 dark:hover:bg-blue-950/40 border border-dashed border-slate-300 dark:border-slate-700 hover:border-blue-400 text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 text-xs font-bold inline-flex items-center gap-2 min-h-[44px] transition-all btn-press group"
+                  >
+                    <ImageIcon className="w-4 h-4 text-slate-400 group-hover:text-blue-500 transition-colors" />
+                    <span>+ Tambah Gambar Ilustrasi (Opsional)</span>
+                  </button>
+                  <span className="text-[11px] text-slate-400 dark:text-slate-500 font-medium hidden sm:inline">
+                    Mendukung AI, Ensiklopedia & Unggah
+                  </span>
+                </div>
+              )}
+            </div>
 
                 {/* Form Input Opsi berdasarkan Tipe */}
                 {qType === 'multiple_choice' && (
@@ -3055,20 +2929,171 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                   </div>
                 )}
 
-                {/* Pembahasan */}
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                    Pembahasan Jawaban (Opsional)
-                  </label>
+                {/* ================= ZONA 2: PENGAYAAN PEDAGOGIS (OPSIONAL) ================= */}
+                <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                      <span>Pembahasan Jawaban (Opsional)</span>
+                    </label>
+                    <span className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">
+                      Muncul setelah siswa menjawab
+                    </span>
+                  </div>
                   <ResizableTextarea
                     value={qExplanation}
                     onChange={(e) => setQExplanation(e.target.value)}
                     rows={2}
-                    placeholder="Tuliskan pembahasan atau konsep di balik jawaban yang benar..."
+                    placeholder="Tuliskan pembahasan atau konsep materi di balik jawaban yang benar..."
                     minHeight={65}
                     maxHeight={300}
                     className="min-h-[75px]"
                   />
+                </div>
+
+                {/* ================= ZONA 3: PENGATURAN SKOR & WAKTU (KONFIGURASI TEKNIS) ================= */}
+                <div className="p-3.5 sm:p-4 rounded-2xl bg-slate-50/80 dark:bg-slate-850/60 border border-slate-200/80 dark:border-slate-800 space-y-3">
+                  <div className="flex flex-col xs:flex-row xs:items-center justify-between gap-1">
+                    <span className="text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                      <Scale className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                      <span>Pengaturan Skor & Waktu Soal</span>
+                    </span>
+                    {questions.length > 0 && (
+                      <span 
+                        className={`text-[11px] font-bold ${
+                          projectedTotalPoints === 100 
+                            ? 'text-emerald-600 dark:text-emerald-400' 
+                            : 'text-slate-500 dark:text-slate-400'
+                        }`}
+                        title="Proyeksi total bobot kuis jika butir soal ini disimpan"
+                      >
+                        Akumulasi Kuis: <strong className="font-black">{projectedTotalPoints}p</strong> {projectedTotalPoints === 100 ? '🎯 (Pas 100)' : ''}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 items-start">
+                    {/* Bobot Poin */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                          Bobot Poin Butir Ini
+                        </label>
+                        <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+                          Standar: 10p
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="relative flex-1 max-w-[130px]">
+                          <input
+                            type="number"
+                            min="1"
+                            max="100"
+                            value={qPoints}
+                            onChange={(e) => setQPoints(parseInt(e.target.value) || 10)}
+                            className="w-full pl-3 pr-11 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none min-h-[44px]"
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none">
+                            Poin
+                          </span>
+                        </div>
+                        {/* Preset Cepat Bobot Poin */}
+                        <div className="flex items-center gap-1 flex-wrap">
+                          {[5, 10, 15, 20].map((p) => (
+                            <button
+                              key={p}
+                              type="button"
+                              onClick={() => setQPoints(p)}
+                              className={`px-2.5 py-2 rounded-xl text-xs font-bold transition-colors min-h-[44px] ${
+                                qPoints === p
+                                  ? 'bg-blue-600 text-white shadow-xs font-black'
+                                  : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-750'
+                              }`}
+                            >
+                              {p}p
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Waktu Jawab */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                          Durasi Timer Menjawab
+                        </label>
+                        {/* Mode Selector Pill: Auto vs Khusus */}
+                        <div className="inline-flex p-0.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[10px] font-bold">
+                          <button
+                            type="button"
+                            onClick={() => setQCustomDurationSec('')}
+                            className={`px-2 py-1 rounded-md transition-all ${
+                              !qCustomDurationSec
+                                ? 'bg-blue-600 text-white shadow-2xs font-black'
+                                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                            }`}
+                            title={`Otomatis mengikuti durasi standar kuis (${durationPerQuestionSec} detik)`}
+                          >
+                            Auto ({durationPerQuestionSec}s)
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (!qCustomDurationSec) setQCustomDurationSec(String(durationPerQuestionSec));
+                            }}
+                            className={`px-2 py-1 rounded-md transition-all ${
+                              qCustomDurationSec
+                                ? 'bg-blue-600 text-white shadow-2xs font-black'
+                                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                            }`}
+                            title="Atur waktu khusus terkunci untuk butir soal ini saja"
+                          >
+                            Khusus
+                          </button>
+                        </div>
+                      </div>
+
+                      {!qCustomDurationSec ? (
+                        <div className="py-2 text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5 bg-white dark:bg-slate-900 px-3 rounded-xl border border-slate-200/80 dark:border-slate-800 min-h-[44px]">
+                          <Clock className="w-4 h-4 text-slate-400 shrink-0" />
+                          <span>Mengikuti pengaturan kuis <strong>({durationPerQuestionSec} detik)</strong></span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <div className="relative flex-1 max-w-[130px]">
+                            <input
+                              type="number"
+                              min="5"
+                              max="300"
+                              value={qCustomDurationSec}
+                              onChange={(e) => setQCustomDurationSec(e.target.value)}
+                              className="w-full pl-3 pr-12 py-2 rounded-xl border border-blue-300 dark:border-blue-700 bg-white dark:bg-slate-900 text-xs font-bold text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none min-h-[44px]"
+                            />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none">
+                              Detik
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1 flex-wrap">
+                            {[15, 30, 45, 60].map((sec) => (
+                              <button
+                                key={sec}
+                                type="button"
+                                onClick={() => setQCustomDurationSec(String(sec))}
+                                className={`px-2.5 py-2 rounded-xl text-xs font-bold transition-colors min-h-[44px] ${
+                                  qCustomDurationSec === String(sec)
+                                    ? 'bg-blue-600 text-white shadow-xs font-black'
+                                    : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-750'
+                                }`}
+                              >
+                                {sec}s
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
                 {/* Bottom Form Action Buttons */}
                 <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2.5">

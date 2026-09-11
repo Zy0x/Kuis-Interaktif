@@ -1,6 +1,32 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.26] - 2026-09-11
+### Restrukturisasi Hierarki Visual 3 Zona Formulir Edit Soal & Optimasi Ergonomis Mobile-First Anti AI-Slop
+
+#### 1. Masalah yang Diselesaikan
+- **Kelelahan Konfigurasi Teknis di Puncak Formulir**: Sebelumnya blok input bobot poin dan durasi waktu berada di posisi paling atas formulir, mengalihkan fokus esensial guru dari pembuatan butir soal dan konten pedagogis.
+- **Pemisahan Pertanyaan dan Jawaban Akibat Kotak Media Kosong**: Wadah placeholder ilustrasi gambar kosong memakan ruang vertikal signifikan (~100px), mendorong kartu opsi jawaban jauh ke bawah (*pushed below the fold*) pada layar perangkat seluler.
+- **Beban Kognitif Berantakan**: Formulir sebelumnya terasa padat tanpa alur prioritas pengerjaan yang alami antara apa yang wajib diisi dan apa yang merupakan konfigurasi teknis lanjutan.
+
+#### 2. Implementasi & Desain 3 Zona Hierarki (`QuizCreator.tsx`)
+- **Zona 1: Inti Butir Soal (Pedagogis Wajib - Prioritas Utama)**:
+  - **Tipe Format Soal**: Berada di baris pertama formulir dilengkapi dengan custom dropdown berdesain konsisten serta badge indikator format ringkas.
+  - **Teks Pertanyaan Soal**: Menyusul langsung di bawahnya dengan textarea proporsional dan penanda wajib diisi yang tegas.
+  - **Bilah Ilustrasi Kompak On-Demand**: Menggantikan kotak placeholder abu-abu kosong bertingkat dengan tombol strip satu baris ramping `[+ Tambah Gambar Ilustrasi (Opsional)]` (`min-h-[44px]`). Jika media diaktifkan/dipilih, kartu pratinjau thumbnail interaktif beserta teks takarir/caption tetap hadir secara elegan.
+  - **Pilihan Jawaban & Kunci Benar**: Menyambung langsung di bawah pertanyaan/gambar tanpa jeda visual, sehingga pada resolusi smartphone 375px pertanyaan dan pilihan jawaban tampil serentak dalam satu *viewport*.
+- **Zona 2: Pengayaan Pedagogis (Opsional)**:
+  - Kolom **Pembahasan Jawaban** ditempatkan di bawah pilihan jawaban dengan label ramah (*"Muncul setelah siswa menjawab"*), memberikan ruang guru menuangkan penjelasan edukatif tanpa menginterupsi alur pembuatan butir soal.
+- **Zona 3: Pengaturan Skor & Waktu (Konfigurasi Teknis Sebagai Sentuhan Akhir)**:
+  - Direlokasi ke bilah bawah formulir dalam satu kontainer horizontal terpadu.
+  - Mengelompokkan **Bobot Poin Butir Ini** (input angka presisi + chip pintas 5p, 10p, 15p, 20p), **Durasi Timer Menjawab** (toggle mode Auto vs Khusus), dan badge **Akumulasi Kuis Real-time** (`Total: 100p 🎯 (Pas 100)`).
+- **Bilah Aksi Formulir di Bagian Bawah**:
+  - Menyediakan tombol aksi sekunder (*Batal / Kembali*) dan primer (*Simpan Perubahan*) berukuran minimal 44×44 px di bawah formulir untuk kenyamanan jangkauan jempol di perangkat seluler.
+
+#### 3. Kepatuhan Standar Teknis & Estetika (Rule 1, Rule 2, & Rule 4)
+- **Mobile-First & Touch Targets**: Seluruh tombol interaktif, chip pilihan, dan bidang input memenuhi standar target sentuh minimum 44×44 px.
+- **Konsistensi & Anti AI-Slop**: Menghilangkan dekorasi berlebihan, teks berulang, dan visual noisy, menghasilkan tata letak yang bersih (*clean*), bernilai guna tinggi, serta stabil di resolusi 720p hingga 4K.
+
 ## [2.3.25] - 2026-09-11
 ### Safeguard Konfirmasi Perubahan Soal Belum Disimpan pada Navigasi & Kembali
 
