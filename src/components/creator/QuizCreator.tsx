@@ -1004,7 +1004,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                     <button
                       type="button"
                       onClick={(e) => handleSaveQuestion(e, 'continue')}
-                      className="hidden md:inline-flex px-3.5 py-2 rounded-xl font-bold text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800 min-h-[44px] items-center transition-colors"
+                      className="hidden sm:inline-flex px-3.5 py-2 rounded-xl font-bold text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800 min-h-[44px] items-center transition-colors"
                     >
                       Simpan & Tambah Lagi
                     </button>
@@ -2259,42 +2259,10 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                     className="min-h-[75px]"
                   />
                 </div>
-
-                {/* Tombol Simpan Butir Soal (Sesuai Konteks Edit vs Tambah) */}
-                <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100 dark:border-slate-800 flex-wrap">
-                  <button
-                    type="button"
-                    onClick={handleCancelEdit}
-                    className="px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 min-h-[44px] transition-colors"
-                  >
-                    Batal
-                  </button>
-                  {editingQuestionId ? (
-                    <button
-                      type="submit"
-                      className="px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-sm hover:shadow btn-press min-h-[44px] transition-all"
-                    >
-                      Simpan Perubahan
-                    </button>
-                  ) : (
-                    <>
-                      <button
-                        type="button"
-                        onClick={(e) => handleSaveQuestion(e, 'continue')}
-                        className="px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800 min-h-[44px] transition-colors"
-                      >
-                        Simpan & Tambah Lagi
-                      </button>
-                      <button
-                        type="submit"
-                        className="px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-sm hover:shadow btn-press min-h-[44px] transition-all"
-                      >
-                        Simpan Soal
-                      </button>
-                    </>
-                  )}
-                </div>
-
+                {/* Hidden submit trigger for Enter key accessibility */}
+                <button type="submit" className="sr-only" tabIndex={-1} aria-hidden="true">
+                  Simpan
+                </button>
               </form>
         )}
       </div>

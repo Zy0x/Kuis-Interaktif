@@ -1,6 +1,20 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.16] - 2026-09-11
+### Eliminasi Redundansi Tombol Simpan & Optimalisasi Alur Aksi Tunggal
+
+#### 1. Masalah yang Diselesaikan
+- **Redundansi Tombol Simpan Atas & Bawah**: Setelah tersedianya *Sticky Action Hub* pada Header Utama, keberadaan baris tombol `[Batal]` dan `[Simpan]` di bagian bawah kartu formulir editor soal menjadi redundan. Pengguna disajikan dua set tombol simpan yang menjalankan fungsi identik di satu layar.
+
+#### 2. Implementasi & Desain Clean (`QuizCreator.tsx`)
+- **Penetapan Header Utama Sebagai Pusat Kendali Tunggal (*Single Source of Truth*)**:
+  - Baris tombol ganda di dasar kartu formulir dihapus total.
+  - Seluruh aksi simpan (`[Simpan]`, `[Simpan Soal]`, dan `[Simpan & Tambah Lagi]`) serta pembatalan (`[Batal]`) kini terpusat secara konsisten pada *Sticky Action Hub* di Header Utama yang selalu tampak dan dapat diakses dari posisi gulir mana pun.
+- **Formulir Ringkas & Bersih**:
+  - Formulir editor butir soal kini diakhiri secara elegan pada kolom *Pembahasan Jawaban (Opsional)* tanpa elemen dekoratif atau tombol berulang di bawahnya.
+  - Aksesibilitas keyboard tetap dipertahankan dengan pemicu submit tersembunyi (*hidden submit trigger*) sehingga menekan tombol Enter pada kolom input tetap menyimpan soal secara mulus.
+
 ## [2.3.15] - 2026-09-11
 ### Transformasi Header Utama Menjadi Sticky Action Hub Editor Butir Soal
 
