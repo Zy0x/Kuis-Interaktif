@@ -2066,10 +2066,10 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                             </span>
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
                               {q.matchingPairs.map((pair, pIdx) => (
-                                <div key={pIdx} className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/60 text-[11px]">
-                                  <span className="font-semibold text-slate-800 dark:text-slate-200">{pair.left}</span>
-                                  <span className="text-blue-500 font-bold">➔</span>
-                                  <span className="font-bold text-emerald-700 dark:text-emerald-300">{pair.right}</span>
+                                <div key={pIdx} className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/60 text-[11px]">
+                                  <span className="font-semibold text-slate-800 dark:text-slate-200 min-w-0 break-words flex-1">{pair.left}</span>
+                                  <span className="text-purple-600 dark:text-purple-400 font-bold px-1 shrink-0">➔</span>
+                                  <span className="font-bold text-emerald-700 dark:text-emerald-300 min-w-0 break-words flex-1 text-right">{pair.right}</span>
                                 </div>
                               ))}
                             </div>
@@ -2663,51 +2663,123 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                 )}
 
                 {qType === 'matching_pairs' && (
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                        Pasangan Kartu Menjodohkan
-                      </label>
-                      <button
-                        type="button"
-                        onClick={handleAddMatchingPair}
-                        className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline min-h-[36px] flex items-center"
-                      >
-                        + Tambah Pasangan
-                      </button>
+                  <div className="space-y-3.5">
+                    {/* Header Bar */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
+                            Pasangan Kartu Menjodohkan
+                          </label>
+                          <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200/80 dark:border-purple-800/60">
+                            {qMatchingPairs.length} / 6 Pasang
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                          Tuliskan konsep pada sisi kiri dan pasangan jawaban yang tepat pada sisi kanan (minimal 2 pasang).
+                        </p>
+                      </div>
+
+                      {qMatchingPairs.length < 6 && (
+                        <button
+                          type="button"
+                          onClick={handleAddMatchingPair}
+                          className="self-start sm:self-auto px-3 py-2 rounded-xl text-xs font-bold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/40 hover:bg-purple-100 dark:hover:bg-purple-900/60 border border-purple-200 dark:border-purple-800 flex items-center gap-1.5 transition-all btn-press min-h-[44px]"
+                        >
+                          <Plus className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" />
+                          <span>Tambah Pasangan</span>
+                        </button>
+                      )}
                     </div>
 
-                    <div className="space-y-2">
+                    {/* List of Pair Cards */}
+                    <div className="space-y-3">
                       {qMatchingPairs.map((pair, idx) => (
-                        <div key={idx} className="flex items-center gap-2">
-                          <input
-                            type="text"
-                            value={pair.left}
-                            onChange={(e) => handleMatchingPairChange(idx, 'left', e.target.value)}
-                            placeholder={`Kartu Kiri #${idx + 1}`}
-                            className="flex-1 px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-slate-900 dark:text-white min-h-[40px]"
-                          />
-                          <span className="text-slate-400 font-bold">➔</span>
-                          <input
-                            type="text"
-                            value={pair.right}
-                            onChange={(e) => handleMatchingPairChange(idx, 'right', e.target.value)}
-                            placeholder={`Kartu Kanan #${idx + 1}`}
-                            className="flex-1 px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium text-slate-900 dark:text-white min-h-[40px]"
-                          />
-                          {qMatchingPairs.length > 2 && (
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveMatchingPair(idx)}
-                              className="w-10 h-10 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl flex items-center justify-center shrink-0 min-h-[40px] min-w-[40px]"
-                              title="Hapus Pasangan Kartu Ini"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          )}
+                        <div
+                          key={idx}
+                          className="p-3.5 sm:p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 bg-slate-50/70 dark:bg-slate-850/50 shadow-2xs space-y-3 transition-all"
+                        >
+                          {/* Pair Card Top Bar */}
+                          <div className="flex items-center justify-between gap-2 border-b border-slate-200/60 dark:border-slate-750 pb-2.5">
+                            <div className="flex items-center gap-2">
+                              <span className="w-6 h-6 rounded-lg bg-purple-600 text-white font-extrabold text-[11px] flex items-center justify-center shadow-2xs shrink-0">
+                                {idx + 1}
+                              </span>
+                              <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                                Pasangan Kartu #{idx + 1}
+                              </span>
+                            </div>
+
+                            {qMatchingPairs.length > 2 && (
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveMatchingPair(idx)}
+                                className="px-2.5 py-1.5 text-xs font-bold text-rose-600 dark:text-rose-400 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-xl flex items-center gap-1.5 transition-all min-h-[44px] btn-press"
+                                title={`Hapus Pasangan Kartu #${idx + 1}`}
+                                aria-label={`Hapus Pasangan Kartu #${idx + 1}`}
+                              >
+                                <Trash2 className="w-4 h-4 shrink-0" />
+                                <span className="text-xs">Hapus Pasangan</span>
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Inputs: 1 Column on Mobile, 2 Columns on Tablet/Desktop */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
+                            {/* Left Card (Question / Concept) */}
+                            <div className="space-y-1.5 min-w-0">
+                              <div className="flex items-center justify-between">
+                                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                  Sisi Kiri (Soal / Konsep)
+                                </label>
+                                <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">
+                                  Kolom A
+                                </span>
+                              </div>
+                              <input
+                                type="text"
+                                value={pair.left}
+                                onChange={(e) => handleMatchingPairChange(idx, 'left', e.target.value)}
+                                placeholder={`Contoh: Fotosintesis / Ibu Kota Indonesia`}
+                                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs sm:text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 focus:outline-none min-h-[44px] transition-all"
+                              />
+                            </div>
+
+                            {/* Right Card (Correct Match / Answer) */}
+                            <div className="space-y-1.5 min-w-0">
+                              <div className="flex items-center justify-between">
+                                <label className="block text-[11px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
+                                  <span>Sisi Kanan (Pasangan Tepat)</span>
+                                  <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                </label>
+                                <span className="text-[10px] text-emerald-600/80 dark:text-emerald-400/80 font-medium">
+                                  Kunci Benar
+                                </span>
+                              </div>
+                              <input
+                                type="text"
+                                value={pair.right}
+                                onChange={(e) => handleMatchingPairChange(idx, 'right', e.target.value)}
+                                placeholder={`Contoh: Pembuatan makanan / Nusantara`}
+                                className="w-full px-3.5 py-2.5 rounded-xl border border-emerald-300 dark:border-emerald-800/80 bg-white dark:bg-slate-900 text-xs sm:text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none min-h-[44px] transition-all"
+                              />
+                            </div>
+                          </div>
                         </div>
                       ))}
                     </div>
+
+                    {/* Bottom Add Pair Button */}
+                    {qMatchingPairs.length < 6 && (
+                      <button
+                        type="button"
+                        onClick={handleAddMatchingPair}
+                        className="w-full py-3 rounded-2xl border-2 border-dashed border-purple-200 dark:border-purple-800/70 hover:border-purple-400 dark:hover:border-purple-600 bg-purple-50/40 dark:bg-purple-950/20 hover:bg-purple-50 dark:hover:bg-purple-950/40 text-purple-700 dark:text-purple-300 text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all min-h-[48px] btn-press"
+                      >
+                        <Plus className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" />
+                        <span>Tambah Pasangan Kartu Baru ({qMatchingPairs.length + 1}/6)</span>
+                      </button>
+                    )}
                   </div>
                 )}
 

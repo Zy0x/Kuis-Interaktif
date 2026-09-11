@@ -1,6 +1,26 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.22] - 2026-09-11
+### Redesain Responsif Kartu Soal Menjodohkan: Layout Mobile-First Bebas Tumpang Tindih
+
+#### 1. Masalah yang Diselesaikan
+- **Tampilan Tumpang Tindih & *Overflow* pada Layar Ponsel**: Pada formulir pengeditan soal tipe Menjodohkan Kartu (*matching pairs*), dua kolom input (Kartu Kiri dan Kartu Kanan) beserta panah penghubung dan tombol hapus sebelumnya dipaksakan berada dalam satu baris horizontal (`flex-row`). Pada resolusi layar ponsel (320px–390px), hal ini menyebabkan input menyusut drastis, teks *placeholder* terpotong, dan tombol hapus (*trash icon*) terdesak ke tepi layar hingga saling menabrak (*overlap*) dan tumpang tindih.
+- **Target Sentuh Kurang Ergonomis**: Tombol hapus dan input sebelumnya berukuran di bawah standar sentuh minimum mobile (40px) sehingga rentan memicu salah sentuh pada perangkat *touchscreen*.
+
+#### 2. Implementasi & Desain Clean (`QuizCreator.tsx`)
+- **Arsitektur Kartu Pasangan Responsif Mandiri (*Dedicated Pair Cards*)**:
+  - Setiap pasangan kartu kini dibungkus dalam kontainer kartu tersendiri dengan bayangan lembut, sudut membulat elegan (`rounded-2xl`), dan garis pembatas bersih.
+  - **Bilah Header Kartu**: Menampilkan lencana nomor pasangan berwarna ungu kontras (`[1]`, `[2]`, dst.), label judul `Pasangan Kartu #X`, dan tombol **`[🗑️ Hapus Pasangan]`** di pojok kanan atas dengan teks jelas dan target sentuh nyaman (tinggi 44px). Tidak ada lagi risiko tabrakan visual dengan kolom input.
+- **Tata Letak Adaptif Mobile-First (1 Kolom di Ponsel, 2 Kolom di Desktop/Tablet)**:
+  - **Di Layar Ponsel (`grid-cols-1`)**: Sisi Kiri (Soal / Konsep - Kolom A) dan Sisi Kanan (Pasangan Tepat - Kunci Benar) masing-masing menggunakan lebar penuh (*full-width*), memberikan ruang leluasa bagi guru untuk mengetik kalimat panjang atau definisi materi tanpa terpotong.
+  - **Di Layar Desktop/Tablet (`md:grid-cols-2`)**: Kolom kiri dan kanan berjajar proporsional 50%-50% dengan garis batas halus dan cincin fokus modern (`ring-2 ring-purple-500/20` & `ring-2 ring-emerald-500/20`).
+- **Indikator Kunci Jawaban Benar & Limitasi Pasangan**:
+  - Sisi kanan diberi penanda tegas berwarna hijau zamrud dengan ikon centang (`✓ Kunci Benar`), memperjelas bahwa kartu kanan adalah jawaban yang benar.
+  - Dilengkapi lencana jumlah pasangan aktif (`X / 6 Pasang`) serta tombol tambah di bagian bawah kartu dengan garis putus-putus (*dashed border*) yang sangat intuitif.
+- **Optimalisasi Pratinjau Bank Soal**:
+  - Menambahkan pembungkusan kata fleksibel (*word-break safe*) pada kartu pratinjau Bank Soal agar teks panjang tidak menembus batas kontainer pada layar kecil.
+
 ## [2.3.21] - 2026-09-11
 ### Kustomisasi Opsi Teks Benar / Salah & Preset Cepat Satu Sentuhan
 
