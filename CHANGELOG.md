@@ -1,6 +1,29 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.31] - 2026-09-11
+### Peningkatan Kontras Badge Dark Mode, Input Auto-Resize Wrapping Dinamis, & Restrukturisasi Tombol Tambah Pengecoh
+
+#### 1. Masalah & Kebutuhan yang Diselesaikan
+- **Badge "Kolom A" Samar di Dark Mode**: Badge penanda kolom pada kartu penjodohan sebelumnya menggunakan latar abu-abu gelap (`bg-slate-750 text-slate-400`), sehingga memudar dan menyatu dengan kontainer dark mode (`bg-slate-900`), menyulitkan penglihatan guru/pengguna.
+- **Teks Input Panjang Terpotong Horizontal**: Input teks kolom menggunakan elemen `<input type="text">` standar yang tidak mendukung pembungkusan baris (*word-wrapping*). Ketika guru menuliskan definisi, kalimat soal, atau konsep yang panjang, teks terpotong secara horizontal dan memaksa scroll samping yang tidak nyaman.
+- **Mental Model Tombol Tambah Pengecoh Membingungkan**: Tombol "+ Tambah Pengecoh" yang diletakkan di header panel pengecoh menimbulkan ambiguitas bagi guru ("apakah setelah mengetik saya harus menekan tombol ini untuk menyimpan, atau tombol ini untuk menambah opsi lain?").
+
+#### 2. Implementasi Desain & Fungsionalitas
+- **Peningkatan Kontras Tinggi Badge Kolom & Kunci Jawaban (`QuizCreator.tsx`)**:
+  - Badge **Kolom A**: Ditingkatkan dengan palet warna cerah dan tajam (`bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border border-blue-200/80 dark:border-blue-800/80`) dengan ketebalan teks ekstra (`font-extrabold`), memastikan kontras keterbacaan sempurna baik di tema terang maupun tema gelap.
+  - Badge **Kunci Benar**: Diselaraskan dengan nuansa emerald beraksen kontras tinggi (`bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/80`).
+- **Komponen Modular `AutoResizeTextarea` (`src/components/common/AutoResizeTextarea.tsx`)**:
+  - Menggantikan `<input type="text">` pada input konsep kiri (`pair.left`), kunci kanan (`pair.right`), dan kartu pengecoh (`distractor`).
+  - Menerapkan fitur *auto-resizing* berbasis pengukuran `scrollHeight` dinamis dan styling modern `[field-sizing:content]` dengan batas tinggi elastis (`minHeight: 44px`, `maxHeight: 180px`).
+  - Mendukung *line-wrapping* otomatis tanpa scroll horizontal, menjaga tampilan tetap rapi saat mengetik teks pendek maupun paragraf definisi panjang.
+- **Restrukturisasi Ergonomis Panel Kartu Pengecoh Sisi Kanan (`QuizCreator.tsx`)**:
+  - Menghilangkan tombol penambahan di header atas panel untuk menghapus beban kognitif dan ambiguitas.
+  - Menambahkan penanda informatif edukatif: `✍️ Tersimpan otomatis saat Anda mengetik.`
+  - Mengorganisasi kartu pengecoh ke dalam kontainer kartu tersendiri dengan penomoran jelas `Pengecoh #X (Kolom B)` dan tombol `Hapus` per kartu.
+  - **Tombol Tambah di Bawah List**: Tombol aksi diposisikan tepat di bawah kartu input dengan label kontekstual (`+ Tambah Pengecoh Ke-2 (Maks. 2)`), serta notifikasi visual informatif saat kuota maksimal 2 kartu telah terpenuhi (`✓ Kuota maksimal 2 kartu pengecoh telah terisi`).
+  - Menyajikan tombol CTA awal yang ramah saat belum ada pengecoh aktif (`+ Tambah Kartu Pengecoh (Maks. 2)`).
+
 ## [2.3.30] - 2026-09-11
 ### Standarisasi Interaksi Drawer Mobile: Eliminasi Tombol Tutup Ganda & Gesture Swipe-Down to Close Anti Pull-to-Refresh
 

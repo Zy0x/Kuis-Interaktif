@@ -34,6 +34,7 @@ import { InfoKuisStep } from './InfoKuisStep';
 import { QuestionTypeDropdown } from './QuestionTypeDropdown';
 import { TrueFalsePresetDropdown } from './TrueFalsePresetDropdown';
 import { ResizableTextarea } from '../common/ResizableTextarea';
+import { AutoResizeTextarea } from '../common/AutoResizeTextarea';
 
 interface QuizCreatorProps {
   onBack: () => void;
@@ -2948,16 +2949,15 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
                                   Konsep / Soal (Sisi Kiri)
                                 </label>
-                                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-200/60 dark:bg-slate-750 text-slate-600 dark:text-slate-400">
+                                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-md bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border border-blue-200/80 dark:border-blue-800/80 shadow-2xs">
                                   Kolom A
                                 </span>
                               </div>
-                              <input
-                                type="text"
+                              <AutoResizeTextarea
                                 value={pair.left}
                                 onChange={(e) => handleMatchingPairChange(idx, 'left', e.target.value)}
                                 placeholder={PAIR_PLACEHOLDERS[idx]?.left || `Contoh: Konsep #${idx + 1}`}
-                                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs sm:text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 focus:outline-none min-h-[44px] transition-all"
+                                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs sm:text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 focus:outline-none min-h-[44px]"
                               />
                             </div>
 
@@ -2975,16 +2975,15 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                                   <span>Pasangan Tepat (Sisi Kanan)</span>
                                   <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                                 </label>
-                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100/70 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
+                                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/80 shadow-2xs">
                                   Kunci Benar
                                 </span>
                               </div>
-                              <input
-                                type="text"
+                              <AutoResizeTextarea
                                 value={pair.right}
                                 onChange={(e) => handleMatchingPairChange(idx, 'right', e.target.value)}
                                 placeholder={PAIR_PLACEHOLDERS[idx]?.right || `Contoh: Pasangan #${idx + 1}`}
-                                className="w-full px-3.5 py-2.5 rounded-xl border border-emerald-300 dark:border-emerald-800/80 bg-white dark:bg-slate-900 text-xs sm:text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none min-h-[44px] transition-all"
+                                className="w-full px-3.5 py-2.5 rounded-xl border border-emerald-300 dark:border-emerald-800/80 bg-white dark:bg-slate-900 text-xs sm:text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none min-h-[44px]"
                               />
                             </div>
                           </div>
@@ -2993,64 +2992,98 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                     </div>
 
                     {/* Panel Kartu Pengecoh Sisi Kanan (Opsional) */}
-                    <div className="p-3.5 sm:p-4 rounded-2xl border border-dashed border-amber-300 dark:border-amber-750/70 bg-amber-50/40 dark:bg-amber-950/20 space-y-3">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs sm:text-sm font-bold text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
-                              <span>Kartu Pengecoh Sisi Kanan</span>
-                              <span className="text-[10px] font-semibold text-amber-700 dark:text-amber-300 px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/40">
-                                Opsional
-                              </span>
+                    <div className="p-3.5 sm:p-4 rounded-2xl border border-dashed border-amber-300 dark:border-amber-700/80 bg-amber-50/40 dark:bg-amber-950/20 space-y-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs sm:text-sm font-black text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
+                            <span>Kartu Pengecoh Sisi Kanan</span>
+                            <span className="text-[10px] font-extrabold text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950/80 border border-amber-200/80 dark:border-amber-800/80 shadow-2xs">
+                              Opsional
                             </span>
-                            {qDistractors.length > 0 && (
-                              <span className="text-[11px] font-bold text-amber-700 dark:text-amber-300">
-                                ({qDistractors.length}/2)
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-[11px] text-amber-800/80 dark:text-amber-300/70 mt-0.5 leading-relaxed">
-                            Pilihan palsu di Kolom B tanpa pasangan di Kolom A untuk mencegah siswa menebak dengan cara eliminasi sisa kartu.
-                          </p>
+                          </span>
+                          {qDistractors.length > 0 && (
+                            <span className="text-[11px] font-extrabold text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-full bg-amber-100/80 dark:bg-amber-950/60 border border-amber-200/80 dark:border-amber-800/60">
+                              {qDistractors.length}/2 Aktif
+                            </span>
+                          )}
                         </div>
+                        <p className="text-[11px] text-amber-800/80 dark:text-amber-300/80 mt-0.5 leading-relaxed">
+                          Pilihan palsu di Kolom B tanpa pasangan di Kolom A untuk mencegah siswa menebak dengan cara eliminasi sisa kartu.
+                          {qDistractors.length > 0 && (
+                            <span className="block text-[10px] text-amber-600 dark:text-amber-400 font-semibold mt-0.5">
+                              ✍️ Tersimpan otomatis saat Anda mengetik.
+                            </span>
+                          )}
+                        </p>
+                      </div>
 
-                        {qDistractors.length < 2 && (
+                      {/* State Belum Ada Pengecoh */}
+                      {qDistractors.length === 0 ? (
+                        <div className="pt-1">
                           <button
                             type="button"
                             onClick={handleAddDistractor}
-                            className="self-start sm:self-auto px-3 py-2 rounded-xl text-xs font-bold text-amber-800 dark:text-amber-200 bg-amber-100/70 dark:bg-amber-900/40 hover:bg-amber-200/70 dark:hover:bg-amber-850 border border-amber-300 dark:border-amber-700 flex items-center gap-1.5 transition-all btn-press min-h-[44px]"
+                            className="w-full sm:w-auto px-4 py-2.5 rounded-xl text-xs font-bold text-amber-800 dark:text-amber-200 bg-amber-100/80 dark:bg-amber-900/40 hover:bg-amber-200/80 dark:hover:bg-amber-850 border border-amber-300 dark:border-amber-700 flex items-center justify-center gap-2 transition-all btn-press min-h-[44px]"
                           >
-                            <Plus className="w-3.5 h-3.5 shrink-0 text-amber-700 dark:text-amber-300" />
-                            <span>Tambah Pengecoh</span>
+                            <Plus className="w-4 h-4 text-amber-700 dark:text-amber-300 shrink-0" />
+                            <span>+ Tambah Kartu Pengecoh (Maks. 2)</span>
                           </button>
-                        )}
-                      </div>
-
-                      {qDistractors.length > 0 && (
-                        <div className="space-y-2 pt-1">
+                        </div>
+                      ) : (
+                        /* State Sudah Ada Pengecoh */
+                        <div className="space-y-2.5 pt-1">
                           {qDistractors.map((distractor, dIdx) => (
-                            <div key={dIdx} className="flex items-center gap-2">
-                              <div className="relative flex-1">
-                                <input
-                                  type="text"
-                                  value={distractor}
-                                  onChange={(e) => handleDistractorChange(dIdx, e.target.value)}
-                                  placeholder={dIdx === 0 ? 'Contoh pengecoh: Karbondioksida' : 'Contoh pengecoh: Gas Nitrogen'}
-                                  className="w-full px-3.5 py-2.5 rounded-xl border border-amber-200 dark:border-amber-800 bg-white dark:bg-slate-900 text-xs sm:text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none min-h-[44px]"
-                                />
+                            <div 
+                              key={dIdx} 
+                              className="p-3 rounded-xl bg-white/80 dark:bg-slate-900/80 border border-amber-200/90 dark:border-amber-800/60 shadow-2xs space-y-2"
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="w-5 h-5 rounded-md bg-amber-500 text-white font-black text-[10px] flex items-center justify-center shrink-0">
+                                    {dIdx + 1}
+                                  </span>
+                                  <span className="text-xs font-bold text-amber-900 dark:text-amber-200">
+                                    Pengecoh #{dIdx + 1} (Kolom B)
+                                  </span>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveDistractor(dIdx)}
+                                  className="px-2.5 py-1 text-xs font-bold text-rose-600 dark:text-rose-400 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-lg flex items-center gap-1 transition-all min-h-[38px] btn-press"
+                                  title={`Hapus Pengecoh #${dIdx + 1}`}
+                                  aria-label={`Hapus Pengecoh #${dIdx + 1}`}
+                                >
+                                  <Trash2 className="w-3.5 h-3.5 shrink-0" />
+                                  <span className="text-xs">Hapus</span>
+                                </button>
                               </div>
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveDistractor(dIdx)}
-                                className="px-2.5 py-2 text-xs font-bold text-rose-600 dark:text-rose-400 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-xl flex items-center gap-1 transition-all min-h-[44px] btn-press shrink-0"
-                                title={`Hapus Pengecoh #${dIdx + 1}`}
-                                aria-label={`Hapus Pengecoh #${dIdx + 1}`}
-                              >
-                                <Trash2 className="w-3.5 h-3.5 shrink-0" />
-                                <span className="text-xs">Hapus</span>
-                              </button>
+
+                              <AutoResizeTextarea
+                                value={distractor}
+                                onChange={(e) => handleDistractorChange(dIdx, e.target.value)}
+                                placeholder={dIdx === 0 ? 'Contoh pengecoh: Karbondioksida (atau opsi salah lain)' : 'Contoh pengecoh: Gas Nitrogen'}
+                                className="w-full px-3.5 py-2.5 rounded-xl border border-amber-200 dark:border-amber-800 bg-slate-50/60 dark:bg-slate-850/60 text-xs sm:text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none min-h-[44px]"
+                              />
                             </div>
                           ))}
+
+                          {/* Tombol Tambah Pengecoh Diletakkan Di Bawah */}
+                          {qDistractors.length < 2 ? (
+                            <div className="pt-1">
+                              <button
+                                type="button"
+                                onClick={handleAddDistractor}
+                                className="w-full sm:w-auto px-4 py-2.5 rounded-xl text-xs font-bold text-amber-800 dark:text-amber-200 bg-amber-100/70 dark:bg-amber-900/30 hover:bg-amber-200/80 dark:hover:bg-amber-850 border border-amber-300/80 dark:border-amber-700 flex items-center justify-center gap-1.5 transition-all btn-press min-h-[44px]"
+                              >
+                                <Plus className="w-3.5 h-3.5 text-amber-700 dark:text-amber-300 shrink-0" />
+                                <span>+ Tambah Pengecoh Ke-2 (Maks. 2)</span>
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="pt-1 text-[11px] font-bold text-amber-700 dark:text-amber-400 flex items-center gap-1.5 px-1">
+                              <span>✓ Kuota maksimal 2 kartu pengecoh telah terisi</span>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
