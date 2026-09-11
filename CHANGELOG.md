@@ -1,6 +1,34 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.41] - 2026-09-11
+### Modal Sampul Kuis Kustom, Durasi Waktu Compact, Konfirmasi Berlapis & Textarea Petunjuk yang Lega
+
+#### 1. Modal Overlay Ikon Sampul Kuis (`QuizCoverModal`)
+- Mengganti *expandable inline emoji tray* yang memperpanjang formulir dengan **modal overlay mandiri berstandar tinggi** yang muncul di tengah layar desktop dan *bottom sheet* elegan di ponsel.
+- **Tab 1 — Koleksi Emoji Tematik**: 5 kategori edukatif (Sains & Alam, Matematika, Bahasa & Humaniora, Karakter & Prestasi, Sekolah & Fauna) dengan grid 6–8 kolom, input ketik emoji bebas, dan navigasi kategori scrollable.
+- **Tab 2 — Unggah Gambar Kustom**: Zona upload dengan auto-kompresi via Canvas API (center-crop persegi 256×256 px, ekspor WebP/JPEG 85%) agar gambar tetap ringan dan cepat dimuat, serta opsi tempel URL web.
+- **Live Preview Box** pada header modal yang senantiasa menampilkan sampul aktif secara real-time.
+- Kontras dark/light mode terjamin penuh (tombol primer `bg-blue-600 text-white`, sekunder `dark:bg-slate-800 dark:text-slate-100`, border tegas `dark:border-slate-700`).
+
+#### 2. Komponen `QuizCoverDisplay` (Utilitas Global)
+- Komponen perender cerdas sampul kuis yang secara otomatis mendeteksi apakah nilai `coverEmoji` berupa **karakter emoji** atau **URL/data:image gambar kustom**.
+- Diterapkan secara menyeluruh di: `InfoKuisStep`, `QuizHome`, `StudentLobby`, `TeacherDashboard`, `QuizDetail`, dan `QuizSettingsModal`.
+
+#### 3. Durasi Waktu Compact — Komponen `DurationSelector`
+- Mendesain ulang selector durasi menjadi **1 baris preset pills horizontal** yang bisa di-scroll (`10s 15s 20s 30s 45s 60s 90s 120s`) dilengkapi badge durasi aktif di header.
+- Tombol **"Atur Detik Bebas"** membuka *collapsible stepper input* (`+5 / -5`) tanpa merusak tata letak form.
+- Hemat > 50% tinggi layar dibandingkan grid 2 baris sebelumnya.
+
+#### 4. Konfirmasi Berlapis Penerapan Waktu — `ResetDurationConfirmModal`
+- Tombol "Samakan Waktu Soal..." kini **tidak langsung menimpa** durasi khusus, tetapi membuka dialog konfirmasi bermakna dengan dua pilihan:
+  - **Opsi Aman (Disarankan)**: Hanya perbarui soal yang belum memiliki durasi kustom — mempertahankan pengaturan soal-soal spesial.
+  - **Opsi Timpa Penuh**: Seragamkan seluruh soal ke waktu standar (dengan label peringatan kuning).
+  
+#### 5. Textarea Petunjuk Siswa yang Lega
+- Nilai dasar diperluas dari `minHeight={68}` (`rows={2}`) menjadi **`minHeight={115}` (`rows={4}`)** dengan tipografi `text-sm leading-relaxed` dan padding dalam yang lebih nyaman.
+- Batas tarikan maksimal dinaikkan ke `maxHeight={260}` untuk fleksibilitas menulis instruksi 3–4 poin sekaligus.
+
 ## [2.3.40] - 2026-09-11
 ### Eliminasi Dropdown Native Webview & Standarisasi Komponen Dropdown Kuis Seru (GradeDropdown & SubjectDropdown)
 

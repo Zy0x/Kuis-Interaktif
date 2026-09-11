@@ -6,6 +6,7 @@ import { generateRandomPin } from '../../lib/supabaseClient';
 import { copyTextToClipboard } from '../../lib/aiQuestionParser';
 import { useDrawerSwipeDown } from '../../hooks/useDrawerSwipeDown';
 import { DrawerHandle } from './DrawerHandle';
+import { QuizCoverDisplay } from './QuizCoverDisplay';
 import { 
   X, 
   Globe, 
@@ -220,9 +221,10 @@ export const QuizSettingsModal: React.FC<QuizSettingsModalProps> = ({
         {/* Minimalist Header */}
         <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-2.5 min-w-0 pr-2">
-            <span className="text-xl p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 flex-shrink-0">
-              {quiz.coverEmoji}
-            </span>
+            <QuizCoverDisplay
+              cover={quiz.coverEmoji}
+              className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex-shrink-0 flex items-center justify-center text-xl overflow-hidden"
+            />
             <div className="min-w-0">
               <h3 id="quiz-settings-title" className="text-sm font-bold text-slate-900 dark:text-white truncate">
                 {quiz.title}

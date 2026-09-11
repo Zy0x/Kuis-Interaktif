@@ -7,6 +7,7 @@ import { copyTextToClipboard } from '../../lib/aiQuestionParser';
 import { ThemeToggle } from '../common/ThemeToggle';
 import { ConfirmDeleteModal } from '../common/ConfirmDeleteModal';
 import { QuizSettingsModal } from '../common/QuizSettingsModal';
+import { QuizCoverDisplay } from '../common/QuizCoverDisplay';
 import { QuizDetail } from './QuizDetail';
 import { CreateQuizMethodModal } from './CreateQuizMethodModal';
 import { 
@@ -608,9 +609,10 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
 
                   {/* Row 2: Emoji & Details */}
                   <div className="flex items-start gap-3 min-w-0">
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-750 flex items-center justify-center text-2xl flex-shrink-0 shadow-xs border border-slate-200/60 dark:border-slate-700/60 select-none">
-                      {quiz.coverEmoji}
-                    </div>
+                    <QuizCoverDisplay
+                      cover={quiz.coverEmoji}
+                      className="w-12 h-12 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-750 flex items-center justify-center text-2xl flex-shrink-0 shadow-xs border border-slate-200/60 dark:border-slate-700/60 select-none overflow-hidden"
+                    />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
                         <span className="inline-flex items-center text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700 whitespace-nowrap">

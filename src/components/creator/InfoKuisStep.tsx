@@ -17,41 +17,16 @@ import {
   Dice5,
   ChevronDown,
   ChevronUp,
-  Smile,
+  Palette,
   Settings
 } from 'lucide-react';
 import { ResizableTextarea } from '../common/ResizableTextarea';
+import { QuizCoverDisplay, isImageCover } from '../common/QuizCoverDisplay';
+import { QuizCoverModal } from './QuizCoverModal';
+import { DurationSelector } from './DurationSelector';
+import { ResetDurationConfirmModal } from './ResetDurationConfirmModal';
 import { GradeDropdown } from './GradeDropdown';
 import { SubjectDropdown } from './SubjectDropdown';
-
-// Kategori Emoji Edukatif
-const EMOJI_CATEGORIES = [
-  {
-    id: 'sains',
-    label: '🔬 Sains & Alam',
-    emojis: ['🌱', '🐸', '🔬', '🪐', '🫀', '🌋', '⚡', '🦅', '🌊', '☀️', '🌸', '🍄'],
-  },
-  {
-    id: 'matematika',
-    label: '📐 Matematika',
-    emojis: ['📐', '📊', '🧮', '🧩', '💡', '🎯', '⚙️', '🔍', '🎲', '🧠'],
-  },
-  {
-    id: 'literasi',
-    label: '📚 Bahasa & Seni',
-    emojis: ['📚', '📖', '🎨', '🎭', '✍️', '🌍', '🏛️', '🎵', '📜', '🎙️'],
-  },
-  {
-    id: 'prestasi',
-    label: '🇮🇩 Karakter & Juara',
-    emojis: ['⭐', '🏆', '🥇', '👑', '🚀', '🇮🇩', '🤝', '🛡️', '🌟', '🏅'],
-  },
-  {
-    id: 'sekolah',
-    label: '🎒 Sekolah & Fauna',
-    emojis: ['🍎', '🦁', '🐯', '🐼', '🦉', '🎒', '⚽', '🎓', '🐬', '🐝'],
-  },
-];
 
 // Template Deskripsi Cepat untuk Guru
 const DESCRIPTION_TEMPLATES = [
@@ -59,9 +34,6 @@ const DESCRIPTION_TEMPLATES = [
   'Kerjakan dengan teliti dan mandiri. Perhatikan durasi timer di layar!',
   'Baca setiap petunjuk soal dengan cermat dan raih lencana prestasi terbaik.',
 ];
-
-// Durasi Standar Populer
-const DURATION_PRESETS = [10, 15, 20, 30, 45, 60, 90, 120];
 
 // Pemetaan Jenjang & Fase Kurikulum Merdeka
 const GRADE_FASE_MAP: Record<number, { fase: string; level: EducationLevel; levelLabel: string }> = {
@@ -182,18 +154,12 @@ export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
   const titleTextareaRef = useRef<HTMLTextAreaElement>(null);
   const [isGeneratingAiInfo, setIsGeneratingAiInfo] = useState(false);
   
-  // State Collapsible untuk Kebersihan Tampilan
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  // State Modal & Collapsible untuk Kebersihan Tampilan
+  const [showCoverModal, setShowCoverModal] = useState(false);
+  const [showResetDurationConfirm, setShowResetDurationConfirm] = useState(false);
   const [showDescriptionSuggestions, setShowDescriptionSuggestions] = useState(false);
   const [showBadgeSuggestions, setShowBadgeSuggestions] = useState(false);
   const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
-
-  // Tab Kategori Emoji & Custom Input Emoji
-  const [activeEmojiCategory, setActiveEmojiCategory] = useState('sains');
-  const [customEmojiInput, setCustomEmojiInput] = useState('');
-  const [showCustomDurationInput, setShowCustomDurationInput] = useState(
-    !DURATION_PRESETS.includes(durationPerQuestionSec)
-  );
 
   // Toggle Pratinjau di Mobile
   const [showMobilePreview, setShowMobilePreview] = useState(false);
@@ -223,13 +189,6 @@ export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
       titleTextareaRef.current.style.height = `${Math.max(46, titleTextareaRef.current.scrollHeight)}px`;
     }
   }, [title]);
-
-  // Sinkronisasi tombol custom duration saat duration berubah di luar preset
-  useEffect(() => {
-    if (!DURATION_PRESETS.includes(durationPerQuestionSec)) {
-      setShowCustomDurationInput(true);
-    }
-  }, [durationPerQuestionSec]);
 
   // Handler Ganti Jenjang
   const handleLevelChange = (lvl: EducationLevel) => {
@@ -281,24 +240,14 @@ export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
     onNext();
   };
 
-  // Handler Custom Emoji
-  const handleApplyCustomEmoji = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    const trimmed = customEmojiInput.trim();
-    if (trimmed) {
-      playClick();
-      setCoverEmoji(trimmed);
-      setCustomEmojiInput('');
-    }
-  };
-
   // Komponen Pratinjau Kartu Siswa (Digunakan di Desktop Sidebar & Mobile Collapsible)
   const renderStudentCardPreview = () => (
     <div className="p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-850 shadow-xs space-y-3.5 transition-all">
       <div className="flex items-start gap-3.5">
-        <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl bg-white dark:bg-slate-800 flex items-center justify-center text-3xl shrink-0 shadow-xs border border-slate-200/80 dark:border-slate-700/80">
-          {coverEmoji || '📝'}
-        </div>
+        <QuizCoverDisplay
+          cover={coverEmoji}
+          className="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl bg-white dark:bg-slate-800 flex items-center justify-center text-3xl shrink-0 shadow-xs border border-slate-200/80 dark:border-slate-700/80 overflow-hidden"
+        />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
             <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-md bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 shadow-2xs">
@@ -510,22 +459,23 @@ export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
                 </div>
               </div>
 
-              {/* Sampul Kuis: Compact Avatar Picker (Hemat Ruang 200px) */}
+              {/* Sampul Kuis: Modal Trigger (Anti-Slop & Bersih) */}
               <div className="sm:col-span-2">
                 <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-800">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-800 flex items-center justify-center text-3xl shadow-xs border border-slate-200 dark:border-slate-700 shrink-0">
-                      {coverEmoji || '📝'}
-                    </div>
+                    <QuizCoverDisplay
+                      cover={coverEmoji}
+                      className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-800 flex items-center justify-center text-3xl shadow-xs border border-slate-200 dark:border-slate-700 shrink-0 overflow-hidden"
+                    />
                     <div>
                       <div className="text-xs font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
                         <span>Ikon Sampul Kuis</span>
-                        <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300">
-                          {coverEmoji || '📝'}
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300">
+                          {isImageCover(coverEmoji) ? 'Gambar Kustom' : (coverEmoji || '📝')}
                         </span>
                       </div>
                       <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                        Tampil di kartu katalog dan lobi siswa
+                        Tampil di kartu katalog, lobi siswa, dan sertifikat
                       </div>
                     </div>
                   </div>
@@ -534,77 +484,14 @@ export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
                     type="button"
                     onClick={() => {
                       playClick();
-                      setShowEmojiPicker((prev) => !prev);
+                      setShowCoverModal(true);
                     }}
                     className="px-3.5 py-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 text-xs font-extrabold transition-all min-h-[40px] flex items-center gap-1.5 btn-press shadow-2xs"
                   >
-                    <Smile className="w-4 h-4 text-amber-500" />
-                    <span>{showEmojiPicker ? 'Tutup Pilihan' : 'Ganti Ikon'}</span>
-                    {showEmojiPicker ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                    <Palette className="w-4 h-4 text-blue-500" />
+                    <span>Ubah Sampul</span>
                   </button>
                 </div>
-
-                {/* Tray Pilihan Emoji (Hanya Terbuka Saat Diklik) */}
-                {showEmojiPicker && (
-                  <div className="mt-2.5 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-800 space-y-3 animate-scale-up">
-                    <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-                      {EMOJI_CATEGORIES.map((cat) => (
-                        <button
-                          key={cat.id}
-                          type="button"
-                          onClick={() => {
-                            playClick();
-                            setActiveEmojiCategory(cat.id);
-                          }}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition-all min-h-[36px] flex items-center ${
-                            activeEmojiCategory === cat.id
-                              ? 'bg-blue-600 text-white shadow-2xs'
-                              : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700'
-                          }`}
-                        >
-                          {cat.label}
-                        </button>
-                      ))}
-                    </div>
-
-                    <div className="flex flex-wrap gap-2">
-                      {EMOJI_CATEGORIES.find((c) => c.id === activeEmojiCategory)?.emojis.map((em) => (
-                        <button
-                          type="button"
-                          key={em}
-                          onClick={() => {
-                            playClick();
-                            setCoverEmoji(em);
-                          }}
-                          className={`w-11 h-11 rounded-2xl text-2xl flex items-center justify-center border transition-all min-h-[44px] min-w-[44px] btn-press ${
-                            coverEmoji === em
-                              ? 'bg-blue-50 dark:bg-blue-900/40 border-blue-500 ring-2 ring-blue-400 shadow-sm scale-105'
-                              : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-750'
-                          }`}
-                        >
-                          {em}
-                        </button>
-                      ))}
-                    </div>
-
-                    <form onSubmit={handleApplyCustomEmoji} className="pt-2 border-t border-slate-200/80 dark:border-slate-750/80 flex items-center gap-2">
-                      <input
-                        type="text"
-                        maxLength={4}
-                        value={customEmojiInput}
-                        onChange={(e) => setCustomEmojiInput(e.target.value)}
-                        placeholder="Ketik emoji bebas..."
-                        className="flex-1 max-w-[200px] px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-bold text-xs focus:border-blue-500 focus:outline-none min-h-[38px]"
-                      />
-                      <button
-                        type="submit"
-                        className="px-3 py-1.5 rounded-xl bg-slate-200 hover:bg-blue-600 hover:text-white dark:bg-slate-750 dark:hover:bg-blue-600 text-slate-700 dark:text-slate-200 font-bold text-xs transition-colors min-h-[38px] btn-press"
-                      >
-                        Gunakan
-                      </button>
-                    </form>
-                  </div>
-                )}
               </div>
 
             </div>
@@ -619,84 +506,19 @@ export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               
-              {/* Waktu Menjawab Per Soal */}
-              <div className="sm:col-span-2 space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300">
-                    Durasi Waktu Standar Per Soal <span className="text-rose-500">*</span>
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => setShowCustomDurationInput((prev) => !prev)}
-                    className="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
-                  >
-                    <Clock className="w-3.5 h-3.5" />
-                    <span>{showCustomDurationInput ? 'Sembunyikan Kustom' : 'Atur Detik Kustom'}</span>
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-4 sm:grid-cols-8 gap-1.5 sm:gap-2">
-                  {DURATION_PRESETS.map((dur) => (
-                    <button
-                      type="button"
-                      key={dur}
-                      onClick={() => {
-                        playClick();
-                        setDurationPerQuestionSec(dur);
-                      }}
-                      className={`py-2 rounded-xl font-extrabold text-xs min-h-[44px] transition-all flex items-center justify-center btn-press ${
-                        durationPerQuestionSec === dur
-                          ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-400/50'
-                          : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-750'
-                      }`}
-                    >
-                      {dur}s
-                    </button>
-                  ))}
-                </div>
-
-                {showCustomDurationInput && (
-                  <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 flex items-center gap-3 animate-fade-in">
-                    <div className="text-xs font-bold text-slate-700 dark:text-slate-300 shrink-0">
-                      Durasi Bebas:
-                    </div>
-                    <input
-                      type="number"
-                      min={5}
-                      max={300}
-                      value={durationPerQuestionSec}
-                      onChange={(e) => {
-                        const val = Math.max(5, Math.min(300, Number(e.target.value) || 30));
-                        setDurationPerQuestionSec(val);
-                      }}
-                      className="w-24 px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-extrabold text-xs focus:border-blue-500 focus:outline-none min-h-[38px]"
-                    />
-                    <span className="text-xs text-slate-500 dark:text-slate-400">
-                      detik (rentang 5 - 300 dtk)
-                    </span>
-                  </div>
-                )}
-
-                {Boolean(customDurationCount && customDurationCount > 0) && (
-                  <div className="p-3 rounded-2xl bg-blue-50/80 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/40 flex flex-col xs:flex-row xs:items-center justify-between gap-2.5 text-xs">
-                    <div className="text-slate-600 dark:text-slate-300">
-                      <span className="font-extrabold text-blue-600 dark:text-blue-400">💡 Waktu Khusus: </span>
-                      <span>{customDurationCount} dari {questionsCount} soal menggunakan durasi berbeda.</span>
-                    </div>
-                    {onResetAllCustomDuration && (
-                      <button
-                        type="button"
-                        onClick={onResetAllCustomDuration}
-                        className="px-3 py-2 rounded-xl font-bold text-xs text-blue-700 dark:text-blue-300 bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/40 transition-colors shrink-0 min-h-[44px] flex items-center justify-center btn-press shadow-2xs"
-                      >
-                        Terapkan {durationPerQuestionSec}s ke Semua Soal
-                      </button>
-                    )}
-                  </div>
-                )}
+              {/* Waktu Menjawab Per Soal: Compact Duration Selector */}
+              <div className="sm:col-span-2">
+                <DurationSelector
+                  durationSec={durationPerQuestionSec}
+                  setDurationSec={setDurationPerQuestionSec}
+                  customDurationCount={customDurationCount}
+                  questionsCount={questionsCount}
+                  onRequestResetDuration={() => setShowResetDurationConfirm(true)}
+                  playClick={playClick}
+                />
               </div>
 
-              {/* Deskripsi / Petunjuk untuk Siswa */}
+              {/* Deskripsi / Petunjuk untuk Siswa (Lega & Nyaman) */}
               <div className="sm:col-span-2 space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300">
@@ -718,11 +540,11 @@ export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
                 <ResizableTextarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  rows={2}
-                  placeholder="Berikan arahan singkat kepada siswa sebelum mereka memulai kuis..."
-                  minHeight={68}
-                  maxHeight={200}
-                  className="min-h-[68px] rounded-2xl"
+                  rows={4}
+                  placeholder="Berikan arahan singkat, tips, atau tata tertib bagi siswa sebelum mereka memulai kuis..."
+                  minHeight={115}
+                  maxHeight={260}
+                  className="min-h-[115px] rounded-2xl p-3.5 sm:p-4 text-sm leading-relaxed"
                 />
 
                 {/* Collapsible Saran Deskripsi */}
@@ -1093,6 +915,31 @@ export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
         </div>
 
       </div>
+
+      {/* Modal Sampul Kuis Baru (Tab Emoji & Upload Gambar) */}
+      <QuizCoverModal
+        isOpen={showCoverModal}
+        onClose={() => setShowCoverModal(false)}
+        currentCover={coverEmoji}
+        onSelectCover={(c) => setCoverEmoji(c)}
+        subject={subject}
+        playClick={playClick}
+      />
+
+      {/* Modal Konfirmasi Penerapan Waktu Standar Soal */}
+      <ResetDurationConfirmModal
+        isOpen={showResetDurationConfirm}
+        onClose={() => setShowResetDurationConfirm(false)}
+        durationSec={durationPerQuestionSec}
+        customCount={customDurationCount || 0}
+        totalQuestions={questionsCount}
+        onConfirm={(mode) => {
+          if (mode === 'all') {
+            onResetAllCustomDuration?.();
+          }
+        }}
+        playClick={playClick}
+      />
     </div>
   );
 };

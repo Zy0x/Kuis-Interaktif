@@ -4,6 +4,7 @@ import { DataManager, generateRandomPin } from '../../lib/supabaseClient';
 import { useBackHandler } from '../../lib/navigationHistory';
 import { copyTextToClipboard } from '../../lib/aiQuestionParser';
 import { ConfirmDeleteModal } from '../common/ConfirmDeleteModal';
+import { QuizCoverDisplay } from '../common/QuizCoverDisplay';
 import { 
   ArrowLeft, 
   Pencil, 
@@ -272,9 +273,10 @@ export const QuizDetail: React.FC<QuizDetailProps> = ({
             
             {/* Left: Emoji, Title, Badges */}
             <div className="flex items-start gap-4 min-w-0">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-3xl bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-800 dark:to-slate-750 flex items-center justify-center text-3xl sm:text-4xl shadow-sm border border-slate-200/80 dark:border-slate-700 flex-shrink-0 select-none">
-                {quiz.coverEmoji || '🍎'}
-              </div>
+              <QuizCoverDisplay
+                cover={quiz.coverEmoji || '🍎'}
+                className="w-16 h-16 sm:w-20 sm:h-20 rounded-3xl bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-800 dark:to-slate-750 flex items-center justify-center text-3xl sm:text-4xl shadow-sm border border-slate-200/80 dark:border-slate-700 flex-shrink-0 select-none overflow-hidden"
+              />
               <div className="min-w-0 space-y-2 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className={`text-xs font-bold px-2.5 py-1 rounded-xl border ${getSubjectBadge(quiz.subject)}`}>

@@ -3,6 +3,7 @@ import type { Quiz, GameMode } from '../../types/quiz';
 import { AVATAR_LIST } from '../../data/seedQuizzes';
 import { DataManager } from '../../lib/supabaseClient';
 import { ThemeToggle } from '../common/ThemeToggle';
+import { QuizCoverDisplay } from '../common/QuizCoverDisplay';
 import { Play, Sparkles, Clock, HelpCircle, ArrowLeft, User } from 'lucide-react';
 
 interface StudentLobbyProps {
@@ -82,9 +83,10 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
               <span>PIN Kuis: <strong className="font-mono text-sm tracking-wider text-blue-900 dark:text-blue-100">{quiz.pinCode || '1001'}</strong></span>
             </div>
 
-            <div className="text-4xl sm:text-5xl my-2 select-none">
-              {quiz.coverEmoji}
-            </div>
+            <QuizCoverDisplay
+              cover={quiz.coverEmoji}
+              className="w-16 h-16 sm:w-20 sm:h-20 mx-auto my-2 rounded-2xl flex items-center justify-center text-4xl sm:text-5xl select-none overflow-hidden"
+            />
 
             <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight leading-snug">
               {quiz.title}

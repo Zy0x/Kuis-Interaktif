@@ -10,6 +10,7 @@ import { CelestialSkyVisual } from './CelestialSkyVisual';
 import { ThemeToggle } from '../common/ThemeToggle';
 import { ConfirmDeleteModal } from '../common/ConfirmDeleteModal';
 import { QuizSettingsModal } from '../common/QuizSettingsModal';
+import { QuizCoverDisplay } from '../common/QuizCoverDisplay';
 import { MobileProfileSheet } from './MobileProfileSheet';
 import { 
   Play, 
@@ -788,9 +789,10 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                     {/* Header Row: Emoji & Subject Badge on Left, Grade & Guru Pill on Right */}
                     <div className="flex items-center justify-between gap-2.5 mb-3">
                       <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                        <div className="w-11 h-11 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 flex items-center justify-center text-2xl select-none flex-shrink-0 shadow-xs">
-                          {quiz.coverEmoji}
-                        </div>
+                        <QuizCoverDisplay
+                          cover={quiz.coverEmoji}
+                          className="w-11 h-11 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 flex items-center justify-center text-2xl select-none flex-shrink-0 shadow-xs overflow-hidden"
+                        />
                         <div className="min-w-0 flex-1">
                           <span
                             className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border block w-fit max-w-full truncate ${getSubjectBadge(quiz.subject)}`}
@@ -912,9 +914,10 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
             {/* Header Modal */}
             <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
               <div className="flex items-center gap-3 min-w-0">
-                <span className="text-2xl p-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 select-none flex-shrink-0">
-                  {rulesModalQuiz.coverEmoji}
-                </span>
+                <QuizCoverDisplay
+                  cover={rulesModalQuiz.coverEmoji}
+                  className="w-10 h-10 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 select-none flex-shrink-0 flex items-center justify-center text-2xl overflow-hidden"
+                />
                 <div className="min-w-0">
                   <h3 className="font-bold text-slate-900 dark:text-white text-base leading-tight truncate">
                     {rulesModalQuiz.title}
