@@ -203,11 +203,19 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   const [showAllExplanations, setShowAllExplanations] = useState(false);
   const [showFloatingActions, setShowFloatingActions] = useState(false);
   const [isSpeedDialOpen, setIsSpeedDialOpen] = useState(false);
+  const [showRacikUlangConfirm, setShowRacikUlangConfirm] = useState(false);
 
   // Monitor scroll untuk memunculkan Smart Floating Action Capsule ketika melewati header card Bank Soal
+  // dan otomatis sembunyi saat mendekati dasar halaman agar tidak menutupi tombol navigasi
   useEffect(() => {
     const handleScroll = () => {
-      const shouldShow = window.scrollY > 180;
+      const scrollY = window.scrollY;
+      const scrollHeight = document.documentElement.scrollHeight;
+      const clientHeight = window.innerHeight;
+      // Cek apakah mendekati dasar halaman (kurang dari 180px dari batas bawah)
+      const isNearBottom = scrollHeight - (scrollY + clientHeight) < 180;
+
+      const shouldShow = scrollY > 180 && !isNearBottom;
       setShowFloatingActions(shouldShow);
       if (!shouldShow) {
         setIsSpeedDialOpen(false);
@@ -232,6 +240,37 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   const handleScrollToTop = () => {
     playClick();
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Simpan draf kuis secara manual dan tampilkan feedback toast
+  const handleSaveDraftManual = () => {
+    playClick();
+    try {
+      const data: CreatorDraft = {
+        currentStep,
+        aiFunnelActive,
+        aiFunnelStage,
+        funnelTopic,
+        creatorMode: isAiMode ? 'ai' : 'manual',
+        title,
+        description,
+        subject,
+        grade,
+        educationLevel,
+        durationPerQuestionSec,
+        coverEmoji,
+        badgeTitle,
+        visibility,
+        defaultGameMode,
+        shuffleQuestions,
+        shuffleOptions,
+        questions,
+      };
+      localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(data));
+      showToast('💾 Draf kuis berhasil disimpan! Anda dapat melanjutkannya kapan saja.');
+    } catch {
+      showToast('⚠️ Gagal menyimpan draf kuis.');
+    }
   };
 
   const toggleExplanation = (id: string) => {
@@ -836,6 +875,12 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
       return;
     }
 
+    // Jika sedang di Mode AI pada Step 1 (Bank Soal), tombol back memicu Racik Ulang dengan konfirmasi
+    if (isAiMode && currentStep === 1) {
+      setShowRacikUlangConfirm(true);
+      return;
+    }
+
     if (currentStep > 1) {
       setCurrentStep((prev) => prev - 1);
     } else {
@@ -1193,6 +1238,49 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
         </div>
       )}
 
+      {/* Modal Konfirmasi Racik Ulang dengan AI */}
+      {showRacikUlangConfirm && (
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-6 max-w-sm w-full border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4 animate-scale-up">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 shadow-xs">
+                <Sparkles className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white">Racik Ulang Kuis AI?</h3>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">Kembali ke formulir konfigurasi AI</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-100 dark:border-slate-800">
+              Anda akan kembali ke tahap pemilihan topik dan format soal. Seluruh pengaturan tetap tersimpan sehingga Anda dapat menyesuaikannya sebelum membuat ulang.
+            </p>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => setShowRacikUlangConfirm(false)}
+                className="px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors min-h-[44px]"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setShowRacikUlangConfirm(false);
+                  setAiFunnelActive(true);
+                }}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-sm flex items-center gap-1.5 min-h-[44px]"
+              >
+                <Sparkles className="w-4 h-4" />
+                <span>Ya, Racik Ulang</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main Content View */}
       <main ref={mainContentRef} tabIndex={-1} className="flex-1 w-full mt-2 sm:mt-4 outline-none focus:outline-none">
         
@@ -1372,7 +1460,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                   : 'opacity-0 translate-y-3 scale-90 pointer-events-none'
               }`}
             >
-              {/* Item 3: Ke Atas */}
+              {/* Item 2: Ke Atas */}
               <div className="flex items-center gap-2">
                 <span className="px-2.5 py-1 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 shadow-md border border-slate-200/80 dark:border-slate-700/80 whitespace-nowrap">
                   Ke Atas
@@ -1388,26 +1476,6 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                   aria-label="Gulir ke paling atas"
                 >
                   <ChevronUp className="w-5 h-5" />
-                </button>
-              </div>
-
-              {/* Item 2: Asisten AI */}
-              <div className="flex items-center gap-2">
-                <span className="px-2.5 py-1 rounded-xl text-xs font-bold text-indigo-900 dark:text-indigo-200 bg-white dark:bg-slate-800 shadow-md border border-indigo-200/80 dark:border-indigo-800/80 whitespace-nowrap">
-                  Asisten AI
-                </span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    playClick();
-                    setIsSpeedDialOpen(false);
-                    setIsAiModalOpen(true);
-                  }}
-                  className="w-11 h-11 rounded-full flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-600/25 transition-all active:scale-95 btn-press min-h-[44px] min-w-[44px]"
-                  title="Buka Asisten AI"
-                  aria-label="Buka Asisten AI"
-                >
-                  <Sparkles className="w-5 h-5" />
                 </button>
               </div>
 
@@ -1493,7 +1561,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
       <div className="w-full max-w-[2000px] mx-auto px-3 xs:px-4 sm:px-8 lg:px-12 space-y-5 animate-fade-in">
         {!isAddingQuestion ? (
           /* ================= 1-KOLOM DAFTAR BANK SOAL (KE BAWAH RESPONSIV) ================= */
-          <div className="space-y-4 sm:space-y-5">
+          <div className="space-y-4 sm:space-y-5 pb-20 sm:pb-24">
             {/* Header Card Bank Soal */}
             <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3.5 sm:space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
@@ -1517,24 +1585,12 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                   </div>
                 </div>
 
-                {/* Tombol Aksi: 50%-50% grid di mobile, sejajar di desktop */}
-                <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      playClick();
-                      setIsAiModalOpen(true);
-                    }}
-                    className="px-3.5 py-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 font-bold text-xs flex items-center justify-center gap-1.5 min-h-[44px] transition-colors border border-indigo-200/60 dark:border-indigo-800/60 active:scale-95 btn-press shadow-2xs"
-                    title="Asisten AI & Tambah Soal Cepat"
-                  >
-                    <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
-                    <span>Asisten AI</span>
-                  </button>
+                {/* Tombol Aksi: Tambah Soal */}
+                <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
                   <button
                     type="button"
                     onClick={handleOpenNewQuestion}
-                    className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 min-h-[44px] transition-colors shadow-xs active:scale-95 btn-press"
+                    className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 min-h-[44px] transition-colors shadow-xs active:scale-95 btn-press"
                   >
                     <Plus className="w-4 h-4 shrink-0 stroke-[2.5]" />
                     <span>Tambah Soal</span>
@@ -1840,32 +1896,16 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
             </div>
 
             {/* Bottom Bar: Bank Soal Navigation */}
-            <div className="flex justify-between items-center pt-4 border-t border-slate-200 dark:border-slate-800">
-              {isAi ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    playClick();
-                    setAiFunnelActive(true);
-                  }}
-                  className="px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 min-h-[44px] flex items-center gap-1.5 transition-colors"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  <span>Racik Ulang dengan AI</span>
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => {
-                    playClick();
-                    setCurrentStep(1);
-                  }}
-                  className="px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 min-h-[44px] flex items-center gap-1.5 transition-colors"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  <span>Kembali ke Pengaturan Kuis</span>
-                </button>
-              )}
+            <div className="flex justify-between items-center pt-4 border-t border-slate-200 dark:border-slate-800 gap-3">
+              <button
+                type="button"
+                onClick={handleSaveDraftManual}
+                className="px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750 min-h-[44px] flex items-center gap-2 transition-colors btn-press shadow-2xs"
+                title="Simpan draf kuis untuk dilanjutkan nanti"
+              >
+                <Save className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                <span>Simpan Draf</span>
+              </button>
 
               <button
                 type="button"
@@ -1881,7 +1921,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                     setCurrentStep(3); // Lanjut ke Pratinjau di Manual mode
                   }
                 }}
-                className="px-6 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-sm flex items-center gap-2 min-h-[44px] btn-press transition-all"
+                className="px-5 sm:px-6 py-2.5 rounded-xl font-extrabold text-xs sm:text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-sm flex items-center gap-2 min-h-[44px] btn-press transition-all"
               >
                 <span>{isAi ? 'Lanjut ke Pengaturan Kuis' : `Lihat Pratinjau (${questions.length} Soal)`}</span>
                 <ArrowRight className="w-4 h-4" />

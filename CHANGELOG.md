@@ -1,6 +1,29 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.8] - 2026-09-11
+### Harmonisasi Navigasi Studio: Tombol Simpan Draf di Bawah, Racik Ulang Terpadu via Header Back, & Eliminasi Benturan FAB
+
+#### 1. Masalah yang Diselesaikan
+- **Benturan Fisik Tombol (*Overlap Collision*)**: Tombol melayang FAB `+` menutupi tombol *"Lanjut ke Pengaturan Kuis"* di sudut kanan bawah saat pengguna menggulir sampai mentok ke bawah.
+- **Redundansi & Kebingungan Aksi AI**: Keberadaan tombol *"Asisten AI"* (modal tambah soal satuan) di kartu atas dan tombol melayang membingungkan pengguna yang sebenarnya ingin meracik ulang (*regenerate*) kuis AI mereka.
+- **Ketiadaan Tombol Simpan Draf Cepat**: Guru membutuhkan tombol tegas untuk menyimpan draf progres pembuatan kuis kapan saja.
+- **Tombol Back Header Keluar Studio**: Menekan `←` di header saat berada di Bank Soal Mode AI sebelumnya langsung keluar dari studio kuis, bukan kembali ke formulir konfigurasi AI.
+
+#### 2. Implementasi Harmonisasi Navigasi (`QuizCreator.tsx`)
+- **Pintu Racik Ulang AI Terpadu di Header Back (`←`)**:
+  - Menekan tombol `←` di header saat berada di Step 1 Mode AI kini memunculkan modal konfirmasi elegan *"Racik Ulang Kuis AI?"*.
+  - Jika dikonfirmasi, guru kembali ke formulir Funnel AI (Tahap 1–4) dengan seluruh topik, jenjang, mata pelajaran, dan format soal yang tetap tersimpan utuh.
+- **Tombol "Simpan Draf" di Dasar Halaman**:
+  - Tombol kiri navigasi bawah diubah menjadi `[💾 Simpan Draf]`. Guru dapat menyimpan progres kuis ke penyimpanan lokal secara instan disertai notifikasi toast konfirmasi.
+- **Eliminasi Total Tombol "Asisten AI" yang Redundan**:
+  - Dihapus dari kartu header Bank Soal dan dari Speed Dial FAB.
+  - Kartu header Bank Soal kini sangat bersih, hanya memuat judul dan tombol utama `[+ Tambah Soal]`.
+  - Speed Dial FAB kini super ramping hanya memuat 2 aksi: `[Tambah Soal]` dan `[Ke Atas]`.
+- **Deteksi Dasar Halaman (*Bottom Threshold Auto-Hide*)**:
+  - Menambahkan sensor `isNearBottom` (`< 180px` dari batas bawah). Saat pengguna mendekati bagian bawah halaman di mana tombol navigasi berada, tombol FAB melayang otomatis *fade-out* menyembunyikan diri.
+  - Memberikan padding bawah lega `pb-20 sm:pb-24` sehingga tombol *"Lanjut ke Pengaturan Kuis"* 100% bebas dari segala bentuk benturan fisik.
+
 ## [2.3.7] - 2026-09-11
 ### Optimasi Presisi Mobile-First Header Card Bank Soal: Grid Aksi 50-50 Simetris & Sub-Bar Anti-Tabrakan
 
