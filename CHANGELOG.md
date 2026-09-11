@@ -1,6 +1,25 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.15] - 2026-09-11
+### Transformasi Header Utama Menjadi Sticky Action Hub Editor Butir Soal
+
+#### 1. Masalah yang Diselesaikan
+- **Redundansi Bertingkat (*Dual Header Stacking*)**: Saat pengguna membuka editor butir soal, halaman menampilkan dua tingkat header bertumpuk (Header Utama di bilah atas dan Header Kartu Form Editor di dalam kartu). Tumpukan ini memakan ~110–120px ruang vertikal berharga dan menimbulkan kesan visual yang berat.
+- **Distraksi Tab Navigasi & Tombol Tidak Relevan**: Tab navigasi 3 langkah (*Bank Soal*, *Pengaturan Kuis*, *Simpan*) serta tombol *Reset Draf* tetap tampil saat pengguna sedang mengedit satu butir soal tertentu, mengurangi fokus dan menimbulkan risiko salah klik.
+- **Keterbatasan Jangkauan Aksi Simpan**: Pengguna harus menggulir sampai ke dasar halaman untuk menekan tombol simpan atau batal pada butir soal yang memiliki banyak pilihan jawaban.
+
+#### 2. Implementasi & Desain Clean (`QuizCreator.tsx`)
+- **Transformasi Header Utama Adaptif (*Sticky Action Hub*)**:
+  - Saat sesi editor butir soal aktif (`isQuestionEditorActive`), Header Utama secara adaptif bertransformasi menjadi pusat kendali editor soal.
+  - **Sisi Kiri**: Tombol navigasi kembali `[←]` otomatis memanggil pembatalan edit dengan aman, dilengkapi ikon pensil dan judul dinamis **`Edit Soal #X`** beserta badge indikator **`X dari Y Soal`** (atau **`Tambah Soal Baru`** dengan badge **`Butir Soal #X`**).
+  - **Sisi Kanan**: Tombol aksi cepat **`[Batal]`** dan **`[Simpan]`** (atau **`[Simpan & Tambah Lagi]`** + **`[Simpan Soal]`**) tersemat langsung di bilah atas yang selalu terlihat (*sticky*) saat layar digulir.
+- **Eliminasi Header Kartu Form & Tab Navigasi**:
+  - Header kartu di dalam form editor dihapus total. Area form kini langsung dimulai dari baris *Tipe Soal* dan *Bobot Poin*, menghemat ruang vertikal secara drastis (*above-the-fold efficiency*).
+  - Tab navigasi 3 langkah dan tombol reset draf otomatis disembunyikan selama sesi penyuntingan butir soal untuk menjaga fokus visual.
+- **Aksesibilitas Aksi Ganda (*Dual-Point Accessibility*)**:
+  - Pengguna dapat menyimpan soal langsung melalui header sticky di bagian atas tanpa perlu menggulir ke bawah, ataupun melalui tombol aksi di bagian bawah formulir setelah selesai meninjau opsi jawaban.
+
 ## [2.3.14] - 2026-09-11
 ### Pembersihan Total AI Slop & Redundansi Editor Butir Soal
 

@@ -884,80 +884,166 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     }
   };
 
+  const isQuestionEditorActive = !aiFunnelActive && isAddingQuestion;
+  const currentEditingIndex = editingQuestionId ? questions.findIndex((q) => q.id === editingQuestionId) : -1;
+  const currentQuestionNumber = currentEditingIndex !== -1 ? currentEditingIndex + 1 : questions.length + 1;
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col transition-colors duration-200">
-      {/* App Header */}
+      {/* App Header (Sticky Top Bar & Action Hub) */}
       <header className="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-xs">
         <div className="max-w-[2000px] mx-auto px-3 xs:px-4 sm:px-8 lg:px-12 h-14 sm:h-16 flex items-center justify-between gap-3">
           
           {/* Header Left: Back Button + Title */}
-          <div className="flex items-center gap-2.5 sm:gap-4 min-w-0">
-            <button
-              type="button"
-              onClick={handleHeaderBack}
-              className="p-2 sm:p-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors btn-press"
-              aria-label="Kembali"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-
-            <div className="min-w-0">
-              <h1 className="text-sm sm:text-base font-black text-slate-900 dark:text-white truncate">
-                {aiFunnelActive
-                  ? 'Asisten Racik Kuis AI ⚡'
-                  : editingQuiz 
-                    ? 'Edit Kuis ✏️' 
-                    : isAiMode 
-                      ? 'Studio Kuis AI ⚡' 
-                      : 'Studio Kuis Guru 🧑‍🏫'}
-              </h1>
-              <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium truncate hidden xs:block">
-                {aiFunnelActive 
-                  ? (aiFunnelStage === 1 
-                      ? 'Tahap 1 dari 4: Jenjang, Mapel & Tingkat Kelas' 
-                      : aiFunnelStage === 2 
-                      ? 'Tahap 2 dari 4: Topik & Sasaran Pembelajaran'
-                      : aiFunnelStage === 3 
-                      ? 'Tahap 3 dari 4: Format & Konfigurasi Soal' 
-                      : 'Tahap 4 dari 4: Pilihan Mesin AI & Eksekusi')
-                : `Langkah ${currentStep} dari ${totalSteps}: ${
-                    isAiMode
-                      ? currentStep === 1
-                        ? 'Bank Soal'
-                        : currentStep === 2
-                        ? 'Pengaturan Kuis'
-                        : 'Pratinjau & Simpan'
-                      : currentStep === 1
-                      ? 'Pengaturan Kuis'
-                      : currentStep === 2
-                      ? 'Bank Soal'
-                      : 'Pratinjau & Simpan'
-                  }`}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
-            {!aiFunnelActive && (title.trim() || questions.length > 0) && (
+          {isQuestionEditorActive ? (
+            <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
               <button
                 type="button"
-                onClick={() => {
-                  playClick();
-                  setShowResetConfirm(true);
-                }}
-                className="text-xs font-semibold text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 p-2 sm:px-2.5 sm:py-1.5 rounded-xl border border-rose-200 dark:border-rose-900/50 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors flex items-center gap-1 min-h-[44px] min-w-[44px] justify-center"
-                title="Hapus draf yang sedang dibuat"
-                aria-label="Reset Draf"
+                onClick={handleCancelEdit}
+                className="p-2 sm:p-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors btn-press min-h-[44px] min-w-[44px] flex items-center justify-center shrink-0"
+                title="Batal & Kembali ke Bank Soal"
+                aria-label="Kembali ke Bank Soal"
               >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span className="hidden md:inline">Reset Draf</span>
+                <ArrowLeft className="w-5 h-5" />
               </button>
-            )}
-            <ThemeToggle isDark={isDark} onToggle={onToggleTheme} />
-            {!aiFunnelActive && (
-              <span className="hidden sm:inline-block text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-2.5 py-1.5 rounded-xl">
-                {questions.length} Soal
-              </span>
+
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="hidden sm:flex w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 items-center justify-center font-bold shadow-xs shrink-0">
+                  <Edit3 className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                    <h1 className="text-sm sm:text-base font-black text-slate-900 dark:text-white whitespace-nowrap">
+                      {editingQuestionId ? `Edit Soal #${currentQuestionNumber}` : 'Tambah Soal Baru'}
+                    </h1>
+                    <span className="hidden sm:inline-flex px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60 shrink-0">
+                      {editingQuestionId && currentEditingIndex !== -1
+                        ? `${currentQuestionNumber} dari ${questions.length} Soal`
+                        : `Butir Soal #${currentQuestionNumber}`}
+                    </span>
+                  </div>
+                  <p className="sm:hidden text-[10px] font-bold text-blue-600 dark:text-blue-400 leading-tight">
+                    {editingQuestionId && currentEditingIndex !== -1
+                      ? `${currentQuestionNumber} dari ${questions.length} Soal`
+                      : `Butir Soal #${currentQuestionNumber}`}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2.5 sm:gap-4 min-w-0">
+              <button
+                type="button"
+                onClick={handleHeaderBack}
+                className="p-2 sm:p-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors btn-press min-h-[44px] min-w-[44px] flex items-center justify-center shrink-0"
+                title={aiFunnelActive && aiFunnelStage === 1 ? 'Ganti Metode Pembuatan Kuis' : 'Kembali'}
+                aria-label="Kembali"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+
+              <div className="min-w-0">
+                <h1 className="text-sm sm:text-base font-black text-slate-900 dark:text-white truncate">
+                  {aiFunnelActive
+                    ? 'Asisten Racik Kuis AI ⚡'
+                    : editingQuiz 
+                      ? 'Edit Kuis ✏️' 
+                      : isAiMode 
+                        ? 'Studio Kuis AI ⚡' 
+                        : 'Studio Kuis Guru 🧑‍🏫'}
+                </h1>
+                <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium truncate hidden xs:block">
+                  {aiFunnelActive 
+                    ? (aiFunnelStage === 1 
+                        ? 'Tahap 1 dari 4: Jenjang, Mapel & Tingkat Kelas' 
+                        : aiFunnelStage === 2 
+                        ? 'Tahap 2 dari 4: Topik & Sasaran Pembelajaran'
+                        : aiFunnelStage === 3 
+                        ? 'Tahap 3 dari 4: Format & Konfigurasi Soal' 
+                        : 'Tahap 4 dari 4: Pilihan Mesin AI & Eksekusi')
+                  : `Langkah ${currentStep} dari ${totalSteps}: ${
+                      isAiMode
+                        ? currentStep === 1
+                          ? 'Bank Soal'
+                          : currentStep === 2
+                          ? 'Pengaturan Kuis'
+                          : 'Pratinjau & Simpan'
+                        : currentStep === 1
+                        ? 'Pengaturan Kuis'
+                        : currentStep === 2
+                        ? 'Bank Soal'
+                        : 'Pratinjau & Simpan'
+                    }`}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Header Right: Actions */}
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+            {isQuestionEditorActive ? (
+              <>
+                <button
+                  type="button"
+                  onClick={handleCancelEdit}
+                  className="px-3 sm:px-3.5 py-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors min-h-[44px]"
+                >
+                  Batal
+                </button>
+                {editingQuestionId ? (
+                  <button
+                    type="button"
+                    onClick={(e) => handleSaveQuestion(e, 'finish')}
+                    className="px-3.5 sm:px-4 py-2 rounded-xl font-bold text-xs sm:text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-sm hover:shadow btn-press min-h-[44px] flex items-center gap-1.5 transition-all"
+                  >
+                    <Save className="w-4 h-4 hidden xs:inline" />
+                    <span>Simpan</span>
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={(e) => handleSaveQuestion(e, 'continue')}
+                      className="hidden md:inline-flex px-3.5 py-2 rounded-xl font-bold text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800 min-h-[44px] items-center transition-colors"
+                    >
+                      Simpan & Tambah Lagi
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => handleSaveQuestion(e, 'finish')}
+                      className="px-3.5 sm:px-4 py-2 rounded-xl font-bold text-xs sm:text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-sm hover:shadow btn-press min-h-[44px] flex items-center gap-1.5 transition-all"
+                    >
+                      <Plus className="w-4 h-4 hidden xs:inline" />
+                      <span>Simpan Soal</span>
+                    </button>
+                  </>
+                )}
+                <ThemeToggle isDark={isDark} onToggle={onToggleTheme} />
+              </>
+            ) : (
+              <>
+                {!aiFunnelActive && (title.trim() || questions.length > 0) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setShowResetConfirm(true);
+                    }}
+                    className="text-xs font-semibold text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 p-2 sm:px-2.5 sm:py-1.5 rounded-xl border border-rose-200 dark:border-rose-900/50 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors flex items-center gap-1 min-h-[44px] min-w-[44px] justify-center"
+                    title="Hapus draf yang sedang dibuat"
+                    aria-label="Reset Draf"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span className="hidden md:inline">Reset Draf</span>
+                  </button>
+                )}
+                <ThemeToggle isDark={isDark} onToggle={onToggleTheme} />
+                {!aiFunnelActive && (
+                  <span className="hidden sm:inline-block text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 px-2.5 py-1.5 rounded-xl">
+                    {questions.length} Soal
+                  </span>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -1091,8 +1177,8 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
               />
             </div>
           </div>
-        ) : (
-          /* 3 Step Navigation Tabs (HANYA MUNCUL DI STUDIO KUIS UTAMA) */
+        ) : !isQuestionEditorActive ? (
+          /* 3 Step Navigation Tabs (HANYA MUNCUL DI STUDIO KUIS UTAMA SAAT TIDAK SEDANG EDIT SOAL) */
           <div className="w-full max-w-[2000px] mx-auto px-3 xs:px-4 sm:px-8 lg:px-12 mt-2.5 pb-2.5 sm:pb-3 grid grid-cols-3 gap-1.5 sm:gap-2 transition-all">
             {isAiMode ? (
               <>
@@ -1186,7 +1272,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
               </>
             )}
           </div>
-        )}
+        ) : null}
       </header>
 
       {/* Floating Notice Toast */}
@@ -1897,44 +1983,9 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
           </div>
         ) : (
           /* ================= MODE EDITOR SOAL TERFOKUS ================= */
-          (() => {
-            const editingIndex = editingQuestionId ? questions.findIndex((q) => q.id === editingQuestionId) : -1;
-            const questionNumber = editingIndex !== -1 ? editingIndex + 1 : questions.length + 1;
-
-            return (
-              <form onSubmit={(e) => handleSaveQuestion(e, 'finish')} className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-7 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4 sm:space-y-5 animate-fade-in">
-                {/* Header Editor: Navigasi Satu Arah & Konteks Butir Soal */}
-                <div className="flex items-center justify-between pb-3.5 border-b border-slate-100 dark:border-slate-800 gap-3">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <button
-                      type="button"
-                      onClick={handleCancelEdit}
-                      className="px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs flex items-center gap-1.5 min-h-[44px] transition-colors btn-press shrink-0"
-                      title="Kembali ke Bank Soal"
-                    >
-                      <ArrowLeft className="w-4 h-4" />
-                      <span>Kembali</span>
-                    </button>
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold shadow-xs shrink-0">
-                        <Edit3 className="w-4 h-4" />
-                      </div>
-                      <div className="flex items-center gap-2 flex-wrap min-w-0">
-                        <h3 className="font-extrabold text-slate-900 dark:text-white text-sm sm:text-base truncate">
-                          {editingQuestionId ? `Edit Soal #${questionNumber}` : 'Tambah Soal Baru'}
-                        </h3>
-                        <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60 shrink-0">
-                          {editingQuestionId && editingIndex !== -1
-                            ? `${questionNumber} dari ${questions.length} Soal`
-                            : `Butir Soal #${questionNumber}`}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Tipe Soal & Bobot Poin (Proporsional & Rapi) */}
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <form onSubmit={(e) => handleSaveQuestion(e, 'finish')} className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-7 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4 sm:space-y-5 animate-fade-in">
+            {/* Tipe Soal & Bobot Poin (Proporsional & Rapi) */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                   <div className="flex-1 min-w-0">
                     <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                       Tipe Soal
@@ -2245,8 +2296,6 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                 </div>
 
               </form>
-            );
-          })()
         )}
       </div>
     );
