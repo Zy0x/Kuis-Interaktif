@@ -1,6 +1,29 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.23] - 2026-09-11
+### Redesain Responsif Modal "Pilih Ilustrasi Edukasi": Mobile-First Bottom Sheet, Segmented Switcher & Layout Ergonomis
+
+#### 1. Masalah yang Diselesaikan
+- **Tampilan Terpotong & Tidak Rapi pada Layar Mobile**: Modal pemilih ilustrasi edukasi sebelumnya menggunakan modal terpusat melayang dengan margin kaku dan tab navigasi horizontal yang terlalu panjang (> 500px). Pada layar ponsel (360px–390px), tab kanan terpotong dan tersembunyi di bawah bilah geser (*overflow scrollbar*).
+- **Gaya Visual AI Saling Bertumpuk**: Pada tab Generator AI, pilihan gaya ilustrasi dipaksakan dalam 3 kolom kisi (`grid-cols-3`), menyebabkan teks judul dan deskripsi terbungkus ke 4-5 baris berjejal dan menabrak batas kartu pada ponsel.
+- **Target Sentuh Di Bawah Standar**: Tombol "Gunakan" pada hasil pencarian ensiklopedia dan beberapa input aksi sebelumnya memiliki tinggi di bawah 44 px, melanggar prinsip desain ramah sentuh (*touch-first*).
+
+#### 2. Implementasi & Desain Clean (`ImageSelectorModal.tsx`)
+- **Adaptasi Mobile-First Bottom Sheet**:
+  - Pada layar ponsel, modal bertransformasi mulus menjadi panel bawah (*bottom-sheet*) dengan sudut atas melengkung anggun (`rounded-t-3xl`), indikator pegangan tarik (*pull-handle*), serta tinggi adaptif (`h-[92dvh]`), memberikan ruang leluasa bagi guru untuk melihat pratinjau media dan diagram pendidikan.
+  - Pada desktop/tablet, tetap tersaji sebagai modal tengah mengambang yang proporsional dan elegan (`max-w-2xl sm:max-h-[88vh] sm:rounded-3xl`).
+- **Segmented Control 3 Kolom Berimbang Bebas *Overflow***:
+  - Mengganti tab geser horizontal dengan *Segmented Control* 3 kolom terbagi rata (`grid-cols-3`) berlatar abu-abu halus dengan label adaptif:
+    - Di layar ponsel: `Wiki (11)`, `AI Flux`, `Unggah`.
+    - Di layar desktop: `Ensiklopedia & Media (11)`, `Generator AI (Flux)`, `Unggah / URL`.
+- **Tata Letak Kartu Gaya Ilustrasi AI Adaptif**:
+  - Di ponsel, gaya ilustrasi tampil dalam 1 kolom horizontal luas (`grid-cols-1 sm:grid-cols-3`) dengan ikon, judul, deskripsi jelas, dan tanda centang visual aktif, bebas desakan teks.
+  - Input deskripsi visual dan tombol "Racik Ulang" ditata vertikal yang ergonomis di ponsel dan berdampingan di desktop.
+- **Kepatuhan Standar Aksesibilitas & Target Sentuh (Rule 1)**:
+  - Seluruh tombol aksi (tombol cari, chip topik, kartu ensiklopedia "Gunakan", generator AI "Gunakan", tombol unggah berkas, dan tombol tutup) memiliki area sentuh minimal 44×44 px.
+  - Didukung integrasi *Android back gesture* (`useBackHandler`) dan penutupan cepat dengan tombol `Escape`.
+
 ## [2.3.22] - 2026-09-11
 ### Redesain Responsif Kartu Soal Menjodohkan: Layout Mobile-First Bebas Tumpang Tindih
 
