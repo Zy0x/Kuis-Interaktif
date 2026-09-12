@@ -1,6 +1,25 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.62] - 2026-09-12
+### Penyempurnaan Action Tiles Horizontal & Eliminasi Redundansi Modal Kuis
+
+#### 1. Penyatuan Header & Penghapusan Dobel Elemen
+- **Integrasi Informasi Kuis Langsung pada Header**:
+  - Menyatukan cover kuis, judul kuis, serta metadata mata pelajaran, kelas, dan jumlah butir soal langsung ke dalam bilah atas (*modal header*).
+  - Menghilangkan kotak abu-abu duplikat di dalam badan modal, menghemat lebih dari 80px ruang vertikal.
+- **Penghapusan Tombol Bawah yang Redundan**:
+  - Menghilangkan tombol "Tutup" besar di bagian bawah pada tahap pemilihan mode karena sudah tersedia tombol `✕`, ketukan area latar (*backdrop*), serta gestur *swipe-down*.
+  - Modal kini pas dan proporsional di seluruh ukuran layar smartphone tanpa perlu di-scroll.
+
+#### 2. Redesain Action Tiles Horizontal Bergaya Modern
+- **Tata Letak Horizontal Bersih (*Horizontal Action Tiles*)**:
+  - Mengubah kotak vertikal bertingkat menjadi *action tiles* horizontal yang ramping, elegan, dan ramah sentuhan ($\ge 72\text{px}$ touch target):
+    1. **Dipandu Guru**: Wadah ikon toga biru lembut, lencana `Smartboard`, intisari 1 baris jelas, dan indikator chevron kanan.
+    2. **Mandiri & PR**: Wadah ikon gawai ungu lembut, lencana `Gawai Siswa`, intisari 1 baris jelas, dan indikator chevron kanan.
+- **Pembersihan Nomor Kaku & Teks Berulang**:
+  - Menghilangkan penomoran kaku `1.` dan `2.` serta tautan teks ganda di bagian bawah kartu untuk pengalaman pengguna yang bebas dari kesan kaku (*anti AI-slop*).
+
 ## [2.3.61] - 2026-09-12
 ### Redesain Dialog Pengaturan Kuis: Alur Dua Tahap Kartu Interaktif & Pembersihan Teks Berlebih
 

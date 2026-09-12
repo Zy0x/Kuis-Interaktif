@@ -34,7 +34,7 @@ import {
   Calendar,
   MessageCircle,
   ArrowLeft,
-  ArrowRight,
+  ChevronRight,
   Tv,
   FileText
 } from 'lucide-react';
@@ -385,36 +385,44 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
         {/* ======================================================== */}
         {/* MODAL HEADER (Dynamic: Step 1 vs Step 2)                 */}
         {/* ======================================================== */}
-        <div className="px-4 sm:px-6 pt-3 sm:pt-4 pb-3 border-b border-slate-200/80 dark:border-slate-800 flex items-center justify-between gap-3 flex-shrink-0 bg-slate-50/70 dark:bg-slate-850/70">
-          <div className="flex items-center gap-2.5 min-w-0">
+        <div className="px-4 sm:px-6 py-3 sm:py-3.5 border-b border-slate-200/80 dark:border-slate-800 flex items-center justify-between gap-3 flex-shrink-0 bg-slate-50/70 dark:bg-slate-850/70">
+          <div className="flex items-center gap-2.5 min-w-0 flex-1">
             {currentStep === 'configure' ? (
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  setCurrentStep('select_mode');
-                }}
-                className="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 flex items-center gap-1.5 text-xs font-bold transition-colors min-h-[44px]"
-                title="Kembali ke Pemilihan Mode"
-                aria-label="Kembali ke Pemilihan Mode"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                <span>Pilih Mode Lain</span>
-              </button>
+              <div className="flex items-center gap-2 min-w-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    setCurrentStep('select_mode');
+                  }}
+                  className="py-1.5 px-3 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 flex items-center gap-1.5 text-xs font-bold transition-colors min-h-[44px]"
+                  title="Kembali ke Pemilihan Mode"
+                  aria-label="Kembali ke Pemilihan Mode"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Pilih Mode Lain</span>
+                </button>
+                <div className="h-4 w-px bg-slate-300 dark:bg-slate-700 hidden sm:block" />
+                <span className="text-xs font-bold text-slate-500 dark:text-slate-400 truncate hidden sm:inline">
+                  {executionMode === 'teacher_led' ? 'Mode Dipandu Guru' : 'Mode Mandiri & PR'}
+                </span>
+              </div>
             ) : (
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-9 h-9 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-xs flex-shrink-0">
-                  <Play className="w-4 h-4 fill-white text-white ml-0.5" />
-                </div>
+              <div className="flex items-center gap-3 min-w-0">
+                <QuizCoverDisplay 
+                  cover={quiz.coverEmoji}
+                  alt={quiz.title}
+                  className="w-10 h-10 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-xl shrink-0 shadow-2xs"
+                />
                 <div className="min-w-0">
                   <h2
                     id="play-quiz-modal-title"
-                    className="text-base sm:text-lg font-black text-slate-900 dark:text-white leading-tight"
+                    className="text-sm sm:text-base font-black text-slate-900 dark:text-white leading-snug truncate"
                   >
-                    Pilih Cara Bermain
+                    {quiz.title}
                   </h2>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    Tentukan bagaimana kuis akan dimainkan
+                  <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 truncate">
+                    {quiz.subject} • Kelas {quiz.grade} • {totalQuestions} Soal
                   </p>
                 </div>
               </div>
@@ -435,93 +443,74 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
         {/* MODAL BODY (STEP 1: CARD SELECTION)                      */}
         {/* ======================================================== */}
         {currentStep === 'select_mode' && (
-          <div className="p-4 sm:p-6 overflow-y-auto space-y-4 custom-scrollbar overscroll-contain animate-fade-in">
-            {/* Header Ringkas Kuis */}
-            <div className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-850/60 border border-slate-200/80 dark:border-slate-800">
-              <QuizCoverDisplay 
-                cover={quiz.coverEmoji}
-                alt={quiz.title}
-                className="w-11 h-11 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-2xl shrink-0"
-              />
-              <div className="min-w-0 flex-1">
-                <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400">
-                  {quiz.subject} • Kelas {quiz.grade} • {totalQuestions} Soal
-                </span>
-                <h3 className="font-bold text-sm text-slate-900 dark:text-white truncate">
-                  {quiz.title}
-                </h3>
-              </div>
+          <div className="p-4 sm:p-6 overflow-y-auto space-y-3 custom-scrollbar overscroll-contain animate-fade-in">
+            <div className="flex items-center justify-between px-0.5">
+              <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                Pilih Cara Bermain
+              </span>
             </div>
 
-            {/* 2 HERO CARDS INTERAKTIF: DIPANDU GURU vs MANDIRI & PR */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
-              {/* CARD 1: DIPANDU GURU */}
-              <div
+            {/* ACTION TILES: DIPANDU GURU vs MANDIRI & PR */}
+            <div className="space-y-3">
+              {/* TILE 1: DIPANDU GURU */}
+              <button
+                type="button"
                 onClick={() => handleSelectModeCard('teacher_led')}
-                className="group relative p-5 rounded-3xl border-2 border-slate-200/90 dark:border-slate-800 hover:border-blue-500 dark:hover:border-blue-500 bg-white dark:bg-slate-850/80 hover:bg-blue-50/30 dark:hover:bg-blue-950/20 shadow-xs hover:shadow-md transition-all cursor-pointer flex flex-col justify-between gap-4 btn-press text-left"
-                role="button"
-                tabIndex={0}
+                className="w-full group p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-slate-200/90 dark:border-slate-800 hover:border-blue-500 dark:hover:border-blue-500 bg-white dark:bg-slate-850/80 hover:bg-blue-50/40 dark:hover:bg-blue-950/25 shadow-2xs hover:shadow-md transition-all cursor-pointer flex items-center justify-between gap-3 sm:gap-4 btn-press text-left min-h-[72px]"
                 aria-label="Pilih Mode Dipandu Guru"
               >
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="w-12 h-12 rounded-2xl bg-blue-100 dark:bg-blue-950/80 text-blue-600 dark:text-blue-400 flex items-center justify-center group-hover:scale-110 transition-transform">
-                      <GraduationCap className="w-6 h-6" />
-                    </div>
-                    <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-900/60">
-                      Live Smartboard
-                    </span>
+                <div className="flex items-center gap-3.5 min-w-0">
+                  <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/70 text-blue-600 dark:text-blue-400 flex items-center justify-center group-hover:scale-105 transition-transform flex-shrink-0 border border-blue-100 dark:border-blue-900/50 shadow-2xs">
+                    <GraduationCap className="w-6 h-6" />
                   </div>
-
-                  <div>
-                    <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                      1. Dipandu Guru
-                    </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
-                      Guru memegang kendali penuh di depan kelas untuk navigasi soal, jeda waktu, dan tayangan proyektor.
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-sm sm:text-base font-black text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                        Dipandu Guru
+                      </h3>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-900/60">
+                        Smartboard
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">
+                      Kontrol penuh guru di layar utama Smartboard & kelas.
                     </p>
                   </div>
                 </div>
-
-                <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-blue-600 dark:text-blue-400">
-                  <span>Atur Sesi Panduan</span>
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 group-hover:bg-blue-600 group-hover:text-white text-slate-400 dark:text-slate-500 flex items-center justify-center flex-shrink-0 transition-all">
+                  <ChevronRight className="w-4 h-4" />
                 </div>
-              </div>
+              </button>
 
-              {/* CARD 2: MANDIRI & PR */}
-              <div
+              {/* TILE 2: MANDIRI & PR */}
+              <button
+                type="button"
                 onClick={() => handleSelectModeCard('self_paced')}
-                className="group relative p-5 rounded-3xl border-2 border-slate-200/90 dark:border-slate-800 hover:border-indigo-500 dark:hover:border-indigo-500 bg-white dark:bg-slate-850/80 hover:bg-indigo-50/30 dark:hover:bg-indigo-950/20 shadow-xs hover:shadow-md transition-all cursor-pointer flex flex-col justify-between gap-4 btn-press text-left"
-                role="button"
-                tabIndex={0}
+                className="w-full group p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-slate-200/90 dark:border-slate-800 hover:border-indigo-500 dark:hover:border-indigo-500 bg-white dark:bg-slate-850/80 hover:bg-indigo-50/40 dark:hover:bg-indigo-950/25 shadow-2xs hover:shadow-md transition-all cursor-pointer flex items-center justify-between gap-3 sm:gap-4 btn-press text-left min-h-[72px]"
                 aria-label="Pilih Mode Mandiri & PR"
               >
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="w-12 h-12 rounded-2xl bg-indigo-100 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 flex items-center justify-center group-hover:scale-110 transition-transform">
-                      <Smartphone className="w-6 h-6" />
-                    </div>
-                    <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-900/60">
-                      Gawai Siswa
-                    </span>
+                <div className="flex items-center gap-3.5 min-w-0">
+                  <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/70 text-indigo-600 dark:text-indigo-400 flex items-center justify-center group-hover:scale-105 transition-transform flex-shrink-0 border border-indigo-100 dark:border-indigo-900/50 shadow-2xs">
+                    <Smartphone className="w-6 h-6" />
                   </div>
-
-                  <div>
-                    <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                      2. Mandiri & PR
-                    </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
-                      Siswa mengerjakan secara mandiri lewat HP masing-masing di kelas atau sebagai penugasan tugas rumah.
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-sm sm:text-base font-black text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                        Mandiri & PR
+                      </h3>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-900/60">
+                        Gawai Siswa
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">
+                      Siswa menjawab mandiri lewat HP masing-masing di kelas atau tugas rumah.
                     </p>
                   </div>
                 </div>
-
-                <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-indigo-600 dark:text-indigo-400">
-                  <span>Atur Sesi Mandiri</span>
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 group-hover:bg-indigo-600 group-hover:text-white text-slate-400 dark:text-slate-500 flex items-center justify-center flex-shrink-0 transition-all">
+                  <ChevronRight className="w-4 h-4" />
                 </div>
-              </div>
+              </button>
             </div>
           </div>
         )}
@@ -992,53 +981,43 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
         )}
 
         {/* ======================================================== */}
-        {/* MODAL FOOTER                                             */}
+        {/* MODAL FOOTER (Only for Step 2 Configuration)             */}
         {/* ======================================================== */}
-        <div className="p-4 sm:p-5 border-t border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center gap-3 flex-shrink-0">
-          {currentStep === 'configure' ? (
-            <>
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  setCurrentStep('select_mode');
-                }}
-                className="py-3 px-4 rounded-xl text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-800 min-h-[48px] transition-colors btn-press"
-              >
-                Ganti Mode
-              </button>
-
-              <button
-                type="button"
-                onClick={handleLaunch}
-                className={`flex-1 py-3 px-5 rounded-xl text-xs sm:text-sm font-black text-white shadow-md hover:shadow-lg flex items-center justify-center gap-2 min-h-[48px] transition-all btn-press tracking-wide ${
-                  executionMode === 'teacher_led'
-                    ? 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800'
-                    : pacingType === 'homework'
-                    ? 'bg-purple-600 hover:bg-purple-700 active:bg-purple-800'
-                    : 'bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800'
-                }`}
-              >
-                <Play className="w-4 h-4 fill-white text-white" />
-                <span>
-                  {executionMode === 'teacher_led'
-                    ? 'Mulai Pandu di Smartboard'
-                    : pacingType === 'homework'
-                    ? 'Buka Akses Tugas Rumah'
-                    : 'Mulai Sesi Mandiri'}
-                </span>
-              </button>
-            </>
-          ) : (
+        {currentStep === 'configure' && (
+          <div className="p-4 sm:p-5 border-t border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center gap-3 flex-shrink-0">
             <button
               type="button"
-              onClick={handleClose}
-              className="w-full py-3 px-4 rounded-xl text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-800 min-h-[48px] transition-colors btn-press"
+              onClick={() => {
+                playClick();
+                setCurrentStep('select_mode');
+              }}
+              className="py-3 px-4 rounded-xl text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-800 min-h-[48px] transition-colors btn-press"
             >
-              Tutup
+              Ganti Mode
             </button>
-          )}
-        </div>
+
+            <button
+              type="button"
+              onClick={handleLaunch}
+              className={`flex-1 py-3 px-5 rounded-xl text-xs sm:text-sm font-black text-white shadow-md hover:shadow-lg flex items-center justify-center gap-2 min-h-[48px] transition-all btn-press tracking-wide ${
+                executionMode === 'teacher_led'
+                  ? 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800'
+                  : pacingType === 'homework'
+                  ? 'bg-purple-600 hover:bg-purple-700 active:bg-purple-800'
+                  : 'bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800'
+              }`}
+            >
+              <Play className="w-4 h-4 fill-white text-white" />
+              <span>
+                {executionMode === 'teacher_led'
+                  ? 'Mulai Pandu di Smartboard'
+                  : pacingType === 'homework'
+                  ? 'Buka Akses Tugas Rumah'
+                  : 'Mulai Sesi Mandiri'}
+              </span>
+            </button>
+          </div>
+        )}
 
       </div>
     </div>
