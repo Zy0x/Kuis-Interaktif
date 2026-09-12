@@ -59,6 +59,7 @@ export interface PlayQuizSessionOptions {
   deadlineAt?: string;
   requireStudentInfo?: boolean;
   selectedQuestionIds?: string[];
+  overrideCustomQuestionDurations?: boolean;
 }
 
 export interface PlayQuizModalProps {
@@ -150,6 +151,56 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
   const [showLeaderboardToStudents, setShowLeaderboardToStudents] = useState<boolean>(true);
   const [maxAttempts, setMaxAttempts] = useState<number>(0);
   const [tabSwitchDetection, setTabSwitchDetection] = useState<boolean>(false);
+  const [overrideCustomDurations, setOverrideCustomDurations] = useState<boolean>(false);
+
+  // Analisis cerdas durasi butir soal (apakah seragam atau bervariasi karena soal kustom)
+  const questionDurationStats = React.useMemo(() => {
+    if (!quiz || !Array.isArray(quiz.questions) || quiz.questions.length === 0) {
+      const baseDur = quiz?.durationPerQuestionSec || 30;
+      return {
+        hasCustomQuestions: false,
+        customCount: 0,
+        standardCount: 0,
+        standardDurationSec: baseDur,
+        customDurations: [] as number[],
+        minDuration: baseDur,
+        maxDuration: baseDur,
+      };
+    }
+
+    const standardDurationSec = Number(quiz.durationPerQuestionSec) || 30;
+    const customQuestions = quiz.questions.filter((q) => {
+      const parsed = typeof q.customDurationSec === 'number'
+        ? q.customDurationSec
+        : typeof q.customDurationSec === 'string' && q.customDurationSec !== ''
+        ? parseInt(q.customDurationSec, 10)
+        : undefined;
+      return typeof parsed === 'number' && !isNaN(parsed) && parsed > 0 && parsed !== standardDurationSec;
+    });
+    const customDurations = Array.from(new Set(customQuestions.map((q) => Number(q.customDurationSec)))).sort((a, b) => a - b);
+    const hasCustom = customQuestions.length > 0;
+
+    const allDurations = quiz.questions.map((q) => {
+      const parsed = typeof q.customDurationSec === 'number'
+        ? q.customDurationSec
+        : typeof q.customDurationSec === 'string' && q.customDurationSec !== ''
+        ? parseInt(q.customDurationSec, 10)
+        : undefined;
+      return typeof parsed === 'number' && !isNaN(parsed) && parsed > 0 ? parsed : standardDurationSec;
+    });
+    const minDuration = Math.min(...allDurations);
+    const maxDuration = Math.max(...allDurations);
+
+    return {
+      hasCustomQuestions: hasCustom,
+      customCount: customQuestions.length,
+      standardCount: quiz.questions.length - customQuestions.length,
+      standardDurationSec,
+      customDurations,
+      minDuration,
+      maxDuration,
+    };
+  }, [quiz]);
 
   // Accordion state for teacher-led additional settings
   const [isTeacherAdvancedOpen, setIsTeacherAdvancedOpen] = useState(false);
@@ -179,6 +230,7 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
       setShuffleQuestions(Boolean(quiz.shuffleQuestions));
       setShuffleOptions(Boolean(quiz.shuffleOptions));
       setSaveAsDefault(false);
+      setOverrideCustomDurations(false);
       setIsCopiedPin(false);
       setIsCopiedLink(false);
       setIsCopiedWa(false);
@@ -304,6 +356,7 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
       pacingType: overrides?.pacingType ?? pacingType,
       deadlineAt: overrides?.deadlineAt ?? (pacingType === 'homework' ? deadlineAt : undefined),
       requireStudentInfo: overrides?.requireStudentInfo ?? (pacingType === 'homework' ? requireStudentInfo : false),
+      overrideCustomQuestionDurations: overrides?.overrideCustomQuestionDurations ?? (durationSelectionType !== 'default' && overrideCustomDurations),
     };
 
     let existing = DataManager.getActiveSessionByQuizId(quiz.id) || DataManager.getActiveSessionByPin(quiz.pinCode || '');
@@ -372,6 +425,7 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
       pacingType,
       deadlineAt: pacingType === 'homework' ? deadlineAt : undefined,
       requireStudentInfo: pacingType === 'homework' ? requireStudentInfo : false,
+      overrideCustomQuestionDurations: durationSelectionType !== 'default' && overrideCustomDurations,
     });
   };
 
@@ -631,7 +685,9 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
                       {selectedMode === 'untimed'
                         ? 'Bebas Waktu (Tanpa Timer)'
                         : durationSelectionType === 'default'
-                        ? `Bawaan Kuis (${quiz.durationPerQuestionSec || 30}s)`
+                        ? questionDurationStats.hasCustomQuestions
+                          ? 'Bawaan (Sesuai Tiap Soal)'
+                          : `Bawaan Kuis (${questionDurationStats.standardDurationSec}s)`
                         : durationSelectionType === 'custom'
                         ? `${customDurationValue} ${customDurationUnit === 'minutes' ? 'menit' : 'detik'} / soal`
                         : `${selectedDuration} detik / soal`}
@@ -653,7 +709,13 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
                     >
                       <Sparkles className="w-3.5 h-3.5" />
                       <span>
-                        Timer ({durationSelectionType === 'custom' ? `${customDurationValue} ${customDurationUnit === 'minutes' ? 'mnt' : 'dtk'}` : `${selectedDuration}s`} / soal)
+                        Timer (
+                        {durationSelectionType === 'default' && questionDurationStats.hasCustomQuestions
+                          ? 'Sesuai Tiap Soal'
+                          : durationSelectionType === 'custom'
+                          ? `${customDurationValue} ${customDurationUnit === 'minutes' ? 'mnt' : 'dtk'} / soal`
+                          : `${selectedDuration}s / soal`}
+                        )
                       </span>
                     </button>
 
@@ -690,10 +752,18 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
                               ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs font-black'
                               : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                           }`}
-                          title="Mengikuti durasi bawaan kuis/soal"
+                          title={
+                            questionDurationStats.hasCustomQuestions
+                              ? `Mengikuti durasi bawaan masing-masing butir soal (${questionDurationStats.customCount} soal khusus)`
+                              : `Mengikuti durasi bawaan kuis (${questionDurationStats.standardDurationSec}s)`
+                          }
                         >
                           <span>Bawaan</span>
-                          <span className="text-[10px] opacity-75">({quiz.durationPerQuestionSec || 30}s)</span>
+                          <span className="text-[10px] opacity-75">
+                            {questionDurationStats.hasCustomQuestions
+                              ? '(Sesuai Soal)'
+                              : `(${questionDurationStats.standardDurationSec}s)`}
+                          </span>
                         </button>
 
                         {/* Preset Buttons */}
@@ -738,11 +808,53 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
 
                       {/* Info kecil saat mode Bawaan aktif */}
                       {durationSelectionType === 'default' && (
-                        <div className="flex items-center gap-2 p-2.5 rounded-xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200/60 dark:border-blue-900/50 text-blue-700 dark:text-blue-300 animate-fade-in text-xs">
-                          <Info className="w-3.5 h-3.5 shrink-0 text-blue-500 dark:text-blue-400" />
-                          <span className="font-medium leading-relaxed">
-                            Mengikuti pengaturan kuis untuk waktu pengerjaan tiap soalnya ({quiz.durationPerQuestionSec || 30} detik).
-                          </span>
+                        <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200/60 dark:border-blue-900/50 text-blue-800 dark:text-blue-200 animate-fade-in text-xs">
+                          <Info className="w-4 h-4 shrink-0 text-blue-500 dark:text-blue-400 mt-0.5" />
+                          <div className="space-y-0.5 leading-relaxed">
+                            <div className="font-bold">
+                              {questionDurationStats.hasCustomQuestions
+                                ? 'Waktu pengerjaan mengikuti durasi masing-masing butir soal:'
+                                : `Waktu pengerjaan tiap butir soal mengikuti pengaturan kuis (${questionDurationStats.standardDurationSec} detik).`}
+                            </div>
+                            {questionDurationStats.hasCustomQuestions && (
+                              <div className="text-slate-600 dark:text-slate-300 text-[11px] pt-0.5 space-y-0.5">
+                                <p>
+                                  • <strong className="text-blue-700 dark:text-blue-300 font-semibold">{questionDurationStats.customCount} butir soal</strong> memiliki durasi khusus ({questionDurationStats.customDurations.map(d => `${d} detik`).join(', ')}).
+                                </p>
+                                <p>
+                                  • <strong className="text-slate-700 dark:text-slate-200 font-semibold">{questionDurationStats.standardCount} butir soal</strong> lainnya berdurasi bawaan {questionDurationStats.standardDurationSec} detik.
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Opsi Override saat ada soal khusus tapi guru memilih preset/kustom */}
+                      {durationSelectionType !== 'default' && questionDurationStats.hasCustomQuestions && (
+                        <div className="p-2.5 rounded-xl bg-amber-50/70 dark:bg-amber-950/40 border border-amber-200/70 dark:border-amber-900/50 text-xs space-y-1.5 animate-fade-in">
+                          <div className="flex items-center justify-between gap-2 flex-wrap">
+                            <span className="font-bold text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
+                              <Sparkles className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+                              <span>Ada {questionDurationStats.customCount} butir soal berdurasi khusus</span>
+                            </span>
+                            <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                              <input
+                                type="checkbox"
+                                checked={overrideCustomDurations}
+                                onChange={(e) => setOverrideCustomDurations(e.target.checked)}
+                                className="w-3.5 h-3.5 text-amber-600 rounded border-amber-300 focus:ring-0 cursor-pointer"
+                              />
+                              <span className="text-[11px] font-bold text-amber-950 dark:text-amber-100">
+                                Samaratakan Semua
+                              </span>
+                            </label>
+                          </div>
+                          <p className="text-[11px] text-amber-800 dark:text-amber-300/90 leading-relaxed">
+                            {overrideCustomDurations
+                              ? `Durasi khusus diabaikan. Seluruh ${totalQuestions} butir soal disamaratakan menjadi ${selectedDuration} detik.`
+                              : `Durasi khusus pada ${questionDurationStats.customCount} soal tetap aktif. Soal lainnya menerapkan ${selectedDuration} detik.`}
+                          </p>
                         </div>
                       )}
 

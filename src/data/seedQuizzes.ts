@@ -192,6 +192,7 @@ export const INITIAL_QUIZZES: Quiz[] = [
         imageCaption: '⏹️ Persegi sisi = 6 cm',
         options: ['12 cm', '18 cm', '24 cm', '36 cm'],
         correctIndex: 2,
+        customDurationSec: 45,
         explanation: 'Keliling persegi = 4 x sisi = 4 x 6 cm = 24 cm.'
       },
       {

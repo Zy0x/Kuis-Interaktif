@@ -294,6 +294,7 @@ export interface QuizSessionSettings {
   showLeaderboardToStudents?: boolean;
   maxAttempts?: number; // 0 = Bebas/Unlimited, 1 = 1x Ujian Resmi
   tabSwitchDetection?: boolean; // Deteksi dan peringatan jika berpindah tab/layar
+  overrideCustomQuestionDurations?: boolean; // Menimpa durasi kustom butir soal dengan durasi seragam
 }
 
 export interface QuizSession {

@@ -185,6 +185,13 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   const showLeaderboardToStudents = activeSettings.showLeaderboardToStudents ?? true;
   const isTabSwitchDetectionEnabled = Boolean(activeSettings.tabSwitchDetection);
   const defaultDurationSec = activeSettings.durationPerQuestionSec || quiz.durationPerQuestionSec || 30;
+  const getQuestionDuration = (q: QuizQuestion | undefined): number => {
+    if (!q) return defaultDurationSec;
+    if (!activeSettings.overrideCustomQuestionDurations && typeof q.customDurationSec === 'number' && q.customDurationSec > 0) {
+      return q.customDurationSec;
+    }
+    return defaultDurationSec;
+  };
 
   // Keamanan Ketat: Tombol reveal jawaban HANYA boleh diakses Guru pada pratinjau studio atau presentasi Smartboard IFP.
   // SISWA TIDAK PERNAH DIBERIKAN TOMBOL INI PADA MODE APAPUN!
@@ -300,7 +307,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
         }
       } catch {}
     }
-    return activeQuestions[targetIdx]?.customDurationSec || defaultDurationSec;
+    return getQuestionDuration(activeQuestions[targetIdx]);
   });
   const [totalTimeSpent, setTotalTimeSpent] = useState<number>(() => {
     if (!isPreview) {
@@ -643,7 +650,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
       }
     }
 
-    const currentDuration = question.customDurationSec || defaultDurationSec;
+    const currentDuration = getQuestionDuration(question);
     const timeSpent = gameMode === 'untimed' ? 5 : (currentDuration - timeLeft);
     const recordedAnswer: QuizAttemptAnswer = {
       questionId: question.id,
@@ -725,7 +732,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     setHearts(3);
     setCurrentIndex(0);
     setAnswersList([]);
-    const firstDuration = activeQuestions[0]?.customDurationSec || defaultDurationSec;
+    const firstDuration = getQuestionDuration(activeQuestions[0]);
     setTimeLeft(firstDuration);
     setTotalTimeSpent(0);
     setStreak(0);
@@ -777,7 +784,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
       setDucked(false);
       const nextIdx = currentIndex + 1;
       const nextQuestion = activeQuestions[nextIdx];
-      const nextDuration = nextQuestion?.customDurationSec || defaultDurationSec;
+      const nextDuration = getQuestionDuration(nextQuestion);
       setCurrentIndex(nextIdx);
       setSelectedOption(null);
       setIsAnswerConfirmed(false);
@@ -799,7 +806,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     setDucked(false);
     const prevIdx = currentIndex - 1;
     const prevQuestion = activeQuestions[prevIdx];
-    const prevDuration = prevQuestion?.customDurationSec || defaultDurationSec;
+    const prevDuration = getQuestionDuration(prevQuestion);
     setCurrentIndex(prevIdx);
     setSelectedOption(null);
     setIsAnswerConfirmed(false);
@@ -819,7 +826,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     if (playClick) playClick();
     setDucked(false);
     const targetQuestion = activeQuestions[targetIdx];
-    const targetDuration = targetQuestion?.customDurationSec || defaultDurationSec;
+    const targetDuration = getQuestionDuration(targetQuestion);
     setCurrentIndex(targetIdx);
     setSelectedOption(null);
     setIsAnswerConfirmed(false);

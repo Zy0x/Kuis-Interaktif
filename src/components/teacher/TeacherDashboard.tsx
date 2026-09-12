@@ -133,6 +133,16 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
 
   useEffect(() => {
     loadData();
+
+    const handleTestOpen = (e: Event) => {
+      const customEvt = e as CustomEvent;
+      if (customEvt.detail) {
+        setQuizToPlay(customEvt.detail);
+      }
+    };
+    window.addEventListener('test_open_play_modal', handleTestOpen);
+    (window as any).__setQuizToPlay = setQuizToPlay;
+    return () => window.removeEventListener('test_open_play_modal', handleTestOpen);
   }, []);
 
   const loadData = async () => {

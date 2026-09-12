@@ -1,6 +1,26 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.67] - 2026-09-12
+### Deteksi Cerdas Durasi Khusus Butir Soal & Kontrol Override pada Sesi Kuis
+
+#### 1. Analisis Durasi Khusus Butir Soal (*Smart Question Duration Detection*)
+- **Deteksi Otomatis & Akurat**:
+  - Memindai seluruh butir soal di dalam kuis untuk mendeteksi apakah ada butir soal yang memiliki durasi khusus (`customDurationSec`), alih-alih hanya mengandalkan durasi kuis umum (`durationPerQuestionSec`).
+  - Mendukung parsing tipe data string maupun angka secara defensif dan aman.
+- **Label Dinamis Adaptif**:
+  - Tombol **"Bawaan"** otomatis berubah menjadi **"Bawaan (Sesuai Soal)"** jika terdapat soal dengan durasi bervariasi, atau **"Bawaan (Xs)"** jika seluruh butir soal berdurasi seragam.
+  - Header dan tombol pil timer ikut menyesuaikan menjadi **"Bawaan (Sesuai Tiap Soal)"** untuk mengonfirmasi kejelasan durasi.
+- **Rincian Transparan pada Info Box**:
+  - Menampilkan daftar rinci jumlah butir soal berdurasi khusus beserta durasinya (misal: *1 butir soal memiliki durasi khusus (60 detik)* dan *4 butir soal lainnya berdurasi bawaan 30 detik*).
+
+#### 2. Kontrol Penyeragaman Durasi (*Override Control*)
+- **Opsi Samaratakan Semua (*Homogenize / Override Toggle*)**:
+  - Ketika guru memilih preset atau durasi kustom pada kuis yang memiliki durasi campuran, sistem menampilkan panel informasi interaktif berwarna amber.
+  - Guru dapat memilih apakah ingin tetap mempertahankan durasi khusus butir soal, atau mencentang opsi **"Samaratakan Semua"** untuk menimpa seluruh butir soal dengan durasi baru yang dipilih.
+- **Integrasi Mesin Kuis (*Quiz Arena*)**:
+  - Menghubungkan opsi `overrideCustomQuestionDurations` langsung ke mesin permainan `QuizArena.tsx` pada seluruh navigasi soal (soal pertama, berikutnya, mundur, lompat soal, dan retry).
+
 ## [2.3.66] - 2026-09-12
 ### Informasi Durasi Bawaan Kuis Interaktif pada Pengaturan Waktu Soal
 
