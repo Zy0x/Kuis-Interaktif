@@ -20,15 +20,10 @@ import {
   Clock, 
   Copy, 
   Check, 
-  Share2,
-  CheckCircle,
-  Zap,
-  ShieldAlert,
-  Eye,
-  Lock,
-  ChevronDown,
-  ChevronUp,
-  SlidersHorizontal
+  Share2, 
+  CheckCircle, 
+  ShieldAlert, 
+  Eye 
 } from 'lucide-react';
 
 export interface PlayQuizSessionOptions {
@@ -90,9 +85,6 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
   const [showLeaderboardToStudents, setShowLeaderboardToStudents] = useState<boolean>(true);
   const [maxAttempts, setMaxAttempts] = useState<number>(0);
   const [tabSwitchDetection, setTabSwitchDetection] = useState<boolean>(false);
-
-  // Accordion UI state for advanced settings
-  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
 
   // Copy feedback states
   const [isCopiedPin, setIsCopiedPin] = useState(false);
@@ -221,72 +213,6 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
     }
   };
 
-  // State active presets detection
-  const isExamStrictActive = 
-    selectedMode === 'standard' &&
-    showAnswersMode === 'exam_strict' &&
-    showExplanationMode === 'end_only' &&
-    !showLeaderboardToStudents &&
-    maxAttempts === 1 &&
-    tabSwitchDetection &&
-    shuffleQuestions &&
-    shuffleOptions;
-
-  const isCasualPracticeActive = 
-    selectedMode === 'standard' &&
-    showAnswersMode === 'immediate' &&
-    showExplanationMode === 'immediate' &&
-    showLeaderboardToStudents &&
-    maxAttempts === 0 &&
-    !tabSwitchDetection &&
-    !shuffleQuestions &&
-    !shuffleOptions;
-
-  // 1-Click Quick Presets
-  const applyExamStrictPreset = async () => {
-    playClick();
-    setSelectedMode('standard');
-    setShowAnswersMode('exam_strict');
-    setShowExplanationMode('end_only');
-    setShowLeaderboardToStudents(false);
-    setMaxAttempts(1);
-    setTabSwitchDetection(true);
-    setShuffleQuestions(true);
-    setShuffleOptions(true);
-    await ensureSessionAndSyncSettings({
-      mode: 'standard',
-      showAnswersMode: 'exam_strict',
-      showExplanationMode: 'end_only',
-      showLeaderboardToStudents: false,
-      maxAttempts: 1,
-      tabSwitchDetection: true,
-      shuffleQuestions: true,
-      shuffleOptions: true,
-    });
-  };
-
-  const applyCasualPracticePreset = async () => {
-    playClick();
-    setSelectedMode('standard');
-    setShowAnswersMode('immediate');
-    setShowExplanationMode('immediate');
-    setShowLeaderboardToStudents(true);
-    setMaxAttempts(0);
-    setTabSwitchDetection(false);
-    setShuffleQuestions(false);
-    setShuffleOptions(false);
-    await ensureSessionAndSyncSettings({
-      mode: 'standard',
-      showAnswersMode: 'immediate',
-      showExplanationMode: 'immediate',
-      showLeaderboardToStudents: true,
-      maxAttempts: 0,
-      tabSwitchDetection: false,
-      shuffleQuestions: false,
-      shuffleOptions: false,
-    });
-  };
-
   const handleLaunch = () => {
     playClick();
     onStartQuiz(quiz, {
@@ -343,7 +269,7 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
                 <span>Mainkan Kuis Bersama Siswa</span>
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Pilih format kuis atau sesuaikan sesi sebelum dimulai
+                Atur konfigurasi sesi kuis sesuai kebutuhan kelas Anda
               </p>
             </div>
           </div>
@@ -431,613 +357,464 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
             </div>
           </div>
 
-          {/* Pemilihan Format Utama (2 Kartu Eksklusif & Jelas) */}
-          <div className="space-y-2.5">
+          {/* 1. Mekanik & Waktu Permainan */}
+          <div className="p-4 rounded-2xl bg-slate-50/70 dark:bg-slate-850/60 border border-slate-200/80 dark:border-slate-800 space-y-3">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-black text-slate-900 dark:text-slate-100 tracking-wide flex items-center gap-1.5 uppercase">
-                <Zap className="w-3.5 h-3.5 text-amber-500" />
-                <span>Pilihan Format Kuis</span>
+              <label className="text-xs font-black text-slate-900 dark:text-white tracking-wide uppercase flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-blue-500" />
+                <span>1. Mekanik Permainan & Waktu</span>
               </label>
-              {!isExamStrictActive && !isCasualPracticeActive && (
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-purple-100 dark:bg-purple-950/80 text-purple-700 dark:text-purple-300">
-                  Format Kustom
-                </span>
-              )}
+              <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400">
+                {selectedMode === 'untimed' ? 'Santai (Tanpa Timer)' : `${selectedDuration}s per butir`}
+              </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {/* Kartu 1: Mode Ujian Resmi */}
+            {/* Mode Pilihan */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-2.5">
               <button
                 type="button"
-                onClick={applyExamStrictPreset}
-                className={`p-3.5 sm:p-4 rounded-2xl border text-left transition-all btn-press flex flex-col justify-between min-h-[115px] relative overflow-hidden ${
-                  isExamStrictActive
-                    ? 'border-indigo-600 dark:border-indigo-500 bg-indigo-50/60 dark:bg-indigo-950/40 shadow-sm ring-2 ring-indigo-500/30'
+                onClick={() => {
+                  playClick();
+                  setSelectedMode('standard');
+                }}
+                className={`p-3 rounded-xl border text-left transition-all btn-press flex flex-col justify-between min-h-[48px] ${
+                  selectedMode === 'standard'
+                    ? 'border-blue-600 dark:border-blue-500 bg-blue-50/80 dark:bg-blue-950/40 shadow-xs ring-2 ring-blue-500/20'
                     : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 hover:bg-slate-50 dark:hover:bg-slate-800'
                 }`}
               >
-                <div>
-                  <div className="flex items-center justify-between w-full mb-1.5">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xl">🎯</span>
-                      <p className="font-black text-sm text-slate-900 dark:text-white">
-                        Mode Ujian Resmi
-                      </p>
-                    </div>
-                    {isExamStrictActive ? (
-                      <span className="flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full bg-indigo-600 text-white shadow-2xs">
-                        <CheckCircle className="w-3 h-3" />
-                        <span>Aktif</span>
-                      </span>
-                    ) : (
-                      <Lock className="w-3.5 h-3.5 text-slate-400" />
-                    )}
-                  </div>
-                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                    Kunci & pembahasan dirahasiakan, 1x kesempatan, soal & opsi diacak, serta proteksi ganti tab.
-                  </p>
+                <div className="flex items-center justify-between w-full mb-1">
+                  <span className="font-black text-xs sm:text-sm text-slate-900 dark:text-white">🌟 Standar</span>
+                  {selectedMode === 'standard' && <CheckCircle className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />}
                 </div>
-                <div className="mt-3 flex flex-wrap gap-1.5">
-                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-white/80 dark:bg-slate-800 text-indigo-700 dark:text-indigo-300 border border-indigo-200/50 dark:border-indigo-800/50">
-                    Kunci Rahasia
-                  </span>
-                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-white/80 dark:bg-slate-800 text-indigo-700 dark:text-indigo-300 border border-indigo-200/50 dark:border-indigo-800/50">
-                    1x Coba
-                  </span>
-                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-white/80 dark:bg-slate-800 text-indigo-700 dark:text-indigo-300 border border-indigo-200/50 dark:border-indigo-800/50">
-                    Anti-Curang
-                  </span>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
+                  Timer aktif, skor dari ketepatan & kecepatan.
+                </p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setSelectedMode('survival_3hearts');
+                }}
+                className={`p-3 rounded-xl border text-left transition-all btn-press flex flex-col justify-between min-h-[48px] ${
+                  selectedMode === 'survival_3hearts'
+                    ? 'border-rose-600 dark:border-rose-500 bg-rose-50/80 dark:bg-rose-950/40 shadow-xs ring-2 ring-rose-500/20'
+                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 hover:bg-slate-50 dark:hover:bg-slate-800'
+                }`}
+              >
+                <div className="flex items-center justify-between w-full mb-1">
+                  <span className="font-black text-xs sm:text-sm text-slate-900 dark:text-white">❤️ 3 Nyawa</span>
+                  {selectedMode === 'survival_3hearts' && <CheckCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />}
+                </div>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
+                  Salah 3x pengerjaan kuis berakhir.
+                </p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setSelectedMode('untimed');
+                }}
+                className={`p-3 rounded-xl border text-left transition-all btn-press flex flex-col justify-between min-h-[48px] ${
+                  selectedMode === 'untimed'
+                    ? 'border-emerald-600 dark:border-emerald-500 bg-emerald-50/80 dark:bg-emerald-950/40 shadow-xs ring-2 ring-emerald-500/20'
+                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 hover:bg-slate-50 dark:hover:bg-slate-800'
+                }`}
+              >
+                <div className="flex items-center justify-between w-full mb-1">
+                  <span className="font-black text-xs sm:text-sm text-slate-900 dark:text-white">🧘 Santai</span>
+                  {selectedMode === 'untimed' && <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />}
+                </div>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
+                  Tanpa timer, leluasa untuk diskusi kelas.
+                </p>
+              </button>
+            </div>
+
+            {/* Durasi Waktu (Jika bukan untimed) */}
+            {selectedMode !== 'untimed' && (
+              <div className="pt-2 border-t border-slate-200/60 dark:border-slate-750/60">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Durasi Per Butir Soal</span>
+                  <span className="text-xs font-black text-blue-600 dark:text-blue-400">{selectedDuration} detik</span>
+                </div>
+                <div className="grid grid-cols-6 gap-1.5 sm:gap-2">
+                  {DURATION_PRESETS.map((dur) => (
+                    <button
+                      key={dur}
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        setSelectedDuration(dur);
+                      }}
+                      className={`py-2 px-1 rounded-xl text-center font-bold text-xs sm:text-sm transition-all min-h-[42px] flex items-center justify-center btn-press ${
+                        selectedDuration === dur
+                          ? 'bg-blue-600 text-white shadow-xs font-black'
+                          : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-750'
+                      }`}
+                    >
+                      {dur}s
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 2. Visibilitas Kunci Jawaban & Pembahasan */}
+          <div className="p-4 rounded-2xl bg-slate-50/70 dark:bg-slate-850/60 border border-slate-200/80 dark:border-slate-800 space-y-3.5">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-black text-slate-900 dark:text-white tracking-wide uppercase flex items-center gap-1.5">
+                <Eye className="w-3.5 h-3.5 text-indigo-500" />
+                <span>2. Visibilitas Kunci & Pembahasan</span>
+              </label>
+              <span className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400">
+                {showAnswersMode === 'immediate' ? 'Kunci Terbuka' : showAnswersMode === 'status_only' ? 'Hanya Status' : 'Sembunyi Total'}
+              </span>
+            </div>
+
+            {/* Opsi Visibilitas Kunci */}
+            <div>
+              <p className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">Kunci Jawaban untuk Siswa:</p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    setShowAnswersMode('immediate');
+                  }}
+                  className={`p-3 rounded-xl border text-left transition-all btn-press flex flex-col justify-between min-h-[48px] ${
+                    showAnswersMode === 'immediate'
+                      ? 'border-emerald-600 dark:border-emerald-500 bg-emerald-50/80 dark:bg-emerald-950/40 shadow-xs ring-2 ring-emerald-500/20'
+                      : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 hover:bg-slate-50 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  <div className="flex items-center justify-between w-full mb-1">
+                    <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">🟢 Terbuka Langsung</span>
+                    {showAnswersMode === 'immediate' && <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />}
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
+                    Siswa langsung tahu letak kunci yang tepat.
+                  </p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    setShowAnswersMode('status_only');
+                  }}
+                  className={`p-3 rounded-xl border text-left transition-all btn-press flex flex-col justify-between min-h-[48px] ${
+                    showAnswersMode === 'status_only'
+                      ? 'border-amber-600 dark:border-amber-500 bg-amber-50/80 dark:bg-amber-950/40 shadow-xs ring-2 ring-amber-500/20'
+                      : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 hover:bg-slate-50 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  <div className="flex items-center justify-between w-full mb-1">
+                    <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">🟡 Hanya Status</span>
+                    {showAnswersMode === 'status_only' && <CheckCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />}
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
+                    Tahu benar/salah, kunci asli tidak dibocorkan.
+                  </p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    setShowAnswersMode('exam_strict');
+                  }}
+                  className={`p-3 rounded-xl border text-left transition-all btn-press flex flex-col justify-between min-h-[48px] ${
+                    showAnswersMode === 'exam_strict'
+                      ? 'border-indigo-600 dark:border-indigo-500 bg-indigo-50/80 dark:bg-indigo-950/40 shadow-xs ring-2 ring-indigo-500/20'
+                      : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 hover:bg-slate-50 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  <div className="flex items-center justify-between w-full mb-1">
+                    <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">🔒 Sembunyi Total</span>
+                    {showAnswersMode === 'exam_strict' && <CheckCircle className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />}
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
+                    Dirahasiakan penuh (standar ujian resmi).
+                  </p>
+                </button>
+              </div>
+            </div>
+
+            {/* Opsi Pembahasan */}
+            <div className="pt-2 border-t border-slate-200/60 dark:border-slate-750/60">
+              <p className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">Pembahasan & Penjelasan Guru:</p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    setShowExplanationMode('immediate');
+                  }}
+                  className={`p-2.5 rounded-xl border text-left transition-all btn-press ${
+                    showExplanationMode === 'immediate'
+                      ? 'border-blue-600 dark:border-blue-500 bg-blue-50/80 dark:bg-blue-950/40 shadow-xs ring-1 ring-blue-500/20'
+                      : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850'
+                  }`}
+                >
+                  <p className="font-bold text-xs text-slate-900 dark:text-white">Langsung Tiap Soal</p>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Cocok belajar mandiri</p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    setShowExplanationMode('end_only');
+                  }}
+                  className={`p-2.5 rounded-xl border text-left transition-all btn-press ${
+                    showExplanationMode === 'end_only'
+                      ? 'border-blue-600 dark:border-blue-500 bg-blue-50/80 dark:bg-blue-950/40 shadow-xs ring-1 ring-blue-500/20'
+                      : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850'
+                  }`}
+                >
+                  <p className="font-bold text-xs text-slate-900 dark:text-white">Di Akhir Kuis</p>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Saat ulasan rekapan</p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    setShowExplanationMode('never');
+                  }}
+                  className={`p-2.5 rounded-xl border text-left transition-all btn-press ${
+                    showExplanationMode === 'never'
+                      ? 'border-blue-600 dark:border-blue-500 bg-blue-50/80 dark:bg-blue-950/40 shadow-xs ring-1 ring-blue-500/20'
+                      : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850'
+                  }`}
+                >
+                  <p className="font-bold text-xs text-slate-900 dark:text-white">Sembunyikan</p>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Tanpa ulasan</p>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* 3. Keamanan & Aturan Pengerjaan */}
+          <div className="p-4 rounded-2xl bg-slate-50/70 dark:bg-slate-850/60 border border-slate-200/80 dark:border-slate-800 space-y-3">
+            <label className="text-xs font-black text-slate-900 dark:text-white tracking-wide uppercase flex items-center gap-1.5">
+              <ShieldAlert className="w-3.5 h-3.5 text-indigo-500" />
+              <span>3. Keamanan & Aturan Pengerjaan</span>
+            </label>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {/* Toggle Acak Urutan Soal */}
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setShuffleQuestions((prev) => !prev);
+                }}
+                className={`p-3 rounded-xl border text-left transition-all btn-press flex items-center justify-between min-h-[46px] ${
+                  shuffleQuestions
+                    ? 'border-indigo-600 dark:border-indigo-500 bg-indigo-50/70 dark:bg-indigo-950/30'
+                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850'
+                }`}
+              >
+                <div>
+                  <p className="font-bold text-xs text-slate-900 dark:text-white">Acak Nomor Soal</p>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400">Urutan nomor soal diacak tiap siswa</p>
+                </div>
+                <div className={`w-9 h-5 rounded-full transition-colors relative flex items-center p-0.5 flex-shrink-0 ${
+                  shuffleQuestions ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-700'
+                }`}>
+                  <div className={`w-4 h-4 rounded-full bg-white transition-transform ${
+                    shuffleQuestions ? 'translate-x-4' : 'translate-x-0'
+                  }`} />
                 </div>
               </button>
 
-              {/* Kartu 2: Mode Latihan Bebas */}
+              {/* Toggle Acak Pilihan Opsi */}
               <button
                 type="button"
-                onClick={applyCasualPracticePreset}
-                className={`p-3.5 sm:p-4 rounded-2xl border text-left transition-all btn-press flex flex-col justify-between min-h-[115px] relative overflow-hidden ${
-                  isCasualPracticeActive
-                    ? 'border-emerald-600 dark:border-emerald-500 bg-emerald-50/60 dark:bg-emerald-950/40 shadow-sm ring-2 ring-emerald-500/30'
-                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 hover:bg-slate-50 dark:hover:bg-slate-800'
+                onClick={() => {
+                  playClick();
+                  setShuffleOptions((prev) => !prev);
+                }}
+                className={`p-3 rounded-xl border text-left transition-all btn-press flex items-center justify-between min-h-[46px] ${
+                  shuffleOptions
+                    ? 'border-indigo-600 dark:border-indigo-500 bg-indigo-50/70 dark:bg-indigo-950/30'
+                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850'
                 }`}
               >
                 <div>
-                  <div className="flex items-center justify-between w-full mb-1.5">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xl">🎮</span>
-                      <p className="font-black text-sm text-slate-900 dark:text-white">
-                        Mode Latihan Bebas
-                      </p>
-                    </div>
-                    {isCasualPracticeActive ? (
-                      <span className="flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-600 text-white shadow-2xs">
-                        <CheckCircle className="w-3 h-3" />
-                        <span>Aktif</span>
-                      </span>
-                    ) : (
-                      <span className="text-base">✨</span>
-                    )}
-                  </div>
-                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                    Kunci jawaban & pembahasan langsung tampil, siswa bebas mengulang untuk memperdalam materi.
+                  <p className="font-bold text-xs text-slate-900 dark:text-white">Acak Opsi Pilihan</p>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400">Posisi opsi A, B, C, D diacak</p>
+                </div>
+                <div className={`w-9 h-5 rounded-full transition-colors relative flex items-center p-0.5 flex-shrink-0 ${
+                  shuffleOptions ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-700'
+                }`}>
+                  <div className={`w-4 h-4 rounded-full bg-white transition-transform ${
+                    shuffleOptions ? 'translate-x-4' : 'translate-x-0'
+                  }`} />
+                </div>
+              </button>
+
+              {/* Toggle Deteksi Ganti Tab */}
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setTabSwitchDetection((prev) => !prev);
+                }}
+                className={`p-3 rounded-xl border text-left transition-all btn-press flex items-center justify-between min-h-[46px] ${
+                  tabSwitchDetection
+                    ? 'border-indigo-600 dark:border-indigo-500 bg-indigo-50/70 dark:bg-indigo-950/30'
+                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850'
+                }`}
+              >
+                <div>
+                  <p className="font-bold text-xs text-slate-900 dark:text-white">Deteksi Ganti Tab</p>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400">Beri peringatan saat siswa pindah layar</p>
+                </div>
+                <div className={`w-9 h-5 rounded-full transition-colors relative flex items-center p-0.5 flex-shrink-0 ${
+                  tabSwitchDetection ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-700'
+                }`}>
+                  <div className={`w-4 h-4 rounded-full bg-white transition-transform ${
+                    tabSwitchDetection ? 'translate-x-4' : 'translate-x-0'
+                  }`} />
+                </div>
+              </button>
+
+              {/* Toggle Papan Peringkat di Siswa */}
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setShowLeaderboardToStudents((prev) => !prev);
+                }}
+                className={`p-3 rounded-xl border text-left transition-all btn-press flex items-center justify-between min-h-[46px] ${
+                  showLeaderboardToStudents
+                    ? 'border-amber-600 dark:border-amber-500 bg-amber-50/70 dark:bg-amber-950/30'
+                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850'
+                }`}
+              >
+                <div>
+                  <p className="font-bold text-xs text-slate-900 dark:text-white">Peringkat di Gawai Siswa</p>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400">{showLeaderboardToStudents ? 'Siswa melihat rank & poin real-time' : 'Hanya guru yang melihat di layar host'}</p>
+                </div>
+                <div className={`w-9 h-5 rounded-full transition-colors relative flex items-center p-0.5 flex-shrink-0 ${
+                  showLeaderboardToStudents ? 'bg-amber-600' : 'bg-slate-300 dark:bg-slate-700'
+                }`}>
+                  <div className={`w-4 h-4 rounded-full bg-white transition-transform ${
+                    showLeaderboardToStudents ? 'translate-x-4' : 'translate-x-0'
+                  }`} />
+                </div>
+              </button>
+
+              {/* Batas Percobaan (1x vs Bebas) */}
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setMaxAttempts((prev) => (prev === 1 ? 0 : 1));
+                }}
+                className={`p-3 rounded-xl border text-left transition-all btn-press flex items-center justify-between min-h-[46px] sm:col-span-2 ${
+                  maxAttempts === 1
+                    ? 'border-rose-600 dark:border-rose-500 bg-rose-50/70 dark:bg-rose-950/30'
+                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850'
+                }`}
+              >
+                <div>
+                  <p className="font-bold text-xs text-slate-900 dark:text-white">
+                    Batas Pengerjaan: {maxAttempts === 1 ? 'Hanya 1 Kali (Standar Ujian)' : 'Bebas Mengulang (Latihan Mandiri)'}
+                  </p>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                    {maxAttempts === 1 ? 'Siswa dilarang mengulang kembali sesi kuis ini' : 'Siswa leluasa mengulang sesi pengerjaan'}
                   </p>
                 </div>
-                <div className="mt-3 flex flex-wrap gap-1.5">
-                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-white/80 dark:bg-slate-850 text-emerald-700 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-800/50">
-                    Kunci Terbuka
-                  </span>
-                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-white/80 dark:bg-slate-850 text-emerald-700 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-800/50">
-                    Bebas Coba
-                  </span>
-                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-white/80 dark:bg-slate-850 text-emerald-700 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-800/50">
-                    Pembahasan Instan
-                  </span>
+                <div className={`w-9 h-5 rounded-full transition-colors relative flex items-center p-0.5 flex-shrink-0 ${
+                  maxAttempts === 1 ? 'bg-rose-600' : 'bg-slate-300 dark:bg-slate-700'
+                }`}>
+                  <div className={`w-4 h-4 rounded-full bg-white transition-transform ${
+                    maxAttempts === 1 ? 'translate-x-4' : 'translate-x-0'
+                  }`} />
                 </div>
               </button>
             </div>
           </div>
 
-          {/* Accordion Pengaturan Lanjutan (Waktu, Kunci, Anti-Mencontek, Target Display) */}
-          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden bg-slate-50/50 dark:bg-slate-850/50">
-            {/* Header Accordion Toggle */}
-            <button
-              type="button"
-              onClick={() => {
-                playClick();
-                setIsAdvancedOpen((prev) => !prev);
-              }}
-              className="w-full p-3.5 sm:p-4 text-left flex items-center justify-between gap-3 bg-white dark:bg-slate-850 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors min-h-[50px] btn-press"
-              aria-expanded={isAdvancedOpen}
-            >
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center justify-center shrink-0">
-                  <SlidersHorizontal className="w-4 h-4" />
+          {/* 4. Target Tampilan Permainan */}
+          <div className="p-4 rounded-2xl bg-slate-50/70 dark:bg-slate-850/60 border border-slate-200/80 dark:border-slate-800 space-y-3">
+            <label className="text-xs font-black text-slate-900 dark:text-white tracking-wide uppercase flex items-center gap-1.5">
+              <Tv className="w-3.5 h-3.5 text-blue-500" />
+              <span>4. Target Tampilan Permainan</span>
+            </label>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setPresentationTarget('smartboard');
+                }}
+                className={`p-3 rounded-xl border text-left transition-all btn-press flex items-center gap-3 min-h-[48px] ${
+                  presentationTarget === 'smartboard'
+                    ? 'border-blue-600 dark:border-blue-500 bg-blue-50/80 dark:bg-blue-950/40 shadow-xs ring-2 ring-blue-500/20'
+                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850'
+                }`}
+              >
+                <div className={`p-2 rounded-lg shrink-0 ${
+                  presentationTarget === 'smartboard' ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+                }`}>
+                  <Tv className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
-                  <span className="font-black text-xs sm:text-sm text-slate-900 dark:text-white block leading-tight">
-                    Pengaturan Sesi Lanjutan
-                  </span>
-                  <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 flex flex-wrap gap-1.5 items-center">
-                    <span>{selectedMode === 'untimed' ? 'Santai (Tanpa Waktu)' : `${selectedDuration}s/soal`}</span>
-                    <span>•</span>
-                    <span>{presentationTarget === 'smartboard' ? 'Layar Smartboard' : 'Gawai Siswa'}</span>
-                    <span>•</span>
-                    <span>{shuffleQuestions ? 'Soal Acak' : 'Soal Terurut'}</span>
-                  </span>
+                  <p className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">Layar Smartboard (IFP)</p>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">Pandu kuis di depan kelas via TV / Proyektor</p>
                 </div>
-              </div>
+              </button>
 
-              <div className="flex items-center gap-2 shrink-0">
-                <span className="text-xs font-bold text-blue-600 dark:text-blue-400 hidden xs:inline">
-                  {isAdvancedOpen ? 'Tutup' : 'Sesuaikan'}
-                </span>
-                <div className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 flex items-center justify-center">
-                  {isAdvancedOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setPresentationTarget('student-lobby');
+                }}
+                className={`p-3 rounded-xl border text-left transition-all btn-press flex items-center gap-3 min-h-[48px] ${
+                  presentationTarget === 'student-lobby'
+                    ? 'border-blue-600 dark:border-blue-500 bg-blue-50/80 dark:bg-blue-950/40 shadow-xs ring-2 ring-blue-500/20'
+                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850'
+                }`}
+              >
+                <div className={`p-2 rounded-lg shrink-0 ${
+                  presentationTarget === 'student-lobby' ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+                }`}>
+                  <Smartphone className="w-4 h-4" />
                 </div>
-              </div>
-            </button>
-
-            {/* Isi Panel Lanjutan (Hanya render saat terbuka) */}
-            {isAdvancedOpen && (
-              <div className="p-4 sm:p-5 border-t border-slate-200 dark:border-slate-800 space-y-5 animate-fade-in bg-white dark:bg-slate-900">
-                
-                {/* 1. Mekanik & Waktu Permainan */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-black text-slate-800 dark:text-slate-200 tracking-wide uppercase flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5 text-blue-500" />
-                      <span>1. Mekanik & Batas Waktu</span>
-                    </label>
-                  </div>
-
-                  {/* Mode Pilihan */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        playClick();
-                        setSelectedMode('standard');
-                      }}
-                      className={`p-2.5 rounded-xl border text-left transition-all btn-press ${
-                        selectedMode === 'standard'
-                          ? 'border-blue-600 dark:border-blue-500 bg-blue-50/80 dark:bg-blue-950/40 shadow-xs ring-1 ring-blue-500/20'
-                          : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-bold text-xs text-slate-900 dark:text-white">🌟 Standar</span>
-                        {selectedMode === 'standard' && <CheckCircle className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />}
-                      </div>
-                      <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
-                        Timer aktif, skor dari ketepatan & kecepatan.
-                      </p>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        playClick();
-                        setSelectedMode('survival_3hearts');
-                      }}
-                      className={`p-2.5 rounded-xl border text-left transition-all btn-press ${
-                        selectedMode === 'survival_3hearts'
-                          ? 'border-rose-600 dark:border-rose-500 bg-rose-50/80 dark:bg-rose-950/40 shadow-xs ring-1 ring-rose-500/20'
-                          : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-bold text-xs text-slate-900 dark:text-white">❤️ 3 Nyawa</span>
-                        {selectedMode === 'survival_3hearts' && <CheckCircle className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />}
-                      </div>
-                      <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
-                        Salah 3x pengerjaan kuis berakhir.
-                      </p>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        playClick();
-                        setSelectedMode('untimed');
-                      }}
-                      className={`p-2.5 rounded-xl border text-left transition-all btn-press ${
-                        selectedMode === 'untimed'
-                          ? 'border-emerald-600 dark:border-emerald-500 bg-emerald-50/80 dark:bg-emerald-950/40 shadow-xs ring-1 ring-emerald-500/20'
-                          : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-bold text-xs text-slate-900 dark:text-white">🧘 Santai</span>
-                        {selectedMode === 'untimed' && <CheckCircle className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />}
-                      </div>
-                      <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
-                        Tanpa timer, leluasa untuk diskusi kelas.
-                      </p>
-                    </button>
-                  </div>
-
-                  {/* Durasi Waktu (Jika bukan untimed) */}
-                  {selectedMode !== 'untimed' && (
-                    <div className="pt-2">
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300">Durasi Per Butir Soal</span>
-                        <span className="text-xs font-black text-blue-600 dark:text-blue-400">{selectedDuration} detik</span>
-                      </div>
-                      <div className="grid grid-cols-6 gap-1.5">
-                        {DURATION_PRESETS.map((dur) => (
-                          <button
-                            key={dur}
-                            type="button"
-                            onClick={() => {
-                              playClick();
-                              setSelectedDuration(dur);
-                            }}
-                            className={`py-2 px-1 rounded-xl text-center font-bold text-xs transition-all min-h-[40px] flex items-center justify-center btn-press ${
-                              selectedDuration === dur
-                                ? 'bg-blue-600 text-white shadow-xs font-black'
-                                : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-750'
-                            }`}
-                          >
-                            {dur}s
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                <div className="min-w-0">
+                  <p className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">Lobi / Gawai Siswa</p>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">Buka lobi mandiri siswa</p>
                 </div>
+              </button>
+            </div>
 
-                {/* 2. Visibilitas Kunci Jawaban & Pembahasan */}
-                <div className="space-y-3 pt-3 border-t border-slate-200/80 dark:border-slate-800">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-black text-slate-800 dark:text-slate-200 tracking-wide uppercase flex items-center gap-1.5">
-                      <Eye className="w-3.5 h-3.5 text-indigo-500" />
-                      <span>2. Visibilitas Kunci & Pembahasan</span>
-                    </label>
-                  </div>
-
-                  {/* Opsi Visibilitas Kunci */}
-                  <div>
-                    <p className="text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Kunci Jawaban Siswa:</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          playClick();
-                          setShowAnswersMode('immediate');
-                        }}
-                        className={`p-2.5 rounded-xl border text-left transition-all btn-press ${
-                          showAnswersMode === 'immediate'
-                            ? 'border-emerald-600 dark:border-emerald-500 bg-emerald-50/80 dark:bg-emerald-950/40 shadow-xs ring-1 ring-emerald-500/20'
-                            : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between mb-0.5">
-                          <span className="font-bold text-xs text-slate-900 dark:text-white">🟢 Terbuka Langsung</span>
-                          {showAnswersMode === 'immediate' && <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />}
-                        </div>
-                        <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
-                          Siswa langsung tahu letak kunci yang tepat.
-                        </p>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          playClick();
-                          setShowAnswersMode('status_only');
-                        }}
-                        className={`p-2.5 rounded-xl border text-left transition-all btn-press ${
-                          showAnswersMode === 'status_only'
-                            ? 'border-amber-600 dark:border-amber-500 bg-amber-50/80 dark:bg-amber-950/40 shadow-xs ring-1 ring-amber-500/20'
-                            : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between mb-0.5">
-                          <span className="font-bold text-xs text-slate-900 dark:text-white">🟡 Hanya Status</span>
-                          {showAnswersMode === 'status_only' && <CheckCircle className="w-3.5 h-3.5 text-amber-600" />}
-                        </div>
-                        <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
-                          Tahu benar/salah, kunci asli tidak dibocorkan.
-                        </p>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          playClick();
-                          setShowAnswersMode('exam_strict');
-                        }}
-                        className={`p-2.5 rounded-xl border text-left transition-all btn-press ${
-                          showAnswersMode === 'exam_strict'
-                            ? 'border-indigo-600 dark:border-indigo-500 bg-indigo-50/80 dark:bg-indigo-950/40 shadow-xs ring-1 ring-indigo-500/20'
-                            : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between mb-0.5">
-                          <span className="font-bold text-xs text-slate-900 dark:text-white">🔒 Sembunyi Total</span>
-                          {showAnswersMode === 'exam_strict' && <CheckCircle className="w-3.5 h-3.5 text-indigo-600" />}
-                        </div>
-                        <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
-                          Dirahasiakan penuh sampai ujian selesai.
-                        </p>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Opsi Pembahasan */}
-                  <div className="pt-2">
-                    <p className="text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1.5">Penjelasan & Pembahasan Guru:</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          playClick();
-                          setShowExplanationMode('immediate');
-                        }}
-                        className={`p-2.5 rounded-xl border text-left transition-all btn-press ${
-                          showExplanationMode === 'immediate'
-                            ? 'border-blue-600 dark:border-blue-500 bg-blue-50/80 dark:bg-blue-950/40 shadow-xs ring-1 ring-blue-500/20'
-                            : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850'
-                        }`}
-                      >
-                        <p className="font-bold text-xs text-slate-900 dark:text-white">Langsung Tiap Soal</p>
-                        <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Cocok belajar mandiri</p>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          playClick();
-                          setShowExplanationMode('end_only');
-                        }}
-                        className={`p-2.5 rounded-xl border text-left transition-all btn-press ${
-                          showExplanationMode === 'end_only'
-                            ? 'border-blue-600 dark:border-blue-500 bg-blue-50/80 dark:bg-blue-950/40 shadow-xs ring-1 ring-blue-500/20'
-                            : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850'
-                        }`}
-                      >
-                        <p className="font-bold text-xs text-slate-900 dark:text-white">Di Akhir Kuis</p>
-                        <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Saat ulasan rekapan</p>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          playClick();
-                          setShowExplanationMode('never');
-                        }}
-                        className={`p-2.5 rounded-xl border text-left transition-all btn-press ${
-                          showExplanationMode === 'never'
-                            ? 'border-blue-600 dark:border-blue-500 bg-blue-50/80 dark:bg-blue-950/40 shadow-xs ring-1 ring-blue-500/20'
-                            : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850'
-                        }`}
-                      >
-                        <p className="font-bold text-xs text-slate-900 dark:text-white">Sembunyikan</p>
-                        <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Tanpa ulasan</p>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 3. Keamanan, Pengacakan & Percobaan */}
-                <div className="space-y-3 pt-3 border-t border-slate-200/80 dark:border-slate-800">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-black text-slate-800 dark:text-slate-200 tracking-wide uppercase flex items-center gap-1.5">
-                      <ShieldAlert className="w-3.5 h-3.5 text-indigo-500" />
-                      <span>3. Keamanan & Aturan Pengerjaan</span>
-                    </label>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    {/* Toggle Acak Urutan Soal */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        playClick();
-                        setShuffleQuestions((prev) => !prev);
-                      }}
-                      className={`p-2.5 rounded-xl border text-left transition-all btn-press flex items-center justify-between min-h-[44px] ${
-                        shuffleQuestions
-                          ? 'border-indigo-600 dark:border-indigo-500 bg-indigo-50/70 dark:bg-indigo-950/30'
-                          : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850'
-                      }`}
-                    >
-                      <div>
-                        <p className="font-bold text-xs text-slate-900 dark:text-white">Acak Nomor Soal</p>
-                        <p className="text-[10px] text-slate-500 dark:text-slate-400">Urutan butir soal diacak tiap siswa</p>
-                      </div>
-                      <div className={`w-9 h-5 rounded-full transition-colors relative flex items-center p-0.5 flex-shrink-0 ${
-                        shuffleQuestions ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-700'
-                      }`}>
-                        <div className={`w-4 h-4 rounded-full bg-white transition-transform ${
-                          shuffleQuestions ? 'translate-x-4' : 'translate-x-0'
-                        }`} />
-                      </div>
-                    </button>
-
-                    {/* Toggle Acak Pilihan Opsi */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        playClick();
-                        setShuffleOptions((prev) => !prev);
-                      }}
-                      className={`p-2.5 rounded-xl border text-left transition-all btn-press flex items-center justify-between min-h-[44px] ${
-                        shuffleOptions
-                          ? 'border-indigo-600 dark:border-indigo-500 bg-indigo-50/70 dark:bg-indigo-950/30'
-                          : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850'
-                      }`}
-                    >
-                      <div>
-                        <p className="font-bold text-xs text-slate-900 dark:text-white">Acak Opsi Pilihan</p>
-                        <p className="text-[10px] text-slate-500 dark:text-slate-400">Posisi opsi A, B, C, D diacak</p>
-                      </div>
-                      <div className={`w-9 h-5 rounded-full transition-colors relative flex items-center p-0.5 flex-shrink-0 ${
-                        shuffleOptions ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-700'
-                      }`}>
-                        <div className={`w-4 h-4 rounded-full bg-white transition-transform ${
-                          shuffleOptions ? 'translate-x-4' : 'translate-x-0'
-                        }`} />
-                      </div>
-                    </button>
-
-                    {/* Toggle Deteksi Ganti Tab */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        playClick();
-                        setTabSwitchDetection((prev) => !prev);
-                      }}
-                      className={`p-2.5 rounded-xl border text-left transition-all btn-press flex items-center justify-between min-h-[44px] ${
-                        tabSwitchDetection
-                          ? 'border-indigo-600 dark:border-indigo-500 bg-indigo-50/70 dark:bg-indigo-950/30'
-                          : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850'
-                      }`}
-                    >
-                      <div>
-                        <p className="font-bold text-xs text-slate-900 dark:text-white">Deteksi Ganti Tab</p>
-                        <p className="text-[10px] text-slate-500 dark:text-slate-400">Beri peringatan saat siswa pindah layar</p>
-                      </div>
-                      <div className={`w-9 h-5 rounded-full transition-colors relative flex items-center p-0.5 flex-shrink-0 ${
-                        tabSwitchDetection ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-700'
-                      }`}>
-                        <div className={`w-4 h-4 rounded-full bg-white transition-transform ${
-                          tabSwitchDetection ? 'translate-x-4' : 'translate-x-0'
-                        }`} />
-                      </div>
-                    </button>
-
-                    {/* Toggle Papan Peringkat di Siswa */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        playClick();
-                        setShowLeaderboardToStudents((prev) => !prev);
-                      }}
-                      className={`p-2.5 rounded-xl border text-left transition-all btn-press flex items-center justify-between min-h-[44px] ${
-                        showLeaderboardToStudents
-                          ? 'border-amber-600 dark:border-amber-500 bg-amber-50/70 dark:bg-amber-950/30'
-                          : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850'
-                      }`}
-                    >
-                      <div>
-                        <p className="font-bold text-xs text-slate-900 dark:text-white">Peringkat di Gawai Siswa</p>
-                        <p className="text-[10px] text-slate-500 dark:text-slate-400">{showLeaderboardToStudents ? 'Siswa melihat live rank' : 'Hanya guru yang melihat'}</p>
-                      </div>
-                      <div className={`w-9 h-5 rounded-full transition-colors relative flex items-center p-0.5 flex-shrink-0 ${
-                        showLeaderboardToStudents ? 'bg-amber-600' : 'bg-slate-300 dark:bg-slate-700'
-                      }`}>
-                        <div className={`w-4 h-4 rounded-full bg-white transition-transform ${
-                          showLeaderboardToStudents ? 'translate-x-4' : 'translate-x-0'
-                        }`} />
-                      </div>
-                    </button>
-
-                    {/* Batas Percobaan (1x vs Bebas) */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        playClick();
-                        setMaxAttempts((prev) => (prev === 1 ? 0 : 1));
-                      }}
-                      className={`p-2.5 rounded-xl border text-left transition-all btn-press flex items-center justify-between min-h-[44px] sm:col-span-2 ${
-                        maxAttempts === 1
-                          ? 'border-rose-600 dark:border-rose-500 bg-rose-50/70 dark:bg-rose-950/30'
-                          : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850'
-                      }`}
-                    >
-                      <div>
-                        <p className="font-bold text-xs text-slate-900 dark:text-white">
-                          Batas Pengerjaan: {maxAttempts === 1 ? 'Hanya 1 Kali (Ujian)' : 'Bebas Mengulang (Latihan)'}
-                        </p>
-                        <p className="text-[10px] text-slate-500 dark:text-slate-400">
-                          {maxAttempts === 1 ? 'Siswa dilarang mengulang kembali sesi ujian ini' : 'Siswa leluasa mengulang sesi kuis'}
-                        </p>
-                      </div>
-                      <div className={`w-9 h-5 rounded-full transition-colors relative flex items-center p-0.5 flex-shrink-0 ${
-                        maxAttempts === 1 ? 'bg-rose-600' : 'bg-slate-300 dark:bg-slate-700'
-                      }`}>
-                        <div className={`w-4 h-4 rounded-full bg-white transition-transform ${
-                          maxAttempts === 1 ? 'translate-x-4' : 'translate-x-0'
-                        }`} />
-                      </div>
-                    </button>
-                  </div>
-                </div>
-
-                {/* 4. Target Tampilan Permainan */}
-                <div className="space-y-2.5 pt-3 border-t border-slate-200/80 dark:border-slate-800">
-                  <label className="text-xs font-black text-slate-800 dark:text-slate-200 tracking-wide uppercase flex items-center gap-1.5">
-                    <Tv className="w-3.5 h-3.5 text-blue-500" />
-                    <span>4. Target Tampilan Permainan</span>
-                  </label>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        playClick();
-                        setPresentationTarget('smartboard');
-                      }}
-                      className={`p-3 rounded-xl border text-left transition-all btn-press flex items-center gap-3 ${
-                        presentationTarget === 'smartboard'
-                          ? 'border-blue-600 dark:border-blue-500 bg-blue-50/80 dark:bg-blue-950/40 shadow-xs ring-1 ring-blue-500/20'
-                          : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850'
-                      }`}
-                    >
-                      <div className={`p-2 rounded-lg shrink-0 ${
-                        presentationTarget === 'smartboard' ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-850 text-slate-500'
-                      }`}>
-                        <Tv className="w-4 h-4" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-bold text-xs text-slate-900 dark:text-white">Layar Smartboard (IFP)</p>
-                        <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">Pandu kuis di depan kelas</p>
-                      </div>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        playClick();
-                        setPresentationTarget('student-lobby');
-                      }}
-                      className={`p-3 rounded-xl border text-left transition-all btn-press flex items-center gap-3 ${
-                        presentationTarget === 'student-lobby'
-                          ? 'border-blue-600 dark:border-blue-500 bg-blue-50/80 dark:bg-blue-950/40 shadow-xs ring-1 ring-blue-500/20'
-                          : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850'
-                      }`}
-                    >
-                      <div className={`p-2 rounded-lg shrink-0 ${
-                        presentationTarget === 'student-lobby' ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-850 text-slate-500'
-                      }`}>
-                        <Smartphone className="w-4 h-4" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-bold text-xs text-slate-900 dark:text-white">Lobi / Gawai Siswa</p>
-                        <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">Buka lobi mandiri siswa</p>
-                      </div>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Simpan Pengaturan Default */}
-                <div className="pt-2 border-t border-slate-200/80 dark:border-slate-800">
-                  <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 select-none">
-                    <input
-                      type="checkbox"
-                      checked={saveAsDefault}
-                      onChange={(e) => {
-                        playClick();
-                        setSaveAsDefault(e.target.checked);
-                      }}
-                      className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800"
-                    />
-                    <span>Simpan konfigurasi ini sebagai default untuk kuis ini</span>
-                  </label>
-                </div>
-
-              </div>
-            )}
+            {/* Simpan Pengaturan Default */}
+            <div className="pt-2 border-t border-slate-200/60 dark:border-slate-750/60">
+              <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 select-none">
+                <input
+                  type="checkbox"
+                  checked={saveAsDefault}
+                  onChange={(e) => {
+                    playClick();
+                    setSaveAsDefault(e.target.checked);
+                  }}
+                  className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800"
+                />
+                <span>Simpan konfigurasi ini sebagai default untuk kuis ini</span>
+              </label>
+            </div>
           </div>
 
         </div>

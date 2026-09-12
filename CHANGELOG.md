@@ -1,6 +1,27 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.57] - 2026-09-12
+### Eliminasi Format Preset Redundan Menuju Kendali Sesi Kuis Mandiri dan Transparan untuk Guru
+
+#### 1. Penghapusan Mutlak Kartu Format Preset Redundan (`PlayQuizModal.tsx`)
+- **Eliminasi Konflik & Kontradiksi Konfigurasi (*Zero Dual-Source of Truth*)**:
+  - Menghapus kartu preset *"Mode Ujian Resmi"* dan *"Mode Latihan Bebas"* sepenuhnya dari antarmuka modal bermain kuis.
+  - Mencegah kebingungan di mana guru memilih preset tertentu namun kemudian mengubah opsi yang bertentangan di pengaturan rinci. Kini tidak ada lagi status kabur atau benturan label *"Format Kustom"*.
+- **Kendali Penuh di Tangan Guru**:
+  - Guru memiliki kendali langsung dan transparan untuk menentukan seluruh parameter sesi permainan sesuai kebutuhan nyata di ruang kelas (misalnya: ulangan resmi dengan nomor soal terurut untuk teks cerita, atau latihan mandiri dengan pembatasan waktu tertentu).
+
+#### 2. Penyajian 4 Kategori Pengaturan Terstruktur Langsung (*Direct Configuration Flow*)
+- **Penghapusan Penumpukan Akordeon (*Frictionless UX*)**:
+  - Seluruh pengaturan kini disajikan langsung dan teratur dalam 4 bagian utama yang mudah ditinjau tanpa perlu membuka/menutup akordeon:
+    1. **Mekanik Permainan & Waktu**: Pilihan mode (*Standar*, *3 Nyawa*, *Santai Tanpa Timer*) dan penentuan durasi waktu per butir soal (10s–60s).
+    2. **Visibilitas Kunci & Pembahasan**: Visibilitas kunci jawaban untuk siswa (*Terbuka Langsung*, *Hanya Status*, *Sembunyi Total*) dan waktu kemunculan pembahasan guru (*Tiap Soal*, *Di Akhir Kuis*, *Sembunyikan*).
+    3. **Keamanan & Aturan Pengerjaan**: Kontrol acak nomor soal, acak pilihan opsi A/B/C/D, deteksi ganti tab/layar, keterlihatan peringkat di gawai siswa, dan batas pengerjaan (*Hanya 1x* vs *Bebas Mengulang*).
+    4. **Target Tampilan Permainan & Default**: Pilihan target presentasi (*Layar Smartboard IFP* vs *Lobi Gawai Siswa*) dan opsi simpan konfigurasi sebagai preferensi default kuis.
+- **Penyelarasan Teks Header & Sentuhan Ergonomis**:
+  - Subtitle modal diperbarui menjadi: *"Atur konfigurasi sesi kuis sesuai kebutuhan kelas Anda"*, mencerminkan kebebasan dan fleksibilitas penuh bagi guru.
+  - Seluruh tombol dan pemilih opsi tetap memenuhi standar mobile-first ($\ge 44 \times 44\text{ px}$).
+
 ## [2.3.56] - 2026-09-12
 ### Redesain Modal Pengaturan Kuis Guru Anti AI-Slop, Eliminasi Redudansi, dan Pengaturan Sesi Lanjutan Terpadu
 
