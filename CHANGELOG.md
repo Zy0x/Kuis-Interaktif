@@ -1,6 +1,35 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.56] - 2026-09-12
+### Redesain Modal Pengaturan Kuis Guru Anti AI-Slop, Eliminasi Redudansi, dan Pengaturan Sesi Lanjutan Terpadu
+
+#### 1. Eliminasi Ciri AI Slop & Pemotongan Teks (*Anti AI-Slop & Zero Truncation*)
+- **Penghapusan Pemotongan Teks Prematur (`truncate`)**:
+  - Menghapus kelas `truncate` pada header modal dan judul kuis. Subtitle *"Pilih format kuis atau sesuaikan sesi sebelum dimulai"* kini mengalir alami tanpa terpotong `...` pada layar kecil maupun besar.
+  - Judul kuis pada kartu info menggunakan `line-clamp-2` sehingga judul panjang seperti *"Kuis Pendidikan Pancasila: Pengamalan Sila Pancasila"* dapat dibaca utuh dan jelas oleh guru.
+- **Kartu Info Kuis & Akses Siswa Terpadu**:
+  - Menggabungkan metadata kuis (cover emoji, mapel, kelas, jumlah butir soal, estimasi waktu) dengan kontrol akses cepat siswa (kode PIN 4-digit dengan tombol salin serta tombol bagikan tautan langsung berumpan balik *"Tersalin!"*).
+  - Mengurangi pemborosan ruang vertikal hingga 40% sekaligus memastikan informasi akses siswa selalu tersedia di bagian atas tanpa perlu menggulir (*scroll*).
+
+#### 2. Eliminasi Redudansi & Selektor Format Kuis Eksklusif 2-Kartu
+- **Penyelarasan Hierarki Kontrol Format Kuis**:
+  - Menggantikan konflik visual antara *"Preset Cepat 1-Klik"* dan *"1. Mode Permainan"* yang sebelumnya sama-sama aktif dengan 2 kartu format utama yang eksklusif dan jelas:
+    - 🎯 **Mode Ujian Resmi**: Dikhususkan untuk asesmen formal, ulangan harian, PTS, atau PAS (kunci & pembahasan dirahasiakan, batas 1x coba, deteksi ganti tab aktif, serta nomor soal dan opsi diacak otomatis).
+    - 🎮 **Mode Latihan Bebas**: Dikhususkan untuk pemanasan kelas, ulasan materi, atau belajar mandiri (kunci dan pembahasan langsung terbuka saat dijawab, siswa leluasa mengulang sesi kuis).
+  - Status aktif ditandai secara presisi dengan badge *"✓ Aktif"*, border aksen bergradasi, dan ring fokus halus tanpa terjadi kebingungan pemilihan ganda.
+
+#### 3. Akordeon Pengaturan Sesi Lanjutan (*Collapsible Advanced Settings*)
+- **Pengorganisasian Opsi Granular Tanpa Penumpukan Kotak (*Anti-Nested Boxes*)**:
+  - Seluruh pengaturan rinci (mekanik 3 hati/santai, durasi waktu per soal, visibilitas kunci, pembahasan guru, keamanan acak/anti-curang, target smartboard IFP vs gawai siswa, dan opsi simpan default) kini dirangkum rapi di dalam panel akordeon akomodatif yang dapat dibuka/tutup sesuai kebutuhan.
+  - Header akordeon dilengkapi pil ringkasan dinamis (misalnya: `30s/soal • Layar Smartboard • Soal Acak`) sehingga guru langsung mengetahui konfigurasi aktif tanpa harus membuka menu jika tidak ingin mengubahnya.
+
+#### 4. Presisi Mobile-First & Footer Aksi Berdampak Tinggi
+- **Standar Sentuh & Responsivitas Antar-Platform**:
+  - Seluruh target sentuh tombol (*Bagi Tautan*, *Mulai Kuis Sekarang*, *Salin PIN*, kartu format, dan toggle) memenuhi standar ergonomis tinggi ($\ge 44 \times 44\text{ px}$, rekomendasi $\ge 48\text{ px}$).
+  - Menjaga kontras visual optimal pada mode Terang (*Light Mode*) dan Gelap (*Dark Mode*).
+  - Footer aksi diperbarui dengan tombol utama *"Mulai Kuis Sekarang"* berukuran penuh dengan gradien modern dan bayangan halus untuk meningkatkan kecepatan peluncuran sesi kuis.
+
 ## [2.3.55] - 2026-09-12
 ### Perbaikan Urutan Hook React pada Modal Pengaturan Kuis Guru & Pemulihan Tombol "Mainkan Sekarang"
 
