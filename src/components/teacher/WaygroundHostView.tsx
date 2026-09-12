@@ -5,6 +5,7 @@ import { copyTextToClipboard } from '../../lib/aiQuestionParser';
 import { AVATAR_MAP } from '../../data/seedQuizzes';
 import { 
   ArrowLeft, 
+  ArrowRight,
   Play, 
   Pause, 
   Square, 
@@ -19,7 +20,9 @@ import {
   Share2,
   Tv,
   TrendingUp,
-  FileSpreadsheet
+  FileSpreadsheet,
+  VolumeX,
+  MessageCircle
 } from 'lucide-react';
 
 interface WaygroundHostViewProps {
@@ -47,16 +50,78 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
   const [confirmEndModal, setConfirmEndModal] = useState(false);
   const [currentDisplayQuestionIdx, setCurrentDisplayQuestionIdx] = useState(0);
 
-  // Poll session state every 3 seconds for local & realtime updates
+  const isTeacherLed = session.settings?.executionMode === 'teacher_led';
+
+  // Synchronize display question index with session
   useEffect(() => {
-    const interval = setInterval(() => {
+    if (typeof session.currentQuestionIndex === 'number') {
+      setCurrentDisplayQuestionIdx(session.currentQuestionIndex);
+    }
+  }, [session.currentQuestionIndex]);
+
+  // Realtime session polling and BroadcastChannel listener
+  useEffect(() => {
+    const refresh = () => {
       const fresh = DataManager.getActiveSessionById(session.id);
       if (fresh) {
         setSession(fresh);
       }
-    }, 3000);
-    return () => clearInterval(interval);
+    };
+
+    const handleSessionUpdated = (e: any) => {
+      if (e.detail?.sessionId === session.id) {
+        refresh();
+      }
+    };
+
+    window.addEventListener('session_updated', handleSessionUpdated);
+
+    let bc: BroadcastChannel | null = null;
+    try {
+      bc = new BroadcastChannel('active_quiz_sessions_sync');
+      bc.onmessage = (event) => {
+        if (event.data?.type === 'SESSION_UPDATED' && event.data?.sessionId === session.id) {
+          refresh();
+        }
+      };
+    } catch {
+      // BroadcastChannel fallback
+    }
+
+    const interval = setInterval(refresh, 2000);
+
+    return () => {
+      window.removeEventListener('session_updated', handleSessionUpdated);
+      if (bc) bc.close();
+      clearInterval(interval);
+    };
   }, [session.id]);
+
+  const handleStartQuiz = async () => {
+    playClick();
+    const updated = await DataManager.startActiveQuizSession(session.id);
+    if (updated) {
+      setSession(updated);
+    }
+  };
+
+  const handleAdvanceQuestion = async (newIndex: number) => {
+    playClick();
+    setCurrentDisplayQuestionIdx(newIndex);
+    const updated = await DataManager.advanceSessionQuestion(session.id, newIndex);
+    if (updated) {
+      setSession(updated);
+    }
+  };
+
+  const handleToggleChatMute = async () => {
+    playClick();
+    const nextMute = !session.isChatMuted;
+    const updated = await DataManager.toggleSessionChatMute(session.id, nextMute);
+    if (updated) {
+      setSession(updated);
+    }
+  };
 
   const handleCopyPin = async () => {
     playClick();
@@ -273,6 +338,36 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
 
           {/* Right: Actions */}
           <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+            {/* Start Quiz button for teacher led waiting state */}
+            {isTeacherLed && session.status === 'waiting' && (
+              <button
+                type="button"
+                onClick={handleStartQuiz}
+                className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black min-h-[40px] flex items-center gap-2 shadow-lg shadow-emerald-950/60 animate-pulse transition-all"
+                title="Mulai Kuis dan Izinkan Seluruh Siswa Menjawab Soal 1"
+              >
+                <Play className="w-4 h-4 fill-white" />
+                <span>Mulai Kuis</span>
+              </button>
+            )}
+
+            {/* Chat Mute / Unmute Toggle */}
+            {isTeacherLed && session.status !== 'finished' && (
+              <button
+                type="button"
+                onClick={handleToggleChatMute}
+                className={`p-2 sm:px-2.5 py-1.5 rounded-xl border text-xs font-bold min-h-[40px] flex items-center gap-1.5 transition-colors ${
+                  session.isChatMuted
+                    ? 'bg-rose-500/20 border-rose-500/40 text-rose-300 hover:bg-rose-500/30'
+                    : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'
+                }`}
+                title={session.isChatMuted ? 'Buka Kunci Obrolan Siswa' : 'Bungkam Obrolan Siswa'}
+              >
+                {session.isChatMuted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <MessageCircle className="w-4 h-4 text-indigo-400" />}
+                <span className="hidden xl:inline">{session.isChatMuted ? 'Obrolan Terkunci' : 'Obrolan Aktif'}</span>
+              </button>
+            )}
+
             {/* Simulation student button */}
             <button
               type="button"
@@ -473,6 +568,82 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
         {/* TAB 1: LEADERBOARD LIVE */}
         {activeTab === 'leaderboard' && (
           <div className="space-y-4">
+            {/* Teacher Led: Waiting Room Status Banner */}
+            {isTeacherLed && session.status === 'waiting' && (
+              <div className="bg-gradient-to-r from-blue-950/60 via-indigo-950/60 to-slate-900 border border-blue-500/50 rounded-3xl p-5 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-blue-500/20 border border-blue-500/30 text-blue-400 flex items-center justify-center text-2xl animate-pulse flex-shrink-0">
+                    ⏳
+                  </div>
+                  <div>
+                    <h4 className="text-base sm:text-lg font-black text-white flex items-center gap-2">
+                      <span>Ruang Tunggu Kelas Aktif</span>
+                      <span className="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-xs border border-blue-500/40">
+                        {session.participants.length} Siswa Terhubung
+                      </span>
+                    </h4>
+                    <p className="text-xs sm:text-sm text-slate-300 mt-0.5">
+                      Siswa sedang menunggu di perangkat mereka. Soal belum dibuka hingga Anda menekan tombol di bawah.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleStartQuiz}
+                  className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm shadow-xl shadow-emerald-950/60 flex items-center justify-center gap-2 transition-all transform active:scale-95 flex-shrink-0"
+                >
+                  <Play className="w-5 h-5 fill-white" />
+                  <span>Mulai Kuis Sekarang</span>
+                </button>
+              </div>
+            )}
+
+            {/* Teacher Led: Active Question Advance Control Bar */}
+            {isTeacherLed && session.status === 'active' && (
+              <div className="bg-slate-900/95 border border-slate-800 rounded-2xl p-3.5 sm:p-4 flex flex-wrap items-center justify-between gap-3 shadow-lg">
+                <div className="flex items-center gap-3">
+                  <span className="px-3 py-1 rounded-xl bg-indigo-600 text-white text-xs font-black tracking-wide">
+                    SOAL {(session.currentQuestionIndex ?? 0) + 1} / {totalQuestions}
+                  </span>
+                  <span className="text-xs font-semibold text-slate-300">
+                    Mode: {session.settings?.teacherPacingSubMode === 'timed_next' ? '⏱️ Timer Soal + Kendali Lanjut Guru' : '🎯 Kendali Penuh Guru (Bebas Waktu)'}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleAdvanceQuestion(Math.max(0, (session.currentQuestionIndex ?? 0) - 1))}
+                    disabled={(session.currentQuestionIndex ?? 0) === 0}
+                    className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold disabled:opacity-40 min-h-[38px] flex items-center gap-1.5 transition-colors"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5" />
+                    <span>Sebelumnya</span>
+                  </button>
+
+                  {(session.currentQuestionIndex ?? 0) < totalQuestions - 1 ? (
+                    <button
+                      type="button"
+                      onClick={() => handleAdvanceQuestion((session.currentQuestionIndex ?? 0) + 1)}
+                      className="px-4 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-black min-h-[38px] flex items-center gap-1.5 shadow-md shadow-blue-950/50 transition-colors"
+                    >
+                      <span>Buka Soal Berikutnya</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setConfirmEndModal(true)}
+                      className="px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black min-h-[38px] flex items-center gap-1.5 shadow-md transition-colors"
+                    >
+                      <Square className="w-3.5 h-3.5 fill-current" />
+                      <span>Selesaikan Kuis</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
             {session.participants.length === 0 ? (
               <div className="bg-slate-900 rounded-3xl border border-slate-800 p-8 sm:p-12 text-center max-w-xl mx-auto space-y-5 shadow-2xl">
                 <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-3xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-4xl animate-bounce">
@@ -691,9 +862,21 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                 <span className="text-xs text-slate-400">Tampilan Layar Presentasi</span>
               </div>
               <div className="flex items-center gap-2">
+                {isTeacherLed && (
+                  <span className="hidden sm:inline-flex px-2 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 text-[11px] font-semibold border border-indigo-500/30">
+                    📡 Terhubung Serentak ke Siswa
+                  </span>
+                )}
                 <button
                   type="button"
-                  onClick={() => setCurrentDisplayQuestionIdx((prev) => Math.max(0, prev - 1))}
+                  onClick={() => {
+                    const nextIdx = Math.max(0, currentDisplayQuestionIdx - 1);
+                    if (isTeacherLed) {
+                      handleAdvanceQuestion(nextIdx);
+                    } else {
+                      setCurrentDisplayQuestionIdx(nextIdx);
+                    }
+                  }}
                   disabled={currentDisplayQuestionIdx === 0}
                   className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold disabled:opacity-40 min-h-[36px]"
                 >
@@ -701,9 +884,16 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setCurrentDisplayQuestionIdx((prev) => Math.min(quiz.questions.length - 1, prev + 1))}
+                  onClick={() => {
+                    const nextIdx = Math.min(quiz.questions.length - 1, currentDisplayQuestionIdx + 1);
+                    if (isTeacherLed) {
+                      handleAdvanceQuestion(nextIdx);
+                    } else {
+                      setCurrentDisplayQuestionIdx(nextIdx);
+                    }
+                  }}
                   disabled={currentDisplayQuestionIdx === quiz.questions.length - 1}
-                  className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold disabled:opacity-40 min-h-[36px]"
+                  className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold disabled:opacity-40 min-h-[36px]"
                 >
                   Selanjutnya ▶
                 </button>
@@ -789,6 +979,21 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Floating Live Reactions from Students */}
+      {session.reactions && session.reactions.length > 0 && (
+        <div className="fixed bottom-6 right-6 pointer-events-none z-40 flex flex-col items-end gap-2">
+          {session.reactions.slice(-5).map((r) => (
+            <div
+              key={r.id}
+              className="px-3.5 py-1.5 rounded-full bg-slate-900/90 border border-slate-700/80 shadow-2xl flex items-center gap-2 animate-bounce text-xs backdrop-blur-md"
+            >
+              <span className="text-base">{r.emoji}</span>
+              <span className="font-bold text-slate-200">{r.senderName}</span>
+            </div>
+          ))}
         </div>
       )}
 

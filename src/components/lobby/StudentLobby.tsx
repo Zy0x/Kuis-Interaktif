@@ -4,6 +4,7 @@ import { AVATAR_LIST } from '../../data/seedQuizzes';
 import { DataManager } from '../../lib/supabaseClient';
 import { ThemeToggle } from '../common/ThemeToggle';
 import { QuizCoverDisplay } from '../common/QuizCoverDisplay';
+import { StudentWaitingRoom } from './StudentWaitingRoom';
 import { 
   Play, 
   Sparkles, 
@@ -11,6 +12,7 @@ import {
   HelpCircle, 
   ArrowLeft, 
   User,
+  Users,
   Lock,
   Eye,
   Shuffle,
@@ -54,6 +56,8 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
   const [nickname, setNickname] = useState(isCustom ? profile.nickname : '');
   const [rollNumber, setRollNumber] = useState('');
   const [selectedAvatar, setSelectedAvatar] = useState(profile.avatarId || 'lion');
+  const [isInWaitingRoom, setIsInWaitingRoom] = useState(false);
+  const [savedFinalName, setSavedFinalName] = useState('');
 
   const formatIndonesianDeadline = (isoString?: string) => {
     if (!isoString) return '';
@@ -75,12 +79,21 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
   };
 
   // Real-time live session & settings state
-  const [liveSession, setLiveSession] = useState<QuizSession | null>(activeSession || null);
+  const [liveSession, setLiveSession] = useState<QuizSession | null>(() => {
+    if (activeSession) return activeSession;
+    if (quiz.pinCode) return DataManager.getActiveSessionByPin(quiz.pinCode);
+    return DataManager.getActiveSessionByQuizId(quiz.id);
+  });
   const [liveSettings, setLiveSettings] = useState<QuizSessionSettings | undefined>(sessionSettings);
 
   useEffect(() => {
-    if (activeSession) setLiveSession(activeSession);
-  }, [activeSession]);
+    if (activeSession) {
+      setLiveSession(activeSession);
+    } else {
+      const found = (quiz.pinCode ? DataManager.getActiveSessionByPin(quiz.pinCode) : null) || DataManager.getActiveSessionByQuizId(quiz.id);
+      if (found) setLiveSession(found);
+    }
+  }, [activeSession, quiz.id, quiz.pinCode]);
 
   useEffect(() => {
     if (sessionSettings) setLiveSettings(sessionSettings);
@@ -126,23 +139,28 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
 
   // Konfigurasi aktif yang ditetapkan oleh Guru (Real-Time)
   const effectiveSettings: QuizSessionSettings = useMemo(() => {
-    return (
-      liveSettings ||
-      liveSession?.settings ||
-      (quiz.defaultSettings as QuizSessionSettings) || {
-        mode: quiz.defaultGameMode || 'standard',
-        durationPerQuestionSec: quiz.durationPerQuestionSec || 30,
-        shuffleQuestions: quiz.shuffleQuestions ?? true,
-        shuffleOptions: quiz.shuffleOptions ?? true,
-        presentationTarget: 'student-lobby',
-        showAnswersMode: 'immediate',
-        showExplanationMode: 'immediate',
-        showLeaderboardToStudents: true,
-        maxAttempts: 0,
-        tabSwitchDetection: false,
-      }
-    );
-  }, [liveSettings, liveSession?.settings, quiz.defaultSettings, quiz.defaultGameMode, quiz.durationPerQuestionSec, quiz.shuffleQuestions, quiz.shuffleOptions]);
+    const defaults: QuizSessionSettings = {
+      executionMode: 'self_paced',
+      mode: quiz.defaultGameMode || 'standard',
+      durationPerQuestionSec: quiz.durationPerQuestionSec || 30,
+      shuffleQuestions: quiz.shuffleQuestions ?? true,
+      shuffleOptions: quiz.shuffleOptions ?? true,
+      presentationTarget: 'student-lobby',
+      showAnswersMode: 'immediate',
+      showExplanationMode: 'immediate',
+      showLeaderboardToStudents: true,
+      maxAttempts: 0,
+      tabSwitchDetection: false,
+    };
+
+    return {
+      ...defaults,
+      ...(quiz.defaultSettings || {}),
+      ...(sessionSettings || {}),
+      ...(liveSettings || {}),
+      ...(liveSession?.settings || {}),
+    };
+  }, [liveSettings, liveSession?.settings, sessionSettings, quiz.defaultSettings, quiz.defaultGameMode, quiz.durationPerQuestionSec, quiz.shuffleQuestions, quiz.shuffleOptions]);
 
   const effectiveMode = effectiveSettings.mode || quiz.defaultGameMode || 'standard';
   const effectiveDuration = effectiveSettings.durationPerQuestionSec || quiz.durationPerQuestionSec || 30;
@@ -189,21 +207,57 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
     );
   }, [effectiveSettings.maxAttempts, nickname, liveSession?.participants]);
 
-  const handleStart = (e: React.FormEvent) => {
+  // Cek apakah mode dipandu guru dan sesi masih berstatus waiting
+  const isTeacherLedWaiting = effectiveSettings.executionMode === 'teacher_led' && (!liveSession || liveSession.status === 'waiting');
+
+  const handleStart = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isAttemptLimitReached) return;
     playClick();
     const cleanNick = nickname.trim() || (isCustom ? profile.nickname : 'Siswa Pintar');
     const finalName = rollNumber.trim() ? `${rollNumber.trim()}. ${cleanNick}` : cleanNick;
+    setSavedFinalName(finalName);
     DataManager.savePlayerProfile({
       nickname: finalName,
       avatarId: selectedAvatar,
     });
-    onStartQuiz();
+
+    if (liveSession) {
+      try {
+        await DataManager.addOrUpdateSessionParticipant(liveSession.id, {
+          name: finalName,
+          avatarId: selectedAvatar,
+        });
+      } catch (err) {
+        console.warn('Failed to add participant in lobby:', err);
+      }
+    }
+
+    if (isTeacherLedWaiting) {
+      setIsInWaitingRoom(true);
+    } else {
+      onStartQuiz();
+    }
   };
 
   const pinDisplay = activeSession?.pinCode || quiz.pinCode || '1001';
   const teacherName = activeSession?.teacherName || quiz.creatorName || 'Bapak/Ibu Guru';
+
+  if (isInWaitingRoom && liveSession) {
+    return (
+      <StudentWaitingRoom
+        quiz={quiz}
+        session={liveSession}
+        studentName={savedFinalName || nickname || 'Siswa Pintar'}
+        avatarId={selectedAvatar}
+        onStartQuiz={onStartQuiz}
+        onBackToHome={() => setIsInWaitingRoom(false)}
+        playClick={playClick}
+        isDark={isDark}
+        onToggleTheme={onToggleTheme}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col justify-between select-none">
@@ -501,6 +555,11 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
                   <>
                     <CheckCircle2 className="w-5 h-5 text-slate-400" />
                     <span>Ujian Sudah Selesai Dikerjakan</span>
+                  </>
+                ) : isTeacherLedWaiting ? (
+                  <>
+                    <Users className="w-5 h-5 text-white" />
+                    <span>Masuk ke Ruang Tunggu Kuis</span>
                   </>
                 ) : (
                   <>

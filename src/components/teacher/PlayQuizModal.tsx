@@ -5,6 +5,7 @@ import type {
   AnswerVisibilityMode, 
   ExplanationVisibilityMode,
   ExecutionMode,
+  TeacherPacingSubMode,
   ParticipantMode,
   PacingType
 } from '../../types/quiz';
@@ -54,6 +55,8 @@ export interface PlayQuizSessionOptions {
   tabSwitchDetection: boolean;
   saveAsDefault?: boolean;
   executionMode: ExecutionMode;
+  teacherPacingSubMode?: TeacherPacingSubMode;
+  isChatMuted?: boolean;
   participantMode: ParticipantMode;
   pacingType: PacingType;
   deadlineAt?: string;
@@ -129,6 +132,8 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
 
   // Core 2-Modes Architecture
   const [executionMode, setExecutionMode] = useState<ExecutionMode>('teacher_led');
+  const [teacherPacingSubMode, setTeacherPacingSubMode] = useState<TeacherPacingSubMode>('manual');
+  const [isChatMuted, setIsChatMuted] = useState<boolean>(false);
   const [participantMode, setParticipantMode] = useState<ParticipantMode>('individual');
   const [pacingType, setPacingType] = useState<PacingType>('in_class');
   const [deadlineAt, setDeadlineAt] = useState<string>(getDefaultDeadline());
@@ -237,6 +242,8 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
 
       const execMode: ExecutionMode = def.executionMode || 'teacher_led';
       setExecutionMode(execMode);
+      setTeacherPacingSubMode(def.teacherPacingSubMode || 'manual');
+      setIsChatMuted(def.isChatMuted ?? false);
       setParticipantMode(def.participantMode || 'individual');
       setPacingType(def.pacingType || 'in_class');
       setDeadlineAt(def.deadlineAt || getDefaultDeadline());
@@ -305,6 +312,8 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
           maxAttempts,
           tabSwitchDetection,
           executionMode,
+          teacherPacingSubMode,
+          isChatMuted,
           participantMode,
           pacingType,
           deadlineAt: pacingType === 'homework' ? deadlineAt : undefined,
@@ -327,6 +336,8 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
     maxAttempts,
     tabSwitchDetection,
     executionMode,
+    teacherPacingSubMode,
+    isChatMuted,
     participantMode,
     pacingType,
     deadlineAt,
@@ -352,6 +363,8 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
       maxAttempts: overrides?.maxAttempts ?? maxAttempts,
       tabSwitchDetection: overrides?.tabSwitchDetection ?? tabSwitchDetection,
       executionMode: overrides?.executionMode ?? executionMode,
+      teacherPacingSubMode: overrides?.teacherPacingSubMode ?? teacherPacingSubMode,
+      isChatMuted: overrides?.isChatMuted ?? isChatMuted,
       participantMode: overrides?.participantMode ?? participantMode,
       pacingType: overrides?.pacingType ?? pacingType,
       deadlineAt: overrides?.deadlineAt ?? (pacingType === 'homework' ? deadlineAt : undefined),
@@ -421,6 +434,8 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
       tabSwitchDetection,
       saveAsDefault,
       executionMode,
+      teacherPacingSubMode,
+      isChatMuted,
       participantMode,
       pacingType,
       deadlineAt: pacingType === 'homework' ? deadlineAt : undefined,
@@ -635,6 +650,75 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
             {/* ---------------------------------------------------- */}
             {executionMode === 'teacher_led' && (
               <div className="space-y-4">
+                {/* 1. Sub-Mode Kendali Laju Guru */}
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
+                    Metode Kendali Laju Guru
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {/* Option 1: Kendali Penuh Guru */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        setTeacherPacingSubMode('manual');
+                        setSelectedMode('untimed');
+                      }}
+                      className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all min-h-[76px] btn-press ${
+                        teacherPacingSubMode === 'manual'
+                          ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-500 ring-2 ring-blue-400/40 shadow-xs'
+                          : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-black text-slate-900 dark:text-white flex items-center gap-1.5">
+                          <span>🕹️</span> Kendali Penuh Guru
+                        </span>
+                        {teacherPacingSubMode === 'manual' && <Check className="w-4 h-4 text-blue-600 dark:text-blue-400" />}
+                      </div>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-snug">
+                        Guru membuka, membahas, dan melangkah ke soal berikutnya tanpa desakan hitung mundur.
+                      </p>
+                    </button>
+
+                    {/* Option 2: Timer Soal + Lanjut Guru */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        setTeacherPacingSubMode('timed_next');
+                        setSelectedMode('standard');
+                      }}
+                      className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all min-h-[76px] btn-press ${
+                        teacherPacingSubMode === 'timed_next'
+                          ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-500 ring-2 ring-blue-400/40 shadow-xs'
+                          : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-black text-slate-900 dark:text-white flex items-center gap-1.5">
+                          <span>⏱️</span> Timer + Lanjut Guru
+                        </span>
+                        {teacherPacingSubMode === 'timed_next' && <Check className="w-4 h-4 text-blue-600 dark:text-blue-400" />}
+                      </div>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-snug">
+                        Ada hitung mundur per soal. Setelah selesai/waktu habis, siswa menunggu guru membuka nomor baru.
+                      </p>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Info Note untuk Mode Manual */}
+                {teacherPacingSubMode === 'manual' && (
+                  <div className="p-3 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-900/50 text-emerald-800 dark:text-emerald-200 text-xs flex items-start gap-2.5 animate-fade-in">
+                    <Info className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-0.5" />
+                    <div className="leading-relaxed">
+                      <strong className="block font-bold">Waktu Fleksibel Santai:</strong>
+                      Siswa dapat berpikir tenang tanpa timer berjalan. Saat siswa selesai menjawab, layar akan masuk ke ruang santai sambil menunggu aba-aba Bapak/Ibu Guru.
+                    </div>
+                  </div>
+                )}
+
                 {/* Format Partisipasi */}
                 <div className="space-y-1.5">
                   <label className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
@@ -675,67 +759,48 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
                   </div>
                 </div>
 
-                {/* Waktu per Butir Soal */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
-                      Waktu per Butir Soal
-                    </label>
-                    <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400">
-                      {selectedMode === 'untimed'
-                        ? 'Bebas Waktu (Tanpa Timer)'
-                        : durationSelectionType === 'default'
-                        ? questionDurationStats.hasCustomQuestions
-                          ? 'Bawaan (Sesuai Tiap Soal)'
-                          : `Bawaan Kuis (${questionDurationStats.standardDurationSec}s)`
-                        : durationSelectionType === 'custom'
-                        ? `${customDurationValue} ${customDurationUnit === 'minutes' ? 'menit' : 'detik'} / soal`
-                        : `${selectedDuration} detik / soal`}
+                {/* Toggle Interaksi & Live Reactions Siswa */}
+                <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                      <span>💬</span> Reaksi Melayang & Obrolan Kelas
                     </span>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">
+                      Izinkan siswa mengirim reaksi ❤️🔥⭐👏 dan obrolan positif saat menunggu di jeda antar-soal.
+                    </p>
                   </div>
-
-                  <div className="bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => {
+                  <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
+                    <input
+                      type="checkbox"
+                      checked={!isChatMuted}
+                      onChange={(e) => {
                         playClick();
-                        setSelectedMode('standard');
+                        setIsChatMuted(!e.target.checked);
                       }}
-                      className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 min-h-[42px] btn-press ${
-                        selectedMode === 'standard'
-                          ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs font-black'
-                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                      }`}
-                    >
-                      <Sparkles className="w-3.5 h-3.5" />
-                      <span>
-                        Timer (
-                        {durationSelectionType === 'default' && questionDurationStats.hasCustomQuestions
-                          ? 'Sesuai Tiap Soal'
+                      className="sr-only peer"
+                    />
+                    <div className="w-10 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  </label>
+                </div>
+
+                {/* Waktu per Butir Soal (Hanya muncul jika sub-mode timed_next dipilih) */}
+                {teacherPacingSubMode === 'timed_next' && (
+                  <div className="space-y-2 pt-1 border-t border-slate-100 dark:border-slate-800">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
+                        Durasi Timer per Soal
+                      </label>
+                      <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400">
+                        {durationSelectionType === 'default'
+                          ? questionDurationStats.hasCustomQuestions
+                            ? 'Bawaan (Sesuai Tiap Soal)'
+                            : `Bawaan Kuis (${questionDurationStats.standardDurationSec}s)`
                           : durationSelectionType === 'custom'
-                          ? `${customDurationValue} ${customDurationUnit === 'minutes' ? 'mnt' : 'dtk'} / soal`
-                          : `${selectedDuration}s / soal`}
-                        )
+                          ? `${customDurationValue} ${customDurationUnit === 'minutes' ? 'menit' : 'detik'} / soal`
+                          : `${selectedDuration} detik / soal`}
                       </span>
-                    </button>
+                    </div>
 
-                    <button
-                      type="button"
-                      onClick={() => {
-                        playClick();
-                        setSelectedMode('untimed');
-                      }}
-                      className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 min-h-[42px] btn-press ${
-                        selectedMode === 'untimed'
-                          ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-xs font-black'
-                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                      }`}
-                    >
-                      <span>🧘 Santai (Tanpa Batas)</span>
-                    </button>
-                  </div>
-
-                  {selectedMode === 'standard' && (
                     <div className="space-y-2 pt-0.5">
                       {/* Baris Pilihan Waktu: Bawaan Soal, Presets, dan Kustom */}
                       <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl flex-wrap">
@@ -925,8 +990,8 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
                         </div>
                       )}
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
 
                 {/* Accordion: Pengaturan Tambahan Kuis */}
                 <div className="pt-2 border-t border-slate-200/80 dark:border-slate-800">

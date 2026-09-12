@@ -58,6 +58,7 @@ export const App: React.FC = () => {
   const [activeGameMode, setActiveGameMode] = useState<GameMode>('standard');
   const [activeSession, setActiveSession] = useState<QuizSession | null>(null);
   const [activeSessionSettings, setActiveSessionSettings] = useState<QuizSessionSettings | undefined>(undefined);
+  const [isJoinedViaStudentLobby, setIsJoinedViaStudentLobby] = useState(false);
   const [lastAnswers, setLastAnswers] = useState<QuizAttemptAnswer[]>(() => initialNav.lastAnswers || []);
   const [lastTimeSpent, setLastTimeSpent] = useState<number>(() => initialNav.lastTimeSpent || 0);
 
@@ -87,6 +88,9 @@ export const App: React.FC = () => {
   const resolveSettings = (session?: QuizSession | null, q?: Quiz | null): QuizSessionSettings => {
     const base = session?.settings || q?.defaultSettings;
     return {
+      executionMode: base?.executionMode || 'self_paced',
+      teacherPacingSubMode: base?.teacherPacingSubMode || 'manual',
+      isChatMuted: base?.isChatMuted ?? false,
       mode: base?.mode || q?.defaultGameMode || 'standard',
       durationPerQuestionSec: base?.durationPerQuestionSec || q?.durationPerQuestionSec || 30,
       shuffleQuestions: base?.shuffleQuestions ?? q?.shuffleQuestions ?? true,
@@ -97,15 +101,24 @@ export const App: React.FC = () => {
       showLeaderboardToStudents: base?.showLeaderboardToStudents ?? true,
       maxAttempts: base?.maxAttempts ?? 0,
       tabSwitchDetection: base?.tabSwitchDetection ?? false,
+      overrideCustomQuestionDurations: base?.overrideCustomQuestionDurations,
+      participantMode: base?.participantMode,
+      pacingType: base?.pacingType,
+      deadlineAt: base?.deadlineAt,
+      requireStudentInfo: base?.requireStudentInfo,
+      selectedQuestionIds: base?.selectedQuestionIds,
     };
   };
 
   // Memulihkan data kuis saat reload (F5) berdasarkan quizId atau pin
   useEffect(() => {
+    const pinToMatch = (initialNav.pin || '').trim().toUpperCase();
     if (initialNav.quizId) {
       DataManager.getQuizById(initialNav.quizId).then((q) => {
         if (q) {
-          const session = DataManager.getActiveSessionByQuizId(q.id) || (q.pinCode ? DataManager.getActiveSessionByPin(q.pinCode) : null);
+          const session = (pinToMatch ? DataManager.getActiveSessionByPin(pinToMatch) : null) || 
+            DataManager.getActiveSessionByQuizId(q.id) || 
+            (q.pinCode ? DataManager.getActiveSessionByPin(q.pinCode) : null);
           const settings = resolveSettings(session, q);
           setActiveQuiz(q);
           if (session) setActiveSession(session);
@@ -117,15 +130,14 @@ export const App: React.FC = () => {
           clearNavigationState();
         }
       });
-    } else if (initialNav.pin) {
-      const cleanPin = initialNav.pin.trim().toUpperCase();
-      const session = DataManager.getActiveSessionByPin(cleanPin);
+    } else if (pinToMatch) {
+      const session = DataManager.getActiveSessionByPin(pinToMatch);
       if (session) {
         setActiveSession(session);
         setActiveSessionSettings(session.settings);
         setActiveGameMode(session.settings.mode);
       }
-      DataManager.getQuizByPin(cleanPin).then((q) => {
+      DataManager.getQuizByPin(pinToMatch).then((q) => {
         if (q) {
           const settings = resolveSettings(session, q);
           setActiveSessionSettings(settings);
@@ -140,7 +152,7 @@ export const App: React.FC = () => {
         }
       });
     }
-  }, []);
+  }, [initialNav.quizId, initialNav.pin, currentScreen]);
 
   // Simpan otomatis status navigasi setiap terjadi perpindahan layar atau kuis aktif
   useEffect(() => {
@@ -519,6 +531,7 @@ export const App: React.FC = () => {
                 console.warn('Gagal mendaftarkan peserta ke sesi kuis:', err);
               }
             }
+            setIsJoinedViaStudentLobby(true);
             setCurrentScreen('arena');
             saveNavigationState({ screen: 'arena', quiz: activeQuiz, replace: false });
           }}
@@ -597,9 +610,10 @@ export const App: React.FC = () => {
           initialMode={activeGameMode}
           sessionSettings={activeSessionSettings || (activeQuiz.defaultSettings as QuizSessionSettings)}
           activeSessionId={activeSession?.id}
-          isTeacher={Boolean(teacher)}
+          isTeacher={Boolean(teacher) && activeSessionSettings?.presentationTarget === 'smartboard' && !initialNav.pin && !isJoinedViaStudentLobby}
           onFinishQuiz={handleFinishQuiz}
           onExit={() => {
+            setIsJoinedViaStudentLobby(false);
             if (teacher) {
               setCurrentScreen('teacher-dashboard');
               saveNavigationState({ screen: 'teacher-dashboard', replace: false });

@@ -274,11 +274,32 @@ export interface QuizSessionParticipant {
 export type AnswerVisibilityMode = 'immediate' | 'status_only' | 'exam_strict';
 export type ExplanationVisibilityMode = 'immediate' | 'end_only' | 'never';
 export type ExecutionMode = 'teacher_led' | 'self_paced';
+export type TeacherPacingSubMode = 'manual' | 'timed_next';
 export type ParticipantMode = 'individual' | 'team';
 export type PacingType = 'in_class' | 'homework';
 
+export interface SessionLiveReaction {
+  id: string;
+  studentName: string;
+  senderName?: string;
+  avatarId: string;
+  emoji: string;
+  createdAt: number;
+}
+
+export interface SessionChatMessage {
+  id: string;
+  studentName: string;
+  avatarId: string;
+  text: string;
+  isTeacher?: boolean;
+  createdAt: number;
+}
+
 export interface QuizSessionSettings {
   executionMode?: ExecutionMode;
+  teacherPacingSubMode?: TeacherPacingSubMode;
+  isChatMuted?: boolean;
   participantMode?: ParticipantMode;
   pacingType?: PacingType;
   deadlineAt?: string;
@@ -315,4 +336,10 @@ export interface QuizSession {
   settings: QuizSessionSettings;
   participants: QuizSessionParticipant[];
   totalQuestions: number;
+  currentQuestionIndex?: number;
+  questionState?: 'answering' | 'revealed' | 'ended';
+  reactions?: SessionLiveReaction[];
+  chatMessages?: SessionChatMessage[];
+  isChatMuted?: boolean;
 }
+

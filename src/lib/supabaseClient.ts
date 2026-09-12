@@ -11,8 +11,11 @@ import type {
   EducationLevel,
   QuizSession,
   QuizSessionParticipant,
+  QuizSessionParticipantAnswer,
   QuizSessionStatus,
   QuizSessionSettings,
+  SessionLiveReaction,
+  SessionChatMessage,
 } from '../types/quiz';
 import { MASTER_TEACHER_EMAIL } from '../types/quiz';
 import { INITIAL_QUIZZES } from '../data/seedQuizzes';
@@ -1534,6 +1537,7 @@ export const DataManager = {
     const sessionId = 'sess_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
     const pin = quiz.pinCode || generateRandomPin();
 
+    const isTeacherLed = (options.executionMode || 'teacher_led') === 'teacher_led';
     const newSession: QuizSession = {
       id: sessionId,
       quizId: quiz.id,
@@ -1545,11 +1549,13 @@ export const DataManager = {
       teacherId: teacher?.id,
       teacherEmail: teacher?.email,
       teacherName: teacher?.fullName,
-      status: 'active',
+      status: isTeacherLed ? 'waiting' : 'active',
       createdAt: new Date().toISOString(),
-      startedAt: new Date().toISOString(),
+      startedAt: isTeacherLed ? undefined : new Date().toISOString(),
       settings: {
         executionMode: options.executionMode || 'teacher_led',
+        teacherPacingSubMode: options.teacherPacingSubMode || 'manual',
+        isChatMuted: options.isChatMuted ?? false,
         participantMode: options.participantMode || 'individual',
         pacingType: options.pacingType || 'in_class',
         deadlineAt: options.deadlineAt,
@@ -1568,10 +1574,19 @@ export const DataManager = {
       },
       participants: [],
       totalQuestions: quiz.questions?.length || 0,
+      currentQuestionIndex: 0,
+      questionState: 'answering',
+      reactions: [],
+      chatMessages: [],
     };
 
-    // Save locally
-    const existing = this.getActiveSessions();
+    // Save locally: supersede any prior active or waiting session for the same PIN or quiz
+    const existing = this.getActiveSessions().map((s) => {
+      if ((s.pinCode === pin || s.quizId === quiz.id) && (s.status === 'active' || s.status === 'waiting')) {
+        return { ...s, status: 'finished' as QuizSessionStatus };
+      }
+      return s;
+    });
     const updated = [newSession, ...existing];
     try {
       localStorage.setItem(STORAGE_KEY_QUIZ_SESSIONS, JSON.stringify(updated));
@@ -1605,6 +1620,226 @@ export const DataManager = {
     }
 
     return newSession;
+  },
+
+  async startActiveQuizSession(sessionId: string): Promise<QuizSession | null> {
+    const existing = this.getActiveSessions();
+    const idx = existing.findIndex((s) => s.id === sessionId);
+    if (idx === -1) return null;
+
+    existing[idx].status = 'active';
+    existing[idx].startedAt = new Date().toISOString();
+    existing[idx].currentQuestionIndex = 0;
+    existing[idx].questionState = 'answering';
+
+    try {
+      localStorage.setItem(STORAGE_KEY_QUIZ_SESSIONS, JSON.stringify(existing));
+    } catch (e) {
+      console.warn('Failed to start quiz session:', e);
+    }
+
+    broadcastSessionUpdate(existing[idx]);
+
+    if (supabase) {
+      try {
+        await supabase
+          .from('quiz_sessions')
+          .update({
+            status: 'active',
+            started_at: existing[idx].startedAt,
+          })
+          .eq('id', sessionId);
+      } catch (err) {
+        console.warn('Supabase startActiveQuizSession notice:', err);
+      }
+    }
+
+    return existing[idx];
+  },
+
+  async advanceSessionQuestion(sessionId: string, newIndex: number): Promise<QuizSession | null> {
+    const existing = this.getActiveSessions();
+    const idx = existing.findIndex((s) => s.id === sessionId);
+    if (idx === -1) return null;
+
+    existing[idx].currentQuestionIndex = newIndex;
+    existing[idx].questionState = 'answering';
+
+    try {
+      localStorage.setItem(STORAGE_KEY_QUIZ_SESSIONS, JSON.stringify(existing));
+    } catch (e) {
+      console.warn('Failed to advance session question:', e);
+    }
+
+    broadcastSessionUpdate(existing[idx]);
+    return existing[idx];
+  },
+
+  async updateSessionQuestionState(
+    sessionId: string,
+    state: 'answering' | 'revealed' | 'ended'
+  ): Promise<QuizSession | null> {
+    const existing = this.getActiveSessions();
+    const idx = existing.findIndex((s) => s.id === sessionId);
+    if (idx === -1) return null;
+
+    existing[idx].questionState = state;
+
+    try {
+      localStorage.setItem(STORAGE_KEY_QUIZ_SESSIONS, JSON.stringify(existing));
+    } catch (e) {
+      console.warn('Failed to update question state:', e);
+    }
+
+    broadcastSessionUpdate(existing[idx]);
+    return existing[idx];
+  },
+
+  async toggleSessionChatMute(sessionId: string, isMuted: boolean): Promise<QuizSession | null> {
+    const existing = this.getActiveSessions();
+    const idx = existing.findIndex((s) => s.id === sessionId);
+    if (idx === -1) return null;
+
+    existing[idx].settings = {
+      ...existing[idx].settings,
+      isChatMuted: isMuted,
+    };
+
+    try {
+      localStorage.setItem(STORAGE_KEY_QUIZ_SESSIONS, JSON.stringify(existing));
+    } catch (e) {
+      console.warn('Failed to toggle chat mute:', e);
+    }
+
+    broadcastSessionUpdate(existing[idx]);
+    return existing[idx];
+  },
+
+  async sendSessionReaction(
+    sessionId: string,
+    reaction: Omit<SessionLiveReaction, 'id' | 'createdAt'>
+  ): Promise<SessionLiveReaction | null> {
+    const existing = this.getActiveSessions();
+    const idx = existing.findIndex((s) => s.id === sessionId);
+    if (idx === -1) return null;
+
+    const newReaction: SessionLiveReaction = {
+      id: 'react_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      studentName: reaction.studentName,
+      avatarId: reaction.avatarId,
+      emoji: reaction.emoji,
+      createdAt: Date.now(),
+    };
+
+    const currentReactions = existing[idx].reactions || [];
+    // Keep last 30 reactions to prevent memory bloat
+    existing[idx].reactions = [...currentReactions.slice(-29), newReaction];
+
+    try {
+      localStorage.setItem(STORAGE_KEY_QUIZ_SESSIONS, JSON.stringify(existing));
+    } catch (e) {
+      console.warn('Failed to save reaction:', e);
+    }
+
+    broadcastSessionUpdate(existing[idx]);
+    return newReaction;
+  },
+
+  async sendSessionChatMessage(
+    sessionId: string,
+    message: Omit<SessionChatMessage, 'id' | 'createdAt'>
+  ): Promise<SessionChatMessage | null> {
+    const existing = this.getActiveSessions();
+    const idx = existing.findIndex((s) => s.id === sessionId);
+    if (idx === -1) return null;
+
+    // Check if chat is muted
+    if (existing[idx].settings?.isChatMuted && !message.isTeacher) {
+      return null;
+    }
+
+    // Basic sanitization: strip dangerous HTML tags
+    const cleanText = message.text
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+      .replace(/<[^>]+>/g, '')
+      .trim()
+      .slice(0, 150);
+
+    if (!cleanText) return null;
+
+    const newMsg: SessionChatMessage = {
+      id: 'chat_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      studentName: message.studentName,
+      avatarId: message.avatarId,
+      text: cleanText,
+      isTeacher: message.isTeacher,
+      createdAt: Date.now(),
+    };
+
+    const currentChat = existing[idx].chatMessages || [];
+    // Keep last 50 chat messages
+    existing[idx].chatMessages = [...currentChat.slice(-49), newMsg];
+
+    try {
+      localStorage.setItem(STORAGE_KEY_QUIZ_SESSIONS, JSON.stringify(existing));
+    } catch (e) {
+      console.warn('Failed to save chat message:', e);
+    }
+
+    broadcastSessionUpdate(existing[idx]);
+    return newMsg;
+  },
+
+  async recordSessionAnswer(
+    sessionId: string,
+    participantName: string,
+    answer: QuizSessionParticipantAnswer
+  ): Promise<QuizSessionParticipant | null> {
+    const existing = this.getActiveSessions();
+    const sIdx = existing.findIndex((s) => s.id === sessionId);
+    if (sIdx === -1) return null;
+
+    const session = existing[sIdx];
+    const pIdx = session.participants.findIndex(
+      (p) => p.name.trim().toLowerCase() === participantName.trim().toLowerCase()
+    );
+    if (pIdx === -1) return null;
+
+    const participant = session.participants[pIdx];
+    const existingAnswers = participant.answers || {};
+    existingAnswers[answer.questionId] = answer;
+
+    // Calculate score
+    const totalAnswered = Object.keys(existingAnswers).length;
+    const correctCount = Object.values(existingAnswers).filter((a) => a.isCorrect).length;
+    const totalQ = session.totalQuestions || 1;
+    const score = Math.round((correctCount / totalQ) * 100);
+    const stars = score >= 85 ? 3 : score >= 60 ? 2 : score > 0 ? 1 : 0;
+    const totalTimeSpent = Object.values(existingAnswers).reduce((acc, a) => acc + (a.timeSpentSec || 0), 0);
+
+    participant.answers = existingAnswers;
+    participant.correctCount = correctCount;
+    participant.incorrectCount = totalAnswered - correctCount;
+    participant.score = score;
+    participant.stars = stars;
+    participant.timeSpentSec = totalTimeSpent;
+    participant.currentQuestionIndex = Math.max(participant.currentQuestionIndex, answer.questionIndex + 1);
+    participant.lastActiveAt = new Date().toISOString();
+
+    if (totalAnswered >= totalQ) {
+      participant.finished = true;
+    }
+
+    session.participants[pIdx] = participant;
+
+    try {
+      localStorage.setItem(STORAGE_KEY_QUIZ_SESSIONS, JSON.stringify(existing));
+    } catch (e) {
+      console.warn('Failed to record session answer:', e);
+    }
+
+    broadcastSessionUpdate(session);
+    return participant;
   },
 
   async updateActiveSessionSettings(

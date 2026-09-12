@@ -4,10 +4,12 @@ import type {
   QuizAttemptAnswer, 
   QuizQuestion, 
   GameMode,
-  AnswerVisibilityMode,
+  AnswerVisibilityMode, 
   ExplanationVisibilityMode,
-  QuizSessionSettings
+  QuizSessionSettings,
+  QuizSession
 } from '../../types/quiz';
+import { InterQuestionWaitingLounge } from './InterQuestionWaitingLounge';
 import { useBackHandler } from '../../lib/navigationHistory';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 import { ThemeToggle } from '../common/ThemeToggle';
@@ -107,12 +109,25 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     tabSwitchDetection: false,
   };
 
-  // Read active session settings with real-time reactive sync
-  const [currentSettings, setCurrentSettings] = useState<QuizSessionSettings>({
-    ...defaultSettingsFallback,
-    ...(quiz.defaultSettings || {}),
-    ...(sessionSettings || {}),
+  const [liveSession, setLiveSession] = useState<QuizSession | null>(() => {
+    if (activeSessionId) return DataManager.getActiveSessionById(activeSessionId);
+    if (quiz.pinCode) return DataManager.getActiveSessionByPin(quiz.pinCode);
+    return DataManager.getActiveSessionByQuizId(quiz.id);
   });
+
+  // Read active session settings with real-time reactive sync
+  const [currentSettings, setCurrentSettings] = useState<QuizSessionSettings>(() => {
+    const initialSession = activeSessionId
+      ? DataManager.getActiveSessionById(activeSessionId)
+      : (quiz.pinCode ? DataManager.getActiveSessionByPin(quiz.pinCode) : DataManager.getActiveSessionByQuizId(quiz.id));
+    return {
+      ...defaultSettingsFallback,
+      ...(quiz.defaultSettings || {}),
+      ...(sessionSettings || {}),
+      ...(initialSession?.settings || {}),
+    };
+  });
+  const [showWaitingLounge, setShowWaitingLounge] = useState(false);
 
   useEffect(() => {
     if (sessionSettings) {
@@ -123,61 +138,14 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     }
   }, [sessionSettings]);
 
-  // Real-time listener for settings changes dispatched by teacher
   useEffect(() => {
-    const handleBroadcastMsg = (event: MessageEvent) => {
-      const data = event.data;
-      if (data?.type === 'SESSION_UPDATED' && data.session) {
-        const sess = data.session;
-        if (
-          (activeSessionId && sess.id === activeSessionId) ||
-          (quiz.pinCode && sess.pinCode === quiz.pinCode) ||
-          sess.quizId === quiz.id
-        ) {
-          setCurrentSettings((prev) => ({
-            ...prev,
-            ...sess.settings,
-          }));
-        }
-      }
-    };
-
-    let bc: BroadcastChannel | null = null;
-    try {
-      if ('BroadcastChannel' in window) {
-        bc = new BroadcastChannel('kuis_realtime_session_sync');
-        bc.addEventListener('message', handleBroadcastMsg);
-      }
-    } catch (e) {
-      console.warn('BroadcastChannel error in QuizArena:', e);
+    if (liveSession?.settings) {
+      setCurrentSettings((prev) => ({
+        ...prev,
+        ...liveSession.settings,
+      }));
     }
-
-    const handleCustomSync = (e: Event) => {
-      const customEvt = e as CustomEvent;
-      const sess = customEvt.detail?.session;
-      if (sess) {
-        if (
-          (activeSessionId && sess.id === activeSessionId) ||
-          (quiz.pinCode && sess.pinCode === quiz.pinCode) ||
-          sess.quizId === quiz.id
-        ) {
-          setCurrentSettings((prev) => ({
-            ...prev,
-            ...sess.settings,
-          }));
-        }
-      }
-    };
-    window.addEventListener('kuis_session_updated', handleCustomSync);
-
-    return () => {
-      if (bc) {
-        bc.removeEventListener('message', handleBroadcastMsg);
-        bc.close();
-      }
-      window.removeEventListener('kuis_session_updated', handleCustomSync);
-    };
-  }, [activeSessionId, quiz.id, quiz.pinCode]);
+  }, [liveSession?.settings]);
 
   const activeSettings = currentSettings;
   const showAnswersMode: AnswerVisibilityMode = activeSettings.showAnswersMode || 'immediate';
@@ -529,8 +497,8 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     timerRef.current = window.setInterval(() => {
       setTotalTimeSpent((t) => t + 1);
 
-      if (gameMode === 'untimed') {
-        return; // Untimed mode does not count down
+      if (gameMode === 'untimed' || (activeSettings.executionMode === 'teacher_led' && activeSettings.teacherPacingSubMode === 'manual')) {
+        return; // Untimed mode or teacher-led manual pacing does not count down
       }
 
       setTimeLeft((prev) => {
@@ -548,7 +516,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [currentIndex, isAnswerConfirmed, isPaused, isGameOver, gameMode, defaultDurationSec, playTick]);
+  }, [currentIndex, isAnswerConfirmed, isPaused, isGameOver, gameMode, defaultDurationSec, playTick, activeSettings.executionMode, activeSettings.teacherPacingSubMode]);
 
   const normalizeAnswer = (text: string) => {
     return text
@@ -703,8 +671,15 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
           console.warn('Session participant sync error:', err);
         }
       }
+
       return updated;
     });
+
+    if (activeSettings.executionMode === 'teacher_led' && !isTeacher && !isLastQuestion) {
+      setTimeout(() => {
+        setShowWaitingLounge(true);
+      }, 700);
+    }
   };
 
   const handleTeacherReveal = () => {
@@ -751,6 +726,17 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 
   const handleNext = () => {
     playClick();
+
+    // In teacher-led mode, advance the session in real time so all students advance together!
+    const targetSessionId = activeSessionId || liveSession?.id;
+    if (isTeacher && activeSettings.executionMode === 'teacher_led' && targetSessionId) {
+      if (isLastQuestion) {
+        DataManager.updateSessionStatus(targetSessionId, 'finished');
+      } else {
+        DataManager.advanceSessionQuestion(targetSessionId, currentIndex + 1);
+      }
+    }
+
     if (isLastQuestion) {
       stopBgm();
       try {
@@ -840,6 +826,125 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     setMatchedPairs(new Set());
     setWrongPairAttempt(null);
   };
+
+  // Real-time listener for settings and question changes dispatched by teacher
+  useEffect(() => {
+    const handleBroadcastMsg = (event: MessageEvent) => {
+      const data = event.data;
+      if (data?.type === 'SESSION_UPDATED' && data.session) {
+        const sess: QuizSession = data.session;
+        if (
+          (activeSessionId && sess.id === activeSessionId) ||
+          (quiz.pinCode && sess.pinCode === quiz.pinCode) ||
+          sess.quizId === quiz.id
+        ) {
+          setLiveSession(sess);
+          if (sess.settings) {
+            setCurrentSettings((prev) => ({
+              ...prev,
+              ...sess.settings,
+            }));
+          }
+
+          // In teacher-led mode, advance student device in real time when teacher advances question
+          if (sess.settings?.executionMode === 'teacher_led' && !isTeacher) {
+            if (
+              typeof sess.currentQuestionIndex === 'number' &&
+              sess.currentQuestionIndex > currentIndex
+            ) {
+              setShowWaitingLounge(false);
+              handleJumpToQuestion(sess.currentQuestionIndex);
+            }
+            if (sess.status === 'finished') {
+              setShowWaitingLounge(false);
+              handleNext();
+            }
+          }
+        }
+      }
+    };
+
+    let bc: BroadcastChannel | null = null;
+    try {
+      if ('BroadcastChannel' in window) {
+        bc = new BroadcastChannel('kuis_realtime_session_sync');
+        bc.addEventListener('message', handleBroadcastMsg);
+      }
+    } catch (e) {
+      console.warn('BroadcastChannel error in QuizArena:', e);
+    }
+
+    const handleCustomSync = (e: Event) => {
+      const customEvt = e as CustomEvent;
+      const sess: QuizSession = customEvt.detail?.session;
+      if (sess) {
+        if (
+          (activeSessionId && sess.id === activeSessionId) ||
+          (quiz.pinCode && sess.pinCode === quiz.pinCode) ||
+          sess.quizId === quiz.id
+        ) {
+          setLiveSession(sess);
+          if (sess.settings) {
+            setCurrentSettings((prev) => ({
+              ...prev,
+              ...sess.settings,
+            }));
+          }
+
+          if (sess.settings?.executionMode === 'teacher_led' && !isTeacher) {
+            if (
+              typeof sess.currentQuestionIndex === 'number' &&
+              sess.currentQuestionIndex > currentIndex
+            ) {
+              setShowWaitingLounge(false);
+              handleJumpToQuestion(sess.currentQuestionIndex);
+            }
+            if (sess.status === 'finished') {
+              setShowWaitingLounge(false);
+              handleNext();
+            }
+          }
+        }
+      }
+    };
+    window.addEventListener('kuis_session_updated', handleCustomSync);
+
+    // Fallback polling for session state every 2 seconds
+    const interval = setInterval(() => {
+      const targetId = activeSessionId || liveSession?.id;
+      const fresh = targetId
+        ? DataManager.getActiveSessionById(targetId)
+        : quiz.pinCode
+        ? DataManager.getActiveSessionByPin(quiz.pinCode)
+        : DataManager.getActiveSessionByQuizId(quiz.id);
+
+      if (fresh) {
+        setLiveSession(fresh);
+        if (fresh.settings?.executionMode === 'teacher_led' && !isTeacher) {
+          if (
+            typeof fresh.currentQuestionIndex === 'number' &&
+            fresh.currentQuestionIndex > currentIndex
+          ) {
+            setShowWaitingLounge(false);
+            handleJumpToQuestion(fresh.currentQuestionIndex);
+          }
+          if (fresh.status === 'finished') {
+            setShowWaitingLounge(false);
+            handleNext();
+          }
+        }
+      }
+    }, 2000);
+
+    return () => {
+      if (bc) {
+        bc.removeEventListener('message', handleBroadcastMsg);
+        bc.close();
+      }
+      window.removeEventListener('kuis_session_updated', handleCustomSync);
+      clearInterval(interval);
+    };
+  }, [activeSessionId, quiz.id, quiz.pinCode, currentIndex, isTeacher, liveSession?.id]);
 
   const handleVoteAdd = (e: React.MouseEvent, optIndex: number) => {
     e.stopPropagation();
@@ -961,6 +1066,14 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                 <span className="text-[10px] sm:text-[11px] font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/50 border border-amber-200/60 dark:border-amber-800/60 px-1.5 py-0.5 rounded-md inline-flex items-center gap-0.5">
                   <Star className="w-3 h-3 text-amber-500 fill-amber-500" /> {question.points || 10} Poin
                 </span>
+                {isTeacher && activeSettings.executionMode === 'teacher_led' && (
+                  <span className="text-[10px] sm:text-[11px] font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 border border-blue-200/80 dark:border-blue-900/80 px-2 py-0.5 rounded-md inline-flex items-center gap-1">
+                    <Users className="w-3 h-3 text-blue-500" />
+                    <span>
+                      {liveSession?.participants?.filter(p => p.answers && p.answers[question.id])?.length || 0} / {liveSession?.participants?.length || 0} Menjawab
+                    </span>
+                  </span>
+                )}
               </div>
               <h2 className="text-[11px] sm:text-xs font-semibold text-slate-600 dark:text-slate-400 truncate max-w-[85px] xs:max-w-[130px] sm:max-w-[200px] md:max-w-[280px] hidden xs:block">
                 {quiz.title}
@@ -988,7 +1101,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
             <span className={`inline-flex items-center gap-1 text-xs sm:text-sm font-bold px-2.5 py-1 rounded-xl transition-colors ${
               isPaused 
                 ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 animate-pulse'
-                : gameMode === 'untimed'
+                : gameMode === 'untimed' || (activeSettings.executionMode === 'teacher_led' && activeSettings.teacherPacingSubMode === 'manual')
                 ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
                 : timeLeft <= 5 
                 ? 'bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 font-extrabold animate-pulse' 
@@ -1000,6 +1113,8 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                   ? 'Jeda' 
                   : gameMode === 'untimed'
                   ? `Santai (${Math.floor(totalTimeSpent / 60)}:${(totalTimeSpent % 60).toString().padStart(2, '0')})`
+                  : activeSettings.executionMode === 'teacher_led' && activeSettings.teacherPacingSubMode === 'manual'
+                  ? '🕹️ Dipandu Guru'
                   : `${timeLeft}s`}
               </span>
             </span>
@@ -1644,18 +1759,25 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
             ) : null}
           </div>
 
-          <button
-            disabled={!isAnswerConfirmed && !(canTeacherReveal || activeSettings.executionMode === 'teacher_led')}
-            onClick={handleNext}
-            className={`flex-1 sm:flex-initial sm:min-w-[200px] xl:min-w-[240px] px-6 py-2.5 sm:py-3 rounded-2xl font-bold text-xs sm:text-sm xl:text-base flex items-center justify-center gap-2 transition-all min-h-[46px] sm:min-h-[50px] btn-press ${
-              isAnswerConfirmed || canTeacherReveal || activeSettings.executionMode === 'teacher_led'
-                ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md'
-                : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed border border-slate-200 dark:border-slate-700'
-            }`}
-          >
-            <span>{isLastQuestion ? 'Selesai & Rekap Nilai' : 'Soal Berikutnya'}</span>
-            <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
-          </button>
+          {activeSettings.executionMode === 'teacher_led' && !isTeacher ? (
+            <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-xs font-bold shadow-xs">
+              <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping flex-shrink-0" />
+              <span>Dipandu Guru di Depan Kelas</span>
+            </div>
+          ) : (
+            <button
+              disabled={!isAnswerConfirmed && !(canTeacherReveal || activeSettings.executionMode === 'teacher_led')}
+              onClick={handleNext}
+              className={`flex-1 sm:flex-initial sm:min-w-[200px] xl:min-w-[240px] px-6 py-2.5 sm:py-3 rounded-2xl font-bold text-xs sm:text-sm xl:text-base flex items-center justify-center gap-2 transition-all min-h-[46px] sm:min-h-[50px] btn-press ${
+                isAnswerConfirmed || canTeacherReveal || activeSettings.executionMode === 'teacher_led'
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed border border-slate-200 dark:border-slate-700'
+              }`}
+            >
+              <span>{isLastQuestion ? 'Selesai & Rekap Nilai' : 'Soal Berikutnya'}</span>
+              <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
+            </button>
+          )}
         </div>
       </footer>
 
@@ -1967,6 +2089,43 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
             </button>
           </div>
         </div>
+      )}
+
+      {/* Lounge Jeda Antar-Soal (Siswa di Mode Dipandu Guru) */}
+      {(showWaitingLounge || isAnswerConfirmed) && activeSettings.executionMode === 'teacher_led' && !isTeacher && !isLastQuestion && (
+        <InterQuestionWaitingLounge
+          session={
+            liveSession || {
+              id: activeSessionId || 'sess_temp',
+              quizId: quiz.id,
+              quizTitle: quiz.title,
+              subject: quiz.subject,
+              grade: quiz.grade,
+              pinCode: quiz.pinCode || '1001',
+              status: 'active',
+              createdAt: new Date().toISOString(),
+              settings: activeSettings,
+              participants: [],
+              totalQuestions: activeQuestions.length,
+            }
+          }
+          questionIndex={currentIndex}
+          totalQuestions={activeQuestions.length}
+          studentName={DataManager.getPlayerProfile().nickname || 'Siswa Pintar'}
+          avatarId={DataManager.getPlayerProfile().avatarId || 'lion'}
+          earnedStars={answersList.filter((a) => a.isCorrect).length}
+          earnedScore={Math.round((answersList.filter((a) => a.isCorrect).length / activeQuestions.length) * 100)}
+          onAdvanceToQuestion={(nextIdx) => {
+            setShowWaitingLounge(false);
+            handleJumpToQuestion(nextIdx);
+          }}
+          onQuizFinished={() => {
+            setShowWaitingLounge(false);
+            handleNext();
+          }}
+          playClick={playClick}
+          playCorrect={playCorrect}
+        />
       )}
 
     </div>

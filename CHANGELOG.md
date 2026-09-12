@@ -1,6 +1,48 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.68] - 2026-09-12
+### Mode Dipandu Guru: 2 Sub-Mode Pacing, Ruang Tunggu Pra-Kuis, Sinkronisasi Soal Serentak & Lounge Jeda Mini-Game
+
+#### 1. Dua Sub-Mode Pacing Dipandu Guru (`PlayQuizModal.tsx`)
+- **Kendali Penuh Guru (*Manual Pacing*)**:
+  - Guru memegang kendali penuh atas pembukaan dan pemindahan tiap butir soal kuis di depan kelas.
+  - Waktu pengerjaan berlangsung fleksibel dan santai tanpa desakan hitung mundur timer, cocok untuk pembahasan konsep mendalam.
+- **Timer Soal + Kendali Lanjut Guru (*Timed Question with Teacher Next*)**:
+  - Timer pengerjaan per butir soal berjalan di masing-masing perangkat siswa (bawaan kuis atau durasi yang ditentukan).
+  - Ketika waktu soal habis atau siswa telah mengirim jawaban, gawai siswa terkunci pada layar jeda hingga guru secara resmi membuka nomor soal berikutnya.
+- **Pengaturan Interaktif Tambahan**:
+  - Sakelar Reaksi Melayang & Obrolan Kelas (*Social Reactions & Class Chat Toggle*) untuk memeriahkan suasana kelas.
+
+#### 2. Ruang Tunggu Pra-Kuis Siswa (*Pre-Quiz Waiting Room*) (`StudentWaitingRoom.tsx`)
+- **Penahanan Masuk Siswa Terkendali**:
+  - Siswa yang bergabung melalui PIN atau tautan kuis dipandu guru tidak langsung mengerjakan soal sebelum guru memulai kuis.
+  - Menampilkan status *"Menunggu Bapak/Ibu Guru Memulai Kuis di Depan Kelas..."* dengan animasi denyut visual.
+- **Fitur Interaksi Pra-Kuis**:
+  - Menampilkan maskot animasi ceria dan daftar avatar teman sekelas yang sudah terhubung.
+  - Bilah reaksi melayang (❤️🔥⭐👏🎉) dan obrolan kelas dengan filter sanitasi teks untuk menyapa teman sekelas.
+- **Transisi Serentak Otomatis**:
+  - Mendengarkan pembaruan status sesi secara waktu nyata (*real-time*). Begitu guru menekan tombol mulai, seluruh perangkat siswa langsung dialihkan serentak ke Soal 1.
+
+#### 3. Lounge Jeda Antar Soal dengan Kasual Mini-Game Bersama (`InterQuestionWaitingLounge.tsx`)
+- **Pengalaman Menunggu Positif & Seru**:
+  - Siswa yang selesai menjawab lebih awal dialihkan ke ruang tunggu jeda antar soal sehingga tertib dan tidak mengganggu siswa lain.
+  - Dilengkapi permainan mini kasual interaktif selaras kelas (berganti tiap butir soal):
+    - **Game 1**: *Tangkap Bintang Mengambang* (*Star Catcher*) untuk melatih fokus dan ketangkasan.
+    - **Game 2**: *Tebak Emoji Kilat* (*Emoji Riddle*) untuk mengasah logika cepat.
+- **Sinkronisasi Otomatis Soal Berikutnya**:
+  - Menghubungkan gawai siswa ke pemancar sesi kuis; begitu guru membuka soal berikutnya, seluruh layar siswa otomatis berganti nomor soal baru.
+
+#### 4. Ruang Kendali Host & Smartboard Guru (`WaygroundHostView.tsx` & `QuizArena.tsx`)
+- **Tombol Mulai Kuis & Indikator Siswa**:
+  - Tombol *"Mulai Kuis Sekarang"* yang mencolok di header dan tab utama ketika sesi berstatus ruang tunggu (*waiting*).
+- **Kendali Navigasi Soal Terpusat**:
+  - Guru dapat memajukan atau memundurkan nomor soal aktif baik dari Smartboard proyektor kelas maupun dasbor kendali host, menyiarkan perintah pembaruan soal ke seluruh gawai siswa serempak.
+- **Pemantauan & Pengendalian Kelas**:
+  - Menampilkan jumlah siswa yang telah menjawab secara *live* (`👥 X / Y Siswa Menjawab`).
+  - Tombol kendali *"Bungkam Obrolan"* (*Mute Class Chat*) untuk menjaga ketertiban kelas seketika jika diperlukan.
+  - Lapisan gelembung reaksi melayang (*Floating Reaction Bubbles*) di layar guru.
+
 ## [2.3.67] - 2026-09-12
 ### Deteksi Cerdas Durasi Khusus Butir Soal & Kontrol Override pada Sesi Kuis
 
