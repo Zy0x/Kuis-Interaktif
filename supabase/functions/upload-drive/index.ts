@@ -122,6 +122,59 @@ async function getGoogleDriveAccessToken(clientEmail: string, privateKeyPem: str
   return tokenData.access_token;
 }
 
+// ──────────────────────────────────────────────────────────────────────────────
+// Supabase Helpers: Lookup & Save drive_folder_id per kuis (Rule 10)
+// ──────────────────────────────────────────────────────────────────────────────
+
+/** Ambil drive_folder_id yang telah tersimpan untuk kuis tertentu */
+async function getStoredDriveFolderId(quizId: string): Promise<string | null> {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+  if (!supabaseUrl || !serviceKey || !quizId) return null;
+  try {
+    const res = await fetch(
+      `${supabaseUrl}/rest/v1/quizzes?id=eq.${encodeURIComponent(quizId)}&select=drive_folder_id&limit=1`,
+      {
+        headers: {
+          Authorization: `Bearer ${serviceKey}`,
+          apikey: serviceKey,
+          Accept: "application/json",
+        },
+      }
+    );
+    if (!res.ok) return null;
+    const rows = await res.json();
+    return rows?.[0]?.drive_folder_id || null;
+  } catch (err) {
+    console.warn("Gagal membaca drive_folder_id dari Supabase:", err);
+    return null;
+  }
+}
+
+/** Simpan drive_folder_id ke record kuis di Supabase */
+async function saveDriveFolderIdToSupabase(quizId: string, folderId: string): Promise<void> {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+  if (!supabaseUrl || !serviceKey || !quizId || !folderId) return;
+  try {
+    await fetch(
+      `${supabaseUrl}/rest/v1/quizzes?id=eq.${encodeURIComponent(quizId)}`,
+      {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${serviceKey}`,
+          apikey: serviceKey,
+          "Content-Type": "application/json",
+          Prefer: "return=minimal",
+        },
+        body: JSON.stringify({ drive_folder_id: folderId }),
+      }
+    );
+  } catch (err) {
+    console.warn("Gagal menyimpan drive_folder_id ke Supabase:", err);
+  }
+}
+
 // Helper: Temukan atau buat folder kuis secara dinamis di Google Drive Pro (Subfolder per Kuis)
 async function getOrCreateQuizFolder(
   accessToken: string,
@@ -526,24 +579,56 @@ serve(async (req) => {
     // Dapatkan Google OAuth2 Token
     const accessToken = await fetchAccessToken();
 
-    // Resolusi Sub-Folder Kuis Otomatis (Rule: Terorganisir & Terstruktur Rapi per Kuis)
-    let resolvedFolderName = requestedFolderName;
-    if (!resolvedFolderName) {
-      if (quizPin) {
-        const cleanTitle = quizTitle ? quizTitle.replace(/[\\/:*?"<>|]/g, " ").trim().slice(0, 45) : "";
-        resolvedFolderName = cleanTitle ? `[PIN ${quizPin}] ${cleanTitle}` : `[PIN ${quizPin}] Kuis`;
-      } else if (quizTitle) {
-        const cleanTitle = quizTitle.replace(/[\\/:*?"<>|]/g, " ").trim().slice(0, 45);
-        resolvedFolderName = `[Draf] ${cleanTitle || "Kuis Baru"}`;
-      }
-    }
-
+    // ── Resolusi Sub-Folder Kuis Otomatis ──────────────────────────────────────
+    // Prioritas: (1) drive_folder_id tersimpan di Supabase → stabil meski PIN berubah
+    //            (2) Buat folder baru berdasarkan nama → simpan ID ke Supabase
     let activeFolderId = targetFolderId;
     let finalFolderName = "Root";
-    if (resolvedFolderName) {
-      const folderResult = await getOrCreateQuizFolder(accessToken, targetFolderId, resolvedFolderName);
-      activeFolderId = folderResult.folderId;
-      finalFolderName = folderResult.folderName;
+
+    if (quizId) {
+      // 1. Coba ambil folder ID yang sudah tersimpan di Supabase
+      const storedFolderId = await getStoredDriveFolderId(quizId);
+      if (storedFolderId) {
+        // Folder sudah ada dan stabil — gunakan langsung
+        activeFolderId = storedFolderId;
+        finalFolderName = requestedFolderName || (quizPin ? `[PIN ${quizPin}] Kuis` : "[Draf] Kuis");
+      } else {
+        // 2. Folder belum ada — buat baru berdasarkan nama, lalu simpan ID-nya
+        let resolvedFolderName = requestedFolderName;
+        if (!resolvedFolderName) {
+          if (quizPin) {
+            const cleanTitle = quizTitle ? quizTitle.replace(/[\\/:*?"<>|]/g, " ").trim().slice(0, 45) : "";
+            resolvedFolderName = cleanTitle ? `[PIN ${quizPin}] ${cleanTitle}` : `[PIN ${quizPin}] Kuis`;
+          } else if (quizTitle) {
+            const cleanTitle = quizTitle.replace(/[\\/:*?"<>|]/g, " ").trim().slice(0, 45);
+            resolvedFolderName = `[Draf] ${cleanTitle || "Kuis Baru"}`;
+          }
+        }
+        if (resolvedFolderName) {
+          const folderResult = await getOrCreateQuizFolder(accessToken, targetFolderId, resolvedFolderName);
+          activeFolderId = folderResult.folderId;
+          finalFolderName = folderResult.folderName;
+          // Simpan drive_folder_id ke Supabase agar upload berikutnya langsung pakai ini
+          await saveDriveFolderIdToSupabase(quizId, activeFolderId);
+        }
+      }
+    } else {
+      // Tidak ada quizId — fallback ke penamaan folder berbasis PIN/judul
+      let resolvedFolderName = requestedFolderName;
+      if (!resolvedFolderName) {
+        if (quizPin) {
+          const cleanTitle = quizTitle ? quizTitle.replace(/[\\/:*?"<>|]/g, " ").trim().slice(0, 45) : "";
+          resolvedFolderName = cleanTitle ? `[PIN ${quizPin}] ${cleanTitle}` : `[PIN ${quizPin}] Kuis`;
+        } else if (quizTitle) {
+          const cleanTitle = quizTitle.replace(/[\\/:*?"<>|]/g, " ").trim().slice(0, 45);
+          resolvedFolderName = `[Draf] ${cleanTitle || "Kuis Baru"}`;
+        }
+      }
+      if (resolvedFolderName) {
+        const folderResult = await getOrCreateQuizFolder(accessToken, targetFolderId, resolvedFolderName);
+        activeFolderId = folderResult.folderId;
+        finalFolderName = folderResult.folderName;
+      }
     }
 
     // Unggah berkas ke subfolder kuis terkait di Google Drive Pro

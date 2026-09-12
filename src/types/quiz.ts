@@ -97,6 +97,7 @@ export interface Quiz {
   shuffleOptions?: boolean;
   defaultGameMode?: GameMode;
   defaultSettings?: Partial<QuizSessionSettings>;
+  driveFolderId?: string; // ID folder Google Drive Pro terkait — stabil meski PIN berubah
 }
 
 export interface AiQuizMetadata {

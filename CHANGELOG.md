@@ -1,6 +1,29 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.76] - 2026-09-13
+### Folder Google Drive Stabil saat PIN Berubah & Auto-Cleanup saat Kuis Dihapus (Rule 10 & Rule 11)
+
+#### 1. Folder Google Drive Stabil — Tidak Berubah saat PIN Diperbarui
+- **Kolom `drive_folder_id` di Tabel `quizzes` (Supabase)**:
+  - Setiap kuis kini memiliki satu folder Google Drive Pro yang terikat secara permanen via `drive_folder_id`.
+  - Edge Function `upload-drive` menyimpan ID folder ke Supabase saat pertama kali folder dibuat.
+  - Upload berikutnya langsung menggunakan folder yang sama berdasarkan ID — tidak peduli PIN berubah atau judul kuis diedit.
+- **Tidak Ada Folder Ganda**:
+  - PIN diacak `7871 → 8234`? Media tetap masuk ke folder yang sama, tidak ada folder baru yang dibuat.
+
+#### 2. Auto-Cleanup Folder Google Drive saat Kuis Dihapus
+- **Edge Function Baru `delete-drive-folder`**:
+  - Menerima `quizId`, mengambil `drive_folder_id` dari Supabase, lalu menghapus folder beserta seluruh isinya dari Google Drive Pro via Drive API (`DELETE /files/{folderId}`).
+  - Tidak meninggalkan sampah — folder lenyap bersih bersamaan dengan penghapusan kuis.
+- **Integrasi Non-Blocking di `deleteQuiz()`**:
+  - Cleanup Drive dipicu otomatis sebelum record Supabase dihapus.
+  - Kegagalan cleanup (misal folder sudah tidak ada) tidak menghentikan proses penghapusan kuis — hanya di-log sebagai peringatan.
+
+#### 3. Skema Tambahan
+- `Quiz.driveFolderId?: string` ditambahkan ke interface TypeScript untuk sinkronisasi data frontend-backend.
+- SQL migration tersedia di `docs/migration_drive_folder.sql`.
+
 ## [2.3.75] - 2026-09-13
 ### Manajemen Folder Google Drive Pro Terstruktur Otomatis Per Kuis (Rule 10 & Rule 14)
 

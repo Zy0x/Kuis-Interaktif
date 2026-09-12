@@ -237,3 +237,26 @@ export async function checkGoogleDriveStatus(): Promise<DriveStatusResult> {
     };
   }
 }
+
+/**
+ * Hapus folder Google Drive kuis beserta seluruh isinya (auto-cleanup saat kuis dihapus)
+ * Tidak pernah throw error — kegagalan cleanup hanya di-log, tidak menghentikan penghapusan kuis.
+ */
+export async function deleteQuizDriveFolder(quizId: string): Promise<void> {
+  if (!isSupabaseConfigured || !supabase || !quizId) return;
+  try {
+    const { data, error } = await supabase.functions.invoke('delete-drive-folder', {
+      body: { quizId },
+    });
+    if (error) {
+      console.warn('Drive folder cleanup notice:', error.message);
+    } else if (data?.success === false) {
+      console.warn('Drive folder cleanup notice:', data?.message || data?.error);
+    } else {
+      console.info('✅ Drive folder kuis berhasil dibersihkan:', data?.message);
+    }
+  } catch (err: any) {
+    // Silent — jangan sampai cleanup gagal membatalkan penghapusan kuis
+    console.warn('Drive folder cleanup exception:', err?.message);
+  }
+}

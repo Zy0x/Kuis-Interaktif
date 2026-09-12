@@ -19,6 +19,7 @@ import type {
 } from '../types/quiz';
 import { MASTER_TEACHER_EMAIL } from '../types/quiz';
 import { INITIAL_QUIZZES } from '../data/seedQuizzes';
+import { deleteQuizDriveFolder } from './driveUploadService';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
@@ -793,7 +794,13 @@ export const DataManager = {
       console.warn('Delete quiz error:', e);
     }
 
-    // 3. Hapus dari Supabase jika terhubung (hapus quiz_questions terlebih dahulu untuk relasi foreign key)
+    // 3. Auto-cleanup folder Google Drive Pro (non-blocking — tidak menghentikan penghapusan)
+    // Harus dilakukan SEBELUM record Supabase dihapus agar drive_folder_id masih bisa diambil
+    deleteQuizDriveFolder(quizId).catch((err) =>
+      console.warn('Drive folder cleanup warning (non-fatal):', err)
+    );
+
+    // 4. Hapus dari Supabase jika terhubung (hapus quiz_questions terlebih dahulu untuk relasi foreign key)
     if (supabase) {
       try {
         await supabase.from('quiz_questions').delete().eq('quiz_id', quizId);
