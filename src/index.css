@@ -214,41 +214,45 @@ textarea::-webkit-resizer {
   animation: toast-progress 3.8s linear forwards;
 }
 
-/* ================= QUIZIZZ-GRADE FLOATING REACTIONS ================= */
-@keyframes quizizz-float-up {
+/* ================= QUIZIZZ-GRADE ULTRA-SMOOTH SIDE-STREAM REACTIONS ================= */
+@keyframes quizizz-stream-rise {
   0% {
     opacity: 0;
-    transform: translate3d(0, 40px, 0) scale(0.3);
+    transform: translate3d(0, 20px, 0) scale(0.6);
   }
-  12% {
+  15% {
     opacity: 1;
-    transform: translate3d(var(--sway-1, 14px), -10vh, 0) scale(1.18);
+    transform: translate3d(0, -35px, 0) scale(1.05);
   }
-  35% {
-    opacity: 1;
-    transform: translate3d(var(--sway-2, -16px), -30vh, 0) scale(1);
-  }
-  60% {
+  70% {
     opacity: 0.95;
-    transform: translate3d(var(--sway-3, 12px), -55vh, 0) scale(0.96);
-  }
-  85% {
-    opacity: 0.65;
-    transform: translate3d(var(--sway-4, -10px), -75vh, 0) scale(0.9);
+    transform: translate3d(0, -220px, 0) scale(0.95);
   }
   100% {
     opacity: 0;
-    transform: translate3d(0, -90vh, 0) scale(0.75);
+    transform: translate3d(0, -320px, 0) scale(0.8);
+  }
+}
+
+@keyframes quizizz-stream-sway {
+  0%, 100% {
+    transform: translateX(0) rotate(0deg);
+  }
+  25% {
+    transform: translateX(-10px) rotate(-6deg);
+  }
+  75% {
+    transform: translateX(10px) rotate(6deg);
   }
 }
 
 @keyframes reaction-bubble-pop {
   0% {
-    transform: scale(0.2);
+    transform: scale(0.3);
     opacity: 0;
   }
-  50% {
-    transform: scale(1.25);
+  60% {
+    transform: scale(1.18);
     opacity: 1;
   }
   100% {
@@ -257,13 +261,19 @@ textarea::-webkit-resizer {
   }
 }
 
-.animate-quizizz-float {
-  animation: quizizz-float-up var(--float-duration, 3.2s) cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+.animate-quizizz-float,
+.animate-quizizz-rise {
+  animation: quizizz-stream-rise var(--rise-duration, 2.0s) cubic-bezier(0.25, 1, 0.5, 1) forwards;
   will-change: transform, opacity;
 }
 
+.animate-quizizz-sway {
+  animation: quizizz-stream-sway 1.8s ease-in-out infinite;
+  will-change: transform;
+}
+
 .animate-reaction-pop {
-  animation: reaction-bubble-pop 250ms cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  animation: reaction-bubble-pop 220ms cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 
 

@@ -1,6 +1,28 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.70] - 2026-09-12
+### Optimasi Performa & Ergonomi Reaksi: Jalur Samping Bebas-Distraksi (*Side-Stream Channel*), Animasi GPU Ultra-Halus (60-120 FPS), dan Penonaktifan Otomatis Saat Soal Berjalan
+
+#### 1. Jalur Khusus Tepi Samping (*Right-Side Stream Channel*)
+- **Bebas Distraksi & Fokus Keterbacaan (Aturan 2)**:
+  - Memindahkan seluruh aliran reaksi melayang ke koridor khusus di pojok kanan bawah (`w-36 sm:w-44 h-[350px]`), bukan lagi tersebar di tengah layar (10% - 90%).
+  - Area tengah yang memuat teks pertanyaan, pilihan ganda A-B-C-D, timer, dan leaderboard dijamin 100% bersih tanpa terhalang sama sekali.
+- **Lencana Pengirim Ramping & Solid (Zero Overdraw)**:
+  - Menghapus efek `backdrop-blur` pada partikel bergerak yang sebelumnya memicu *heavy repaint* pada GPU peramban.
+  - Menggantinya dengan lencana semi-transparan solid GPU-friendly (`bg-slate-900/90` dan `bg-amber-950`), ringkas, dan bebas lag.
+
+#### 2. Pemisahan Sumbu Translasi 100% GPU (*Dual-Axis Pure GPU Transforms*)
+- **Pergerakan Alami & Bebas Kaku**:
+  - Sumbu vertikal (Y) menggunakan translasi murni `translate3d(0, -320px, 0)` dengan kurva lembut `cubic-bezier(0.25, 1, 0.5, 1)` berdurasi ~2.0 detik.
+  - Sumbu horizontal (X) digerakkan secara independen oleh elemen anak dengan goyangan sinusoidal murni (`@keyframes quizizz-stream-sway`), mengeliminasi perhitungan CSS variables bertahap yang sebelumnya terasa kaku.
+  - Pembatasan partikel aktif maksimal 14 partikel dengan pembersihan otomatis instan.
+
+#### 3. Penonaktifan Reaksi Saat Kuis / Soal Berjalan
+- **Eksklusif Ruang Tunggu & Lobby**:
+  - Reaksi langsung dan tombol reaksi dinonaktifkan sepenuhnya saat kuis sedang berjalan di `QuizArena.tsx` dan `InterQuestionWaitingLounge.tsx` agar siswa dapat 100% fokus menjawab soal tanpa gangguan visual.
+  - Di Layar Guru (`WaygroundHostView.tsx`), bilah reaksi guru dan tampilan reaksi hanya aktif ketika status sesi berada di ruang tunggu pra-kuis (`waiting`), dan otomatis disembunyikan saat kuis telah dimulai (`active`).
+
 ## [2.3.69] - 2026-09-12
 ### Sistem Reaksi Melayang Terpadu Ala Quizizz: Fisika Balon Melayang, Sender Avatar Chip & Multi-Tap Rapid Burst
 

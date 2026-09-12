@@ -276,6 +276,11 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                       <Pause className="w-2.5 h-2.5 text-amber-400" />
                       <span className="text-amber-300">DIJEDA</span>
                     </>
+                  ) : session.status === 'waiting' ? (
+                    <>
+                      <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                      <span className="text-amber-300">RUANG TUNGGU</span>
+                    </>
                   ) : (
                     <>
                       <CheckCircle2 className="w-2.5 h-2.5 text-emerald-400" />
@@ -600,17 +605,19 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
               </div>
             )}
 
-            {/* Bilah Reaksi Semangat Guru (Tersinkronisasi ke Seluruh Layar) */}
-            <div className="bg-slate-900/80 border border-slate-800 rounded-2xl px-4 py-2.5 flex flex-col sm:flex-row items-center justify-between gap-2 shadow-md">
-              <QuizizzReactionButtonRow
-                sessionId={session.id}
-                senderName={session.teacherName || 'Bapak/Ibu Guru'}
-                isTeacher={true}
-                playClick={playClick}
-                compact={true}
-                title="Kirim Reaksi Guru ke Seluruh Layar:"
-              />
-            </div>
+            {/* Bilah Reaksi Semangat Guru (Hanya aktif di Ruang Tunggu Pra-Kuis) */}
+            {session.status === 'waiting' && (
+              <div className="bg-slate-900/80 border border-slate-800 rounded-2xl px-4 py-2.5 flex flex-col sm:flex-row items-center justify-between gap-2 shadow-md">
+                <QuizizzReactionButtonRow
+                  sessionId={session.id}
+                  senderName={session.teacherName || 'Bapak/Ibu Guru'}
+                  isTeacher={true}
+                  playClick={playClick}
+                  compact={true}
+                  title="Kirim Reaksi Guru di Ruang Tunggu:"
+                />
+              </div>
+            )}
 
             {/* Teacher Led: Active Question Advance Control Bar */}
             {isTeacherLed && session.status === 'active' && (
@@ -996,8 +1003,10 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
         </div>
       )}
 
-      {/* Quizizz-Grade Floating Live Reactions Overlay */}
-      <QuizizzReactionOverlay sessionId={session.id} />
+      {/* Quizizz-Grade Floating Live Reactions Overlay (Hanya di Ruang Tunggu Pra-Kuis) */}
+      {session.status === 'waiting' && (
+        <QuizizzReactionOverlay sessionId={session.id} />
+      )}
 
     </div>
   );

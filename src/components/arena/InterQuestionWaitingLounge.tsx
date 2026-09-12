@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import type { QuizSession } from '../../types/quiz';
 import { DataManager } from '../../lib/supabaseClient';
-import { QuizizzReactionOverlay } from '../common/QuizizzReactionOverlay';
-import { QuizizzReactionButtonRow } from '../common/QuizizzReactionButtonRow';
 import { 
   Send, 
   MessageCircle, 
@@ -305,9 +303,6 @@ export const InterQuestionWaitingLounge: React.FC<InterQuestionWaitingLoungeProp
   return (
     <div className="fixed inset-0 z-40 bg-slate-950/80 backdrop-blur-md flex flex-col items-center justify-center p-3 sm:p-4 overflow-y-auto animate-fade-in select-none">
       
-      {/* Quizizz-Grade Floating Reactions Overlay */}
-      <QuizizzReactionOverlay sessionId={session.id} />
-
       <div className="w-full max-w-xl bg-slate-900 border border-slate-800 rounded-3xl p-4 sm:p-6 shadow-2xl space-y-4 my-auto">
         
         {/* Top Header: Answer Saved Status */}
@@ -335,20 +330,7 @@ export const InterQuestionWaitingLounge: React.FC<InterQuestionWaitingLoungeProp
           <EmojiGuessGame playClick={playClick} playCorrect={playCorrect} />
         )}
 
-        {/* Quick Reactions Bar Ala Quizizz */}
-        <div className="pt-2 border-t border-slate-800">
-          <QuizizzReactionButtonRow
-            sessionId={session.id}
-            senderName={studentName}
-            avatarId={avatarId}
-            isTeacher={false}
-            playClick={playClick}
-            compact={true}
-            title="Kirim Reaksi Semangat:"
-          />
-        </div>
-
-        {/* Live Chat Box */}
+        {/* Live Chat Panel (Classroom Social) */}
         <div className="bg-slate-950/60 rounded-2xl p-3 border border-slate-800/80 space-y-2">
           <div className="flex items-center justify-between text-[11px] font-bold text-slate-400">
             <span className="flex items-center gap-1">
