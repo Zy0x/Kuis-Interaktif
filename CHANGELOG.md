@@ -1,6 +1,22 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.63] - 2026-09-12
+### Pengaturan Lengkap Kuis pada Panel Mode Dipandu Guru Berbasis Accordion
+
+#### 1. Penambahan Accordion Pengaturan Tambahan Kuis (`PlayQuizModal.tsx`)
+- **Desain Bersih & Tidak Berjejal (*Collapsible Accordion*)**:
+  - Menghadirkan bagian lipat interaktif bertajuk *"Pengaturan Tambahan Kuis"* pada mode Dipandu Guru.
+  - Secara bawaan dalam status tertutup agar antarmuka kuis tetap ramping dan minimalis, namun siap dibuka guru saat memerlukan kustomisasi sesi lanjutan.
+- **Dukungan Pengaturan Kuis Komprehensif**:
+  - **Kunci Jawaban Siswa**: Pilihan keterlihatan kunci jawaban (*Tiap Soal*, *Akhir Kuis*, atau *Rahasia*).
+  - **Pembahasan Materi**: Opsi penayangan penjelasan materi kuis (*Tiap Soal*, *Akhir Kuis*, atau *Sembunyikan*).
+  - **Acak Urutan Nomor Soal**: Sakelar toggle untuk mengacak urutan butir soal kelas.
+  - **Acak Pilihan Opsi Jawaban**: Sakelar toggle untuk mengacak penataan pilihan A, B, C, D di setiap perangkat siswa.
+  - **Tayangkan Peringkat Kelas di Smartboard**: Sakelar toggle untuk menampilkan leaderboard skor live di layar proyektor setelah tiap soal.
+- **Sinkronisasi Sesi Real-Time**:
+  - Seluruh parameter lanjutan otomatis tersimpan dan disinkronkan ke sesi aktif kuis di Smartboard dan gawai siswa.
+
 ## [2.3.62] - 2026-09-12
 ### Penyempurnaan Action Tiles Horizontal & Eliminasi Redundansi Modal Kuis
 

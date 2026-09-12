@@ -35,6 +35,8 @@ import {
   MessageCircle,
   ArrowLeft,
   ChevronRight,
+  ChevronDown,
+  SlidersHorizontal,
   Tv,
   FileText
 } from 'lucide-react';
@@ -146,6 +148,9 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
   const [maxAttempts, setMaxAttempts] = useState<number>(0);
   const [tabSwitchDetection, setTabSwitchDetection] = useState<boolean>(false);
 
+  // Accordion state for teacher-led additional settings
+  const [isTeacherAdvancedOpen, setIsTeacherAdvancedOpen] = useState(false);
+
   // Copy feedback states
   const [isCopiedPin, setIsCopiedPin] = useState(false);
   const [isCopiedLink, setIsCopiedLink] = useState(false);
@@ -156,6 +161,7 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
     if (quiz && isOpen) {
       const def = quiz.defaultSettings || {};
       setCurrentStep('select_mode'); // Always start with clean card picker
+      setIsTeacherAdvancedOpen(false);
       setSelectedMode(quiz.defaultGameMode || 'standard');
       setSelectedDuration(quiz.durationPerQuestionSec || 30);
       setShuffleQuestions(Boolean(quiz.shuffleQuestions));
@@ -678,6 +684,173 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
                   <span className="px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center gap-1.5">
                     🔢 Lompat Soal
                   </span>
+                </div>
+
+                {/* Accordion: Pengaturan Tambahan Kuis */}
+                <div className="pt-2 border-t border-slate-200/80 dark:border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setIsTeacherAdvancedOpen(!isTeacherAdvancedOpen);
+                    }}
+                    className="w-full flex items-center justify-between py-2 px-1 text-xs font-bold text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors min-h-[44px] select-none"
+                    aria-expanded={isTeacherAdvancedOpen}
+                  >
+                    <span className="flex items-center gap-2">
+                      <SlidersHorizontal className="w-4 h-4 text-blue-500" />
+                      <span>Pengaturan Tambahan Kuis</span>
+                    </span>
+                    <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${isTeacherAdvancedOpen ? 'rotate-180 text-blue-500' : ''}`} />
+                  </button>
+
+                  {isTeacherAdvancedOpen && (
+                    <div className="pt-2 pb-1 space-y-3.5 animate-fade-in">
+                      {/* Kunci Jawaban Siswa */}
+                      <div className="space-y-1.5">
+                        <label className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
+                          Kunci Jawaban Siswa
+                        </label>
+                        <div className="bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl flex items-center gap-1">
+                          {[
+                            { id: 'immediate', label: 'Tiap Soal' },
+                            { id: 'post-game', label: 'Akhir Kuis' },
+                            { id: 'hidden', label: 'Rahasia' }
+                          ].map(opt => (
+                            <button
+                              key={opt.id}
+                              type="button"
+                              onClick={() => {
+                                playClick();
+                                setShowAnswersMode(opt.id as AnswerVisibilityMode);
+                              }}
+                              className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all min-h-[38px] flex items-center justify-center btn-press ${
+                                showAnswersMode === opt.id
+                                  ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs font-black'
+                                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                              }`}
+                            >
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Pembahasan Materi */}
+                      <div className="space-y-1.5">
+                        <label className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
+                          Pembahasan Materi
+                        </label>
+                        <div className="bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl flex items-center gap-1">
+                          {[
+                            { id: 'immediate', label: 'Tiap Soal' },
+                            { id: 'post-game', label: 'Akhir Kuis' },
+                            { id: 'hidden', label: 'Sembunyikan' }
+                          ].map(opt => (
+                            <button
+                              key={opt.id}
+                              type="button"
+                              onClick={() => {
+                                playClick();
+                                setShowExplanationMode(opt.id as ExplanationVisibilityMode);
+                              }}
+                              className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-bold transition-all min-h-[38px] flex items-center justify-center btn-press ${
+                                showExplanationMode === opt.id
+                                  ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs font-black'
+                                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                              }`}
+                            >
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Daftar Sakelar Opsi: Acak Soal, Acak Opsi, Leaderboard */}
+                      <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-850 divide-y divide-slate-100 dark:divide-slate-800/80 shadow-2xs overflow-hidden">
+                        {/* Acak Urutan Nomor Soal */}
+                        <div 
+                          onClick={() => {
+                            playClick();
+                            setShuffleQuestions(!shuffleQuestions);
+                          }}
+                          className="flex items-center justify-between p-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors"
+                        >
+                          <div className="flex items-center gap-2.5 text-xs font-bold text-slate-900 dark:text-white">
+                            <Shuffle className="w-4 h-4 text-blue-500" />
+                            <span>Acak Urutan Nomor Soal</span>
+                          </div>
+                          <button
+                            type="button"
+                            role="switch"
+                            aria-checked={shuffleQuestions}
+                            aria-label="Acak Urutan Nomor Soal"
+                            className={`w-10 h-5 rounded-full transition-colors relative flex items-center p-0.5 shrink-0 focus:outline-none ${
+                              shuffleQuestions ? 'bg-blue-600' : 'bg-slate-200 dark:bg-slate-700'
+                            }`}
+                          >
+                            <span className={`w-4 h-4 rounded-full bg-white shadow-xs transition-transform transform ${
+                              shuffleQuestions ? 'translate-x-5' : 'translate-x-0'
+                            }`} />
+                          </button>
+                        </div>
+
+                        {/* Acak Pilihan Opsi */}
+                        <div 
+                          onClick={() => {
+                            playClick();
+                            setShuffleOptions(!shuffleOptions);
+                          }}
+                          className="flex items-center justify-between p-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors"
+                        >
+                          <div className="flex items-center gap-2.5 text-xs font-bold text-slate-900 dark:text-white">
+                            <Layers className="w-4 h-4 text-indigo-500" />
+                            <span>Acak Pilihan Opsi (A, B, C, D)</span>
+                          </div>
+                          <button
+                            type="button"
+                            role="switch"
+                            aria-checked={shuffleOptions}
+                            aria-label="Acak Pilihan Opsi"
+                            className={`w-10 h-5 rounded-full transition-colors relative flex items-center p-0.5 shrink-0 focus:outline-none ${
+                              shuffleOptions ? 'bg-blue-600' : 'bg-slate-200 dark:bg-slate-700'
+                            }`}
+                          >
+                            <span className={`w-4 h-4 rounded-full bg-white shadow-xs transition-transform transform ${
+                              shuffleOptions ? 'translate-x-5' : 'translate-x-0'
+                            }`} />
+                          </button>
+                        </div>
+
+                        {/* Tayangkan Papan Peringkat / Leaderboard di Smartboard */}
+                        <div 
+                          onClick={() => {
+                            playClick();
+                            setShowLeaderboardToStudents(!showLeaderboardToStudents);
+                          }}
+                          className="flex items-center justify-between p-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors"
+                        >
+                          <div className="flex items-center gap-2.5 text-xs font-bold text-slate-900 dark:text-white">
+                            <Sparkles className="w-4 h-4 text-amber-500" />
+                            <span>Tayangkan Peringkat Kelas di Smartboard</span>
+                          </div>
+                          <button
+                            type="button"
+                            role="switch"
+                            aria-checked={showLeaderboardToStudents}
+                            aria-label="Tayangkan Peringkat Kelas di Smartboard"
+                            className={`w-10 h-5 rounded-full transition-colors relative flex items-center p-0.5 shrink-0 focus:outline-none ${
+                              showLeaderboardToStudents ? 'bg-blue-600' : 'bg-slate-200 dark:bg-slate-700'
+                            }`}
+                          >
+                            <span className={`w-4 h-4 rounded-full bg-white shadow-xs transition-transform transform ${
+                              showLeaderboardToStudents ? 'translate-x-5' : 'translate-x-0'
+                            }`} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
