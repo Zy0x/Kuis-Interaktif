@@ -3,6 +3,8 @@ import type { Quiz, QuizSession } from '../../types/quiz';
 import { DataManager } from '../../lib/supabaseClient';
 import { AVATAR_MAP } from '../../data/seedQuizzes';
 import { ThemeToggle } from '../common/ThemeToggle';
+import { QuizizzReactionOverlay } from '../common/QuizizzReactionOverlay';
+import { QuizizzReactionButtonRow } from '../common/QuizizzReactionButtonRow';
 import { 
   ArrowLeft, 
   Sparkles, 
@@ -33,14 +35,6 @@ const PRESET_QUICK_MESSAGES = [
   'Pasti bisa nilai 100! 🎯',
 ];
 
-const FLOATING_REACTIONS = [
-  { emoji: '❤️', label: 'Love' },
-  { emoji: '🔥', label: 'Semangat' },
-  { emoji: '⭐', label: 'Bintang' },
-  { emoji: '👏', label: 'Tepuk Tangan' },
-  { emoji: '🎉', label: 'Pesta' },
-];
-
 export const StudentWaitingRoom: React.FC<StudentWaitingRoomProps> = ({
   quiz,
   session: initialSession,
@@ -54,9 +48,6 @@ export const StudentWaitingRoom: React.FC<StudentWaitingRoomProps> = ({
 }) => {
   const [session, setSession] = useState<QuizSession>(initialSession);
   const [chatText, setChatText] = useState('');
-  const [floatingBubbles, setFloatingBubbles] = useState<
-    { id: string; emoji: string; left: number }[]
-  >([]);
   const chatScrollRef = useRef<HTMLDivElement>(null);
 
   // Sync session in real time
@@ -106,29 +97,6 @@ export const StudentWaitingRoom: React.FC<StudentWaitingRoomProps> = ({
     };
   }, [session.id, session.pinCode, onStartQuiz]);
 
-  // Handle spawn floating emoji bubble
-  const triggerBubble = (emoji: string) => {
-    const newBubble = {
-      id: 'bubble_' + Date.now() + '_' + Math.random().toString(36).substring(2, 5),
-      emoji,
-      left: Math.floor(15 + Math.random() * 70), // Random left 15% - 85%
-    };
-    setFloatingBubbles((prev) => [...prev, newBubble]);
-    setTimeout(() => {
-      setFloatingBubbles((prev) => prev.filter((b) => b.id !== newBubble.id));
-    }, 2200);
-  };
-
-  const handleSendReaction = async (emoji: string) => {
-    playClick();
-    triggerBubble(emoji);
-    await DataManager.sendSessionReaction(session.id, {
-      studentName,
-      avatarId,
-      emoji,
-    });
-  };
-
   const handleSendChatMessage = async (textToSend: string) => {
     const clean = textToSend.trim();
     if (!clean) return;
@@ -153,18 +121,8 @@ export const StudentWaitingRoom: React.FC<StudentWaitingRoomProps> = ({
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col justify-between select-none relative overflow-hidden">
-      {/* Floating Reaction Bubbles Animation Layer */}
-      <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
-        {floatingBubbles.map((b) => (
-          <div
-            key={b.id}
-            className="absolute bottom-16 text-3xl sm:text-4xl animate-float-up opacity-90 drop-shadow-md"
-            style={{ left: `${b.left}%` }}
-          >
-            {b.emoji}
-          </div>
-        ))}
-      </div>
+      {/* Quizizz-Grade Floating Reactions Overlay */}
+      <QuizizzReactionOverlay sessionId={session.id} />
 
       {/* Top Header */}
       <header className="w-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-3 sm:px-8 py-2.5 sm:py-3 sticky top-0 z-30 shadow-sm">
@@ -227,25 +185,16 @@ export const StudentWaitingRoom: React.FC<StudentWaitingRoomProps> = ({
             Begitu Guru menekan tombol mulai, layar HP-mu akan otomatis menyajikan soal pertama secara serentak.
           </p>
 
-          {/* Floating Reaction Bar */}
-          <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80">
-            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
-              Kirim Reaksi Semangat:
-            </div>
-            <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap">
-              {FLOATING_REACTIONS.map((r) => (
-                <button
-                  key={r.emoji}
-                  type="button"
-                  onClick={() => handleSendReaction(r.emoji)}
-                  className="px-3 py-2 sm:px-4 sm:py-2.5 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-900/40 border border-slate-200 dark:border-slate-700 text-lg sm:text-xl font-bold transition-all transform active:scale-90 min-h-[44px] min-w-[44px] flex items-center justify-center btn-press shadow-2xs"
-                  title={r.label}
-                  aria-label={r.label}
-                >
-                  <span>{r.emoji}</span>
-                </button>
-              ))}
-            </div>
+          {/* Floating Reaction Bar Ala Quizizz */}
+          <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80">
+            <QuizizzReactionButtonRow
+              sessionId={session.id}
+              senderName={studentName}
+              avatarId={avatarId}
+              isTeacher={false}
+              playClick={playClick}
+              title="Kirim Reaksi Semangat:"
+            />
           </div>
         </div>
 

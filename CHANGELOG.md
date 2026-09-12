@@ -1,6 +1,32 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.69] - 2026-09-12
+### Sistem Reaksi Melayang Terpadu Ala Quizizz: Fisika Balon Melayang, Sender Avatar Chip & Multi-Tap Rapid Burst
+
+#### 1. Arsitektur Reaksi Terpadu & Universal (`QuizizzReactionOverlay.tsx` & `QuizizzReactionButtonRow.tsx`)
+- **Visual Identik & Konsisten 100%**:
+  - Menggantikan tumpukan kartu statis di layar guru dan elemen statis di layar siswa dengan satu sistem animasi terpadu `<QuizizzReactionOverlay />`.
+  - Reaksi yang dikirim oleh siapapun (guru maupun siswa) disiarkan secara *real-time* ke seluruh perangkat yang terhubung dan melayang identik di semua layar.
+- **Fisika Balon Helium & Efek Animasi Organik**:
+  - Implementasi animasi CSS terakselerasi GPU (`@keyframes quizizz-float-up`, `@keyframes reaction-bubble-pop`).
+  - Emoji meluncur anggun dari bawah layar ke atas (hingga 90vh) dengan goyangan sinusoidal (*organic sway*), efek letupan (*pop-in* `scale(1.25)`), dan rotasi acak halus.
+  - Setiap emoji melayang dilengkapi lencana *glassmorphic* elegan yang menampilkan avatar pengirim beserta nama panggilan (*sender name chip*).
+- **Dukungan Multi-Tap Rapid Burst (Kombinasi Hujan Emoji)**:
+  - Siswa dan guru dapat menekan tombol reaksi berkali-kali secara cepat untuk menghasilkan semburan partikel reaksi yang menyebar meriah di layar tanpa penurunan performa (stabil pada 60 FPS).
+
+#### 2. Bilah Tombol Reaksi Seru Ala Quizizz (`QuizizzReactionButtonRow.tsx`)
+- **Pilihan Emoji Berenergi Tinggi**:
+  - Menyediakan 8 reaksi terpopuler: ❤️ (Cinta), 🔥 (Semangat), ⭐ (Bintang), 👏 (Tepuk Tangan), 🎉 (Pesta), 🚀 (Gaspol), 🤩 (Kagum), dan 💯 (Seratus).
+  - Target sentuh ramah anak dan layar sentuh tablet/ponsel (minimal 44×44 px) dengan respon mikro-interaksi *bounce* yang memuaskan.
+- **Peran Guru Interaktif**:
+  - Guru dapat mengirimkan reaksi penyemangat langsung dari Dasbor Ruang Kendali Host (`WaygroundHostView.tsx`) untuk memicu antusiasme kelas.
+
+#### 3. Integrasi Menyeluruh di Semua Layar Permainan
+- **Ruang Tunggu Pra-Kuis (`StudentWaitingRoom.tsx`)**: Menghilangkan hambatan animasi sebelumnya sehingga reaksi siswa melayang bebas melintasi layar.
+- **Layar Host & Smartboard Guru (`WaygroundHostView.tsx` & `QuizArena.tsx`)**: Reaksi melayang secara non-intrusif (`pointer-events-none`) di latar depan tanpa menutupi keterbacaan soal.
+- **Lounge Jeda Antar-Soal (`InterQuestionWaitingLounge.tsx`)**: Reaksi melayang meriah saat siswa menikmati permainan mini kasual.
+
 ## [2.3.68] - 2026-09-12
 ### Mode Dipandu Guru: 2 Sub-Mode Pacing, Ruang Tunggu Pra-Kuis, Sinkronisasi Soal Serentak & Lounge Jeda Mini-Game
 

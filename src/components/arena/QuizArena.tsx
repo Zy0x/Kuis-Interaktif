@@ -10,6 +10,7 @@ import type {
   QuizSession
 } from '../../types/quiz';
 import { InterQuestionWaitingLounge } from './InterQuestionWaitingLounge';
+import { QuizizzReactionOverlay } from '../common/QuizizzReactionOverlay';
 import { useBackHandler } from '../../lib/navigationHistory';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 import { ThemeToggle } from '../common/ThemeToggle';
@@ -2127,6 +2128,9 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
           playCorrect={playCorrect}
         />
       )}
+
+      {/* Quizizz-Grade Floating Reaction Overlay */}
+      <QuizizzReactionOverlay sessionId={liveSession?.id || activeSessionId} />
 
     </div>
   );

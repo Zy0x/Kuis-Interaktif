@@ -91,6 +91,31 @@ export function broadcastSessionUpdate(session: QuizSession) {
   }
 }
 
+export function broadcastLiveReaction(sessionId: string, reaction: SessionLiveReaction) {
+  try {
+    if (sessionBroadcastChannel) {
+      sessionBroadcastChannel.postMessage({
+        type: 'LIVE_REACTION',
+        sessionId,
+        reaction,
+        timestamp: Date.now(),
+      });
+    }
+  } catch (err) {
+    console.warn('BroadcastChannel reaction error:', err);
+  }
+
+  if (typeof window !== 'undefined') {
+    try {
+      window.dispatchEvent(
+        new CustomEvent('kuis_live_reaction', {
+          detail: { sessionId, reaction },
+        })
+      );
+    } catch {}
+  }
+}
+
 export const DataManager = {
   // Deleted Quizzes Tracking (Supports deleting seed quizzes & custom quizzes for testing & admin control)
   getDeletedQuizIds(): string[] {
@@ -1726,7 +1751,9 @@ export const DataManager = {
     const newReaction: SessionLiveReaction = {
       id: 'react_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
       studentName: reaction.studentName,
+      senderName: reaction.senderName || reaction.studentName,
       avatarId: reaction.avatarId,
+      isTeacher: reaction.isTeacher,
       emoji: reaction.emoji,
       createdAt: Date.now(),
     };
@@ -1741,6 +1768,7 @@ export const DataManager = {
       console.warn('Failed to save reaction:', e);
     }
 
+    broadcastLiveReaction(sessionId, newReaction);
     broadcastSessionUpdate(existing[idx]);
     return newReaction;
   },

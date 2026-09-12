@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import type { QuizSession } from '../../types/quiz';
 import { DataManager } from '../../lib/supabaseClient';
+import { QuizizzReactionOverlay } from '../common/QuizizzReactionOverlay';
+import { QuizizzReactionButtonRow } from '../common/QuizizzReactionButtonRow';
 import { 
   Send, 
   MessageCircle, 
@@ -197,14 +199,6 @@ const EmojiGuessGame: React.FC<{ playClick: () => void; playCorrect?: () => void
 // -------------------------------------------------------------
 // Component Utama: InterQuestionWaitingLounge
 // -------------------------------------------------------------
-const FLOATING_REACTIONS = [
-  { emoji: '❤️', label: 'Love' },
-  { emoji: '🔥', label: 'Semangat' },
-  { emoji: '⭐', label: 'Bintang' },
-  { emoji: '👏', label: 'Tepuk Tangan' },
-  { emoji: '🎉', label: 'Pesta' },
-];
-
 const PRESET_MESSAGES = [
   'Mantap! 🎉',
   'Semangat lanjut! 💪',
@@ -227,9 +221,6 @@ export const InterQuestionWaitingLounge: React.FC<InterQuestionWaitingLoungeProp
 }) => {
   const [session, setSession] = useState<QuizSession>(initialSession);
   const [chatText, setChatText] = useState('');
-  const [floatingBubbles, setFloatingBubbles] = useState<
-    { id: string; emoji: string; left: number }[]
-  >([]);
   const chatScrollRef = useRef<HTMLDivElement>(null);
 
   // Sync session and detect teacher advancing question
@@ -238,18 +229,17 @@ export const InterQuestionWaitingLounge: React.FC<InterQuestionWaitingLoungeProp
       if (updated.id === session.id || updated.pinCode === session.pinCode) {
         setSession(updated);
 
-        // Check if session finished
-        if (updated.status === 'finished') {
-          onQuizFinished();
-          return;
-        }
-
-        // Check if teacher advanced to a newer question!
+        // Advance synchronously when teacher updates currentQuestionIndex
         if (
           typeof updated.currentQuestionIndex === 'number' &&
           updated.currentQuestionIndex > questionIndex
         ) {
           onAdvanceToQuestion(updated.currentQuestionIndex);
+        }
+
+        // Quiz finished
+        if (updated.status === 'finished') {
+          onQuizFinished();
         }
       }
     };
@@ -258,9 +248,9 @@ export const InterQuestionWaitingLounge: React.FC<InterQuestionWaitingLoungeProp
     try {
       if ('BroadcastChannel' in window) {
         channel = new BroadcastChannel('kuis_realtime_session_sync');
-        channel.onmessage = (event) => {
-          if (event.data?.type === 'SESSION_UPDATED' && event.data.session) {
-            handleSync(event.data.session);
+        channel.onmessage = (e) => {
+          if (e.data?.type === 'SESSION_UPDATED' && e.data.session) {
+            handleSync(e.data.session);
           }
         };
       }
@@ -274,6 +264,7 @@ export const InterQuestionWaitingLounge: React.FC<InterQuestionWaitingLoungeProp
     };
     window.addEventListener('kuis_session_updated', handleCustom);
 
+    // Fallback polling
     const interval = setInterval(() => {
       const fresh = DataManager.getActiveSessionById(session.id);
       if (fresh) {
@@ -287,28 +278,6 @@ export const InterQuestionWaitingLounge: React.FC<InterQuestionWaitingLoungeProp
       clearInterval(interval);
     };
   }, [session.id, session.pinCode, questionIndex, onAdvanceToQuestion, onQuizFinished]);
-
-  const triggerBubble = (emoji: string) => {
-    const newBubble = {
-      id: 'bubble_' + Date.now() + '_' + Math.random().toString(36).substring(2, 5),
-      emoji,
-      left: Math.floor(15 + Math.random() * 70),
-    };
-    setFloatingBubbles((prev) => [...prev, newBubble]);
-    setTimeout(() => {
-      setFloatingBubbles((prev) => prev.filter((b) => b.id !== newBubble.id));
-    }, 2200);
-  };
-
-  const handleSendReaction = async (emoji: string) => {
-    playClick();
-    triggerBubble(emoji);
-    await DataManager.sendSessionReaction(session.id, {
-      studentName,
-      avatarId,
-      emoji,
-    });
-  };
 
   const handleSendChatMessage = async (textToSend: string) => {
     const clean = textToSend.trim();
@@ -336,18 +305,8 @@ export const InterQuestionWaitingLounge: React.FC<InterQuestionWaitingLoungeProp
   return (
     <div className="fixed inset-0 z-40 bg-slate-950/80 backdrop-blur-md flex flex-col items-center justify-center p-3 sm:p-4 overflow-y-auto animate-fade-in select-none">
       
-      {/* Floating Bubbles Layer */}
-      <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
-        {floatingBubbles.map((b) => (
-          <div
-            key={b.id}
-            className="absolute bottom-16 text-3xl sm:text-4xl animate-float-up opacity-90 drop-shadow-md"
-            style={{ left: `${b.left}%` }}
-          >
-            {b.emoji}
-          </div>
-        ))}
-      </div>
+      {/* Quizizz-Grade Floating Reactions Overlay */}
+      <QuizizzReactionOverlay sessionId={session.id} />
 
       <div className="w-full max-w-xl bg-slate-900 border border-slate-800 rounded-3xl p-4 sm:p-6 shadow-2xl space-y-4 my-auto">
         
@@ -376,22 +335,17 @@ export const InterQuestionWaitingLounge: React.FC<InterQuestionWaitingLoungeProp
           <EmojiGuessGame playClick={playClick} playCorrect={playCorrect} />
         )}
 
-        {/* Quick Reactions Bar */}
+        {/* Quick Reactions Bar Ala Quizizz */}
         <div className="pt-2 border-t border-slate-800">
-          <div className="flex items-center justify-center gap-2 flex-wrap">
-            {FLOATING_REACTIONS.map((r) => (
-              <button
-                key={r.emoji}
-                type="button"
-                onClick={() => handleSendReaction(r.emoji)}
-                className="px-3 py-2 rounded-2xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xl transition-transform active:scale-90 min-h-[44px] min-w-[44px] flex items-center justify-center btn-press shadow-sm"
-                title={r.label}
-                aria-label={r.label}
-              >
-                {r.emoji}
-              </button>
-            ))}
-          </div>
+          <QuizizzReactionButtonRow
+            sessionId={session.id}
+            senderName={studentName}
+            avatarId={avatarId}
+            isTeacher={false}
+            playClick={playClick}
+            compact={true}
+            title="Kirim Reaksi Semangat:"
+          />
         </div>
 
         {/* Live Chat Box */}

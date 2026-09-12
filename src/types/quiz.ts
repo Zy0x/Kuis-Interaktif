@@ -280,9 +280,10 @@ export type PacingType = 'in_class' | 'homework';
 
 export interface SessionLiveReaction {
   id: string;
-  studentName: string;
+  studentName?: string;
   senderName?: string;
-  avatarId: string;
+  avatarId?: string;
+  isTeacher?: boolean;
   emoji: string;
   createdAt: number;
 }

@@ -3,6 +3,8 @@ import type { Quiz, QuizSession } from '../../types/quiz';
 import { DataManager } from '../../lib/supabaseClient';
 import { copyTextToClipboard } from '../../lib/aiQuestionParser';
 import { AVATAR_MAP } from '../../data/seedQuizzes';
+import { QuizizzReactionOverlay } from '../common/QuizizzReactionOverlay';
+import { QuizizzReactionButtonRow } from '../common/QuizizzReactionButtonRow';
 import { 
   ArrowLeft, 
   ArrowRight,
@@ -598,6 +600,18 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
               </div>
             )}
 
+            {/* Bilah Reaksi Semangat Guru (Tersinkronisasi ke Seluruh Layar) */}
+            <div className="bg-slate-900/80 border border-slate-800 rounded-2xl px-4 py-2.5 flex flex-col sm:flex-row items-center justify-between gap-2 shadow-md">
+              <QuizizzReactionButtonRow
+                sessionId={session.id}
+                senderName={session.teacherName || 'Bapak/Ibu Guru'}
+                isTeacher={true}
+                playClick={playClick}
+                compact={true}
+                title="Kirim Reaksi Guru ke Seluruh Layar:"
+              />
+            </div>
+
             {/* Teacher Led: Active Question Advance Control Bar */}
             {isTeacherLed && session.status === 'active' && (
               <div className="bg-slate-900/95 border border-slate-800 rounded-2xl p-3.5 sm:p-4 flex flex-wrap items-center justify-between gap-3 shadow-lg">
@@ -982,20 +996,8 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
         </div>
       )}
 
-      {/* Floating Live Reactions from Students */}
-      {session.reactions && session.reactions.length > 0 && (
-        <div className="fixed bottom-6 right-6 pointer-events-none z-40 flex flex-col items-end gap-2">
-          {session.reactions.slice(-5).map((r) => (
-            <div
-              key={r.id}
-              className="px-3.5 py-1.5 rounded-full bg-slate-900/90 border border-slate-700/80 shadow-2xl flex items-center gap-2 animate-bounce text-xs backdrop-blur-md"
-            >
-              <span className="text-base">{r.emoji}</span>
-              <span className="font-bold text-slate-200">{r.senderName}</span>
-            </div>
-          ))}
-        </div>
-      )}
+      {/* Quizizz-Grade Floating Live Reactions Overlay */}
+      <QuizizzReactionOverlay sessionId={session.id} />
 
     </div>
   );
