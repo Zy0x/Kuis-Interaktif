@@ -419,6 +419,13 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
               </button>
             </div>
 
+            {/* Deskripsi Opsi Mode Terpilih */}
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium leading-relaxed px-0.5">
+              {selectedMode === 'standard' && 'Timer aktif per butir soal. Poin dihitung dari ketepatan dan kecepatan menjawab.'}
+              {selectedMode === 'survival_3hearts' && 'Tantangan 3 nyawa. Pengerjaan kuis berakhir otomatis jika siswa salah 3 kali.'}
+              {selectedMode === 'untimed' && 'Tanpa batas waktu pengerjaan. Memberikan keleluasaan untuk ulasan dan diskusi kelas.'}
+            </p>
+
             {/* Durasi per Butir (Kondisional jika bukan untimed) */}
             {selectedMode !== 'untimed' && (
               <div className="pt-2 space-y-1.5">
@@ -445,6 +452,9 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
                     </button>
                   ))}
                 </div>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium leading-relaxed px-0.5">
+                  Setiap butir berdurasi {selectedDuration} detik (estimasi kuis selesai sekitar {estimatedTotalMinutes}).
+                </p>
               </div>
             )}
           </div>
@@ -510,6 +520,11 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
                   <span>Rahasia</span>
                 </button>
               </div>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium leading-relaxed px-0.5">
+                {showAnswersMode === 'immediate' && 'Siswa langsung mengetahui letak kunci jawaban yang tepat setelah menjawab.'}
+                {showAnswersMode === 'status_only' && 'Siswa hanya tahu status benar/salah, tanpa memperlihatkan letak kunci aslinya.'}
+                {showAnswersMode === 'exam_strict' && 'Kunci jawaban dirahasiakan total selama sesi kuis berlangsung (standar ujian).'}
+              </p>
             </div>
 
             {/* Pembahasan Soal */}
@@ -568,6 +583,11 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
                   <span>Sembunyikan</span>
                 </button>
               </div>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium leading-relaxed px-0.5">
+                {showExplanationMode === 'immediate' && 'Teks pembahasan materi langsung tampil setelah siswa mengirimkan jawaban.'}
+                {showExplanationMode === 'end_only' && 'Pembahasan baru dibuka setelah siswa menyelesaikan seluruh butir soal.'}
+                {showExplanationMode === 'never' && 'Pembahasan ditiadakan agar materi soal tetap steril dan rahasia.'}
+              </p>
             </div>
           </div>
 
@@ -781,6 +801,12 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
                 <span>Gawai Siswa Mandiri</span>
               </button>
             </div>
+
+            {/* Deskripsi Target Tampilan Terpilih */}
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium leading-relaxed px-0.5">
+              {presentationTarget === 'smartboard' && 'Menampilkan soal dan papan skor interaktif di layar depan kelas (TV / Smartboard).'}
+              {presentationTarget === 'student-lobby' && 'Siswa langsung membaca dan menjawab soal secara mandiri melalui gawai masing-masing.'}
+            </p>
 
             {/* Simpan Pengaturan Default */}
             <label className="flex items-center gap-2.5 cursor-pointer text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 select-none pt-1">

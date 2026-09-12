@@ -1,6 +1,31 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.59] - 2026-09-12
+### Keterangan Kontekstual Dinamis pada Segmented Controls Modal Sesi Kuis Guru
+
+#### 1. Penambahan Deskripsi Kontekstual Dinamis (*Dynamic Contextual Captions*)
+- **Penjelasan Efektif Khusus Pilihan Aktif (`PlayQuizModal.tsx`)**:
+  - Menghindari pengulangan teks deskripsi di setiap tombol dengan menyajikan keterangan kecil, elegan, dan informatif tepat di bawah kontrol segmen untuk opsi yang sedang terpilih:
+    - **Mode Permainan**:
+      - *Standar*: "Timer aktif per butir soal. Poin dihitung dari ketepatan dan kecepatan menjawab."
+      - *3 Nyawa*: "Tantangan 3 nyawa. Pengerjaan kuis berakhir otomatis jika siswa salah 3 kali."
+      - *Santai*: "Tanpa batas waktu pengerjaan. Memberikan keleluasaan untuk ulasan dan diskusi kelas."
+    - **Durasi per Butir**: Keterangan dinamis durasi detik dan estimasi durasi selesai kuis.
+    - **Kunci Jawaban Siswa**:
+      - *Terbuka*: "Siswa langsung mengetahui letak kunci jawaban yang tepat setelah menjawab."
+      - *Status Saja*: "Siswa hanya tahu status benar/salah, tanpa memperlihatkan letak kunci aslinya."
+      - *Rahasia*: "Kunci jawaban dirahasiakan total selama sesi kuis berlangsung (standar ujian)."
+    - **Pembahasan & Penjelasan**:
+      - *Tiap Soal*: "Teks pembahasan materi langsung tampil setelah siswa mengirimkan jawaban."
+      - *Di Akhir*: "Pembahasan baru dibuka setelah siswa menyelesaikan seluruh butir soal."
+      - *Sembunyikan*: "Pembahasan ditiadakan agar materi soal tetap steril dan rahasia."
+    - **Target Tampilan Permainan**:
+      - *Smartboard / TV Kelas*: "Menampilkan soal dan papan skor interaktif di layar depan kelas (TV / Smartboard)."
+      - *Gawai Siswa Mandiri*: "Siswa langsung membaca dan menjawab soal secara mandiri melalui gawai masing-masing."
+- **Kerapian Antarmuka & Keterbacaan Maksimal**:
+  - Teks dirancang berukuran `text-[11px]`, warna netral kontras seimbang (`text-slate-500 dark:text-slate-400`), dan spasi proporsional sehingga antarmuka tetap minimalis tanpa menambah beban kognitif pengguna.
+
 ## [2.3.58] - 2026-09-12
 ### Redesain Modal Sesi Kuis Guru Ultra-Clean, Segmented Controls, dan iOS Settings List Group
 
