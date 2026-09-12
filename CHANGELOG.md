@@ -1,6 +1,18 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.66] - 2026-09-12
+### Informasi Durasi Bawaan Kuis Interaktif pada Pengaturan Waktu Soal
+
+#### 1. Banner Edukatif & Penjelasan Durasi Bawaan (`PlayQuizModal.tsx`)
+- **Pemberitahuan Otomatis Pilihan Bawaan**:
+  - Menampilkan panel informasi ringkas di bawah baris tombol preset ketika opsi *"Bawaan"* aktif.
+  - Memberikan kepastian kepada guru bahwa alur kuis akan mengikuti pengaturan asli kuis (`quiz.durationPerQuestionSec` detik per butir soal) tanpa perlu menebak atau menghitung manual.
+- **Desain Ramah & Terintegrasi (*Inclusive & Clean Design*)**:
+  - Menggunakan aksen biru tematik dengan ikon informasi (`Info`) yang lembut dan tidak mengganggu fokus visual utama.
+  - Mendukung penyesuaian kontras otomatis pada tema terang (*light mode*) dan gelap (*dark mode*).
+  - Teks terformat responsif tanpa distorsi pada perangkat ponsel pintar (mobile portrait & landscape).
+
 ## [2.3.65] - 2026-09-12
 ### Input Durasi Kustom Angka Bebas & Pilihan Satuan (Detik / Menit) pada Pengaturan Kuis
 

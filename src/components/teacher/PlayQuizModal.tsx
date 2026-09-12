@@ -37,7 +37,8 @@ import {
   ChevronRight,
   ChevronDown,
   SlidersHorizontal,
-  FileText
+  FileText,
+  Info
 } from 'lucide-react';
 
 export interface PlayQuizSessionOptions {
@@ -734,6 +735,16 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
                           Kustom
                         </button>
                       </div>
+
+                      {/* Info kecil saat mode Bawaan aktif */}
+                      {durationSelectionType === 'default' && (
+                        <div className="flex items-center gap-2 p-2.5 rounded-xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200/60 dark:border-blue-900/50 text-blue-700 dark:text-blue-300 animate-fade-in text-xs">
+                          <Info className="w-3.5 h-3.5 shrink-0 text-blue-500 dark:text-blue-400" />
+                          <span className="font-medium leading-relaxed">
+                            Mengikuti pengaturan kuis untuk waktu pengerjaan tiap soalnya ({quiz.durationPerQuestionSec || 30} detik).
+                          </span>
+                        </div>
+                      )}
 
                       {/* Input Kustom: Angka Bebas + Satuan Detik/Menit (Tanpa Batas Rentang) */}
                       {durationSelectionType === 'custom' && (
