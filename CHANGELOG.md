@@ -1,6 +1,30 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.61] - 2026-09-12
+### Redesain Dialog Pengaturan Kuis: Alur Dua Tahap Kartu Interaktif & Pembersihan Teks Berlebih
+
+#### 1. Alur Pemilihan Mode Dua Tahap (*Two-Step Card Selection Flow*)
+- **Tahap 1: Pemilihan Mode Interaktif (*Hero Mode Cards*)**:
+  - Mengubah tampilan awal modal menjadi pemilih mode yang luas, bersih, dan berorientasi visual tanpa penumpukan opsi rumit.
+  - Menyajikan dua kartu hero interaktif dengan hierarki visual kontras tinggi:
+    1. **1. Dipandu Guru (*Live Smartboard*)**: Kartu biru dengan ikon toga, lencana indikator Smartboard, dan navigasi langsung ke pengaturan panduan.
+    2. **2. Mandiri & PR (*Gawai Siswa*)**: Kartu ungu dengan ikon ponsel gawai, lencana pengerjaan mandiri/PR, dan navigasi langsung ke pengaturan mandiri.
+- **Tahap 2: Pengaturan Terfokus Sesuai Mode (*Focused Mode Configuration*)**:
+  - Konfigurasi disajikan secara terisolasi dan spesifik hanya untuk mode yang dipilih oleh guru, menghilangkan elemen yang tidak relevan.
+  - Tombol navigasi kembali (*breadcrumb*) `← Pilih Mode Lain` di bilah atas modal untuk memudahkan berpindah mode dengan satu ketukan.
+  - Dukungan navigasi tombol fisik / gestur kembali Android (*hardware back button*) yang otomatis kembali dari Tahap 2 ke Tahap 1, lalu menutup modal.
+
+#### 2. Eliminasi Teks Berlebih & Penyempurnaan Estetika Antarmuka
+- **Menghilangkan Seluruh Deskripsi Mikro Berlebih**:
+  - Membersihkan tumpukan kalimat deskripsi di bawah tombol dan opsi agar modal terasa lega, ringkas, dan bebas dari kesan *AI-slop*.
+  - Menggunakan label tombol yang lugas, *segmented pills*, dan sakelar pengaturan iOS-style yang intuitif.
+- **Kemudahan Fitur Pekerjaan Rumah (PR)**:
+  - Input batas pengumpulan dilengkapi pratinjau tanggal Indonesia yang rapi, tombol pintas `Besok`, `+3 Hari`, `+1 Minggu`, dan tombol instan salin pesan tugas ke WhatsApp.
+- **Presisi Responsif Mobile-First (Standar Aturan #1)**:
+  - Ukuran target sentuh seluruh kartu dan tombol minimal 44×44 px.
+  - Penataan vertikal yang proporsional pada layar ponsel portrait tanpa tumpang tindih elemen.
+
 ## [2.3.60] - 2026-09-12
 ### Implementasi Arsitektur 2 Mode Utama Kuis: Mode Dipandu Guru & Mode Mandiri Hybrid PR
 

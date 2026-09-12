@@ -25,7 +25,6 @@ import {
   ShieldAlert, 
   Shuffle, 
   Layers, 
-  Trophy, 
   Lock,
   Sparkles,
   Heart,
@@ -34,11 +33,9 @@ import {
   User,
   Calendar,
   MessageCircle,
-  Pause,
-  ArrowRight,
   ArrowLeft,
-  Eye,
-  CheckCircle2,
+  ArrowRight,
+  Tv,
   FileText
 } from 'lucide-react';
 
@@ -107,15 +104,22 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
   playClick,
 }) => {
   useBodyScrollLock(isOpen);
+
+  // Step state: 'select_mode' (Hero Cards) or 'configure' (Focused Minimal Settings)
+  const [currentStep, setCurrentStep] = useState<'select_mode' | 'configure'>('select_mode');
+
+  // Back handler: if configure -> back to select_mode; if select_mode -> close modal
   useBackHandler(
     'play-quiz-modal',
     95,
     () => {
-      if (isOpen) {
-        onClose();
+      if (!isOpen) return false;
+      if (currentStep === 'configure') {
+        setCurrentStep('select_mode');
         return true;
       }
-      return false;
+      onClose();
+      return true;
     },
     isOpen
   );
@@ -147,10 +151,11 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
   const [isCopiedLink, setIsCopiedLink] = useState(false);
   const [isCopiedWa, setIsCopiedWa] = useState(false);
 
-  // Sync state whenever quiz changes
+  // Reset or initialize state whenever quiz opens/changes
   useEffect(() => {
-    if (quiz) {
+    if (quiz && isOpen) {
       const def = quiz.defaultSettings || {};
+      setCurrentStep('select_mode'); // Always start with clean card picker
       setSelectedMode(quiz.defaultGameMode || 'standard');
       setSelectedDuration(quiz.durationPerQuestionSec || 30);
       setShuffleQuestions(Boolean(quiz.shuffleQuestions));
@@ -173,14 +178,13 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
         setPresentationTarget(def.presentationTarget || 'student-lobby');
       }
 
-      // Load saved flexible settings or defaults
       setShowAnswersMode(def.showAnswersMode || 'immediate');
       setShowExplanationMode(def.showExplanationMode || 'immediate');
       setShowLeaderboardToStudents(def.showLeaderboardToStudents ?? true);
       setMaxAttempts(def.maxAttempts ?? 0);
       setTabSwitchDetection(def.tabSwitchDetection ?? false);
     }
-  }, [quiz]);
+  }, [quiz, isOpen]);
 
   const handleClose = () => {
     playClick();
@@ -192,8 +196,8 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
     enabled: isOpen,
   });
 
-  // Switch execution mode with proper target presentation default
-  const handleSelectExecutionMode = (mode: ExecutionMode) => {
+  // Step 1: Card Selection Action
+  const handleSelectModeCard = (mode: ExecutionMode) => {
     playClick();
     setExecutionMode(mode);
     if (mode === 'teacher_led') {
@@ -201,6 +205,7 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
     } else {
       setPresentationTarget('student-lobby');
     }
+    setCurrentStep('configure');
   };
 
   // Quick preset deadline
@@ -213,9 +218,9 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
     setDeadlineAt(new Date(d.getTime() - tzOffset).toISOString().slice(0, 16));
   };
 
-  // Sinkronisasi otomatis ke siswa jika guru mengubah opsi saat sesi sudah aktif
+  // Sinkronisasi otomatis ke sesi aktif
   useEffect(() => {
-    if (isOpen && quiz) {
+    if (isOpen && quiz && currentStep === 'configure') {
       const existing = DataManager.getActiveSessionByQuizId(quiz.id) || DataManager.getActiveSessionByPin(quiz.pinCode || '');
       if (existing) {
         DataManager.updateActiveSessionSettings(existing.id, {
@@ -240,6 +245,7 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
   }, [
     isOpen,
     quiz?.id,
+    currentStep,
     selectedMode,
     selectedDuration,
     shuffleQuestions,
@@ -261,11 +267,8 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
 
   const pin = quiz.pinCode || '1001';
   const totalQuestions = quiz.questions?.length || 0;
-  const estimatedTotalMinutes = selectedMode === 'untimed' 
-    ? 'Fleksibel' 
-    : `${Math.ceil((totalQuestions * selectedDuration) / 60)} mnt`;
 
-  // Helper untuk memastikan sesi aktif terdaftar dan menyinkronkan seluruh pengaturan real-time
+  // Helper sync
   const ensureSessionAndSyncSettings = async (overrides?: Partial<PlayQuizSessionOptions>) => {
     const opts: PlayQuizSessionOptions = {
       mode: overrides?.mode ?? selectedMode,
@@ -379,23 +382,43 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
           <DrawerHandle />
         </div>
 
-        {/* Modal Header */}
+        {/* ======================================================== */}
+        {/* MODAL HEADER (Dynamic: Step 1 vs Step 2)                 */}
+        {/* ======================================================== */}
         <div className="px-4 sm:px-6 pt-3 sm:pt-4 pb-3 border-b border-slate-200/80 dark:border-slate-800 flex items-center justify-between gap-3 flex-shrink-0 bg-slate-50/70 dark:bg-slate-850/70">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-xs flex-shrink-0">
-              <Play className="w-5 h-5 fill-white text-white ml-0.5" />
-            </div>
-            <div className="min-w-0">
-              <h2
-                id="play-quiz-modal-title"
-                className="text-base sm:text-lg font-black text-slate-900 dark:text-white leading-tight"
+          <div className="flex items-center gap-2.5 min-w-0">
+            {currentStep === 'configure' ? (
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setCurrentStep('select_mode');
+                }}
+                className="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 flex items-center gap-1.5 text-xs font-bold transition-colors min-h-[44px]"
+                title="Kembali ke Pemilihan Mode"
+                aria-label="Kembali ke Pemilihan Mode"
               >
-                Atur Sesi Kuis
-              </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Pilih mode pengerjaan kuis dan sesuaikan parameter sesi
-              </p>
-            </div>
+                <ArrowLeft className="w-4 h-4" />
+                <span>Pilih Mode Lain</span>
+              </button>
+            ) : (
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-9 h-9 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-xs flex-shrink-0">
+                  <Play className="w-4 h-4 fill-white text-white ml-0.5" />
+                </div>
+                <div className="min-w-0">
+                  <h2
+                    id="play-quiz-modal-title"
+                    className="text-base sm:text-lg font-black text-slate-900 dark:text-white leading-tight"
+                  >
+                    Pilih Cara Bermain
+                  </h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    Tentukan bagaimana kuis akan dimainkan
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
           <button
@@ -408,39 +431,109 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
           </button>
         </div>
 
-        {/* Scrollable Content Body */}
-        <div className="p-4 sm:p-6 overflow-y-auto space-y-4 sm:space-y-5 custom-scrollbar overscroll-contain">
-          
-          {/* Card Terpadu: Ringkasan Kuis & Akses Siswa (PIN + Tautan) */}
-          <div className="p-3.5 sm:p-4 rounded-2xl bg-slate-50/80 dark:bg-slate-850/70 border border-slate-200/80 dark:border-slate-800 space-y-3">
-            <div className="flex items-center gap-3">
+        {/* ======================================================== */}
+        {/* MODAL BODY (STEP 1: CARD SELECTION)                      */}
+        {/* ======================================================== */}
+        {currentStep === 'select_mode' && (
+          <div className="p-4 sm:p-6 overflow-y-auto space-y-4 custom-scrollbar overscroll-contain animate-fade-in">
+            {/* Header Ringkas Kuis */}
+            <div className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-850/60 border border-slate-200/80 dark:border-slate-800">
               <QuizCoverDisplay 
                 cover={quiz.coverEmoji}
                 alt={quiz.title}
-                className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-2xl shadow-2xs shrink-0"
+                className="w-11 h-11 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-2xl shrink-0"
               />
               <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-bold">
-                  <span className="px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-900/60">
-                    {quiz.subject} • Kelas {quiz.grade}
-                  </span>
-                  <span className="text-slate-400 dark:text-slate-500">•</span>
-                  <span className="text-slate-600 dark:text-slate-400">
-                    {totalQuestions} Soal
-                  </span>
-                  <span className="text-slate-400 dark:text-slate-500">•</span>
-                  <span className="text-slate-600 dark:text-slate-400">
-                    {estimatedTotalMinutes}
-                  </span>
-                </div>
-                <h3 className="font-black text-sm sm:text-base text-slate-900 dark:text-white mt-1 leading-snug truncate">
+                <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400">
+                  {quiz.subject} • Kelas {quiz.grade} • {totalQuestions} Soal
+                </span>
+                <h3 className="font-bold text-sm text-slate-900 dark:text-white truncate">
                   {quiz.title}
                 </h3>
               </div>
             </div>
 
-            {/* Quick PIN & Share row */}
-            <div className="pt-2.5 border-t border-slate-200/60 dark:border-slate-800/80 flex items-center justify-between gap-2">
+            {/* 2 HERO CARDS INTERAKTIF: DIPANDU GURU vs MANDIRI & PR */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
+              {/* CARD 1: DIPANDU GURU */}
+              <div
+                onClick={() => handleSelectModeCard('teacher_led')}
+                className="group relative p-5 rounded-3xl border-2 border-slate-200/90 dark:border-slate-800 hover:border-blue-500 dark:hover:border-blue-500 bg-white dark:bg-slate-850/80 hover:bg-blue-50/30 dark:hover:bg-blue-950/20 shadow-xs hover:shadow-md transition-all cursor-pointer flex flex-col justify-between gap-4 btn-press text-left"
+                role="button"
+                tabIndex={0}
+                aria-label="Pilih Mode Dipandu Guru"
+              >
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="w-12 h-12 rounded-2xl bg-blue-100 dark:bg-blue-950/80 text-blue-600 dark:text-blue-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <GraduationCap className="w-6 h-6" />
+                    </div>
+                    <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-900/60">
+                      Live Smartboard
+                    </span>
+                  </div>
+
+                  <div>
+                    <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                      1. Dipandu Guru
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                      Guru memegang kendali penuh di depan kelas untuk navigasi soal, jeda waktu, dan tayangan proyektor.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-blue-600 dark:text-blue-400">
+                  <span>Atur Sesi Panduan</span>
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </div>
+
+              {/* CARD 2: MANDIRI & PR */}
+              <div
+                onClick={() => handleSelectModeCard('self_paced')}
+                className="group relative p-5 rounded-3xl border-2 border-slate-200/90 dark:border-slate-800 hover:border-indigo-500 dark:hover:border-indigo-500 bg-white dark:bg-slate-850/80 hover:bg-indigo-50/30 dark:hover:bg-indigo-950/20 shadow-xs hover:shadow-md transition-all cursor-pointer flex flex-col justify-between gap-4 btn-press text-left"
+                role="button"
+                tabIndex={0}
+                aria-label="Pilih Mode Mandiri & PR"
+              >
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="w-12 h-12 rounded-2xl bg-indigo-100 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <Smartphone className="w-6 h-6" />
+                    </div>
+                    <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-900/60">
+                      Gawai Siswa
+                    </span>
+                  </div>
+
+                  <div>
+                    <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                      2. Mandiri & PR
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                      Siswa mengerjakan secara mandiri lewat HP masing-masing di kelas atau sebagai penugasan tugas rumah.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-indigo-600 dark:text-indigo-400">
+                  <span>Atur Sesi Mandiri</span>
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ======================================================== */}
+        {/* MODAL BODY (STEP 2: FOCUSED MINIMAL CONFIGURATION)       */}
+        {/* ======================================================== */}
+        {currentStep === 'configure' && (
+          <div className="p-4 sm:p-6 overflow-y-auto space-y-4 sm:space-y-5 custom-scrollbar overscroll-contain animate-fade-in">
+            
+            {/* Quick PIN & Share row (Minimalist) */}
+            <div className="p-3 rounded-2xl bg-slate-50/80 dark:bg-slate-850/70 border border-slate-200/80 dark:border-slate-800 flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 bg-white dark:bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-750 shadow-2xs">
                 <span className="text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">PIN</span>
                 <span className="font-black text-base text-blue-600 dark:text-blue-400 font-mono tracking-widest leading-none">
@@ -453,860 +546,498 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
                   title="Salin PIN"
                   aria-label="Salin PIN Kuis"
                 >
-                  {isCopiedPin ? (
+                  {isCopiedPin ? <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleCopyLink}
+                className="py-1.5 px-3 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-750 shadow-2xs flex items-center gap-1.5 min-h-[36px] transition-colors btn-press"
+              >
+                {isCopiedLink ? (
+                  <>
                     <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                  ) : (
-                    <Copy className="w-3.5 h-3.5" />
-                  )}
-                </button>
-              </div>
-
-              <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={handleCopyLink}
-                  className="py-1.5 px-3 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-750 shadow-2xs flex items-center gap-1.5 min-h-[36px] transition-colors btn-press"
-                  title="Salin tautan langsung untuk siswa"
-                >
-                  {isCopiedLink ? (
-                    <>
-                      <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                      <span className="text-emerald-600 dark:text-emerald-400 font-extrabold">Tersalin!</span>
-                    </>
-                  ) : (
-                    <>
-                      <Share2 className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-                      <span className="hidden xs:inline">Salin Tautan</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* ======================================================== */}
-          {/* ARSITEKTUR 2 MODE UTAMA (SEGMENTED CONTROL TOP LEVEL)    */}
-          {/* ======================================================== */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                Pilih Mode Pelaksanaan Sesi
-              </span>
-              <span className="text-xs font-bold text-blue-600 dark:text-blue-400">
-                {executionMode === 'teacher_led' ? 'Kendali Penuh Guru' : 'Pengerjaan Fleksibel Siswa'}
-              </span>
-            </div>
-
-            <div className="bg-slate-100 dark:bg-slate-800/80 p-1.5 rounded-2xl flex items-center gap-1.5 border border-slate-200/60 dark:border-slate-750">
-              {/* Option 1: Dipandu Guru */}
-              <button
-                type="button"
-                onClick={() => handleSelectExecutionMode('teacher_led')}
-                className={`flex-1 py-3 px-3 rounded-xl text-xs sm:text-sm font-bold transition-all text-center flex items-center justify-center gap-2 min-h-[48px] btn-press ${
-                  executionMode === 'teacher_led'
-                    ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm font-black ring-1 ring-blue-500/20'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                }`}
-              >
-                <GraduationCap className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
-                <span>1. Dipandu Guru</span>
-              </button>
-
-              {/* Option 2: Mandiri & PR */}
-              <button
-                type="button"
-                onClick={() => handleSelectExecutionMode('self_paced')}
-                className={`flex-1 py-3 px-3 rounded-xl text-xs sm:text-sm font-bold transition-all text-center flex items-center justify-center gap-2 min-h-[48px] btn-press ${
-                  executionMode === 'self_paced'
-                    ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm font-black ring-1 ring-indigo-500/20'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                }`}
-              >
-                <Smartphone className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
-                <span>2. Mandiri & PR</span>
+                    <span className="text-emerald-600 dark:text-emerald-400 font-extrabold">Tersalin!</span>
+                  </>
+                ) : (
+                  <>
+                    <Share2 className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                    <span>Salin Tautan Siswa</span>
+                  </>
+                )}
               </button>
             </div>
 
-            {/* Penjelasan Ringkas & Komunikatif Mode Terpilih */}
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium leading-relaxed px-1">
-              {executionMode === 'teacher_led'
-                ? '🎯 Guru memegang kendali penuh atas navigasi soal (Next / Prev / Hold Timer), pembukaan kunci jawaban, dan penayangan interaktif di Smartboard/TV.'
-                : '📱 Siswa menjawab secara mandiri melalui gawai masing-masing, baik serentak di kelas maupun sebagai penugasan pekerjaan rumah (PR) dengan batas waktu.'}
-            </p>
-          </div>
-
-          {/* ======================================================== */}
-          {/* PANEL MODE 1: DIPANDU GURU (TEACHER-LED)                 */}
-          {/* ======================================================== */}
-          {executionMode === 'teacher_led' && (
-            <div className="space-y-4 animate-fade-in">
-              
-              {/* Format Partisipasi: Individu vs Regu */}
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                    Format Partisipasi Siswa
-                  </span>
-                  <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
-                    {participantMode === 'individual' ? 'Individu (1 HP / Siswa)' : 'Regu (1 HP / Kelompok)'}
-                  </span>
-                </div>
-
-                <div className="bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      playClick();
-                      setParticipantMode('individual');
-                    }}
-                    className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 min-h-[42px] btn-press ${
-                      participantMode === 'individual'
-                        ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs font-black'
-                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                    }`}
-                  >
-                    <User className="w-3.5 h-3.5 shrink-0" />
-                    <span>Individu</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      playClick();
-                      setParticipantMode('team');
-                    }}
-                    className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 min-h-[42px] btn-press ${
-                      participantMode === 'team'
-                        ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-xs font-black'
-                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                    }`}
-                  >
-                    <Users className="w-3.5 h-3.5 shrink-0" />
-                    <span>Regu / Kelompok</span>
-                  </button>
-                </div>
-
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium leading-relaxed px-0.5">
-                  {participantMode === 'individual'
-                    ? 'Setiap siswa memasukkan PIN dan menjawab dari gawai masing-masing.'
-                    : 'Satu gawai per meja/kelompok diskusi untuk melatih kerja sama dan komunikasi tim.'}
-                </p>
-              </div>
-
-              {/* Mekanik Waktu Soal Guru */}
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                    Ritme & Mekanik Waktu
-                  </span>
-                  <span className="text-xs font-bold text-blue-600 dark:text-blue-400">
-                    {selectedMode === 'standard' ? 'Timer Otomatis per Butir' : 'Bebas Tanpa Batas Waktu'}
-                  </span>
-                </div>
-
-                <div className="bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      playClick();
-                      setSelectedMode('standard');
-                    }}
-                    className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 min-h-[42px] btn-press ${
-                      selectedMode === 'standard'
-                        ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs font-black'
-                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                    }`}
-                  >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>Standar (Timer)</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      playClick();
-                      setSelectedMode('untimed');
-                    }}
-                    className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 min-h-[42px] btn-press ${
-                      selectedMode === 'untimed'
-                        ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-xs font-black'
-                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                    }`}
-                  >
-                    <span>🧘 Santai (Ritme Guru)</span>
-                  </button>
-                </div>
-
-                {selectedMode === 'standard' && (
-                  <div className="pt-2 space-y-1.5">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-semibold text-slate-500 dark:text-slate-400">Durasi Per Butir</span>
-                      <span className="font-bold text-blue-600 dark:text-blue-400">{selectedDuration} Detik</span>
-                    </div>
-                    <div className="grid grid-cols-6 gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl">
-                      {DURATION_PRESETS.map((dur) => (
-                        <button
-                          key={dur}
-                          type="button"
-                          onClick={() => {
-                            playClick();
-                            setSelectedDuration(dur);
-                          }}
-                          className={`py-1.5 rounded-lg text-xs font-bold transition-all min-h-[38px] flex items-center justify-center btn-press ${
-                            selectedDuration === dur
-                              ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs font-black'
-                              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                          }`}
-                        >
-                          {dur}s
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Fitur Live Teacher Controls Summary Card */}
-              <div className="p-3.5 rounded-2xl bg-blue-50/60 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900/60 space-y-2">
-                <span className="text-[11px] font-black uppercase tracking-wider text-blue-800 dark:text-blue-300 flex items-center gap-1.5">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                  <span>Fitur Kendali Penuh Guru Aktif di Arena:</span>
-                </span>
-                
-                <div className="grid grid-cols-1 xs:grid-cols-2 gap-2 text-xs text-slate-700 dark:text-slate-300">
-                  <div className="flex items-start gap-2 bg-white/80 dark:bg-slate-900/60 p-2 rounded-xl border border-blue-100 dark:border-blue-900/40">
-                    <Pause className="w-3.5 h-3.5 text-amber-500 mt-0.5 shrink-0" />
-                    <div>
-                      <strong className="block text-slate-900 dark:text-white">Hold / Jeda Waktu</strong>
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400">Hentikan timer kapan saja untuk memberi arahan</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-2 bg-white/80 dark:bg-slate-900/60 p-2 rounded-xl border border-blue-100 dark:border-blue-900/40">
-                    <ArrowLeft className="w-3.5 h-3.5 text-blue-500 mt-0.5 shrink-0" />
-                    <div>
-                      <strong className="block text-slate-900 dark:text-white">Navigasi Mundur (Prev)</strong>
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400">Guru bebas kembali ke soal sebelumnya</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-2 bg-white/80 dark:bg-slate-900/60 p-2 rounded-xl border border-blue-100 dark:border-blue-900/40">
-                    <ArrowRight className="w-3.5 h-3.5 text-indigo-500 mt-0.5 shrink-0" />
-                    <div>
-                      <strong className="block text-slate-900 dark:text-white">Lompat Nomor Soal</strong>
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400">Pilih butir soal spesifik via menu arena</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-2 bg-white/80 dark:bg-slate-900/60 p-2 rounded-xl border border-blue-100 dark:border-blue-900/40">
-                    <Eye className="w-3.5 h-3.5 text-emerald-500 mt-0.5 shrink-0" />
-                    <div>
-                      <strong className="block text-slate-900 dark:text-white">Buka Kunci Manual</strong>
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400">Buka kunci hanya saat guru menghendaki</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-            </div>
-          )}
-
-          {/* ======================================================== */}
-          {/* PANEL MODE 2: MANDIRI & PR (SELF-PACED & HOMEWORK)       */}
-          {/* ======================================================== */}
-          {executionMode === 'self_paced' && (
-            <div className="space-y-4 animate-fade-in">
-              
-              {/* Tipe Pelaksanaan: Di Kelas vs Pekerjaan Rumah (PR) */}
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                    Tipe Pelaksanaan Siswa
-                  </span>
-                  <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">
-                    {pacingType === 'in_class' ? 'Langsung di Kelas' : 'Pekerjaan Rumah (PR)'}
-                  </span>
-                </div>
-
-                <div className="bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      playClick();
-                      setPacingType('in_class');
-                    }}
-                    className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 min-h-[42px] btn-press ${
-                      pacingType === 'in_class'
-                        ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-xs font-black'
-                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                    }`}
-                  >
-                    <Smartphone className="w-3.5 h-3.5 shrink-0" />
-                    <span>Langsung di Kelas</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      playClick();
-                      setPacingType('homework');
-                    }}
-                    className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 min-h-[42px] btn-press ${
-                      pacingType === 'homework'
-                        ? 'bg-white dark:bg-slate-700 text-purple-600 dark:text-purple-400 shadow-xs font-black'
-                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                    }`}
-                  >
-                    <FileText className="w-3.5 h-3.5 shrink-0" />
-                    <span>Pekerjaan Rumah (PR)</span>
-                  </button>
-                </div>
-
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium leading-relaxed px-0.5">
-                  {pacingType === 'in_class'
-                    ? 'Siswa mengerjakan secara mandiri serentak di kelas melalui gawai masing-masing.'
-                    : 'Siswa mengerjakan dari rumah secara asinkron dengan tenggat batas waktu pengumpulan.'}
-                </p>
-              </div>
-
-              {/* Sub-Panel Khusus Pekerjaan Rumah (PR): Deadline, Wajib Nama, Share WA */}
-              {pacingType === 'homework' && (
-                <div className="p-3.5 rounded-2xl bg-purple-50/60 dark:bg-purple-950/30 border border-purple-200/80 dark:border-purple-900/60 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-black uppercase tracking-wider text-purple-800 dark:text-purple-300 flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-                      <span>Batas Waktu Pengumpulan (Deadline)</span>
-                    </span>
-                  </div>
-
-                  {/* Input Date Time Local */}
-                  <div className="space-y-1.5">
-                    <input
-                      type="datetime-local"
-                      value={deadlineAt}
-                      min={new Date().toISOString().slice(0, 16)}
-                      onChange={(e) => setDeadlineAt(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-purple-200 dark:border-purple-800 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500 min-h-[44px]"
-                    />
-
-                    {/* Quick Preset Buttons */}
-                    <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
-                      <button
-                        type="button"
-                        onClick={() => handleSetQuickDeadline(1)}
-                        className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-900 hover:bg-purple-100 text-[11px] font-bold text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-850 transition-colors btn-press"
-                      >
-                        +1 Hari (Besok)
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleSetQuickDeadline(3)}
-                        className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-900 hover:bg-purple-100 text-[11px] font-bold text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-850 transition-colors btn-press"
-                      >
-                        +3 Hari
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleSetQuickDeadline(7)}
-                        className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-900 hover:bg-purple-100 text-[11px] font-bold text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-850 transition-colors btn-press"
-                      >
-                        +1 Minggu
-                      </button>
-                    </div>
-
-                    <p className="text-[11px] text-purple-900 dark:text-purple-200 font-semibold px-0.5">
-                      🗓️ Tenggat: {formatIndonesianDeadline(deadlineAt)}
-                    </p>
-                  </div>
-
-                  {/* Toggle: Wajib Nama Lengkap & Nomor Absen */}
-                  <div
-                    onClick={() => {
-                      playClick();
-                      setRequireStudentInfo(!requireStudentInfo);
-                    }}
-                    className="flex items-center justify-between p-2.5 rounded-xl bg-white/80 dark:bg-slate-900/60 border border-purple-100 dark:border-purple-900/40 cursor-pointer transition-colors"
-                  >
-                    <div className="min-w-0 pr-2">
-                      <p className="text-xs font-bold text-slate-900 dark:text-white leading-tight">Wajib Nama & No. Absen</p>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5">Siswa wajib mengisi identitas jelas untuk buku nilai</p>
-                    </div>
-                    <button
-                      type="button"
-                      role="switch"
-                      aria-checked={requireStudentInfo}
-                      className={`w-10 h-5 rounded-full transition-colors relative flex items-center p-0.5 shrink-0 focus:outline-none ${
-                        requireStudentInfo ? 'bg-purple-600' : 'bg-slate-200 dark:bg-slate-700'
-                      }`}
-                    >
-                      <span className={`w-4 h-4 rounded-full bg-white shadow-xs transition-transform transform ${
-                        requireStudentInfo ? 'translate-x-5' : 'translate-x-0'
-                      }`} />
-                    </button>
-                  </div>
-
-                  {/* Tombol Bagikan Format Penugasan ke WhatsApp */}
-                  <button
-                    type="button"
-                    onClick={handleShareWhatsApp}
-                    className="w-full py-2.5 px-3 rounded-xl text-xs font-bold text-emerald-800 dark:text-emerald-200 bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-300 dark:border-emerald-800 shadow-2xs flex items-center justify-center gap-2 min-h-[42px] transition-colors btn-press"
-                  >
-                    {isCopiedWa ? (
-                      <>
-                        <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                        <span className="text-emerald-600 dark:text-emerald-400 font-extrabold">Pesan Tugas Disalin! Siap Ditempel di WhatsApp</span>
-                      </>
-                    ) : (
-                      <>
-                        <MessageCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                        <span>Salin Format Tugas untuk Grup WhatsApp Kelas</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              )}
-
-              {/* Mode Permainan: Standar vs 3 Nyawa vs Santai */}
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                    Mekanik Pengerjaan
-                  </span>
-                  <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">
-                    {selectedMode === 'standard' ? 'Timer Aktif' : selectedMode === 'survival_3hearts' ? '3 Nyawa' : 'Santai'}
-                  </span>
-                </div>
-
-                <div className="bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      playClick();
-                      setSelectedMode('standard');
-                    }}
-                    className={`flex-1 py-2 px-2.5 rounded-lg text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 min-h-[42px] btn-press ${
-                      selectedMode === 'standard'
-                        ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs font-black'
-                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                    }`}
-                  >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>Standar</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      playClick();
-                      setSelectedMode('survival_3hearts');
-                    }}
-                    className={`flex-1 py-2 px-2.5 rounded-lg text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 min-h-[42px] btn-press ${
-                      selectedMode === 'survival_3hearts'
-                        ? 'bg-white dark:bg-slate-700 text-rose-600 dark:text-rose-400 shadow-xs font-black'
-                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                    }`}
-                  >
-                    <Heart className="w-3.5 h-3.5" />
-                    <span>3 Nyawa</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      playClick();
-                      setSelectedMode('untimed');
-                    }}
-                    className={`flex-1 py-2 px-2.5 rounded-lg text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 min-h-[42px] btn-press ${
-                      selectedMode === 'untimed'
-                        ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-xs font-black'
-                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                    }`}
-                  >
-                    <span>🧘 Santai</span>
-                  </button>
-                </div>
-
-                {selectedMode !== 'untimed' && (
-                  <div className="pt-2 space-y-1.5">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-semibold text-slate-500 dark:text-slate-400">Durasi Per Butir</span>
-                      <span className="font-bold text-blue-600 dark:text-blue-400">{selectedDuration} Detik</span>
-                    </div>
-                    <div className="grid grid-cols-6 gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl">
-                      {DURATION_PRESETS.map((dur) => (
-                        <button
-                          key={dur}
-                          type="button"
-                          onClick={() => {
-                            playClick();
-                            setSelectedDuration(dur);
-                          }}
-                          className={`py-1.5 rounded-lg text-xs font-bold transition-all min-h-[38px] flex items-center justify-center btn-press ${
-                            selectedDuration === dur
-                              ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs font-black'
-                              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                          }`}
-                        >
-                          {dur}s
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Visibilitas Kunci Jawaban & Pembahasan */}
-              <div className="space-y-3">
-                {/* Kunci Jawaban */}
+            {/* ---------------------------------------------------- */}
+            {/* SUB-PANEL 1: DIPANDU GURU                            */}
+            {/* ---------------------------------------------------- */}
+            {executionMode === 'teacher_led' && (
+              <div className="space-y-4">
+                {/* Format Partisipasi */}
                 <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                      Kunci Jawaban Siswa
-                    </span>
-                    <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
-                      {showAnswersMode === 'immediate' ? 'Kunci Terbuka' : showAnswersMode === 'status_only' ? 'Hanya Status' : 'Dirahasiakan'}
-                    </span>
-                  </div>
+                  <label className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
+                    Format Partisipasi
+                  </label>
                   <div className="bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl flex items-center gap-1">
                     <button
                       type="button"
                       onClick={() => {
                         playClick();
-                        setShowAnswersMode('immediate');
+                        setParticipantMode('individual');
                       }}
-                      className={`flex-1 py-2 px-2 rounded-lg text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 min-h-[42px] btn-press ${
-                        showAnswersMode === 'immediate'
-                          ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-xs font-black'
+                      className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 min-h-[42px] btn-press ${
+                        participantMode === 'individual'
+                          ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs font-black'
                           : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                       }`}
                     >
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-                      <span>Terbuka</span>
+                      <User className="w-3.5 h-3.5" />
+                      <span>Individu (1 HP)</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => {
                         playClick();
-                        setShowAnswersMode('status_only');
+                        setParticipantMode('team');
                       }}
-                      className={`flex-1 py-2 px-2 rounded-lg text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 min-h-[42px] btn-press ${
-                        showAnswersMode === 'status_only'
-                          ? 'bg-white dark:bg-slate-700 text-amber-600 dark:text-amber-400 shadow-xs font-black'
-                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                      }`}
-                    >
-                      <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
-                      <span>Status Saja</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        playClick();
-                        setShowAnswersMode('exam_strict');
-                      }}
-                      className={`flex-1 py-2 px-2 rounded-lg text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 min-h-[42px] btn-press ${
-                        showAnswersMode === 'exam_strict'
+                      className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 min-h-[42px] btn-press ${
+                        participantMode === 'team'
                           ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-xs font-black'
                           : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                       }`}
                     >
-                      <Lock className="w-3.5 h-3.5 shrink-0" />
-                      <span>Rahasia (Ujian)</span>
+                      <Users className="w-3.5 h-3.5" />
+                      <span>Regu / Kelompok</span>
                     </button>
                   </div>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium leading-relaxed px-0.5">
-                    {showAnswersMode === 'immediate' && 'Siswa langsung mengetahui letak jawaban benar setelah menjawab.'}
-                    {showAnswersMode === 'status_only' && 'Siswa hanya tahu status benar/salah, tanpa memperlihatkan kunci.'}
-                    {showAnswersMode === 'exam_strict' && 'Kunci jawaban dirahasiakan total selama pengerjaan kuis.'}
-                  </p>
                 </div>
 
-                {/* Pembahasan Soal */}
+                {/* Mekanik Waktu */}
                 <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                      Pembahasan & Penjelasan
-                    </span>
-                    <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
-                      {showExplanationMode === 'immediate' ? 'Tiap Butir' : showExplanationMode === 'end_only' ? 'Di Akhir' : 'Sembunyi'}
-                    </span>
-                  </div>
+                  <label className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
+                    Mekanik Waktu
+                  </label>
                   <div className="bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl flex items-center gap-1">
                     <button
                       type="button"
                       onClick={() => {
                         playClick();
-                        setShowExplanationMode('immediate');
+                        setSelectedMode('standard');
                       }}
-                      className={`flex-1 py-2 px-2 rounded-lg text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 min-h-[42px] btn-press ${
-                        showExplanationMode === 'immediate'
+                      className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 min-h-[42px] btn-press ${
+                        selectedMode === 'standard'
                           ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs font-black'
                           : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                       }`}
                     >
-                      <span>Tiap Soal</span>
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Timer ({selectedDuration}s)</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => {
                         playClick();
-                        setShowExplanationMode('end_only');
+                        setSelectedMode('untimed');
                       }}
-                      className={`flex-1 py-2 px-2 rounded-lg text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 min-h-[42px] btn-press ${
-                        showExplanationMode === 'end_only'
-                          ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs font-black'
+                      className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 min-h-[42px] btn-press ${
+                        selectedMode === 'untimed'
+                          ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-xs font-black'
                           : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                       }`}
                     >
-                      <span>Di Akhir</span>
+                      <span>🧘 Santai (Ritme Bebas)</span>
+                    </button>
+                  </div>
+
+                  {selectedMode === 'standard' && (
+                    <div className="grid grid-cols-6 gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl pt-1">
+                      {DURATION_PRESETS.map((dur) => (
+                        <button
+                          key={dur}
+                          type="button"
+                          onClick={() => {
+                            playClick();
+                            setSelectedDuration(dur);
+                          }}
+                          className={`py-1.5 rounded-lg text-xs font-bold transition-all min-h-[38px] flex items-center justify-center btn-press ${
+                            selectedDuration === dur
+                              ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs font-black'
+                              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                          }`}
+                        >
+                          {dur}s
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Badges Fitur Guru Aktif (Clean & Compact) */}
+                <div className="pt-1 flex flex-wrap gap-2 text-xs font-bold text-slate-600 dark:text-slate-300">
+                  <span className="px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center gap-1.5">
+                    <Tv className="w-3.5 h-3.5 text-blue-500" /> Smartboard IFP
+                  </span>
+                  <span className="px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center gap-1.5">
+                    ⏸️ Jeda Waktu
+                  </span>
+                  <span className="px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center gap-1.5">
+                    ◀️ Navigasi Mundur
+                  </span>
+                  <span className="px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center gap-1.5">
+                    🔢 Lompat Soal
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* ---------------------------------------------------- */}
+            {/* SUB-PANEL 2: MANDIRI & PR                            */}
+            {/* ---------------------------------------------------- */}
+            {executionMode === 'self_paced' && (
+              <div className="space-y-4">
+                {/* Tipe Pelaksanaan */}
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
+                    Tipe Pelaksanaan
+                  </label>
+                  <div className="bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        setPacingType('in_class');
+                      }}
+                      className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 min-h-[42px] btn-press ${
+                        pacingType === 'in_class'
+                          ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-xs font-black'
+                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                      }`}
+                    >
+                      <Smartphone className="w-3.5 h-3.5" />
+                      <span>Di Kelas</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => {
                         playClick();
-                        setShowExplanationMode('never');
+                        setPacingType('homework');
                       }}
-                      className={`flex-1 py-2 px-2 rounded-lg text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 min-h-[42px] btn-press ${
-                        showExplanationMode === 'never'
-                          ? 'bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300 shadow-xs font-black'
+                      className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 min-h-[42px] btn-press ${
+                        pacingType === 'homework'
+                          ? 'bg-white dark:bg-slate-700 text-purple-600 dark:text-purple-400 shadow-xs font-black'
                           : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                       }`}
                     >
-                      <span>Sembunyikan</span>
-                    </button>
-                  </div>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium leading-relaxed px-0.5">
-                    {showExplanationMode === 'immediate' && 'Teks penjelasan materi langsung tampil setelah siswa menjawab.'}
-                    {showExplanationMode === 'end_only' && 'Pembahasan baru dibuka setelah siswa menyelesaikan seluruh kuis.'}
-                    {showExplanationMode === 'never' && 'Pembahasan ditiadakan agar materi kuis tetap steril.'}
-                  </p>
-                </div>
-              </div>
-
-              {/* Section: Keamanan & Integritas (iOS Settings Group) */}
-              <div className="space-y-2">
-                <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                  Keamanan & Integritas
-                </span>
-
-                <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-850 divide-y divide-slate-100 dark:divide-slate-800/80 shadow-2xs overflow-hidden">
-                  {/* Row 1: Acak Nomor Soal */}
-                  <div 
-                    onClick={() => {
-                      playClick();
-                      setShuffleQuestions((prev) => !prev);
-                    }}
-                    className="flex items-center justify-between p-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors"
-                  >
-                    <div className="flex items-center gap-3 min-w-0 pr-3">
-                      <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
-                        <Shuffle className="w-4 h-4" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-tight">Acak Nomor Soal</p>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5">Urutan butir soal berbeda tiap siswa</p>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      role="switch"
-                      aria-checked={shuffleQuestions}
-                      aria-label="Acak Nomor Soal"
-                      className={`w-11 h-6 rounded-full transition-colors relative flex items-center p-0.5 shrink-0 focus:outline-none ${
-                        shuffleQuestions ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-slate-700'
-                      }`}
-                    >
-                      <span className={`w-5 h-5 rounded-full bg-white shadow-xs transition-transform transform ${
-                        shuffleQuestions ? 'translate-x-5' : 'translate-x-0'
-                      }`} />
-                    </button>
-                  </div>
-
-                  {/* Row 2: Acak Opsi Pilihan */}
-                  <div 
-                    onClick={() => {
-                      playClick();
-                      setShuffleOptions((prev) => !prev);
-                    }}
-                    className="flex items-center justify-between p-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors"
-                  >
-                    <div className="flex items-center gap-3 min-w-0 pr-3">
-                      <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
-                        <Layers className="w-4 h-4" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-tight">Acak Pilihan Opsi</p>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5">Posisi pilihan A, B, C, D diacak</p>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      role="switch"
-                      aria-checked={shuffleOptions}
-                      aria-label="Acak Pilihan Opsi"
-                      className={`w-11 h-6 rounded-full transition-colors relative flex items-center p-0.5 shrink-0 focus:outline-none ${
-                        shuffleOptions ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-slate-700'
-                      }`}
-                    >
-                      <span className={`w-5 h-5 rounded-full bg-white shadow-xs transition-transform transform ${
-                        shuffleOptions ? 'translate-x-5' : 'translate-x-0'
-                      }`} />
-                    </button>
-                  </div>
-
-                  {/* Row 3: Deteksi Ganti Tab */}
-                  <div 
-                    onClick={() => {
-                      playClick();
-                      setTabSwitchDetection((prev) => !prev);
-                    }}
-                    className="flex items-center justify-between p-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors"
-                  >
-                    <div className="flex items-center gap-3 min-w-0 pr-3">
-                      <div className="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-                        <ShieldAlert className="w-4 h-4" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-tight">Deteksi Ganti Tab</p>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5">Peringatan saat siswa membuka tab lain</p>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      role="switch"
-                      aria-checked={tabSwitchDetection}
-                      aria-label="Deteksi Ganti Tab"
-                      className={`w-11 h-6 rounded-full transition-colors relative flex items-center p-0.5 shrink-0 focus:outline-none ${
-                        tabSwitchDetection ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-slate-700'
-                      }`}
-                    >
-                      <span className={`w-5 h-5 rounded-full bg-white shadow-xs transition-transform transform ${
-                        tabSwitchDetection ? 'translate-x-5' : 'translate-x-0'
-                      }`} />
-                    </button>
-                  </div>
-
-                  {/* Row 4: Peringkat di Siswa */}
-                  <div 
-                    onClick={() => {
-                      playClick();
-                      setShowLeaderboardToStudents((prev) => !prev);
-                    }}
-                    className="flex items-center justify-between p-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors"
-                  >
-                    <div className="flex items-center gap-3 min-w-0 pr-3">
-                      <div className="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-                        <Trophy className="w-4 h-4" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-tight">Peringkat di Gawai Siswa</p>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5">Tampilkan peringkat & poin langsung ke siswa</p>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      role="switch"
-                      aria-checked={showLeaderboardToStudents}
-                      aria-label="Peringkat di Gawai Siswa"
-                      className={`w-11 h-6 rounded-full transition-colors relative flex items-center p-0.5 shrink-0 focus:outline-none ${
-                        showLeaderboardToStudents ? 'bg-amber-600' : 'bg-slate-200 dark:bg-slate-700'
-                      }`}
-                    >
-                      <span className={`w-5 h-5 rounded-full bg-white shadow-xs transition-transform transform ${
-                        showLeaderboardToStudents ? 'translate-x-5' : 'translate-x-0'
-                      }`} />
-                    </button>
-                  </div>
-
-                  {/* Row 5: Batasi Pengerjaan 1x */}
-                  <div 
-                    onClick={() => {
-                      playClick();
-                      setMaxAttempts((prev) => (prev === 1 ? 0 : 1));
-                    }}
-                    className="flex items-center justify-between p-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors"
-                  >
-                    <div className="flex items-center gap-3 min-w-0 pr-3">
-                      <div className="w-8 h-8 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
-                        <Lock className="w-4 h-4" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-tight">Batas Pengerjaan 1 Kali</p>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5">
-                          {maxAttempts === 1 ? 'Siswa hanya punya 1x kesempatan (Ujian)' : 'Siswa bebas mengulang latihan'}
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      role="switch"
-                      aria-checked={maxAttempts === 1}
-                      aria-label="Batas Pengerjaan 1 Kali"
-                      className={`w-11 h-6 rounded-full transition-colors relative flex items-center p-0.5 shrink-0 focus:outline-none ${
-                        maxAttempts === 1 ? 'bg-rose-600' : 'bg-slate-200 dark:bg-slate-700'
-                      }`}
-                    >
-                      <span className={`w-5 h-5 rounded-full bg-white shadow-xs transition-transform transform ${
-                        maxAttempts === 1 ? 'translate-x-5' : 'translate-x-0'
-                      }`} />
+                      <FileText className="w-3.5 h-3.5" />
+                      <span>Tugas Rumah (PR)</span>
                     </button>
                   </div>
                 </div>
+
+                {/* Sub-panel Khusus Pekerjaan Rumah */}
+                {pacingType === 'homework' && (
+                  <div className="p-3.5 rounded-2xl bg-purple-50/60 dark:bg-purple-950/30 border border-purple-200/80 dark:border-purple-900/60 space-y-3">
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between text-xs font-bold text-purple-900 dark:text-purple-200">
+                        <span className="flex items-center gap-1.5">
+                          <Calendar className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                          <span>Batas Pengumpulan</span>
+                        </span>
+                        <span className="text-[11px] font-semibold">{formatIndonesianDeadline(deadlineAt)}</span>
+                      </div>
+                      <input
+                        type="datetime-local"
+                        value={deadlineAt}
+                        min={new Date().toISOString().slice(0, 16)}
+                        onChange={(e) => setDeadlineAt(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-purple-200 dark:border-purple-800 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none min-h-[42px]"
+                      />
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <button
+                          type="button"
+                          onClick={() => handleSetQuickDeadline(1)}
+                          className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-900 text-[11px] font-bold text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-850 btn-press"
+                        >
+                          Besok
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleSetQuickDeadline(3)}
+                          className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-900 text-[11px] font-bold text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-850 btn-press"
+                        >
+                          +3 Hari
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleSetQuickDeadline(7)}
+                          className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-900 text-[11px] font-bold text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-850 btn-press"
+                        >
+                          +1 Minggu
+                        </button>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleShareWhatsApp}
+                      className="w-full py-2 px-3 rounded-xl text-xs font-bold text-emerald-800 dark:text-emerald-200 bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-300 dark:border-emerald-800 flex items-center justify-center gap-2 min-h-[40px] transition-colors btn-press"
+                    >
+                      {isCopiedWa ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                          <span>Pesan Tugas Disalin ke Clipboard!</span>
+                        </>
+                      ) : (
+                        <>
+                          <MessageCircle className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                          <span>Salin Format Tugas ke WhatsApp</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
+
+                {/* Mode Pengerjaan */}
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
+                    Mode Permainan
+                  </label>
+                  <div className="bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        setSelectedMode('standard');
+                      }}
+                      className={`flex-1 py-2 px-2.5 rounded-lg text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 min-h-[42px] btn-press ${
+                        selectedMode === 'standard'
+                          ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs font-black'
+                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                      }`}
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Standar ({selectedDuration}s)</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        setSelectedMode('survival_3hearts');
+                      }}
+                      className={`flex-1 py-2 px-2.5 rounded-lg text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 min-h-[42px] btn-press ${
+                        selectedMode === 'survival_3hearts'
+                          ? 'bg-white dark:bg-slate-700 text-rose-600 dark:text-rose-400 shadow-xs font-black'
+                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                      }`}
+                    >
+                      <Heart className="w-3.5 h-3.5" />
+                      <span>3 Nyawa</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        setSelectedMode('untimed');
+                      }}
+                      className={`flex-1 py-2 px-2.5 rounded-lg text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 min-h-[42px] btn-press ${
+                        selectedMode === 'untimed'
+                          ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-xs font-black'
+                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                      }`}
+                    >
+                      <span>🧘 Santai</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Keamanan & Integritas (Ultra-Clean Single List Group) */}
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
+                    Opsi Keamanan & Integritas
+                  </label>
+                  <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-850 divide-y divide-slate-100 dark:divide-slate-800/80 shadow-2xs overflow-hidden">
+                    {/* Acak Nomor Soal */}
+                    <div 
+                      onClick={() => {
+                        playClick();
+                        setShuffleQuestions(!shuffleQuestions);
+                      }}
+                      className="flex items-center justify-between p-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors"
+                    >
+                      <div className="flex items-center gap-2.5 text-xs font-bold text-slate-900 dark:text-white">
+                        <Shuffle className="w-4 h-4 text-indigo-500" />
+                        <span>Acak Urutan Nomor Soal</span>
+                      </div>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={shuffleQuestions}
+                        aria-label="Acak Urutan Nomor Soal"
+                        className={`w-10 h-5 rounded-full transition-colors relative flex items-center p-0.5 shrink-0 focus:outline-none ${
+                          shuffleQuestions ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-slate-700'
+                        }`}
+                      >
+                        <span className={`w-4 h-4 rounded-full bg-white shadow-xs transition-transform transform ${
+                          shuffleQuestions ? 'translate-x-5' : 'translate-x-0'
+                        }`} />
+                      </button>
+                    </div>
+
+                    {/* Acak Opsi Pilihan */}
+                    <div 
+                      onClick={() => {
+                        playClick();
+                        setShuffleOptions(!shuffleOptions);
+                      }}
+                      className="flex items-center justify-between p-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors"
+                    >
+                      <div className="flex items-center gap-2.5 text-xs font-bold text-slate-900 dark:text-white">
+                        <Layers className="w-4 h-4 text-blue-500" />
+                        <span>Acak Pilihan Opsi (A, B, C, D)</span>
+                      </div>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={shuffleOptions}
+                        aria-label="Acak Pilihan Opsi"
+                        className={`w-10 h-5 rounded-full transition-colors relative flex items-center p-0.5 shrink-0 focus:outline-none ${
+                          shuffleOptions ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-slate-700'
+                        }`}
+                      >
+                        <span className={`w-4 h-4 rounded-full bg-white shadow-xs transition-transform transform ${
+                          shuffleOptions ? 'translate-x-5' : 'translate-x-0'
+                        }`} />
+                      </button>
+                    </div>
+
+                    {/* Deteksi Ganti Tab */}
+                    <div 
+                      onClick={() => {
+                        playClick();
+                        setTabSwitchDetection(!tabSwitchDetection);
+                      }}
+                      className="flex items-center justify-between p-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors"
+                    >
+                      <div className="flex items-center gap-2.5 text-xs font-bold text-slate-900 dark:text-white">
+                        <ShieldAlert className="w-4 h-4 text-amber-500" />
+                        <span>Deteksi Ganti Tab (Anti-Mencontek)</span>
+                      </div>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={tabSwitchDetection}
+                        aria-label="Deteksi Ganti Tab"
+                        className={`w-10 h-5 rounded-full transition-colors relative flex items-center p-0.5 shrink-0 focus:outline-none ${
+                          tabSwitchDetection ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-slate-700'
+                        }`}
+                      >
+                        <span className={`w-4 h-4 rounded-full bg-white shadow-xs transition-transform transform ${
+                          tabSwitchDetection ? 'translate-x-5' : 'translate-x-0'
+                        }`} />
+                      </button>
+                    </div>
+
+                    {/* Batas Pengerjaan 1x */}
+                    <div 
+                      onClick={() => {
+                        playClick();
+                        setMaxAttempts(maxAttempts === 1 ? 0 : 1);
+                      }}
+                      className="flex items-center justify-between p-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors"
+                    >
+                      <div className="flex items-center gap-2.5 text-xs font-bold text-slate-900 dark:text-white">
+                        <Lock className="w-4 h-4 text-rose-500" />
+                        <span>Batas Pengerjaan 1 Kali (Ujian)</span>
+                      </div>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={maxAttempts === 1}
+                        aria-label="Batas Pengerjaan 1 Kali"
+                        className={`w-10 h-5 rounded-full transition-colors relative flex items-center p-0.5 shrink-0 focus:outline-none ${
+                          maxAttempts === 1 ? 'bg-rose-600' : 'bg-slate-200 dark:bg-slate-700'
+                        }`}
+                      >
+                        <span className={`w-4 h-4 rounded-full bg-white shadow-xs transition-transform transform ${
+                          maxAttempts === 1 ? 'translate-x-5' : 'translate-x-0'
+                        }`} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
+            )}
 
-            </div>
-          )}
+            {/* Simpan Preferensi Default */}
+            <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-500 dark:text-slate-400 select-none pt-1">
+              <input
+                type="checkbox"
+                checked={saveAsDefault}
+                onChange={(e) => {
+                  playClick();
+                  setSaveAsDefault(e.target.checked);
+                }}
+                className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800"
+              />
+              <span>Simpan sebagai setelan bawaan kuis ini</span>
+            </label>
 
-          {/* Simpan Pengaturan Default */}
-          <label className="flex items-center gap-2.5 cursor-pointer text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 select-none pt-1">
-            <input
-              type="checkbox"
-              checked={saveAsDefault}
-              onChange={(e) => {
-                playClick();
-                setSaveAsDefault(e.target.checked);
-              }}
-              className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800"
-            />
-            <span>Simpan preferensi ini sebagai bawaan untuk kuis ini</span>
-          </label>
+          </div>
+        )}
 
-        </div>
-
-        {/* Modal Action Footer */}
+        {/* ======================================================== */}
+        {/* MODAL FOOTER                                             */}
+        {/* ======================================================== */}
         <div className="p-4 sm:p-5 border-t border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center gap-3 flex-shrink-0">
-          <button
-            type="button"
-            onClick={handleClose}
-            className="py-3 px-4 rounded-xl text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-800 min-h-[48px] transition-colors btn-press"
-          >
-            Batal
-          </button>
+          {currentStep === 'configure' ? (
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setCurrentStep('select_mode');
+                }}
+                className="py-3 px-4 rounded-xl text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-800 min-h-[48px] transition-colors btn-press"
+              >
+                Ganti Mode
+              </button>
 
-          <button
-            type="button"
-            onClick={handleLaunch}
-            className={`flex-1 py-3 px-5 rounded-xl text-xs sm:text-sm font-black text-white shadow-md hover:shadow-lg flex items-center justify-center gap-2 min-h-[48px] transition-all btn-press tracking-wide ${
-              executionMode === 'teacher_led'
-                ? 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800'
-                : pacingType === 'homework'
-                ? 'bg-purple-600 hover:bg-purple-700 active:bg-purple-800'
-                : 'bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800'
-            }`}
-          >
-            <Play className="w-4 h-4 fill-white text-white" />
-            <span>
-              {executionMode === 'teacher_led'
-                ? 'Mulai Pandu Kuis di Smartboard'
-                : pacingType === 'homework'
-                ? 'Buka Akses Penugasan PR'
-                : 'Mulai Sesi Mandiri Siswa'}
-            </span>
-          </button>
+              <button
+                type="button"
+                onClick={handleLaunch}
+                className={`flex-1 py-3 px-5 rounded-xl text-xs sm:text-sm font-black text-white shadow-md hover:shadow-lg flex items-center justify-center gap-2 min-h-[48px] transition-all btn-press tracking-wide ${
+                  executionMode === 'teacher_led'
+                    ? 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800'
+                    : pacingType === 'homework'
+                    ? 'bg-purple-600 hover:bg-purple-700 active:bg-purple-800'
+                    : 'bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800'
+                }`}
+              >
+                <Play className="w-4 h-4 fill-white text-white" />
+                <span>
+                  {executionMode === 'teacher_led'
+                    ? 'Mulai Pandu di Smartboard'
+                    : pacingType === 'homework'
+                    ? 'Buka Akses Tugas Rumah'
+                    : 'Mulai Sesi Mandiri'}
+                </span>
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={handleClose}
+              className="w-full py-3 px-4 rounded-xl text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-800 min-h-[48px] transition-colors btn-press"
+            >
+              Tutup
+            </button>
+          )}
         </div>
 
       </div>
