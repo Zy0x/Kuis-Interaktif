@@ -1,6 +1,36 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.58] - 2026-09-12
+### Redesain Modal Sesi Kuis Guru Ultra-Clean, Segmented Controls, dan iOS Settings List Group
+
+#### 1. Transformasi Segmented Controls (Pill Sliders) Elegan & Anti AI-Slop (`PlayQuizModal.tsx`)
+- **Eliminasi Penumpukan Kotak (*Anti-Box Nesting / No Lasagna UI*)**:
+  - Menggantikan kartu-kartu abu-abu berlapis (*box-in-a-box*) dan paragraf deskripsi panjang yang berulang dengan *segmented controls* (slider pil horizontal) berstandar Linear dan iOS.
+  - Pengaturan mode permainan dirampingkan menjadi kontrol pil horizontal: `[ 🌟 Standar | ❤️ 3 Nyawa | 🧘 Santai ]` yang menghemat 70% ruang vertikal.
+  - Durasi per butir soal ditata rapi dalam grid pil terpadu `[ 10s | 15s | 20s | 30s | 45s | 60s ]` yang hanya muncul dinamis saat mode berbatas waktu aktif.
+  - Visibilitas kunci jawaban dan pembahasan guru disajikan dalam segmen interaktif:
+    - Kunci Jawaban Siswa: `[ 🟢 Terbuka | 🟡 Status Saja | 🔒 Rahasia ]`
+    - Pembahasan Guru: `[ Tiap Soal | Di Akhir | Sembunyikan ]`
+
+#### 2. Grup Pengaturan Keamanan Bergaya iOS (*iOS Settings List Group*)
+- **Penyatuan Pengaturan Keamanan & Integritas Ujian**:
+  - Menggabungkan 5 kartu tombol toggle terpisah menjadi satu kontainer *List Group* melengkung terpadu dengan pembatas garis tipis (*subtle dividers*):
+    - 🔀 **Acak Nomor Soal**: Pilihan urutan nomor butir soal berbeda untuk tiap siswa.
+    - 📚 **Acak Pilihan Opsi**: Posisi opsi jawaban A, B, C, D diacak otomatis.
+    - 🛡️ **Deteksi Ganti Tab**: Peringatan seketika saat siswa berpindah tab/layar ujian.
+    - 🏆 **Papan Peringkat di Siswa**: Pengaturan keterlihatan skor dan rank di gawai siswa vs hanya di layar guru.
+    - 🔒 **Batas Pengerjaan 1 Kali**: Pembatasan percobaan pengerjaan untuk standar asesmen formal.
+  - Setiap baris memiliki ikon berlatar warna tematik, judul dan keterangan ringkas di sisi kiri, serta tombol geser (*switch toggle*) taktil di sisi kanan yang responsif terhadap klik seluruh baris.
+
+#### 3. Optimalisasi Akses Cepat, Footer Aksi, dan Keterbacaan Antar-Tema
+- **Header & Ringkasan Kuis Efisien**:
+  - Kartu ringkasan kuis menampilkan cover emoji, label mapel dan kelas, jumlah soal, estimasi durasi, serta pil kode PIN dengan tombol salin dan tombol bagikan tautan langsung.
+  - Menghilangkan tombol ganda yang redundan pada footer sehingga modal memiliki alur aksi yang tegas dan terarah: tombol *"Batal"* dan tombol utama *"Mulai Kuis Sekarang"*.
+- **Presisi Mobile-First & Dukungan Dark Mode Penuh**:
+  - Seluruh elemen sentuh memenuhi target minimum $\ge 44 \times 44\text{ px}$.
+  - Kontras visual diuji dan disempurnakan baik pada mode terang (*Light Mode*) maupun mode gelap (*Dark Mode*).
+
 ## [2.3.57] - 2026-09-12
 ### Eliminasi Format Preset Redundan Menuju Kendali Sesi Kuis Mandiri dan Transparan untuk Guru
 

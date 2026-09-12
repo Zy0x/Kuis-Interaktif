@@ -17,13 +17,16 @@ import {
   Play, 
   Tv, 
   Smartphone, 
-  Clock, 
   Copy, 
   Check, 
   Share2, 
-  CheckCircle, 
   ShieldAlert, 
-  Eye 
+  Shuffle, 
+  Layers, 
+  Trophy, 
+  Lock,
+  Sparkles,
+  Heart
 } from 'lucide-react';
 
 export interface PlayQuizSessionOptions {
@@ -79,7 +82,7 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
   const [presentationTarget, setPresentationTarget] = useState<'smartboard' | 'student-lobby'>('smartboard');
   const [saveAsDefault, setSaveAsDefault] = useState<boolean>(false);
 
-  // New flexible settings
+  // Flexible settings
   const [showAnswersMode, setShowAnswersMode] = useState<AnswerVisibilityMode>('immediate');
   const [showExplanationMode, setShowExplanationMode] = useState<ExplanationVisibilityMode>('immediate');
   const [showLeaderboardToStudents, setShowLeaderboardToStudents] = useState<boolean>(true);
@@ -191,7 +194,6 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
   const handleCopyPin = async (e: React.MouseEvent) => {
     e.stopPropagation();
     playClick();
-    // Pastikan sesi kuis sudah terdaftar dengan konfigurasi terbaru guru sebelum PIN disalin
     await ensureSessionAndSyncSettings();
     const success = await copyTextToClipboard(pin);
     if (success) {
@@ -203,7 +205,6 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
   const handleCopyLink = async (e: React.MouseEvent) => {
     e.stopPropagation();
     playClick();
-    // Pastikan sesi kuis sudah terdaftar dengan konfigurasi terbaru guru sebelum tautan disalin
     await ensureSessionAndSyncSettings();
     const url = `${window.location.origin}${window.location.pathname}?pin=${pin}`;
     const success = await copyTextToClipboard(url);
@@ -256,20 +257,20 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
         </div>
 
         {/* Modal Header */}
-        <div className="px-4 sm:px-6 pt-3 sm:pt-5 pb-3.5 border-b border-slate-200/80 dark:border-slate-800 flex items-center justify-between gap-3 flex-shrink-0 bg-slate-50/70 dark:bg-slate-850/70">
+        <div className="px-4 sm:px-6 pt-3 sm:pt-4 pb-3 border-b border-slate-200/80 dark:border-slate-800 flex items-center justify-between gap-3 flex-shrink-0 bg-slate-50/70 dark:bg-slate-850/70">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center shadow-xs flex-shrink-0">
+            <div className="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-xs flex-shrink-0">
               <Play className="w-5 h-5 fill-white text-white ml-0.5" />
             </div>
             <div className="min-w-0">
               <h2
                 id="play-quiz-modal-title"
-                className="text-base sm:text-lg font-black text-slate-900 dark:text-white leading-tight flex items-center gap-1.5"
+                className="text-base sm:text-lg font-black text-slate-900 dark:text-white leading-tight"
               >
-                <span>Mainkan Kuis Bersama Siswa</span>
+                Atur Sesi Kuis
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Atur konfigurasi sesi kuis sesuai kebutuhan kelas Anda
+                Konfigurasi aturan dan mekanik permainan kuis
               </p>
             </div>
           </div>
@@ -287,69 +288,69 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
         {/* Scrollable Content Body */}
         <div className="p-4 sm:p-6 overflow-y-auto space-y-4 sm:space-y-5 custom-scrollbar overscroll-contain">
           
-          {/* Card Terpadu: Info Kuis & Akses Siswa (PIN + Bagikan Tautan) */}
-          <div className="p-4 rounded-2xl bg-gradient-to-br from-slate-50 to-blue-50/30 dark:from-slate-850 dark:to-slate-850 border border-slate-200/80 dark:border-slate-750 space-y-3.5">
-            {/* Info Kuis */}
-            <div className="flex items-start gap-3.5">
+          {/* Card Terpadu: Ringkasan Kuis & Akses Siswa (PIN + Tautan) */}
+          <div className="p-3.5 sm:p-4 rounded-2xl bg-slate-50/80 dark:bg-slate-850/70 border border-slate-200/80 dark:border-slate-800 space-y-3">
+            <div className="flex items-center gap-3">
               <QuizCoverDisplay 
                 cover={quiz.coverEmoji}
                 alt={quiz.title}
-                className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-2xl sm:text-3xl shadow-xs shrink-0"
+                className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-2xl shadow-2xs shrink-0"
               />
               <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-md bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300">
+                <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-bold">
+                  <span className="px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-900/60">
                     {quiz.subject} • Kelas {quiz.grade}
                   </span>
-                  <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
-                    {totalQuestions} Soal • {estimatedTotalMinutes}
+                  <span className="text-slate-400 dark:text-slate-500">•</span>
+                  <span className="text-slate-600 dark:text-slate-400">
+                    {totalQuestions} Soal
+                  </span>
+                  <span className="text-slate-400 dark:text-slate-500">•</span>
+                  <span className="text-slate-600 dark:text-slate-400">
+                    {estimatedTotalMinutes}
                   </span>
                 </div>
-                <h3 className="font-black text-sm sm:text-base text-slate-900 dark:text-white mt-1 leading-snug line-clamp-2">
+                <h3 className="font-black text-sm sm:text-base text-slate-900 dark:text-white mt-1 leading-snug truncate">
                   {quiz.title}
                 </h3>
               </div>
             </div>
 
-            {/* Bar Akses Siswa (PIN & Tautan) */}
-            <div className="pt-2 border-t border-slate-200/70 dark:border-slate-750/70 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2.5">
-              {/* PIN Code Box */}
-              <div className="flex items-center gap-2 bg-white dark:bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xs">
-                <div className="text-left">
-                  <p className="text-[9px] font-bold tracking-wider text-slate-400 uppercase leading-none">PIN Kuis</p>
-                  <p className="font-black text-base sm:text-lg tracking-widest text-blue-600 dark:text-blue-400 font-mono leading-none mt-0.5">
-                    {pin}
-                  </p>
-                </div>
+            {/* Quick PIN & Share row */}
+            <div className="pt-2.5 border-t border-slate-200/60 dark:border-slate-800/80 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 bg-white dark:bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-750 shadow-2xs">
+                <span className="text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">PIN</span>
+                <span className="font-black text-base text-blue-600 dark:text-blue-400 font-mono tracking-widest leading-none">
+                  {pin}
+                </span>
                 <button
                   type="button"
                   onClick={handleCopyPin}
-                  className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800 min-h-[38px] min-w-[38px] flex items-center justify-center transition-colors"
-                  title="Salin PIN Kuis"
+                  className="p-1 rounded-lg text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800 min-h-[32px] min-w-[32px] flex items-center justify-center transition-colors"
+                  title="Salin PIN"
                   aria-label="Salin PIN Kuis"
                 >
                   {isCopiedPin ? (
-                    <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                   ) : (
-                    <Copy className="w-4 h-4" />
+                    <Copy className="w-3.5 h-3.5" />
                   )}
                 </button>
               </div>
 
-              {/* Tombol Bagikan Tautan Langsung */}
               <button
                 type="button"
                 onClick={handleCopyLink}
-                className="flex-1 sm:flex-initial py-2 px-3.5 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-750 shadow-2xs flex items-center justify-center gap-2 min-h-[38px] transition-colors btn-press"
+                className="py-1.5 px-3 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-750 shadow-2xs flex items-center gap-1.5 min-h-[36px] transition-colors btn-press"
               >
                 {isCopiedLink ? (
                   <>
-                    <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                    <span className="text-emerald-600 dark:text-emerald-400 font-extrabold">Tautan Berhasil Disalin!</span>
+                    <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                    <span className="text-emerald-600 dark:text-emerald-400 font-extrabold">Tersalin!</span>
                   </>
                 ) : (
                   <>
-                    <Share2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                    <Share2 className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
                     <span>Salin Tautan Siswa</span>
                   </>
                 )}
@@ -357,39 +358,33 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
             </div>
           </div>
 
-          {/* 1. Mekanik & Waktu Permainan */}
-          <div className="p-4 rounded-2xl bg-slate-50/70 dark:bg-slate-850/60 border border-slate-200/80 dark:border-slate-800 space-y-3">
+          {/* Section: Mode Permainan & Durasi */}
+          <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-black text-slate-900 dark:text-white tracking-wide uppercase flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-blue-500" />
-                <span>1. Mekanik Permainan & Waktu</span>
-              </label>
-              <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400">
-                {selectedMode === 'untimed' ? 'Santai (Tanpa Timer)' : `${selectedDuration}s per butir`}
+              <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                Mode Permainan
+              </span>
+              <span className="text-xs font-bold text-blue-600 dark:text-blue-400">
+                {selectedMode === 'standard' ? 'Timer Aktif & Poin Cepat' : selectedMode === 'survival_3hearts' ? 'Tantangan 3 Nyawa' : 'Bebas Tanpa Timer'}
               </span>
             </div>
 
-            {/* Mode Pilihan */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-2.5">
+            {/* Segmented Control Mode */}
+            <div className="bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl flex items-center gap-1">
               <button
                 type="button"
                 onClick={() => {
                   playClick();
                   setSelectedMode('standard');
                 }}
-                className={`p-3 rounded-xl border text-left transition-all btn-press flex flex-col justify-between min-h-[48px] ${
+                className={`flex-1 py-2 px-2.5 rounded-lg text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 min-h-[42px] btn-press ${
                   selectedMode === 'standard'
-                    ? 'border-blue-600 dark:border-blue-500 bg-blue-50/80 dark:bg-blue-950/40 shadow-xs ring-2 ring-blue-500/20'
-                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 hover:bg-slate-50 dark:hover:bg-slate-800'
+                    ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs font-black'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                 }`}
               >
-                <div className="flex items-center justify-between w-full mb-1">
-                  <span className="font-black text-xs sm:text-sm text-slate-900 dark:text-white">🌟 Standar</span>
-                  {selectedMode === 'standard' && <CheckCircle className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />}
-                </div>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
-                  Timer aktif, skor dari ketepatan & kecepatan.
-                </p>
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Standar</span>
               </button>
 
               <button
@@ -398,19 +393,14 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
                   playClick();
                   setSelectedMode('survival_3hearts');
                 }}
-                className={`p-3 rounded-xl border text-left transition-all btn-press flex flex-col justify-between min-h-[48px] ${
+                className={`flex-1 py-2 px-2.5 rounded-lg text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 min-h-[42px] btn-press ${
                   selectedMode === 'survival_3hearts'
-                    ? 'border-rose-600 dark:border-rose-500 bg-rose-50/80 dark:bg-rose-950/40 shadow-xs ring-2 ring-rose-500/20'
-                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 hover:bg-slate-50 dark:hover:bg-slate-800'
+                    ? 'bg-white dark:bg-slate-700 text-rose-600 dark:text-rose-400 shadow-xs font-black'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                 }`}
               >
-                <div className="flex items-center justify-between w-full mb-1">
-                  <span className="font-black text-xs sm:text-sm text-slate-900 dark:text-white">❤️ 3 Nyawa</span>
-                  {selectedMode === 'survival_3hearts' && <CheckCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />}
-                </div>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
-                  Salah 3x pengerjaan kuis berakhir.
-                </p>
+                <Heart className="w-3.5 h-3.5" />
+                <span>3 Nyawa</span>
               </button>
 
               <button
@@ -419,30 +409,24 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
                   playClick();
                   setSelectedMode('untimed');
                 }}
-                className={`p-3 rounded-xl border text-left transition-all btn-press flex flex-col justify-between min-h-[48px] ${
+                className={`flex-1 py-2 px-2.5 rounded-lg text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 min-h-[42px] btn-press ${
                   selectedMode === 'untimed'
-                    ? 'border-emerald-600 dark:border-emerald-500 bg-emerald-50/80 dark:bg-emerald-950/40 shadow-xs ring-2 ring-emerald-500/20'
-                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 hover:bg-slate-50 dark:hover:bg-slate-800'
+                    ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-xs font-black'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                 }`}
               >
-                <div className="flex items-center justify-between w-full mb-1">
-                  <span className="font-black text-xs sm:text-sm text-slate-900 dark:text-white">🧘 Santai</span>
-                  {selectedMode === 'untimed' && <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />}
-                </div>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
-                  Tanpa timer, leluasa untuk diskusi kelas.
-                </p>
+                <span>🧘 Santai</span>
               </button>
             </div>
 
-            {/* Durasi Waktu (Jika bukan untimed) */}
+            {/* Durasi per Butir (Kondisional jika bukan untimed) */}
             {selectedMode !== 'untimed' && (
-              <div className="pt-2 border-t border-slate-200/60 dark:border-slate-750/60">
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Durasi Per Butir Soal</span>
-                  <span className="text-xs font-black text-blue-600 dark:text-blue-400">{selectedDuration} detik</span>
+              <div className="pt-2 space-y-1.5">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-semibold text-slate-500 dark:text-slate-400">Durasi Per Butir</span>
+                  <span className="font-bold text-blue-600 dark:text-blue-400">{selectedDuration} Detik</span>
                 </div>
-                <div className="grid grid-cols-6 gap-1.5 sm:gap-2">
+                <div className="grid grid-cols-6 gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl">
                   {DURATION_PRESETS.map((dur) => (
                     <button
                       key={dur}
@@ -451,10 +435,10 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
                         playClick();
                         setSelectedDuration(dur);
                       }}
-                      className={`py-2 px-1 rounded-xl text-center font-bold text-xs sm:text-sm transition-all min-h-[42px] flex items-center justify-center btn-press ${
+                      className={`py-1.5 rounded-lg text-xs font-bold transition-all min-h-[38px] flex items-center justify-center btn-press ${
                         selectedDuration === dur
-                          ? 'bg-blue-600 text-white shadow-xs font-black'
-                          : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-750'
+                          ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs font-black'
+                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                       }`}
                     >
                       {dur}s
@@ -465,41 +449,33 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
             )}
           </div>
 
-          {/* 2. Visibilitas Kunci Jawaban & Pembahasan */}
-          <div className="p-4 rounded-2xl bg-slate-50/70 dark:bg-slate-850/60 border border-slate-200/80 dark:border-slate-800 space-y-3.5">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-black text-slate-900 dark:text-white tracking-wide uppercase flex items-center gap-1.5">
-                <Eye className="w-3.5 h-3.5 text-indigo-500" />
-                <span>2. Visibilitas Kunci & Pembahasan</span>
-              </label>
-              <span className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400">
-                {showAnswersMode === 'immediate' ? 'Kunci Terbuka' : showAnswersMode === 'status_only' ? 'Hanya Status' : 'Sembunyi Total'}
-              </span>
-            </div>
-
-            {/* Opsi Visibilitas Kunci */}
-            <div>
-              <p className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">Kunci Jawaban untuk Siswa:</p>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          {/* Section: Visibilitas Kunci & Pembahasan */}
+          <div className="space-y-3">
+            {/* Kunci Jawaban Siswa */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                  Kunci Jawaban Siswa
+                </span>
+                <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
+                  {showAnswersMode === 'immediate' ? 'Kunci Terbuka' : showAnswersMode === 'status_only' ? 'Hanya Benar / Salah' : 'Dirahasiakan'}
+                </span>
+              </div>
+              <div className="bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl flex items-center gap-1">
                 <button
                   type="button"
                   onClick={() => {
                     playClick();
                     setShowAnswersMode('immediate');
                   }}
-                  className={`p-3 rounded-xl border text-left transition-all btn-press flex flex-col justify-between min-h-[48px] ${
+                  className={`flex-1 py-2 px-2 rounded-lg text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 min-h-[42px] btn-press ${
                     showAnswersMode === 'immediate'
-                      ? 'border-emerald-600 dark:border-emerald-500 bg-emerald-50/80 dark:bg-emerald-950/40 shadow-xs ring-2 ring-emerald-500/20'
-                      : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 hover:bg-slate-50 dark:hover:bg-slate-800'
+                      ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-xs font-black'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                   }`}
                 >
-                  <div className="flex items-center justify-between w-full mb-1">
-                    <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">🟢 Terbuka Langsung</span>
-                    {showAnswersMode === 'immediate' && <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />}
-                  </div>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
-                    Siswa langsung tahu letak kunci yang tepat.
-                  </p>
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                  <span>Terbuka</span>
                 </button>
 
                 <button
@@ -508,19 +484,14 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
                     playClick();
                     setShowAnswersMode('status_only');
                   }}
-                  className={`p-3 rounded-xl border text-left transition-all btn-press flex flex-col justify-between min-h-[48px] ${
+                  className={`flex-1 py-2 px-2 rounded-lg text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 min-h-[42px] btn-press ${
                     showAnswersMode === 'status_only'
-                      ? 'border-amber-600 dark:border-amber-500 bg-amber-50/80 dark:bg-amber-950/40 shadow-xs ring-2 ring-amber-500/20'
-                      : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 hover:bg-slate-50 dark:hover:bg-slate-800'
+                      ? 'bg-white dark:bg-slate-700 text-amber-600 dark:text-amber-400 shadow-xs font-black'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                   }`}
                 >
-                  <div className="flex items-center justify-between w-full mb-1">
-                    <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">🟡 Hanya Status</span>
-                    {showAnswersMode === 'status_only' && <CheckCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />}
-                  </div>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
-                    Tahu benar/salah, kunci asli tidak dibocorkan.
-                  </p>
+                  <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+                  <span>Status Saja</span>
                 </button>
 
                 <button
@@ -529,41 +500,42 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
                     playClick();
                     setShowAnswersMode('exam_strict');
                   }}
-                  className={`p-3 rounded-xl border text-left transition-all btn-press flex flex-col justify-between min-h-[48px] ${
+                  className={`flex-1 py-2 px-2 rounded-lg text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 min-h-[42px] btn-press ${
                     showAnswersMode === 'exam_strict'
-                      ? 'border-indigo-600 dark:border-indigo-500 bg-indigo-50/80 dark:bg-indigo-950/40 shadow-xs ring-2 ring-indigo-500/20'
-                      : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 hover:bg-slate-50 dark:hover:bg-slate-800'
+                      ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-xs font-black'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                   }`}
                 >
-                  <div className="flex items-center justify-between w-full mb-1">
-                    <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">🔒 Sembunyi Total</span>
-                    {showAnswersMode === 'exam_strict' && <CheckCircle className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />}
-                  </div>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
-                    Dirahasiakan penuh (standar ujian resmi).
-                  </p>
+                  <Lock className="w-3.5 h-3.5 shrink-0" />
+                  <span>Rahasia</span>
                 </button>
               </div>
             </div>
 
-            {/* Opsi Pembahasan */}
-            <div className="pt-2 border-t border-slate-200/60 dark:border-slate-750/60">
-              <p className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">Pembahasan & Penjelasan Guru:</p>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            {/* Pembahasan Soal */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                  Pembahasan & Penjelasan
+                </span>
+                <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
+                  {showExplanationMode === 'immediate' ? 'Tiap Butir Soal' : showExplanationMode === 'end_only' ? 'Di Akhir Kuis' : 'Tidak Ditampilkan'}
+                </span>
+              </div>
+              <div className="bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl flex items-center gap-1">
                 <button
                   type="button"
                   onClick={() => {
                     playClick();
                     setShowExplanationMode('immediate');
                   }}
-                  className={`p-2.5 rounded-xl border text-left transition-all btn-press ${
+                  className={`flex-1 py-2 px-2 rounded-lg text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 min-h-[42px] btn-press ${
                     showExplanationMode === 'immediate'
-                      ? 'border-blue-600 dark:border-blue-500 bg-blue-50/80 dark:bg-blue-950/40 shadow-xs ring-1 ring-blue-500/20'
-                      : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850'
+                      ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs font-black'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                   }`}
                 >
-                  <p className="font-bold text-xs text-slate-900 dark:text-white">Langsung Tiap Soal</p>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Cocok belajar mandiri</p>
+                  <span>Tiap Soal</span>
                 </button>
 
                 <button
@@ -572,14 +544,13 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
                     playClick();
                     setShowExplanationMode('end_only');
                   }}
-                  className={`p-2.5 rounded-xl border text-left transition-all btn-press ${
+                  className={`flex-1 py-2 px-2 rounded-lg text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 min-h-[42px] btn-press ${
                     showExplanationMode === 'end_only'
-                      ? 'border-blue-600 dark:border-blue-500 bg-blue-50/80 dark:bg-blue-950/40 shadow-xs ring-1 ring-blue-500/20'
-                      : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850'
+                      ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs font-black'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                   }`}
                 >
-                  <p className="font-bold text-xs text-slate-900 dark:text-white">Di Akhir Kuis</p>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Saat ulasan rekapan</p>
+                  <span>Di Akhir</span>
                 </button>
 
                 <button
@@ -588,192 +559,210 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
                     playClick();
                     setShowExplanationMode('never');
                   }}
-                  className={`p-2.5 rounded-xl border text-left transition-all btn-press ${
+                  className={`flex-1 py-2 px-2 rounded-lg text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 min-h-[42px] btn-press ${
                     showExplanationMode === 'never'
-                      ? 'border-blue-600 dark:border-blue-500 bg-blue-50/80 dark:bg-blue-950/40 shadow-xs ring-1 ring-blue-500/20'
-                      : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850'
+                      ? 'bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300 shadow-xs font-black'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                   }`}
                 >
-                  <p className="font-bold text-xs text-slate-900 dark:text-white">Sembunyikan</p>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Tanpa ulasan</p>
+                  <span>Sembunyikan</span>
                 </button>
               </div>
             </div>
           </div>
 
-          {/* 3. Keamanan & Aturan Pengerjaan */}
-          <div className="p-4 rounded-2xl bg-slate-50/70 dark:bg-slate-850/60 border border-slate-200/80 dark:border-slate-800 space-y-3">
-            <label className="text-xs font-black text-slate-900 dark:text-white tracking-wide uppercase flex items-center gap-1.5">
-              <ShieldAlert className="w-3.5 h-3.5 text-indigo-500" />
-              <span>3. Keamanan & Aturan Pengerjaan</span>
-            </label>
+          {/* Section: Keamanan & Integritas (iOS Settings Group) */}
+          <div className="space-y-2">
+            <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              Keamanan & Integritas
+            </span>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              {/* Toggle Acak Urutan Soal */}
-              <button
-                type="button"
+            <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-850 divide-y divide-slate-100 dark:divide-slate-800/80 shadow-2xs overflow-hidden">
+              {/* Row 1: Acak Nomor Soal */}
+              <div 
                 onClick={() => {
                   playClick();
                   setShuffleQuestions((prev) => !prev);
                 }}
-                className={`p-3 rounded-xl border text-left transition-all btn-press flex items-center justify-between min-h-[46px] ${
-                  shuffleQuestions
-                    ? 'border-indigo-600 dark:border-indigo-500 bg-indigo-50/70 dark:bg-indigo-950/30'
-                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850'
-                }`}
+                className="flex items-center justify-between p-3.5 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors"
               >
-                <div>
-                  <p className="font-bold text-xs text-slate-900 dark:text-white">Acak Nomor Soal</p>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400">Urutan nomor soal diacak tiap siswa</p>
+                <div className="flex items-center gap-3 min-w-0 pr-3">
+                  <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                    <Shuffle className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-tight">Acak Nomor Soal</p>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5">Urutan nomor soal berbeda tiap siswa</p>
+                  </div>
                 </div>
-                <div className={`w-9 h-5 rounded-full transition-colors relative flex items-center p-0.5 flex-shrink-0 ${
-                  shuffleQuestions ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-700'
-                }`}>
-                  <div className={`w-4 h-4 rounded-full bg-white transition-transform ${
-                    shuffleQuestions ? 'translate-x-4' : 'translate-x-0'
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={shuffleQuestions}
+                  aria-label="Acak Nomor Soal"
+                  className={`w-11 h-6 rounded-full transition-colors relative flex items-center p-0.5 shrink-0 focus:outline-none ${
+                    shuffleQuestions ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-slate-700'
+                  }`}
+                >
+                  <span className={`w-5 h-5 rounded-full bg-white shadow-xs transition-transform transform ${
+                    shuffleQuestions ? 'translate-x-5' : 'translate-x-0'
                   }`} />
-                </div>
-              </button>
+                </button>
+              </div>
 
-              {/* Toggle Acak Pilihan Opsi */}
-              <button
-                type="button"
+              {/* Row 2: Acak Opsi Pilihan */}
+              <div 
                 onClick={() => {
                   playClick();
                   setShuffleOptions((prev) => !prev);
                 }}
-                className={`p-3 rounded-xl border text-left transition-all btn-press flex items-center justify-between min-h-[46px] ${
-                  shuffleOptions
-                    ? 'border-indigo-600 dark:border-indigo-500 bg-indigo-50/70 dark:bg-indigo-950/30'
-                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850'
-                }`}
+                className="flex items-center justify-between p-3.5 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors"
               >
-                <div>
-                  <p className="font-bold text-xs text-slate-900 dark:text-white">Acak Opsi Pilihan</p>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400">Posisi opsi A, B, C, D diacak</p>
+                <div className="flex items-center gap-3 min-w-0 pr-3">
+                  <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                    <Layers className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-tight">Acak Pilihan Opsi</p>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5">Posisi pilihan A, B, C, D diacak</p>
+                  </div>
                 </div>
-                <div className={`w-9 h-5 rounded-full transition-colors relative flex items-center p-0.5 flex-shrink-0 ${
-                  shuffleOptions ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-700'
-                }`}>
-                  <div className={`w-4 h-4 rounded-full bg-white transition-transform ${
-                    shuffleOptions ? 'translate-x-4' : 'translate-x-0'
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={shuffleOptions}
+                  aria-label="Acak Pilihan Opsi"
+                  className={`w-11 h-6 rounded-full transition-colors relative flex items-center p-0.5 shrink-0 focus:outline-none ${
+                    shuffleOptions ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-slate-700'
+                  }`}
+                >
+                  <span className={`w-5 h-5 rounded-full bg-white shadow-xs transition-transform transform ${
+                    shuffleOptions ? 'translate-x-5' : 'translate-x-0'
                   }`} />
-                </div>
-              </button>
+                </button>
+              </div>
 
-              {/* Toggle Deteksi Ganti Tab */}
-              <button
-                type="button"
+              {/* Row 3: Deteksi Ganti Tab */}
+              <div 
                 onClick={() => {
                   playClick();
                   setTabSwitchDetection((prev) => !prev);
                 }}
-                className={`p-3 rounded-xl border text-left transition-all btn-press flex items-center justify-between min-h-[46px] ${
-                  tabSwitchDetection
-                    ? 'border-indigo-600 dark:border-indigo-500 bg-indigo-50/70 dark:bg-indigo-950/30'
-                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850'
-                }`}
+                className="flex items-center justify-between p-3.5 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors"
               >
-                <div>
-                  <p className="font-bold text-xs text-slate-900 dark:text-white">Deteksi Ganti Tab</p>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400">Beri peringatan saat siswa pindah layar</p>
+                <div className="flex items-center gap-3 min-w-0 pr-3">
+                  <div className="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                    <ShieldAlert className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-tight">Deteksi Ganti Tab</p>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5">Peringatan saat siswa meninggalkan layar ujian</p>
+                  </div>
                 </div>
-                <div className={`w-9 h-5 rounded-full transition-colors relative flex items-center p-0.5 flex-shrink-0 ${
-                  tabSwitchDetection ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-700'
-                }`}>
-                  <div className={`w-4 h-4 rounded-full bg-white transition-transform ${
-                    tabSwitchDetection ? 'translate-x-4' : 'translate-x-0'
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={tabSwitchDetection}
+                  aria-label="Deteksi Ganti Tab"
+                  className={`w-11 h-6 rounded-full transition-colors relative flex items-center p-0.5 shrink-0 focus:outline-none ${
+                    tabSwitchDetection ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-slate-700'
+                  }`}
+                >
+                  <span className={`w-5 h-5 rounded-full bg-white shadow-xs transition-transform transform ${
+                    tabSwitchDetection ? 'translate-x-5' : 'translate-x-0'
                   }`} />
-                </div>
-              </button>
+                </button>
+              </div>
 
-              {/* Toggle Papan Peringkat di Siswa */}
-              <button
-                type="button"
+              {/* Row 4: Papan Peringkat di Siswa */}
+              <div 
                 onClick={() => {
                   playClick();
                   setShowLeaderboardToStudents((prev) => !prev);
                 }}
-                className={`p-3 rounded-xl border text-left transition-all btn-press flex items-center justify-between min-h-[46px] ${
-                  showLeaderboardToStudents
-                    ? 'border-amber-600 dark:border-amber-500 bg-amber-50/70 dark:bg-amber-950/30'
-                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850'
-                }`}
+                className="flex items-center justify-between p-3.5 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors"
               >
-                <div>
-                  <p className="font-bold text-xs text-slate-900 dark:text-white">Peringkat di Gawai Siswa</p>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400">{showLeaderboardToStudents ? 'Siswa melihat rank & poin real-time' : 'Hanya guru yang melihat di layar host'}</p>
+                <div className="flex items-center gap-3 min-w-0 pr-3">
+                  <div className="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                    <Trophy className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-tight">Peringkat di Gawai Siswa</p>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5">Tampilkan peringkat & poin langsung ke siswa</p>
+                  </div>
                 </div>
-                <div className={`w-9 h-5 rounded-full transition-colors relative flex items-center p-0.5 flex-shrink-0 ${
-                  showLeaderboardToStudents ? 'bg-amber-600' : 'bg-slate-300 dark:bg-slate-700'
-                }`}>
-                  <div className={`w-4 h-4 rounded-full bg-white transition-transform ${
-                    showLeaderboardToStudents ? 'translate-x-4' : 'translate-x-0'
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={showLeaderboardToStudents}
+                  aria-label="Peringkat di Gawai Siswa"
+                  className={`w-11 h-6 rounded-full transition-colors relative flex items-center p-0.5 shrink-0 focus:outline-none ${
+                    showLeaderboardToStudents ? 'bg-amber-600' : 'bg-slate-200 dark:bg-slate-700'
+                  }`}
+                >
+                  <span className={`w-5 h-5 rounded-full bg-white shadow-xs transition-transform transform ${
+                    showLeaderboardToStudents ? 'translate-x-5' : 'translate-x-0'
                   }`} />
-                </div>
-              </button>
+                </button>
+              </div>
 
-              {/* Batas Percobaan (1x vs Bebas) */}
-              <button
-                type="button"
+              {/* Row 5: Batasi Pengerjaan 1x */}
+              <div 
                 onClick={() => {
                   playClick();
                   setMaxAttempts((prev) => (prev === 1 ? 0 : 1));
                 }}
-                className={`p-3 rounded-xl border text-left transition-all btn-press flex items-center justify-between min-h-[46px] sm:col-span-2 ${
-                  maxAttempts === 1
-                    ? 'border-rose-600 dark:border-rose-500 bg-rose-50/70 dark:bg-rose-950/30'
-                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850'
-                }`}
+                className="flex items-center justify-between p-3.5 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors"
               >
-                <div>
-                  <p className="font-bold text-xs text-slate-900 dark:text-white">
-                    Batas Pengerjaan: {maxAttempts === 1 ? 'Hanya 1 Kali (Standar Ujian)' : 'Bebas Mengulang (Latihan Mandiri)'}
-                  </p>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400">
-                    {maxAttempts === 1 ? 'Siswa dilarang mengulang kembali sesi kuis ini' : 'Siswa leluasa mengulang sesi pengerjaan'}
-                  </p>
+                <div className="flex items-center gap-3 min-w-0 pr-3">
+                  <div className="w-8 h-8 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+                    <Lock className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-tight">Batas Pengerjaan 1 Kali</p>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5">
+                      {maxAttempts === 1 ? 'Siswa dilarang mengulang pengerjaan' : 'Siswa bebas mengulang latihan'}
+                    </p>
+                  </div>
                 </div>
-                <div className={`w-9 h-5 rounded-full transition-colors relative flex items-center p-0.5 flex-shrink-0 ${
-                  maxAttempts === 1 ? 'bg-rose-600' : 'bg-slate-300 dark:bg-slate-700'
-                }`}>
-                  <div className={`w-4 h-4 rounded-full bg-white transition-transform ${
-                    maxAttempts === 1 ? 'translate-x-4' : 'translate-x-0'
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={maxAttempts === 1}
+                  aria-label="Batas Pengerjaan 1 Kali"
+                  className={`w-11 h-6 rounded-full transition-colors relative flex items-center p-0.5 shrink-0 focus:outline-none ${
+                    maxAttempts === 1 ? 'bg-rose-600' : 'bg-slate-200 dark:bg-slate-700'
+                  }`}
+                >
+                  <span className={`w-5 h-5 rounded-full bg-white shadow-xs transition-transform transform ${
+                    maxAttempts === 1 ? 'translate-x-5' : 'translate-x-0'
                   }`} />
-                </div>
-              </button>
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* 4. Target Tampilan Permainan */}
-          <div className="p-4 rounded-2xl bg-slate-50/70 dark:bg-slate-850/60 border border-slate-200/80 dark:border-slate-800 space-y-3">
-            <label className="text-xs font-black text-slate-900 dark:text-white tracking-wide uppercase flex items-center gap-1.5">
-              <Tv className="w-3.5 h-3.5 text-blue-500" />
-              <span>4. Target Tampilan Permainan</span>
-            </label>
+          {/* Section: Target Tampilan Permainan */}
+          <div className="space-y-2">
+            <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              Target Tampilan Permainan
+            </span>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div className="bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl flex items-center gap-1">
               <button
                 type="button"
                 onClick={() => {
                   playClick();
                   setPresentationTarget('smartboard');
                 }}
-                className={`p-3 rounded-xl border text-left transition-all btn-press flex items-center gap-3 min-h-[48px] ${
+                className={`flex-1 py-2.5 px-3 rounded-lg text-xs font-bold transition-all text-center flex items-center justify-center gap-2 min-h-[44px] btn-press ${
                   presentationTarget === 'smartboard'
-                    ? 'border-blue-600 dark:border-blue-500 bg-blue-50/80 dark:bg-blue-950/40 shadow-xs ring-2 ring-blue-500/20'
-                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850'
+                    ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs font-black'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                 }`}
               >
-                <div className={`p-2 rounded-lg shrink-0 ${
-                  presentationTarget === 'smartboard' ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
-                }`}>
-                  <Tv className="w-4 h-4" />
-                </div>
-                <div className="min-w-0">
-                  <p className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">Layar Smartboard (IFP)</p>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">Pandu kuis di depan kelas via TV / Proyektor</p>
-                </div>
+                <Tv className="w-4 h-4 shrink-0" />
+                <span>Smartboard / TV Kelas</span>
               </button>
 
               <button
@@ -782,69 +771,48 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
                   playClick();
                   setPresentationTarget('student-lobby');
                 }}
-                className={`p-3 rounded-xl border text-left transition-all btn-press flex items-center gap-3 min-h-[48px] ${
+                className={`flex-1 py-2.5 px-3 rounded-lg text-xs font-bold transition-all text-center flex items-center justify-center gap-2 min-h-[44px] btn-press ${
                   presentationTarget === 'student-lobby'
-                    ? 'border-blue-600 dark:border-blue-500 bg-blue-50/80 dark:bg-blue-950/40 shadow-xs ring-2 ring-blue-500/20'
-                    : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850'
+                    ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs font-black'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                 }`}
               >
-                <div className={`p-2 rounded-lg shrink-0 ${
-                  presentationTarget === 'student-lobby' ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
-                }`}>
-                  <Smartphone className="w-4 h-4" />
-                </div>
-                <div className="min-w-0">
-                  <p className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">Lobi / Gawai Siswa</p>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">Buka lobi mandiri siswa</p>
-                </div>
+                <Smartphone className="w-4 h-4 shrink-0" />
+                <span>Gawai Siswa Mandiri</span>
               </button>
             </div>
 
             {/* Simpan Pengaturan Default */}
-            <div className="pt-2 border-t border-slate-200/60 dark:border-slate-750/60">
-              <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 select-none">
-                <input
-                  type="checkbox"
-                  checked={saveAsDefault}
-                  onChange={(e) => {
-                    playClick();
-                    setSaveAsDefault(e.target.checked);
-                  }}
-                  className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800"
-                />
-                <span>Simpan konfigurasi ini sebagai default untuk kuis ini</span>
-              </label>
-            </div>
+            <label className="flex items-center gap-2.5 cursor-pointer text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 select-none pt-1">
+              <input
+                type="checkbox"
+                checked={saveAsDefault}
+                onChange={(e) => {
+                  playClick();
+                  setSaveAsDefault(e.target.checked);
+                }}
+                className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800"
+              />
+              <span>Simpan konfigurasi ini sebagai default untuk kuis ini</span>
+            </label>
           </div>
 
         </div>
 
         {/* Modal Action Footer */}
-        <div className="p-4 sm:p-5 border-t border-slate-200/90 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-850/90 flex items-center justify-between gap-3 flex-shrink-0">
+        <div className="p-4 sm:p-5 border-t border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center gap-3 flex-shrink-0">
           <button
             type="button"
-            onClick={handleCopyLink}
-            className="py-3 px-4 rounded-2xl text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700 shadow-2xs flex items-center justify-center gap-2 min-h-[48px] transition-colors btn-press flex-shrink-0"
-            title="Salin Tautan Siswa"
+            onClick={handleClose}
+            className="py-3 px-4 rounded-xl text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-800 min-h-[48px] transition-colors btn-press"
           >
-            {isCopiedLink ? (
-              <>
-                <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                <span className="text-emerald-600 dark:text-emerald-400 font-bold">Tersalin!</span>
-              </>
-            ) : (
-              <>
-                <Share2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                <span className="hidden xs:inline">Bagi Tautan</span>
-                <span className="xs:hidden">Bagikan</span>
-              </>
-            )}
+            Batal
           </button>
 
           <button
             type="button"
             onClick={handleLaunch}
-            className="flex-1 py-3 px-5 rounded-2xl text-xs sm:text-sm font-black text-white bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 hover:from-blue-700 hover:to-indigo-700 shadow-md hover:shadow-lg flex items-center justify-center gap-2.5 min-h-[48px] transition-all btn-press tracking-wide"
+            className="flex-1 py-3 px-5 rounded-xl text-xs sm:text-sm font-black text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 shadow-md hover:shadow-lg flex items-center justify-center gap-2 min-h-[48px] transition-all btn-press tracking-wide"
           >
             <Play className="w-4 h-4 fill-white text-white" />
             <span>Mulai Kuis Sekarang</span>
