@@ -1,6 +1,26 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.74] - 2026-09-13
+### Perbaikan Presisi Tampilan Modal Unggah Media & Eliminasi Pemotongan Elemen Antarmuka (Rule 1 & Rule 2)
+
+#### 1. Arsitektur React Portal & Eliminasi Trap Stacking Context Modal
+- **Teleportasi Modal Mandiri (`createPortal` ke `document.body`)**:
+  - Mengimplementasikan `createPortal` pada `QuizCoverModal` dan `ImageSelectorModal` langsung ke `document.body` dengan tingkat prioritas tampilan tinggi (`z-[100]`).
+  - Mengeliminasi kendala *stacking context* lokal yang sebelumnya menyebabkan header modal tertutup di belakang bilah navigasi pembuat kuis (*sticky header*).
+  - Memastikan seluruh bagian atas modal (pratinjau ikon/sampul, judul, lencana status, tombol reset, dan tombol tutup [X]) tampil 100% utuh dan mudah diakses di seluruh perangkat.
+
+#### 2. Optimalisasi Tata Letak Dropzone & Bidang Tautan URL
+- **Penyelarasan Ruang Konten & Penanganan Overflow Fleksibel**:
+  - Menambahkan `min-h-0` dan `overscroll-contain pb-6` pada kontainer scrollable agar algoritma flexbox bekerja presisi dan tidak memotong elemen di bagian bawah (*clipping*).
+  - Merampingkan dimensi vertikal area *dropzone* berkas Google Drive Pro dengan proporsi padding dan ikon yang estetis, modern, dan kompak.
+  - Memastikan kotak isian tautan gambar web (URL) beserta tombol *Terapkan URL* tidak lagi tertimpa atau terdorong ke balik bilah footer aksi (*Batal* / *Terapkan Sampul*).
+
+#### 3. Verifikasi Responsivitas Seluler, Tablet, & Lanskap (Rule 1)
+- **Pengujian Multi-Resolusi Komprehensif**:
+  - Memverifikasi kestabilan antarmuka pada tampilan desktop standar, tablet, smartphone mode potret (390×844), serta orientasi lanskap ringkas (844×390).
+  - Memastikan seluruh target sentuh memenuhi standar minimal 44×44 px / 48×48 px dengan interaksi sentuh yang mulus tanpa gangguan visual.
+
 ## [2.3.73] - 2026-09-13
 ### Integrasi Penyimpanan Media Google Drive Pro via Supabase Edge Function & Pengoptimalan Alur Unggah Berkas
 

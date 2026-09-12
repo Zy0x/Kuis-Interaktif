@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   Search, 
   Sparkles, 
@@ -120,7 +121,7 @@ export const ImageSelectorModal: React.FC<ImageSelectorModalProps> = ({
     enabled: isOpen,
   });
 
-  if (!isOpen) return null;
+  if (!isOpen || typeof document === 'undefined') return null;
 
   const handleSearch = async (queryToUse?: string) => {
     const q = (queryToUse !== undefined ? queryToUse : searchQuery).trim();
@@ -190,14 +191,14 @@ export const ImageSelectorModal: React.FC<ImageSelectorModalProps> = ({
     }
   };
 
-  return (
+  return createPortal(
     <div 
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs animate-fade-in overscroll-contain"
+      className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/75 backdrop-blur-xs animate-fade-in overscroll-contain"
       onClick={onClose}
       style={backdropStyle}
     >
       <div 
-        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-t-3xl sm:rounded-3xl w-full max-w-2xl h-[92dvh] sm:h-auto sm:max-h-[88vh] flex flex-col shadow-2xl overflow-hidden animate-scale-up overscroll-contain"
+        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-t-3xl sm:rounded-3xl w-full max-w-2xl h-[92dvh] sm:h-auto sm:max-h-[88vh] flex flex-col shadow-2xl overflow-hidden animate-scale-up overscroll-contain my-auto"
         onClick={(e) => e.stopPropagation()}
         style={drawerStyle}
       >
@@ -278,7 +279,7 @@ export const ImageSelectorModal: React.FC<ImageSelectorModalProps> = ({
         </div>
 
         {/* Tab Content Body */}
-        <div className="flex-1 overflow-y-auto p-3.5 sm:p-5 space-y-4">
+        <div className="flex-1 min-h-0 overflow-y-auto p-3.5 sm:p-5 space-y-4 overscroll-contain pb-6">
           
           {/* TAB 1: ENSIKLOPEDIA (WIKIPEDIA & WIKIMEDIA COMMONS) */}
           {activeTab === 'wiki' && (
@@ -516,14 +517,14 @@ export const ImageSelectorModal: React.FC<ImageSelectorModalProps> = ({
 
           {/* TAB 3: UNGGAH / TAUTAN URL */}
           {activeTab === 'upload' && (
-            <div className="space-y-4">
+            <div className="space-y-3.5">
               {/* Upload Local File - Direct to Google Drive Pro */}
-              <div className="p-6 rounded-3xl border-2 border-dashed border-blue-200 dark:border-blue-900 text-center space-y-3 bg-gradient-to-b from-blue-50/50 to-indigo-50/30 dark:from-blue-950/30 dark:to-slate-900/50">
+              <div className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl border-2 border-dashed border-blue-200 dark:border-blue-900 text-center space-y-2.5 bg-gradient-to-b from-blue-50/50 to-indigo-50/30 dark:from-blue-950/30 dark:to-slate-900/50">
                 <div className="flex items-center justify-center gap-1.5 px-3 py-1 bg-blue-100/80 dark:bg-blue-900/60 rounded-full w-fit mx-auto text-[10px] font-extrabold text-blue-700 dark:text-blue-300">
                   <span>☁️ Google Drive Pro Storage</span>
                 </div>
-                <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto text-xl">
-                  {isUploadingDrive ? <Loader2 className="w-6 h-6 animate-spin text-blue-600 dark:text-blue-400" /> : '📁'}
+                <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto text-xl">
+                  {isUploadingDrive ? <Loader2 className="w-5 h-5 animate-spin text-blue-600 dark:text-blue-400" /> : '📁'}
                 </div>
                 <div>
                   <h4 className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
@@ -543,7 +544,7 @@ export const ImageSelectorModal: React.FC<ImageSelectorModalProps> = ({
                   </div>
                 )}
 
-                <label className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs cursor-pointer btn-press min-h-[48px] ${isUploadingDrive ? 'opacity-60 pointer-events-none' : ''}`}>
+                <label className={`inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs cursor-pointer btn-press min-h-[44px] ${isUploadingDrive ? 'opacity-60 pointer-events-none' : ''}`}>
                   {isUploadingDrive ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -566,7 +567,7 @@ export const ImageSelectorModal: React.FC<ImageSelectorModalProps> = ({
               </div>
 
               {/* Or Manual URL */}
-              <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 space-y-2.5">
+              <div className="p-3.5 sm:p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 space-y-2">
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
                   Atau Tempel Tautan / URL Gambar:
                 </label>
@@ -582,7 +583,7 @@ export const ImageSelectorModal: React.FC<ImageSelectorModalProps> = ({
                     type="button"
                     disabled={!manualUrl.trim().startsWith('http')}
                     onClick={() => handleApplyImage(manualUrl.trim())}
-                    className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold disabled:opacity-50 btn-press min-h-[44px] justify-center"
+                    className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold disabled:opacity-50 btn-press min-h-[44px] justify-center"
                   >
                     Terapkan
                   </button>
@@ -607,6 +608,7 @@ export const ImageSelectorModal: React.FC<ImageSelectorModalProps> = ({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

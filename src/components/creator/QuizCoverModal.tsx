@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import {
   X,
   Smile,
@@ -133,7 +134,7 @@ export const QuizCoverModal: React.FC<QuizCoverModalProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
+  if (!isOpen || typeof document === 'undefined') return null;
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -200,13 +201,13 @@ export const QuizCoverModal: React.FC<QuizCoverModalProps> = ({
 
   const isCurrentAnImage = isImageCover(selectedCover);
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs overscroll-contain animate-fade-in"
+      className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/75 backdrop-blur-xs overscroll-contain animate-fade-in"
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-t-3xl sm:rounded-3xl w-full max-w-lg max-h-[92dvh] sm:max-h-[85vh] flex flex-col shadow-2xl overflow-hidden animate-scale-up overscroll-contain"
+        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-t-3xl sm:rounded-3xl w-full max-w-lg max-h-[92dvh] sm:max-h-[86vh] flex flex-col shadow-2xl overflow-hidden animate-scale-up overscroll-contain my-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header Modal Compact dengan Live Preview Terintegrasi */}
@@ -295,7 +296,7 @@ export const QuizCoverModal: React.FC<QuizCoverModalProps> = ({
         </div>
 
         {/* Tab Content Area (Scrollable) */}
-        <div className="p-4 sm:p-5 overflow-y-auto space-y-4 flex-1">
+        <div className="p-3.5 sm:p-5 overflow-y-auto space-y-3.5 sm:space-y-4 flex-1 min-h-0 overscroll-contain pb-6">
           
           {/* TAB 1: KOLEKSI EMOJI */}
           {activeTab === 'emoji' && (
@@ -372,26 +373,26 @@ export const QuizCoverModal: React.FC<QuizCoverModalProps> = ({
 
           {/* TAB 2: UNGGAH GAMBAR KUSTOM */}
           {activeTab === 'upload' && (
-            <div className="space-y-4">
+            <div className="space-y-3.5">
               {/* Dropzone File Upload - Direct to Google Drive Pro */}
-              <div className="p-6 rounded-3xl border-2 border-dashed border-blue-200 dark:border-blue-900 text-center space-y-3 bg-gradient-to-b from-blue-50/50 to-indigo-50/30 dark:from-blue-950/30 dark:to-slate-900/50">
+              <div className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl border-2 border-dashed border-blue-200 dark:border-blue-900 text-center space-y-2.5 bg-gradient-to-b from-blue-50/50 to-indigo-50/30 dark:from-blue-950/30 dark:to-slate-900/50">
                 <div className="flex items-center justify-center gap-1.5 px-3 py-1 bg-blue-100/80 dark:bg-blue-900/60 rounded-full w-fit mx-auto text-[10px] font-extrabold text-blue-700 dark:text-blue-300">
                   <span>☁️ Google Drive Pro Storage</span>
                 </div>
-                <div className="w-14 h-14 rounded-2xl bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto text-2xl">
-                  {isCompressing ? <RefreshCw className="w-6 h-6 animate-spin text-blue-600" /> : <ImageIcon className="w-6 h-6" />}
+                <div className="w-12 h-12 rounded-2xl bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto text-xl">
+                  {isCompressing ? <RefreshCw className="w-5 h-5 animate-spin text-blue-600" /> : <ImageIcon className="w-5 h-5" />}
                 </div>
 
                 <div>
                   <h4 className="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white">
                     {isCompressing ? 'Menyinkronkan ke Google Drive Pro...' : 'Unggah Foto / Logo Sampul'}
                   </h4>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 max-w-xs mx-auto">
-                    Format: PNG, JPG, WEBP. Media otomatis disimpan permanen di folder Google Drive Pro Anda.
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 max-w-xs mx-auto leading-relaxed">
+                    Format: PNG, JPG, WEBP. Media otomatis disimpan permanen di Google Drive Pro.
                   </p>
                 </div>
 
-                <label className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-black text-xs cursor-pointer btn-press min-h-[46px] shadow-sm transition-colors">
+                <label className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black text-xs cursor-pointer btn-press min-h-[44px] shadow-sm transition-colors">
                   <Upload className="w-4 h-4" />
                   <span>Pilih Berkas dari HP / Laptop</span>
                   <input
@@ -406,7 +407,7 @@ export const QuizCoverModal: React.FC<QuizCoverModalProps> = ({
               </div>
 
               {/* Input URL Gambar */}
-              <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/80 space-y-2.5">
+              <div className="p-3.5 sm:p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800/80 space-y-2">
                 <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
                   Atau Tempelkan Tautan Web (URL Gambar):
                 </label>
@@ -449,7 +450,7 @@ export const QuizCoverModal: React.FC<QuizCoverModalProps> = ({
         </div>
 
         {/* Footer Actions */}
-        <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/90 flex items-center justify-end gap-2.5 shrink-0">
+        <div className="p-3.5 sm:p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/90 flex items-center justify-end gap-2.5 shrink-0">
           <button
             type="button"
             onClick={onClose}
@@ -467,6 +468,7 @@ export const QuizCoverModal: React.FC<QuizCoverModalProps> = ({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
