@@ -183,9 +183,9 @@ export const DataManager = {
           // Migrasikan kepemilikan custom quizzes ke Master Teacher / Admin
           let changed = false;
           customQuizzes = customQuizzes.map((q) => {
-            if (!q.creatorId || q.creatorId.startsWith('guru_demo_') || q.creatorId.startsWith('teacher_local_')) {
+            if (!q.creatorId || q.creatorId.startsWith('guru_demo_') || q.creatorId.startsWith('teacher_local_') || q.creatorId === teacherId || q.creatorId === 'teacher_master_zy0x') {
               changed = true;
-              return { ...q, creatorId: teacherId, creatorName: q.creatorName || teacherName };
+              return { ...q, creatorId: teacherId, creatorName: teacherName };
             }
             return q;
           });
@@ -196,8 +196,8 @@ export const DataManager = {
           // Migrasikan kepemilikan kuis aktif seed ke Master Teacher / Admin agar terikat sah ke akun admin
           const claimedSeeds = activeSeeds.map((q) => ({
             ...q,
-            creatorId: q.creatorId || teacherId,
-            creatorName: q.creatorName || teacherName,
+            creatorId: teacherId,
+            creatorName: teacherName,
           }));
 
           return [...customQuizzes, ...claimedSeeds];
@@ -1287,7 +1287,7 @@ export const DataManager = {
     }
   },
 
-  async updateTeacherProfile(fullName: string, schoolName: string): Promise<{ success: boolean; error?: string; teacher?: TeacherProfile }> {
+  async updateTeacherProfile(fullName: string, schoolName: string): Promise<{ success: boolean; error?: string; teacher?: TeacherProfile; cloudSynced?: boolean }> {
     const current = this.getTeacherProfile();
     if (!current) {
       return { success: false, error: 'Sesi pendidik tidak ditemukan. Silakan masuk kembali.' };
@@ -1305,35 +1305,176 @@ export const DataManager = {
     // 1. Simpan ke LocalStorage seketika
     this.setTeacherProfile(updated);
 
-    // 2. Sinkronkan ke Supabase Auth & profiles_teacher jika terhubung
+    // Perbarui kepemilikan dan nama author kuis lokal milik guru
+    this.claimMasterTeacherQuizzes(updated.id, updated.fullName);
+
+    // Perbarui nama host di sesi kuis lokal
+    try {
+      const sessStr = localStorage.getItem(STORAGE_KEY_QUIZ_SESSIONS);
+      if (sessStr) {
+        let sessions: QuizSession[] = JSON.parse(sessStr);
+        let sUpdated = false;
+        sessions = sessions.map((s) => {
+          if (
+            (s.teacherEmail && s.teacherEmail.toLowerCase() === updated.email.toLowerCase()) ||
+            s.teacherId === updated.id
+          ) {
+            sUpdated = true;
+            return { ...s, teacherName: updated.fullName };
+          }
+          return s;
+        });
+        if (sUpdated) {
+          localStorage.setItem(STORAGE_KEY_QUIZ_SESSIONS, JSON.stringify(sessions));
+        }
+      }
+    } catch (e) {
+      console.warn('Local session sync notice:', e);
+    }
+
+    let cloudSynced = false;
+
+    // 2. SINKRONISASI MENYELURUH KE SUPABASE CLOUD
     if (supabase) {
       try {
-        await supabase.auth.updateUser({
-          data: {
+        // A. Perbarui Auth User Metadata jika terautentikasi
+        let authUserId: string | null = null;
+        try {
+          const { data: authData } = await supabase.auth.getUser();
+          if (authData?.user?.id) {
+            authUserId = authData.user.id;
+            await supabase.auth.updateUser({
+              data: {
+                full_name: updated.fullName,
+                school_name: updated.schoolName,
+              },
+            });
+          }
+        } catch (authErr) {
+          console.warn('[Supabase Auth] updateUser notice:', authErr);
+        }
+
+        const isUuid = (val?: string | null) => Boolean(val && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val));
+
+        // B. Cek apakah ada record di profiles_teacher berdasarkan email atau id
+        let targetRecordId = updated.id;
+        let existingAuthUserId: string | null = null;
+        try {
+          const { data: existingRows } = await supabase
+            .from('profiles_teacher')
+            .select('id, auth_user_id')
+            .eq('email', updated.email)
+            .limit(1);
+
+          if (existingRows && existingRows.length > 0) {
+            targetRecordId = existingRows[0].id;
+            existingAuthUserId = existingRows[0].auth_user_id;
+            // Sinkronkan ID lokal agar konsisten dengan cloud ID
+            updated.id = targetRecordId;
+            this.setTeacherProfile(updated);
+          }
+        } catch {}
+
+        const finalAuthUserId = isUuid(authUserId)
+          ? authUserId
+          : (isUuid(existingAuthUserId) ? existingAuthUserId : (isUuid(updated.id) ? updated.id : null));
+
+        // C. Upsert ke public.profiles_teacher
+        const { error: profileError } = await supabase
+          .from('profiles_teacher')
+          .upsert({
+            id: targetRecordId,
+            auth_user_id: finalAuthUserId,
+            email: updated.email,
             full_name: updated.fullName,
             school_name: updated.schoolName,
-          },
-        });
+            updated_at: new Date().toISOString(),
+          }, { onConflict: 'id' });
 
-        await supabase.from('profiles_teacher').upsert({
-          id: updated.id,
-          auth_user_id: updated.id,
-          email: updated.email,
-          full_name: updated.fullName,
-          school_name: updated.schoolName,
-          updated_at: new Date().toISOString(),
-        });
+        if (profileError) {
+          console.warn('[Supabase] profiles_teacher upsert notice:', profileError);
+        } else {
+          cloudSynced = true;
+        }
+
+        // D. SINKRONKAN SELURUH DATA KUIS TERKAIT DI TABEL QUIZZES
+        try {
+          const isMaster = updated.email.toLowerCase() === MASTER_TEACHER_EMAIL.toLowerCase();
+          let quizQuery = supabase
+            .from('quizzes')
+            .update({
+              creator_name: updated.fullName,
+              updated_at: new Date().toISOString(),
+            });
+
+          if (isMaster) {
+            quizQuery = quizQuery.or(
+              `creator_id.eq.${updated.id},creator_id.eq.${targetRecordId},creator_id.eq.teacher_master_zy0x,creator_id.is.null,creator_name.eq.${current.fullName}`
+            );
+          } else {
+            quizQuery = quizQuery.or(
+              `creator_id.eq.${updated.id},creator_id.eq.${targetRecordId}`
+            );
+          }
+
+          const { error: quizErr } = await quizQuery;
+          if (quizErr) {
+            console.warn('[Supabase] Quizzes creator_name sync notice:', quizErr);
+          }
+        } catch (quizSyncErr) {
+          console.warn('[Supabase] Quizzes update error:', quizSyncErr);
+        }
+
+        // E. SINKRONKAN SELURUH DATA SESI KUIS DI TABEL QUIZ_SESSIONS
+        try {
+          const { error: sessionErr } = await supabase
+            .from('quiz_sessions')
+            .update({
+              teacher_name: updated.fullName,
+            })
+            .or(`teacher_email.eq.${updated.email},teacher_id.eq.${updated.id},teacher_id.eq.${targetRecordId}`);
+
+          if (sessionErr) {
+            console.warn('[Supabase] quiz_sessions teacher_name sync notice:', sessionErr);
+          }
+        } catch (sessSyncErr) {
+          console.warn('[Supabase] Quiz sessions update error:', sessSyncErr);
+        }
+
+        // F. Catat ke tabel AUDIT_LOGS di Supabase
+        try {
+          await supabase.from('audit_logs').insert({
+            action: 'UPDATE_TEACHER_PROFILE',
+            table_name: 'profiles_teacher',
+            record_id: targetRecordId,
+            actor_id: updated.email,
+            details: {
+              old_name: current.fullName,
+              new_name: updated.fullName,
+              old_school: current.schoolName,
+              new_school: updated.schoolName,
+              timestamp: new Date().toISOString(),
+            },
+          });
+        } catch {}
+
       } catch (err) {
         console.warn('[Supabase] Gagal menyinkronkan pembaruan profil pendidik ke cloud:', err);
       }
     }
 
-    // Perbarui kepemilikan kuis jika akun master
-    if (updated.email.toLowerCase() === MASTER_TEACHER_EMAIL.toLowerCase()) {
-      this.claimMasterTeacherQuizzes(updated.id, updated.fullName);
+    // Broadcast ke seluruh window / tab
+    if (typeof window !== 'undefined') {
+      try {
+        window.dispatchEvent(
+          new CustomEvent('kuis_teacher_profile_updated', {
+            detail: { teacher: updated },
+          })
+        );
+      } catch {}
     }
 
-    return { success: true, teacher: updated };
+    return { success: true, teacher: updated, cloudSynced };
   },
 
   claimMasterTeacherQuizzes(teacherId: string, teacherName: string) {
@@ -1342,7 +1483,13 @@ export const DataManager = {
       let customQuizzes: Quiz[] = customStr ? JSON.parse(customStr) : [];
       let updated = false;
       customQuizzes = customQuizzes.map((q) => {
-        if (!q.creatorId || q.creatorId.startsWith('guru_demo_') || q.creatorId.startsWith('teacher_local_')) {
+        if (
+          !q.creatorId ||
+          q.creatorId.startsWith('guru_demo_') ||
+          q.creatorId.startsWith('teacher_local_') ||
+          q.creatorId === teacherId ||
+          q.creatorId === 'teacher_master_zy0x'
+        ) {
           updated = true;
           return { ...q, creatorId: teacherId, creatorName: teacherName };
         }

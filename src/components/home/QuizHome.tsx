@@ -1481,9 +1481,9 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
               {isEditingTeacherProfile ? (
                 <form onSubmit={handleSaveTeacherProfile} className="space-y-3.5">
                   {teacherProfileSuccess && (
-                    <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-2">
+                    <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-2 animate-fade-in">
                       <Check className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                      <span>Profil pendidik berhasil diperbarui!</span>
+                      <span>Profil & seluruh data kuis/sesi berhasil tersinkron ke Supabase Cloud!</span>
                     </div>
                   )}
 

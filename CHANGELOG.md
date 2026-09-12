@@ -1,6 +1,18 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.72] - 2026-09-13
+### Sinkronisasi Menyeluruh Profil Pendidik & Seluruh Entitas Terkait ke Supabase Cloud
+
+#### 1. Sinkronisasi Profil Pendidik Multi-Tabel
+- **Pembaruan Menyeluruh Data Pendidik ke Cloud**:
+  - Menyelesaikan sinkronisasi profil (`full_name` dan `school_name`) secara presisi ke tabel `profiles_teacher` di Supabase dengan resolusi UUID yang akurat dan penanganan constraint yang aman.
+  - Memastikan metadata akun terautentikasi (`auth.users`) tersinkronisasi sempurna dengan pembaruan profil pengguna.
+- **Penyelarasan Seluruh Kuis & Sesi Aktif Terkait**:
+  - Setiap perubahan nama pendidik kini secara otomatis memperbarui kolom pembuat (`creator_name`) di seluruh tabel `quizzes` terkait di Supabase maupun di penyimpanan lokal.
+  - Menyelaraskan nama host guru (`teacher_name`) di tabel `quiz_sessions` serta mencatat jejak perubahan pada tabel log audit sistem (`audit_logs`).
+  - Menambahkan pendengar kejadian global (`kuis_teacher_profile_updated`) sehingga kartu kuis, lencana header, dan panel dashboard guru otomatis memperbarui tampilan seketika tanpa perlu memuat ulang halaman.
+
 ## [2.3.71] - 2026-09-13
 ### Sinkronisasi Menyeluruh Sesi Kuis & Rekap Histori Nilai ke Supabase Cloud, Ruang Chat Host & Notifikasi Toast Ala Zoom, Serta Fitur Edit Profil Pendidik
 

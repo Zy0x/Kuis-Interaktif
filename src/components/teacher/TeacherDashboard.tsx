@@ -142,7 +142,16 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
     };
     window.addEventListener('test_open_play_modal', handleTestOpen);
     (window as any).__setQuizToPlay = setQuizToPlay;
-    return () => window.removeEventListener('test_open_play_modal', handleTestOpen);
+
+    const handleProfileUpdated = () => {
+      loadData();
+    };
+    window.addEventListener('kuis_teacher_profile_updated', handleProfileUpdated);
+
+    return () => {
+      window.removeEventListener('test_open_play_modal', handleTestOpen);
+      window.removeEventListener('kuis_teacher_profile_updated', handleProfileUpdated);
+    };
   }, []);
 
   const loadData = async () => {
