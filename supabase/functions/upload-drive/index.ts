@@ -199,9 +199,11 @@ async function uploadToGoogleDrive(
     console.warn("Gagal menyetel izin publik file:", err);
   }
 
-  // Generate CDN URL Google & direct webViewLink
-  const directUrl = `https://lh3.googleusercontent.com/d/${fileId}=s1600`;
-  const thumbnailUrl = `https://lh3.googleusercontent.com/d/${fileId}=s400`;
+  // Generate Direct Proxy URL via Supabase Edge Function & Google Drive links
+  const supabaseUrl = Deno.env.get("SUPABASE_URL") || "https://colpcgesngntiztjeprg.supabase.co";
+  const directUrl = `${supabaseUrl}/functions/v1/upload-drive?fileId=${fileId}`;
+  const googleDirectUrl = `https://drive.google.com/uc?id=${fileId}&export=view`;
+  const thumbnailUrl = `${supabaseUrl}/functions/v1/upload-drive?fileId=${fileId}&thumb=1`;
   const webViewLink = `https://drive.google.com/file/d/${fileId}/view?usp=drivesdk`;
 
   return {
@@ -210,6 +212,7 @@ async function uploadToGoogleDrive(
     name: uploadedFile.name,
     mimeType: uploadedFile.mimeType,
     directUrl,
+    googleDirectUrl,
     thumbnailUrl,
     webViewLink,
   };
@@ -258,8 +261,48 @@ serve(async (req) => {
       }
     };
 
-    // Health check endpoint (GET)
+    // Method GET: Image Delivery Proxy & Health Check
     if (req.method === "GET") {
+      const reqUrl = new URL(req.url);
+      const fileId = reqUrl.searchParams.get("fileId") || reqUrl.searchParams.get("id");
+
+      // Layani berkas media langsung ke browser (Zero-CORS, High-Performance Streaming)
+      if (fileId) {
+        try {
+          const accessToken = await fetchAccessToken();
+          const driveRes = await fetch(
+            `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&supportsAllDrives=true`,
+            { headers: { Authorization: `Bearer ${accessToken}` } }
+          );
+
+          if (!driveRes.ok) {
+            return new Response(`Media Google Drive tidak ditemukan (${driveRes.status})`, {
+              status: driveRes.status,
+              headers: { ...corsHeaders, "Content-Type": "text/plain" },
+            });
+          }
+
+          const mediaType = driveRes.headers.get("content-type") || "image/png";
+          const imageBytes = await driveRes.arrayBuffer();
+
+          return new Response(imageBytes, {
+            status: 200,
+            headers: {
+              ...corsHeaders,
+              "Content-Type": mediaType,
+              "Cache-Control": "public, max-age=31536000, immutable",
+              "Cross-Origin-Resource-Policy": "cross-origin",
+            },
+          });
+        } catch (err: any) {
+          return new Response(`Kesalahan streaming media: ${err?.message}`, {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "text/plain" },
+          });
+        }
+      }
+
+      // Health Check Response jika tanpa fileId
       return new Response(
         JSON.stringify({
           status: "ok",
