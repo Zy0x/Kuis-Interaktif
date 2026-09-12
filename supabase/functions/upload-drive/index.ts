@@ -122,13 +122,90 @@ async function getGoogleDriveAccessToken(clientEmail: string, privateKeyPem: str
   return tokenData.access_token;
 }
 
+// Helper: Temukan atau buat folder kuis secara dinamis di Google Drive Pro (Subfolder per Kuis)
+async function getOrCreateQuizFolder(
+  accessToken: string,
+  parentFolderId: string,
+  folderName: string
+): Promise<{ folderId: string; folderName: string }> {
+  const safeName = folderName.replace(/['\\\/]/g, " ").trim().slice(0, 80);
+  if (!safeName) return { folderId: parentFolderId, folderName: "Root" };
+
+  try {
+    const escapedName = safeName.replace(/'/g, "\\'");
+    const q = `'${parentFolderId}' in parents and name = '${escapedName}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`;
+    
+    const searchRes = await fetch(
+      `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id,name)&supportsAllDrives=true&includeItemsFromAllDrives=true`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+
+    if (searchRes.ok) {
+      const searchData = await searchRes.json();
+      if (searchData.files && searchData.files.length > 0) {
+        return { folderId: searchData.files[0].id, folderName: searchData.files[0].name };
+      }
+    } else {
+      console.warn("Pencarian folder kuis Drive notice:", await searchRes.text());
+    }
+
+    // Buat subfolder baru jika belum ada
+    const createRes = await fetch(
+      "https://www.googleapis.com/drive/v3/files?supportsAllDrives=true",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: safeName,
+          mimeType: "application/vnd.google-apps.folder",
+          parents: [parentFolderId],
+        }),
+      }
+    );
+
+    if (createRes.ok) {
+      const folderData = await createRes.json();
+      const newFolderId = folderData.id;
+
+      // Set permission folder agar berkas publik dapat diakses
+      try {
+        await fetch(
+          `https://www.googleapis.com/drive/v3/files/${newFolderId}/permissions?supportsAllDrives=true`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ role: "reader", type: "anyone" }),
+          }
+        );
+      } catch (err) {
+        console.warn("Peringatan izin folder publik:", err);
+      }
+
+      return { folderId: newFolderId, folderName: safeName };
+    } else {
+      console.warn("Gagal membuat folder kuis baru di Drive:", await createRes.text());
+    }
+  } catch (err) {
+    console.warn("Kesalahan proses folder kuis Google Drive:", err);
+  }
+
+  return { folderId: parentFolderId, folderName: "Root" };
+}
+
 // Upload file to Google Drive and set permission to anyone reader
 async function uploadToGoogleDrive(
   accessToken: string,
   folderId: string,
   fileName: string,
   mimeType: string,
-  fileBytes: Uint8Array
+  fileBytes: Uint8Array,
+  folderName: string = "Root"
 ) {
   const boundary = `-------KuisGdriveBoundary${Date.now()}`;
   const delimiter = `\r\n--${boundary}\r\n`;
@@ -211,6 +288,8 @@ async function uploadToGoogleDrive(
     fileId,
     name: uploadedFile.name,
     mimeType: uploadedFile.mimeType,
+    folderId,
+    folderName,
     directUrl,
     googleDirectUrl,
     thumbnailUrl,
@@ -321,6 +400,11 @@ serve(async (req) => {
     let mimeType = "image/png";
     let targetFolderId = defaultFolderId;
 
+    let quizPin = "";
+    let quizTitle = "";
+    let quizId = "";
+    let requestedFolderName = "";
+
     // A. Penanganan Multipart Form Data
     if (contentType.includes("multipart/form-data")) {
       const formData = await req.formData();
@@ -331,6 +415,18 @@ serve(async (req) => {
       if (folderOverride && typeof folderOverride === "string") {
         targetFolderId = folderOverride;
       }
+
+      const pinParam = formData.get("quizPin") || formData.get("pin");
+      if (pinParam && typeof pinParam === "string") quizPin = pinParam.trim();
+
+      const titleParam = formData.get("quizTitle") || formData.get("title");
+      if (titleParam && typeof titleParam === "string") quizTitle = titleParam.trim();
+
+      const idParam = formData.get("quizId") || formData.get("id");
+      if (idParam && typeof idParam === "string") quizId = idParam.trim();
+
+      const customFolder = formData.get("folderName");
+      if (customFolder && typeof customFolder === "string") requestedFolderName = customFolder.trim();
 
       if (!file || !(file instanceof File)) {
         return new Response(
@@ -372,6 +468,11 @@ serve(async (req) => {
       if (body.folderId) {
         targetFolderId = body.folderId;
       }
+
+      if (body.quizPin || body.pin) quizPin = String(body.quizPin || body.pin).trim();
+      if (body.quizTitle || body.title) quizTitle = String(body.quizTitle || body.title).trim();
+      if (body.quizId || body.id) quizId = String(body.quizId || body.id).trim();
+      if (body.folderName) requestedFolderName = String(body.folderName).trim();
 
       // Base64 Upload
       if (body.base64) {
@@ -422,9 +523,31 @@ serve(async (req) => {
       );
     }
 
-    // Dapatkan Google OAuth2 Token & Upload
+    // Dapatkan Google OAuth2 Token
     const accessToken = await fetchAccessToken();
-    const result = await uploadToGoogleDrive(accessToken, targetFolderId, fileName, mimeType, fileBytes);
+
+    // Resolusi Sub-Folder Kuis Otomatis (Rule: Terorganisir & Terstruktur Rapi per Kuis)
+    let resolvedFolderName = requestedFolderName;
+    if (!resolvedFolderName) {
+      if (quizPin) {
+        const cleanTitle = quizTitle ? quizTitle.replace(/[\\/:*?"<>|]/g, " ").trim().slice(0, 45) : "";
+        resolvedFolderName = cleanTitle ? `[PIN ${quizPin}] ${cleanTitle}` : `[PIN ${quizPin}] Kuis`;
+      } else if (quizTitle) {
+        const cleanTitle = quizTitle.replace(/[\\/:*?"<>|]/g, " ").trim().slice(0, 45);
+        resolvedFolderName = `[Draf] ${cleanTitle || "Kuis Baru"}`;
+      }
+    }
+
+    let activeFolderId = targetFolderId;
+    let finalFolderName = "Root";
+    if (resolvedFolderName) {
+      const folderResult = await getOrCreateQuizFolder(accessToken, targetFolderId, resolvedFolderName);
+      activeFolderId = folderResult.folderId;
+      finalFolderName = folderResult.folderName;
+    }
+
+    // Unggah berkas ke subfolder kuis terkait di Google Drive Pro
+    const result = await uploadToGoogleDrive(accessToken, activeFolderId, fileName, mimeType, fileBytes, finalFolderName);
 
     return new Response(JSON.stringify(result), {
       status: 200,

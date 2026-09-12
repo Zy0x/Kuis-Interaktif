@@ -180,6 +180,11 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
 
   // General Quiz State
   const [title, setTitle] = useState(editingQuiz?.title || draft?.title || '');
+  
+  // Identitas kuis aktif untuk manajemen sub-folder media terstruktur di Google Drive Pro
+  const activeQuizPin = editingQuiz?.pinCode || (editingQuiz as any)?.pin || (draft as any)?.pinCode || (draft as any)?.pin || (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('pin') || '' : '');
+  const activeQuizId = editingQuiz?.id || (draft as any)?.id || (typeof window !== 'undefined' ? (new URLSearchParams(window.location.search).get('quiz') || new URLSearchParams(window.location.search).get('quizId') || '') : '');
+
   const [description, setDescription] = useState(editingQuiz?.description || draft?.description || '');
   const [subject, setSubject] = useState<Subject>(editingQuiz?.subject || draft?.subject || 'Matematika');
   const [grade, setGrade] = useState<number>(editingQuiz?.grade ?? draft?.grade ?? 3);
@@ -2052,6 +2057,8 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                 setCoverEmoji={setCoverEmoji}
                 questionsCount={questions.length}
                 isAiMode={true}
+                quizPin={activeQuizPin}
+                quizId={activeQuizId}
                 onNext={() => setCurrentStep(3)}
                 onBack={() => setCurrentStep(1)}
                 playClick={playClick}
@@ -2081,6 +2088,8 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                 setCoverEmoji={setCoverEmoji}
                 questionsCount={questions.length}
                 isAiMode={false}
+                quizPin={activeQuizPin}
+                quizId={activeQuizId}
                 onNext={() => setCurrentStep(2)}
                 onBack={onBack}
                 playClick={playClick}
@@ -2372,6 +2381,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
         questionText={qText}
         subject={subject}
         topic={title}
+        quizPin={activeQuizPin}
       />
 
     </div>

@@ -1,5 +1,14 @@
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 
+export interface DriveUploadOptions {
+  fileName?: string;
+  folderId?: string;
+  folderName?: string;
+  quizPin?: string;
+  quizTitle?: string;
+  quizId?: string;
+}
+
 export interface DriveUploadResult {
   success: boolean;
   directUrl: string;
@@ -7,6 +16,8 @@ export interface DriveUploadResult {
   webViewLink?: string;
   fileId?: string;
   name?: string;
+  folderId?: string;
+  folderName?: string;
   error?: string;
 }
 
@@ -21,11 +32,12 @@ export interface DriveStatusResult {
 
 /**
  * Unggah file gambar / media langsung ke Google Drive Pro via Supabase Edge Function (Rule 9 & Rule 10)
- * Kredensial terlindungi aman di server-side (Edge Function Secrets).
+ * Mendukung pengelompokan otomatis per subfolder kuis (misal: [PIN 7871] Judul Kuis).
  */
 export async function uploadFileToGoogleDrive(
   file: File | Blob,
-  customFileName?: string
+  customFileNameOrOptions?: string | DriveUploadOptions,
+  legacyOptions?: DriveUploadOptions
 ): Promise<DriveUploadResult> {
   if (!isSupabaseConfigured || !supabase) {
     return {
@@ -35,11 +47,34 @@ export async function uploadFileToGoogleDrive(
     };
   }
 
+  const options: DriveUploadOptions =
+    typeof customFileNameOrOptions === 'object'
+      ? customFileNameOrOptions
+      : {
+          fileName: customFileNameOrOptions,
+          ...legacyOptions,
+        };
+
   try {
     const formData = new FormData();
     formData.append('file', file);
-    if (customFileName) {
-      formData.append('fileName', customFileName);
+    if (options.fileName) {
+      formData.append('fileName', options.fileName);
+    }
+    if (options.quizPin) {
+      formData.append('quizPin', options.quizPin);
+    }
+    if (options.quizTitle) {
+      formData.append('quizTitle', options.quizTitle);
+    }
+    if (options.quizId) {
+      formData.append('quizId', options.quizId);
+    }
+    if (options.folderName) {
+      formData.append('folderName', options.folderName);
+    }
+    if (options.folderId) {
+      formData.append('folderId', options.folderId);
     }
 
     const { data, error } = await supabase.functions.invoke('upload-drive', {
@@ -69,6 +104,8 @@ export async function uploadFileToGoogleDrive(
       webViewLink: data.webViewLink,
       fileId: data.fileId,
       name: data.name,
+      folderId: data.folderId,
+      folderName: data.folderName,
     };
   } catch (err: any) {
     console.error('DriveUploadService error:', err);
@@ -85,8 +122,9 @@ export async function uploadFileToGoogleDrive(
  */
 export async function uploadBase64ToGoogleDrive(
   base64Data: string,
-  fileName?: string,
-  mimeType?: string
+  fileNameOrOptions?: string | DriveUploadOptions,
+  mimeType?: string,
+  extraOptions?: DriveUploadOptions
 ): Promise<DriveUploadResult> {
   if (!isSupabaseConfigured || !supabase) {
     return {
@@ -96,12 +134,25 @@ export async function uploadBase64ToGoogleDrive(
     };
   }
 
+  const options: DriveUploadOptions =
+    typeof fileNameOrOptions === 'object'
+      ? fileNameOrOptions
+      : {
+          fileName: fileNameOrOptions,
+          ...extraOptions,
+        };
+
   try {
     const { data, error } = await supabase.functions.invoke('upload-drive', {
       body: {
         base64: base64Data,
-        fileName: fileName || `image_${Date.now()}.png`,
+        fileName: options.fileName || `image_${Date.now()}.png`,
         mimeType: mimeType || 'image/png',
+        quizPin: options.quizPin,
+        quizTitle: options.quizTitle,
+        quizId: options.quizId,
+        folderName: options.folderName,
+        folderId: options.folderId,
       },
     });
 

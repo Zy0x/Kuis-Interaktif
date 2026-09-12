@@ -21,6 +21,9 @@ interface QuizCoverModalProps {
   currentCover: string;
   onSelectCover: (cover: string) => void;
   subject?: Subject;
+  quizPin?: string;
+  quizTitle?: string;
+  quizId?: string;
   playClick: () => void;
 }
 
@@ -100,6 +103,9 @@ export const QuizCoverModal: React.FC<QuizCoverModalProps> = ({
   onClose,
   currentCover,
   onSelectCover,
+  quizPin,
+  quizTitle,
+  quizId,
   playClick,
 }) => {
   const [activeTab, setActiveTab] = useState<'emoji' | 'upload'>('emoji');
@@ -149,8 +155,13 @@ export const QuizCoverModal: React.FC<QuizCoverModalProps> = ({
     setIsCompressing(true);
 
     try {
-      // Unggah berkas langsung ke Google Drive Pro via Supabase Edge Function
-      const driveResult = await uploadFileToGoogleDrive(file, `quiz_cover_${Date.now()}_${file.name}`);
+      // Unggah berkas langsung ke Google Drive Pro subfolder kuis via Supabase Edge Function
+      const driveResult = await uploadFileToGoogleDrive(file, {
+        fileName: `quiz_cover_${Date.now()}_${file.name}`,
+        quizPin,
+        quizTitle,
+        quizId,
+      });
       if (driveResult.success && driveResult.directUrl) {
         setSelectedCover(driveResult.directUrl);
       } else {
@@ -377,7 +388,7 @@ export const QuizCoverModal: React.FC<QuizCoverModalProps> = ({
               {/* Dropzone File Upload - Direct to Google Drive Pro */}
               <div className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl border-2 border-dashed border-blue-200 dark:border-blue-900 text-center space-y-2.5 bg-gradient-to-b from-blue-50/50 to-indigo-50/30 dark:from-blue-950/30 dark:to-slate-900/50">
                 <div className="flex items-center justify-center gap-1.5 px-3 py-1 bg-blue-100/80 dark:bg-blue-900/60 rounded-full w-fit mx-auto text-[10px] font-extrabold text-blue-700 dark:text-blue-300">
-                  <span>☁️ Google Drive Pro Storage</span>
+                  <span>☁️ Google Drive Pro • {quizPin ? `Folder [PIN ${quizPin}]` : 'Folder Kuis'}</span>
                 </div>
                 <div className="w-12 h-12 rounded-2xl bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto text-xl">
                   {isCompressing ? <RefreshCw className="w-5 h-5 animate-spin text-blue-600" /> : <ImageIcon className="w-5 h-5" />}

@@ -1,6 +1,28 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.75] - 2026-09-13
+### Manajemen Folder Google Drive Pro Terstruktur Otomatis Per Kuis (Rule 10 & Rule 14)
+
+#### 1. Sub-Folder Otomatis Berdasarkan Identitas Kuis di Google Drive Pro
+- **Arsitektur Folder Terorganisir**:
+  - Supabase Edge Function `upload-drive` kini secara otomatis mencari atau membuat sub-folder kuis di dalam folder induk Google Drive Pro.
+  - Penamaan sub-folder mengikuti konvensi: `[PIN 7871] Judul Kuis` jika kuis sudah aktif, atau `[Draf] Judul Kuis` untuk kuis yang belum diterbitkan.
+  - Helper `getOrCreateQuizFolder` mencegah duplikasi folder kuis saat guru mengunggah beberapa media sekaligus dalam satu sesi.
+- **Manfaat Organisasi Media**:
+  - File sampul kuis dan ilustrasi butir soal tersimpan rapi di folder masing-masing kuis — tidak lagi tertumpuk di folder induk.
+  - Memudahkan pengelolaan dan penelusuran media kuis di Google Drive Pro secara mandiri.
+
+#### 2. Propagasi Identitas Kuis ke Seluruh Komponen Pengunggah Media
+- **`QuizCreator.tsx`**:
+  - Menyediakan `activeQuizPin` dan `activeQuizId` yang diekstrak dari prop `editingQuiz`, draf lokal, dan query URL (`?pin=`, `?quiz=`).
+  - Meneruskan `quizPin` dan `quizId` ke `<InfoKuisStep>` (mode AI & manual) serta `quizPin` ke `<ImageSelectorModal>`.
+- **`InfoKuisStep.tsx`**:
+  - Ditambahkan prop `quizId?: string` dan diteruskan ke `<QuizCoverModal>`.
+- **Lencana Folder Real-Time**:
+  - `QuizCoverModal` tab Unggah Gambar: menampilkan `☁️ Google Drive Pro • Folder [PIN {quizPin}]`.
+  - `ImageSelectorModal` tab Unggah / URL: menampilkan `☁️ Google Drive Pro • Folder [PIN {quizPin}]`.
+
 ## [2.3.74] - 2026-09-13
 ### Perbaikan Presisi Tampilan Modal Unggah Media & Eliminasi Pemotongan Elemen Antarmuka (Rule 1 & Rule 2)
 

@@ -55,6 +55,8 @@ interface InfoKuisStepProps {
   setCoverEmoji: (v: string) => void;
   questionsCount: number;
   isAiMode: boolean;
+  quizPin?: string;
+  quizId?: string;
   onNext: () => void;
   onBack: () => void;
   playClick: () => void;
@@ -75,6 +77,8 @@ export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
   setCoverEmoji,
   questionsCount,
   isAiMode,
+  quizPin,
+  quizId,
   onNext,
   onBack,
   playClick,
@@ -450,6 +454,9 @@ export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
         currentCover={coverEmoji}
         onSelectCover={(c) => setCoverEmoji(c)}
         subject={subject}
+        quizPin={quizPin}
+        quizTitle={title}
+        quizId={quizId}
         playClick={playClick}
       />
     </div>

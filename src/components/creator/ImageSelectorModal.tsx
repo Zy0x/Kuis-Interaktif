@@ -28,6 +28,7 @@ interface ImageSelectorModalProps {
   questionText?: string;
   subject?: string;
   topic?: string;
+  quizPin?: string;
 }
 
 export const ImageSelectorModal: React.FC<ImageSelectorModalProps> = ({
@@ -39,6 +40,7 @@ export const ImageSelectorModal: React.FC<ImageSelectorModalProps> = ({
   questionText = '',
   subject = '',
   topic = '',
+  quizPin = '',
 }) => {
   const [activeTab, setActiveTab] = useState<'wiki' | 'ai' | 'upload'>('wiki');
   
@@ -169,7 +171,11 @@ export const ImageSelectorModal: React.FC<ImageSelectorModalProps> = ({
     setIsUploadingDrive(true);
 
     try {
-      const result = await uploadFileToGoogleDrive(file);
+      const result = await uploadFileToGoogleDrive(file, {
+        fileName: `soal_${Date.now()}_${file.name}`,
+        quizPin,
+        quizTitle: topic || questionText || subject,
+      });
       if (result.success && result.directUrl) {
         handleApplyImage(result.directUrl, file.name.replace(/\.[^/.]+$/, ''));
       } else {
@@ -521,7 +527,7 @@ export const ImageSelectorModal: React.FC<ImageSelectorModalProps> = ({
               {/* Upload Local File - Direct to Google Drive Pro */}
               <div className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl border-2 border-dashed border-blue-200 dark:border-blue-900 text-center space-y-2.5 bg-gradient-to-b from-blue-50/50 to-indigo-50/30 dark:from-blue-950/30 dark:to-slate-900/50">
                 <div className="flex items-center justify-center gap-1.5 px-3 py-1 bg-blue-100/80 dark:bg-blue-900/60 rounded-full w-fit mx-auto text-[10px] font-extrabold text-blue-700 dark:text-blue-300">
-                  <span>☁️ Google Drive Pro Storage</span>
+                  <span>☁️ Google Drive Pro • {quizPin ? `Folder [PIN ${quizPin}]` : 'Folder Kuis'}</span>
                 </div>
                 <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto text-xl">
                   {isUploadingDrive ? <Loader2 className="w-5 h-5 animate-spin text-blue-600 dark:text-blue-400" /> : '📁'}
