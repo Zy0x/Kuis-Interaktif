@@ -504,6 +504,7 @@ export const App: React.FC = () => {
           onOpenAuthModal={handleOpenAuthModal}
           onEnterPin={handleEnterPinLobby}
           teacher={teacher}
+          onTeacherUpdate={(updated) => setTeacher(updated)}
           onTeacherLogout={handleTeacherLogout}
           onPrintWorksheet={handlePrintWorksheet}
           isDark={isDark}

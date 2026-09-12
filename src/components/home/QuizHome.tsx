@@ -32,9 +32,12 @@ import {
   LogOut,
   School,
   Mail,
-  User,
-  LogIn,
-  MoreVertical
+  User, 
+  LogIn, 
+  MoreVertical,
+  Edit3,
+  Save,
+  Check
 } from 'lucide-react';
 
 interface QuizHomeProps {
@@ -43,6 +46,7 @@ interface QuizHomeProps {
   onOpenAuthModal?: (tab?: 'teacher' | 'student') => void;
   onEnterPin: (quiz: Quiz, session?: QuizSession | null) => void;
   teacher: TeacherProfile | null;
+  onTeacherUpdate?: (teacher: TeacherProfile) => void;
   onTeacherLogout?: () => void;
   onPrintWorksheet?: (quiz: Quiz) => void;
   isDark: boolean;
@@ -58,6 +62,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
   onOpenAuthModal,
   onEnterPin,
   teacher,
+  onTeacherUpdate,
   onTeacherLogout,
   onPrintWorksheet,
   isDark,
@@ -75,6 +80,55 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
   const [isTeacherProfileModalOpen, setIsTeacherProfileModalOpen] = useState(false);
   const [isMobileProfileSheetOpen, setIsMobileProfileSheetOpen] = useState(false);
   const [rulesModalQuiz, setRulesModalQuiz] = useState<Quiz | null>(null);
+
+  // Status Formulir Edit Profil Pendidik
+  const [isEditingTeacherProfile, setIsEditingTeacherProfile] = useState(false);
+  const [editTeacherName, setEditTeacherName] = useState('');
+  const [editSchoolName, setEditSchoolName] = useState('');
+  const [isSavingTeacherProfile, setIsSavingTeacherProfile] = useState(false);
+  const [teacherProfileSuccess, setTeacherProfileSuccess] = useState(false);
+  const [teacherProfileError, setTeacherProfileError] = useState('');
+
+  // Sinkronkan data saat modal profil guru dibuka
+  useEffect(() => {
+    if (isTeacherProfileModalOpen && teacher) {
+      setEditTeacherName(teacher.fullName || '');
+      setEditSchoolName(teacher.schoolName || '');
+      setIsEditingTeacherProfile(false);
+      setTeacherProfileSuccess(false);
+      setTeacherProfileError('');
+    }
+  }, [isTeacherProfileModalOpen, teacher]);
+
+  const handleSaveTeacherProfile = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!editTeacherName.trim() || isSavingTeacherProfile) return;
+
+    playClick();
+    setIsSavingTeacherProfile(true);
+    setTeacherProfileError('');
+    setTeacherProfileSuccess(false);
+
+    try {
+      const res = await DataManager.updateTeacherProfile(editTeacherName.trim(), editSchoolName.trim());
+      if (res.success && res.teacher) {
+        setTeacherProfileSuccess(true);
+        if (onTeacherUpdate) {
+          onTeacherUpdate(res.teacher);
+        }
+        setTimeout(() => {
+          setIsEditingTeacherProfile(false);
+          setTeacherProfileSuccess(false);
+        }, 1200);
+      } else {
+        setTeacherProfileError(res.error || 'Gagal menyimpan profil');
+      }
+    } catch (err: any) {
+      setTeacherProfileError(err.message || 'Terjadi kesalahan saat menyimpan profil');
+    } finally {
+      setIsSavingTeacherProfile(false);
+    }
+  };
 
   // Data fase waktu dan sapaan dinamis (Pagi, Siang, Sore, Malam, Tengah Malam, Dini Hari)
   const timeData = useTimeGreeting();
@@ -1424,65 +1478,170 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
 
             {/* Content */}
             <div className="p-5 space-y-4 text-slate-700 dark:text-slate-300 overflow-y-auto flex-1">
-              <div className="bg-blue-50/70 dark:bg-slate-800/70 border border-blue-100 dark:border-slate-700 rounded-2xl p-4 space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 flex items-center justify-center shadow-xs flex-shrink-0">
-                    <User className="w-4 h-4" />
-                  </div>
-                  <div className="min-w-0">
-                    <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400 dark:text-slate-400 block">Nama Pendidik</span>
-                    <span className="text-sm font-extrabold text-slate-900 dark:text-white truncate block">{teacher.fullName}</span>
-                  </div>
-                </div>
+              {isEditingTeacherProfile ? (
+                <form onSubmit={handleSaveTeacherProfile} className="space-y-3.5">
+                  {teacherProfileSuccess && (
+                    <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-2">
+                      <Check className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                      <span>Profil pendidik berhasil diperbarui!</span>
+                    </div>
+                  )}
 
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 flex items-center justify-center shadow-xs flex-shrink-0">
-                    <School className="w-4 h-4" />
-                  </div>
-                  <div className="min-w-0">
-                    <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400 dark:text-slate-400 block">Asal Sekolah</span>
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate block">{teacher.schoolName || 'SD Indonesia'}</span>
-                  </div>
-                </div>
+                  {teacherProfileError && (
+                    <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-xs font-semibold text-rose-700 dark:text-rose-300 flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 text-rose-500 flex-shrink-0" />
+                      <span>{teacherProfileError}</span>
+                    </div>
+                  )}
 
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 flex items-center justify-center shadow-xs flex-shrink-0">
-                    <Mail className="w-4 h-4" />
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                      <User className="w-3.5 h-3.5 text-blue-500" />
+                      <span>Nama Lengkap Pendidik & Gelar:</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={editTeacherName}
+                      onChange={(e) => setEditTeacherName(e.target.value)}
+                      placeholder="Cth: Bapak Aliridho, S.Pd"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs sm:text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                      required
+                    />
                   </div>
-                  <div className="min-w-0">
-                    <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400 dark:text-slate-400 block">Email Pendidik</span>
-                    <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 truncate block">{teacher.email}</span>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                      <School className="w-3.5 h-3.5 text-blue-500" />
+                      <span>Asal Sekolah / Institusi:</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={editSchoolName}
+                      onChange={(e) => setEditSchoolName(e.target.value)}
+                      placeholder="Cth: SD Indonesia"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs sm:text-sm font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                    />
                   </div>
-                </div>
-              </div>
 
-              <div className="pt-2 space-y-2.5">
-                <button
-                  onClick={() => {
-                    playClick();
-                    setIsTeacherProfileModalOpen(false);
-                    onOpenTeacherPortal();
-                  }}
-                  className="w-full py-2.5 px-4 rounded-xl font-bold text-xs sm:text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-sm min-h-[44px] flex items-center justify-center gap-2 btn-press transition-colors"
-                >
-                  <LayoutDashboard className="w-4 h-4" />
-                  <span>Buka Dashboard Guru</span>
-                </button>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                      <Mail className="w-3.5 h-3.5" />
+                      <span>Email Pendidik (Terkunci):</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={teacher.email}
+                      disabled
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800/50 text-xs text-slate-500 dark:text-slate-400 cursor-not-allowed"
+                    />
+                  </div>
 
-                {onTeacherLogout && (
+                  <div className="grid grid-cols-2 gap-2 pt-2">
+                    <button
+                      type="button"
+                      disabled={isSavingTeacherProfile}
+                      onClick={() => {
+                        playClick();
+                        setIsEditingTeacherProfile(false);
+                      }}
+                      className="py-2.5 px-3 rounded-xl font-bold text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 min-h-[44px] flex items-center justify-center transition-colors"
+                    >
+                      Batal
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isSavingTeacherProfile || !editTeacherName.trim()}
+                      className="py-2.5 px-3 rounded-xl font-bold text-xs text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 min-h-[44px] flex items-center justify-center gap-1.5 shadow-sm transition-colors btn-press"
+                    >
+                      {isSavingTeacherProfile ? (
+                        <>
+                          <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          <span>Menyimpan...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Save className="w-3.5 h-3.5" />
+                          <span>Simpan Profil</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <>
+                  <div className="bg-blue-50/70 dark:bg-slate-800/70 border border-blue-100 dark:border-slate-700 rounded-2xl p-4 space-y-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 flex items-center justify-center shadow-xs flex-shrink-0">
+                        <User className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400 dark:text-slate-400 block">Nama Pendidik</span>
+                        <span className="text-sm font-extrabold text-slate-900 dark:text-white truncate block">{teacher.fullName}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 flex items-center justify-center shadow-xs flex-shrink-0">
+                        <School className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400 dark:text-slate-400 block">Asal Sekolah</span>
+                        <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate block">{teacher.schoolName || 'SD Indonesia'}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 flex items-center justify-center shadow-xs flex-shrink-0">
+                        <Mail className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400 dark:text-slate-400 block">Email Pendidik</span>
+                        <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 truncate block">{teacher.email}</span>
+                      </div>
+                    </div>
+                  </div>
+
                   <button
+                    type="button"
                     onClick={() => {
                       playClick();
-                      setIsTeacherProfileModalOpen(false);
-                      onTeacherLogout();
+                      setIsEditingTeacherProfile(true);
                     }}
-                    className="w-full py-2.5 px-4 rounded-xl font-bold text-xs sm:text-sm text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 bg-rose-50 dark:bg-rose-950/30 hover:bg-rose-100 dark:hover:bg-rose-900/50 border border-rose-200 dark:border-rose-900 min-h-[44px] flex items-center justify-center gap-2 btn-press transition-colors"
+                    className="w-full py-2.5 px-3 rounded-xl font-bold text-xs text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 border border-blue-200 dark:border-blue-800/80 min-h-[44px] flex items-center justify-center gap-2 transition-colors btn-press"
                   >
-                    <LogOut className="w-4 h-4" />
-                    <span>Keluar Akun Guru (Logout)</span>
+                    <Edit3 className="w-4 h-4" />
+                    <span>Edit Nama & Asal Sekolah</span>
                   </button>
-                )}
-              </div>
+
+                  <div className="pt-2 space-y-2.5">
+                    <button
+                      onClick={() => {
+                        playClick();
+                        setIsTeacherProfileModalOpen(false);
+                        onOpenTeacherPortal();
+                      }}
+                      className="w-full py-2.5 px-4 rounded-xl font-bold text-xs sm:text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-sm min-h-[44px] flex items-center justify-center gap-2 btn-press transition-colors"
+                    >
+                      <LayoutDashboard className="w-4 h-4" />
+                      <span>Buka Dashboard Guru</span>
+                    </button>
+
+                    {onTeacherLogout && (
+                      <button
+                        onClick={() => {
+                          playClick();
+                          setIsTeacherProfileModalOpen(false);
+                          onTeacherLogout();
+                        }}
+                        className="w-full py-2.5 px-4 rounded-xl font-bold text-xs sm:text-sm text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 bg-rose-50 dark:bg-rose-950/30 hover:bg-rose-100 dark:hover:bg-rose-900/50 border border-rose-200 dark:border-rose-900 min-h-[44px] flex items-center justify-center gap-2 btn-press transition-colors"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        <span>Keluar Akun Guru (Logout)</span>
+                      </button>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>

@@ -267,7 +267,7 @@ export const UnifiedAuthModal: React.FC<UnifiedAuthModalProps> = ({
                         required
                         value={teacherFullName}
                         onChange={(e) => setTeacherFullName(e.target.value)}
-                        placeholder="Cth: Ibu Rahmawati, S.Pd"
+                        placeholder="Cth: Bapak Aliridho, S.Pd"
                         className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium text-xs sm:text-sm focus:border-blue-500 focus:outline-none min-h-[44px]"
                       />
                     </div>

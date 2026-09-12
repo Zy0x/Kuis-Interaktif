@@ -5,6 +5,8 @@ import { copyTextToClipboard } from '../../lib/aiQuestionParser';
 import { AVATAR_MAP } from '../../data/seedQuizzes';
 import { QuizizzReactionOverlay } from '../common/QuizizzReactionOverlay';
 import { QuizizzReactionButtonRow } from '../common/QuizizzReactionButtonRow';
+import { ZoomChatToast } from '../common/ZoomChatToast';
+import { TeacherChatDrawer } from '../chat/TeacherChatDrawer';
 import { 
   ArrowLeft, 
   ArrowRight,
@@ -24,7 +26,8 @@ import {
   TrendingUp,
   FileSpreadsheet,
   VolumeX,
-  MessageCircle
+  Volume2,
+  MessageSquare
 } from 'lucide-react';
 
 interface WaygroundHostViewProps {
@@ -51,6 +54,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
   const [isSimulating, setIsSimulating] = useState(false);
   const [confirmEndModal, setConfirmEndModal] = useState(false);
   const [currentDisplayQuestionIdx, setCurrentDisplayQuestionIdx] = useState(0);
+  const [isChatDrawerOpen, setIsChatDrawerOpen] = useState(false);
 
   const isTeacherLed = session.settings?.executionMode === 'teacher_led';
 
@@ -63,11 +67,17 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
 
   // Realtime session polling and BroadcastChannel listener
   useEffect(() => {
-    const refresh = () => {
+    const refresh = async () => {
       const fresh = DataManager.getActiveSessionById(session.id);
       if (fresh) {
         setSession(fresh);
       }
+      try {
+        const cloudFresh = await DataManager.fetchActiveSessionById(session.id);
+        if (cloudFresh) {
+          setSession(cloudFresh);
+        }
+      } catch {}
     };
 
     const handleSessionUpdated = (e: any) => {
@@ -358,20 +368,46 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
               </button>
             )}
 
-            {/* Chat Mute / Unmute Toggle */}
+            {/* Tombol Buka Ruang Chat Kelas Guru */}
+            {session.status !== 'finished' && (
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setIsChatDrawerOpen(true);
+                }}
+                className={`relative p-2 sm:px-3 py-1.5 rounded-xl border text-xs font-bold min-h-[40px] flex items-center gap-1.5 transition-colors ${
+                  session.isChatMuted || session.settings?.isChatMuted
+                    ? 'border-rose-500/40 bg-rose-500/10 text-rose-300 hover:bg-rose-500/20'
+                    : 'border-blue-500/40 bg-blue-600/20 hover:bg-blue-600/30 text-blue-200'
+                }`}
+                title="Buka Ruang Obrolan Kelas"
+                aria-label="Buka Ruang Obrolan Kelas"
+              >
+                <MessageSquare className="w-4 h-4 text-blue-400" />
+                <span className="hidden md:inline">Chat Kelas</span>
+                {session.chatMessages && session.chatMessages.length > 0 && (
+                  <span className="px-1.5 py-0.2 rounded-full bg-blue-500 text-white text-[10px] font-black">
+                    {session.chatMessages.length}
+                  </span>
+                )}
+              </button>
+            )}
+
+            {/* Quick Chat Mute / Unmute Toggle */}
             {isTeacherLed && session.status !== 'finished' && (
               <button
                 type="button"
                 onClick={handleToggleChatMute}
                 className={`p-2 sm:px-2.5 py-1.5 rounded-xl border text-xs font-bold min-h-[40px] flex items-center gap-1.5 transition-colors ${
-                  session.isChatMuted
+                  session.isChatMuted || session.settings?.isChatMuted
                     ? 'bg-rose-500/20 border-rose-500/40 text-rose-300 hover:bg-rose-500/30'
                     : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'
                 }`}
-                title={session.isChatMuted ? 'Buka Kunci Obrolan Siswa' : 'Bungkam Obrolan Siswa'}
+                title={session.isChatMuted || session.settings?.isChatMuted ? 'Buka Kunci Obrolan Siswa' : 'Bungkam Obrolan Siswa'}
               >
-                {session.isChatMuted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <MessageCircle className="w-4 h-4 text-indigo-400" />}
-                <span className="hidden xl:inline">{session.isChatMuted ? 'Obrolan Terkunci' : 'Obrolan Aktif'}</span>
+                {session.isChatMuted || session.settings?.isChatMuted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
+                <span className="hidden xl:inline">{session.isChatMuted || session.settings?.isChatMuted ? 'Terkunci' : 'Chat Aktif'}</span>
               </button>
             )}
 
@@ -1007,6 +1043,28 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
       {session.status === 'waiting' && (
         <QuizizzReactionOverlay sessionId={session.id} />
       )}
+
+      {/* Popup Notifikasi Obrolan Masuk Ala Zoom / Google Meet */}
+      <ZoomChatToast
+        sessionId={session.id}
+        onOpenChat={() => {
+          playClick();
+          setIsChatDrawerOpen(true);
+        }}
+        currentUserName={session.teacherName || 'Guru (Host)'}
+      />
+
+      {/* Laci Obrolan Interaktif Guru (Teacher Chat Drawer) */}
+      <TeacherChatDrawer
+        isOpen={isChatDrawerOpen}
+        onClose={() => setIsChatDrawerOpen(false)}
+        sessionId={session.id}
+        teacherName={session.teacherName || 'Guru (Host)'}
+        isChatMuted={Boolean(session.isChatMuted || session.settings?.isChatMuted)}
+        onToggleChatMute={handleToggleChatMute}
+        participantsCount={session.participants?.length || 0}
+        playClick={playClick}
+      />
 
     </div>
   );

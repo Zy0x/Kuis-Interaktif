@@ -5,6 +5,7 @@ import { AVATAR_MAP } from '../../data/seedQuizzes';
 import { ThemeToggle } from '../common/ThemeToggle';
 import { QuizizzReactionOverlay } from '../common/QuizizzReactionOverlay';
 import { QuizizzReactionButtonRow } from '../common/QuizizzReactionButtonRow';
+import { ZoomChatToast } from '../common/ZoomChatToast';
 import { 
   ArrowLeft, 
   Sparkles, 
@@ -82,12 +83,18 @@ export const StudentWaitingRoom: React.FC<StudentWaitingRoomProps> = ({
     };
     window.addEventListener('kuis_session_updated', handleCustom);
 
-    // Polling fallback every 2 seconds
-    const interval = setInterval(() => {
+    // Polling fallback every 2 seconds (local + cloud sync)
+    const interval = setInterval(async () => {
       const fresh = DataManager.getActiveSessionById(session.id);
       if (fresh) {
         handleSync(fresh);
       }
+      try {
+        const cloudFresh = await DataManager.fetchActiveSessionById(session.id);
+        if (cloudFresh) {
+          handleSync(cloudFresh);
+        }
+      } catch {}
     }, 2000);
 
     return () => {
@@ -351,6 +358,17 @@ export const StudentWaitingRoom: React.FC<StudentWaitingRoomProps> = ({
       <footer className="w-full py-2.5 text-center text-[11px] text-slate-400 dark:text-slate-500">
         Kuis Interaktif • Ruang Tunggu Terpadu
       </footer>
+
+      {/* Popup Chat Masuk Ala Zoom */}
+      <ZoomChatToast
+        sessionId={session.id}
+        onOpenChat={() => {
+          if (chatScrollRef.current) {
+            chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+          }
+        }}
+        currentUserName={studentName}
+      />
     </div>
   );
 };

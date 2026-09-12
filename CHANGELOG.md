@@ -1,6 +1,36 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.71] - 2026-09-13
+### Sinkronisasi Menyeluruh Sesi Kuis & Rekap Histori Nilai ke Supabase Cloud, Ruang Chat Host & Notifikasi Toast Ala Zoom, Serta Fitur Edit Profil Pendidik
+
+#### 1. Sinkronisasi Penuh Sesi Kuis Langsung & Histori Nilai ke Supabase Cloud
+- **Sinkronisasi Dua Arah Sesi & Peserta**:
+  - Seluruh pembuatan sesi kuis baru, aktivasi kuis, perpindahan nomor soal (`current_question_index`), perubahan status soal (`answering`, `revealed`), kontrol bungkam chat, serta reaksi dan obrolan kini tersinkronisasi langsung ke database Supabase eksternal.
+  - Setiap siswa yang bergabung ke sesi kuis otomatis dicatat dan diperbarui pada tabel `quiz_session_participants` di cloud Supabase.
+  - Penambahan mekanisme sinkronisasi lintas-perangkat (*cross-device cloud polling*) pada `StudentWaitingRoom`, `WaygroundHostView`, dan `InterQuestionWaitingLounge` sehingga siswa dan guru di perangkat dan jaringan berbeda tetap terhubung harmonis secara *real-time*.
+- **Otomatisasi Arsip Rekap Nilai ke Tabel Histori Permanen (`quiz_attempts`)**:
+  - Saat sesi kuis diselesaikan oleh guru, seluruh rekapan skor, bintang, jumlah benar/salah, dan waktu pengerjaan peserta secara otomatis diarsipkan ke tabel `quiz_attempts` cloud.
+  - Hasil sesi kuis langsung otomatis terintegrasi ke dalam tab Rekap Nilai Guru (*Teacher Gradebook*) dan papan peringkat (*leaderboard*) global secara permanen.
+- **Pembaruan Skema SQL & Skrip Pengujian (`docs/setup.sql` & `scripts/deploy-supabase.js`)**:
+  - Menambahkan definisi tabel `quiz_sessions` dan `quiz_session_participants` lengkap dengan index, constraint, dan Row Level Security (RLS) pada skrip database resmi.
+  - Memperbarui skrip verifikasi otomatis `deploy-supabase.js` agar memvalidasi integritas baris data sesi dan peserta secara langsung.
+
+#### 2. Ruang Obrolan Interaktif Host & Notifikasi Mengambang Pop-up Ala Zoom
+- **Notifikasi Toast Mengambang Ala Zoom / Google Meet (`ZoomChatToast.tsx`)**:
+  - Menampilkan kartu notifikasi mengambang saat pesan obrolan baru masuk, dilengkapi avatar pengirim, lencana peran Guru/Siswa, cuplikan pesan, dan efek nada lonceng lembut Web Audio API.
+  - Timer penutupan otomatis 4.5 detik dengan jeda otomatis saat diarahkan kursor (*hover pause*) serta tombol klik langsung untuk membuka panel obrolan.
+- **Laci Obrolan Kendali Host Guru (`TeacherChatDrawer.tsx`)**:
+  - Panel laci sisi kanan (*slide-over drawer*) yang responsif dengan daftar riwayat obrolan lengkap, chip pengumuman kilat, input pengumuman guru (maks. 150 karakter), dan tombol cepat pembungkaman obrolan siswa (*mute chat toggle*).
+- **Penonaktifan Saat Soal Berjalan (Zero-Distraction Policy)**:
+  - Notifikasi pop-up dan kolom input obrolan dinonaktifkan otomatis saat soal kuis sedang dijawab di `QuizArena.tsx` agar siswa dapat berkonsentrasi penuh pada pembelajaran.
+
+#### 3. Koreksi Permanen & Fitur Pembaruan Mandiri Profil Pendidik
+- **Koreksi Data Profil Pendidik**:
+  - Menghapus riwayat data placeholder lama dan memastikan identitas pendidik master (`Bapak Aliridho`) terpampang akurat dan konsisten di seluruh sesi.
+- **Antarmuka Edit Profil Langsung di Dashboard**:
+  - Menyediakan modal interaktif "✏️ Edit Nama & Asal Sekolah" yang memungkinkan pendidik memperbarui nama lengkap, gelar, dan nama instansi sekolah secara mandiri kapan saja dengan sinkronisasi instan ke penyimpanan lokal dan Supabase.
+
 ## [2.3.70] - 2026-09-12
 ### Optimasi Performa & Ergonomi Reaksi: Jalur Samping Bebas-Distraksi (*Side-Stream Channel*), Animasi GPU Ultra-Halus (60-120 FPS), dan Penonaktifan Otomatis Saat Soal Berjalan
 

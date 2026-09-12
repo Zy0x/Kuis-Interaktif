@@ -513,6 +513,11 @@ CREATE TABLE IF NOT EXISTS public.quiz_sessions (
     status VARCHAR(32) NOT NULL DEFAULT 'active' CHECK (status IN ('waiting', 'active', 'paused', 'finished')),
     settings JSONB NOT NULL DEFAULT '{}'::jsonb,
     total_questions SMALLINT NOT NULL DEFAULT 0,
+    current_question_index SMALLINT NOT NULL DEFAULT 0,
+    question_state VARCHAR(32) NOT NULL DEFAULT 'answering',
+    reactions JSONB NOT NULL DEFAULT '[]'::jsonb,
+    chat_messages JSONB NOT NULL DEFAULT '[]'::jsonb,
+    is_chat_muted BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     started_at TIMESTAMPTZ DEFAULT NOW(),
     ended_at TIMESTAMPTZ
@@ -522,6 +527,13 @@ CREATE INDEX IF NOT EXISTS idx_quiz_sessions_quiz_id ON public.quiz_sessions(qui
 CREATE INDEX IF NOT EXISTS idx_quiz_sessions_pin ON public.quiz_sessions(pin_code);
 CREATE INDEX IF NOT EXISTS idx_quiz_sessions_status ON public.quiz_sessions(status);
 CREATE INDEX IF NOT EXISTS idx_quiz_sessions_teacher ON public.quiz_sessions(teacher_email);
+
+-- Migrasi Kolom Tambahan (v2.3.71) jika tabel sudah pernah dieksekusi sebelumnya:
+ALTER TABLE public.quiz_sessions ADD COLUMN IF NOT EXISTS current_question_index SMALLINT DEFAULT 0;
+ALTER TABLE public.quiz_sessions ADD COLUMN IF NOT EXISTS question_state VARCHAR(32) DEFAULT 'answering';
+ALTER TABLE public.quiz_sessions ADD COLUMN IF NOT EXISTS reactions JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE public.quiz_sessions ADD COLUMN IF NOT EXISTS chat_messages JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE public.quiz_sessions ADD COLUMN IF NOT EXISTS is_chat_muted BOOLEAN DEFAULT FALSE;
 
 CREATE TABLE IF NOT EXISTS public.quiz_session_participants (
     id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,

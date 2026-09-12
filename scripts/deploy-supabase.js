@@ -1,4 +1,4 @@
-﻿import fs from 'fs';
+import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -81,6 +81,8 @@ async function deploy() {
     { name: 'profiles_player', query: 'SELECT count(*) FROM public.profiles_player;' },
     { name: 'profiles_teacher', query: 'SELECT count(*) FROM public.profiles_teacher;' },
     { name: 'quiz_attempts', query: 'SELECT count(*) FROM public.quiz_attempts;' },
+    { name: 'quiz_sessions', query: 'SELECT count(*) FROM public.quiz_sessions;' },
+    { name: 'quiz_session_participants', query: 'SELECT count(*) FROM public.quiz_session_participants;' },
   ];
 
   console.log('\n🔍 Memverifikasi integritas tabel & data:');

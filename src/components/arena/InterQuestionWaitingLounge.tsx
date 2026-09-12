@@ -262,12 +262,18 @@ export const InterQuestionWaitingLounge: React.FC<InterQuestionWaitingLoungeProp
     };
     window.addEventListener('kuis_session_updated', handleCustom);
 
-    // Fallback polling
-    const interval = setInterval(() => {
+    // Fallback polling (local + cloud sync)
+    const interval = setInterval(async () => {
       const fresh = DataManager.getActiveSessionById(session.id);
       if (fresh) {
         handleSync(fresh);
       }
+      try {
+        const cloudFresh = await DataManager.fetchActiveSessionById(session.id);
+        if (cloudFresh) {
+          handleSync(cloudFresh);
+        }
+      } catch {}
     }, 1500);
 
     return () => {

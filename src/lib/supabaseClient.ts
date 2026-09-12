@@ -116,6 +116,31 @@ export function broadcastLiveReaction(sessionId: string, reaction: SessionLiveRe
   }
 }
 
+export function broadcastChatMessage(sessionId: string, message: SessionChatMessage) {
+  try {
+    if (sessionBroadcastChannel) {
+      sessionBroadcastChannel.postMessage({
+        type: 'NEW_CHAT_MESSAGE',
+        sessionId,
+        message,
+        timestamp: Date.now(),
+      });
+    }
+  } catch (err) {
+    console.warn('BroadcastChannel chat message error:', err);
+  }
+
+  if (typeof window !== 'undefined') {
+    try {
+      window.dispatchEvent(
+        new CustomEvent('kuis_chat_message', {
+          detail: { sessionId, message },
+        })
+      );
+    } catch {}
+  }
+}
+
 export const DataManager = {
   // Deleted Quizzes Tracking (Supports deleting seed quizzes & custom quizzes for testing & admin control)
   getDeletedQuizIds(): string[] {
@@ -1239,7 +1264,16 @@ export const DataManager = {
   getTeacherProfile(): TeacherProfile | null {
     try {
       const data = localStorage.getItem(STORAGE_KEY_TEACHER_PROFILE);
-      return data ? JSON.parse(data) : null;
+      if (!data) return null;
+      const parsed: TeacherProfile = JSON.parse(data);
+      // Auto-koreksi nama placeholder lama untuk akun Master Teacher (Bapak Aliridho)
+      if (parsed.email?.toLowerCase() === MASTER_TEACHER_EMAIL.toLowerCase()) {
+        if (!parsed.fullName || parsed.fullName.includes('Rahmawati')) {
+          parsed.fullName = 'Bapak Aliridho (Master)';
+          this.setTeacherProfile(parsed);
+        }
+      }
+      return parsed;
     } catch {
       return null;
     }
@@ -1251,6 +1285,55 @@ export const DataManager = {
     } else {
       localStorage.removeItem(STORAGE_KEY_TEACHER_PROFILE);
     }
+  },
+
+  async updateTeacherProfile(fullName: string, schoolName: string): Promise<{ success: boolean; error?: string; teacher?: TeacherProfile }> {
+    const current = this.getTeacherProfile();
+    if (!current) {
+      return { success: false, error: 'Sesi pendidik tidak ditemukan. Silakan masuk kembali.' };
+    }
+
+    const trimmedName = fullName.trim() || current.fullName;
+    const trimmedSchool = schoolName.trim() || current.schoolName || 'SD Indonesia';
+
+    const updated: TeacherProfile = {
+      ...current,
+      fullName: trimmedName,
+      schoolName: trimmedSchool,
+    };
+
+    // 1. Simpan ke LocalStorage seketika
+    this.setTeacherProfile(updated);
+
+    // 2. Sinkronkan ke Supabase Auth & profiles_teacher jika terhubung
+    if (supabase) {
+      try {
+        await supabase.auth.updateUser({
+          data: {
+            full_name: updated.fullName,
+            school_name: updated.schoolName,
+          },
+        });
+
+        await supabase.from('profiles_teacher').upsert({
+          id: updated.id,
+          auth_user_id: updated.id,
+          email: updated.email,
+          full_name: updated.fullName,
+          school_name: updated.schoolName,
+          updated_at: new Date().toISOString(),
+        });
+      } catch (err) {
+        console.warn('[Supabase] Gagal menyinkronkan pembaruan profil pendidik ke cloud:', err);
+      }
+    }
+
+    // Perbarui kepemilikan kuis jika akun master
+    if (updated.email.toLowerCase() === MASTER_TEACHER_EMAIL.toLowerCase()) {
+      this.claimMasterTeacherQuizzes(updated.id, updated.fullName);
+    }
+
+    return { success: true, teacher: updated };
   },
 
   claimMasterTeacherQuizzes(teacherId: string, teacherName: string) {
@@ -1303,11 +1386,37 @@ export const DataManager = {
             // ignore
           }
 
+          let finalFullName = fullName || cleanEmail.split('@')[0];
+          let finalSchoolName = schoolName || 'SD Negeri Favorit';
+
+          // Auto-koreksi akun Master Teacher jika di Supabase masih tersimpan nama placeholder lama
+          if (cleanEmail.toLowerCase() === MASTER_TEACHER_EMAIL.toLowerCase()) {
+            if (!fullName || fullName.includes('Rahmawati')) {
+              finalFullName = 'Bapak Aliridho (Master)';
+              finalSchoolName = schoolName && !schoolName.includes('Nusantara') ? schoolName : 'SD Kreatif Nusantara';
+              try {
+                supabase.auth.updateUser({
+                  data: { full_name: finalFullName, school_name: finalSchoolName }
+                });
+                supabase.from('profiles_teacher').upsert({
+                  id: data.user.id,
+                  auth_user_id: data.user.id,
+                  email: cleanEmail,
+                  full_name: finalFullName,
+                  school_name: finalSchoolName,
+                  updated_at: new Date().toISOString()
+                });
+              } catch (e) {
+                console.warn('Auto-sync master teacher profile error:', e);
+              }
+            }
+          }
+
           const profile: TeacherProfile = {
             id: data.user.id,
             email: data.user.email || cleanEmail,
-            fullName: fullName || cleanEmail.split('@')[0],
-            schoolName: schoolName || 'SD Negeri Favorit',
+            fullName: finalFullName,
+            schoolName: finalSchoolName,
           };
           this.setTeacherProfile(profile);
           if (cleanEmail.toLowerCase() === MASTER_TEACHER_EMAIL.toLowerCase()) {
@@ -1625,6 +1734,30 @@ export const DataManager = {
     // Try cloud sync if Supabase configured
     if (supabase) {
       try {
+        // Ensure quiz entity exists in quizzes table so foreign keys don't fail
+        const { data: existingQ } = await supabase.from('quizzes').select('id').eq('id', quiz.id).maybeSingle();
+        if (!existingQ) {
+          await supabase.from('quizzes').upsert({
+            id: quiz.id,
+            title: quiz.title,
+            description: quiz.description || '',
+            subject: quiz.subject,
+            target_grade: quiz.grade,
+            duration_per_question_sec: quiz.durationPerQuestionSec,
+            cover_emoji: quiz.coverEmoji || '⭐',
+            theme_color: quiz.themeColor || 'from-blue-600 to-cyan-500',
+            badge_title: quiz.badgeTitle || 'Bintang Juara',
+            pin_code: pin,
+            creator_id: teacher?.id || null,
+            creator_name: teacher?.fullName || null,
+            visibility: quiz.visibility || 'public',
+            is_published: true,
+            default_game_mode: quiz.defaultGameMode || 'standard',
+            shuffle_questions: quiz.shuffleQuestions ?? false,
+            shuffle_options: quiz.shuffleOptions ?? false,
+          });
+        }
+
         await supabase.from('quiz_sessions').insert({
           id: newSession.id,
           quiz_id: newSession.quizId,
@@ -1697,6 +1830,21 @@ export const DataManager = {
     }
 
     broadcastSessionUpdate(existing[idx]);
+
+    if (supabase) {
+      try {
+        await supabase
+          .from('quiz_sessions')
+          .update({
+            current_question_index: newIndex,
+            question_state: 'answering',
+          })
+          .eq('id', sessionId);
+      } catch (err) {
+        console.warn('Supabase advanceSessionQuestion notice:', err);
+      }
+    }
+
     return existing[idx];
   },
 
@@ -1717,6 +1865,20 @@ export const DataManager = {
     }
 
     broadcastSessionUpdate(existing[idx]);
+
+    if (supabase) {
+      try {
+        await supabase
+          .from('quiz_sessions')
+          .update({
+            question_state: state,
+          })
+          .eq('id', sessionId);
+      } catch (err) {
+        console.warn('Supabase updateSessionQuestionState notice:', err);
+      }
+    }
+
     return existing[idx];
   },
 
@@ -1725,6 +1887,7 @@ export const DataManager = {
     const idx = existing.findIndex((s) => s.id === sessionId);
     if (idx === -1) return null;
 
+    existing[idx].isChatMuted = isMuted;
     existing[idx].settings = {
       ...existing[idx].settings,
       isChatMuted: isMuted,
@@ -1737,6 +1900,21 @@ export const DataManager = {
     }
 
     broadcastSessionUpdate(existing[idx]);
+
+    if (supabase) {
+      try {
+        await supabase
+          .from('quiz_sessions')
+          .update({
+            settings: existing[idx].settings,
+            is_chat_muted: isMuted,
+          })
+          .eq('id', sessionId);
+      } catch (err) {
+        console.warn('Supabase toggleSessionChatMute notice:', err);
+      }
+    }
+
     return existing[idx];
   },
 
@@ -1770,6 +1948,20 @@ export const DataManager = {
 
     broadcastLiveReaction(sessionId, newReaction);
     broadcastSessionUpdate(existing[idx]);
+
+    if (supabase) {
+      try {
+        await supabase
+          .from('quiz_sessions')
+          .update({
+            reactions: existing[idx].reactions,
+          })
+          .eq('id', sessionId);
+      } catch (err) {
+        console.warn('Supabase sendSessionReaction notice:', err);
+      }
+    }
+
     return newReaction;
   },
 
@@ -1782,7 +1974,7 @@ export const DataManager = {
     if (idx === -1) return null;
 
     // Check if chat is muted
-    if (existing[idx].settings?.isChatMuted && !message.isTeacher) {
+    if ((existing[idx].isChatMuted || existing[idx].settings?.isChatMuted) && !message.isTeacher) {
       return null;
     }
 
@@ -1814,7 +2006,22 @@ export const DataManager = {
       console.warn('Failed to save chat message:', e);
     }
 
+    broadcastChatMessage(sessionId, newMsg);
     broadcastSessionUpdate(existing[idx]);
+
+    if (supabase) {
+      try {
+        await supabase
+          .from('quiz_sessions')
+          .update({
+            chat_messages: existing[idx].chatMessages,
+          })
+          .eq('id', sessionId);
+      } catch (err) {
+        console.warn('Supabase sendSessionChatMessage notice:', err);
+      }
+    }
+
     return newMsg;
   },
 
@@ -1867,6 +2074,30 @@ export const DataManager = {
     }
 
     broadcastSessionUpdate(session);
+
+    if (supabase) {
+      try {
+        await supabase.from('quiz_session_participants').upsert({
+          id: participant.id,
+          session_id: sessionId,
+          student_name: participant.name,
+          avatar_id: participant.avatarId,
+          current_question_index: participant.currentQuestionIndex,
+          score: participant.score,
+          stars: participant.stars,
+          correct_count: participant.correctCount,
+          incorrect_count: participant.incorrectCount,
+          streak: participant.streak,
+          finished: participant.finished,
+          time_spent_sec: participant.timeSpentSec,
+          answers: participant.answers,
+          last_active_at: participant.lastActiveAt,
+        });
+      } catch (err) {
+        console.warn('Supabase recordSessionAnswer notice:', err);
+      }
+    }
+
     return participant;
   },
 
@@ -1920,13 +2151,15 @@ export const DataManager = {
   async fetchActiveSessionByPin(pin: string): Promise<QuizSession | null> {
     const cleanPin = pin.trim().toUpperCase();
     const local = this.getActiveSessionByPin(cleanPin);
-    if (local) return local;
 
     if (supabase) {
       try {
         const { data, error } = await supabase
           .from('quiz_sessions')
-          .select('*')
+          .select(`
+            *,
+            quiz_session_participants (*)
+          `)
           .eq('pin_code', cleanPin)
           .in('status', ['active', 'waiting', 'paused'])
           .order('created_at', { ascending: false })
@@ -1934,6 +2167,24 @@ export const DataManager = {
           .maybeSingle();
 
         if (data && !error) {
+          const parts: QuizSessionParticipant[] = (data.quiz_session_participants || []).map((p: any) => ({
+            id: p.id,
+            name: p.student_name,
+            avatarId: p.avatar_id,
+            currentQuestionIndex: p.current_question_index,
+            totalQuestions: data.total_questions || 0,
+            score: p.score,
+            stars: p.stars,
+            correctCount: p.correct_count,
+            incorrectCount: p.incorrect_count,
+            streak: p.streak,
+            finished: p.finished,
+            timeSpentSec: p.time_spent_sec,
+            answers: p.answers || {},
+            joinedAt: p.joined_at,
+            lastActiveAt: p.last_active_at,
+          }));
+
           const session: QuizSession = {
             id: data.id,
             quizId: data.quiz_id,
@@ -1950,8 +2201,13 @@ export const DataManager = {
             startedAt: data.started_at,
             endedAt: data.ended_at,
             settings: data.settings || {},
-            participants: data.participants || [],
+            participants: parts.length > 0 ? parts : (local?.participants || []),
             totalQuestions: data.total_questions || 0,
+            currentQuestionIndex: data.current_question_index ?? 0,
+            questionState: data.question_state || 'answering',
+            reactions: Array.isArray(data.reactions) ? data.reactions : (local?.reactions || []),
+            chatMessages: Array.isArray(data.chat_messages) ? data.chat_messages : (local?.chatMessages || []),
+            isChatMuted: Boolean(data.is_chat_muted ?? local?.isChatMuted),
           };
 
           const existing = this.getActiveSessions();
@@ -1967,7 +2223,170 @@ export const DataManager = {
       }
     }
 
-    return null;
+    return local;
+  },
+
+  async fetchActiveSessionById(sessionId: string): Promise<QuizSession | null> {
+    if (!sessionId) return null;
+    const cleanId = sessionId.trim();
+    const local = this.getActiveSessionById(cleanId);
+
+    if (supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('quiz_sessions')
+          .select(`
+            *,
+            quiz_session_participants (*)
+          `)
+          .eq('id', cleanId)
+          .maybeSingle();
+
+        if (data && !error) {
+          const parts: QuizSessionParticipant[] = (data.quiz_session_participants || []).map((p: any) => ({
+            id: p.id,
+            name: p.student_name,
+            avatarId: p.avatar_id,
+            currentQuestionIndex: p.current_question_index,
+            totalQuestions: data.total_questions || 0,
+            score: p.score,
+            stars: p.stars,
+            correctCount: p.correct_count,
+            incorrectCount: p.incorrect_count,
+            streak: p.streak,
+            finished: p.finished,
+            timeSpentSec: p.time_spent_sec,
+            answers: p.answers || {},
+            joinedAt: p.joined_at,
+            lastActiveAt: p.last_active_at,
+          }));
+
+          const session: QuizSession = {
+            id: data.id,
+            quizId: data.quiz_id,
+            quizTitle: data.quiz_title,
+            quizCover: data.quiz_cover || '⭐',
+            subject: data.subject || 'Umum',
+            grade: data.grade || 'Semua Kelas',
+            pinCode: data.pin_code,
+            teacherId: data.teacher_id,
+            teacherEmail: data.teacher_email,
+            teacherName: data.teacher_name,
+            status: data.status,
+            createdAt: data.created_at,
+            startedAt: data.started_at,
+            endedAt: data.ended_at,
+            settings: data.settings || {},
+            participants: parts.length > 0 ? parts : (local?.participants || []),
+            totalQuestions: data.total_questions || 0,
+            currentQuestionIndex: data.current_question_index ?? 0,
+            questionState: data.question_state || 'answering',
+            reactions: Array.isArray(data.reactions) ? data.reactions : (local?.reactions || []),
+            chatMessages: Array.isArray(data.chat_messages) ? data.chat_messages : (local?.chatMessages || []),
+            isChatMuted: Boolean(data.is_chat_muted ?? local?.isChatMuted),
+          };
+
+          const existing = this.getActiveSessions();
+          const filtered = existing.filter((s) => s.id !== session.id);
+          try {
+            localStorage.setItem(STORAGE_KEY_QUIZ_SESSIONS, JSON.stringify([session, ...filtered]));
+          } catch {}
+
+          return session;
+        }
+      } catch (err) {
+        console.warn('fetchActiveSessionById Supabase notice:', err);
+      }
+    }
+
+    return local;
+  },
+
+  async syncActiveSessionsFromSupabase(teacherEmail?: string): Promise<QuizSession[]> {
+    if (!supabase) return this.getActiveSessions({ teacherEmail });
+    try {
+      let query = supabase
+        .from('quiz_sessions')
+        .select(`
+          *,
+          quiz_session_participants (*)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (teacherEmail && teacherEmail.trim().toLowerCase() !== MASTER_TEACHER_EMAIL.toLowerCase()) {
+        query = query.eq('teacher_email', teacherEmail.trim());
+      }
+
+      const { data, error } = await query;
+      if (error || !data) {
+        return this.getActiveSessions({ teacherEmail });
+      }
+
+      const mappedSessions: QuizSession[] = data.map((d: any) => {
+        const parts: QuizSessionParticipant[] = (d.quiz_session_participants || []).map((p: any) => ({
+          id: p.id,
+          name: p.student_name,
+          avatarId: p.avatar_id,
+          currentQuestionIndex: p.current_question_index,
+          totalQuestions: d.total_questions || 0,
+          score: p.score,
+          stars: p.stars,
+          correctCount: p.correct_count,
+          incorrectCount: p.incorrect_count,
+          streak: p.streak,
+          finished: p.finished,
+          timeSpentSec: p.time_spent_sec,
+          answers: p.answers || {},
+          joinedAt: p.joined_at,
+          lastActiveAt: p.last_active_at,
+        }));
+
+        return {
+          id: d.id,
+          quizId: d.quiz_id,
+          quizTitle: d.quiz_title,
+          quizCover: d.quiz_cover || '⭐',
+          subject: d.subject || 'Umum',
+          grade: d.grade || 'Semua Kelas',
+          pinCode: d.pin_code,
+          teacherId: d.teacher_id,
+          teacherEmail: d.teacher_email,
+          teacherName: d.teacher_name,
+          status: d.status,
+          createdAt: d.created_at,
+          startedAt: d.started_at,
+          endedAt: d.ended_at,
+          settings: d.settings || {},
+          participants: parts,
+          totalQuestions: d.total_questions || 0,
+          currentQuestionIndex: d.current_question_index ?? 0,
+          questionState: d.question_state || 'answering',
+          reactions: Array.isArray(d.reactions) ? d.reactions : [],
+          chatMessages: Array.isArray(d.chat_messages) ? d.chat_messages : [],
+          isChatMuted: Boolean(d.is_chat_muted),
+        };
+      });
+
+      const local = this.getActiveSessions();
+      const cloudIds = new Set(mappedSessions.map((s) => s.id));
+      const nonCloudLocal = local.filter((s) => !cloudIds.has(s.id));
+      const merged = [...mappedSessions, ...nonCloudLocal];
+
+      try {
+        localStorage.setItem(STORAGE_KEY_QUIZ_SESSIONS, JSON.stringify(merged));
+      } catch {}
+
+      if (teacherEmail) {
+        return merged.filter(
+          (s) => !s.teacherEmail || s.teacherEmail.trim().toLowerCase() === teacherEmail.trim().toLowerCase()
+        );
+      }
+      return merged;
+    } catch (err) {
+      console.warn('syncActiveSessionsFromSupabase error:', err);
+      return this.getActiveSessions({ teacherEmail });
+    }
   },
 
   async updateSessionStatus(sessionId: string, status: QuizSessionStatus): Promise<QuizSession | null> {
@@ -1998,6 +2417,55 @@ export const DataManager = {
             ended_at: existing[idx].endedAt,
           })
           .eq('id', sessionId);
+
+        // Jika sesi telah berakhir (finished), sinkronkan rekapitulasi nilai peserta ke tabel quiz_attempts
+        if (status === 'finished') {
+          const finishedSession = existing[idx];
+          if (finishedSession.participants && finishedSession.participants.length > 0) {
+            // Pastikan kuis terdaftar di Supabase quizzes agar relasi foreign key valid
+            const { data: existingQ } = await supabase
+              .from('quizzes')
+              .select('id')
+              .eq('id', finishedSession.quizId)
+              .maybeSingle();
+
+            if (!existingQ) {
+              await supabase.from('quizzes').upsert({
+                id: finishedSession.quizId,
+                title: finishedSession.quizTitle,
+                description: '',
+                subject: finishedSession.subject,
+                target_grade: finishedSession.grade,
+                duration_per_question_sec: 30,
+                cover_emoji: finishedSession.quizCover || '⭐',
+                theme_color: 'from-blue-600 to-indigo-600',
+                badge_title: 'Bintang Juara',
+                pin_code: finishedSession.pinCode,
+                creator_id: finishedSession.teacherId || null,
+                creator_name: finishedSession.teacherName || null,
+                visibility: 'public',
+                is_published: true,
+                default_game_mode: 'standard',
+                shuffle_questions: false,
+                shuffle_options: false,
+              });
+            }
+
+            const attemptRows = finishedSession.participants.map((p) => ({
+              quiz_id: finishedSession.quizId,
+              player_nickname: p.name,
+              player_avatar: p.avatarId,
+              score: p.score ?? 0,
+              stars: p.stars ?? 0,
+              total_questions: finishedSession.totalQuestions || 1,
+              correct_answers: p.correctCount ?? 0,
+              time_spent_sec: p.timeSpentSec ?? 0,
+              created_at: finishedSession.endedAt || new Date().toISOString(),
+            }));
+
+            await supabase.from('quiz_attempts').insert(attemptRows);
+          }
+        }
       } catch (err) {
         console.warn('Supabase updateSessionStatus notice:', err);
       }
@@ -2060,6 +2528,29 @@ export const DataManager = {
 
     // Broadcast participant update in real time
     broadcastSessionUpdate(existing[sIdx]);
+
+    if (supabase) {
+      try {
+        await supabase.from('quiz_session_participants').upsert({
+          id: finalParticipant.id,
+          session_id: sessionId,
+          student_name: finalParticipant.name,
+          avatar_id: finalParticipant.avatarId,
+          current_question_index: finalParticipant.currentQuestionIndex,
+          score: finalParticipant.score,
+          stars: finalParticipant.stars,
+          correct_count: finalParticipant.correctCount,
+          incorrect_count: finalParticipant.incorrectCount,
+          streak: finalParticipant.streak,
+          finished: finalParticipant.finished,
+          time_spent_sec: finalParticipant.timeSpentSec,
+          answers: finalParticipant.answers,
+          last_active_at: finalParticipant.lastActiveAt,
+        });
+      } catch (err) {
+        console.warn('Supabase addOrUpdateSessionParticipant notice:', err);
+      }
+    }
 
     return finalParticipant;
   },

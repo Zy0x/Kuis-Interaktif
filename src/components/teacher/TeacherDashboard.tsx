@@ -160,6 +160,11 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
       if (health.tablesReady) {
         const cloudQuizzes = await DataManager.fetchQuizzesFromCloud({ teacherEmail: teacher.email, teacherId: teacher.id });
         setQuizzes(cloudQuizzes);
+
+        const cloudSessions = await DataManager.syncActiveSessionsFromSupabase(teacher.email);
+        if (cloudSessions && cloudSessions.length > 0) {
+          setSessions(cloudSessions);
+        }
       }
     } catch (e) {
       console.warn('TeacherDashboard cloud sync notice:', e);
