@@ -1,6 +1,22 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.64] - 2026-09-12
+### Klarifikasi Waktu per Butir Soal, Durasi Bawaan/Kustom, dan Pembersihan Badge Pasif
+
+#### 1. Klarifikasi & Fleksibilitas Waktu per Butir Soal (`PlayQuizModal.tsx`)
+- **Penegasan Label & Keterangan Durasi**:
+  - Mengubah label menjadi *"Waktu per Butir Soal"* dengan indikator status aktif (misal: *Bawaan Kuis (30s)* atau *40s (Kustom)*) untuk menghilangkan ambiguitas durasi kuis vs durasi per butir.
+- **Dukungan Durasi Bawaan Soal (*Default*) & Durasi Kustom**:
+  - Menyediakan tombol pilihan *"Bawaan"* untuk mengikuti pengaturan durasi asli dari kuis/soal.
+  - Menyediakan tombol pilihan cepat preset detik (`10s`, `15s`, `20s`, `30s`, `45s`, `60s`).
+  - Menyediakan mode *"Kustom"* dengan kolom input numerik interaktif (rentang 5 – 300 detik per butir soal).
+
+#### 2. Pembersihan Lencana Pasif yang Membingungkan
+- **Penghapusan Badge Statis**:
+  - Menghilangkan deretan badge pasif non-interaktif (*Smartboard IFP, Jeda Waktu, Navigasi Mundur, Lompat Soal*) yang sebelumnya membingungkan pengguna dan membuat antarmuka terasa ramai.
+  - Panel konfigurasi kuis kini jauh lebih bersih, terfokus, dan bebas dari elemen dekoratif yang tidak perlu.
+
 ## [2.3.63] - 2026-09-12
 ### Pengaturan Lengkap Kuis pada Panel Mode Dipandu Guru Berbasis Accordion
 

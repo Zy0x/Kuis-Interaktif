@@ -37,7 +37,6 @@ import {
   ChevronRight,
   ChevronDown,
   SlidersHorizontal,
-  Tv,
   FileText
 } from 'lucide-react';
 
@@ -136,6 +135,7 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
   // Session state settings
   const [selectedMode, setSelectedMode] = useState<GameMode>('standard');
   const [selectedDuration, setSelectedDuration] = useState<number>(30);
+  const [durationSelectionType, setDurationSelectionType] = useState<'default' | 'preset' | 'custom'>('default');
   const [shuffleQuestions, setShuffleQuestions] = useState<boolean>(false);
   const [shuffleOptions, setShuffleOptions] = useState<boolean>(false);
   const [presentationTarget, setPresentationTarget] = useState<'smartboard' | 'student-lobby'>('smartboard');
@@ -164,6 +164,7 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
       setIsTeacherAdvancedOpen(false);
       setSelectedMode(quiz.defaultGameMode || 'standard');
       setSelectedDuration(quiz.durationPerQuestionSec || 30);
+      setDurationSelectionType('default');
       setShuffleQuestions(Boolean(quiz.shuffleQuestions));
       setShuffleOptions(Boolean(quiz.shuffleOptions));
       setSaveAsDefault(false);
@@ -609,11 +610,23 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
                   </div>
                 </div>
 
-                {/* Mekanik Waktu */}
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
-                    Mekanik Waktu
-                  </label>
+                {/* Waktu per Butir Soal */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
+                      Waktu per Butir Soal
+                    </label>
+                    <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400">
+                      {selectedMode === 'untimed'
+                        ? 'Bebas Waktu (Tanpa Timer)'
+                        : durationSelectionType === 'default'
+                        ? `Bawaan Kuis (${quiz.durationPerQuestionSec || 30}s)`
+                        : durationSelectionType === 'custom'
+                        ? `${selectedDuration}s (Kustom)`
+                        : `${selectedDuration} detik / soal`}
+                    </span>
+                  </div>
+
                   <div className="bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl flex items-center gap-1">
                     <button
                       type="button"
@@ -628,7 +641,7 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
                       }`}
                     >
                       <Sparkles className="w-3.5 h-3.5" />
-                      <span>Timer ({selectedDuration}s)</span>
+                      <span>Timer ({selectedDuration}s / soal)</span>
                     </button>
 
                     <button
@@ -643,47 +656,99 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
                           : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                       }`}
                     >
-                      <span>🧘 Santai (Ritme Bebas)</span>
+                      <span>🧘 Santai (Tanpa Batas)</span>
                     </button>
                   </div>
 
                   {selectedMode === 'standard' && (
-                    <div className="grid grid-cols-6 gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl pt-1">
-                      {DURATION_PRESETS.map((dur) => (
+                    <div className="space-y-2 pt-0.5">
+                      {/* Baris Pilihan Waktu: Bawaan Soal, Presets, dan Kustom */}
+                      <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl flex-wrap">
+                        {/* Tombol Bawaan Soal */}
                         <button
-                          key={dur}
                           type="button"
                           onClick={() => {
                             playClick();
-                            setSelectedDuration(dur);
+                            setDurationSelectionType('default');
+                            setSelectedDuration(quiz.durationPerQuestionSec || 30);
                           }}
-                          className={`py-1.5 rounded-lg text-xs font-bold transition-all min-h-[38px] flex items-center justify-center btn-press ${
-                            selectedDuration === dur
+                          className={`py-1.5 px-2.5 rounded-lg text-xs font-bold transition-all min-h-[38px] flex items-center justify-center gap-1 flex-1 sm:flex-initial btn-press ${
+                            durationSelectionType === 'default'
+                              ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs font-black'
+                              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                          }`}
+                          title="Mengikuti durasi bawaan kuis/soal"
+                        >
+                          <span>Bawaan</span>
+                          <span className="text-[10px] opacity-75">({quiz.durationPerQuestionSec || 30}s)</span>
+                        </button>
+
+                        {/* Preset Buttons */}
+                        {DURATION_PRESETS.map((dur) => (
+                          <button
+                            key={dur}
+                            type="button"
+                            onClick={() => {
+                              playClick();
+                              setDurationSelectionType('preset');
+                              setSelectedDuration(dur);
+                            }}
+                            className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all min-h-[38px] flex items-center justify-center flex-1 sm:flex-initial btn-press ${
+                              durationSelectionType === 'preset' && selectedDuration === dur
+                                ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs font-black'
+                                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                            }`}
+                          >
+                            {dur}s
+                          </button>
+                        ))}
+
+                        {/* Tombol Kustom */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            playClick();
+                            setDurationSelectionType('custom');
+                          }}
+                          className={`py-1.5 px-2.5 rounded-lg text-xs font-bold transition-all min-h-[38px] flex items-center justify-center flex-1 sm:flex-initial btn-press ${
+                            durationSelectionType === 'custom'
                               ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs font-black'
                               : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                           }`}
                         >
-                          {dur}s
+                          Kustom
                         </button>
-                      ))}
+                      </div>
+
+                      {/* Input Kustom (Hanya tampil saat Kustom aktif) */}
+                      {durationSelectionType === 'custom' && (
+                        <div className="flex items-center gap-2.5 p-2 rounded-xl bg-blue-50/60 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900/60 animate-fade-in">
+                          <span className="text-xs font-bold text-blue-900 dark:text-blue-200">
+                            Tentukan Detik:
+                          </span>
+                          <div className="flex items-center gap-1.5 bg-white dark:bg-slate-900 px-2.5 py-1 rounded-lg border border-blue-200 dark:border-blue-800 shadow-2xs">
+                            <input
+                              type="number"
+                              min={5}
+                              max={300}
+                              value={selectedDuration}
+                              onChange={(e) => {
+                                const val = parseInt(e.target.value);
+                                if (!isNaN(val)) {
+                                  setSelectedDuration(Math.max(5, Math.min(300, val)));
+                                }
+                              }}
+                              className="w-14 bg-transparent text-center font-black text-sm text-blue-600 dark:text-blue-400 focus:outline-none"
+                            />
+                            <span className="text-xs font-bold text-slate-500">detik / soal</span>
+                          </div>
+                          <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                            (Rentang 5 – 300 dtk)
+                          </span>
+                        </div>
+                      )}
                     </div>
                   )}
-                </div>
-
-                {/* Badges Fitur Guru Aktif (Clean & Compact) */}
-                <div className="pt-1 flex flex-wrap gap-2 text-xs font-bold text-slate-600 dark:text-slate-300">
-                  <span className="px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center gap-1.5">
-                    <Tv className="w-3.5 h-3.5 text-blue-500" /> Smartboard IFP
-                  </span>
-                  <span className="px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center gap-1.5">
-                    ⏸️ Jeda Waktu
-                  </span>
-                  <span className="px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center gap-1.5">
-                    ◀️ Navigasi Mundur
-                  </span>
-                  <span className="px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center gap-1.5">
-                    🔢 Lompat Soal
-                  </span>
                 </div>
 
                 {/* Accordion: Pengaturan Tambahan Kuis */}
