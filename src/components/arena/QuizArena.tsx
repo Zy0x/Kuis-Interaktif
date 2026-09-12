@@ -23,7 +23,8 @@ import {
   Check,
   CheckCircle, 
   XCircle, 
-  ArrowRight, 
+  ArrowRight,
+  ArrowLeft, 
   HelpCircle,
   Clock,
   Maximize2,
@@ -792,6 +793,47 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     }
   };
 
+  const handlePrev = () => {
+    if (currentIndex <= 0) return;
+    if (playClick) playClick();
+    setDucked(false);
+    const prevIdx = currentIndex - 1;
+    const prevQuestion = activeQuestions[prevIdx];
+    const prevDuration = prevQuestion?.customDurationSec || defaultDurationSec;
+    setCurrentIndex(prevIdx);
+    setSelectedOption(null);
+    setIsAnswerConfirmed(false);
+    setTimeLeft(prevDuration);
+    setIsPaused(false);
+    setPollVotes({ 0: 0, 1: 0, 2: 0, 3: 0 });
+    setShortAnswerInput('');
+    setShowFirstLetterHint(false);
+    setRevealedTiles(new Set());
+    setSelectedLeft(null);
+    setMatchedPairs(new Set());
+    setWrongPairAttempt(null);
+  };
+
+  const handleJumpToQuestion = (targetIdx: number) => {
+    if (targetIdx < 0 || targetIdx >= activeQuestions.length || targetIdx === currentIndex) return;
+    if (playClick) playClick();
+    setDucked(false);
+    const targetQuestion = activeQuestions[targetIdx];
+    const targetDuration = targetQuestion?.customDurationSec || defaultDurationSec;
+    setCurrentIndex(targetIdx);
+    setSelectedOption(null);
+    setIsAnswerConfirmed(false);
+    setTimeLeft(targetDuration);
+    setIsPaused(false);
+    setPollVotes({ 0: 0, 1: 0, 2: 0, 3: 0 });
+    setShortAnswerInput('');
+    setShowFirstLetterHint(false);
+    setRevealedTiles(new Set());
+    setSelectedLeft(null);
+    setMatchedPairs(new Set());
+    setWrongPairAttempt(null);
+  };
+
   const handleVoteAdd = (e: React.MouseEvent, optIndex: number) => {
     e.stopPropagation();
     playClick();
@@ -885,9 +927,25 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 
             <div className="min-w-0 flex flex-col justify-center">
               <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-[11px] sm:text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/50 px-2 py-0.5 rounded-md inline-block whitespace-nowrap self-start">
-                  Soal {currentIndex + 1}/{activeQuestions.length}
-                </span>
+                {canTeacherReveal || activeSettings.executionMode === 'teacher_led' ? (
+                  <select
+                    value={currentIndex}
+                    onChange={(e) => handleJumpToQuestion(Number(e.target.value))}
+                    className="text-[11px] sm:text-xs font-black text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/70 border border-blue-200/80 dark:border-blue-900/80 px-2 py-0.5 rounded-md cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    title="Lompat ke Nomor Soal Tertentu (Khusus Guru)"
+                    aria-label="Pilih Nomor Soal"
+                  >
+                    {activeQuestions.map((_, qIdx) => (
+                      <option key={qIdx} value={qIdx} className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200">
+                        Soal {qIdx + 1}/{activeQuestions.length}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <span className="text-[11px] sm:text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/50 px-2 py-0.5 rounded-md inline-block whitespace-nowrap self-start">
+                    Soal {currentIndex + 1}/{activeQuestions.length}
+                  </span>
+                )}
                 {isPreview && (
                   <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-indigo-600 text-white shadow-xs">
                     Pratinjau
@@ -1510,43 +1568,80 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
       <footer className="w-full bg-white dark:bg-slate-900 border-t border-slate-200/80 dark:border-slate-800 px-3 sm:px-6 py-2.5 sm:py-3 pb-[max(env(safe-area-inset-bottom),0.625rem)] flex-shrink-0 z-20 shadow-sm">
         <div className="w-full max-w-2xl lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl 3xl:max-w-6xl 4k:max-w-7xl mx-auto flex items-center justify-between gap-3">
           
-          {/* Teacher Reveal Button (HANYA untuk Guru pada Smartboard atau Pratinjau Studio - 100% Bebas Kebocoran Siswa) */}
-          {canTeacherReveal && !isAnswerConfirmed ? (
-            <button
-              type="button"
-              onClick={handleTeacherReveal}
-              className="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-blue-700 dark:text-blue-300 hover:text-blue-800 dark:hover:text-blue-200 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800 min-h-[46px] sm:min-h-[50px] transition-colors"
-              title="Buka Kunci Jawaban untuk Pembahasan Bersama (Khusus Guru / Smartboard)"
-            >
-              <Eye className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400" />
-              <span className="hidden sm:inline">Buka Kunci Jawaban (Guru)</span>
-              <span className="sm:hidden">Kunci Guru</span>
-            </button>
-          ) : !isAnswerConfirmed ? (
-            <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-xs font-bold border border-slate-200/80 dark:border-slate-700">
-              {showAnswersMode === 'exam_strict' ? (
-                <>
-                  <ShieldAlert className="w-4 h-4 text-indigo-500 flex-shrink-0" />
-                  <span>Mode Ujian Terproteksi</span>
-                </>
-              ) : (
-                <>
-                  <Clock className="w-4 h-4 text-blue-500 flex-shrink-0" />
-                  <span>Pilih satu jawaban terbaik</span>
-                </>
-              )}
-            </div>
-          ) : (
-            <span className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium hidden sm:block">
-              Tekan lanjut untuk soal berikutnya
-            </span>
-          )}
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+            {/* Tombol Soal Sebelumnya (Prev) - Khusus Mode Dipandu Guru atau Guru Terverifikasi */}
+            {(canTeacherReveal || activeSettings.executionMode === 'teacher_led') && currentIndex > 0 && (
+              <button
+                type="button"
+                onClick={handlePrev}
+                className="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 min-h-[46px] sm:min-h-[50px] transition-colors btn-press"
+                title="Kembali ke Soal Sebelumnya"
+                aria-label="Soal Sebelumnya"
+              >
+                <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="hidden sm:inline">Sebelumnya</span>
+              </button>
+            )}
+
+            {/* Tombol Hold Timer / Jeda Waktu Guru */}
+            {(canTeacherReveal || activeSettings.executionMode === 'teacher_led') && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (playClick) playClick();
+                  setIsPaused(!isPaused);
+                }}
+                className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold min-h-[46px] sm:min-h-[50px] transition-colors btn-press ${
+                  isPaused
+                    ? 'bg-amber-500 text-white shadow-xs'
+                    : 'text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 dark:hover:bg-amber-900/60 border border-amber-200 dark:border-amber-800'
+                }`}
+                title={isPaused ? 'Lanjutkan Waktu Kuis' : 'Jeda Waktu untuk Memberikan Arahan Guru'}
+                aria-label={isPaused ? 'Lanjutkan Waktu' : 'Jeda Waktu'}
+              >
+                {isPaused ? <Play className="w-4 h-4 sm:w-5 sm:h-5 fill-white" /> : <Pause className="w-4 h-4 sm:w-5 sm:h-5" />}
+                <span className="hidden sm:inline">{isPaused ? 'Lanjut' : 'Jeda Waktu'}</span>
+              </button>
+            )}
+
+            {/* Teacher Reveal Button (HANYA untuk Guru pada Smartboard atau Pratinjau Studio - 100% Bebas Kebocoran Siswa) */}
+            {canTeacherReveal && !isAnswerConfirmed ? (
+              <button
+                type="button"
+                onClick={handleTeacherReveal}
+                className="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-blue-700 dark:text-blue-300 hover:text-blue-800 dark:hover:text-blue-200 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800 min-h-[46px] sm:min-h-[50px] transition-colors btn-press"
+                title="Buka Kunci Jawaban untuk Pembahasan Bersama (Khusus Guru / Smartboard)"
+              >
+                <Eye className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400" />
+                <span className="hidden sm:inline">Buka Kunci</span>
+                <span className="sm:hidden">Kunci</span>
+              </button>
+            ) : !isAnswerConfirmed && !(canTeacherReveal || activeSettings.executionMode === 'teacher_led') ? (
+              <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-xs font-bold border border-slate-200/80 dark:border-slate-700">
+                {showAnswersMode === 'exam_strict' ? (
+                  <>
+                    <ShieldAlert className="w-4 h-4 text-indigo-500 flex-shrink-0" />
+                    <span>Mode Ujian Terproteksi</span>
+                  </>
+                ) : (
+                  <>
+                    <Clock className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                    <span>Pilih satu jawaban terbaik</span>
+                  </>
+                )}
+              </div>
+            ) : isAnswerConfirmed ? (
+              <span className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium hidden sm:block">
+                Tekan lanjut untuk soal berikutnya
+              </span>
+            ) : null}
+          </div>
 
           <button
-            disabled={!isAnswerConfirmed}
+            disabled={!isAnswerConfirmed && !(canTeacherReveal || activeSettings.executionMode === 'teacher_led')}
             onClick={handleNext}
             className={`flex-1 sm:flex-initial sm:min-w-[200px] xl:min-w-[240px] px-6 py-2.5 sm:py-3 rounded-2xl font-bold text-xs sm:text-sm xl:text-base flex items-center justify-center gap-2 transition-all min-h-[46px] sm:min-h-[50px] btn-press ${
-              isAnswerConfirmed
+              isAnswerConfirmed || canTeacherReveal || activeSettings.executionMode === 'teacher_led'
                 ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md'
                 : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed border border-slate-200 dark:border-slate-700'
             }`}

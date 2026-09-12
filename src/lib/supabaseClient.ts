@@ -13,8 +13,6 @@ import type {
   QuizSessionParticipant,
   QuizSessionStatus,
   QuizSessionSettings,
-  AnswerVisibilityMode,
-  ExplanationVisibilityMode,
 } from '../types/quiz';
 import { MASTER_TEACHER_EMAIL } from '../types/quiz';
 import { INITIAL_QUIZZES } from '../data/seedQuizzes';
@@ -1530,18 +1528,7 @@ export const DataManager = {
 
   async createActiveSession(
     quiz: Quiz,
-    options: {
-      mode: GameMode;
-      durationPerQuestionSec: number;
-      shuffleQuestions: boolean;
-      shuffleOptions: boolean;
-      presentationTarget: 'smartboard' | 'student-lobby';
-      showAnswersMode?: AnswerVisibilityMode;
-      showExplanationMode?: ExplanationVisibilityMode;
-      showLeaderboardToStudents?: boolean;
-      maxAttempts?: number;
-      tabSwitchDetection?: boolean;
-    },
+    options: QuizSessionSettings,
     teacher?: TeacherProfile
   ): Promise<QuizSession> {
     const sessionId = 'sess_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
@@ -1562,6 +1549,12 @@ export const DataManager = {
       createdAt: new Date().toISOString(),
       startedAt: new Date().toISOString(),
       settings: {
+        executionMode: options.executionMode || 'teacher_led',
+        participantMode: options.participantMode || 'individual',
+        pacingType: options.pacingType || 'in_class',
+        deadlineAt: options.deadlineAt,
+        requireStudentInfo: options.requireStudentInfo,
+        selectedQuestionIds: options.selectedQuestionIds,
         mode: options.mode,
         durationPerQuestionSec: options.durationPerQuestionSec,
         shuffleQuestions: options.shuffleQuestions,

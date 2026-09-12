@@ -273,8 +273,17 @@ export interface QuizSessionParticipant {
 
 export type AnswerVisibilityMode = 'immediate' | 'status_only' | 'exam_strict';
 export type ExplanationVisibilityMode = 'immediate' | 'end_only' | 'never';
+export type ExecutionMode = 'teacher_led' | 'self_paced';
+export type ParticipantMode = 'individual' | 'team';
+export type PacingType = 'in_class' | 'homework';
 
 export interface QuizSessionSettings {
+  executionMode?: ExecutionMode;
+  participantMode?: ParticipantMode;
+  pacingType?: PacingType;
+  deadlineAt?: string;
+  requireStudentInfo?: boolean;
+  selectedQuestionIds?: string[];
   mode: GameMode;
   durationPerQuestionSec: number;
   shuffleQuestions: boolean;

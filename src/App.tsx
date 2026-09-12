@@ -369,6 +369,12 @@ export const App: React.FC = () => {
       showLeaderboardToStudents: options.showLeaderboardToStudents,
       maxAttempts: options.maxAttempts,
       tabSwitchDetection: options.tabSwitchDetection,
+      executionMode: options.executionMode,
+      participantMode: options.participantMode,
+      pacingType: options.pacingType,
+      deadlineAt: options.deadlineAt,
+      requireStudentInfo: options.requireStudentInfo,
+      selectedQuestionIds: options.selectedQuestionIds,
     };
 
     const sessionQuiz: Quiz = {

@@ -1,6 +1,46 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.60] - 2026-09-12
+### Implementasi Arsitektur 2 Mode Utama Kuis: Mode Dipandu Guru & Mode Mandiri Hybrid PR
+
+#### 1. Arsitektur 2 Mode Pelaksanaan Inti (`PlayQuizModal.tsx`)
+- **Penyederhanaan Segmented Control Teratas**:
+  - Mengintegrasikan konfigurasi kuis ke dalam 2 mode utama yang jelas dan terfokus:
+    1. **1. Dipandu Guru (*Teacher-Led / Instructor-Paced*)**:
+       - Memberikan kendali penuh kepada Guru atas jalannya kuis di kelas.
+       - Pilihan Format Partisipasi Siswa: *Individu (1 HP / Siswa)* atau *Regu / Kelompok (1 HP / Meja Diskusi)* untuk melatih kerja sama tim.
+       - Mekanik Waktu: *Standar (Timer Otomatis)* atau *Santai (Mengikuti Ritme Guru)*.
+       - Target tampilan otomatis diarahkan ke Smartboard / TV Kelas.
+       - Panel Ringkasan Fitur Live Guru di Arena: Jeda Waktu (*Hold Timer*), Navigasi Mundur (*Prev*), Lompat Nomor Soal, dan Buka Kunci Jawaban Manual.
+    2. **2. Mandiri & PR (*Self-Paced & Hybrid Homework*)**:
+       - Mengakomodasi pengerjaan fleksibel siswa baik serentak maupun sebagai penugasan rumah.
+       - Pilihan Tipe Pelaksanaan: *Langsung di Kelas* atau *Pekerjaan Rumah (PR)*.
+       - Fitur Pekerjaan Rumah (PR) Lengkap:
+         - Penentuan batas waktu pengumpulan (*deadline*) dengan pemilih tanggal/waktu interaktif dan tombol pintas `+1 Hari (Besok)`, `+3 Hari`, `+1 Minggu`.
+         - Keterangan format tanggal lokal Indonesia yang komunikatif.
+         - Sakelar wajib isi Nama Lengkap & Nomor Absen siswa untuk kemudahan rekapitulasi nilai.
+         - Tombol instan salin format pengumuman tugas ke grup WhatsApp kelas.
+       - Pengaturan keamanan dan integritas pengerjaan: Acak nomor soal, acak pilihan opsi, deteksi ganti tab, keterlihatan peringkat, dan pembatasan pengerjaan 1 kali.
+- **Kepatuhan Penuh Pengaturan Sesi**:
+  - Seluruh parameter sesi permainan tetap terjaga, disinkronkan secara real-time ke penyimpanan sesi aktif dan didistribusikan ke peserta.
+
+#### 2. Fitur Kendali Guru di Arena Permainan (`QuizArena.tsx`)
+- **Tombol Navigasi Mundur (*Previous Question*)**:
+  - Guru dapat kembali ke butir soal sebelumnya kapan saja saat memandu kuis atau dalam mode pratinjau.
+- **Tombol Jeda Waktu (*Hold & Resume Timer*)**:
+  - Guru dapat menghentikan hitung mundur timer seketika dari navigasi bawah untuk memberikan penjelasan konsep atau arahan kepada kelas, lalu melanjutkannya kembali.
+- **Pemilih Lompat Soal Cepat (*Question Jumper*)**:
+  - Dropdown pemilih nomor soal interaktif di bilah atas (*header*) yang memungkinkan guru melompat langsung ke butir soal yang diinginkan.
+- **Transisi Soal Fleksibel**:
+  - Guru dapat memajukan soal ke nomor berikutnya (*Next Question*) kapan saja tanpa harus menunggu atau terhalang input.
+
+#### 3. Peningkatan Ruang Tunggu Siswa (*Student Lobby*) (`StudentLobby.tsx`)
+- **Banner Mode Pelaksanaan**:
+  - Menampilkan lencana informatif jika sesi berstatus *Dipandu Guru* atau *Pekerjaan Rumah (PR)* lengkap dengan tanggal batas waktu pengumpulan.
+- **Bidang Input Nomor Absen**:
+  - Form pendaftaran siswa secara dinamis menyediakan kolom Nomor Absen saat sesi berupa penugasan PR atau diaktifkan oleh guru.
+
 ## [2.3.59] - 2026-09-12
 ### Keterangan Kontekstual Dinamis pada Segmented Controls Modal Sesi Kuis Guru
 

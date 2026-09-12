@@ -17,7 +17,10 @@ import {
   AlertCircle,
   Gamepad2,
   CheckCircle2,
-  Info
+  Info,
+  Calendar,
+  GraduationCap,
+  FileText
 } from 'lucide-react';
 
 export interface StudentLobbyProps {
@@ -49,7 +52,27 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
     profile.nickname.trim().toLowerCase() !== 'bintang pintar'
   );
   const [nickname, setNickname] = useState(isCustom ? profile.nickname : '');
+  const [rollNumber, setRollNumber] = useState('');
   const [selectedAvatar, setSelectedAvatar] = useState(profile.avatarId || 'lion');
+
+  const formatIndonesianDeadline = (isoString?: string) => {
+    if (!isoString) return '';
+    try {
+      const d = new Date(isoString);
+      return (
+        d.toLocaleDateString('id-ID', {
+          weekday: 'long',
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        }) + ' WIB'
+      );
+    } catch {
+      return isoString;
+    }
+  };
 
   // Real-time live session & settings state
   const [liveSession, setLiveSession] = useState<QuizSession | null>(activeSession || null);
@@ -171,8 +194,9 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
     if (isAttemptLimitReached) return;
     playClick();
     const cleanNick = nickname.trim() || (isCustom ? profile.nickname : 'Siswa Pintar');
+    const finalName = rollNumber.trim() ? `${rollNumber.trim()}. ${cleanNick}` : cleanNick;
     DataManager.savePlayerProfile({
-      nickname: cleanNick,
+      nickname: finalName,
       avatarId: selectedAvatar,
     });
     onStartQuiz();
@@ -251,6 +275,41 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
               {quiz.description || 'Kuis interaktif untuk menguji pemahaman dan mengumpulkan Bintang Prestasi!'}
             </p>
           </div>
+
+          {/* Mode Execution Banner */}
+          {effectiveSettings.executionMode === 'teacher_led' && (
+            <div className="p-3.5 rounded-2xl bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-900/60 text-blue-900 dark:text-blue-100 flex items-center gap-3 shadow-2xs">
+              <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0">
+                <GraduationCap className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <span className="text-[10px] font-black uppercase tracking-wider text-blue-600 dark:text-blue-300 block">
+                  Mode Dipandu Guru
+                </span>
+                <p className="text-xs font-bold leading-tight mt-0.5">
+                  Laju soal & pembahasan kuis dikendalikan oleh Guru di depan kelas.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {effectiveSettings.pacingType === 'homework' && (
+            <div className="p-3.5 rounded-2xl bg-purple-50 dark:bg-purple-950/50 border border-purple-200 dark:border-purple-900/60 text-purple-900 dark:text-purple-100 flex items-center gap-3 shadow-2xs">
+              <div className="w-9 h-9 rounded-xl bg-purple-600 text-white flex items-center justify-center shrink-0">
+                <Calendar className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <span className="text-[10px] font-black uppercase tracking-wider text-purple-600 dark:text-purple-300 block">
+                  Penugasan Pekerjaan Rumah (PR)
+                </span>
+                <p className="text-xs font-bold leading-tight mt-0.5">
+                  {effectiveSettings.deadlineAt
+                    ? `Batas waktu pengumpulan: ${formatIndonesianDeadline(effectiveSettings.deadlineAt)}`
+                    : 'Kerjakan tugas ini secara teliti dari rumah.'}
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Konfigurasi Sesi dari Guru (Metadata Cards) */}
           <div className="space-y-2.5">
@@ -354,6 +413,28 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
                 className="w-full px-4 py-3 rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-900/40 focus:outline-none font-bold text-sm sm:text-base text-slate-900 dark:text-white min-h-[48px] transition-all shadow-xs"
               />
             </div>
+
+            {/* Nomor Absen (Jika Mode PR atau Diaktifkan Guru) */}
+            {(effectiveSettings.requireStudentInfo || effectiveSettings.pacingType === 'homework') && (
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <FileText className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                    <span>Nomor Absen Siswa:</span>
+                  </span>
+                  <span className="text-[11px] font-normal text-slate-400 dark:text-slate-500">Wajib untuk rekap tugas</span>
+                </label>
+                <input
+                  type="text"
+                  maxLength={5}
+                  value={rollNumber}
+                  onChange={(e) => setRollNumber(e.target.value)}
+                  placeholder="Contoh: 15"
+                  required={Boolean(effectiveSettings.requireStudentInfo)}
+                  className="w-full px-4 py-3 rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/40 focus:outline-none font-bold text-sm sm:text-base text-slate-900 dark:text-white min-h-[48px] transition-all shadow-xs"
+                />
+              </div>
+            )}
 
             {/* ======================================================== */}
             {/* 3. PILIH MASKOT                                          */}
