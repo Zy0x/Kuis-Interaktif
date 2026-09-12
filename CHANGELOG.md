@@ -1,6 +1,16 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.55] - 2026-09-12
+### Perbaikan Urutan Hook React pada Modal Pengaturan Kuis Guru & Pemulihan Tombol "Mainkan Sekarang"
+
+#### 1. Perbaikan Kepatuhan Aturan Hook React (*Rules of Hooks Compliance* di `PlayQuizModal.tsx`)
+- **Penyelarasan Urutan Deklarasi Hook**:
+  - Memindahkan pemanggilan hook `useEffect` sinkronisasi pengaturan real-time ke bagian atas komponen sebelum pernyataan kondisional `if (!isOpen || !quiz) return null;`.
+  - Mengatasi galat *runtime* *"React has detected a change in the order of Hooks called by PlayQuizModal"* yang sebelumnya memblokir pembukaan modal saat guru mengklik tombol *"Mainkan Sekarang"*.
+- **Pemulihan Alur Pembukaan Modal Kuis Guru**:
+  - Tombol *"Mainkan Sekarang"* di seluruh dashboard dan detail kuis kini dapat dibuka dengan mulus, instan, dan responsif. Seluruh preset cepat 1-klik (*Mode Ujian Resmi* & *Latihan Bebas*) dan konfigurasi sesi berfungsi tanpa kendala.
+
 ## [2.3.54] - 2026-09-12
 ### Eliminasi Mutlak Kebocoran Tombol Kunci Jawaban Siswa & Sinkronisasi Konfigurasi Sesi Real-Time Antar Guru-Siswa
 

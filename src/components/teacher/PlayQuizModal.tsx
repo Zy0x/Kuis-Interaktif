@@ -128,38 +128,6 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
     enabled: isOpen,
   });
 
-  if (!isOpen || !quiz) return null;
-
-  const pin = quiz.pinCode || '1001';
-  const totalQuestions = quiz.questions?.length || 0;
-  const estimatedTotalMinutes = selectedMode === 'untimed' 
-    ? 'Fleksibel' 
-    : `${Math.ceil((totalQuestions * selectedDuration) / 60)} mnt`;
-
-  // Helper untuk memastikan sesi aktif terdaftar dan menyinkronkan seluruh pengaturan real-time
-  const ensureSessionAndSyncSettings = async (overrides?: Partial<PlayQuizSessionOptions>) => {
-    const opts: PlayQuizSessionOptions = {
-      mode: overrides?.mode ?? selectedMode,
-      durationPerQuestionSec: overrides?.durationPerQuestionSec ?? selectedDuration,
-      shuffleQuestions: overrides?.shuffleQuestions ?? shuffleQuestions,
-      shuffleOptions: overrides?.shuffleOptions ?? shuffleOptions,
-      presentationTarget: overrides?.presentationTarget ?? presentationTarget,
-      showAnswersMode: overrides?.showAnswersMode ?? showAnswersMode,
-      showExplanationMode: overrides?.showExplanationMode ?? showExplanationMode,
-      showLeaderboardToStudents: overrides?.showLeaderboardToStudents ?? showLeaderboardToStudents,
-      maxAttempts: overrides?.maxAttempts ?? maxAttempts,
-      tabSwitchDetection: overrides?.tabSwitchDetection ?? tabSwitchDetection,
-    };
-
-    let existing = DataManager.getActiveSessionByQuizId(quiz.id) || DataManager.getActiveSessionByPin(quiz.pinCode || '');
-    if (existing) {
-      await DataManager.updateActiveSessionSettings(existing.id, opts);
-    } else {
-      existing = await DataManager.createActiveSession(quiz, opts, DataManager.getTeacherProfile() || undefined);
-    }
-    return existing;
-  };
-
   // Sinkronisasi otomatis ke siswa jika guru mengubah opsi saat sesi sudah aktif
   useEffect(() => {
     if (isOpen && quiz) {
@@ -193,6 +161,38 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
     maxAttempts,
     tabSwitchDetection,
   ]);
+
+  if (!isOpen || !quiz) return null;
+
+  const pin = quiz.pinCode || '1001';
+  const totalQuestions = quiz.questions?.length || 0;
+  const estimatedTotalMinutes = selectedMode === 'untimed' 
+    ? 'Fleksibel' 
+    : `${Math.ceil((totalQuestions * selectedDuration) / 60)} mnt`;
+
+  // Helper untuk memastikan sesi aktif terdaftar dan menyinkronkan seluruh pengaturan real-time
+  const ensureSessionAndSyncSettings = async (overrides?: Partial<PlayQuizSessionOptions>) => {
+    const opts: PlayQuizSessionOptions = {
+      mode: overrides?.mode ?? selectedMode,
+      durationPerQuestionSec: overrides?.durationPerQuestionSec ?? selectedDuration,
+      shuffleQuestions: overrides?.shuffleQuestions ?? shuffleQuestions,
+      shuffleOptions: overrides?.shuffleOptions ?? shuffleOptions,
+      presentationTarget: overrides?.presentationTarget ?? presentationTarget,
+      showAnswersMode: overrides?.showAnswersMode ?? showAnswersMode,
+      showExplanationMode: overrides?.showExplanationMode ?? showExplanationMode,
+      showLeaderboardToStudents: overrides?.showLeaderboardToStudents ?? showLeaderboardToStudents,
+      maxAttempts: overrides?.maxAttempts ?? maxAttempts,
+      tabSwitchDetection: overrides?.tabSwitchDetection ?? tabSwitchDetection,
+    };
+
+    let existing = DataManager.getActiveSessionByQuizId(quiz.id) || DataManager.getActiveSessionByPin(quiz.pinCode || '');
+    if (existing) {
+      await DataManager.updateActiveSessionSettings(existing.id, opts);
+    } else {
+      existing = await DataManager.createActiveSession(quiz, opts, DataManager.getTeacherProfile() || undefined);
+    }
+    return existing;
+  };
 
   const handleCopyPin = async (e: React.MouseEvent) => {
     e.stopPropagation();
