@@ -136,6 +136,8 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
   const [selectedMode, setSelectedMode] = useState<GameMode>('standard');
   const [selectedDuration, setSelectedDuration] = useState<number>(30);
   const [durationSelectionType, setDurationSelectionType] = useState<'default' | 'preset' | 'custom'>('default');
+  const [customDurationValue, setCustomDurationValue] = useState<number>(30);
+  const [customDurationUnit, setCustomDurationUnit] = useState<'seconds' | 'minutes'>('seconds');
   const [shuffleQuestions, setShuffleQuestions] = useState<boolean>(false);
   const [shuffleOptions, setShuffleOptions] = useState<boolean>(false);
   const [presentationTarget, setPresentationTarget] = useState<'smartboard' | 'student-lobby'>('smartboard');
@@ -163,8 +165,16 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
       setCurrentStep('select_mode'); // Always start with clean card picker
       setIsTeacherAdvancedOpen(false);
       setSelectedMode(quiz.defaultGameMode || 'standard');
-      setSelectedDuration(quiz.durationPerQuestionSec || 30);
+      const initDur = quiz.durationPerQuestionSec || 30;
+      setSelectedDuration(initDur);
       setDurationSelectionType('default');
+      if (initDur >= 60 && initDur % 60 === 0) {
+        setCustomDurationValue(initDur / 60);
+        setCustomDurationUnit('minutes');
+      } else {
+        setCustomDurationValue(initDur);
+        setCustomDurationUnit('seconds');
+      }
       setShuffleQuestions(Boolean(quiz.shuffleQuestions));
       setShuffleOptions(Boolean(quiz.shuffleOptions));
       setSaveAsDefault(false);
@@ -622,7 +632,7 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
                         : durationSelectionType === 'default'
                         ? `Bawaan Kuis (${quiz.durationPerQuestionSec || 30}s)`
                         : durationSelectionType === 'custom'
-                        ? `${selectedDuration}s (Kustom)`
+                        ? `${customDurationValue} ${customDurationUnit === 'minutes' ? 'menit' : 'detik'} / soal`
                         : `${selectedDuration} detik / soal`}
                     </span>
                   </div>
@@ -641,7 +651,9 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
                       }`}
                     >
                       <Sparkles className="w-3.5 h-3.5" />
-                      <span>Timer ({selectedDuration}s / soal)</span>
+                      <span>
+                        Timer ({durationSelectionType === 'custom' ? `${customDurationValue} ${customDurationUnit === 'minutes' ? 'mnt' : 'dtk'}` : `${selectedDuration}s`} / soal)
+                      </span>
                     </button>
 
                     <button
@@ -692,6 +704,8 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
                               playClick();
                               setDurationSelectionType('preset');
                               setSelectedDuration(dur);
+                              setCustomDurationValue(dur);
+                              setCustomDurationUnit('seconds');
                             }}
                             className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all min-h-[38px] flex items-center justify-center flex-1 sm:flex-initial btn-press ${
                               durationSelectionType === 'preset' && selectedDuration === dur
@@ -709,6 +723,7 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
                           onClick={() => {
                             playClick();
                             setDurationSelectionType('custom');
+                            setSelectedDuration(customDurationUnit === 'minutes' ? customDurationValue * 60 : customDurationValue);
                           }}
                           className={`py-1.5 px-2.5 rounded-lg text-xs font-bold transition-all min-h-[38px] flex items-center justify-center flex-1 sm:flex-initial btn-press ${
                             durationSelectionType === 'custom'
@@ -720,31 +735,70 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
                         </button>
                       </div>
 
-                      {/* Input Kustom (Hanya tampil saat Kustom aktif) */}
+                      {/* Input Kustom: Angka Bebas + Satuan Detik/Menit (Tanpa Batas Rentang) */}
                       {durationSelectionType === 'custom' && (
-                        <div className="flex items-center gap-2.5 p-2 rounded-xl bg-blue-50/60 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900/60 animate-fade-in">
-                          <span className="text-xs font-bold text-blue-900 dark:text-blue-200">
-                            Tentukan Detik:
-                          </span>
-                          <div className="flex items-center gap-1.5 bg-white dark:bg-slate-900 px-2.5 py-1 rounded-lg border border-blue-200 dark:border-blue-800 shadow-2xs">
-                            <input
-                              type="number"
-                              min={5}
-                              max={300}
-                              value={selectedDuration}
-                              onChange={(e) => {
-                                const val = parseInt(e.target.value);
-                                if (!isNaN(val)) {
-                                  setSelectedDuration(Math.max(5, Math.min(300, val)));
-                                }
-                              }}
-                              className="w-14 bg-transparent text-center font-black text-sm text-blue-600 dark:text-blue-400 focus:outline-none"
-                            />
-                            <span className="text-xs font-bold text-slate-500">detik / soal</span>
+                        <div className="flex flex-wrap items-center justify-between gap-2.5 p-2.5 rounded-2xl bg-blue-50/60 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900/60 animate-fade-in">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-blue-900 dark:text-blue-200 whitespace-nowrap">
+                              Atur Durasi:
+                            </span>
+                            {/* Kolom Angka (Bebas tanpa batasan rentang) */}
+                            <div className="flex items-center bg-white dark:bg-slate-900 px-2.5 py-1 rounded-xl border border-blue-200 dark:border-blue-800 shadow-2xs">
+                              <input
+                                type="number"
+                                min={1}
+                                value={customDurationValue || ''}
+                                onChange={(e) => {
+                                  const parsed = parseInt(e.target.value);
+                                  const cleanVal = isNaN(parsed) || parsed < 1 ? 1 : parsed;
+                                  setCustomDurationValue(cleanVal);
+                                  setSelectedDuration(customDurationUnit === 'minutes' ? cleanVal * 60 : cleanVal);
+                                }}
+                                className="w-14 bg-transparent text-center font-black text-sm text-blue-600 dark:text-blue-400 focus:outline-none"
+                                placeholder="30"
+                              />
+                            </div>
                           </div>
-                          <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                            (Rentang 5 – 300 dtk)
-                          </span>
+
+                          <div className="flex items-center gap-2">
+                            {/* Pilihan Satuan (Detik vs Menit) */}
+                            <div className="bg-slate-200/80 dark:bg-slate-800 p-0.5 rounded-xl flex items-center shadow-2xs">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  playClick();
+                                  setCustomDurationUnit('seconds');
+                                  setSelectedDuration(customDurationValue);
+                                }}
+                                className={`py-1 px-3 rounded-lg text-xs font-bold transition-all min-h-[32px] btn-press ${
+                                  customDurationUnit === 'seconds'
+                                    ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs font-black'
+                                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                                }`}
+                              >
+                                Detik
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  playClick();
+                                  setCustomDurationUnit('minutes');
+                                  setSelectedDuration(customDurationValue * 60);
+                                }}
+                                className={`py-1 px-3 rounded-lg text-xs font-bold transition-all min-h-[32px] btn-press ${
+                                  customDurationUnit === 'minutes'
+                                    ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs font-black'
+                                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                                }`}
+                              >
+                                Menit
+                              </button>
+                            </div>
+
+                            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                              / soal
+                            </span>
+                          </div>
                         </div>
                       )}
                     </div>

@@ -1,6 +1,19 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.65] - 2026-09-12
+### Input Durasi Kustom Angka Bebas & Pilihan Satuan (Detik / Menit) pada Pengaturan Kuis
+
+#### 1. Input Angka & Satuan Fleksibel (`PlayQuizModal.tsx`)
+- **Penyederhanaan Input Durasi Kustom**:
+  - Mengganti pembatasan rentang kaku dengan kolom input angka bebas tanpa batasan sempit, memberikan keleluasaan penuh bagi guru untuk kuis kilat maupun pemecahan soal berdurasi panjang.
+  - Menambahkan *segmented toggle* satuan interaktif antara **Detik** dan **Menit**.
+  - Melakukan konversi otomatis nilai satuan menit ke detik saat disimpan ke konfigurasi sesi (`durationPerQuestionSec`), menjamin kompatibilitas 100% dengan mesin kuis dan gawai siswa.
+- **Optimalisasi Tata Letak & Kenyamanan Visual (*Spacious Layout*)**:
+  - Menghilangkan label rentang statis `(Rentang 5 - 300 dtk)` yang memadati ruang visual antarmuka.
+  - Menata elemen ke dalam grup fleksibel (*flex-wrap responsive*) sehingga tampil lapang di layar desktop serta bebas dari pemotongan teks (*text clipping*) pada perangkat seluler dengan layar sempit.
+  - Memperbarui indikator status durasi header dan lencana pil secara dinamis mengikuti nilai angka dan satuan yang aktif (contoh: *2 menit / soal* atau *45 detik / soal*).
+
 ## [2.3.64] - 2026-09-12
 ### Klarifikasi Waktu per Butir Soal, Durasi Bawaan/Kustom, dan Pembersihan Badge Pasif
 
