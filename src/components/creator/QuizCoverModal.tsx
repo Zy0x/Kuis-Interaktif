@@ -11,6 +11,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { QuizCoverDisplay, isImageCover } from '../common/QuizCoverDisplay';
+import { uploadFileToGoogleDrive } from '../../lib/driveUploadService';
 import type { Subject } from '../../types/quiz';
 
 interface QuizCoverModalProps {
@@ -147,8 +148,19 @@ export const QuizCoverModal: React.FC<QuizCoverModalProps> = ({
     setIsCompressing(true);
 
     try {
-      const compressedDataUrl = await compressImageToAvatar(file);
-      setSelectedCover(compressedDataUrl);
+      // Unggah berkas langsung ke Google Drive Pro via Supabase Edge Function
+      const driveResult = await uploadFileToGoogleDrive(file, `quiz_cover_${Date.now()}_${file.name}`);
+      if (driveResult.success && driveResult.directUrl) {
+        setSelectedCover(driveResult.directUrl);
+      } else {
+        console.warn('Google Drive cover upload notice:', driveResult.error);
+        // Fallback kompresi lokal jika kuota service account tertahan atau offline
+        const compressedDataUrl = await compressImageToAvatar(file);
+        setSelectedCover(compressedDataUrl);
+        if (driveResult.error) {
+          setUploadError(`Penyimpanan cadangan aktif (${driveResult.error})`);
+        }
+      }
       playClick();
     } catch {
       setUploadError('Gagal memproses gambar. Pastikan format berkas didukung (PNG, JPG, WEBP).');
@@ -361,18 +373,21 @@ export const QuizCoverModal: React.FC<QuizCoverModalProps> = ({
           {/* TAB 2: UNGGAH GAMBAR KUSTOM */}
           {activeTab === 'upload' && (
             <div className="space-y-4">
-              {/* Dropzone File Upload */}
-              <div className="p-6 rounded-3xl border-2 border-dashed border-slate-300 dark:border-slate-700 text-center space-y-3 bg-slate-50/60 dark:bg-slate-850/40">
+              {/* Dropzone File Upload - Direct to Google Drive Pro */}
+              <div className="p-6 rounded-3xl border-2 border-dashed border-blue-200 dark:border-blue-900 text-center space-y-3 bg-gradient-to-b from-blue-50/50 to-indigo-50/30 dark:from-blue-950/30 dark:to-slate-900/50">
+                <div className="flex items-center justify-center gap-1.5 px-3 py-1 bg-blue-100/80 dark:bg-blue-900/60 rounded-full w-fit mx-auto text-[10px] font-extrabold text-blue-700 dark:text-blue-300">
+                  <span>☁️ Google Drive Pro Storage</span>
+                </div>
                 <div className="w-14 h-14 rounded-2xl bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto text-2xl">
                   {isCompressing ? <RefreshCw className="w-6 h-6 animate-spin text-blue-600" /> : <ImageIcon className="w-6 h-6" />}
                 </div>
 
                 <div>
                   <h4 className="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white">
-                    {isCompressing ? 'Mengompresi Gambar...' : 'Unggah Foto / Logo Sampul'}
+                    {isCompressing ? 'Menyinkronkan ke Google Drive Pro...' : 'Unggah Foto / Logo Sampul'}
                   </h4>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 max-w-xs mx-auto">
-                    Format: PNG, JPG, WEBP, SVG. Gambar otomatis dipotong persegi dan dioptimalkan agar ringan.
+                    Format: PNG, JPG, WEBP. Media otomatis disimpan permanen di folder Google Drive Pro Anda.
                   </p>
                 </div>
 

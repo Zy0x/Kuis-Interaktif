@@ -1,7 +1,32 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
-## [2.3.72] - 2026-09-13
+## [2.3.73] - 2026-09-13
+### Integrasi Penyimpanan Media Google Drive Pro via Supabase Edge Function & Pengoptimalan Alur Unggah Berkas
+
+#### 1. Arsitektur Penyimpanan Media Google Drive Pro Server-Side (Rule 9 & Rule 10)
+- **Implementasi Supabase Edge Function `upload-drive`**:
+  - Membangun endpoint server-side terisolasi yang menangani otentikasi Google Cloud (RS256 JWT assertion / OAuth2) dan unggah media multipart langsung ke folder Google Drive Pro pengguna.
+  - Menyetel izin akses publik otomatis (`anyone with link can view`) dan mengembalikan tautan CDN Google (`lh3.googleusercontent.com/d/{fileId}`) yang cepat, ringan, dan stabil tanpa membebani kuota database utama.
+- **Kepatuhan Keamanan Tingkat Tinggi (Zero Frontend Secret)**:
+  - Seluruh kredensial sensitif (*Service Account Email, Private Key RSA, Folder ID*) tersimpan aman di Supabase Secrets dan hanya diakses di lingkungan server Deno melalui `Deno.env.get()`.
+- **Dukungan Dual-Auth (Shared Drive & Personal Google One Pro)**:
+  - Menyediakan dukungan otomatis untuk Service Account (Google Workspace Shared Drive) dan OAuth2 Refresh Token (Akun Google One Pribadi) dengan pesan status diagnostik yang informatif.
+
+#### 2. Layanan Klien & Antarmuka Unggah Media Terintegrasi
+- **Service Klien `driveUploadService.ts`**:
+  - Modul perantara frontend yang menangani pengiriman file *multipart* atau konversi gambar ke Edge Function dengan penanganan kesalahan transparan.
+- **Pembaruan Pemilih Media Butir Soal (`ImageSelectorModal.tsx`)**:
+  - Menggantikan ketergantungan *data URL* base64 dengan alur unggah langsung ke Google Drive Pro.
+  - Menampilkan lencana *Google Drive Pro Storage*, indikator progress unggah, serta mekanisme *fallback* lokal cadangan agar aktivitas guru tidak terputus.
+- **Pembaruan Pengunggah Sampul Kuis (`QuizCoverModal.tsx`)**:
+  - Mengintegrasikan pengunggahan logo/foto sampul kuis kustom langsung ke Google Drive Pro.
+  - Mempercantik antarmuka dropzone dengan status sinkronisasi *cloud* yang responsif di seluruh perangkat.
+
+#### 3. Dokumentasi Sistem & Panduan Integrasi
+- **Panduan Lengkap `docs/panduan-integrasi-google-drive-storage.md`**:
+  - Menyediakan dokumentasi detail arsitektur, daftar secrets Supabase, panduan pengaturan Shared Drive vs Akun Pribadi Google One, format respons, dan tata cara verifikasi sistem.
+
 ### Sinkronisasi Menyeluruh Profil Pendidik & Seluruh Entitas Terkait ke Supabase Cloud
 
 #### 1. Sinkronisasi Profil Pendidik Multi-Tabel

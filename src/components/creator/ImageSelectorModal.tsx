@@ -13,6 +13,7 @@ import {
   generateRefinedAiImageUrl, 
   type EducationalImageResult 
 } from '../../lib/imageService';
+import { uploadFileToGoogleDrive } from '../../lib/driveUploadService';
 import { useBackHandler } from '../../lib/navigationHistory';
 import { useDrawerSwipeDown } from '../../hooks/useDrawerSwipeDown';
 import { DrawerHandle } from '../common/DrawerHandle';
@@ -55,6 +56,8 @@ export const ImageSelectorModal: React.FC<ImageSelectorModalProps> = ({
 
   // Tab Upload / URL State
   const [manualUrl, setManualUrl] = useState('');
+  const [isUploadingDrive, setIsUploadingDrive] = useState(false);
+  const [uploadErrorMsg, setUploadErrorMsg] = useState<string | null>(null);
 
   // Sinkronisasi saat modal dibuka
   useEffect(() => {
@@ -152,22 +155,39 @@ export const ImageSelectorModal: React.FC<ImageSelectorModalProps> = ({
     onClose();
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      alert('Ukuran berkas maksimal 5 MB');
+    if (file.size > 15 * 1024 * 1024) {
+      alert('Ukuran berkas maksimal 15 MB');
       return;
     }
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      if (typeof reader.result === 'string') {
-        handleApplyImage(reader.result, file.name.replace(/\.[^/.]+$/, ''));
+    setUploadErrorMsg(null);
+    setIsUploadingDrive(true);
+
+    try {
+      const result = await uploadFileToGoogleDrive(file);
+      if (result.success && result.directUrl) {
+        handleApplyImage(result.directUrl, file.name.replace(/\.[^/.]+$/, ''));
+      } else {
+        console.warn('Upload Google Drive:', result.error);
+        setUploadErrorMsg(result.error || 'Gagal mengunggah gambar ke Google Drive.');
+        // Fallback lokal agar pengerjaan guru tidak terhenti total
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          if (typeof reader.result === 'string') {
+            handleApplyImage(reader.result, file.name.replace(/\.[^/.]+$/, ''));
+          }
+        };
+        reader.readAsDataURL(file);
       }
-    };
-    reader.readAsDataURL(file);
+    } catch (err: any) {
+      setUploadErrorMsg(err?.message || 'Terjadi gangguan saat mengunggah.');
+    } finally {
+      setIsUploadingDrive(false);
+    }
   };
 
   return (
@@ -497,25 +517,48 @@ export const ImageSelectorModal: React.FC<ImageSelectorModalProps> = ({
           {/* TAB 3: UNGGAH / TAUTAN URL */}
           {activeTab === 'upload' && (
             <div className="space-y-4">
-              {/* Upload Local File */}
-              <div className="p-6 rounded-3xl border-2 border-dashed border-slate-300 dark:border-slate-700 text-center space-y-3 bg-slate-50/50 dark:bg-slate-850/50">
+              {/* Upload Local File - Direct to Google Drive Pro */}
+              <div className="p-6 rounded-3xl border-2 border-dashed border-blue-200 dark:border-blue-900 text-center space-y-3 bg-gradient-to-b from-blue-50/50 to-indigo-50/30 dark:from-blue-950/30 dark:to-slate-900/50">
+                <div className="flex items-center justify-center gap-1.5 px-3 py-1 bg-blue-100/80 dark:bg-blue-900/60 rounded-full w-fit mx-auto text-[10px] font-extrabold text-blue-700 dark:text-blue-300">
+                  <span>☁️ Google Drive Pro Storage</span>
+                </div>
                 <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto text-xl">
-                  📁
+                  {isUploadingDrive ? <Loader2 className="w-6 h-6 animate-spin text-blue-600 dark:text-blue-400" /> : '📁'}
                 </div>
                 <div>
                   <h4 className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
-                    Unggah Berkas Gambar dari Perangkat
+                    {isUploadingDrive ? 'Mengunggah ke Google Drive Pro...' : 'Unggah Berkas Gambar dari Perangkat'}
                   </h4>
-                  <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
-                    Format didukung: PNG, JPG, WEBP (Maksimal 5 MB)
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                    {isUploadingDrive 
+                      ? 'Sinkronisasi berkas gambar langsung ke akun Google Drive Anda'
+                      : 'Format: PNG, JPG, WEBP (Otomatis tersimpan permanen di Google Drive)'}
                   </p>
                 </div>
-                <label className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs cursor-pointer btn-press min-h-[48px]">
-                  <Upload className="w-4 h-4" />
-                  <span>Pilih Berkas dari HP / Komputer</span>
+
+                {uploadErrorMsg && (
+                  <div className="p-3 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 rounded-xl text-left text-[11px] text-amber-800 dark:text-amber-300">
+                    <p className="font-bold">Catatan Penyimpanan:</p>
+                    <p className="mt-0.5">{uploadErrorMsg}</p>
+                  </div>
+                )}
+
+                <label className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs cursor-pointer btn-press min-h-[48px] ${isUploadingDrive ? 'opacity-60 pointer-events-none' : ''}`}>
+                  {isUploadingDrive ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Sedang Mengunggah...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4" />
+                      <span>Pilih Berkas dari HP / Komputer</span>
+                    </>
+                  )}
                   <input
                     type="file"
                     accept="image/*"
+                    disabled={isUploadingDrive}
                     onChange={handleFileUpload}
                     className="hidden"
                   />
