@@ -1,6 +1,20 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.77] - 2026-09-13
+### Verifikasi End-to-End & Penyempurnaan Propagasi Kuis ID pada Pemilih Gambar (Rule 10 & Rule 11)
+
+#### 1. Propagasi Identitas Kuis Lengkap ke Pemilih Ilustrasi Soal
+- **Integrasi `quizId` pada `ImageSelectorModal.tsx`**:
+  - Meneruskan `quizId` dari `QuizCreator.tsx` ke dalam modal pemilihan gambar ilustrasi soal.
+  - Memastikan unggahan gambar pada tingkat butir soal langsung terasosiasi dengan `drive_folder_id` kuis di database Supabase.
+- **Verifikasi Stabilitas PIN**:
+  - Teruji berhasil: Mengubah atau mengacak PIN kuis tidak membuat folder baru di Google Drive Pro. File baru tetap masuk ke dalam folder kuis yang sama secara konsisten.
+
+#### 2. Verifikasi Komprehensif Siklus Auto-Cleanup Google Drive
+- **Pengujian End-to-End Penghapusan Bersih (Zero-Waste)**:
+  - Berhasil memverifikasi alur lengkap: Pembuatan kuis → Unggah media → Folder Drive terbentuk & `drive_folder_id` tersimpan di Supabase → Penghapusan kuis memicu pembersihan folder di Google Drive secara otomatis tanpa meninggalkan berkas sisa.
+
 ## [2.3.76] - 2026-09-13
 ### Folder Google Drive Stabil saat PIN Berubah & Auto-Cleanup saat Kuis Dihapus (Rule 10 & Rule 11)
 

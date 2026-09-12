@@ -29,6 +29,7 @@ interface ImageSelectorModalProps {
   subject?: string;
   topic?: string;
   quizPin?: string;
+  quizId?: string;
 }
 
 export const ImageSelectorModal: React.FC<ImageSelectorModalProps> = ({
@@ -41,6 +42,7 @@ export const ImageSelectorModal: React.FC<ImageSelectorModalProps> = ({
   subject = '',
   topic = '',
   quizPin = '',
+  quizId = '',
 }) => {
   const [activeTab, setActiveTab] = useState<'wiki' | 'ai' | 'upload'>('wiki');
   
@@ -175,6 +177,7 @@ export const ImageSelectorModal: React.FC<ImageSelectorModalProps> = ({
         fileName: `soal_${Date.now()}_${file.name}`,
         quizPin,
         quizTitle: topic || questionText || subject,
+        quizId,
       });
       if (result.success && result.directUrl) {
         handleApplyImage(result.directUrl, file.name.replace(/\.[^/.]+$/, ''));

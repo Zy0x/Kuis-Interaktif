@@ -2382,6 +2382,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
         subject={subject}
         topic={title}
         quizPin={activeQuizPin}
+        quizId={activeQuizId}
       />
 
     </div>
