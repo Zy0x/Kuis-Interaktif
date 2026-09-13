@@ -1,6 +1,33 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.89] - 2026-09-13
+### Eliminasi Total Dialog Pemblokir Browser Native (alert & confirm), Integrasi Modal Konfirmasi Terpadu Touch-First, dan Notifikasi Visual Aksesibel (Rule 1, Rule 2, Rule 5, Rule 7 & Rule 8)
+
+#### 1. Eliminasi Total window.confirm pada Pembuat Kuis (QuizCreator.tsx) (Rule 1 & Rule 8)
+- **Modal Konfirmasi Hapus Soal Touch-First**:
+  - Menggantikan dialog bawaan browser `window.confirm` dengan komponen modal terintegrasi `ConfirmDeleteModal` saat menghapus butir soal dari bank soal.
+  - Menyertakan cuplikan teks butir soal yang akan dihapus, target sentuh minimal 44×44 px (`min-h-[44px]`), dukungan Android gesture back, penguncian scroll body, serta tema gelap dan terang yang serasi.
+
+#### 2. Notifikasi Modal Elegan "Sesi Berakhir" pada Ruang Tunggu Siswa (StudentWaitingRoom.tsx) (Rule 1, Rule 7 & Rule 8)
+- **Dialog Modal Khusus Status Sesi Selesai**:
+  - Menggantikan `window.alert` dengan modal responsif beranimasi halus saat guru mengakhiri sesi kuis secara real-time.
+  - Siswa disajikan pemberitahuan yang komunikatif dengan tombol berukuran penuh (`min-h-[48px]`) untuk kembali ke beranda dengan nyaman tanpa membekukan thread peramban.
+
+#### 3. Penanganan Galat Unggah Berkas Gambar Terpadu (ImageSelectorModal.tsx) (Rule 2 & Rule 8)
+- **Pesan Galat Visual Inline**:
+  - Menggantikan `window.alert` batas ukuran berkas 15 MB dengan banner pesan peringatan visual inline yang terintegrasi langsung pada antarmuka pemilihan gambar edukasi.
+
+#### 4. Notifikasi Toast Umpan Balik Rekap Nilai Guru (QuizSessionRecapView.tsx) (Rule 2 & Rule 5)
+- **Umpan Balik Visual Aksi Ekspor CSV**:
+  - Menggantikan dialog native `window.alert` dengan notifikasi toast mengambang berlatar kontras tinggi (*high contrast*) dan animasi transisi halus.
+  - Memberikan umpan balik langsung baik saat data nilai belum tersedia maupun saat pengunduhan berkas CSV berhasil diproses.
+
+#### 5. Modal Akses Kuis Privat Terpadu (App.tsx) (Rule 1, Rule 8 & Rule 9)
+- **Modal Edukatif Proteksi Kuis Privat**:
+  - Menggantikan `window.alert` penolakan akses kuis privat via tautan URL dengan kartu modal dialog terpadu yang ramah pengguna.
+  - Menjelaskan tata cara bergabung melalui PIN Ruang Kelas 6 digit dari guru dan mendukung tombol kembali (*back navigation*).
+
 ## [2.3.88] - 2026-09-13
 ### Skema DDL Lengkap pada SQL Dump, Pencadangan Inkremental (*Delta Backup*), Uji Integritas Mandiri Otomatis (*Self-Test Suite*), dan Pengingat Jadwal Pencadangan Terjadwal (Rule 1, Rule 2, Rule 6, Rule 8 & Rule 13)
 

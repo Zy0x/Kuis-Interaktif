@@ -217,7 +217,7 @@ export const ImageSelectorModal: React.FC<ImageSelectorModalProps> = ({
     if (!file) return;
 
     if (file.size > 15 * 1024 * 1024) {
-      alert('Ukuran berkas maksimal 15 MB');
+      setUploadErrorMsg('Ukuran berkas melebihi batas maksimal 15 MB. Silakan pilih berkas yang lebih kecil.');
       return;
     }
 

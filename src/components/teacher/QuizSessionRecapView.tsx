@@ -36,6 +36,14 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
   const [activeTab, setActiveTab] = useState<'overview' | 'students' | 'questions'>('overview');
   const [searchStudent, setSearchStudent] = useState('');
   const [selectedStudentForModal, setSelectedStudentForModal] = useState<QuizSessionParticipant | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => {
+      setToastMessage((cur) => (cur === msg ? null : cur));
+    }, 3500);
+  };
 
   const totalQuestions = quiz.questions?.length || session.totalQuestions || 1;
   const participants = session.participants || [];
@@ -155,7 +163,7 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
   const handleExportCSV = () => {
     playClick();
     if (participants.length === 0) {
-      alert('Belum ada data nilai siswa untuk diunduh.');
+      showToast('⚠️ Belum ada data nilai siswa untuk diunduh.');
       return;
     }
 
@@ -201,6 +209,7 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+    showToast('✅ Berhasil mengunduh rekap nilai siswa (CSV)!');
   };
 
   const handlePrint = () => {
@@ -874,6 +883,17 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
             </div>
 
           </div>
+        </div>
+      )}
+
+      {/* Toast Notifikasi Keterangan Aksi */}
+      {toastMessage && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 dark:bg-slate-800/95 text-white text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-2xl shadow-xl backdrop-blur-md border border-slate-700/80 animate-fade-in flex items-center gap-2 max-w-[90vw] text-center"
+        >
+          <span>{toastMessage}</span>
         </div>
       )}
 

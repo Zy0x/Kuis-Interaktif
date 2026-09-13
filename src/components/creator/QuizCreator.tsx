@@ -38,6 +38,7 @@ import { QuestionTypeDropdown } from './QuestionTypeDropdown';
 import { TrueFalsePresetDropdown } from './TrueFalsePresetDropdown';
 import { ResizableTextarea } from '../common/ResizableTextarea';
 import { AutoResizeTextarea } from '../common/AutoResizeTextarea';
+import { ConfirmDeleteModal } from '../common/ConfirmDeleteModal';
 
 interface QuizCreatorProps {
   onBack: () => void;
@@ -238,6 +239,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   const [qImagePrompt, setQImagePrompt] = useState(() => draft?.activeQuestionDraft?.qImagePrompt ?? '');
   const [qImageUrl, setQImageUrl] = useState<string | undefined>(() => draft?.activeQuestionDraft?.qImageUrl);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [questionIdToDelete, setQuestionIdToDelete] = useState<string | null>(null);
   const [qOptions, setQOptions] = useState<string[]>(() => draft?.activeQuestionDraft?.qOptions ?? ['', '', '', '']);
   const [qCorrectIndex, setQCorrectIndex] = useState<number>(() => draft?.activeQuestionDraft?.qCorrectIndex ?? 0);
   const [isCustomTrueFalse, setIsCustomTrueFalse] = useState<boolean>(() => {
@@ -961,12 +963,19 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
 
   const handleDeleteQuestion = (id: string) => {
     playClick();
-    if (!window.confirm('Hapus butir soal ini dari bank soal?')) return;
-    setQuestions((prev) => prev.filter((q) => q.id !== id));
-    if (editingQuestionId === id) {
+    setQuestionIdToDelete(id);
+  };
+
+  const handleConfirmDeleteQuestion = () => {
+    if (!questionIdToDelete) return;
+    playClick();
+    const targetId = questionIdToDelete;
+    setQuestions((prev) => prev.filter((q) => q.id !== targetId));
+    if (editingQuestionId === targetId) {
       handleCancelEditImmediate();
     }
-    showToast('Soal telah dihapus.');
+    setQuestionIdToDelete(null);
+    showToast('Soal telah berhasil dihapus dari bank soal.');
   };
 
   const handleMoveQuestion = (index: number, direction: 'up' | 'down') => {
@@ -2384,6 +2393,25 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
         topic={title}
         quizPin={activeQuizPin}
         quizId={activeQuizId}
+      />
+
+      {/* Modal Konfirmasi Hapus Butir Soal (Rule 1 & Rule 8: Touch-first, Tanpa window.confirm) */}
+      <ConfirmDeleteModal
+        isOpen={questionIdToDelete !== null}
+        title="Hapus Butir Soal Ini?"
+        description={
+          (() => {
+            const targetQ = questions.find((q) => q.id === questionIdToDelete);
+            const snippet = targetQ ? (targetQ.text.length > 70 ? targetQ.text.substring(0, 70) + '...' : targetQ.text) : '';
+            return snippet 
+              ? `Soal "${snippet}" akan dihapus permanen dari bank soal kuis ini. Tindakan ini tidak dapat dibatalkan.`
+              : 'Butir soal ini akan dihapus permanen dari bank soal kuis. Tindakan ini tidak dapat dibatalkan.';
+          })()
+        }
+        confirmLabel="Ya, Hapus Soal"
+        cancelLabel="Batal"
+        onConfirm={handleConfirmDeleteQuestion}
+        onCancel={() => setQuestionIdToDelete(null)}
       />
 
     </div>

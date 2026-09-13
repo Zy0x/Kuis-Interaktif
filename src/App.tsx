@@ -76,6 +76,7 @@ export const App: React.FC = () => {
   });
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authInitialTab, setAuthInitialTab] = useState<AuthModalTab>('student');
+  const [privateQuizAlertModal, setPrivateQuizAlertModal] = useState<string | null>(null);
 
   const {
     isMuted,
@@ -131,7 +132,7 @@ export const App: React.FC = () => {
 
           if (q.visibility === 'private' && !session && !isOwnerTeacher && currentScreen !== 'creator') {
             console.warn('Akses langsung kuis privat via ?quiz= ditolak.');
-            alert('Kuis ini bersifat privat. Silakan minta PIN Ruang Kelas (6 digit) dari gurumu.');
+            setPrivateQuizAlertModal('Kuis ini bersifat privat. Silakan minta PIN Ruang Kelas (6 digit) dari gurumu untuk bergabung ke sesi belajar.');
             setCurrentScreen('home');
             clearNavigationState();
             return;
@@ -469,6 +470,14 @@ export const App: React.FC = () => {
     return false;
   }, isAuthModalOpen);
 
+  useBackHandler('app-private-quiz-modal', 95, () => {
+    if (privateQuizAlertModal) {
+      setPrivateQuizAlertModal(null);
+      return true;
+    }
+    return false;
+  }, Boolean(privateQuizAlertModal));
+
   // 2. Level 3 (Prioritas 20): Transisi Layar Utama
   useBackHandler('screen-worksheet-print', 20, () => {
     if (teacher) {
@@ -528,6 +537,44 @@ export const App: React.FC = () => {
             playClick={playClick}
           />
         </React.Suspense>
+      )}
+
+      {/* 4. Modal Peringatan Akses Kuis Privat (Rule 1 & Rule 8: Elegan & Touch-First) */}
+      {privateQuizAlertModal && (
+        <div
+          className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 sm:p-6"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="private-quiz-title"
+        >
+          <div
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm animate-backdrop-fade"
+            onClick={() => setPrivateQuizAlertModal(null)}
+          />
+          <div className="relative z-10 bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-7 max-w-sm w-full shadow-2xl border border-slate-200 dark:border-slate-800 text-center space-y-4 animate-scale-in">
+            <div className="w-14 h-14 mx-auto rounded-2xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-900/60 flex items-center justify-center text-amber-500 text-2xl shadow-xs">
+              🔒
+            </div>
+            <div className="space-y-1.5">
+              <h4 id="private-quiz-title" className="text-lg font-bold text-slate-900 dark:text-white leading-tight">
+                Kuis Bersifat Privat
+              </h4>
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                {privateQuizAlertModal}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                setPrivateQuizAlertModal(null);
+              }}
+              className="w-full py-3 px-4 rounded-xl font-bold text-sm text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 min-h-[48px] shadow-sm flex items-center justify-center gap-2 transition-colors btn-press"
+            >
+              Mengerti
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Loading state jika layar bergantung pada kuis yang sedang dipulihkan */}

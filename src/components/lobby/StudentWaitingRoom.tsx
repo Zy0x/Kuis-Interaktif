@@ -49,6 +49,7 @@ export const StudentWaitingRoom: React.FC<StudentWaitingRoomProps> = ({
 }) => {
   const [session, setSession] = useState<QuizSession>(initialSession);
   const [chatText, setChatText] = useState('');
+  const [isSessionEndedModalOpen, setIsSessionEndedModalOpen] = useState(false);
   const chatScrollRef = useRef<HTMLDivElement>(null);
 
   // Sync session in real time
@@ -60,8 +61,7 @@ export const StudentWaitingRoom: React.FC<StudentWaitingRoomProps> = ({
         if (updated.status === 'active') {
           onStartQuiz();
         } else if (updated.status === 'finished') {
-          alert('Sesi kuis telah diakhiri atau ditutup oleh Guru.');
-          onBackToHome();
+          setIsSessionEndedModalOpen(true);
         }
       }
     };
@@ -378,6 +378,42 @@ export const StudentWaitingRoom: React.FC<StudentWaitingRoomProps> = ({
         }}
         currentUserName={studentName}
       />
+
+      {/* Modal Sesi Berakhir (Rule 1 & Rule 8: Elegan & Touch-First, Pengganti window.alert) */}
+      {isSessionEndedModalOpen && (
+        <div
+          className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 sm:p-6"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="session-ended-title"
+        >
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm animate-backdrop-fade" />
+          <div className="relative z-10 bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-7 max-w-sm w-full shadow-2xl border border-slate-200 dark:border-slate-800 text-center space-y-4 animate-scale-in">
+            <div className="w-14 h-14 mx-auto rounded-2xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-900/60 flex items-center justify-center text-2xl shadow-xs">
+              🔔
+            </div>
+            <div className="space-y-1.5">
+              <h4 id="session-ended-title" className="text-lg font-bold text-slate-900 dark:text-white leading-tight">
+                Sesi Kuis Berakhir
+              </h4>
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                Sesi kuis telah diakhiri atau ditutup oleh Guru. Terima kasih telah bergabung!
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                setIsSessionEndedModalOpen(false);
+                onBackToHome();
+              }}
+              className="w-full py-3 px-4 rounded-xl font-bold text-sm text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 min-h-[48px] shadow-sm flex items-center justify-center gap-2 transition-colors btn-press"
+            >
+              Kembali ke Beranda
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
