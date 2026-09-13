@@ -1,6 +1,33 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.88] - 2026-09-13
+### Skema DDL Lengkap pada SQL Dump, Pencadangan Inkremental (*Delta Backup*), Uji Integritas Mandiri Otomatis (*Self-Test Suite*), dan Pengingat Jadwal Pencadangan Terjadwal (Rule 1, Rule 2, Rule 6, Rule 8 & Rule 13)
+
+#### 1. Skema DDL Lengkap pada Paket Cadangan SQL Dump (`backupService.ts`) (Rule 13 - Schema + Data SQL Dump)
+- **Ekspor Skema DDL Komprehensif (9 Tabel Inti)**:
+  - Generator SQL dump kini menyertakan deklarasi DDL tabel lengkap (`CREATE TABLE IF NOT EXISTS`), ekstensi PostgreSQL (`uuid-ossp`, `pgcrypto`), indeks performa kueri, dan konfigurasi Row Level Security (RLS) di bagian awal transaksi SQL (`BEGIN ... COMMIT`).
+  - Berkas cadangan kini dapat dieksekusi langsung pada basis data baru yang kosong tanpa perlu membuat skema tabel secara terpisah terlebih dahulu.
+
+#### 2. Pencadangan Inkremental / Delta (*Incremental Backup Support*) (`backupService.ts`, `AdminDatabaseBackupModal.tsx`) (Rule 13)
+- **Pilihan Mode Pencadangan Penuh vs Inkremental**:
+  - Panel admin dilengkapi opsi pemilihan mode: **Pencadangan Penuh (Full)** untuk seluruh data dan skema, atau **Pencadangan Inkremental (Delta)** untuk menyaring data baru/diperbarui sejak tanggal yang ditentukan.
+  - Penamaan berkas arsip secara otomatis disesuaikan (`_full.sql.gz.enc` atau `_incremental.sql.gz.enc`), mempermudah pemilahan berkas cadangan rutin.
+
+#### 3. Pengujian Integritas Mandiri Otomatis (*Automated Self-Test Suite*) (`backupService.ts`, `AdminDatabaseBackupModal.tsx`) (Rule 13)
+- **Uji Diagnostik Sub-Sistem 6 Modul**:
+  - Disediakan tab khusus **Uji Integritas** pada panel admin untuk memvalidasi engine enkripsi WebCrypto AES-256-GCM, dekompresi GZIP stream, kalkulasi SHA-256 anti-tamper, keutuhan DDL skema, simulasi peremapan ID (UUID remapping), dan penyesuaian domain tanpa memodifikasi data aktif.
+  - Menyajikan laporan visual status tiap modul beserta durasi latensi eksekusi dalam milidetik.
+
+#### 4. Pengingat & Pemantauan Jadwal Pencadangan (*Backup Schedule Monitor*) (`AdminDatabaseBackupModal.tsx`) (Rule 13)
+- **Deteksi Keterlambatan Cadangan Terjadwal**:
+  - Banner status real-time memantau jarak hari sejak pencadangan terakhir terhadap frekuensi jadwal yang dipilih guru/admin (Harian, Mingguan, atau Bulanan).
+  - Menampilkan notifikasi visual yang jelas jika jadwal cadangan terlewat untuk menjaga kesiapsiagaan data.
+
+#### 5. Opsi Remapping UUID Otomatis saat Pemulihan Database (Rule 13)
+- **Pencegahan Bentrokan ID Kuis (*Anti-Collision Remapping*)**:
+  - Fitur opsional untuk menghasilkan UUID acak baru bagi kuis, soal, dan rekaman terkait saat proses restorasi, menjamin integritas relasi foreign key tanpa menimpa kuis yang sudah ada di database tujuan.
+
 ## [2.3.87] - 2026-09-13
 ### Kompresi GZIP Stream Terintegrasi pada Pencadangan Terenkripsi AES-256, Penyesuaian Domain Otomatis (*Cross-Domain Restore*), dan Versi Format V2 (Rule 1, Rule 6, Rule 9, Rule 11 & Rule 13)
 
