@@ -25,7 +25,14 @@ export const QuizCoverDisplay: React.FC<QuizCoverDisplayProps> = ({
   className = 'w-12 h-12 rounded-2xl flex items-center justify-center text-3xl',
   fallbackEmoji = '📝',
 }) => {
-  if (isImageCover(cover)) {
+  const [hasError, setHasError] = React.useState(false);
+
+  // Reset error jika cover prop berubah
+  React.useEffect(() => {
+    setHasError(false);
+  }, [cover]);
+
+  if (isImageCover(cover) && !hasError) {
     return (
       <div className={`overflow-hidden shrink-0 ${className}`}>
         <img
@@ -33,6 +40,7 @@ export const QuizCoverDisplay: React.FC<QuizCoverDisplayProps> = ({
           alt={alt}
           className="w-full h-full object-cover"
           loading="lazy"
+          onError={() => setHasError(true)}
         />
       </div>
     );
@@ -40,7 +48,7 @@ export const QuizCoverDisplay: React.FC<QuizCoverDisplayProps> = ({
 
   return (
     <div className={`shrink-0 select-none ${className}`}>
-      {cover || fallbackEmoji}
+      {(!isImageCover(cover) && cover) || fallbackEmoji}
     </div>
   );
 };

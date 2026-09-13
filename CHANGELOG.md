@@ -1,6 +1,31 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.79] - 2026-09-13
+### Penutupan Menyeluruh 7 Celah ID, PIN, dan Sesi Live Multi-Device Online (Rule 9, Rule 10, Rule 11 & Rule 12)
+
+#### 1. Penyediaan Database Sesi Live Supabase (Multi-Device Online)
+- **Tabel `quiz_sessions` & `quiz_session_participants`**:
+  - Dibuat secara resmi di Supabase PostgreSQL dengan constraint Foreign Key `ON DELETE CASCADE` ke `quizzes(id)`.
+  - Dilengkapi RLS (Row Level Security) publik dan terotentikasi.
+  - Didaftarkan ke Supabase Realtime Publication (`supabase_realtime`) sehingga sinkronisasi antar perangkat (Laptop Guru $\leftrightarrow$ HP Android Siswa) berjalan real-time dan stabil.
+  - SQL migrasi tersimpan di `docs/migration_quiz_sessions.sql`.
+
+#### 2. Proteksi Kuis Privat via URL Langsung (`?quiz=<id>`)
+- Validasi otentikasi di `App.tsx`: jika kuis berstatus `private`, akses mandiri via parameter URL langsung ditolak bagi siswa/pengguna umum dan dialihkan ke beranda dengan pesan edukatif.
+
+#### 3. Constraint `UNIQUE` pada `quizzes.pin_code`
+- Menambahkan constraint database `unique_quizzes_pin_code` di Supabase untuk mencegah duplikasi PIN master kuis antar guru.
+
+#### 4. Auto-Expiration Sesi Zombi (> 3 Jam)
+- Mekanisme TTL otomatis: sesi kelas live yang tidak aktif selama lebih dari 3 jam otomatis difilter keluar dan ditandai sebagai `finished` di database, mencegah Game PIN menggantung.
+
+#### 5. Cascade Cleanup saat Kuis Dihapus
+- `deleteQuiz()` kini secara otomatis membersihkan seluruh rekaman sesi live terkait di Supabase maupun penyimpanan lokal.
+
+#### 6. Resiliensi Fallback Gambar Rusak (*Broken-Link Resiliency*)
+- Komponen `QuizCoverDisplay.tsx` dilengkapi `onError` handler agar secara anggun menampilkan fallback emoji jika tautan gambar eksternal rusak/terhapus, menjaga estetika tampilan.
+
 ## [2.3.78] - 2026-09-13
 ### Arsitektur Game PIN Sesi Live Dinamis (6-Digit) & Kloning Kuis Berbasis UUID Paten (Rule 9, Rule 10 & Rule 11)
 

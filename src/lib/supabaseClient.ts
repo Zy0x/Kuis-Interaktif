@@ -807,6 +807,14 @@ export const DataManager = {
         customQuizzes = customQuizzes.filter((q) => q.id !== quizId);
         localStorage.setItem(STORAGE_KEY_CUSTOM_QUIZZES, JSON.stringify(customQuizzes));
       }
+
+      // 2b. Bersihkan sesi terkait kuis ini dari localStorage
+      const sessionsStr = localStorage.getItem(STORAGE_KEY_QUIZ_SESSIONS);
+      if (sessionsStr) {
+        let sessions: QuizSession[] = JSON.parse(sessionsStr);
+        sessions = sessions.filter((s) => s.quizId !== quizId);
+        localStorage.setItem(STORAGE_KEY_QUIZ_SESSIONS, JSON.stringify(sessions));
+      }
     } catch (e) {
       console.warn('Delete quiz error:', e);
     }
@@ -817,9 +825,10 @@ export const DataManager = {
       console.warn('Drive folder cleanup warning (non-fatal):', err)
     );
 
-    // 4. Hapus dari Supabase jika terhubung (hapus quiz_questions terlebih dahulu untuk relasi foreign key)
+    // 4. Hapus dari Supabase jika terhubung (cascade: hapus sesi & pertanyaan kuis sebelum record kuis)
     if (supabase) {
       try {
+        await supabase.from('quiz_sessions').delete().eq('quiz_id', quizId);
         await supabase.from('quiz_questions').delete().eq('quiz_id', quizId);
         await supabase.from('quizzes').delete().eq('id', quizId);
       } catch (err) {
@@ -1845,13 +1854,23 @@ export const DataManager = {
   getActiveSessionByPin(pin: string): QuizSession | null {
     const cleanPin = pin.trim().toUpperCase();
     const all = this.getActiveSessions();
-    return all.find((s) => s.pinCode === cleanPin && (s.status === 'active' || s.status === 'waiting' || s.status === 'paused')) || null;
+    const THREE_HOURS_MS = 3 * 60 * 60 * 1000;
+    return all.find((s) => 
+      s.pinCode === cleanPin && 
+      (s.status === 'active' || s.status === 'waiting' || s.status === 'paused') &&
+      (Date.now() - new Date(s.createdAt).getTime() <= THREE_HOURS_MS)
+    ) || null;
   },
 
   getActiveSessionByQuizId(quizId: string): QuizSession | null {
     const cleanId = quizId.trim();
     const all = this.getActiveSessions();
-    return all.find((s) => s.quizId === cleanId && (s.status === 'active' || s.status === 'waiting' || s.status === 'paused')) || null;
+    const THREE_HOURS_MS = 3 * 60 * 60 * 1000;
+    return all.find((s) => 
+      s.quizId === cleanId && 
+      (s.status === 'active' || s.status === 'waiting' || s.status === 'paused') &&
+      (Date.now() - new Date(s.createdAt).getTime() <= THREE_HOURS_MS)
+    ) || null;
   },
 
   async createActiveSession(
@@ -2366,6 +2385,19 @@ export const DataManager = {
           .maybeSingle();
 
         if (data && !error) {
+          // AUTO-EXPIRATION: Cek apakah sesi zombi (tidak ada aktivitas / lebih tua dari 3 jam)
+          const THREE_HOURS_MS = 3 * 60 * 60 * 1000;
+          const sessionTime = new Date(data.created_at).getTime();
+          if (Date.now() - sessionTime > THREE_HOURS_MS) {
+            // Tandai sesi selesai di background agar tidak menggantung
+            supabase
+              .from('quiz_sessions')
+              .update({ status: 'finished', ended_at: new Date().toISOString() })
+              .eq('id', data.id)
+              .then(() => {}, () => {});
+            return null;
+          }
+
           const parts: QuizSessionParticipant[] = (data.quiz_session_participants || []).map((p: any) => ({
             id: p.id,
             name: p.student_name,

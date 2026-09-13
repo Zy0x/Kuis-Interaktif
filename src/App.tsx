@@ -119,6 +119,19 @@ export const App: React.FC = () => {
           const session = (pinToMatch ? DataManager.getActiveSessionByPin(pinToMatch) : null) || 
             DataManager.getActiveSessionByQuizId(q.id) || 
             (q.pinCode ? DataManager.getActiveSessionByPin(q.pinCode) : null);
+
+          // PROTEKSI KUIS PRIVAT: Jika kuis privat, tolak akses langsung tanpa sesi kelas live atau kepemilikan guru
+          const teacher = DataManager.getTeacherProfile();
+          const isOwnerTeacher = Boolean(teacher && (teacher.id === q.creatorId || teacher.email === q.creatorId));
+
+          if (q.visibility === 'private' && !session && !isOwnerTeacher && currentScreen !== 'creator') {
+            console.warn('Akses langsung kuis privat via ?quiz= ditolak.');
+            alert('Kuis ini bersifat privat. Silakan minta PIN Ruang Kelas (6 digit) dari gurumu.');
+            setCurrentScreen('home');
+            clearNavigationState();
+            return;
+          }
+
           const settings = resolveSettings(session, q);
           setActiveQuiz(q);
           if (session) setActiveSession(session);
