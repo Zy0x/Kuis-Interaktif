@@ -33,8 +33,30 @@ export const QuizizzReactionButtonRow: React.FC<QuizizzReactionButtonRowProps> =
   title = 'Kirim Reaksi Semangat:',
 }) => {
   const [activePressedEmoji, setActivePressedEmoji] = useState<string | null>(null);
+  const lastBackendSendRef = React.useRef<number>(0);
+  const queuedReactionRef = React.useRef<string | null>(null);
+  const debounceTimerRef = React.useRef<any>(null);
 
-  const handleSendReaction = async (emoji: string) => {
+  React.useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    };
+  }, []);
+
+  const persistReaction = async (emoji: string) => {
+    try {
+      await DataManager.sendSessionReaction(sessionId, {
+        studentName: senderName,
+        avatarId,
+        isTeacher,
+        emoji,
+      });
+    } catch (err) {
+      console.warn('Failed to send reaction:', err);
+    }
+  };
+
+  const handleSendReaction = (emoji: string) => {
     if (playClick) playClick();
     setActivePressedEmoji(emoji);
     setTimeout(() => setActivePressedEmoji(null), 250);
@@ -51,16 +73,21 @@ export const QuizizzReactionButtonRow: React.FC<QuizizzReactionButtonRowProps> =
     // 0ms instant local & cross-tab broadcast
     broadcastLiveReaction(sessionId, tempReaction);
 
-    // Persist to session storage & backend
-    try {
-      await DataManager.sendSessionReaction(sessionId, {
-        studentName: senderName,
-        avatarId,
-        isTeacher,
-        emoji,
-      });
-    } catch (err) {
-      console.warn('Failed to send reaction:', err);
+    // Throttled network persistence ke backend Supabase (maks 1 per 500ms)
+    const now = Date.now();
+    if (now - lastBackendSendRef.current > 500) {
+      lastBackendSendRef.current = now;
+      persistReaction(emoji);
+    } else {
+      queuedReactionRef.current = emoji;
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = setTimeout(() => {
+        if (queuedReactionRef.current) {
+          lastBackendSendRef.current = Date.now();
+          persistReaction(queuedReactionRef.current);
+          queuedReactionRef.current = null;
+        }
+      }, 500);
     }
   };
 
@@ -81,7 +108,7 @@ export const QuizizzReactionButtonRow: React.FC<QuizizzReactionButtonRowProps> =
               onClick={() => handleSendReaction(r.emoji)}
               className={`rounded-2xl transition-all select-none flex items-center justify-center transform active:scale-90 hover:scale-110 btn-press ${
                 compact
-                  ? 'p-2 text-lg sm:text-xl min-h-[40px] min-w-[40px] bg-slate-100/90 dark:bg-slate-800/90 hover:bg-amber-100/80 dark:hover:bg-amber-950/60 border border-slate-200/80 dark:border-slate-700/80'
+                  ? 'p-2 text-lg sm:text-xl min-h-[44px] min-w-[44px] bg-slate-100/90 dark:bg-slate-800/90 hover:bg-amber-100/80 dark:hover:bg-amber-950/60 border border-slate-200/80 dark:border-slate-700/80'
                   : 'px-3 py-2 sm:px-3.5 sm:py-2.5 text-xl sm:text-2xl min-h-[44px] min-w-[44px] bg-white dark:bg-slate-850 hover:bg-blue-50 dark:hover:bg-blue-950/50 border border-slate-200/90 dark:border-slate-800 shadow-xs'
               } ${isPressed ? 'ring-2 ring-amber-400 scale-125 bg-amber-50 dark:bg-amber-900/40' : ''}`}
               title={r.label}

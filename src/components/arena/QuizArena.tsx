@@ -181,7 +181,19 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        setTabSwitchCount((c) => c + 1);
+        setTabSwitchCount((c) => {
+          const nextCount = c + 1;
+          const targetSessionId = activeSessionId || liveSession?.id;
+          if (targetSessionId) {
+            const profile = DataManager.getPlayerProfile();
+            DataManager.addOrUpdateSessionParticipant(targetSessionId, {
+              name: profile.nickname || 'Siswa',
+              avatarId: profile.avatarId || 'lion',
+              tabSwitchCount: nextCount,
+            }).catch(() => {});
+          }
+          return nextCount;
+        });
         setShowTabSwitchWarning(true);
       }
     };
@@ -190,7 +202,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [isPreview, isTabSwitchDetectionEnabled, isGameOver]);
+  }, [isPreview, isTabSwitchDetectionEnabled, isGameOver, activeSessionId, liveSession?.id]);
 
   // Active Questions (support shuffleQuestions & shuffleOptions - disabled in preview mode)
   const [activeQuestions] = useState<QuizQuestion[]>(() => {
@@ -671,6 +683,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
             finished: isLastQuestion,
             timeSpentSec: totalTimeSpent + Math.max(1, timeSpent),
             answers: answersMap,
+            tabSwitchCount,
           });
         } catch (err) {
           console.warn('Session participant sync error:', err);
@@ -765,6 +778,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
             incorrectCount,
             finished: true,
             timeSpentSec: totalTimeSpent,
+            tabSwitchCount,
           });
         } catch (err) {
           console.warn('Session participant finish sync error:', err);

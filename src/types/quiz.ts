@@ -268,6 +268,7 @@ export interface QuizSessionParticipant {
   finished: boolean;
   timeSpentSec: number;
   answers: Record<string, QuizSessionParticipantAnswer>;
+  tabSwitchCount?: number;
   joinedAt: string;
   lastActiveAt: string;
 }
@@ -343,5 +344,6 @@ export interface QuizSession {
   reactions?: SessionLiveReaction[];
   chatMessages?: SessionChatMessage[];
   isChatMuted?: boolean;
+  lastHeartbeat?: string;
 }
 

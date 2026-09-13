@@ -115,6 +115,19 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
     };
   }, [session.id]);
 
+  // Heartbeat host berkala (setiap 25 detik) untuk menjaga status keaktifan sesi di Supabase
+  useEffect(() => {
+    if (session.status !== 'active' && session.status !== 'waiting' && session.status !== 'paused') return;
+
+    const sendHeartbeat = () => {
+      DataManager.updateSessionHeartbeat(session.id).catch(() => {});
+    };
+
+    sendHeartbeat();
+    const heartbeatInterval = setInterval(sendHeartbeat, 25000);
+    return () => clearInterval(heartbeatInterval);
+  }, [session.id, session.status]);
+
   const handleStartQuiz = async () => {
     playClick();
     const updated = await DataManager.startActiveQuizSession(session.id);
@@ -798,6 +811,15 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                                   Selesai
                                 </span>
                               )}
+                              {p.tabSwitchCount && p.tabSwitchCount > 0 ? (
+                                <span 
+                                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[10px] font-bold animate-pulse"
+                                  title={`Terdeteksi berpindah tab/layar sebanyak ${p.tabSwitchCount} kali`}
+                                >
+                                  <span>⚠️</span>
+                                  <span>{p.tabSwitchCount}x Tab</span>
+                                </span>
+                              ) : null}
                             </div>
                             <div className="text-[11px] text-slate-400 flex items-center gap-2">
                               <span>Benar: <strong className="text-emerald-400">{p.correctCount}</strong></span>

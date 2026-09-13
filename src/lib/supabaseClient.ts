@@ -2393,10 +2393,17 @@ export const DataManager = {
           .maybeSingle();
 
         if (data && !error) {
-          // AUTO-EXPIRATION: Cek apakah sesi zombi (tidak ada aktivitas / lebih tua dari 3 jam)
-          const THREE_HOURS_MS = 3 * 60 * 60 * 1000;
+          // AUTO-EXPIRATION: Cek apakah sesi zombi (tidak ada heartbeat / sesi ditinggalkan guru)
+          const nowMs = Date.now();
           const sessionTime = new Date(data.created_at).getTime();
-          if (Date.now() - sessionTime > THREE_HOURS_MS) {
+          const heartbeatTime = data.last_heartbeat ? new Date(data.last_heartbeat).getTime() : sessionTime;
+          const TEN_MINUTES_MS = 10 * 60 * 1000;
+          const THREE_HOURS_MS = 3 * 60 * 60 * 1000;
+
+          const isStaleActive = data.status === 'active' && (nowMs - heartbeatTime > TEN_MINUTES_MS);
+          const isTooOld = nowMs - sessionTime > THREE_HOURS_MS;
+
+          if (isStaleActive || isTooOld) {
             // Tandai sesi selesai di background agar tidak menggantung
             supabase
               .from('quiz_sessions')
@@ -2420,6 +2427,7 @@ export const DataManager = {
             finished: p.finished,
             timeSpentSec: p.time_spent_sec,
             answers: p.answers || {},
+            tabSwitchCount: p.tab_switch_count ?? 0,
             joinedAt: p.joined_at,
             lastActiveAt: p.last_active_at,
           }));
@@ -2447,6 +2455,7 @@ export const DataManager = {
             reactions: Array.isArray(data.reactions) ? data.reactions : (local?.reactions || []),
             chatMessages: Array.isArray(data.chat_messages) ? data.chat_messages : (local?.chatMessages || []),
             isChatMuted: Boolean(data.is_chat_muted ?? local?.isChatMuted),
+            lastHeartbeat: data.last_heartbeat,
           };
 
           const existing = this.getActiveSessions();
@@ -2496,6 +2505,7 @@ export const DataManager = {
             finished: p.finished,
             timeSpentSec: p.time_spent_sec,
             answers: p.answers || {},
+            tabSwitchCount: p.tab_switch_count ?? 0,
             joinedAt: p.joined_at,
             lastActiveAt: p.last_active_at,
           }));
@@ -2523,6 +2533,7 @@ export const DataManager = {
             reactions: Array.isArray(data.reactions) ? data.reactions : (local?.reactions || []),
             chatMessages: Array.isArray(data.chat_messages) ? data.chat_messages : (local?.chatMessages || []),
             isChatMuted: Boolean(data.is_chat_muted ?? local?.isChatMuted),
+            lastHeartbeat: data.last_heartbeat,
           };
 
           const existing = this.getActiveSessions();
@@ -2577,6 +2588,7 @@ export const DataManager = {
           finished: p.finished,
           timeSpentSec: p.time_spent_sec,
           answers: p.answers || {},
+          tabSwitchCount: p.tab_switch_count ?? 0,
           joinedAt: p.joined_at,
           lastActiveAt: p.last_active_at,
         }));
@@ -2604,6 +2616,7 @@ export const DataManager = {
           reactions: Array.isArray(d.reactions) ? d.reactions : [],
           chatMessages: Array.isArray(d.chat_messages) ? d.chat_messages : [],
           isChatMuted: Boolean(d.is_chat_muted),
+          lastHeartbeat: d.last_heartbeat,
         };
       });
 
@@ -2715,6 +2728,29 @@ export const DataManager = {
     return existing[idx];
   },
 
+  async updateSessionHeartbeat(sessionId: string): Promise<void> {
+    if (!sessionId) return;
+    const now = new Date().toISOString();
+    const existing = this.getActiveSessions();
+    const idx = existing.findIndex((s) => s.id === sessionId);
+    if (idx !== -1) {
+      existing[idx].lastHeartbeat = now;
+      try {
+        localStorage.setItem(STORAGE_KEY_QUIZ_SESSIONS, JSON.stringify(existing));
+      } catch {}
+    }
+    if (supabase) {
+      try {
+        await supabase
+          .from('quiz_sessions')
+          .update({ last_heartbeat: now })
+          .eq('id', sessionId);
+      } catch (err) {
+        console.warn('updateSessionHeartbeat notice:', err);
+      }
+    }
+  },
+
   async addOrUpdateSessionParticipant(
     sessionId: string,
     participant: Partial<QuizSessionParticipant> & { name: string; avatarId: string }
@@ -2749,6 +2785,9 @@ export const DataManager = {
         finalParticipant = {
           ...session.participants[pIdx],
           ...participant,
+          tabSwitchCount: participant.tabSwitchCount !== undefined 
+            ? participant.tabSwitchCount 
+            : session.participants[pIdx].tabSwitchCount,
           lastActiveAt: now,
         };
         session.participants[pIdx] = finalParticipant;
@@ -2768,6 +2807,7 @@ export const DataManager = {
           finished: participant.finished ?? false,
           timeSpentSec: participant.timeSpentSec ?? 0,
           answers: participant.answers ?? {},
+          tabSwitchCount: participant.tabSwitchCount ?? 0,
           joinedAt: now,
           lastActiveAt: now,
         };
@@ -2797,6 +2837,7 @@ export const DataManager = {
         finished: participant.finished ?? false,
         timeSpentSec: participant.timeSpentSec ?? 0,
         answers: participant.answers ?? {},
+        tabSwitchCount: participant.tabSwitchCount ?? 0,
         joinedAt: now,
         lastActiveAt: now,
       };
@@ -2819,6 +2860,7 @@ export const DataManager = {
             finished: finalParticipant.finished,
             time_spent_sec: finalParticipant.timeSpentSec,
             answers: finalParticipant.answers,
+            tab_switch_count: finalParticipant.tabSwitchCount ?? 0,
             last_active_at: finalParticipant.lastActiveAt,
           },
           {
@@ -2889,6 +2931,7 @@ export const DataManager = {
                 finished: p.finished,
                 timeSpentSec: p.time_spent_sec,
                 answers: p.answers || {},
+                tabSwitchCount: p.tab_switch_count ?? 0,
                 joinedAt: p.joined_at,
                 lastActiveAt: p.last_active_at,
               });

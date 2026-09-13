@@ -1,6 +1,44 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.81] - 2026-09-13
+### Panel Admin Database & Backup Terenkripsi AES-256, Heartbeat Sesi Live Guru, Deteksi Tab-Switch Anti-Curang & Throttling Reaksi (Rule 1, Rule 2, Rule 9, Rule 11, Rule 12 & Rule 13)
+
+#### 1. Panel Administrasi Database & Cadangan Terenkripsi (Rule 13)
+- **Ekspor Cadangan Terenkripsi AES-256-GCM**:
+  - Disediakan modul pencadangan basis data mandiri menggunakan WebCrypto API dengan derivasi kunci PBKDF2-SHA256 (100.000 iterasi).
+  - Menghasilkan berkas arsip `.sql.enc` lengkap yang mencakup skema DDL, relasi antartabel, dan data baris (DML) dari seluruh tabel sistem.
+  - Perhitungan checksum integritas SHA-256 sebelum dan sesudah proses transfer untuk memastikan berkas tidak rusak atau dimanipulasi.
+  - Pencatatan otomatis ke tabel `system_backups` dan log aktivitas audit.
+- **Pemulihan Database Bertahap (*Staged Restore*)**:
+  - Validasi ketat integritas SHA-256 dan dekripsi berkas cadangan sebelum eksekusi.
+  - Pratinjau ringkasan data kuis, butir pertanyaan, dan rekap sebelum pemulihan dijalankan.
+  - Impor bertahap ke database dengan perlindungan konflik kunci primer.
+- **Prosedur Darurat: Pembersihan Seluruh Database (*Total Database Wipe*)**:
+  - Dilengkapi pengamanan 3 lapis wajib: verifikasi kata sandi Super-Admin, pengetikan persis kalimat konfirmasi, dan persetujuan checkbox resiko permanen.
+  - Audit logging otomatis pada seluruh tindakan kritis basis data.
+
+#### 2. Mekanisme Heartbeat & Pembersihan Sesi Zombi Guru
+- **Interval Heartbeat Otomatis (25 detik)**:
+  - Panel host guru secara berkala mengirimkan sinyal kebaruan (*heartbeat*) pada kolom `last_heartbeat` di database.
+  - Menghilangkan celah sesi menggantung jika laptop/perangkat guru ditutup mendadak di tengah sesi ujian.
+- **Pembersihan Otomatis Sesi Terbengkalai**:
+  - Siswa yang memasukkan PIN sesi yang telah ditinggalkan guru selama lebih dari 10 menit otomatis dialihkan atau sesi ditandai selesai secara teratur.
+
+#### 3. Sinkronisasi Deteksi Pindah Tab (*Anti-Cheat Tab-Switch Tracking*)
+- **Pencatatan Persisten ke Database**:
+  - Penambahan kolom `tab_switch_count` pada tabel `quiz_session_participants` dengan indeks performa kueri.
+  - Saat siswa berpindah layar atau membuka tab lain selama ujian aktif, sistem langsung mencatat dan menyinkronkan data secara seketika ke database dan layar guru.
+- **Indikator Peringatan Integritas pada Antarmuka Guru**:
+  - Penambahan lencana peringatan anti-curang (*Tab-Switch Badge*) pada papan kendali guru (`WaygroundHostView`) dan rekapitulasi ujian (`QuizSessionRecapView`).
+  - Spanduk peringatan integritas ditampilkan pada modal rincian lembar jawaban siswa individual jika terdeteksi pelanggaran.
+
+#### 4. Throttling Reaksi Siswa & Optimalisasi Target Sentuh Mobile (Rule 1)
+- **Throttling Jaringan untuk Tombol Reaksi**:
+  - Siaran reaksi visual di layar lokal tetap instan (0ms) untuk kepuasan interaksi pengguna, sedangkan pengiriman kueri pembaruan ke database dibatasi (*throttled*) maksimal 1 request per 500ms dengan sistem antrean cerdas untuk mencegah banjir lalu lintas data (*traffic spam*).
+- **Presisi Target Sentuh**:
+  - Tombol reaksi pada tampilan kompak disesuaikan memenuhi standar minimal target sentuh 44×44 px sesuai ketentuan Rule 1.
+
 ## [2.3.80] - 2026-09-13
 ### Sinkronisasi WebSocket Real-Time Multi-Device, Skema Integritas Peserta & Optimalisasi Media Google Drive (Rule 1, Rule 6, Rule 9, Rule 10, Rule 11 & Rule 12)
 

@@ -613,9 +613,18 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
                         <td className="py-3 px-3 font-bold text-slate-700 dark:text-slate-300">
                           #{pIdx + 1}
                         </td>
-                        <td className="py-3 px-3 font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <td className="py-3 px-3 font-bold text-slate-900 dark:text-white flex items-center gap-2 flex-wrap">
                           <span className="text-xl">{AVATAR_MAP[p.avatarId] || '🦁'}</span>
                           <span>{p.name}</span>
+                          {p.tabSwitchCount && p.tabSwitchCount > 0 ? (
+                            <span 
+                              className="px-1.5 py-0.5 rounded-md bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 text-[10px] font-bold border border-rose-200 dark:border-rose-900/60 flex items-center gap-1"
+                              title={`Terdeteksi berpindah tab/aplikasi ${p.tabSwitchCount} kali selama kuis`}
+                            >
+                              <AlertTriangle className="w-3 h-3 text-rose-500" />
+                              <span>{p.tabSwitchCount}x Pindah Tab</span>
+                            </span>
+                          ) : null}
                         </td>
                         <td className="py-3 px-3 font-black text-sm text-amber-600 dark:text-amber-400">
                           {p.score}
@@ -798,6 +807,15 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
             </div>
 
             <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4">
+              {selectedStudentForModal.tabSwitchCount && selectedStudentForModal.tabSwitchCount > 0 ? (
+                <div className="p-3 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 flex items-center gap-2.5 text-xs text-rose-700 dark:text-rose-300">
+                  <AlertTriangle className="w-4 h-4 text-rose-500 flex-shrink-0" />
+                  <span>
+                    <strong>Peringatan Integritas:</strong> Siswa ini terdeteksi meninggalkan layar/berpindah tab sebanyak <strong>{selectedStudentForModal.tabSwitchCount} kali</strong> selama pengerjaan kuis.
+                  </span>
+                </div>
+              ) : null}
+
               {quiz.questions.map((q, idx) => {
                 const ans = Object.values(selectedStudentForModal.answers || {}).find((a) => a.questionIndex === idx);
                 const isCorrect = ans?.isCorrect || false;

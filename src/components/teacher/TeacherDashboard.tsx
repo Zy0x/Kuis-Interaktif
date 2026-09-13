@@ -13,6 +13,7 @@ import { CreateQuizMethodModal } from './CreateQuizMethodModal';
 import { PlayQuizModal, type PlayQuizSessionOptions } from './PlayQuizModal';
 import { WaygroundHostView } from './WaygroundHostView';
 import { QuizSessionRecapView } from './QuizSessionRecapView';
+import { AdminDatabaseBackupModal } from './AdminDatabaseBackupModal';
 import { 
   GraduationCap, 
   Plus, 
@@ -23,6 +24,7 @@ import {
   ArrowLeft, 
   Share2, 
   Lock, 
+  Database, 
   Globe, 
   RotateCcw, 
   MoreVertical, 
@@ -112,6 +114,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   const [selectedQuizForSettings, setSelectedQuizForSettings] = useState<Quiz | null>(null);
   const [deletedCount, setDeletedCount] = useState<number>(() => DataManager.getDeletedQuizIds().length);
   const isMasterTeacher = teacher.email.trim().toLowerCase() === MASTER_TEACHER_EMAIL.toLowerCase();
+  const [isAdminBackupModalOpen, setIsAdminBackupModalOpen] = useState(false);
 
   // Navigation back handler
   useBackHandler('teacher-dashboard-main', 30, () => {
@@ -495,6 +498,22 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
             {/* Dark / Light Mode Toggle */}
             <ThemeToggle isDark={isDark} onToggle={onToggleTheme} />
 
+            {isMasterTeacher && (
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setIsAdminBackupModalOpen(true);
+                }}
+                className="p-2 sm:px-3 sm:py-2 rounded-xl border border-indigo-200 dark:border-indigo-800/80 bg-indigo-50/80 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 font-bold text-xs sm:text-sm min-h-[40px] min-w-[40px] flex items-center justify-center transition-all btn-press flex-shrink-0"
+                title="Admin Database & Backup Terenkripsi (Rule 13)"
+                aria-label="Admin Database & Backup Terenkripsi"
+              >
+                <Database className="w-4 h-4 flex-shrink-0 text-indigo-600 dark:text-indigo-400" />
+                <span className="hidden md:inline ml-1.5">Backup DB</span>
+              </button>
+            )}
+
             <button
               type="button"
               onClick={() => {
@@ -572,6 +591,20 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
               </span>
             )}
           </button>
+
+          {isMasterTeacher && (
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                setIsAdminBackupModalOpen(true);
+              }}
+              className="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all min-h-[44px] whitespace-nowrap text-indigo-700 dark:text-indigo-300 bg-indigo-50/80 dark:bg-indigo-950/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 border border-indigo-200 dark:border-indigo-800/80 ml-auto"
+            >
+              <Database className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+              <span>Database & Backup (AES-256)</span>
+            </button>
+          )}
         </div>
       </nav>
 
@@ -1275,6 +1308,15 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
         isLoading={isDeletingSession}
         onConfirm={handleConfirmDeleteSession}
         onCancel={() => setSessionToDelete(null)}
+      />
+
+      {/* Modal Admin Database & Backup Terenkripsi (Rule 13) */}
+      <AdminDatabaseBackupModal
+        isOpen={isAdminBackupModalOpen}
+        onClose={() => setIsAdminBackupModalOpen(false)}
+        teacherEmail={teacher.email}
+        teacherName={teacher.fullName}
+        playClick={playClick}
       />
     </div>
   );
