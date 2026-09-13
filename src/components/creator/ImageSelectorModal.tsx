@@ -15,7 +15,9 @@ import {
   type EducationalImageResult 
 } from '../../lib/imageService';
 import { uploadFileToGoogleDrive } from '../../lib/driveUploadService';
+import { resolveMediaUrl, isGoogleDriveUrl } from '../../lib/driveUtils';
 import { useBackHandler } from '../../lib/navigationHistory';
+
 import { useDrawerSwipeDown } from '../../hooks/useDrawerSwipeDown';
 import { DrawerHandle } from '../common/DrawerHandle';
 
@@ -632,27 +634,38 @@ export const ImageSelectorModal: React.FC<ImageSelectorModalProps> = ({
 
               {/* Or Manual URL */}
               <div className="p-3.5 sm:p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 space-y-2">
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                  Atau Tempel Tautan / URL Gambar:
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Atau Tempel Tautan / URL Gambar:
+                  </label>
+                  {isGoogleDriveUrl(manualUrl.trim()) && (
+                    <span className="text-[10px] font-black text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded-md flex items-center gap-1">
+                      <span>☁️ Google Drive terdeteksi</span>
+                    </span>
+                  )}
+                </div>
                 <div className="flex flex-col sm:flex-row gap-2">
                   <input
                     type="url"
                     value={manualUrl}
                     onChange={(e) => setManualUrl(e.target.value)}
-                    placeholder="https://example.com/gambar-edukasi.jpg"
+                    placeholder="https://example.com/gambar-edukasi.jpg atau tautan Google Drive"
                     className="flex-1 px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs min-h-[44px]"
                   />
                   <button
                     type="button"
                     disabled={!manualUrl.trim().startsWith('http')}
-                    onClick={() => handleApplyImage(manualUrl.trim())}
+                    onClick={() => {
+                      const optimizedUrl = resolveMediaUrl(manualUrl.trim());
+                      handleApplyImage(optimizedUrl);
+                    }}
                     className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold disabled:opacity-50 btn-press min-h-[44px] justify-center"
                   >
                     Terapkan
                   </button>
                 </div>
               </div>
+
             </div>
           )}
 

@@ -222,17 +222,18 @@ export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
                 type="button"
                 onClick={handleAutoGenerateInfo}
                 disabled={isGeneratingAiInfo}
-                className="h-9 px-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold text-xs shadow-xs transition-all flex items-center gap-1.5 btn-press disabled:opacity-50 whitespace-nowrap"
+                className="min-h-[44px] px-3.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold text-xs shadow-xs transition-all flex items-center gap-1.5 btn-press disabled:opacity-50 whitespace-nowrap"
               >
                 {isGeneratingAiInfo
                   ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /><span>AI...</span></>
                   : <><Sparkles className="w-3.5 h-3.5" /><span>Racik AI</span></>
                 }
               </button>
-              <span className="text-xs font-black h-9 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center whitespace-nowrap">
+              <span className="text-xs font-black min-h-[44px] px-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center whitespace-nowrap">
                 {questionsCount} Soal
               </span>
             </div>
+
           </div>
 
           {/* ── Judul ── */}

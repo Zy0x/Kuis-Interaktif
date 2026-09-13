@@ -2433,9 +2433,10 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                       type="button"
                       disabled={isBrainstormingAi}
                       onClick={handleBrainstormTopics}
-                      className="text-[11px] sm:text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1 hover:underline btn-press disabled:opacity-60"
+                      className="text-[11px] sm:text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 inline-flex items-center gap-1.5 hover:underline btn-press disabled:opacity-60 min-h-[44px] px-2.5 py-1 -my-1 rounded-xl"
                       title="Acak atau segarkan ide topik"
                     >
+
                       {isBrainstormingAi ? (
                         <>
                           <Loader2 className="w-3 h-3 animate-spin text-blue-600" />
@@ -3079,29 +3080,30 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                       <button
                         type="button"
                         onClick={() => { playClick(); setShowCognitiveProportions(v => !v); }}
-                        className="text-[11px] text-blue-600 dark:text-blue-400 font-semibold flex items-center gap-1 hover:underline"
+                        className="text-[11px] text-blue-600 dark:text-blue-400 font-bold inline-flex items-center gap-1.5 hover:underline min-h-[44px] px-2.5 py-1 -my-1 rounded-xl"
                       >
                         <span>{showCognitiveProportions ? '▾' : '▸'}</span>
                         <span>{showCognitiveProportions ? 'Sembunyikan proporsi' : 'Atur proporsi (%)'}</span>
                       </button>
 
                       {showCognitiveProportions && (
-                        <div className="space-y-1.5 animate-fade-in">
+                        <div className="space-y-2 animate-fade-in pt-1">
                           {Array.from(cognitiveCustomLevels).sort().map(l => {
                             const lvl = C_LEVELS.find(c => c.id === l)!;
                             const val = cognitiveProportions[l] ?? 0;
                             return (
                               <div key={l} className="flex items-center gap-2">
                                 <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 w-10 shrink-0">{lvl.label}</span>
-                                <button type="button" onClick={() => { playClick(); setCognitiveProportions(p => ({ ...p, [l]: Math.max(0, (p[l] ?? 0) - 5) })); }} className="w-7 h-7 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center text-sm font-bold hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors btn-press shrink-0">−</button>
+                                <button type="button" onClick={() => { playClick(); setCognitiveProportions(p => ({ ...p, [l]: Math.max(0, (p[l] ?? 0) - 5) })); }} className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center text-base font-black hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors btn-press shrink-0 shadow-2xs">−</button>
                                 <span className="text-xs font-bold text-slate-800 dark:text-slate-200 w-8 text-center">{val}%</span>
-                                <button type="button" onClick={() => { playClick(); setCognitiveProportions(p => ({ ...p, [l]: Math.min(100, (p[l] ?? 0) + 5) })); }} className="w-7 h-7 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center text-sm font-bold hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors btn-press shrink-0">+</button>
-                                <div className="flex-1 h-1.5 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
+                                <button type="button" onClick={() => { playClick(); setCognitiveProportions(p => ({ ...p, [l]: Math.min(100, (p[l] ?? 0) + 5) })); }} className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center text-base font-black hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors btn-press shrink-0 shadow-2xs">+</button>
+                                <div className="flex-1 h-2 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
                                   <div className="h-full bg-blue-500 rounded-full transition-all" style={{ width: `${val}%` }} />
                                 </div>
                               </div>
                             );
                           })}
+
                           {sumCogProp !== 100 && sumCogProp > 0 && (
                             <p className="text-[11px] font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
                               <span>⚠️</span><span>Total {sumCogProp}% (harus 100%)</span>

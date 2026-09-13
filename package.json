@@ -1,8 +1,9 @@
 {
   "name": "kuis-sd-seru",
   "private": true,
-  "version": "2.3.82",
+  "version": "2.3.83",
   "type": "module",
+
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",

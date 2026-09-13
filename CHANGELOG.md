@@ -1,7 +1,46 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.83] - 2026-09-13
+### Resiliensi Media Google Drive Cerdas, Optimasi Service Worker PWA (Network-First Cache & Early Install Capture), serta Penyelarasan Penuh 100% Target Sentuh 44px (Rule 1, Rule 2, Rule 7, Rule 9 & Rule 10)
+
+#### 1. Resiliensi Media Google Drive Cerdas (`driveUtils.ts`, `QuizCoverDisplay`, `QuizIllustration`, `ImageSelectorModal`, `WorksheetPrintView`)
+- **Deteksi & Normalisasi Tautan Google Drive Otomatis**:
+  - Dibuat modul utilitas `driveUtils.ts` yang mampu mendeteksi dan mengekstrak ID berkas dari seluruh format tautan Google Drive publik/berbagi (`/file/d/...`, `/open?id=...`, `/uc?id=...`, `/thumbnail?id=...`, `docs.google.com/file/d/...`, dan `/file/u/0/d/...`).
+  - Mengubah tautan Google Drive secara instan ke URL Google Cache Thumbnail CDN (`sz=w1200`) yang bebas pemblokiran CORS browser, bebas peringatan virus Google Drive, dan dapat di-render langsung oleh tag `<img>`.
+  - Integrasi deteksi cerdas pada input tempel URL `ImageSelectorModal`: menampilkan lencana konfirmasi `☁️ Google Drive terdeteksi` dan menormalkan URL seketika saat diterapkan.
+- **Mekanisme Cadangan Dua Lapis (*Two-Tier Fallback*)**:
+  - Komponen `QuizCoverDisplay` dan `QuizIllustration` dilengkapi penanganan error ganda: jika CDN thumbnail mengalami hambatan jaringan, sistem otomatis beralih ke proxy streaming Supabase Edge Function sebelum kembali ke emoji/placeholder kuis, menjamin media tidak pernah tampil rusak (*broken image*).
+  - Format cetak lembar kerja siswa (`WorksheetPrintView`) kini mendukung resolusi gambar soal Google Drive secara mulus.
+
+#### 2. Arsitektur PWA & Pembaruan Service Worker Modern (Rule 7)
+- **Pembaruan Invalidation Cache Service Worker**:
+  - Cache versi PWA diperbarui ke `kuis-sd-seru-v2.3.83` pada `sw.js` dengan pembersihan otomatis seluruh cache lama saat aktivasi (`clients.claim` & `skipWaiting`).
+  - Menerapkan strategi caching **Network-First** untuk navigasi dokumen HTML (`index.html`), mencegah kendala *stale chunk hash mismatch* saat versi baru aplikasi dirilis, sekaligus mempertahankan fallback offline jika koneksi internet terputus.
+  - Permintaan API eksternal dan Supabase diloloskan langsung tanpa interferensi cache lokal.
+- **Pencegahan Kehilangan Event Instalasi (*Early Prompt Capture*)**:
+  - Penangkapan awal event `beforeinstallprompt` langsung di level `index.html` dan disimpan ke `window.__deferredInstallPrompt`.
+  - Komponen `InstallPrompt.tsx` langsung membaca event yang tertangkap sejak awal proses inisialisasi aplikasi tanpa terlewat oleh tampilan splash screen.
+- **Peningkatan Overlay Orientasi Layar Non-Reguler (`ReorientationOverlay.tsx`)**:
+  - Integrasi `screen.orientation` API beserta event listener perubahan orientasi layar.
+  - Penanganan khusus untuk perangkat smartphone dengan rasio ultra-tall (misalnya 1080×2460, 20:9, 21:9) saat berada dalam orientasi mendatar (*landscape*) dengan ruang vertikal terbatas (< 540px).
+  - Penyimpanan preferensi penutupan overlay di `sessionStorage` agar tidak mengganggu alur guru/siswa yang sengaja menggunakan orientasi tertentu.
+
+#### 3. Penyelarasan Penuh 100% Target Sentuh Minimal 44×44 px (Rule 1 & Rule 8)
+- **Penyelarasan Seluruh Komponen Interaktif Tersisa**:
+  - `AiGeneratorStep.tsx`: Tombol steppers proporsi tingkat kognitif Bloom (`−` dan `+`) ditingkatkan dari `w-7 h-7` (28px) menjadi `w-11 h-11 min-w-[44px] min-h-[44px]` dengan font tebal dan bayangan halus; tombol toggle "Atur proporsi (%)" dan tombol "Acak Ide" topik ditingkatkan ke `min-h-[44px]`.
+  - `PlayQuizModal.tsx`: Seluruh 7 switch toggle button (acak soal, acak opsi, tayangan peringkat smartboard, deteksi ganti tab ujian, dan batas pengerjaan 1x) dibungkus dengan target sentuh `min-w-[44px] min-h-[44px]` yang nyaman disentuh jari dan ramah aksesibilitas.
+  - `InfoKuisStep.tsx`: Tombol "Racik AI" dan badge jumlah soal ditingkatkan dari `h-9` (36px) ke `min-h-[44px] px-3.5`.
+  - `QuizCreator.tsx`: Tombol "Batal" dan "Ya, Kosongkan" pada modal konfirmasi reset draf kuis ditingkatkan ke `min-h-[44px]`.
+  - `QuizHome.tsx`: Tombol "Keluar Akun" siswa pada modal profil ditingkatkan ke `min-h-[44px]`.
+  - `AdminDatabaseBackupModal.tsx`: Tombol "Segarkan" riwayat pencadangan ditingkatkan ke `min-h-[44px]`.
+  - `QuizDetail.tsx`: Tombol "Ubah" status visibilitas kuis ditingkatkan ke `min-h-[44px]`.
+  - `QuizSessionRecapView.tsx`: Tombol "Lihat Lembar Jawaban" ditingkatkan ke `w-11 h-11 min-w-[44px] min-h-[44px]`.
+  - `TeacherDashboard.tsx`: Tombol "Reset Filter Pencarian" dan "Buat Kuis Baru Sekarang" pada status kosong ditingkatkan ke `min-h-[44px]`.
+  - `WaygroundHostView.tsx`: Tombol "Salin PIN" dan "Tautan" pada bilah kontrol mobile guru ditingkatkan ke `min-h-[44px]`.
+
 ## [2.3.82] - 2026-09-13
+
 ### Penyelarasan Menyeluruh Standar Sentuh Mobile-First 44px (Rule 1), Presisi Kontrol Studio Soal & Resiliensi Interaksi Antar-Perangkat (Rule 1, Rule 2, Rule 4, Rule 5 & Rule 8)
 
 #### 1. Penyelarasan Standar Target Sentuh Mobile-First (Rule 1 & Rule 8 - Inclusive Design)

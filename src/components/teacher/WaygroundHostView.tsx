@@ -497,24 +497,25 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
               {session.pinCode}
             </span>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={handleCopyPin}
-              className="px-2 py-1 rounded-lg bg-slate-800 text-slate-300 font-semibold flex items-center gap-1"
+              className="min-h-[44px] px-3 py-1.5 rounded-xl bg-slate-800 text-slate-200 font-bold text-xs inline-flex items-center gap-1.5 hover:bg-slate-750 transition-colors btn-press"
             >
-              {copiedPin ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+              {copiedPin ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
               <span>{copiedPin ? 'Tersalin' : 'Salin PIN'}</span>
             </button>
             <button
               type="button"
               onClick={handleCopyLink}
-              className="px-2 py-1 rounded-lg bg-slate-800 text-slate-300 font-semibold flex items-center gap-1"
+              className="min-h-[44px] px-3 py-1.5 rounded-xl bg-slate-800 text-slate-200 font-bold text-xs inline-flex items-center gap-1.5 hover:bg-slate-750 transition-colors btn-press"
             >
-              {copiedLink ? <Check className="w-3 h-3 text-emerald-400" /> : <Share2 className="w-3 h-3" />}
+              {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Share2 className="w-3.5 h-3.5" />}
               <span>{copiedLink ? 'Link Tersalin' : 'Tautan'}</span>
             </button>
           </div>
+
         </div>
       </header>
 

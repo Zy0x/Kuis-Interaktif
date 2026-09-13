@@ -649,15 +649,16 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
                             {isPassed ? 'TUNTAS' : 'REMEDIAL'}
                           </span>
                         </td>
-                        <td className="py-3 px-3 print:hidden">
+                        <td className="py-2 px-2 print:hidden">
                           <button
                             type="button"
-                            className="p-1 rounded-lg text-slate-400 hover:text-blue-600 dark:hover:text-blue-400"
+                            className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors btn-press"
                             title="Lihat Lembar Jawaban"
                           >
                             <Eye className="w-4 h-4" />
                           </button>
                         </td>
+
                       </tr>
                     );
                   })}

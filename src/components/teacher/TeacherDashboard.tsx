@@ -781,7 +781,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
               <button
                 type="button"
                 onClick={handleResetFilters}
-                className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-bold text-xs"
+                className="px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 font-bold text-xs min-h-[44px] btn-press"
               >
                 Reset Filter Pencarian
               </button>
@@ -792,12 +792,13 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                   playClick();
                   setIsCreateModalOpen(true);
                 }}
-                className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-sm"
+                className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs inline-flex items-center gap-1.5 shadow-sm min-h-[44px] btn-press"
               >
                 <Plus className="w-4 h-4" />
                 <span>Buat Kuis Baru Sekarang</span>
               </button>
             )}
+
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-5">

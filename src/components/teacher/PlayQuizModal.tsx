@@ -1113,13 +1113,15 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
                             role="switch"
                             aria-checked={shuffleQuestions}
                             aria-label="Acak Urutan Nomor Soal"
-                            className={`w-10 h-5 rounded-full transition-colors relative flex items-center p-0.5 shrink-0 focus:outline-none ${
-                              shuffleQuestions ? 'bg-blue-600' : 'bg-slate-200 dark:bg-slate-700'
-                            }`}
+                            className="min-w-[44px] min-h-[44px] flex items-center justify-center -mr-1.5 -my-2 focus:outline-none"
                           >
-                            <span className={`w-4 h-4 rounded-full bg-white shadow-xs transition-transform transform ${
-                              shuffleQuestions ? 'translate-x-5' : 'translate-x-0'
-                            }`} />
+                            <span className={`w-10 h-5 rounded-full transition-colors relative flex items-center p-0.5 shrink-0 ${
+                              shuffleQuestions ? 'bg-blue-600' : 'bg-slate-200 dark:bg-slate-700'
+                            }`}>
+                              <span className={`w-4 h-4 rounded-full bg-white shadow-xs transition-transform transform ${
+                                shuffleQuestions ? 'translate-x-5' : 'translate-x-0'
+                              }`} />
+                            </span>
                           </button>
                         </div>
 
@@ -1140,13 +1142,15 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
                             role="switch"
                             aria-checked={shuffleOptions}
                             aria-label="Acak Pilihan Opsi"
-                            className={`w-10 h-5 rounded-full transition-colors relative flex items-center p-0.5 shrink-0 focus:outline-none ${
-                              shuffleOptions ? 'bg-blue-600' : 'bg-slate-200 dark:bg-slate-700'
-                            }`}
+                            className="min-w-[44px] min-h-[44px] flex items-center justify-center -mr-1.5 -my-2 focus:outline-none"
                           >
-                            <span className={`w-4 h-4 rounded-full bg-white shadow-xs transition-transform transform ${
-                              shuffleOptions ? 'translate-x-5' : 'translate-x-0'
-                            }`} />
+                            <span className={`w-10 h-5 rounded-full transition-colors relative flex items-center p-0.5 shrink-0 ${
+                              shuffleOptions ? 'bg-blue-600' : 'bg-slate-200 dark:bg-slate-700'
+                            }`}>
+                              <span className={`w-4 h-4 rounded-full bg-white shadow-xs transition-transform transform ${
+                                shuffleOptions ? 'translate-x-5' : 'translate-x-0'
+                              }`} />
+                            </span>
                           </button>
                         </div>
 
@@ -1167,15 +1171,18 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
                             role="switch"
                             aria-checked={showLeaderboardToStudents}
                             aria-label="Tayangkan Peringkat Kelas di Smartboard"
-                            className={`w-10 h-5 rounded-full transition-colors relative flex items-center p-0.5 shrink-0 focus:outline-none ${
-                              showLeaderboardToStudents ? 'bg-blue-600' : 'bg-slate-200 dark:bg-slate-700'
-                            }`}
+                            className="min-w-[44px] min-h-[44px] flex items-center justify-center -mr-1.5 -my-2 focus:outline-none"
                           >
-                            <span className={`w-4 h-4 rounded-full bg-white shadow-xs transition-transform transform ${
-                              showLeaderboardToStudents ? 'translate-x-5' : 'translate-x-0'
-                            }`} />
+                            <span className={`w-10 h-5 rounded-full transition-colors relative flex items-center p-0.5 shrink-0 ${
+                              showLeaderboardToStudents ? 'bg-blue-600' : 'bg-slate-200 dark:bg-slate-700'
+                            }`}>
+                              <span className={`w-4 h-4 rounded-full bg-white shadow-xs transition-transform transform ${
+                                showLeaderboardToStudents ? 'translate-x-5' : 'translate-x-0'
+                              }`} />
+                            </span>
                           </button>
                         </div>
+
                       </div>
                     </div>
                   )}
@@ -1369,13 +1376,15 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
                         role="switch"
                         aria-checked={shuffleQuestions}
                         aria-label="Acak Urutan Nomor Soal"
-                        className={`w-10 h-5 rounded-full transition-colors relative flex items-center p-0.5 shrink-0 focus:outline-none ${
-                          shuffleQuestions ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-slate-700'
-                        }`}
+                        className="min-w-[44px] min-h-[44px] flex items-center justify-center -mr-1.5 -my-2 focus:outline-none"
                       >
-                        <span className={`w-4 h-4 rounded-full bg-white shadow-xs transition-transform transform ${
-                          shuffleQuestions ? 'translate-x-5' : 'translate-x-0'
-                        }`} />
+                        <span className={`w-10 h-5 rounded-full transition-colors relative flex items-center p-0.5 shrink-0 ${
+                          shuffleQuestions ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-slate-700'
+                        }`}>
+                          <span className={`w-4 h-4 rounded-full bg-white shadow-xs transition-transform transform ${
+                            shuffleQuestions ? 'translate-x-5' : 'translate-x-0'
+                          }`} />
+                        </span>
                       </button>
                     </div>
 
@@ -1396,13 +1405,15 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
                         role="switch"
                         aria-checked={shuffleOptions}
                         aria-label="Acak Pilihan Opsi"
-                        className={`w-10 h-5 rounded-full transition-colors relative flex items-center p-0.5 shrink-0 focus:outline-none ${
-                          shuffleOptions ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-slate-700'
-                        }`}
+                        className="min-w-[44px] min-h-[44px] flex items-center justify-center -mr-1.5 -my-2 focus:outline-none"
                       >
-                        <span className={`w-4 h-4 rounded-full bg-white shadow-xs transition-transform transform ${
-                          shuffleOptions ? 'translate-x-5' : 'translate-x-0'
-                        }`} />
+                        <span className={`w-10 h-5 rounded-full transition-colors relative flex items-center p-0.5 shrink-0 ${
+                          shuffleOptions ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-slate-700'
+                        }`}>
+                          <span className={`w-4 h-4 rounded-full bg-white shadow-xs transition-transform transform ${
+                            shuffleOptions ? 'translate-x-5' : 'translate-x-0'
+                          }`} />
+                        </span>
                       </button>
                     </div>
 
@@ -1423,13 +1434,15 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
                         role="switch"
                         aria-checked={tabSwitchDetection}
                         aria-label="Deteksi Ganti Tab"
-                        className={`w-10 h-5 rounded-full transition-colors relative flex items-center p-0.5 shrink-0 focus:outline-none ${
-                          tabSwitchDetection ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-slate-700'
-                        }`}
+                        className="min-w-[44px] min-h-[44px] flex items-center justify-center -mr-1.5 -my-2 focus:outline-none"
                       >
-                        <span className={`w-4 h-4 rounded-full bg-white shadow-xs transition-transform transform ${
-                          tabSwitchDetection ? 'translate-x-5' : 'translate-x-0'
-                        }`} />
+                        <span className={`w-10 h-5 rounded-full transition-colors relative flex items-center p-0.5 shrink-0 ${
+                          tabSwitchDetection ? 'bg-indigo-600' : 'bg-slate-200 dark:bg-slate-700'
+                        }`}>
+                          <span className={`w-4 h-4 rounded-full bg-white shadow-xs transition-transform transform ${
+                            tabSwitchDetection ? 'translate-x-5' : 'translate-x-0'
+                          }`} />
+                        </span>
                       </button>
                     </div>
 
@@ -1450,15 +1463,18 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
                         role="switch"
                         aria-checked={maxAttempts === 1}
                         aria-label="Batas Pengerjaan 1 Kali"
-                        className={`w-10 h-5 rounded-full transition-colors relative flex items-center p-0.5 shrink-0 focus:outline-none ${
-                          maxAttempts === 1 ? 'bg-rose-600' : 'bg-slate-200 dark:bg-slate-700'
-                        }`}
+                        className="min-w-[44px] min-h-[44px] flex items-center justify-center -mr-1.5 -my-2 focus:outline-none"
                       >
-                        <span className={`w-4 h-4 rounded-full bg-white shadow-xs transition-transform transform ${
-                          maxAttempts === 1 ? 'translate-x-5' : 'translate-x-0'
-                        }`} />
+                        <span className={`w-10 h-5 rounded-full transition-colors relative flex items-center p-0.5 shrink-0 ${
+                          maxAttempts === 1 ? 'bg-rose-600' : 'bg-slate-200 dark:bg-slate-700'
+                        }`}>
+                          <span className={`w-4 h-4 rounded-full bg-white shadow-xs transition-transform transform ${
+                            maxAttempts === 1 ? 'translate-x-5' : 'translate-x-0'
+                          }`} />
+                        </span>
                       </button>
                     </div>
+
                   </div>
                 </div>
               </div>

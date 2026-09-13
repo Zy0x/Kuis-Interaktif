@@ -345,10 +345,11 @@ export const QuizDetail: React.FC<QuizDetailProps> = ({
                   type="button"
                   onClick={handleToggleVisibility}
                   disabled={isUpdatingVis}
-                  className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline px-2 py-1"
+                  className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline px-3 py-1.5 min-h-[44px] inline-flex items-center justify-center rounded-xl btn-press"
                 >
                   Ubah
                 </button>
+
               </div>
             </div>
           </div>

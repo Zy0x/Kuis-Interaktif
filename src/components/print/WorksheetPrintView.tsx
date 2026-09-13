@@ -1,6 +1,8 @@
 import React from 'react';
 import type { Quiz } from '../../types/quiz';
 import { Printer, ArrowLeft, CheckCircle } from 'lucide-react';
+import { resolveMediaUrl } from '../../lib/driveUtils';
+
 
 interface WorksheetPrintViewProps {
   quiz: Quiz;
@@ -114,9 +116,10 @@ export const WorksheetPrintView: React.FC<WorksheetPrintViewProps> = ({
               {/* Optional Question Image / Emoji illustration */}
               {q.imageUrl && (
                 <div className="ml-5 my-2 max-w-[200px] border border-slate-300 rounded p-1">
-                  <img src={q.imageUrl} alt="Ilustrasi" className="max-h-28 w-auto mx-auto object-contain" />
+                  <img src={resolveMediaUrl(q.imageUrl)} alt="Ilustrasi" className="max-h-28 w-auto mx-auto object-contain" />
                 </div>
               )}
+
               {q.imageCaption && (
                 <div className="ml-5 text-2xl my-1 select-none">
                   {q.imageCaption}

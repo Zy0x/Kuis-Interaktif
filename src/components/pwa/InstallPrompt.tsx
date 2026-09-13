@@ -11,37 +11,62 @@ export const InstallPrompt: React.FC = () => {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
+    const isDismissed = sessionStorage.getItem('pwa_prompt_dismissed');
+
+    // Periksa apakah event prompt sudah tertangkap sebelumnya oleh index.html
+    const existingPrompt = (window as any).__deferredInstallPrompt;
+    if (existingPrompt) {
+      setDeferredPrompt(existingPrompt as BeforeInstallPromptEvent);
+      if (!isDismissed) {
+        setIsVisible(true);
+      }
+    }
+
     const handleBeforeInstall = (e: Event) => {
       e.preventDefault();
+      (window as any).__deferredInstallPrompt = e;
       setDeferredPrompt(e as BeforeInstallPromptEvent);
-      // Show prompt banner after 3 seconds on first visit
-      const isDismissed = sessionStorage.getItem('pwa_prompt_dismissed');
       if (!isDismissed) {
         setIsVisible(true);
       }
     };
 
+    const handleCustomEvent = (e: any) => {
+      if (e.detail) {
+        setDeferredPrompt(e.detail as BeforeInstallPromptEvent);
+        if (!isDismissed) {
+          setIsVisible(true);
+        }
+      }
+    };
+
     window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+    window.addEventListener('pwa-installable', handleCustomEvent);
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+      window.removeEventListener('pwa-installable', handleCustomEvent);
     };
   }, []);
 
   const handleInstall = async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const choice = await deferredPrompt.userChoice;
+    const promptEvent = deferredPrompt || (window as any).__deferredInstallPrompt;
+    if (!promptEvent) return;
+    promptEvent.prompt();
+    const choice = await promptEvent.userChoice;
     if (choice.outcome === 'accepted') {
       setIsVisible(false);
+      sessionStorage.setItem('pwa_prompt_dismissed', 'true');
     }
     setDeferredPrompt(null);
+    (window as any).__deferredInstallPrompt = null;
   };
 
   const handleClose = () => {
     setIsVisible(false);
     sessionStorage.setItem('pwa_prompt_dismissed', 'true');
   };
+
 
   if (!isVisible) return null;
 

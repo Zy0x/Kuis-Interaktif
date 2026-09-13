@@ -424,11 +424,12 @@ export const AdminDatabaseBackupModal: React.FC<AdminDatabaseBackupModalProps> =
                   <button
                     type="button"
                     onClick={loadHistory}
-                    className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                    className="text-xs text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1.5 min-h-[44px] px-2.5 py-1 -my-1 rounded-xl btn-press font-bold"
                   >
-                    <RefreshCw className={`w-3 h-3 ${isLoadingHistory ? 'animate-spin' : ''}`} />
+                    <RefreshCw className={`w-3.5 h-3.5 ${isLoadingHistory ? 'animate-spin' : ''}`} />
                     <span>Segarkan</span>
                   </button>
+
                 </div>
 
                 {history.length === 0 ? (

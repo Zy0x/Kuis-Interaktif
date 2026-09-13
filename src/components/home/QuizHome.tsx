@@ -1249,11 +1249,12 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                     <button
                       type="button"
                       onClick={handleStudentSignOut}
-                      className="text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 font-bold"
+                      className="text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 font-bold min-h-[44px] px-3 py-1 inline-flex items-center hover:underline rounded-xl btn-press"
                     >
                       Keluar Akun
                     </button>
                   </div>
+
                 )}
 
                 <div className="pt-2 flex gap-2.5">

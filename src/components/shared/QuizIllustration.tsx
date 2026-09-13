@@ -1,5 +1,6 @@
-﻿import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { fetchWikipediaImageUrl, generateAiIllustrationUrl } from '../../lib/geminiApi';
+import { resolveMediaUrl, getAlternativeMediaUrl, isGoogleDriveUrl } from '../../lib/driveUtils';
 
 interface QuizIllustrationProps {
   imageUrl?: string;
@@ -13,7 +14,7 @@ interface QuizIllustrationProps {
 
 /**
  * Komponen ilustrasi soal dengan resolusi gambar hybrid:
- * 1. Langsung tampil gambar dari imageUrl (Pollinations) sebagai placeholder cepat.
+ * 1. Langsung tampil gambar dari imageUrl (Google Drive CDN / Pollinations) sebagai placeholder cepat.
  * 2. Fetch Wikipedia async — jika ditemukan, upgrade ke gambar Wikipedia yang lebih relevan.
  * 3. Jika semua sumber gagal, tampilkan placeholder caption.
  */
@@ -26,8 +27,9 @@ export function QuizIllustration({
   imgClassName = 'max-h-32 sm:max-h-48 xl:max-h-60 w-auto rounded-xl object-contain mx-auto',
   enableWikipedia = true,
 }: QuizIllustrationProps) {
+  const normalizedImageUrl = imageUrl ? resolveMediaUrl(imageUrl) : undefined;
   const pollinationsUrl =
-    imageUrl ||
+    normalizedImageUrl ||
     (imagePrompt || imageCaption
       ? generateAiIllustrationUrl(imagePrompt || imageCaption || '', {
           seed:
@@ -42,6 +44,7 @@ export function QuizIllustration({
   const [resolvedUrl, setResolvedUrl] = useState<string | null>(pollinationsUrl);
   const [isLoading, setIsLoading] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const [triedAlternative, setTriedAlternative] = useState(false);
   const mountedRef = useRef(true);
 
   useEffect(() => {
@@ -51,7 +54,13 @@ export function QuizIllustration({
 
   useEffect(() => {
     setHasError(false);
+    setTriedAlternative(false);
     setResolvedUrl(pollinationsUrl);
+
+    // Jangan override gambar kustom/Google Drive jika guru secara eksplisit mengunggahnya
+    if (imageUrl && (isGoogleDriveUrl(imageUrl) || imageUrl.startsWith('data:') || imageUrl.startsWith('blob:'))) {
+      return;
+    }
 
     if (!enableWikipedia || !imageCaption) return;
     const keyword = imageCaption.replace(/[^\w\s\u00C0-\u024F]/gi, ' ').trim();
@@ -69,6 +78,16 @@ export function QuizIllustration({
   }, [imageCaption, imagePrompt, imageUrl]);
 
   const handleImgError = () => {
+    // Jika sumber awal adalah Google Drive dan belum coba alternatif (misal switch antara CDN dan proxy)
+    if (imageUrl && isGoogleDriveUrl(imageUrl) && !triedAlternative) {
+      const altUrl = getAlternativeMediaUrl(imageUrl);
+      if (altUrl && altUrl !== resolvedUrl) {
+        setTriedAlternative(true);
+        setResolvedUrl(altUrl);
+        return;
+      }
+    }
+
     if (resolvedUrl !== pollinationsUrl && pollinationsUrl) {
       setResolvedUrl(pollinationsUrl);
     } else {
@@ -77,6 +96,7 @@ export function QuizIllustration({
   };
 
   if (!resolvedUrl && !hasError) return null;
+
 
   return (
     <div className={`relative overflow-hidden ${className}`}>

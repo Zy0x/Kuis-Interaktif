@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { resolveMediaUrl, getAlternativeMediaUrl, isGoogleDriveUrl } from '../../lib/driveUtils';
 
 export const isImageCover = (val?: string | null): boolean => {
   if (!val) return false;
@@ -8,7 +9,8 @@ export const isImageCover = (val?: string | null): boolean => {
     trimmed.startsWith('http://') ||
     trimmed.startsWith('https://') ||
     trimmed.startsWith('blob:') ||
-    trimmed.startsWith('/')
+    trimmed.startsWith('/') ||
+    isGoogleDriveUrl(trimmed)
   );
 };
 
@@ -25,22 +27,39 @@ export const QuizCoverDisplay: React.FC<QuizCoverDisplayProps> = ({
   className = 'w-12 h-12 rounded-2xl flex items-center justify-center text-3xl',
   fallbackEmoji = '📝',
 }) => {
-  const [hasError, setHasError] = React.useState(false);
+  const [currentUrl, setCurrentUrl] = useState<string>(() => resolveMediaUrl(cover));
+  const [hasError, setHasError] = useState(false);
+  const [hasTriedAlternative, setHasTriedAlternative] = useState(false);
 
-  // Reset error jika cover prop berubah
-  React.useEffect(() => {
+  // Reset status saat prop cover berubah
+  useEffect(() => {
+    setCurrentUrl(resolveMediaUrl(cover));
     setHasError(false);
+    setHasTriedAlternative(false);
   }, [cover]);
 
-  if (isImageCover(cover) && !hasError) {
+  const handleImgError = () => {
+    // Coba URL alternatif Google Drive (misal thumbnail CDN vs proxy Edge function)
+    if (!hasTriedAlternative && cover) {
+      const altUrl = getAlternativeMediaUrl(cover);
+      if (altUrl && altUrl !== currentUrl) {
+        setHasTriedAlternative(true);
+        setCurrentUrl(altUrl);
+        return;
+      }
+    }
+    setHasError(true);
+  };
+
+  if (isImageCover(cover) && currentUrl && !hasError) {
     return (
       <div className={`overflow-hidden shrink-0 ${className}`}>
         <img
-          src={cover!}
+          src={currentUrl}
           alt={alt}
           className="w-full h-full object-cover"
           loading="lazy"
-          onError={() => setHasError(true)}
+          onError={handleImgError}
         />
       </div>
     );
@@ -52,3 +71,4 @@ export const QuizCoverDisplay: React.FC<QuizCoverDisplayProps> = ({
     </div>
   );
 };
+
