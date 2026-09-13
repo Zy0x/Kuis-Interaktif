@@ -3,7 +3,9 @@ import type { Quiz, QuizAttemptAnswer, TeacherProfile, ScreenState, GameMode, Qu
 import { SplashScreen } from './components/pwa/SplashScreen';
 import { InstallPrompt } from './components/pwa/InstallPrompt';
 import { ReorientationOverlay } from './components/pwa/ReorientationOverlay';
+import { OfflineSyncIndicator } from './components/common/OfflineSyncIndicator';
 import { QuizHome } from './components/home/QuizHome';
+
 import { QuizArena } from './components/arena/QuizArena';
 import { QuizResult } from './components/result/QuizResult';
 import { QuizCreator } from './components/creator/QuizCreator';
@@ -506,11 +508,13 @@ export const App: React.FC = () => {
       {/* 1. Animated Splash Screen */}
       {showSplash && <SplashScreen onFinish={handleFinishSplash} />}
 
-      {/* 2. PWA Utilities */}
+      {/* 2. PWA Utilities & Offline Sync */}
       {currentScreen === 'home' && <InstallPrompt />}
       <ReorientationOverlay />
+      <OfflineSyncIndicator />
 
       {/* 3. Unified Auth Modal (Guru & Siswa) */}
+
       <UnifiedAuthModal
         isOpen={isAuthModalOpen}
         initialTab={authInitialTab}

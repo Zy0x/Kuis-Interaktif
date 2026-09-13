@@ -20,6 +20,7 @@ import type {
 import { MASTER_TEACHER_EMAIL } from '../types/quiz';
 import { INITIAL_QUIZZES } from '../data/seedQuizzes';
 import { deleteQuizDriveFolder } from './driveUploadService';
+import { offlineQueue } from './offlineQueue';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
@@ -33,6 +34,16 @@ export const isSupabaseConfigured = Boolean(
 export const supabase = isSupabaseConfigured
   ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
   : null;
+
+// Flush antrean offline saat peramban kembali online
+if (typeof window !== 'undefined') {
+  window.addEventListener('online', () => {
+    if (supabase) {
+      offlineQueue.flushQueue(supabase);
+    }
+  });
+}
+
 
 // Local Storage Keys
 const STORAGE_KEY_LEADERBOARD = 'kuis_sd_leaderboard_v1';
@@ -1170,23 +1181,30 @@ export const DataManager = {
       console.warn('Local storage save error:', e);
     }
 
-    if (supabase) {
+    const attemptPayload = {
+      quiz_id: result.quizId,
+      score: result.score,
+      stars: result.stars,
+      total_questions: result.totalCount,
+      correct_answers: result.correctCount,
+      time_spent_sec: result.timeSpentSec,
+      player_nickname: player.nickname,
+      player_avatar: player.avatarId,
+    };
+
+    if (supabase && (typeof navigator === 'undefined' || navigator.onLine)) {
       try {
-        await supabase.from('quiz_attempts').insert({
-          quiz_id: result.quizId,
-          score: result.score,
-          stars: result.stars,
-          total_questions: result.totalCount,
-          correct_answers: result.correctCount,
-          time_spent_sec: result.timeSpentSec,
-          player_nickname: player.nickname,
-          player_avatar: player.avatarId,
-        });
+        const { error } = await supabase.from('quiz_attempts').insert(attemptPayload);
+        if (error) throw error;
       } catch (err) {
-        console.warn('Supabase sync background notice:', err);
+        console.warn('Supabase sync background notice, simpan ke antrean offline:', err);
+        offlineQueue.enqueue('quiz_attempt_insert', attemptPayload);
       }
+    } else {
+      offlineQueue.enqueue('quiz_attempt_insert', attemptPayload);
     }
   },
+
 
   // 8. Get Leaderboard for a Quiz
   async getLeaderboard(quizId: string): Promise<LeaderboardEntry[]> {
@@ -2301,28 +2319,38 @@ export const DataManager = {
 
     broadcastSessionUpdate(session);
 
-    if (supabase) {
+    const answerPayload = {
+      id: participant.id,
+      session_id: sessionId,
+      student_name: participant.name,
+      avatar_id: participant.avatarId,
+      current_question_index: participant.currentQuestionIndex,
+      score: participant.score,
+      stars: participant.stars,
+      correct_count: participant.correctCount,
+      incorrect_count: participant.incorrectCount,
+      streak: participant.streak,
+      finished: participant.finished,
+      time_spent_sec: participant.timeSpentSec,
+      answers: participant.answers,
+      tab_switch_count: participant.tabSwitchCount ?? 0,
+      last_active_at: participant.lastActiveAt,
+    };
+
+    if (supabase && (typeof navigator === 'undefined' || navigator.onLine)) {
       try {
-        await supabase.from('quiz_session_participants').upsert({
-          id: participant.id,
-          session_id: sessionId,
-          student_name: participant.name,
-          avatar_id: participant.avatarId,
-          current_question_index: participant.currentQuestionIndex,
-          score: participant.score,
-          stars: participant.stars,
-          correct_count: participant.correctCount,
-          incorrect_count: participant.incorrectCount,
-          streak: participant.streak,
-          finished: participant.finished,
-          time_spent_sec: participant.timeSpentSec,
-          answers: participant.answers,
-          last_active_at: participant.lastActiveAt,
+        const { error } = await supabase.from('quiz_session_participants').upsert(answerPayload, {
+          onConflict: 'session_id, student_name',
         });
+        if (error) throw error;
       } catch (err) {
-        console.warn('Supabase recordSessionAnswer notice:', err);
+        console.warn('Supabase recordSessionAnswer notice, simpan ke antrean offline:', err);
+        offlineQueue.enqueue('session_participant_upsert', answerPayload, 'session_id, student_name');
       }
+    } else {
+      offlineQueue.enqueue('session_participant_upsert', answerPayload, 'session_id, student_name');
     }
+
 
     return participant;
   },
@@ -2552,9 +2580,18 @@ export const DataManager = {
     return local;
   },
 
-  async syncActiveSessionsFromSupabase(teacherEmail?: string): Promise<QuizSession[]> {
+  async syncActiveSessionsFromSupabase(
+    teacherEmail?: string,
+    options?: { limit?: number; offset?: number }
+  ): Promise<QuizSession[]> {
     if (!supabase) return this.getActiveSessions({ teacherEmail });
     try {
+      // Usahakan flush antrean jawaban offline terlebih dahulu agar database memiliki data teranyar
+      offlineQueue.flushQueue(supabase).catch(() => {});
+
+      const limit = Math.min(options?.limit || 50, 100);
+      const offset = options?.offset || 0;
+
       let query = supabase
         .from('quiz_sessions')
         .select(`
@@ -2562,7 +2599,8 @@ export const DataManager = {
           quiz_session_participants (*)
         `)
         .order('created_at', { ascending: false })
-        .limit(50);
+        .range(offset, offset + limit - 1);
+
 
       if (teacherEmail && teacherEmail.trim().toLowerCase() !== MASTER_TEACHER_EMAIL.toLowerCase()) {
         query = query.eq('teacher_email', teacherEmail.trim());
@@ -2843,34 +2881,41 @@ export const DataManager = {
       };
     }
 
-    if (supabase) {
+    const partPayload = {
+      id: finalParticipant.id,
+      session_id: sessionId,
+      student_name: finalParticipant.name,
+      avatar_id: finalParticipant.avatarId,
+      current_question_index: finalParticipant.currentQuestionIndex,
+      score: finalParticipant.score,
+      stars: finalParticipant.stars,
+      correct_count: finalParticipant.correctCount,
+      incorrect_count: finalParticipant.incorrectCount,
+      streak: finalParticipant.streak,
+      finished: finalParticipant.finished,
+      time_spent_sec: finalParticipant.timeSpentSec,
+      answers: finalParticipant.answers,
+      tab_switch_count: finalParticipant.tabSwitchCount ?? 0,
+      last_active_at: finalParticipant.lastActiveAt,
+    };
+
+    if (supabase && (typeof navigator === 'undefined' || navigator.onLine)) {
       try {
-        await supabase.from('quiz_session_participants').upsert(
-          {
-            id: finalParticipant.id,
-            session_id: sessionId,
-            student_name: finalParticipant.name,
-            avatar_id: finalParticipant.avatarId,
-            current_question_index: finalParticipant.currentQuestionIndex,
-            score: finalParticipant.score,
-            stars: finalParticipant.stars,
-            correct_count: finalParticipant.correctCount,
-            incorrect_count: finalParticipant.incorrectCount,
-            streak: finalParticipant.streak,
-            finished: finalParticipant.finished,
-            time_spent_sec: finalParticipant.timeSpentSec,
-            answers: finalParticipant.answers,
-            tab_switch_count: finalParticipant.tabSwitchCount ?? 0,
-            last_active_at: finalParticipant.lastActiveAt,
-          },
+        const { error } = await supabase.from('quiz_session_participants').upsert(
+          partPayload,
           {
             onConflict: 'session_id, student_name',
           }
         );
+        if (error) throw error;
       } catch (err) {
-        console.warn('Supabase addOrUpdateSessionParticipant notice:', err);
+        console.warn('Supabase addOrUpdateSessionParticipant notice, simpan ke antrean offline:', err);
+        offlineQueue.enqueue('session_participant_upsert', partPayload, 'session_id, student_name');
       }
+    } else {
+      offlineQueue.enqueue('session_participant_upsert', partPayload, 'session_id, student_name');
     }
+
 
     return finalParticipant;
   },

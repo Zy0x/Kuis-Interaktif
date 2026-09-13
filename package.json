@@ -1,8 +1,9 @@
 {
   "name": "kuis-sd-seru",
   "private": true,
-  "version": "2.3.83",
+  "version": "2.3.84",
   "type": "module",
+
 
   "scripts": {
     "dev": "vite",

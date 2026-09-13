@@ -1,7 +1,32 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.84] - 2026-09-13
+### Arsitektur Antrean Offline Cerdas (*Offline Queue & Auto-Retry*), Indikator Sinkronisasi Jaringan Luring, dan Paginasi Sesi Guru (Rule 1, Rule 6, Rule 9, Rule 10 & Rule 11)
+
+#### 1. Arsitektur Antrean Offline Cerdas (*Offline Queue & Auto-Retry*) (`offlineQueue.ts`, `supabaseClient.ts`)
+- **Penyimpanan Lokal Persisten (*Persistent Outbox*)**:
+  - Disediakan modul mandiri `offlineQueue.ts` yang menangani antrean penyimpanan data lokal (`session_participant_upsert` dan `quiz_attempt_insert`) di `localStorage` saat jaringan seluler atau WiFi sekolah mengalami gangguan, terputus, atau latensi tinggi.
+  - **Deduplikasi Cerdas**: Ketika siswa menjawab beberapa butir soal dalam kondisi luring, sistem secara cerdas menggabungkan akumulasi jawaban dan skor terbaru untuk partisipan tersebut ke dalam satu baris antrean terpadu, mencegah beban kueri redundan saat jaringan pulih.
+- **Sinkronisasi Otomatis saat Online**:
+  - Pemicu instan saat peramban mendeteksi koneksi aktif via event `online` dan pemindaian berkala setiap 20 detik jika ada antrean tertunda.
+  - Penanganan batas percobaan ulang hingga 10 kali dengan backoff sebelum data dianggap usang.
+
+#### 2. Indikator Status Sinkronisasi Jaringan Real-Time (`OfflineSyncIndicator.tsx`, `App.tsx`)
+- **Visibilitas Status bagi Siswa & Guru (Rule 1 & Rule 8)**:
+  - Ditambahkan komponen antarmuka mengambang yang ramah anak dan komunikatif:
+    - Status Luring: Memberikan kepastian visual `⚡ Sinyal terputus • Jawaban tersimpan aman di perangkat`.
+    - Status Sinkronisasi: Menampilkan animasi putar `🔄 Menyinkronkan jawaban ke server...`.
+    - Status Sukses: Menampilkan konfirmasi hijau instan `✅ Jawaban berhasil tersinkronkan ke server!`.
+  - Target sentuh memenuhi standar `min-h-[44px]` dan dapat diketuk oleh pengguna untuk memicu sinkronisasi manual saat sinyal telah stabil.
+
+#### 3. Optimasi Kueri & Paginasi Riwayat Sesi Guru (Rule 6 - Performance Optimization)
+- **Dukungan Paginasi Rentang Kueri Supabase**:
+  - Fungsi `syncActiveSessionsFromSupabase` kini mendukung parameter `options: { limit?: number; offset?: number }` dengan rentang kueri `.range(offset, offset + limit - 1)`, mengoptimalkan waktu render dan alokasi memori browser guru.
+  - Pemanggilan otomatis pembersihan antrean offline sebelum kueri sesi dijalankan untuk memastikan data terbaru tampil di dashboard.
+
 ## [2.3.83] - 2026-09-13
+
 ### Resiliensi Media Google Drive Cerdas, Optimasi Service Worker PWA (Network-First Cache & Early Install Capture), serta Penyelarasan Penuh 100% Target Sentuh 44px (Rule 1, Rule 2, Rule 7, Rule 9 & Rule 10)
 
 #### 1. Resiliensi Media Google Drive Cerdas (`driveUtils.ts`, `QuizCoverDisplay`, `QuizIllustration`, `ImageSelectorModal`, `WorksheetPrintView`)
