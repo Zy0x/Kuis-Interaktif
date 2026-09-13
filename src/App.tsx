@@ -4,20 +4,23 @@ import { SplashScreen } from './components/pwa/SplashScreen';
 import { InstallPrompt } from './components/pwa/InstallPrompt';
 import { ReorientationOverlay } from './components/pwa/ReorientationOverlay';
 import { OfflineSyncIndicator } from './components/common/OfflineSyncIndicator';
+import { ScreenLoadingFallback } from './components/common/ScreenLoadingFallback';
 import { QuizHome } from './components/home/QuizHome';
-
-import { QuizArena } from './components/arena/QuizArena';
-import { QuizResult } from './components/result/QuizResult';
-import { QuizCreator } from './components/creator/QuizCreator';
 import { StudentLobby } from './components/lobby/StudentLobby';
-import { UnifiedAuthModal, type AuthModalTab } from './components/auth/UnifiedAuthModal';
-import { TeacherDashboard } from './components/teacher/TeacherDashboard';
+import type { AuthModalTab } from './components/auth/UnifiedAuthModal';
 import type { PlayQuizSessionOptions } from './components/teacher/PlayQuizModal';
-import { WorksheetPrintView } from './components/print/WorksheetPrintView';
 import { DataManager } from './lib/supabaseClient';
 import { useSoundEffects } from './hooks/useSoundEffects';
 import { useBackHandler } from './lib/navigationHistory';
 import { useTheme } from './hooks/useTheme';
+
+// Lazy-loaded heavy screens & modals (Rule 6: Optimalisasi Kinerja & Code-Splitting)
+const QuizArena = React.lazy(() => import('./components/arena/QuizArena').then((m) => ({ default: m.QuizArena })));
+const QuizResult = React.lazy(() => import('./components/result/QuizResult').then((m) => ({ default: m.QuizResult })));
+const QuizCreator = React.lazy(() => import('./components/creator/QuizCreator').then((m) => ({ default: m.QuizCreator })));
+const TeacherDashboard = React.lazy(() => import('./components/teacher/TeacherDashboard').then((m) => ({ default: m.TeacherDashboard })));
+const WorksheetPrintView = React.lazy(() => import('./components/print/WorksheetPrintView').then((m) => ({ default: m.WorksheetPrintView })));
+const UnifiedAuthModal = React.lazy(() => import('./components/auth/UnifiedAuthModal').then((m) => ({ default: m.UnifiedAuthModal })));
 import { BackGestureIndicator } from './components/common/BackGestureIndicator';
 import {
   saveNavigationState,
@@ -514,15 +517,18 @@ export const App: React.FC = () => {
       <OfflineSyncIndicator />
 
       {/* 3. Unified Auth Modal (Guru & Siswa) */}
-
-      <UnifiedAuthModal
-        isOpen={isAuthModalOpen}
-        initialTab={authInitialTab}
-        onClose={() => setIsAuthModalOpen(false)}
-        onLoginTeacher={handleTeacherLoginSuccess}
-        onLoginStudent={handleStudentLoginSuccess}
-        playClick={playClick}
-      />
+      {isAuthModalOpen && (
+        <React.Suspense fallback={null}>
+          <UnifiedAuthModal
+            isOpen={isAuthModalOpen}
+            initialTab={authInitialTab}
+            onClose={() => setIsAuthModalOpen(false)}
+            onLoginTeacher={handleTeacherLoginSuccess}
+            onLoginStudent={handleStudentLoginSuccess}
+            playClick={playClick}
+          />
+        </React.Suspense>
+      )}
 
       {/* Loading state jika layar bergantung pada kuis yang sedang dipulihkan */}
       {['arena', 'student-lobby', 'result', 'worksheet-print'].includes(currentScreen) && !activeQuiz && (
@@ -587,102 +593,112 @@ export const App: React.FC = () => {
       )}
 
       {currentScreen === 'creator' && teacher && (
-        <QuizCreator
-          editingQuiz={editingQuiz}
-          initialMode={creatorInitialMode}
-          onBack={() => {
-            setEditingQuiz(null);
-            setCurrentScreen('teacher-dashboard');
-            saveNavigationState({ screen: 'teacher-dashboard', replace: false });
-          }}
-          onSaveQuiz={handleSaveCreatedQuiz}
-          isDark={isDark}
-          onToggleTheme={toggleTheme}
-          playClick={playClick}
-          playCorrect={playCorrect}
-          playWrong={playWrong}
-          playTick={playTick}
-          playReveal={playReveal}
-          playApplause={playApplause}
-        />
+        <React.Suspense fallback={<ScreenLoadingFallback message="Menyiapkan studio pembuatan kuis..." isDark={isDark} />}>
+          <QuizCreator
+            editingQuiz={editingQuiz}
+            initialMode={creatorInitialMode}
+            onBack={() => {
+              setEditingQuiz(null);
+              setCurrentScreen('teacher-dashboard');
+              saveNavigationState({ screen: 'teacher-dashboard', replace: false });
+            }}
+            onSaveQuiz={handleSaveCreatedQuiz}
+            isDark={isDark}
+            onToggleTheme={toggleTheme}
+            playClick={playClick}
+            playCorrect={playCorrect}
+            playWrong={playWrong}
+            playTick={playTick}
+            playReveal={playReveal}
+            playApplause={playApplause}
+          />
+        </React.Suspense>
       )}
 
       {currentScreen === 'teacher-dashboard' && teacher && (
-        <TeacherDashboard
-          teacher={teacher}
-          onLogout={handleTeacherLogout}
-          onGoHome={handleGoHome}
-          onOpenCreator={(quizToEdit?: Quiz, mode?: 'ai' | 'manual') => {
-            setEditingQuiz(quizToEdit || null);
-            setCreatorInitialMode(mode || (quizToEdit ? 'manual' : 'manual'));
-            setCurrentScreen('creator');
-            saveNavigationState({ screen: 'creator', quiz: quizToEdit, creatorMode: mode || (quizToEdit ? 'manual' : 'manual'), replace: false });
-          }}
-          onLaunchSmartboard={handleLaunchSmartboard}
-          onPrintWorksheet={handlePrintWorksheet}
-          onStartQuiz={handleStartQuizWithSettings}
-          isDark={isDark}
-          onToggleTheme={toggleTheme}
-          playClick={playClick}
-        />
+        <React.Suspense fallback={<ScreenLoadingFallback message="Membuka dashboard guru..." isDark={isDark} />}>
+          <TeacherDashboard
+            teacher={teacher}
+            onLogout={handleTeacherLogout}
+            onGoHome={handleGoHome}
+            onOpenCreator={(quizToEdit?: Quiz, mode?: 'ai' | 'manual') => {
+              setEditingQuiz(quizToEdit || null);
+              setCreatorInitialMode(mode || (quizToEdit ? 'manual' : 'manual'));
+              setCurrentScreen('creator');
+              saveNavigationState({ screen: 'creator', quiz: quizToEdit, creatorMode: mode || (quizToEdit ? 'manual' : 'manual'), replace: false });
+            }}
+            onLaunchSmartboard={handleLaunchSmartboard}
+            onPrintWorksheet={handlePrintWorksheet}
+            onStartQuiz={handleStartQuizWithSettings}
+            isDark={isDark}
+            onToggleTheme={toggleTheme}
+            playClick={playClick}
+          />
+        </React.Suspense>
       )}
 
       {currentScreen === 'worksheet-print' && activeQuiz && (
-        <WorksheetPrintView
-          quiz={activeQuiz}
-          onBack={() => {
-            if (teacher) {
-              setCurrentScreen('teacher-dashboard');
-            } else {
-              setCurrentScreen('home');
-            }
-          }}
-          playClick={playClick}
-        />
+        <React.Suspense fallback={<ScreenLoadingFallback message="Menyiapkan lembar kerja cetak..." isDark={isDark} />}>
+          <WorksheetPrintView
+            quiz={activeQuiz}
+            onBack={() => {
+              if (teacher) {
+                setCurrentScreen('teacher-dashboard');
+              } else {
+                setCurrentScreen('home');
+              }
+            }}
+            playClick={playClick}
+          />
+        </React.Suspense>
       )}
 
       {currentScreen === 'arena' && activeQuiz && (
-        <QuizArena
-          quiz={activeQuiz}
-          initialMode={activeGameMode}
-          sessionSettings={activeSessionSettings || (activeQuiz.defaultSettings as QuizSessionSettings)}
-          activeSessionId={activeSession?.id}
-          isTeacher={Boolean(teacher) && activeSessionSettings?.presentationTarget === 'smartboard' && !initialNav.pin && !isJoinedViaStudentLobby}
-          onFinishQuiz={handleFinishQuiz}
-          onExit={() => {
-            setIsJoinedViaStudentLobby(false);
-            if (teacher) {
-              setCurrentScreen('teacher-dashboard');
-              saveNavigationState({ screen: 'teacher-dashboard', replace: false });
-            } else {
-              handleGoHome();
-            }
-          }}
-          isDark={isDark}
-          onToggleTheme={toggleTheme}
-          isMuted={isMuted}
-          onToggleMute={toggleMute}
-          playClick={playClick}
-          playCorrect={playCorrect}
-          playWrong={playWrong}
-          playTick={playTick}
-          playReveal={playReveal}
-          playApplause={playApplause}
-        />
+        <React.Suspense fallback={<ScreenLoadingFallback message="Memasuki arena kuis..." isDark={isDark} />}>
+          <QuizArena
+            quiz={activeQuiz}
+            initialMode={activeGameMode}
+            sessionSettings={activeSessionSettings || (activeQuiz.defaultSettings as QuizSessionSettings)}
+            activeSessionId={activeSession?.id}
+            isTeacher={Boolean(teacher) && activeSessionSettings?.presentationTarget === 'smartboard' && !initialNav.pin && !isJoinedViaStudentLobby}
+            onFinishQuiz={handleFinishQuiz}
+            onExit={() => {
+              setIsJoinedViaStudentLobby(false);
+              if (teacher) {
+                setCurrentScreen('teacher-dashboard');
+                saveNavigationState({ screen: 'teacher-dashboard', replace: false });
+              } else {
+                handleGoHome();
+              }
+            }}
+            isDark={isDark}
+            onToggleTheme={toggleTheme}
+            isMuted={isMuted}
+            onToggleMute={toggleMute}
+            playClick={playClick}
+            playCorrect={playCorrect}
+            playWrong={playWrong}
+            playTick={playTick}
+            playReveal={playReveal}
+            playApplause={playApplause}
+          />
+        </React.Suspense>
       )}
 
       {currentScreen === 'result' && activeQuiz && (
-        <QuizResult
-          quiz={activeQuiz}
-          answers={lastAnswers}
-          totalTimeSpent={lastTimeSpent}
-          onReplay={handleReplay}
-          onGoHome={handleGoHome}
-          isDark={isDark}
-          onToggleTheme={toggleTheme}
-          playClick={playClick}
-          playCelebration={playCelebration}
-        />
+        <React.Suspense fallback={<ScreenLoadingFallback message="Menghitung skor dan prestasi..." isDark={isDark} />}>
+          <QuizResult
+            quiz={activeQuiz}
+            answers={lastAnswers}
+            totalTimeSpent={lastTimeSpent}
+            onReplay={handleReplay}
+            onGoHome={handleGoHome}
+            isDark={isDark}
+            onToggleTheme={toggleTheme}
+            playClick={playClick}
+            playCelebration={playCelebration}
+          />
+        </React.Suspense>
       )}
     </div>
   );

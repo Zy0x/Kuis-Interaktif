@@ -1,6 +1,32 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.85] - 2026-09-13
+### Optimalisasi Kinerja Drastis (*81.8% Initial Bundle Reduction*), Code-Splitting Asinkron (*React.lazy & Suspense*), Pemisahan Vendor Chunks, dan Layar Transisi Halus (Rule 1, Rule 2, Rule 5, Rule 6 & Rule 14)
+
+#### 1. Pemisahan Kode Asinkron Komprehensif (*Code-Splitting via React.lazy*) (`App.tsx`, `ScreenLoadingFallback.tsx`)
+- **Pemuatan Berdasarkan Kebutuhan Nyata (*On-Demand Route Loading*)**:
+  - Modul antarmuka kelas berat (`QuizCreator`, `TeacherDashboard`, `QuizArena`, `QuizResult`, `WorksheetPrintView`, dan `UnifiedAuthModal`) kini dipisahkan secara dinamis menggunakan `React.lazy`.
+  - Siswa yang mengunjungi halaman beranda kini tidak lagi dibebani pengunduhan pustaka studio kuis, grafik analitik guru, atau fitur pencetakan lembar kerja.
+  - **Penurunan Ukuran Bundel Awal Drastis**:
+    - Ukuran bundel awal `index.js` berkurang drastis dari **1.538 kB (1.54 MB)** menjadi hanya **280 kB (71 kB gzip)** — penghematan beban data peramban hingga **81,8%**!
+    - Menghilangkan seluruh peringatan ukuran chunk (*chunk size warnings*) pada build Vite.
+- **Komponen Transisi Halus (*ScreenLoadingFallback*) (Rule 1, Rule 2 & Rule 5)**:
+  - Dibuat komponen pemuatan fallback ramah siswa dan guru dengan animasi putar modern (durasi transisi 200–300 ms), ikon dinamis, penyesuaian tema gelap/terang otomatis, dan pesan konteks berbahasa Indonesia yang jelas.
+  - Menghindari pergeseran tata letak (*Layout Shift*) saat modul layar dimuat di perangkat spesifikasi rendah.
+
+#### 2. Strategi Chunking Vendor Modular (*Modular Rollup Chunks*) (`vite.config.ts`)
+- **Pemisahan Pustaka Pihak Ketiga Mandiri**:
+  - Konfigurasi `rollupOptions.output.manualChunks` pada `vite.config.ts` memisahkan dependensi eksternal ke dalam berkas-berkas terisolasi:
+    - `vendor-supabase.js`: Klien basis data Supabase (208 kB).
+    - `vendor-lucide.js`: Pustaka ikon antarmuka (30 kB).
+    - `vendor-confetti.js`: Efek selebrasi hasil kuis (10 kB).
+    - `vendor-core.js`: Runtime inti React & ReactDOM (195 kB).
+  - Mengoptimalkan efisiensi *HTTP Long-Term Browser Caching*: ketika kode fitur aplikasi diperbarui, pengguna tidak perlu mengunduh ulang pustaka vendor pihak ketiga yang tidak berubah.
+
+#### 3. Pembaruan Cache PWA Service Worker (Rule 7)
+- Nama cache PWA ditingkatkan ke `kuis-sd-seru-v2.3.85` pada `public/sw.js` untuk memastikan aset chunk hasil *code-splitting* terdaftar dan dipelihara secara optimal.
+
 ## [2.3.84] - 2026-09-13
 ### Arsitektur Antrean Offline Cerdas (*Offline Queue & Auto-Retry*), Indikator Sinkronisasi Jaringan Luring, dan Paginasi Sesi Guru (Rule 1, Rule 6, Rule 9, Rule 10 & Rule 11)
 

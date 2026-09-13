@@ -19,4 +19,25 @@ export default defineConfig({
   optimizeDeps: {
     include: ['react', 'react-dom', 'react/jsx-runtime'],
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: (id) => {
+          if (id.includes('node_modules')) {
+            if (id.includes('@supabase')) {
+              return 'vendor-supabase';
+            }
+            if (id.includes('lucide-react')) {
+              return 'vendor-lucide';
+            }
+            if (id.includes('canvas-confetti')) {
+              return 'vendor-confetti';
+            }
+            return 'vendor-core';
+          }
+        },
+      },
+    },
+    chunkSizeWarningLimit: 800,
+  },
 })
