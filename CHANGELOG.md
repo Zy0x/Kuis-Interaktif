@@ -1,6 +1,23 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.86] - 2026-09-13
+### Penegakan Konfirmasi Berlapis Penuh pada Pembersihan Database (*Password, CAPTCHA Anti-Bot, Teks Konfirmasi, & Checkbox*), dan Penyelarasan Target Sentuh Dropdown Guru (Rule 1, Rule 9, Rule 11 & Rule 13)
+
+#### 1. Konfirmasi Berlapis Penuh Pembersihan Database (*Multi-Layer DB Wipe Protection*) (`AdminDatabaseBackupModal.tsx`, `backupService.ts`) (Rule 13 - Critical & Non-Negotiable)
+- **Integrasi CAPTCHA Anti-Bot Dinamis (Rule 13)**:
+  - Menyempurnakan panel darurat pembersihan database dengan 4 lapis konfirmasi keamanan ketat:
+    - **Lapis 1**: Verifikasi kata sandi akun Super-Admin / Master Teacher.
+    - **Lapis 2 (Baru)**: Kode keamanan anti-bot dinamis (*CAPTCHA*) 5-karakter alfanumerik acak dengan tampilan bergaris (*noise lines*), tombol acak ulang instan (`min-h-[44px] min-w-[44px]`), dan input validasi (*case-insensitive*).
+    - **Lapis 3**: Pengetikan persis kalimat konfirmasi `HAPUS SELURUH DATABASE KUIS SD SERU`.
+    - **Lapis 4**: Checkbox persetujuan bahwa tindakan permanen dan tidak dapat dibatalkan.
+- **Validasi Backend / Layanan (*backupService.ts*)**:
+  - Prosedur `BackupService.wipeEntireDatabase` kini memvalidasi `expectedCaptcha` secara ketat sebelum query penghapusan atau audit log dieksekusi. Tombol eksekusi dikunci (*disabled*) hingga seluruh 4 lapisan terpenuhi secara sempurna.
+
+#### 2. Penyelarasan Target Sentuh Dropdown Guru di Arena Kuis (Rule 1 - Mobile-First Precision)
+- **Komponen Pemilih Soal Cepat Guru (`QuizArena.tsx`)**:
+  - Elemen `<select>` lompat nomor soal pada mode dipandu guru dan pratinjau ditingkatkan dengan `min-h-[44px] inline-flex items-center px-2.5 py-1.5 rounded-xl`, memastikan guru di perangkat seluler atau smartboard layar sentuh dapat mengganti soal dengan mudah tanpa risiko salah sentuh.
+
 ## [2.3.85] - 2026-09-13
 ### Optimalisasi Kinerja Drastis (*81.8% Initial Bundle Reduction*), Code-Splitting Asinkron (*React.lazy & Suspense*), Pemisahan Vendor Chunks, dan Layar Transisi Halus (Rule 1, Rule 2, Rule 5, Rule 6 & Rule 14)
 

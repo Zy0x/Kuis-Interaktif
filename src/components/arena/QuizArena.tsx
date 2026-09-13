@@ -1046,7 +1046,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                   <select
                     value={currentIndex}
                     onChange={(e) => handleJumpToQuestion(Number(e.target.value))}
-                    className="text-[11px] sm:text-xs font-black text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/70 border border-blue-200/80 dark:border-blue-900/80 px-2 py-0.5 rounded-md cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    className="text-[11px] sm:text-xs font-black text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/70 border border-blue-200/80 dark:border-blue-900/80 px-2.5 py-1.5 rounded-xl cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500 min-h-[44px] inline-flex items-center"
                     title="Lompat ke Nomor Soal Tertentu (Khusus Guru)"
                     aria-label="Pilih Nomor Soal"
                   >

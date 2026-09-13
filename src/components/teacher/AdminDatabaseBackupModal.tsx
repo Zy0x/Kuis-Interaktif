@@ -31,6 +31,15 @@ interface AdminDatabaseBackupModalProps {
   playClick: () => void;
 }
 
+function generateCaptchaCode(): string {
+  const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+  let res = '';
+  for (let i = 0; i < 5; i++) {
+    res += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return res;
+}
+
 export const AdminDatabaseBackupModal: React.FC<AdminDatabaseBackupModalProps> = ({
   isOpen,
   onClose,
@@ -74,6 +83,8 @@ export const AdminDatabaseBackupModal: React.FC<AdminDatabaseBackupModalProps> =
 
   // Danger Zone (Wipe) State
   const [wipePassword, setWipePassword] = useState('');
+  const [wipeCaptchaCode, setWipeCaptchaCode] = useState(() => generateCaptchaCode());
+  const [wipeCaptchaInput, setWipeCaptchaInput] = useState('');
   const [wipePhrase, setWipePhrase] = useState('');
   const [wipeAgreed, setWipeAgreed] = useState(false);
   const [isWiping, setIsWiping] = useState(false);
@@ -201,20 +212,37 @@ export const AdminDatabaseBackupModal: React.FC<AdminDatabaseBackupModalProps> =
     }
   };
 
+  const handleRefreshCaptcha = () => {
+    playClick();
+    setWipeCaptchaCode(generateCaptchaCode());
+    setWipeCaptchaInput('');
+  };
+
   const handleExecuteWipe = async (e: React.FormEvent) => {
     e.preventDefault();
     playClick();
     setWipeError('');
     setIsWiping(true);
     try {
-      await BackupService.wipeEntireDatabase(wipePassword, wipePhrase, wipeAgreed, teacherEmail);
+      await BackupService.wipeEntireDatabase(
+        wipePassword,
+        wipePhrase,
+        wipeAgreed,
+        teacherEmail,
+        wipeCaptchaInput,
+        wipeCaptchaCode
+      );
       setWipeSuccess(true);
       setWipePassword('');
+      setWipeCaptchaInput('');
+      setWipeCaptchaCode(generateCaptchaCode());
       setWipePhrase('');
       setWipeAgreed(false);
       loadHistory();
     } catch (err: any) {
       setWipeError(err.message || 'Gagal membersihkan database.');
+      setWipeCaptchaCode(generateCaptchaCode());
+      setWipeCaptchaInput('');
     } finally {
       setIsWiping(false);
     }
@@ -692,9 +720,38 @@ export const AdminDatabaseBackupModal: React.FC<AdminDatabaseBackupModalProps> =
                   />
                 </div>
 
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    Lapis 2: Masukkan Kode Keamanan Anti-Bot (CAPTCHA Rule 13)
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <div className="px-3.5 py-2 bg-slate-200 dark:bg-slate-750 rounded-xl border border-slate-300 dark:border-slate-600 tracking-[0.3em] font-mono text-base font-black text-rose-700 dark:text-rose-400 select-none shadow-inner line-through decoration-rose-500/40 decoration-2 flex items-center justify-center min-w-[90px]">
+                      {wipeCaptchaCode}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleRefreshCaptcha}
+                      className="p-2.5 rounded-xl text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors"
+                      title="Acak Ulang Kode CAPTCHA"
+                      aria-label="Acak Ulang Kode CAPTCHA"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                    </button>
+                    <input
+                      type="text"
+                      maxLength={5}
+                      value={wipeCaptchaInput}
+                      onChange={(e) => setWipeCaptchaInput(e.target.value.toUpperCase())}
+                      placeholder="Ketik 5 digit kode di kiri..."
+                      className="flex-1 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold uppercase tracking-wider focus:outline-none focus:border-rose-500 min-h-[44px]"
+                      required
+                    />
+                  </div>
+                </div>
+
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    Lapis 2: Ketik Tepat Kalimat Konfirmasi: <code className="bg-slate-200 dark:bg-slate-700 px-1 py-0.5 rounded text-[11px] font-black text-rose-600">HAPUS SELURUH DATABASE KUIS SD SERU</code>
+                    Lapis 3: Ketik Tepat Kalimat Konfirmasi: <code className="bg-slate-200 dark:bg-slate-700 px-1 py-0.5 rounded text-[11px] font-black text-rose-600">HAPUS SELURUH DATABASE KUIS SD SERU</code>
                   </label>
                   <input
                     type="text"
@@ -716,13 +773,19 @@ export const AdminDatabaseBackupModal: React.FC<AdminDatabaseBackupModalProps> =
                     required
                   />
                   <label htmlFor="wipeAgreeCheck" className="text-xs font-medium text-slate-700 dark:text-slate-300 cursor-pointer select-none">
-                    Lapis 3: Saya memahami sepenuhnya bahwa tindakan ini permanen dan menghapus seluruh database.
+                    Lapis 4: Saya memahami sepenuhnya bahwa tindakan ini permanen dan menghapus seluruh database.
                   </label>
                 </div>
 
                 <button
                   type="submit"
-                  disabled={isWiping || !wipeAgreed || wipePhrase.trim() !== 'HAPUS SELURUH DATABASE KUIS SD SERU'}
+                  disabled={
+                    isWiping || 
+                    !wipeAgreed || 
+                    wipePhrase.trim() !== 'HAPUS SELURUH DATABASE KUIS SD SERU' ||
+                    wipeCaptchaInput.trim().toUpperCase() !== wipeCaptchaCode.toUpperCase() ||
+                    wipePassword.trim().length < 6
+                  }
                   className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-black flex items-center justify-center gap-2 shadow-md min-h-[44px] transition-colors disabled:opacity-40"
                 >
                   {isWiping ? (

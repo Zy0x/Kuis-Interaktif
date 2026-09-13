@@ -584,13 +584,15 @@ export const BackupService = {
 
   /**
    * Prosedur Darurat: Hapus Seluruh Database (Rule 13)
-   * Dilindungi 3 lapis otorisasi ketat: Sandi, Kalimat Tepat, & Checkbox
+   * Dilindungi konfirmasi berlapis ketat: Sandi, CAPTCHA, Kalimat Tepat, & Checkbox
    */
   async wipeEntireDatabase(
     superAdminPassword: string,
     confirmationPhrase: string,
     isConfirmedRisk: boolean,
-    teacherEmail: string
+    teacherEmail: string,
+    captchaInput?: string,
+    expectedCaptcha?: string
   ): Promise<{ success: boolean; message: string }> {
     // 1. Verifikasi Super-Admin
     const isMaster = teacherEmail.trim().toLowerCase() === MASTER_TEACHER_EMAIL.toLowerCase();
@@ -603,13 +605,18 @@ export const BackupService = {
       throw new Error('Kata sandi Super-Admin wajib dimasukkan dengan benar.');
     }
 
-    // 3. Verifikasi Kalimat Konfirmasi Persis
+    // 3. Verifikasi CAPTCHA Anti-Bot (Rule 13)
+    if (expectedCaptcha && (!captchaInput || captchaInput.trim().toUpperCase() !== expectedCaptcha.trim().toUpperCase())) {
+      throw new Error('Kode verifikasi CAPTCHA tidak cocok! Silakan periksa kembali.');
+    }
+
+    // 4. Verifikasi Kalimat Konfirmasi Persis
     const REQUIRED_PHRASE = 'HAPUS SELURUH DATABASE KUIS SD SERU';
     if (confirmationPhrase.trim() !== REQUIRED_PHRASE) {
       throw new Error(`Kalimat konfirmasi tidak sesuai! Anda wajib mengetik tepat: "${REQUIRED_PHRASE}"`);
     }
 
-    // 4. Verifikasi Checkbox Resiko Permanen
+    // 5. Verifikasi Checkbox Resiko Permanen
     if (!isConfirmedRisk) {
       throw new Error('Anda wajib mencentang persetujuan bahwa penghapusan bersifat permanen dan tidak dapat dibatalkan.');
     }
