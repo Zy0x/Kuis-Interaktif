@@ -7,7 +7,7 @@ import { supabase, DataManager } from './supabaseClient';
 import { MASTER_TEACHER_EMAIL } from '../types/quiz';
 
 export interface EncryptedBackupPackage {
-  format: 'KUIS_SD_ENCRYPTED_BACKUP_V1';
+  format: 'KUIS_SD_ENCRYPTED_BACKUP_V1' | 'KUIS_SD_ENCRYPTED_BACKUP_V2';
   appVersion: string;
   createdAt: string;
   algorithm: 'AES-256-GCM';
@@ -17,6 +17,7 @@ export interface EncryptedBackupPackage {
   ivHex: string;
   checksumSha256: string;
   fileSizeBytes: number;
+  compression?: 'GZIP' | 'NONE';
   tableCounts: Record<string, number>;
   ciphertext: string;
 }
@@ -109,19 +110,33 @@ async function encryptText(text: string, password: string): Promise<{
   saltHex: string;
   ivHex: string;
   checksumSha256: string;
+  compression: 'GZIP' | 'NONE';
 }> {
   const checksumSha256 = await computeSha256(text);
   const salt = crypto.getRandomValues(new Uint8Array(16));
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const key = await deriveKey(password, salt);
 
-  const enc = new TextEncoder();
-  const encodedText = enc.encode(text);
+  let rawBytes: Uint8Array;
+  let compression: 'GZIP' | 'NONE' = 'NONE';
+  if (typeof CompressionStream !== 'undefined') {
+    try {
+      const stream = new Blob([text]).stream().pipeThrough(new CompressionStream('gzip'));
+      const response = new Response(stream);
+      const buffer = await response.arrayBuffer();
+      rawBytes = new Uint8Array(buffer);
+      compression = 'GZIP';
+    } catch {
+      rawBytes = new TextEncoder().encode(text);
+    }
+  } else {
+    rawBytes = new TextEncoder().encode(text);
+  }
 
   const encryptedBuffer = await crypto.subtle.encrypt(
     { name: 'AES-GCM', iv },
     key,
-    encodedText
+    rawBytes as any
   );
 
   // Convert encrypted buffer to base64
@@ -137,6 +152,7 @@ async function encryptText(text: string, password: string): Promise<{
     saltHex: bufferToHex(salt.buffer),
     ivHex: bufferToHex(iv.buffer),
     checksumSha256,
+    compression,
   };
 }
 
@@ -145,7 +161,8 @@ async function decryptText(
   password: string,
   saltHex: string,
   ivHex: string,
-  expectedChecksum: string
+  expectedChecksum: string,
+  compression: 'GZIP' | 'NONE' = 'NONE'
 ): Promise<string> {
   const salt = hexToBuffer(saltHex);
   const iv = hexToBuffer(ivHex);
@@ -164,12 +181,24 @@ async function decryptText(
       key,
       bytes
     );
-  } catch (err) {
+  } catch {
     throw new Error('Kata sandi enkripsi salah atau arsip cadangan rusak.');
   }
 
-  const dec = new TextDecoder();
-  const plaintext = dec.decode(decryptedBuffer);
+  let plaintext: string;
+  if (compression === 'GZIP' && typeof DecompressionStream !== 'undefined') {
+    try {
+      const stream = new Blob([decryptedBuffer]).stream().pipeThrough(new DecompressionStream('gzip'));
+      const response = new Response(stream);
+      plaintext = await response.text();
+    } catch {
+      const dec = new TextDecoder();
+      plaintext = dec.decode(decryptedBuffer);
+    }
+  } else {
+    const dec = new TextDecoder();
+    plaintext = dec.decode(decryptedBuffer);
+  }
 
   const actualChecksum = await computeSha256(plaintext);
   if (actualChecksum !== expectedChecksum) {
@@ -279,10 +308,12 @@ export const BackupService = {
       quizSessions = DataManager.getActiveSessions() as any[];
     }
 
+    const CURRENT_BACKUP_VERSION = '2.3.87';
+
     // 2. Generate SQL Dump lengkap
     const sqlHeader = `-- ==========================================================\n` +
       `-- ARSIP CADANGAN RESMI: KUIS SD SERU (ENTERPRISE DUMP)\n` +
-      `-- Versi Aplikasi: 2.3.81\n` +
+      `-- Versi Aplikasi: ${CURRENT_BACKUP_VERSION}\n` +
       `-- Waktu Ekspor: ${new Date().toISOString()}\n` +
       `-- Operator: ${authorName}\n` +
       `-- ==========================================================\n\n` +
@@ -301,7 +332,7 @@ export const BackupService = {
       sqlFooter;
 
     const payload: DatabaseDumpPayload = {
-      version: '2.3.81',
+      version: CURRENT_BACKUP_VERSION,
       exportedAt: new Date().toISOString(),
       database: 'Supabase PostgreSQL (public)',
       sqlDump,
@@ -325,17 +356,17 @@ export const BackupService = {
 
     const plainString = JSON.stringify(payload);
 
-    // 3. Enkripsi dengan AES-256-GCM
+    // 3. Enkripsi dengan AES-256-GCM + GZIP (Rule 13)
     const encResult = await encryptText(plainString, encryptionPassword);
 
     const now = new Date();
     const pad = (n: number) => String(n).padStart(2, '0');
     const timestampStr = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
-    const backupFileName = `backup_kuis_sd_seru_${timestampStr}_v2.3.81.sql.enc`;
+    const backupFileName = `backup_kuis_sd_seru_${timestampStr}_v${CURRENT_BACKUP_VERSION}.sql.gz.enc`;
 
     const backupPackage: EncryptedBackupPackage = {
-      format: 'KUIS_SD_ENCRYPTED_BACKUP_V1',
-      appVersion: '2.3.81',
+      format: 'KUIS_SD_ENCRYPTED_BACKUP_V2',
+      appVersion: CURRENT_BACKUP_VERSION,
       createdAt: now.toISOString(),
       algorithm: 'AES-256-GCM',
       kdf: 'PBKDF2-SHA256',
@@ -344,6 +375,7 @@ export const BackupService = {
       ivHex: encResult.ivHex,
       checksumSha256: encResult.checksumSha256,
       fileSizeBytes: plainString.length,
+      compression: encResult.compression,
       tableCounts: {
         quizzes: quizzes.length,
         quiz_questions: quizQuestions.length,
@@ -439,7 +471,7 @@ export const BackupService = {
       throw new Error('Format berkas tidak valid. Pastikan Anda mengunggah berkas cadangan .sql.enc atau .enc resmi.');
     }
 
-    if (pkg.format !== 'KUIS_SD_ENCRYPTED_BACKUP_V1') {
+    if (pkg.format !== 'KUIS_SD_ENCRYPTED_BACKUP_V1' && pkg.format !== 'KUIS_SD_ENCRYPTED_BACKUP_V2') {
       throw new Error('Versi format cadangan tidak didukung atau berkas bukan hasil ekspor Kuis SD Seru.');
     }
 
@@ -448,7 +480,8 @@ export const BackupService = {
       password,
       pkg.saltHex,
       pkg.ivHex,
-      pkg.checksumSha256
+      pkg.checksumSha256,
+      pkg.compression || 'NONE'
     );
 
     let payload: DatabaseDumpPayload;
@@ -468,7 +501,11 @@ export const BackupService = {
     file: File,
     password: string,
     operatorName: string = 'Super Admin',
-    onProgress?: (progressText: string, percent: number) => void
+    onProgress?: (progressText: string, percent: number) => void,
+    options?: {
+      domainAdjustment?: { fromDomain: string; toDomain: string };
+      remapIds?: boolean;
+    }
   ): Promise<{
     restoredQuizzes: number;
     restoredQuestions: number;
@@ -481,6 +518,26 @@ export const BackupService = {
     onProgress?.('Verifikasi integritas SHA-256 berhasil. Memulai impor bertahap...', 30);
 
     const { tables } = payload;
+
+    // Penyesuaian Domain Cross-Domain & Remapping jika diaktifkan (Rule 13)
+    if (options?.domainAdjustment?.fromDomain && options?.domainAdjustment?.toDomain) {
+      const { fromDomain, toDomain } = options.domainAdjustment;
+      if (tables.quizzes) {
+        tables.quizzes.forEach((q) => {
+          if (typeof q.coverEmoji === 'string' && q.coverEmoji.includes(fromDomain)) {
+            q.coverEmoji = q.coverEmoji.replaceAll(fromDomain, toDomain);
+          }
+        });
+      }
+      if (tables.quiz_questions) {
+        tables.quiz_questions.forEach((q) => {
+          if (typeof q.imageUrl === 'string' && q.imageUrl.includes(fromDomain)) {
+            q.imageUrl = q.imageUrl.replaceAll(fromDomain, toDomain);
+          }
+        });
+      }
+    }
+
     let restoredQuizzes = 0;
     let restoredQuestions = 0;
     let restoredAttempts = 0;

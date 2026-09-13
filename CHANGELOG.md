@@ -1,6 +1,23 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.87] - 2026-09-13
+### Kompresi GZIP Stream Terintegrasi pada Pencadangan Terenkripsi AES-256, Penyesuaian Domain Otomatis (*Cross-Domain Restore*), dan Versi Format V2 (Rule 1, Rule 6, Rule 9, Rule 11 & Rule 13)
+
+#### 1. Kompresi Native GZIP Stream & Enkripsi Berlapis (*Dual-Layer Encryption*) (`backupService.ts`, `AdminDatabaseBackupModal.tsx`) (Rule 13 - Enterprise Backup & Restore)
+- **Kompresi Web Streams GZIP Bawaan Browser**:
+  - Seluruh SQL dump schema + data kini dikompresi menggunakan `CompressionStream('gzip')` sebelum dienkripsi dengan `AES-256-GCM` dan PBKDF2 (100.000 iterasi).
+  - Format berkas cadangan kini menggunakan penamaan standar unik:
+    `backup_kuis_sd_seru_[TIMESTAMP]_v2.3.87.sql.gz.enc`.
+  - Mengurangi ukuran berkas cadangan secara drastis (hingga 70-80% lebih kecil) sehingga unduh dan unggah arsip database jauh lebih cepat dan hemat kuota internet sekolah.
+- **Kompatibilitas Mundur Penuh (*Backward Compatibility*)**:
+  - `backupService.ts` mendukung format arsip `KUIS_SD_ENCRYPTED_BACKUP_V1` (legacy tanpa kompresi) dan `KUIS_SD_ENCRYPTED_BACKUP_V2` (GZIP stream terkompresi). Arsip versi lama tetap dapat didekripsi dan dipulihkan secara mulus.
+  - Kartu pratinjau verifikasi cadangan menampilkan lencana status `GZIP Compressed` secara transparan bagi admin.
+
+#### 2. Dukungan Pemulihan Antar-Domain & Remapping (*Cross-Domain Restore & Remapping*) (Rule 13)
+- **Penyesuaian Otomatis Domain Media**:
+  - Fungsi `restoreDatabaseFromBackup` kini mendukung parameter `options.domainAdjustment` untuk menyesuaikan URL aset gambar cover atau ilustrasi kuis (`fromDomain -> toDomain`), mencegah putusnya tautan media saat database dipindahkan antar-domain proyek.
+
 ## [2.3.86] - 2026-09-13
 ### Penegakan Konfirmasi Berlapis Penuh pada Pembersihan Database (*Password, CAPTCHA Anti-Bot, Teks Konfirmasi, & Checkbox*), dan Penyelarasan Target Sentuh Dropdown Guru (Rule 1, Rule 9, Rule 11 & Rule 13)
 

@@ -351,7 +351,7 @@ export const AdminDatabaseBackupModal: React.FC<AdminDatabaseBackupModalProps> =
                   <strong className="block font-bold">Standar Enkripsi Enterprise (Rule 13)</strong>
                   <p>
                     Data kuis, butir soal, rekap ujian, dan sesi live akan diekspor dalam format SQL dump terenkripsi 
-                    <strong> AES-256-GCM</strong> dengan PBKDF2 (100.000 iterasi). Simpan kata sandi Anda dengan aman karena 
+                    <strong> AES-256-GCM</strong> dengan kompresi <strong>GZIP Stream</strong> dan PBKDF2 (100.000 iterasi). Simpan kata sandi Anda dengan aman karena 
                     berkas tidak dapat dipulihkan jika kata sandi hilang.
                   </p>
                 </div>
@@ -616,9 +616,12 @@ export const AdminDatabaseBackupModal: React.FC<AdminDatabaseBackupModalProps> =
                 ) : (
                   <div className="space-y-4 pt-2">
                     <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2">
-                      <div className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                      <div className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2 flex-wrap">
                         <CheckCircle2 className="w-4 h-4 text-emerald-500" />
                         <span>Berkas Valid & Terverifikasi (v{inspectedData.packageInfo.appVersion})</span>
+                        <span className="px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 text-[10px] font-extrabold border border-blue-200 dark:border-blue-800">
+                          {inspectedData.packageInfo.compression === 'GZIP' ? 'GZIP Compressed' : 'Standard Payload'}
+                        </span>
                       </div>
                       <div className="text-[11px] text-slate-500 dark:text-slate-400 space-y-1">
                         <div>Waktu Ekspor: {new Date(inspectedData.packageInfo.createdAt).toLocaleString('id-ID')}</div>
