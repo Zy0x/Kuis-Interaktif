@@ -344,12 +344,25 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
     requireStudentInfo,
   ]);
 
+  const [activeSessionPin, setActiveSessionPin] = useState<string>('');
+
+  // Sinkronkan Game PIN sesi aktif saat modal dibuka
+  useEffect(() => {
+    if (isOpen && quiz) {
+      const existing = DataManager.getActiveSessionByQuizId(quiz.id);
+      if (existing && ['active', 'waiting', 'paused'].includes(existing.status)) {
+        setActiveSessionPin(existing.pinCode);
+      } else {
+        setActiveSessionPin('');
+      }
+    }
+  }, [isOpen, quiz?.id]);
+
   if (!isOpen || !quiz) return null;
 
-  const pin = quiz.pinCode || '1001';
   const totalQuestions = quiz.questions?.length || 0;
 
-  // Helper sync
+  // Helper sync sesi kelas live
   const ensureSessionAndSyncSettings = async (overrides?: Partial<PlayQuizSessionOptions>) => {
     const opts: PlayQuizSessionOptions = {
       mode: overrides?.mode ?? selectedMode,
@@ -372,20 +385,26 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
       overrideCustomQuestionDurations: overrides?.overrideCustomQuestionDurations ?? (durationSelectionType !== 'default' && overrideCustomDurations),
     };
 
-    let existing = DataManager.getActiveSessionByQuizId(quiz.id) || DataManager.getActiveSessionByPin(quiz.pinCode || '');
-    if (existing) {
+    let existing = DataManager.getActiveSessionByQuizId(quiz.id);
+    if (existing && ['active', 'waiting', 'paused'].includes(existing.status)) {
       await DataManager.updateActiveSessionSettings(existing.id, opts);
     } else {
       existing = await DataManager.createActiveSession(quiz, opts, DataManager.getTeacherProfile() || undefined);
     }
+    if (existing?.pinCode) {
+      setActiveSessionPin(existing.pinCode);
+    }
     return existing;
   };
+
+  const currentDisplayPin = activeSessionPin || quiz.pinCode || '6-Digit';
 
   const handleCopyPin = async (e: React.MouseEvent) => {
     e.stopPropagation();
     playClick();
-    await ensureSessionAndSyncSettings();
-    const success = await copyTextToClipboard(pin);
+    const session = await ensureSessionAndSyncSettings();
+    const pinToCopy = session?.pinCode || activeSessionPin || quiz.pinCode || '';
+    const success = await copyTextToClipboard(pinToCopy);
     if (success) {
       setIsCopiedPin(true);
       setTimeout(() => setIsCopiedPin(false), 2000);
@@ -395,8 +414,9 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
   const handleCopyLink = async (e: React.MouseEvent) => {
     e.stopPropagation();
     playClick();
-    await ensureSessionAndSyncSettings();
-    const url = `${window.location.origin}${window.location.pathname}?pin=${pin}`;
+    const session = await ensureSessionAndSyncSettings();
+    const pinToCopy = session?.pinCode || activeSessionPin || quiz.pinCode || '';
+    const url = `${window.location.origin}${window.location.pathname}?pin=${pinToCopy}`;
     const success = await copyTextToClipboard(url);
     if (success) {
       setIsCopiedLink(true);
@@ -407,10 +427,11 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
   const handleShareWhatsApp = async (e: React.MouseEvent) => {
     e.stopPropagation();
     playClick();
-    await ensureSessionAndSyncSettings();
-    const studentUrl = `${window.location.origin}${window.location.pathname}?pin=${pin}`;
+    const session = await ensureSessionAndSyncSettings();
+    const pinToCopy = session?.pinCode || activeSessionPin || quiz.pinCode || '';
+    const studentUrl = `${window.location.origin}${window.location.pathname}?pin=${pinToCopy}`;
     const deadlineStr = pacingType === 'homework' && deadlineAt ? `⏰ Batas Pengumpulan: ${formatIndonesianDeadline(deadlineAt)}\n` : '';
-    const message = `Halo anak-anak dan Ayah/Bunda! 📚\nBerikut tugas kuis interaktif kita:\n\n*${quiz.title}*\n📖 Mata Pelajaran: ${quiz.subject} (Kelas ${quiz.grade})\n${deadlineStr}🔑 PIN Kuis: *${pin}*\n🔗 Tautan Langsung: ${studentUrl}\n\nKerjakan dengan teliti dan raih bintang terbaik! 🌟`;
+    const message = `Halo anak-anak dan Ayah/Bunda! 📚\nBerikut tugas kuis interaktif kita:\n\n*${quiz.title}*\n📖 Mata Pelajaran: ${quiz.subject} (Kelas ${quiz.grade})\n${deadlineStr}🔑 PIN Ruang Kelas: *${pinToCopy}*\n🔗 Tautan Masuk Langsung: ${studentUrl}\n\nKerjakan dengan teliti dan raih bintang terbaik! 🌟`;
 
     const success = await copyTextToClipboard(message);
     if (success) {
@@ -613,7 +634,7 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
               <div className="flex items-center gap-2 bg-white dark:bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-750 shadow-2xs">
                 <span className="text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">PIN</span>
                 <span className="font-black text-base text-blue-600 dark:text-blue-400 font-mono tracking-widest leading-none">
-                  {pin}
+                  {currentDisplayPin}
                 </span>
                 <button
                   type="button"

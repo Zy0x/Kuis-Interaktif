@@ -1,6 +1,33 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.78] - 2026-09-13
+### Arsitektur Game PIN Sesi Live Dinamis (6-Digit) & Kloning Kuis Berbasis UUID Paten (Rule 9, Rule 10 & Rule 11)
+
+#### 1. Pemisahan Total Sesi Kelas Live dengan PIN Kuis Master
+- **Game PIN Dinamis 6 Digit (`generateLiveGamePin`)**:
+  - Setiap sesi kelas live yang dibuka oleh guru (baik dari kuis publik maupun privat) menghasilkan 6 digit PIN ruang kelas unik (contoh: `912 255`).
+  - Tidak lagi menggunakan atau berbagi PIN dengan kuis master (`quiz.pinCode`), menjamin privasi 100% dan mencegah kebocoran antar kelas atau siswa luar.
+  - Bersifat sementara (*ephemeral*): hanya aktif selama sesi kelas dibuka oleh guru.
+- **Pembaruan `PlayQuizModal` & `WaygroundHostView`**:
+  - Sinkronisasi instan Game PIN dinamis 6 digit pada modal host dan tautan undang siswa.
+
+#### 2. Kloning Kuis Berbasis UUID Mandiri & Isolasi Google Drive
+- **UUID Standar RFC4122**:
+  - Saat guru menduplikasi kuis publik, kuis baru mendapatkan UUID unik (`crypto.randomUUID()`).
+  - Seluruh butir soal dalam kuis hasil duplikasi juga mendapatkan UUID baru independen.
+  - Visibilitas otomatis diatur ke `private` di perpustakaan guru yang menyalin.
+- **Isolasi Google Drive Pro (Zero Cross-Contamination)**:
+  - `driveFolderId` pada kuis hasil duplikasi disetel ke `undefined` (bersih), sehingga kuis salinan tidak akan menggunakan ataupun menghapus folder Google Drive milik guru pencipta asli jika kuis salinan kelak dihapus.
+
+#### 3. Penghapusan Tombol "Acak PIN" pada Kuis Master
+- Menghilangkan tombol pengacakan PIN dari `QuizSettingsModal` dan `QuizDetail`. PIN kuis master kini berstatus paten dan terkunci untuk mencegah kerusakan tautan tugas siswa yang telah dibagikan sebelumnya.
+
+#### 4. Proteksi Kuis Privat pada Alur Masuk Beranda
+- Prioritas pencarian PIN di beranda:
+  1. Cek Game PIN 6 digit sesi kelas live aktif $\rightarrow$ Langsung masuk ke Ruang Tunggu Kelas Live.
+  2. Jika bukan sesi live, cek PIN kuis master $\rightarrow$ Jika kuis berstatus `private`, akses mandiri ditolak dengan pesan edukatif ramah: *"Kuis ini bersifat privat. Silakan minta PIN Ruang Kelas (6 digit) dari gurumu saat sesi kuis bersama dimulai."*
+
 ## [2.3.77] - 2026-09-13
 ### Verifikasi End-to-End & Penyempurnaan Propagasi Kuis ID pada Pemilih Gambar (Rule 10 & Rule 11)
 

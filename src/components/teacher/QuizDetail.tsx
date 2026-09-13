@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import type { Quiz, StudentSubmission, TeacherProfile } from '../../types/quiz';
-import { DataManager, generateRandomPin } from '../../lib/supabaseClient';
+import { DataManager } from '../../lib/supabaseClient';
 import { useBackHandler } from '../../lib/navigationHistory';
 import { copyTextToClipboard } from '../../lib/aiQuestionParser';
 import { ConfirmDeleteModal } from '../common/ConfirmDeleteModal';
@@ -13,7 +13,6 @@ import {
   Printer, 
   Copy, 
   Check, 
-  RotateCcw, 
   Globe, 
   Lock, 
   Trash2, 
@@ -82,9 +81,8 @@ export const QuizDetail: React.FC<QuizDetailProps> = ({
   const [isLoadingSubs, setIsLoadingSubs] = useState(true);
   const [copiedPin, setCopiedPin] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
-  const [currentPin, setCurrentPin] = useState(quiz.pinCode || '1001');
+  const currentPin = quiz.pinCode || '1001';
   const [currentVisibility, setCurrentVisibility] = useState<'public' | 'private'>(quiz.visibility || 'public');
-  const [isUpdatingPin, setIsUpdatingPin] = useState(false);
   const [isUpdatingVis, setIsUpdatingVis] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -151,21 +149,6 @@ export const QuizDetail: React.FC<QuizDetailProps> = ({
       setCopiedLink(true);
       showToast('✓ Tautan kuis berhasil disalin!');
       setTimeout(() => setCopiedLink(false), 2000);
-    }
-  };
-
-  const handleRandomizePin = async () => {
-    playClick();
-    setIsUpdatingPin(true);
-    const newPin = generateRandomPin();
-    setCurrentPin(newPin);
-    try {
-      await onUpdateQuizSettings(quiz.id, { pinCode: newPin });
-      showToast(`✓ PIN baru dibuat: ${newPin}`);
-    } catch {
-      showToast('Gagal mengubah PIN.');
-    } finally {
-      setIsUpdatingPin(false);
     }
   };
 
@@ -342,16 +325,6 @@ export const QuizDetail: React.FC<QuizDetailProps> = ({
                     title="Salin PIN"
                   >
                     {copiedPin ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleRandomizePin}
-                    disabled={isUpdatingPin}
-                    className="p-2 rounded-xl bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-blue-600 border border-slate-200 dark:border-slate-700 min-h-[38px] min-w-[38px] flex items-center justify-center transition-colors disabled:opacity-50"
-                    title="Buat PIN Baru Secara Acak"
-                  >
-                    <RotateCcw className={`w-4 h-4 ${isUpdatingPin ? 'animate-spin' : ''}`} />
                   </button>
                 </div>
               </div>

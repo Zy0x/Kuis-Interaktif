@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import type { Quiz } from '../../types/quiz';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 import { useBackHandler } from '../../lib/navigationHistory';
-import { generateRandomPin } from '../../lib/supabaseClient';
 import { copyTextToClipboard } from '../../lib/aiQuestionParser';
 import { useDrawerSwipeDown } from '../../hooks/useDrawerSwipeDown';
 import { DrawerHandle } from './DrawerHandle';
@@ -12,7 +11,6 @@ import {
   Globe, 
   Lock, 
   KeyRound, 
-  RefreshCw, 
   Copy, 
   Check, 
   Printer, 
@@ -66,7 +64,6 @@ export const QuizSettingsModal: React.FC<QuizSettingsModalProps> = ({
   const [pin, setPin] = useState<string>('1001');
   const [isDuplicating, setIsDuplicating] = useState(false);
   const [isUpdatingVisibility, setIsUpdatingVisibility] = useState(false);
-  const [isRandomizingPin, setIsRandomizingPin] = useState(false);
   const [isCopiedPin, setIsCopiedPin] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -77,7 +74,6 @@ export const QuizSettingsModal: React.FC<QuizSettingsModalProps> = ({
       setPin(quiz.pinCode || '1001');
       setIsDuplicating(false);
       setIsUpdatingVisibility(false);
-      setIsRandomizingPin(false);
       setToastMessage(null);
     }
   }, [quiz]);
@@ -150,26 +146,6 @@ export const QuizSettingsModal: React.FC<QuizSettingsModalProps> = ({
       showToast('Gagal mengubah visibilitas.');
     } finally {
       setIsUpdatingVisibility(false);
-    }
-  };
-
-  // 5. Konfig PIN: Acak
-  const handleRandomizePin = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (isRandomizingPin) return;
-    playClick();
-    setIsRandomizingPin(true);
-    const newPin = generateRandomPin();
-    setPin(newPin);
-    try {
-      await onSaveSettings(quiz.id, { pinCode: newPin });
-      showToast(`PIN baru: ${newPin}`);
-    } catch (err) {
-      console.error('Gagal memperbarui PIN:', err);
-      setPin(quiz.pinCode || '1001');
-      showToast('Gagal memperbarui PIN.');
-    } finally {
-      setIsRandomizingPin(false);
     }
   };
 
@@ -350,17 +326,6 @@ export const QuizSettingsModal: React.FC<QuizSettingsModalProps> = ({
             </div>
 
             <div className="flex items-center gap-1 shrink-0">
-              <button
-                type="button"
-                onClick={handleRandomizePin}
-                disabled={isRandomizingPin}
-                className="px-2.5 py-1.5 rounded-xl font-semibold text-xs text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 border border-indigo-200 dark:border-indigo-800 flex items-center gap-1 min-h-[44px] transition-colors btn-press"
-                title="Acak PIN"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${isRandomizingPin ? 'animate-spin' : ''}`} />
-                <span>Acak</span>
-              </button>
-
               <button
                 type="button"
                 onClick={handleCopyPin}

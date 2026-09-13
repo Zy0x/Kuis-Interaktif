@@ -277,12 +277,29 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
     setIsPinLoading(true);
 
     try {
+      // 1. Prioritas Utama: Cek apakah kode merupakan Game PIN sesi kelas live yang sedang aktif (Supabase & Lokal)
+      const liveSession = await DataManager.fetchActiveSessionByPin(cleanPin);
+      if (liveSession) {
+        const sessionQuiz = await DataManager.getQuizById(liveSession.quizId);
+        if (sessionQuiz) {
+          onEnterPin(sessionQuiz, liveSession);
+          return;
+        }
+      }
+
+      // 2. Prioritas Kedua: Cek apakah kode merupakan PIN Kuis Master
       const match = await DataManager.getQuizByPin(cleanPin);
       if (match) {
+        // Proteksi Kuis Privat: Tidak boleh diakses mandiri di luar sesi kelas live!
+        if (match.visibility === 'private') {
+          setPinError('Kuis ini bersifat privat. Silakan minta PIN Ruang Kelas (6 digit) dari gurumu saat sesi kuis bersama dimulai.');
+          return;
+        }
+        // Kuis Publik: Izinkan pengerjaan mandiri (Solo Practice)
         const session = DataManager.getActiveSessionByPin(cleanPin);
         onEnterPin(match, session);
       } else {
-        setPinError('PIN Kuis tidak ditemukan. Silakan periksa kembali PIN dari gurumu.');
+        setPinError('Kode PIN tidak ditemukan atau sesi kelas telah berakhir. Silakan periksa kembali PIN dari gurumu.');
       }
     } catch {
       setPinError('Gagal memeriksa PIN. Coba lagi sebentar.');

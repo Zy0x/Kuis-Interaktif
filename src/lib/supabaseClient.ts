@@ -43,9 +43,26 @@ const STORAGE_KEY_TEACHER_PROFILE = 'kuis_sd_teacher_profile_v1';
 const STORAGE_KEY_DELETED_QUIZZES = 'kuis_sd_deleted_quizzes_v1';
 const STORAGE_KEY_QUIZ_SESSIONS = 'kuis_sd_quiz_sessions_v1';
 
-// 4-Digit PIN Helper
+// RFC4122 Standard UUID Generator
+export function generateUUID(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
+// 4-Digit Static Master PIN Helper
 export function generateRandomPin(): string {
   return Math.floor(1000 + Math.random() * 9000).toString();
+}
+
+// 6-Digit Dynamic Live Game Room PIN Helper (Ephemeral & Isolated)
+export function generateLiveGamePin(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
 // Ensure seed quizzes have friendly fallback PINs
@@ -887,21 +904,41 @@ export const DataManager = {
     return updatedQuiz;
   },
 
-  // 5c. Duplicate Quiz (Clone questions and metadata with new PIN)
+  // 5c. Duplicate Quiz (Clone questions and metadata with new UUID and clean isolation)
   async duplicateQuiz(quizId: string): Promise<Quiz | null> {
     const original = await this.getQuizById(quizId);
     if (!original) return null;
     const teacher = this.getTeacherProfile();
-    const newId = 'custom_' + Date.now();
+    const newId = generateUUID();
+
+    // Kloning butir soal dengan UUID baru per soal agar terisolasi sempurna
+    const rawQuestions: QuizQuestion[] = original.questions || [];
+    const clonedQuestions: QuizQuestion[] = rawQuestions.map((q, idx) => ({
+      ...JSON.parse(JSON.stringify(q)),
+      id: generateUUID(),
+      orderNumber: idx + 1,
+    }));
+
+    // PIN master baru yang dipastikan tidak bentrok
+    let newPin = generateRandomPin();
+    const existingQuizzes = this.getAllQuizzes();
+    while (existingQuizzes.some((eq) => eq.pinCode === newPin)) {
+      newPin = generateRandomPin();
+    }
+
     const duplicated: Quiz = {
       ...JSON.parse(JSON.stringify(original)),
       id: newId,
-      title: `${original.title} (Salinan)`,
-      pinCode: generateRandomPin(),
-      creatorId: teacher?.id || original.creatorId,
-      creatorName: teacher?.fullName || original.creatorName,
+      title: `${original.title} (Salinan Saya)`,
+      pinCode: newPin,
+      creatorId: teacher?.id || 'teacher_custom',
+      creatorName: teacher?.fullName || 'Guru Pengguna',
       createdAt: new Date().toISOString(),
+      visibility: 'private', // Kuis hasil duplikasi otomatis privat untuk guru tersebut
+      questions: clonedQuestions,
+      driveFolderId: undefined, // KRUSIAL: Reset driveFolderId agar tidak menimpa/menghapus folder Drive guru asli!
     };
+
     await this.saveCustomQuiz(duplicated);
     return duplicated;
   },
@@ -1823,7 +1860,15 @@ export const DataManager = {
     teacher?: TeacherProfile
   ): Promise<QuizSession> {
     const sessionId = 'sess_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
-    const pin = quiz.pinCode || generateRandomPin();
+    
+    // SELALU buat PIN Ruang Game Live 6-digit yang dinamis & unik untuk sesi ini!
+    // JANGAN PERNAH gunakan quiz.pinCode agar sesi kelas live tidak bocor ke publik atau bertabrakan antar kelas.
+    let livePin = generateLiveGamePin();
+    const activeSessions = this.getActiveSessions();
+    while (activeSessions.some((s) => s.pinCode === livePin && s.status !== 'finished')) {
+      livePin = generateLiveGamePin();
+    }
+    const pin = livePin;
 
     const isTeacherLed = (options.executionMode || 'teacher_led') === 'teacher_led';
     const newSession: QuizSession = {

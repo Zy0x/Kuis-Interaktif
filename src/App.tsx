@@ -131,25 +131,44 @@ export const App: React.FC = () => {
         }
       });
     } else if (pinToMatch) {
-      const session = DataManager.getActiveSessionByPin(pinToMatch);
-      if (session) {
-        setActiveSession(session);
-        setActiveSessionSettings(session.settings);
-        setActiveGameMode(session.settings.mode);
-      }
-      DataManager.getQuizByPin(pinToMatch).then((q) => {
-        if (q) {
-          const settings = resolveSettings(session, q);
-          setActiveSessionSettings(settings);
-          setActiveGameMode(settings.mode);
-          setActiveQuiz(q);
-          if (currentScreen === 'home') {
-            setCurrentScreen('student-lobby');
+      DataManager.fetchActiveSessionByPin(pinToMatch).then(async (liveSession) => {
+        if (liveSession) {
+          const q = await DataManager.getQuizById(liveSession.quizId);
+          if (q) {
+            const settings = resolveSettings(liveSession, q);
+            setActiveSession(liveSession);
+            setActiveSessionSettings(settings);
+            setActiveGameMode(settings.mode);
+            setActiveQuiz(q);
+            if (currentScreen === 'home') {
+              setCurrentScreen('student-lobby');
+            }
+            return;
           }
-        } else if (currentScreen === 'student-lobby') {
-          setCurrentScreen('home');
-          clearNavigationState();
         }
+
+        // Jika bukan sesi live, periksa kuis master
+        DataManager.getQuizByPin(pinToMatch).then((q) => {
+          if (q) {
+            if (q.visibility === 'private') {
+              console.warn('Akses kuis privat ditolak via tautan langsung tanpa sesi live.');
+              setCurrentScreen('home');
+              clearNavigationState();
+              return;
+            }
+            const localSession = DataManager.getActiveSessionByPin(pinToMatch);
+            const settings = resolveSettings(localSession, q);
+            setActiveSessionSettings(settings);
+            setActiveGameMode(settings.mode);
+            setActiveQuiz(q);
+            if (currentScreen === 'home') {
+              setCurrentScreen('student-lobby');
+            }
+          } else if (currentScreen === 'student-lobby') {
+            setCurrentScreen('home');
+            clearNavigationState();
+          }
+        });
       });
     }
   }, [initialNav.quizId, initialNav.pin, currentScreen]);

@@ -1206,7 +1206,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   // Aksi simpan sesungguhnya setelah konfirmasi di PublishQuizModal
   const handleConfirmPublish = () => {
     const finalQuiz: Quiz = {
-      id: editingQuiz?.id || ('quiz_' + Date.now()),
+      id: editingQuiz?.id || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : ('quiz_' + Date.now())),
       title: title.trim(),
       description: description.trim(),
       subject,
