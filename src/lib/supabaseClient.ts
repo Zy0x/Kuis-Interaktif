@@ -323,6 +323,7 @@ export const DataManager = {
           default_game_mode,
           shuffle_questions,
           shuffle_options,
+          drive_folder_id,
           created_at,
           quiz_questions (
             id,
@@ -393,6 +394,7 @@ export const DataManager = {
             defaultGameMode: (row.default_game_mode as GameMode) || 'standard',
             shuffleQuestions: Boolean(row.shuffle_questions),
             shuffleOptions: Boolean(row.shuffle_options),
+            driveFolderId: row.drive_folder_id || undefined,
             createdAt: row.created_at,
             questions: rawQuestions.map((q) => {
               const rawOpts = Array.isArray(q.options) ? q.options : (typeof q.options === 'string' ? JSON.parse(q.options || '[]') : []);
@@ -485,6 +487,7 @@ export const DataManager = {
             default_game_mode,
             shuffle_questions,
             shuffle_options,
+            drive_folder_id,
             quiz_questions (
               id,
               question_text,
@@ -541,6 +544,7 @@ export const DataManager = {
             defaultGameMode: (data.default_game_mode as GameMode) || 'standard',
             shuffleQuestions: Boolean(data.shuffle_questions),
             shuffleOptions: Boolean(data.shuffle_options),
+            driveFolderId: data.drive_folder_id || undefined,
             questions: rawQuestions.map((q) => {
               const rawOpts = Array.isArray(q.options) ? q.options : (typeof q.options === 'string' ? JSON.parse(q.options || '[]') : []);
               const distractors = rawOpts
@@ -607,6 +611,7 @@ export const DataManager = {
             default_game_mode,
             shuffle_questions,
             shuffle_options,
+            drive_folder_id,
             quiz_questions (
               id,
               question_text,
@@ -662,6 +667,7 @@ export const DataManager = {
             defaultGameMode: (data.default_game_mode as GameMode) || 'standard',
             shuffleQuestions: Boolean(data.shuffle_questions),
             shuffleOptions: Boolean(data.shuffle_options),
+            driveFolderId: data.drive_folder_id || undefined,
             questions: rawQuestions.map((q) => {
               const rawOpts = Array.isArray(q.options) ? q.options : (typeof q.options === 'string' ? JSON.parse(q.options || '[]') : []);
               const distractors = rawOpts
@@ -749,6 +755,7 @@ export const DataManager = {
           default_game_mode: quiz.defaultGameMode || 'standard',
           shuffle_questions: quiz.shuffleQuestions ?? false,
           shuffle_options: quiz.shuffleOptions ?? false,
+          drive_folder_id: quiz.driveFolderId || null,
         });
 
         // Insert questions
@@ -898,6 +905,7 @@ export const DataManager = {
         if (updates.defaultGameMode !== undefined) dbUpdates.default_game_mode = updates.defaultGameMode;
         if (updates.shuffleQuestions !== undefined) dbUpdates.shuffle_questions = updates.shuffleQuestions;
         if (updates.shuffleOptions !== undefined) dbUpdates.shuffle_options = updates.shuffleOptions;
+        if (updates.driveFolderId !== undefined) dbUpdates.drive_folder_id = updates.driveFolderId;
 
         if (Object.keys(dbUpdates).length > 0) {
           await supabase
@@ -2661,24 +2669,26 @@ export const DataManager = {
               .maybeSingle();
 
             if (!existingQ) {
+              const masterQuiz = this.getAllQuizzes().find((q) => q.id === finishedSession.quizId);
               await supabase.from('quizzes').upsert({
                 id: finishedSession.quizId,
                 title: finishedSession.quizTitle,
-                description: '',
+                description: masterQuiz?.description || '',
                 subject: finishedSession.subject,
                 target_grade: finishedSession.grade,
-                duration_per_question_sec: 30,
+                duration_per_question_sec: masterQuiz?.durationPerQuestionSec || 30,
                 cover_emoji: finishedSession.quizCover || '⭐',
-                theme_color: 'from-blue-600 to-indigo-600',
-                badge_title: 'Bintang Juara',
-                pin_code: finishedSession.pinCode,
+                theme_color: masterQuiz?.themeColor || 'from-blue-600 to-indigo-600',
+                badge_title: masterQuiz?.badgeTitle || 'Bintang Juara',
+                pin_code: masterQuiz?.pinCode || `P${Date.now().toString().slice(-5)}`,
                 creator_id: finishedSession.teacherId || null,
                 creator_name: finishedSession.teacherName || null,
-                visibility: 'public',
+                visibility: masterQuiz?.visibility || 'public',
                 is_published: true,
-                default_game_mode: 'standard',
+                default_game_mode: masterQuiz?.defaultGameMode || 'standard',
                 shuffle_questions: false,
                 shuffle_options: false,
+                drive_folder_id: masterQuiz?.driveFolderId || null,
               });
             }
 
@@ -2709,34 +2719,76 @@ export const DataManager = {
     sessionId: string,
     participant: Partial<QuizSessionParticipant> & { name: string; avatarId: string }
   ): Promise<QuizSessionParticipant | null> {
-    const existing = this.getActiveSessions();
-    const sIdx = existing.findIndex((s) => s.id === sessionId);
-    if (sIdx === -1) return null;
+    let existing = this.getActiveSessions();
+    let sIdx = existing.findIndex((s) => s.id === sessionId);
 
-    const session = existing[sIdx];
+    // Jika sesi belum ada di cache lokal perangkat, coba ambil dari Supabase terlebih dahulu
+    if (sIdx === -1 && supabase) {
+      try {
+        const cloudSess = await this.fetchActiveSessionById(sessionId);
+        if (cloudSess) {
+          existing = this.getActiveSessions();
+          sIdx = existing.findIndex((s) => s.id === sessionId);
+        }
+      } catch {}
+    }
+
+    const session = sIdx !== -1 ? existing[sIdx] : null;
     const now = new Date().toISOString();
     const partId = participant.id || 'part_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
 
-    const pIdx = session.participants.findIndex((p) => p.id === partId || p.name.trim().toLowerCase() === participant.name.trim().toLowerCase());
-
     let finalParticipant: QuizSessionParticipant;
 
-    if (pIdx >= 0) {
-      // Update existing participant
-      finalParticipant = {
-        ...session.participants[pIdx],
-        ...participant,
-        lastActiveAt: now,
-      };
-      session.participants[pIdx] = finalParticipant;
+    if (session) {
+      const pIdx = session.participants.findIndex(
+        (p) => (participant.id && p.id === participant.id) || p.name.trim().toLowerCase() === participant.name.trim().toLowerCase()
+      );
+
+      if (pIdx >= 0) {
+        // Update existing participant
+        finalParticipant = {
+          ...session.participants[pIdx],
+          ...participant,
+          lastActiveAt: now,
+        };
+        session.participants[pIdx] = finalParticipant;
+      } else {
+        // Insert new participant
+        finalParticipant = {
+          id: partId,
+          name: participant.name,
+          avatarId: participant.avatarId || 'lion',
+          currentQuestionIndex: participant.currentQuestionIndex ?? 0,
+          totalQuestions: session.totalQuestions,
+          score: participant.score ?? 0,
+          stars: participant.stars ?? 0,
+          correctCount: participant.correctCount ?? 0,
+          incorrectCount: participant.incorrectCount ?? 0,
+          streak: participant.streak ?? 0,
+          finished: participant.finished ?? false,
+          timeSpentSec: participant.timeSpentSec ?? 0,
+          answers: participant.answers ?? {},
+          joinedAt: now,
+          lastActiveAt: now,
+        };
+        session.participants.push(finalParticipant);
+      }
+
+      try {
+        localStorage.setItem(STORAGE_KEY_QUIZ_SESSIONS, JSON.stringify(existing));
+      } catch (e) {
+        console.warn('Failed to save session participant:', e);
+      }
+
+      broadcastSessionUpdate(existing[sIdx]);
     } else {
-      // Insert new participant
+      // Fallback jika perangkat belum memiliki cache sesi di localStorage
       finalParticipant = {
         id: partId,
         name: participant.name,
         avatarId: participant.avatarId || 'lion',
         currentQuestionIndex: participant.currentQuestionIndex ?? 0,
-        totalQuestions: session.totalQuestions,
+        totalQuestions: participant.totalQuestions || 1,
         score: participant.score ?? 0,
         stars: participant.stars ?? 0,
         correctCount: participant.correctCount ?? 0,
@@ -2748,42 +2800,113 @@ export const DataManager = {
         joinedAt: now,
         lastActiveAt: now,
       };
-      session.participants.push(finalParticipant);
     }
-
-    try {
-      localStorage.setItem(STORAGE_KEY_QUIZ_SESSIONS, JSON.stringify(existing));
-    } catch (e) {
-      console.warn('Failed to save session participant:', e);
-    }
-
-    // Broadcast participant update in real time
-    broadcastSessionUpdate(existing[sIdx]);
 
     if (supabase) {
       try {
-        await supabase.from('quiz_session_participants').upsert({
-          id: finalParticipant.id,
-          session_id: sessionId,
-          student_name: finalParticipant.name,
-          avatar_id: finalParticipant.avatarId,
-          current_question_index: finalParticipant.currentQuestionIndex,
-          score: finalParticipant.score,
-          stars: finalParticipant.stars,
-          correct_count: finalParticipant.correctCount,
-          incorrect_count: finalParticipant.incorrectCount,
-          streak: finalParticipant.streak,
-          finished: finalParticipant.finished,
-          time_spent_sec: finalParticipant.timeSpentSec,
-          answers: finalParticipant.answers,
-          last_active_at: finalParticipant.lastActiveAt,
-        });
+        await supabase.from('quiz_session_participants').upsert(
+          {
+            id: finalParticipant.id,
+            session_id: sessionId,
+            student_name: finalParticipant.name,
+            avatar_id: finalParticipant.avatarId,
+            current_question_index: finalParticipant.currentQuestionIndex,
+            score: finalParticipant.score,
+            stars: finalParticipant.stars,
+            correct_count: finalParticipant.correctCount,
+            incorrect_count: finalParticipant.incorrectCount,
+            streak: finalParticipant.streak,
+            finished: finalParticipant.finished,
+            time_spent_sec: finalParticipant.timeSpentSec,
+            answers: finalParticipant.answers,
+            last_active_at: finalParticipant.lastActiveAt,
+          },
+          {
+            onConflict: 'session_id, student_name',
+          }
+        );
       } catch (err) {
         console.warn('Supabase addOrUpdateSessionParticipant notice:', err);
       }
     }
 
     return finalParticipant;
+  },
+
+  // Langganan WebSocket Realtime Supabase untuk Sesi Live Lintas Perangkat (Sub-Second Latency)
+  subscribeToQuizSession(
+    sessionId: string,
+    onSessionUpdate: (session: QuizSession) => void,
+    onParticipantUpdate?: (participant: QuizSessionParticipant) => void
+  ): () => void {
+    if (!supabase || !sessionId) {
+      return () => {};
+    }
+
+    const channelName = `quiz_sess_rt_${sessionId}_${Math.random().toString(36).substring(2, 7)}`;
+    const channel = supabase
+      .channel(channelName)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'quiz_sessions',
+          filter: `id=eq.${sessionId}`,
+        },
+        async () => {
+          try {
+            const fresh = await this.fetchActiveSessionById(sessionId);
+            if (fresh) {
+              onSessionUpdate(fresh);
+            }
+          } catch {}
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'quiz_session_participants',
+          filter: `session_id=eq.${sessionId}`,
+        },
+        async (payload: any) => {
+          try {
+            if (onParticipantUpdate && payload.new) {
+              const p = payload.new;
+              onParticipantUpdate({
+                id: p.id,
+                name: p.student_name,
+                avatarId: p.avatar_id,
+                currentQuestionIndex: p.current_question_index,
+                totalQuestions: 0,
+                score: p.score,
+                stars: p.stars,
+                correctCount: p.correct_count,
+                incorrectCount: p.incorrect_count,
+                streak: p.streak,
+                finished: p.finished,
+                timeSpentSec: p.time_spent_sec,
+                answers: p.answers || {},
+                joinedAt: p.joined_at,
+                lastActiveAt: p.last_active_at,
+              });
+            }
+            const fresh = await this.fetchActiveSessionById(sessionId);
+            if (fresh) {
+              onSessionUpdate(fresh);
+            }
+          } catch {}
+        }
+      )
+      .subscribe();
+
+    return () => {
+      try {
+        supabase.removeChannel(channel);
+      } catch {}
+    };
   },
 
   async deleteActiveSession(sessionId: string): Promise<boolean> {

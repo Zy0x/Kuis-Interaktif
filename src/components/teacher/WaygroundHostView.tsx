@@ -100,12 +100,18 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
       // BroadcastChannel fallback
     }
 
+    // Langganan WebSocket Realtime Supabase untuk papan kendali guru
+    const unsubRealtime = DataManager.subscribeToQuizSession(session.id, (fresh) => {
+      setSession(fresh);
+    });
+
     const interval = setInterval(refresh, 2000);
 
     return () => {
       window.removeEventListener('session_updated', handleSessionUpdated);
       if (bc) bc.close();
       clearInterval(interval);
+      unsubRealtime();
     };
   }, [session.id]);
 

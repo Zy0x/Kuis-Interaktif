@@ -1,6 +1,41 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.80] - 2026-09-13
+### Sinkronisasi WebSocket Real-Time Multi-Device, Skema Integritas Peserta & Optimalisasi Media Google Drive (Rule 1, Rule 6, Rule 9, Rule 10, Rule 11 & Rule 12)
+
+#### 1. Sinkronisasi Real-Time Multi-Device Berbasis WebSocket (`supabase.channel`)
+- **Langganan WebSocket Lintas Perangkat**:
+  - `QuizArena`, `StudentWaitingRoom`, `StudentLobby`, dan `WaygroundHostView` kini terhubung langsung ke kanal WebSocket Realtime database.
+  - Perubahan nomor soal oleh guru pada mode panduan (*teacher-led*) langsung menggerakkan smartphone siswa secara seketika (*sub-second latency*) tanpa jeda polling.
+  - Siswa tidak lagi terkunci di soal nomor 1 pada mode panduan guru saat bermain lintas gawai.
+- **Dual-Layer Fallback Polling**:
+  - Polling cadangan diperluas dengan query asinkron cloud Supabase untuk menjamin ketahanan koneksi jika jaringan seluler siswa mengalami fluktuasi.
+
+#### 2. Integritas Database Peserta & Pencegahan Duplikasi Papan Peringkat
+- **Constraint Unik `(session_id, student_name)`**:
+  - Tabel `quiz_session_participants` dilengkapi constraint unik `unique_session_participant` untuk mencegah baris ganda ketika siswa melakukan penyegaran (*refresh*) layar atau masuk kembali ke ruang kelas.
+  - Penambahan parameter `onConflict` pada mekanisme simpan peserta untuk stabilitas rekonsiliasi data.
+- **Auto-Recovery Sesi Peserta**:
+  - Penyimpanan progres jawaban dan nilai siswa otomatis memulihkan sesi dari cloud jika cache lokal perangkat baru dibuat atau berada dalam mode penyamaran (*incognito*).
+- **Proteksi Master PIN saat Rekapitulasi Selesai**:
+  - Rekonsiliasi akhir kuis tidak lagi menimpa PIN master kuis dengan Game PIN sesi sementara.
+
+#### 3. Integrasi & Sinkronisasi Folder Google Drive
+- **Persistensi `drive_folder_id`**:
+  - Kolom `drive_folder_id` kini disinkronkan secara konsisten pada seluruh operasi baca (`fetchQuizzesFromCloud`, `getQuizById`, `getQuizByPin`) dan simpan (`saveCustomQuiz`, `updateQuizSettings`).
+  - Edge Function pembersihan folder Drive kini dapat menemukan ID folder kuis dengan akurat saat kuis dihapus.
+
+#### 4. Resiliensi Media & Kompresi Gambar Cerdas
+- **Kompresi Gambar Lokal Cerdas (Anti-Crash `QuotaExceededError`)**:
+  - Modal pemilih gambar (`ImageSelectorModal`) dilengkapi utilitas kompresi Canvas otomatis (resize proporsional maks 1200px dan kompresi WebP/JPEG) saat menggunakan penyimpanan cadangan lokal.
+  - Menghindarkan browser dari kehabisan kuota memori `localStorage` (maks 5MB) saat mengunggah foto beresolusi tinggi.
+- **Fallback Soal Tebak Gambar (*Mystery Grid*)**:
+  - Tipe soal `image_guess` pada `QuizArena` kini dilengkapi penangan `onError` yang otomatis beralih ke petunjuk ilustrasi default jika gambar eksternal tidak dapat diakses.
+
+#### 5. Kepatuhan Target Sentuh Mobile (*Touch-First*)
+- Tombol aksi bantu pada arena ("Buka 1 Kotak Acak") disesuaikan menjadi minimal 44×44 px sesuai standar **Rule 1 (Presisi Antar-Platform & Touch-First)**.
+
 ## [2.3.79] - 2026-09-13
 ### Penutupan Menyeluruh 7 Celah ID, PIN, dan Sesi Live Multi-Device Online (Rule 9, Rule 10, Rule 11 & Rule 12)
 

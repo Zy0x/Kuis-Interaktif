@@ -311,6 +311,11 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 
   // 2. Mystery Image Reveal state (3x3 grid)
   const [revealedTiles, setRevealedTiles] = useState<Set<number>>(new Set());
+  const [mysteryImgError, setMysteryImgError] = useState(false);
+
+  useEffect(() => {
+    setMysteryImgError(false);
+  }, [currentIndex]);
 
   // 3. Matching Pairs state
   const [selectedLeft, setSelectedLeft] = useState<number | null>(null);
@@ -829,38 +834,41 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 
   // Real-time listener for settings and question changes dispatched by teacher
   useEffect(() => {
+    const applySessionUpdate = (sess: QuizSession) => {
+      if (
+        (activeSessionId && sess.id === activeSessionId) ||
+        (quiz.pinCode && sess.pinCode === quiz.pinCode) ||
+        sess.quizId === quiz.id
+      ) {
+        setLiveSession(sess);
+        if (sess.settings) {
+          setCurrentSettings((prev) => ({
+            ...prev,
+            ...sess.settings,
+          }));
+        }
+
+        // In teacher-led mode, advance student device in real time when teacher advances question
+        if (sess.settings?.executionMode === 'teacher_led' && !isTeacher) {
+          if (
+            typeof sess.currentQuestionIndex === 'number' &&
+            sess.currentQuestionIndex > currentIndex
+          ) {
+            setShowWaitingLounge(false);
+            handleJumpToQuestion(sess.currentQuestionIndex);
+          }
+          if (sess.status === 'finished') {
+            setShowWaitingLounge(false);
+            handleNext();
+          }
+        }
+      }
+    };
+
     const handleBroadcastMsg = (event: MessageEvent) => {
       const data = event.data;
       if (data?.type === 'SESSION_UPDATED' && data.session) {
-        const sess: QuizSession = data.session;
-        if (
-          (activeSessionId && sess.id === activeSessionId) ||
-          (quiz.pinCode && sess.pinCode === quiz.pinCode) ||
-          sess.quizId === quiz.id
-        ) {
-          setLiveSession(sess);
-          if (sess.settings) {
-            setCurrentSettings((prev) => ({
-              ...prev,
-              ...sess.settings,
-            }));
-          }
-
-          // In teacher-led mode, advance student device in real time when teacher advances question
-          if (sess.settings?.executionMode === 'teacher_led' && !isTeacher) {
-            if (
-              typeof sess.currentQuestionIndex === 'number' &&
-              sess.currentQuestionIndex > currentIndex
-            ) {
-              setShowWaitingLounge(false);
-              handleJumpToQuestion(sess.currentQuestionIndex);
-            }
-            if (sess.status === 'finished') {
-              setShowWaitingLounge(false);
-              handleNext();
-            }
-          }
-        }
+        applySessionUpdate(data.session);
       }
     };
 
@@ -878,61 +886,41 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
       const customEvt = e as CustomEvent;
       const sess: QuizSession = customEvt.detail?.session;
       if (sess) {
-        if (
-          (activeSessionId && sess.id === activeSessionId) ||
-          (quiz.pinCode && sess.pinCode === quiz.pinCode) ||
-          sess.quizId === quiz.id
-        ) {
-          setLiveSession(sess);
-          if (sess.settings) {
-            setCurrentSettings((prev) => ({
-              ...prev,
-              ...sess.settings,
-            }));
-          }
-
-          if (sess.settings?.executionMode === 'teacher_led' && !isTeacher) {
-            if (
-              typeof sess.currentQuestionIndex === 'number' &&
-              sess.currentQuestionIndex > currentIndex
-            ) {
-              setShowWaitingLounge(false);
-              handleJumpToQuestion(sess.currentQuestionIndex);
-            }
-            if (sess.status === 'finished') {
-              setShowWaitingLounge(false);
-              handleNext();
-            }
-          }
-        }
+        applySessionUpdate(sess);
       }
     };
     window.addEventListener('kuis_session_updated', handleCustomSync);
 
-    // Fallback polling for session state every 2 seconds
-    const interval = setInterval(() => {
+    // Langganan WebSocket Realtime Supabase untuk sinkronisasi instan multi-device
+    const targetSessionId = activeSessionId || liveSession?.id;
+    let unsubRealtime = () => {};
+    if (targetSessionId) {
+      unsubRealtime = DataManager.subscribeToQuizSession(targetSessionId, (freshSess) => {
+        applySessionUpdate(freshSess);
+      });
+    }
+
+    // Polling fallback lokal + cloud Supabase setiap 2 detik
+    const interval = setInterval(async () => {
       const targetId = activeSessionId || liveSession?.id;
-      const fresh = targetId
+      const freshLocal = targetId
         ? DataManager.getActiveSessionById(targetId)
         : quiz.pinCode
         ? DataManager.getActiveSessionByPin(quiz.pinCode)
         : DataManager.getActiveSessionByQuizId(quiz.id);
 
-      if (fresh) {
-        setLiveSession(fresh);
-        if (fresh.settings?.executionMode === 'teacher_led' && !isTeacher) {
-          if (
-            typeof fresh.currentQuestionIndex === 'number' &&
-            fresh.currentQuestionIndex > currentIndex
-          ) {
-            setShowWaitingLounge(false);
-            handleJumpToQuestion(fresh.currentQuestionIndex);
+      if (freshLocal) {
+        applySessionUpdate(freshLocal);
+      }
+
+      // KRUSIAL UNTUK MULTI-DEVICE: Query ke Supabase Cloud agar perubahan soal guru langsung masuk ke smartphone siswa
+      if (targetId) {
+        try {
+          const freshCloud = await DataManager.fetchActiveSessionById(targetId);
+          if (freshCloud) {
+            applySessionUpdate(freshCloud);
           }
-          if (fresh.status === 'finished') {
-            setShowWaitingLounge(false);
-            handleNext();
-          }
-        }
+        } catch {}
       }
     }, 2000);
 
@@ -943,6 +931,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
       }
       window.removeEventListener('kuis_session_updated', handleCustomSync);
       clearInterval(interval);
+      unsubRealtime();
     };
   }, [activeSessionId, quiz.id, quiz.pinCode, currentIndex, isTeacher, liveSession?.id]);
 
@@ -1275,11 +1264,12 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
           {question.type === 'image_guess' ? (
             <div className="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-850 max-h-56 sm:max-h-64 flex flex-col items-center justify-center p-2 flex-shrink-0 select-none">
               <div className="relative max-h-48 sm:max-h-56 w-auto aspect-video max-w-full rounded-xl overflow-hidden flex items-center justify-center bg-slate-200 dark:bg-slate-800">
-                {question.imageUrl ? (
+                {question.imageUrl && !mysteryImgError ? (
                   <img
                     src={question.imageUrl}
                     alt="Gambar Misteri"
                     className="max-h-48 sm:max-h-56 w-auto object-contain mx-auto"
+                    onError={() => setMysteryImgError(true)}
                   />
                 ) : (
                   <div className="text-5xl sm:text-6xl p-4">
@@ -1327,9 +1317,9 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                   <button
                     type="button"
                     onClick={handleRevealRandomTile}
-                    className="px-2.5 py-1 rounded-lg bg-amber-100 dark:bg-amber-950/60 hover:bg-amber-200 dark:hover:bg-amber-900 text-amber-800 dark:text-amber-300 font-bold text-[11px] flex items-center gap-1 transition-colors min-h-[32px]"
+                    className="px-3 py-2 rounded-xl bg-amber-100 dark:bg-amber-950/60 hover:bg-amber-200 dark:hover:bg-amber-900 text-amber-800 dark:text-amber-300 font-bold text-xs flex items-center gap-1.5 transition-colors min-h-[44px] min-w-[44px] active:scale-95"
                   >
-                    <Puzzle className="w-3 h-3" />
+                    <Puzzle className="w-4 h-4" />
                     <span>Buka 1 Kotak Acak</span>
                   </button>
                 )}

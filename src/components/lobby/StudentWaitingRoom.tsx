@@ -83,6 +83,11 @@ export const StudentWaitingRoom: React.FC<StudentWaitingRoomProps> = ({
     };
     window.addEventListener('kuis_session_updated', handleCustom);
 
+    // Langganan WebSocket Realtime Supabase agar transisi ke arena langsung instan
+    const unsubRealtime = DataManager.subscribeToQuizSession(session.id, (fresh) => {
+      handleSync(fresh);
+    });
+
     // Polling fallback every 2 seconds (local + cloud sync)
     const interval = setInterval(async () => {
       const fresh = DataManager.getActiveSessionById(session.id);
@@ -101,6 +106,7 @@ export const StudentWaitingRoom: React.FC<StudentWaitingRoomProps> = ({
       if (channel) channel.close();
       window.removeEventListener('kuis_session_updated', handleCustom);
       clearInterval(interval);
+      unsubRealtime();
     };
   }, [session.id, session.pinCode, onStartQuiz]);
 

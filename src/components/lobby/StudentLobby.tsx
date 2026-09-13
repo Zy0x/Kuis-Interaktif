@@ -131,11 +131,32 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
     };
     window.addEventListener('kuis_session_updated', handleCustom);
 
+    let unsubRealtime = () => {};
+    if (liveSession?.id) {
+      unsubRealtime = DataManager.subscribeToQuizSession(liveSession.id, (fresh) => {
+        handleSync(fresh);
+      });
+    }
+
+    // Polling fallback lokal + cloud Supabase setiap 2 detik
+    const pollInterval = setInterval(async () => {
+      if (liveSession?.id) {
+        try {
+          const freshCloud = await DataManager.fetchActiveSessionById(liveSession.id);
+          if (freshCloud) {
+            handleSync(freshCloud);
+          }
+        } catch {}
+      }
+    }, 2000);
+
     return () => {
       if (channel) channel.close();
       window.removeEventListener('kuis_session_updated', handleCustom);
+      clearInterval(pollInterval);
+      unsubRealtime();
     };
-  }, [quiz.id, quiz.pinCode, liveSession]);
+  }, [quiz.id, quiz.pinCode, liveSession?.id]);
 
   // Konfigurasi aktif yang ditetapkan oleh Guru (Real-Time)
   const effectiveSettings: QuizSessionSettings = useMemo(() => {

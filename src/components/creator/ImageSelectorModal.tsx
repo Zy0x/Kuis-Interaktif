@@ -19,6 +19,56 @@ import { useBackHandler } from '../../lib/navigationHistory';
 import { useDrawerSwipeDown } from '../../hooks/useDrawerSwipeDown';
 import { DrawerHandle } from '../common/DrawerHandle';
 
+// Helper untuk resize & kompres gambar via Canvas ke resolusi optimal (max 1200x900) agar memori localStorage tidak crash (Rule 6)
+const compressQuestionImage = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = reject;
+      img.onload = () => {
+        const maxW = 1200;
+        const maxH = 900;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxW || height > maxH) {
+          const ratio = Math.min(maxW / width, maxH / height);
+          width = Math.round(width * ratio);
+          height = Math.round(height * ratio);
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          return resolve(typeof reader.result === 'string' ? reader.result : '');
+        }
+
+        ctx.drawImage(img, 0, 0, width, height);
+
+        try {
+          const dataUrl = canvas.toDataURL('image/webp', 0.8);
+          if (dataUrl.startsWith('data:image/webp')) {
+            resolve(dataUrl);
+            return;
+          }
+        } catch {}
+
+        try {
+          resolve(canvas.toDataURL('image/jpeg', 0.8));
+        } catch {
+          resolve(typeof reader.result === 'string' ? reader.result : '');
+        }
+      };
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
+};
+
 interface ImageSelectorModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -183,15 +233,20 @@ export const ImageSelectorModal: React.FC<ImageSelectorModalProps> = ({
         handleApplyImage(result.directUrl, file.name.replace(/\.[^/.]+$/, ''));
       } else {
         console.warn('Upload Google Drive:', result.error);
-        setUploadErrorMsg(result.error || 'Gagal mengunggah gambar ke Google Drive.');
-        // Fallback lokal agar pengerjaan guru tidak terhenti total
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          if (typeof reader.result === 'string') {
-            handleApplyImage(reader.result, file.name.replace(/\.[^/.]+$/, ''));
-          }
-        };
-        reader.readAsDataURL(file);
+        setUploadErrorMsg(result.error || 'Gagal mengunggah ke Google Drive. Menggunakan cadangan lokal terkompresi.');
+        // Fallback kompresi lokal agar pengerjaan guru tidak terhenti total dan tidak melampaui kuota localStorage (Rule 6)
+        try {
+          const compressedDataUrl = await compressQuestionImage(file);
+          handleApplyImage(compressedDataUrl, file.name.replace(/\.[^/.]+$/, ''));
+        } catch {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            if (typeof reader.result === 'string') {
+              handleApplyImage(reader.result, file.name.replace(/\.[^/.]+$/, ''));
+            }
+          };
+          reader.readAsDataURL(file);
+        }
       }
     } catch (err: any) {
       setUploadErrorMsg(err?.message || 'Terjadi gangguan saat mengunggah.');
