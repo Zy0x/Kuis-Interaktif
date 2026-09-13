@@ -177,7 +177,7 @@ export const ZoomChatToast: React.FC<ZoomChatToastProps> = ({
             setIsVisible(false);
             setTimeout(() => setActiveMessage(null), 300);
           }}
-          className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex-shrink-0 min-h-[28px] min-w-[28px] flex items-center justify-center"
+          className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex-shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center"
           title="Tutup Notifikasi"
           aria-label="Tutup Notifikasi"
         >

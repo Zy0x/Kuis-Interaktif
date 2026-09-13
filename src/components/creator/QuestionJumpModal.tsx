@@ -1,4 +1,4 @@
-﻿import React, { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import type { QuizQuestion } from '../../types/quiz';
 import {
   X,
@@ -106,10 +106,11 @@ export const QuestionJumpModal: React.FC<QuestionJumpModalProps> = ({
                 playClick();
                 onClose();
               }}
-              className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 flex items-center justify-center transition-colors btn-press"
+              className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 flex items-center justify-center transition-colors btn-press"
               title="Tutup"
+              aria-label="Tutup"
             >
-              <X className="w-4 h-4" />
+              <X className="w-5 h-5" />
             </button>
           </div>
         </div>

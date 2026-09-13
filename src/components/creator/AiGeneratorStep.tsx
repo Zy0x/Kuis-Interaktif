@@ -2323,7 +2323,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                   type="button"
                   onClick={handleGenerateAiCp}
                   disabled={isGeneratingAiCp}
-                  className="text-[11px] font-bold px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/80 shadow-xs flex items-center gap-1.5 transition-all btn-press disabled:opacity-60 min-h-[34px]"
+                  className="text-xs font-bold px-3 py-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/80 shadow-xs flex items-center gap-1.5 transition-all btn-press disabled:opacity-60 min-h-[44px]"
                   title="Rumuskan / elaborasi Capaian Pembelajaran spesifik kelas ini via AI"
                 >
                   {isGeneratingAiCp ? (
@@ -2561,7 +2561,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                   playClick();
                   onStageChange(2);
                 }}
-                className="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline px-1 py-0.5 min-h-[28px] flex items-center"
+                className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline px-2.5 py-1.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors min-h-[44px] flex items-center"
                 title="Ubah topik atau materi kuis"
               >
                 Ubah Topik
@@ -2921,7 +2921,8 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                                     playClick();
                                     setProportions((p) => ({ ...p, [t]: Math.max(0, (p[t] || 0) - 1) }));
                                   }}
-                                  className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 font-bold text-sm flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 btn-press text-slate-800 dark:text-slate-200 shrink-0"
+                                  className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl bg-slate-100 dark:bg-slate-800 font-black text-base flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 btn-press text-slate-800 dark:text-slate-200 shrink-0"
+                                  aria-label="Kurangi jumlah soal tipe ini"
                                 >-</button>
                                 <span className="font-black text-sm text-slate-900 dark:text-white">
                                   {val}
@@ -2932,7 +2933,8 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                                     playClick();
                                     setProportions((p) => ({ ...p, [t]: (p[t] || 0) + 1 }));
                                   }}
-                                  className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 font-bold text-sm flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 btn-press text-slate-800 dark:text-slate-200 shrink-0"
+                                  className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl bg-slate-100 dark:bg-slate-800 font-black text-base flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 btn-press text-slate-800 dark:text-slate-200 shrink-0"
+                                  aria-label="Tambah jumlah soal tipe ini"
                                 >+</button>
                               </div>
                             </div>
@@ -2999,8 +3001,14 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                     </div>
                     {/* Info button tooltip */}
                     <div className="relative group">
-                      <button type="button" className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700 hover:border-blue-400 hover:text-blue-500 transition-colors">i</button>
-                      <div className="absolute right-0 top-7 z-50 hidden group-hover:block w-56 p-2.5 rounded-xl bg-slate-900 dark:bg-slate-800 text-white text-[10px] leading-relaxed shadow-xl border border-slate-700">
+                      <button
+                        type="button"
+                        aria-label="Informasi Taksonomi Bloom"
+                        className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                      >
+                        <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold border border-slate-200 dark:border-slate-700">i</span>
+                      </button>
+                      <div className="absolute right-0 top-11 z-50 hidden group-hover:block group-focus-within:block w-56 p-2.5 rounded-xl bg-slate-900 dark:bg-slate-800 text-white text-[10px] leading-relaxed shadow-xl border border-slate-700 pointer-events-none">
                         <p className="font-bold mb-1 text-slate-200">Taksonomi Bloom</p>
                         <p><span className="text-slate-400">C1–C3</span> Mengingat, memahami, menerapkan (LOTS)</p>
                         <p><span className="text-slate-400">C4</span> Menganalisis (MOTS)</p>
@@ -3228,7 +3236,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                     playClick();
                     onStageChange(3);
                   }}
-                  className="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline px-1 py-0.5 min-h-[28px] flex items-center"
+                  className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline px-2.5 py-1.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors min-h-[44px] flex items-center"
                   title="Ubah jumlah atau format soal"
                 >
                   Ubah
@@ -3273,7 +3281,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                         .catch(() => {})
                         .finally(() => setIsCheckingCloudAi(false));
                     }}
-                    className="p-2 rounded-xl text-slate-400 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all btn-press disabled:opacity-50 flex items-center justify-center min-w-[36px] min-h-[36px]"
+                    className="p-2.5 rounded-xl text-slate-400 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all btn-press disabled:opacity-50 flex items-center justify-center min-w-[44px] min-h-[44px]"
                     title="Periksa ulang status ketersediaan mesin AI"
                     aria-label="Periksa ulang status ketersediaan mesin AI"
                   >
@@ -3287,7 +3295,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                       playClick();
                       setIsApiKeyModalOpen(true);
                     }}
-                    className="px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 transition-all btn-press min-h-[36px] shadow-2xs"
+                    className="px-3.5 py-2 sm:px-4 sm:py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700 flex items-center gap-1.5 transition-all btn-press min-h-[44px] shadow-2xs"
                     title="Atur Kunci API pribadi untuk DeepSeek, Groq, atau Gemini"
                   >
                     <Key className="w-3.5 h-3.5 text-blue-500 shrink-0" />
@@ -3818,7 +3826,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                     setApiKeyTab('deepseek');
                     setIsApiKeyModalOpen(true);
                   }}
-                  className="px-3.5 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs btn-press shrink-0 min-h-[36px]"
+                  className="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs btn-press shrink-0 min-h-[44px]"
                 >
                   <Key className="w-3.5 h-3.5" />
                   <span>Atur Kunci API</span>
@@ -3844,7 +3852,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                     <button
                       type="button"
                       onClick={handleCopyPrompt}
-                      className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-2 shadow-xs btn-press min-h-[36px]"
+                      className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-2 shadow-xs btn-press min-h-[44px]"
                     >
                       {copiedPrompt ? (
                         <>
@@ -3895,14 +3903,14 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                       <span>Hasil Kuis / Berkas</span>
                     </span>
 
-                    <div className="flex p-0.5 rounded-xl bg-slate-200/70 dark:bg-slate-800 border border-slate-300/50 dark:border-slate-700">
+                    <div className="flex p-1 rounded-2xl bg-slate-200/70 dark:bg-slate-800 border border-slate-300/50 dark:border-slate-700">
                       <button
                         type="button"
                         onClick={() => {
                           playClick();
                           setInputMethodTab('paste');
                         }}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all min-h-[32px] ${
+                        className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all min-h-[44px] flex items-center justify-center ${
                           inputMethodTab === 'paste'
                             ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs'
                             : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -3916,7 +3924,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                           playClick();
                           setInputMethodTab('file');
                         }}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all min-h-[32px] ${
+                        className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all min-h-[44px] flex items-center justify-center ${
                           inputMethodTab === 'file'
                             ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs'
                             : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -3950,7 +3958,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                       <div className="flex-1 p-5 sm:p-6 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-center space-y-3 flex flex-col justify-center items-center shadow-xs min-h-[150px]">
                         <UploadCloud className="w-10 h-10 text-blue-500 shrink-0" />
                         <div>
-                          <label className="inline-block px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm cursor-pointer shadow-sm min-h-[42px] btn-press">
+                          <label className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm cursor-pointer shadow-sm min-h-[44px] btn-press">
                             Pilih Berkas (.xlsx, .csv, .json, .txt)
                             <input
                               type="file"
@@ -3968,7 +3976,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                           <button
                             type="button"
                             onClick={handleDownloadCsvTemplate}
-                            className="text-xs text-blue-600 dark:text-blue-400 font-bold hover:underline flex items-center gap-1.5 min-h-[32px]"
+                            className="text-xs text-blue-600 dark:text-blue-400 font-bold hover:underline flex items-center gap-1.5 min-h-[44px] px-3 py-2 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors"
                           >
                             <Download className="w-3.5 h-3.5" />
                             Unduh Contoh Template CSV
@@ -4057,7 +4065,8 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
               <button
                 type="button"
                 onClick={() => setIsSubjectModalOpen(false)}
-                className="w-10 h-10 rounded-2xl flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors btn-press shrink-0"
+                className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-2xl flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors btn-press shrink-0"
+                aria-label="Tutup Katalog Mata Pelajaran"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -4147,7 +4156,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
               <button
                 type="button"
                 onClick={() => setIsSubjectModalOpen(false)}
-                className="px-4 py-2 rounded-xl font-bold bg-slate-200/80 hover:bg-slate-300 dark:bg-slate-750 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 transition-colors btn-press min-h-[40px]"
+                className="px-4 py-2 rounded-xl font-bold bg-slate-200/80 hover:bg-slate-300 dark:bg-slate-750 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 transition-colors btn-press min-h-[44px]"
               >
                 Tutup
               </button>
@@ -4186,7 +4195,8 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
               <button
                 type="button"
                 onClick={() => setIsApiKeyModalOpen(false)}
-                className="w-10 h-10 rounded-2xl flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors btn-press shrink-0"
+                className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-2xl flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors btn-press shrink-0"
+                aria-label="Tutup Pengaturan Kunci API"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -4201,7 +4211,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                     playClick();
                     setApiKeyTab('deepseek');
                   }}
-                  className={`py-2 px-2.5 rounded-xl font-extrabold text-xs transition-all flex items-center justify-center gap-1.5 min-h-[38px] ${
+                  className={`py-2 px-2.5 rounded-xl font-extrabold text-xs transition-all flex items-center justify-center gap-1.5 min-h-[44px] ${
                     apiKeyTab === 'deepseek'
                       ? 'bg-white dark:bg-slate-900 text-sky-600 dark:text-sky-400 shadow-xs'
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -4217,7 +4227,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                     playClick();
                     setApiKeyTab('groq');
                   }}
-                  className={`py-2 px-2.5 rounded-xl font-extrabold text-xs transition-all flex items-center justify-center gap-1.5 min-h-[38px] ${
+                  className={`py-2 px-2.5 rounded-xl font-extrabold text-xs transition-all flex items-center justify-center gap-1.5 min-h-[44px] ${
                     apiKeyTab === 'groq'
                       ? 'bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 shadow-xs'
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -4233,7 +4243,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                     playClick();
                     setApiKeyTab('gemini');
                   }}
-                  className={`py-2 px-2.5 rounded-xl font-extrabold text-xs transition-all flex items-center justify-center gap-1.5 min-h-[38px] ${
+                  className={`py-2 px-2.5 rounded-xl font-extrabold text-xs transition-all flex items-center justify-center gap-1.5 min-h-[44px] ${
                     apiKeyTab === 'gemini'
                       ? 'bg-white dark:bg-slate-900 text-purple-600 dark:text-purple-400 shadow-xs'
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -4284,12 +4294,13 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                         value={deepseekKeyInput}
                         onChange={(e) => setDeepseekKeyInput(e.target.value)}
                         placeholder="sk-..."
-                        className="w-full pl-3.5 pr-10 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:border-sky-500 min-h-[44px]"
+                        className="w-full pl-3.5 pr-12 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:border-sky-500 min-h-[44px]"
                       />
                       <button
                         type="button"
                         onClick={() => setShowKeySecret(!showKeySecret)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 min-h-[36px] flex items-center"
+                        className="absolute right-1 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 min-h-[44px] min-w-[44px]"
+                        aria-label={showKeySecret ? "Sembunyikan Kunci" : "Tampilkan Kunci"}
                       >
                         {showKeySecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
@@ -4347,12 +4358,13 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                         value={groqKeyInput}
                         onChange={(e) => setGroqKeyInput(e.target.value)}
                         placeholder="gsk_..."
-                        className="w-full pl-3.5 pr-10 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:border-amber-500 min-h-[44px]"
+                        className="w-full pl-3.5 pr-12 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:border-amber-500 min-h-[44px]"
                       />
                       <button
                         type="button"
                         onClick={() => setShowKeySecret(!showKeySecret)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 min-h-[36px] flex items-center"
+                        className="absolute right-1 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 min-h-[44px] min-w-[44px]"
+                        aria-label={showKeySecret ? "Sembunyikan Kunci" : "Tampilkan Kunci"}
                       >
                         {showKeySecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
@@ -4413,12 +4425,13 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                         value={geminiKeyInput}
                         onChange={(e) => setGeminiKeyInput(e.target.value)}
                         placeholder="AIzaSy..."
-                        className="w-full pl-3.5 pr-10 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:border-purple-500 min-h-[44px]"
+                        className="w-full pl-3.5 pr-12 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-mono text-xs focus:outline-none focus:border-purple-500 min-h-[44px]"
                       />
                       <button
                         type="button"
                         onClick={() => setShowKeySecret(!showKeySecret)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 min-h-[36px] flex items-center"
+                        className="absolute right-1 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 min-h-[44px] min-w-[44px]"
+                        aria-label={showKeySecret ? "Sembunyikan Kunci" : "Tampilkan Kunci"}
                       >
                         {showKeySecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
@@ -4473,7 +4486,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                       setKeySaveMessage('Kunci telah dihapus.');
                       setTimeout(() => setKeySaveMessage(null), 1000);
                     }}
-                    className="text-xs font-bold text-rose-600 hover:text-rose-700 dark:text-rose-400 hover:underline px-2 py-1.5 min-h-[36px]"
+                    className="text-xs font-bold text-rose-600 hover:text-rose-700 dark:text-rose-400 hover:underline px-3 py-2 min-h-[44px] flex items-center"
                   >
                     Hapus Kunci
                   </button>
@@ -4484,14 +4497,14 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsApiKeyModalOpen(false)}
-                  className="px-4 py-2 rounded-xl font-bold text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-750 transition-colors btn-press min-h-[40px]"
+                  className="px-4 py-2.5 rounded-xl font-bold text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-750 transition-colors btn-press min-h-[44px]"
                 >
                   Batal
                 </button>
                 <button
                   type="button"
                   onClick={handleSaveApiKeySettings}
-                  className="px-5 py-2 rounded-xl font-black text-xs text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-500/20 flex items-center gap-1.5 btn-press transition-all min-h-[40px]"
+                  className="px-5 py-2.5 rounded-xl font-black text-xs text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-500/20 flex items-center gap-1.5 btn-press transition-all min-h-[44px]"
                 >
                   <Check className="w-3.5 h-3.5" />
                   <span>Simpan Kunci</span>

@@ -373,7 +373,7 @@ export const AdminDatabaseBackupModal: React.FC<AdminDatabaseBackupModalProps> =
                       <button
                         type="button"
                         onClick={() => setShowBackupPassword(!showBackupPassword)}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-slate-600 min-h-[36px] min-w-[36px] flex items-center justify-center"
+                        className="absolute right-1 top-1/2 -translate-y-1/2 p-2 text-slate-400 hover:text-slate-600 min-h-[44px] min-w-[44px] flex items-center justify-center"
                       >
                         {showBackupPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
@@ -452,7 +452,7 @@ export const AdminDatabaseBackupModal: React.FC<AdminDatabaseBackupModalProps> =
                         <button
                           type="button"
                           onClick={() => handleCopyChecksum(h.sha256_checksum)}
-                          className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-[11px] font-mono text-slate-600 dark:text-slate-400 flex items-center gap-1.5 self-start sm:self-auto min-h-[38px]"
+                          className="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-[11px] font-mono text-slate-600 dark:text-slate-400 flex items-center gap-1.5 self-start sm:self-auto min-h-[44px]"
                           title="Salin SHA-256 Checksum"
                         >
                           {copiedChecksum === h.sha256_checksum ? (
@@ -558,7 +558,7 @@ export const AdminDatabaseBackupModal: React.FC<AdminDatabaseBackupModalProps> =
                     <button
                       type="button"
                       onClick={() => setShowRestorePassword(!showRestorePassword)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-slate-600 min-h-[36px] min-w-[36px] flex items-center justify-center"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 p-2 text-slate-400 hover:text-slate-600 min-h-[44px] min-w-[44px] flex items-center justify-center"
                     >
                       {showRestorePassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>

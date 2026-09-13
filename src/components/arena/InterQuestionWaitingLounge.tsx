@@ -389,7 +389,7 @@ export const InterQuestionWaitingLounge: React.FC<InterQuestionWaitingLoungeProp
                     key={msg}
                     type="button"
                     onClick={() => handleSendChatMessage(msg)}
-                    className="px-2 py-0.5 rounded-lg bg-purple-900/30 text-purple-300 text-[10px] font-bold border border-purple-800/40 whitespace-nowrap hover:bg-purple-900/60 min-h-[28px]"
+                    className="px-3 py-1.5 rounded-xl bg-purple-900/30 text-purple-300 text-xs font-bold border border-purple-800/40 whitespace-nowrap hover:bg-purple-900/60 min-h-[44px] inline-flex items-center shrink-0 btn-press"
                   >
                     {msg}
                   </button>
@@ -409,15 +409,15 @@ export const InterQuestionWaitingLounge: React.FC<InterQuestionWaitingLoungeProp
                   value={chatText}
                   onChange={(e) => setChatText(e.target.value)}
                   placeholder="Ketik komentar santai..."
-                  className="flex-1 px-3 py-1.5 rounded-xl border border-slate-700 bg-slate-900 text-xs text-white focus:outline-none focus:ring-1 focus:ring-purple-500 min-h-[36px]"
+                  className="flex-1 px-3 py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-xs text-white focus:outline-none focus:ring-1 focus:ring-purple-500 min-h-[44px]"
                 />
                 <button
                   type="submit"
                   disabled={!chatText.trim()}
-                  className="p-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold disabled:opacity-40 min-h-[36px] min-w-[36px] flex items-center justify-center btn-press"
+                  className="p-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold disabled:opacity-40 min-h-[44px] min-w-[44px] flex items-center justify-center btn-press flex-shrink-0"
                   aria-label="Kirim"
                 >
-                  <Send className="w-3.5 h-3.5" />
+                  <Send className="w-4 h-4" />
                 </button>
               </form>
             </div>

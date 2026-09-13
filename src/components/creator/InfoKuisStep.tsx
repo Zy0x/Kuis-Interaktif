@@ -279,7 +279,7 @@ export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
                   key={item.level}
                   type="button"
                   onClick={() => handleLevelChange(item.level)}
-                  className={`py-2 px-1 rounded-xl border text-center min-h-[40px] flex items-center justify-center text-[11px] font-bold btn-press transition-all leading-tight ${
+                  className={`py-2 px-1 rounded-xl border text-center min-h-[44px] flex items-center justify-center text-[11px] font-bold btn-press transition-all leading-tight ${
                     currentEducationLevel === item.level
                       ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 ring-1 ring-blue-400/40'
                       : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 text-slate-600 dark:text-slate-400'
@@ -342,7 +342,7 @@ export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
                     key={idx}
                     type="button"
                     onClick={() => { playClick(); setDescription(tmpl); setShowDescriptionSuggestions(false); }}
-                    className="text-left text-[11px] font-medium px-3 py-2 rounded-xl bg-slate-50 hover:bg-blue-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 hover:text-blue-700 dark:hover:text-blue-300 border border-slate-200 dark:border-slate-700 transition-colors btn-press min-h-[36px] flex items-center leading-relaxed"
+                    className="text-left text-[11px] font-medium px-3 py-2.5 rounded-xl bg-slate-50 hover:bg-blue-50 dark:bg-slate-800 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-300 hover:text-blue-700 dark:hover:text-blue-300 border border-slate-200 dark:border-slate-700 transition-colors btn-press min-h-[44px] flex items-center leading-relaxed"
                   >
                     {tmpl}
                   </button>
@@ -371,7 +371,7 @@ export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
             <button
               type="button"
               onClick={() => { playClick(); setShowCoverModal(true); }}
-              className="px-3 py-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 text-xs font-extrabold transition-all min-h-[40px] flex items-center gap-1.5 btn-press shadow-2xs shrink-0"
+              className="px-3 py-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 text-xs font-extrabold transition-all min-h-[44px] flex items-center gap-1.5 btn-press shadow-2xs shrink-0"
             >
               <Palette className="w-4 h-4 text-blue-500" />
               <span>Ubah</span>

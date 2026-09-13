@@ -952,7 +952,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                   setSelectedGrade('Semua');
                   setSelectedSubject('Semua');
                 }}
-                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs min-h-[42px] btn-press shadow-sm"
+                className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs min-h-[44px] btn-press shadow-sm"
               >
                 <span>Tampilkan Semua Kuis</span>
               </button>
@@ -1001,7 +1001,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
               </div>
               <button
                 onClick={() => setRulesModalQuiz(null)}
-                className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg min-h-[40px] min-w-[40px] flex-shrink-0"
+                className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center flex-shrink-0"
                 aria-label="Tutup Aturan"
               >
                 <X className="w-5 h-5" />
@@ -1124,7 +1124,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
               </div>
               <button
                 onClick={() => setIsProfileModalOpen(false)}
-                className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-xl min-h-[40px] min-w-[40px] flex items-center justify-center"
+                className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center"
                 aria-label="Tutup"
               >
                 <X className="w-5 h-5" />
@@ -1139,7 +1139,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                   playClick();
                   setProfileTab('guest');
                 }}
-                className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all min-h-[40px] ${
+                className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all min-h-[44px] ${
                   profileTab === 'guest'
                     ? 'bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-400 shadow-sm'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
@@ -1154,7 +1154,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                   playClick();
                   setProfileTab(profile.isLoggedIn ? 'guest' : 'login');
                 }}
-                className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all min-h-[40px] ${
+                className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all min-h-[44px] ${
                   profileTab !== 'guest' || profile.isLoggedIn
                     ? 'bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-400 shadow-sm'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
@@ -1238,7 +1238,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                         playClick();
                         setProfileTab('login');
                       }}
-                      className="px-3 py-1.5 rounded-xl bg-blue-600 text-white font-bold text-[11px] hover:bg-blue-700 min-h-[36px] whitespace-nowrap"
+                      className="px-3.5 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-xs hover:bg-blue-700 min-h-[44px] flex items-center justify-center whitespace-nowrap"
                     >
                       Masuk / Daftar
                     </button>
@@ -1486,7 +1486,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
               </div>
               <button
                 onClick={() => setIsTeacherProfileModalOpen(false)}
-                className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-lg min-h-[40px] min-w-[40px] flex-shrink-0"
+                className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center flex-shrink-0"
                 aria-label="Tutup Profil Guru"
               >
                 <X className="w-5 h-5" />

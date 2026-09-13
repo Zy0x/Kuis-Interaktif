@@ -247,7 +247,7 @@ export const UnifiedAuthModal: React.FC<UnifiedAuthModalProps> = ({
                   setIsTeacherRegister(!isTeacherRegister);
                   setErrorMessage(null);
                 }}
-                className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline min-h-[36px] flex items-center"
+                className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline min-h-[44px] flex items-center"
               >
                 {isTeacherRegister ? 'Sudah punya akun? Masuk' : 'Belum punya akun? Daftar'}
               </button>
@@ -371,7 +371,7 @@ export const UnifiedAuthModal: React.FC<UnifiedAuthModalProps> = ({
                   setIsStudentRegister(!isStudentRegister);
                   setErrorMessage(null);
                 }}
-                className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline min-h-[36px] flex items-center"
+                className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline min-h-[44px] flex items-center"
               >
                 {isStudentRegister ? 'Sudah punya akun? Masuk' : 'Belum punya akun? Daftar'}
               </button>

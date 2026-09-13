@@ -60,7 +60,7 @@ export const DurationSelector: React.FC<DurationSelectorProps> = ({
             playClick();
             setShowCustomInput((prev) => !prev);
           }}
-          className="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 min-h-[36px] py-1 px-1.5"
+          className="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 min-h-[44px] py-1 px-1.5"
         >
           <Sliders className="w-3 h-3" />
           <span>{showCustomInput ? 'Tutup Kustom' : 'Atur Detik Bebas'}</span>
@@ -101,10 +101,10 @@ export const DurationSelector: React.FC<DurationSelectorProps> = ({
               type="button"
               onClick={() => handleStep(-5)}
               disabled={durationSec <= 5}
-              className="w-9 h-9 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-750 disabled:opacity-40 transition-colors btn-press min-h-[38px] min-w-[38px]"
+              className="w-11 h-11 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-750 disabled:opacity-40 transition-colors btn-press min-h-[44px] min-w-[44px]"
               aria-label="Kurang 5 detik"
             >
-              <Minus className="w-3.5 h-3.5" />
+              <Minus className="w-4 h-4" />
             </button>
 
             <input
@@ -113,17 +113,17 @@ export const DurationSelector: React.FC<DurationSelectorProps> = ({
               max={300}
               value={durationSec}
               onChange={handleInputChange}
-              className="w-20 text-center px-2 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-black text-xs focus:border-blue-500 focus:outline-none min-h-[38px]"
+              className="w-20 text-center px-2 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-black text-xs focus:border-blue-500 focus:outline-none min-h-[44px]"
             />
 
             <button
               type="button"
               onClick={() => handleStep(5)}
               disabled={durationSec >= 300}
-              className="w-9 h-9 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-750 disabled:opacity-40 transition-colors btn-press min-h-[38px] min-w-[38px]"
+              className="w-11 h-11 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-750 disabled:opacity-40 transition-colors btn-press min-h-[44px] min-w-[44px]"
               aria-label="Tambah 5 detik"
             >
-              <Plus className="w-3.5 h-3.5" />
+              <Plus className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -143,7 +143,7 @@ export const DurationSelector: React.FC<DurationSelectorProps> = ({
             <button
               type="button"
               onClick={onRequestResetDuration}
-              className="px-3 py-1.5 rounded-xl font-bold text-xs text-amber-800 dark:text-amber-200 bg-white dark:bg-slate-800 border border-amber-300 dark:border-amber-700/60 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors shrink-0 min-h-[40px] flex items-center justify-center btn-press shadow-2xs"
+              className="px-3 py-2 rounded-xl font-bold text-xs text-amber-800 dark:text-amber-200 bg-white dark:bg-slate-800 border border-amber-300 dark:border-amber-700/60 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors shrink-0 min-h-[44px] flex items-center justify-center btn-press shadow-2xs"
             >
               Samakan Waktu Soal...
             </button>

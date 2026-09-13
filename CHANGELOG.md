@@ -1,6 +1,31 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.82] - 2026-09-13
+### Penyelarasan Menyeluruh Standar Sentuh Mobile-First 44px (Rule 1), Presisi Kontrol Studio Soal & Resiliensi Interaksi Antar-Perangkat (Rule 1, Rule 2, Rule 4, Rule 5 & Rule 8)
+
+#### 1. Penyelarasan Standar Target Sentuh Mobile-First (Rule 1 & Rule 8 - Inclusive Design)
+- **Studio Pembuat Kuis (`QuizCreator.tsx`, `InfoKuisStep.tsx`, `SubjectDropdown.tsx`, `PublishQuizModal.tsx`, `QuizCoverModal.tsx`, `QuestionJumpModal.tsx`)**:
+  - Tombol kembali ke preset Benar/Salah, tombol hapus pengecoh tipe soal menjodohkan, dan tombol pratinjau butir soal di arena kuis seluruhnya ditingkatkan memenuhi standar minimal `min-h-[44px]`.
+  - Pilihan template deskripsi kuis, input pencarian mata pelajaran & filter tab jenjang (SD, SMP, SMA, Semua) ditingkatkan ke `min-h-[44px]`.
+  - Preset durasi soal, input kustom detik, chip saran lencana penghargaan, serta tombol tutup modal ditingkatkan ke `min-h-[44px]` (dan `w-11 h-11 min-h-[44px] min-w-[44px]` untuk ikon tutup).
+  - Tombol reset emoji sampul, chip kategori cover, dan tombol navigasi lompat nomor soal dioptimalkan memenuhi touch-target 44×44 px.
+- **Generator Soal AI & Modal Impor Cepat (`AiQuestionModal.tsx`, `AiGeneratorStep.tsx`)**:
+  - Tab navigasi utama, chip saran topik Kurikulum Merdeka, pemilih tingkat kelas & jumlah soal (3, 5, 10), serta kartu tipe format soal ditingkatkan ke `min-h-[44px]`.
+  - Tombol konfigurasi kunci API (DeepSeek, Groq, Gemini), tombol simpan & hapus kunci, tombol mata visibilitas kata sandi (`min-h-[44px] min-w-[44px]`), dan dropdown model ditingkatkan ke `min-h-[44px]`.
+  - Stepper minus/plus proporsi kustom soal ditingkatkan dari 32×32 px menjadi `w-11 h-11 min-h-[44px] min-w-[44px]` dengan tipografi tegas dan mudah ditekan di layar sentuh kecil.
+  - Tombol bantuan Taksonomi Bloom dioptimalkan dari 24×24 px hover-only menjadi target sentuh `44×44 px` dengan dukungan `group-focus-within` sehingga dapat dibuka dengan sentuhan (*touch tap*) pada smartphone.
+  - Tombol salin prompt, pemilih tab input teks/berkas, unduh berkas contoh CSV, serta tombol "Ubah Topik" dan "Ubah Jumlah" ditingkatkan ke `min-h-[44px]`.
+- **Ruang Tunggu, Notifikasi & Hasil Kuis (`InterQuestionWaitingLounge.tsx`, `ZoomChatToast.tsx`, `QuizHome.tsx`, `QuizResult.tsx`)**:
+  - Chip pesan cepat ruang tunggu antar-soal ditingkatkan ke `min-h-[44px]`.
+  - Tombol tutup notifikasi pesan instan (`ZoomChatToast`) ditingkatkan ke `min-h-[44px] min-w-[44px]`.
+  - Tombol "Tampilkan Semua Kuis" pada keadaan kosong di beranda dan tab filter pembahasan/peringkat pada layar hasil kuis ditingkatkan ke `min-h-[44px]`.
+
+#### 2. Kerapian Estetika & Keterbacaan Antarmuka (Rule 2 & Rule 4)
+- **Konsistensi Visual & Ergonomi**:
+  - Preservasi hierarki visual dengan padding proporsional (`px-3 py-2` hingga `px-4 py-2.5`), menjaga layout tetap seimbang dan estetik di layar sempit Android maupun monitor desktop resolusi tinggi.
+  - Kontras warna teks, border, dan status fokus tetap terjaga optimal pada mode gelap (*dark mode*) maupun terang (*light mode*).
+
 ## [2.3.81] - 2026-09-13
 ### Panel Admin Database & Backup Terenkripsi AES-256, Heartbeat Sesi Live Guru, Deteksi Tab-Switch Anti-Curang & Throttling Reaksi (Rule 1, Rule 2, Rule 9, Rule 11, Rule 12 & Rule 13)
 

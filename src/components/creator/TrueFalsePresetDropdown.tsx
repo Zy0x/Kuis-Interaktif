@@ -138,7 +138,7 @@ export const TrueFalsePresetDropdown: React.FC<TrueFalsePresetDropdownProps> = (
                   role="option"
                   aria-selected={isSelected}
                   onClick={() => handleChoosePreset(preset)}
-                  className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-colors flex items-center justify-between min-h-[40px] ${
+                  className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold transition-colors flex items-center justify-between min-h-[44px] ${
                     isSelected
                       ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 font-black'
                       : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
@@ -160,7 +160,7 @@ export const TrueFalsePresetDropdown: React.FC<TrueFalsePresetDropdownProps> = (
               role="option"
               aria-selected={isCustom}
               onClick={handleChooseCustom}
-              className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-colors flex items-center justify-between min-h-[40px] ${
+              className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold transition-colors flex items-center justify-between min-h-[44px] ${
                 isCustom
                   ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 font-black'
                   : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-blue-600'

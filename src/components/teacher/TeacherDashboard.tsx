@@ -468,7 +468,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                 playClick();
                 onGoHome();
               }}
-              className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 min-h-[40px] min-w-[40px] flex items-center justify-center transition-colors flex-shrink-0"
+              className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors flex-shrink-0"
               title="Kembali ke Beranda"
               aria-label="Kembali ke Beranda"
             >
@@ -505,7 +505,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                   playClick();
                   setIsAdminBackupModalOpen(true);
                 }}
-                className="p-2 sm:px-3 sm:py-2 rounded-xl border border-indigo-200 dark:border-indigo-800/80 bg-indigo-50/80 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 font-bold text-xs sm:text-sm min-h-[40px] min-w-[40px] flex items-center justify-center transition-all btn-press flex-shrink-0"
+                className="p-2 sm:px-3 sm:py-2.5 rounded-xl border border-indigo-200 dark:border-indigo-800/80 bg-indigo-50/80 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 font-bold text-xs sm:text-sm min-h-[44px] min-w-[44px] flex items-center justify-center transition-all btn-press flex-shrink-0"
                 title="Admin Database & Backup Terenkripsi (Rule 13)"
                 aria-label="Admin Database & Backup Terenkripsi"
               >
@@ -520,7 +520,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                 playClick();
                 setIsCreateModalOpen(true);
               }}
-              className="p-2 sm:px-3.5 sm:py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm min-h-[40px] min-w-[40px] flex items-center justify-center shadow-xs transition-all btn-press flex-shrink-0"
+              className="p-2 sm:px-3.5 sm:py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm min-h-[44px] min-w-[44px] flex items-center justify-center shadow-xs transition-all btn-press flex-shrink-0"
               title="Buat Kuis Baru"
               aria-label="Buat Kuis Baru"
             >
@@ -534,7 +534,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                 playClick();
                 onLogout();
               }}
-              className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 border border-slate-200 dark:border-slate-700 min-h-[40px] min-w-[40px] flex items-center justify-center transition-colors flex-shrink-0"
+              className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 border border-slate-200 dark:border-slate-700 min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors flex-shrink-0"
               title="Keluar Akun Guru"
               aria-label="Keluar Akun Guru"
             >
@@ -630,7 +630,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
             <button
               type="button"
               onClick={handleRestoreDefaultQuizzes}
-              className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 text-xs font-semibold flex items-center gap-1.5 min-h-[38px] self-start sm:self-auto"
+              className="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 text-xs font-semibold flex items-center gap-1.5 min-h-[44px] self-start sm:self-auto"
             >
               <RotateCcw className="w-3.5 h-3.5 text-blue-500" />
               <span>Pulihkan Kuis Default ({deletedCount})</span>
@@ -649,13 +649,13 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Cari judul kuis, mata pelajaran, atau PIN kelas 4-digit..."
-              className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-slate-900 dark:text-white text-xs sm:text-sm font-medium focus:outline-none focus:border-blue-500 min-h-[42px]"
+              className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-slate-900 dark:text-white text-xs sm:text-sm font-medium focus:outline-none focus:border-blue-500 min-h-[44px]"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-2 min-h-[44px] min-w-[44px] flex items-center justify-center"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -672,7 +672,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
               <select
                 value={filterSubject}
                 onChange={(e) => setFilterSubject(e.target.value as any)}
-                className="w-full px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-semibold focus:outline-none min-h-[38px]"
+                className="w-full px-2.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-semibold focus:outline-none min-h-[44px]"
               >
                 <option value="Semua">Semua Mapel</option>
                 <option value="Matematika">Matematika</option>
@@ -691,7 +691,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
               <select
                 value={filterGrade}
                 onChange={(e) => setFilterGrade(e.target.value === 'Semua' ? 'Semua' : Number(e.target.value))}
-                className="w-full px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-semibold focus:outline-none min-h-[38px]"
+                className="w-full px-2.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-semibold focus:outline-none min-h-[44px]"
               >
                 <option value="Semua">Semua Kelas</option>
                 <option value="1">Kelas 1 SD</option>
@@ -711,7 +711,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
               <select
                 value={filterVisibility}
                 onChange={(e) => setFilterVisibility(e.target.value as any)}
-                className="w-full px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-semibold focus:outline-none min-h-[38px]"
+                className="w-full px-2.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-semibold focus:outline-none min-h-[44px]"
               >
                 <option value="all">Semua Status</option>
                 <option value="public">🌐 Publik</option>
@@ -728,7 +728,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                 <select
                   value={sortOption}
                   onChange={(e) => setSortOption(e.target.value as any)}
-                  className="w-full px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-semibold focus:outline-none min-h-[38px]"
+                  className="w-full px-2.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-semibold focus:outline-none min-h-[44px]"
                 >
                   <option value="newest">🕒 Terbaru Dibuat</option>
                   <option value="oldest">⏳ Terlama Dibuat</option>
@@ -741,7 +741,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                   <button
                     type="button"
                     onClick={handleResetFilters}
-                    className="p-2 rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-bold whitespace-nowrap min-h-[38px] flex items-center gap-1 border border-rose-200 dark:border-rose-900/60"
+                    className="p-2.5 rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-bold whitespace-nowrap min-h-[44px] flex items-center gap-1 border border-rose-200 dark:border-rose-900/60"
                     title="Reset Filter"
                   >
                     <X className="w-3.5 h-3.5" />
@@ -862,7 +862,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                           playClick();
                           setSelectedQuizForSettings(quiz);
                         }}
-                        className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl min-h-[40px] min-w-[40px] flex items-center justify-center transition-colors"
+                        className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors"
                         title="Pengaturan Kuis"
                       >
                         <MoreVertical className="w-4 h-4" />
@@ -1114,7 +1114,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                       <button
                         type="button"
                         onClick={() => handleCopyPin(s.pinCode)}
-                        className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-xs font-bold transition-colors min-h-[36px]"
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-xs font-bold transition-colors min-h-[44px]"
                         title="Klik untuk salin PIN"
                       >
                         <span className="text-slate-400 text-[10px]">PIN:</span>
@@ -1191,7 +1191,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                                 playClick();
                                 setSelectedSessionForRecap(s);
                               }}
-                              className="py-2 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold flex items-center justify-center gap-1.5 min-h-[40px] transition-colors"
+                              className="py-2.5 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold flex items-center justify-center gap-1.5 min-h-[44px] transition-colors"
                             >
                               <BarChart3 className="w-3.5 h-3.5 text-blue-500" />
                               <span>Rekap Sesi</span>
@@ -1200,7 +1200,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                             <button
                               type="button"
                               onClick={() => handleEndSessionDirectly(s.id)}
-                              className="py-2 px-3 rounded-xl bg-rose-50 dark:bg-rose-950/30 hover:bg-rose-100 dark:hover:bg-rose-900/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/40 text-xs font-bold flex items-center justify-center gap-1.5 min-h-[40px] transition-colors"
+                              className="py-2.5 px-3 rounded-xl bg-rose-50 dark:bg-rose-950/30 hover:bg-rose-100 dark:hover:bg-rose-900/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/40 text-xs font-bold flex items-center justify-center gap-1.5 min-h-[44px] transition-colors"
                             >
                               <span>Akhiri Sesi</span>
                             </button>

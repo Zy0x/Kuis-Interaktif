@@ -1411,7 +1411,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                       playClick();
                       setShowFirstLetterHint(true);
                     }}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/50 hover:bg-amber-100 dark:hover:bg-amber-900/60 text-amber-700 dark:text-amber-300 font-bold text-xs border border-amber-200 dark:border-amber-800 min-h-[36px] transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-50 dark:bg-amber-950/50 hover:bg-amber-100 dark:hover:bg-amber-900/60 text-amber-700 dark:text-amber-300 font-bold text-xs border border-amber-200 dark:border-amber-800 min-h-[44px] transition-colors"
                   >
                     <Lightbulb className="w-3.5 h-3.5" />
                     <span>Bantuan Huruf Pertama</span>

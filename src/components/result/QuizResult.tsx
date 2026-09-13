@@ -166,7 +166,7 @@ export const QuizResult: React.FC<QuizResultProps> = ({
               playClick();
               setActiveTab('review');
             }}
-            className={`flex-1 py-2.5 rounded-lg font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all min-h-[42px] ${
+            className={`flex-1 py-2.5 rounded-lg font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all min-h-[44px] ${
               activeTab === 'review'
                 ? 'bg-blue-600 text-white shadow-sm'
                 : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
@@ -180,7 +180,7 @@ export const QuizResult: React.FC<QuizResultProps> = ({
               playClick();
               setActiveTab('leaderboard');
             }}
-            className={`flex-1 py-2.5 rounded-lg font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all min-h-[42px] ${
+            className={`flex-1 py-2.5 rounded-lg font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all min-h-[44px] ${
               activeTab === 'leaderboard'
                 ? 'bg-blue-600 text-white shadow-sm'
                 : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'

@@ -393,7 +393,7 @@ export const ImageSelectorModal: React.FC<ImageSelectorModalProps> = ({
                           setSearchQuery(kw);
                           handleSearch(kw);
                         }}
-                        className="px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-950/60 hover:text-blue-600 dark:hover:text-blue-400 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition-colors btn-press min-h-[36px] shrink-0"
+                        className="px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-950/60 hover:text-blue-600 dark:hover:text-blue-400 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition-colors btn-press min-h-[44px] shrink-0 inline-flex items-center"
                       >
                         {kw}
                       </button>

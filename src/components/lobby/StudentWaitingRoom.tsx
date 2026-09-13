@@ -59,6 +59,9 @@ export const StudentWaitingRoom: React.FC<StudentWaitingRoomProps> = ({
         // If teacher started quiz, transition to arena!
         if (updated.status === 'active') {
           onStartQuiz();
+        } else if (updated.status === 'finished') {
+          alert('Sesi kuis telah diakhiri atau ditutup oleh Guru.');
+          onBackToHome();
         }
       }
     };
@@ -314,13 +317,13 @@ export const StudentWaitingRoom: React.FC<StudentWaitingRoomProps> = ({
             {!isChatMuted && (
               <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
                 {/* Preset Chips */}
-                <div className="flex items-center gap-1 overflow-x-auto pb-1 no-scrollbar">
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
                   {PRESET_QUICK_MESSAGES.map((msg) => (
                     <button
                       key={msg}
                       type="button"
                       onClick={() => handleSendChatMessage(msg)}
-                      className="px-2 py-1 rounded-lg bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 text-[10px] font-bold hover:bg-purple-100 dark:hover:bg-purple-900/60 border border-purple-200 dark:border-purple-800 whitespace-nowrap min-h-[30px] btn-press"
+                      className="px-3 py-2 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 text-xs font-bold hover:bg-purple-100 dark:hover:bg-purple-900/60 border border-purple-200 dark:border-purple-800 whitespace-nowrap min-h-[44px] flex items-center justify-center btn-press"
                     >
                       {msg}
                     </button>
@@ -333,7 +336,7 @@ export const StudentWaitingRoom: React.FC<StudentWaitingRoomProps> = ({
                     e.preventDefault();
                     handleSendChatMessage(chatText);
                   }}
-                  className="flex items-center gap-1.5"
+                  className="flex items-center gap-2"
                 >
                   <input
                     type="text"
@@ -341,15 +344,15 @@ export const StudentWaitingRoom: React.FC<StudentWaitingRoomProps> = ({
                     value={chatText}
                     onChange={(e) => setChatText(e.target.value)}
                     placeholder="Ketik pesan positif..."
-                    className="flex-1 px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-purple-500 text-slate-900 dark:text-white min-h-[38px]"
+                    className="flex-1 px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-purple-500 text-slate-900 dark:text-white min-h-[44px]"
                   />
                   <button
                     type="submit"
                     disabled={!chatText.trim()}
-                    className="p-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold disabled:opacity-40 min-h-[38px] min-w-[38px] flex items-center justify-center transition-colors btn-press"
+                    className="p-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold disabled:opacity-40 min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors btn-press flex-shrink-0"
                     aria-label="Kirim Pesan"
                   >
-                    <Send className="w-3.5 h-3.5" />
+                    <Send className="w-4 h-4" />
                   </button>
                 </form>
               </div>

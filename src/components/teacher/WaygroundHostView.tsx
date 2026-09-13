@@ -365,7 +365,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
             <button
               type="button"
               onClick={handleCopyPin}
-              className="p-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
+              className="p-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-200 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
               title="Salin PIN"
             >
               {copiedPin ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
@@ -379,7 +379,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
               <button
                 type="button"
                 onClick={handleStartQuiz}
-                className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black min-h-[40px] flex items-center gap-2 shadow-lg shadow-emerald-950/60 animate-pulse transition-all"
+                className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black min-h-[44px] flex items-center gap-2 shadow-lg shadow-emerald-950/60 animate-pulse transition-all"
                 title="Mulai Kuis dan Izinkan Seluruh Siswa Menjawab Soal 1"
               >
                 <Play className="w-4 h-4 fill-white" />
@@ -395,7 +395,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                   playClick();
                   setIsChatDrawerOpen(true);
                 }}
-                className={`relative p-2 sm:px-3 py-1.5 rounded-xl border text-xs font-bold min-h-[40px] flex items-center gap-1.5 transition-colors ${
+                className={`relative p-2.5 sm:px-3 py-2 rounded-xl border text-xs font-bold min-h-[44px] flex items-center gap-1.5 transition-colors ${
                   session.isChatMuted || session.settings?.isChatMuted
                     ? 'border-rose-500/40 bg-rose-500/10 text-rose-300 hover:bg-rose-500/20'
                     : 'border-blue-500/40 bg-blue-600/20 hover:bg-blue-600/30 text-blue-200'
@@ -418,7 +418,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
               <button
                 type="button"
                 onClick={handleToggleChatMute}
-                className={`p-2 sm:px-2.5 py-1.5 rounded-xl border text-xs font-bold min-h-[40px] flex items-center gap-1.5 transition-colors ${
+                className={`p-2 sm:px-2.5 py-2 rounded-xl border text-xs font-bold min-h-[44px] flex items-center gap-1.5 transition-colors ${
                   session.isChatMuted || session.settings?.isChatMuted
                     ? 'bg-rose-500/20 border-rose-500/40 text-rose-300 hover:bg-rose-500/30'
                     : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'
@@ -435,7 +435,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
               type="button"
               onClick={handleSimulateStudents}
               disabled={isSimulating || session.status === 'finished'}
-              className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-500/40 text-indigo-200 text-xs font-bold min-h-[40px] flex items-center gap-1.5 transition-colors disabled:opacity-50"
+              className="px-2.5 sm:px-3 py-2 rounded-xl bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-500/40 text-indigo-200 text-xs font-bold min-h-[44px] flex items-center gap-1.5 transition-colors disabled:opacity-50"
               title="Simulasi 3 Murid Bergabung (Uji Coba Kelas)"
             >
               <UserPlus className="w-4 h-4 text-indigo-400" />
@@ -447,7 +447,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
               <button
                 type="button"
                 onClick={handleTogglePause}
-                className="p-2 sm:px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-bold min-h-[40px] min-w-[40px] flex items-center justify-center gap-1.5 transition-colors"
+                className="p-2 sm:px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-bold min-h-[44px] min-w-[44px] flex items-center justify-center gap-1.5 transition-colors"
                 title={session.status === 'paused' ? 'Lanjutkan Kuis' : 'Jeda Kuis'}
               >
                 {session.status === 'paused' ? (
@@ -469,7 +469,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
               <button
                 type="button"
                 onClick={() => setConfirmEndModal(true)}
-                className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold min-h-[40px] flex items-center gap-1.5 shadow-md shadow-rose-950/40 transition-colors"
+                className="px-3 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold min-h-[44px] flex items-center gap-1.5 shadow-md shadow-rose-950/40 transition-colors"
                 title="Akhiri Kuis & Buka Rekapan Nilai"
               >
                 <Square className="w-3.5 h-3.5 fill-current" />
@@ -479,7 +479,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
               <button
                 type="button"
                 onClick={() => onViewRecap(session)}
-                className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold min-h-[40px] flex items-center gap-1.5 shadow-md transition-colors"
+                className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold min-h-[44px] flex items-center gap-1.5 shadow-md transition-colors"
               >
                 <FileSpreadsheet className="w-4 h-4" />
                 <span>Buka Rekapan</span>
@@ -580,7 +580,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
               playClick();
               setActiveTab('leaderboard');
             }}
-            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all min-h-[40px] whitespace-nowrap ${
+            className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all min-h-[44px] whitespace-nowrap ${
               activeTab === 'leaderboard'
                 ? 'bg-blue-600 text-white shadow-md'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
@@ -596,7 +596,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
               playClick();
               setActiveTab('matrix');
             }}
-            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all min-h-[40px] whitespace-nowrap ${
+            className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all min-h-[44px] whitespace-nowrap ${
               activeTab === 'matrix'
                 ? 'bg-blue-600 text-white shadow-md'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
@@ -612,7 +612,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
               playClick();
               setActiveTab('display');
             }}
-            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all min-h-[40px] whitespace-nowrap ${
+            className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all min-h-[44px] whitespace-nowrap ${
               activeTab === 'display'
                 ? 'bg-blue-600 text-white shadow-md'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
@@ -652,7 +652,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                 <button
                   type="button"
                   onClick={handleStartQuiz}
-                  className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm shadow-xl shadow-emerald-950/60 flex items-center justify-center gap-2 transition-all transform active:scale-95 flex-shrink-0"
+                  className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm shadow-xl shadow-emerald-950/60 flex items-center justify-center gap-2 transition-all transform active:scale-95 flex-shrink-0 min-h-[44px]"
                 >
                   <Play className="w-5 h-5 fill-white" />
                   <span>Mulai Kuis Sekarang</span>
@@ -691,7 +691,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                     type="button"
                     onClick={() => handleAdvanceQuestion(Math.max(0, (session.currentQuestionIndex ?? 0) - 1))}
                     disabled={(session.currentQuestionIndex ?? 0) === 0}
-                    className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold disabled:opacity-40 min-h-[38px] flex items-center gap-1.5 transition-colors"
+                    className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold disabled:opacity-40 min-h-[44px] flex items-center gap-1.5 transition-colors"
                   >
                     <ArrowLeft className="w-3.5 h-3.5" />
                     <span>Sebelumnya</span>
@@ -701,7 +701,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                     <button
                       type="button"
                       onClick={() => handleAdvanceQuestion((session.currentQuestionIndex ?? 0) + 1)}
-                      className="px-4 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-black min-h-[38px] flex items-center gap-1.5 shadow-md shadow-blue-950/50 transition-colors"
+                      className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-black min-h-[44px] flex items-center gap-1.5 shadow-md shadow-blue-950/50 transition-colors"
                     >
                       <span>Buka Soal Berikutnya</span>
                       <ArrowRight className="w-3.5 h-3.5" />
@@ -710,7 +710,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                     <button
                       type="button"
                       onClick={() => setConfirmEndModal(true)}
-                      className="px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black min-h-[38px] flex items-center gap-1.5 shadow-md transition-colors"
+                      className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black min-h-[44px] flex items-center gap-1.5 shadow-md transition-colors"
                     >
                       <Square className="w-3.5 h-3.5 fill-current" />
                       <span>Selesaikan Kuis</span>
@@ -963,7 +963,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                     }
                   }}
                   disabled={currentDisplayQuestionIdx === 0}
-                  className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold disabled:opacity-40 min-h-[36px]"
+                  className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold disabled:opacity-40 min-h-[44px]"
                 >
                   ◀ Sebelumnya
                 </button>
@@ -978,7 +978,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                     }
                   }}
                   disabled={currentDisplayQuestionIdx === quiz.questions.length - 1}
-                  className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold disabled:opacity-40 min-h-[36px]"
+                  className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold disabled:opacity-40 min-h-[44px]"
                 >
                   Selanjutnya ▶
                 </button>

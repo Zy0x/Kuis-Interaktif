@@ -230,7 +230,7 @@ export const QuizDetail: React.FC<QuizDetailProps> = ({
               playClick();
               onBack();
             }}
-            className="flex items-center gap-2 px-3 py-2 rounded-xl text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 font-bold text-xs sm:text-sm min-h-[42px] transition-colors"
+            className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 font-bold text-xs sm:text-sm min-h-[44px] transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Kembali ke Dashboard</span>
@@ -243,7 +243,7 @@ export const QuizDetail: React.FC<QuizDetailProps> = ({
                 playClick();
                 onEditQuiz(quiz);
               }}
-              className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm flex items-center gap-1.5 shadow-sm min-h-[42px] transition-all btn-press"
+              className="px-3.5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm flex items-center gap-1.5 shadow-sm min-h-[44px] transition-all btn-press"
             >
               <Pencil className="w-4 h-4" />
               <span>Edit Kuis</span>
@@ -321,7 +321,7 @@ export const QuizDetail: React.FC<QuizDetailProps> = ({
                   <button
                     type="button"
                     onClick={handleCopyPin}
-                    className="p-2 rounded-xl bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-blue-600 border border-slate-200 dark:border-slate-700 min-h-[38px] min-w-[38px] flex items-center justify-center transition-colors"
+                    className="p-2.5 rounded-xl bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-blue-600 border border-slate-200 dark:border-slate-700 min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors"
                     title="Salin PIN"
                   >
                     {copiedPin ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
@@ -362,7 +362,7 @@ export const QuizDetail: React.FC<QuizDetailProps> = ({
                   playClick();
                   setIsPlayModalOpen(true);
                 }}
-                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black text-xs sm:text-sm flex items-center gap-2 shadow-sm min-h-[42px] transition-all btn-press tracking-wide"
+                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black text-xs sm:text-sm flex items-center gap-2 shadow-sm min-h-[44px] transition-all btn-press tracking-wide"
                 title="Mainkan Kuis Bersama Siswa (Buka Pengaturan Sesi Bermain)"
               >
                 <Play className="w-4 h-4 fill-white text-white" />
@@ -375,7 +375,7 @@ export const QuizDetail: React.FC<QuizDetailProps> = ({
                   playClick();
                   onPrintWorksheet(quiz);
                 }}
-                className="px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 font-bold text-xs sm:text-sm flex items-center gap-2 min-h-[42px] transition-all btn-press"
+                className="px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 font-bold text-xs sm:text-sm flex items-center gap-2 min-h-[44px] transition-all btn-press"
               >
                 <Printer className="w-4 h-4" />
                 <span>Cetak Lembar Kerja (LKS)</span>
@@ -384,7 +384,7 @@ export const QuizDetail: React.FC<QuizDetailProps> = ({
               <button
                 type="button"
                 onClick={handleCopyLink}
-                className="px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 font-bold text-xs sm:text-sm flex items-center gap-2 min-h-[42px] transition-all btn-press"
+                className="px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 font-bold text-xs sm:text-sm flex items-center gap-2 min-h-[44px] transition-all btn-press"
               >
                 {copiedLink ? <Check className="w-4 h-4 text-emerald-600" /> : <Share2 className="w-4 h-4 text-blue-500" />}
                 <span>{copiedLink ? 'Tautan Tersalin' : 'Bagi Tautan'}</span>
@@ -399,7 +399,7 @@ export const QuizDetail: React.FC<QuizDetailProps> = ({
                   await onDuplicateQuiz(quiz);
                   showToast('✓ Kuis berhasil diduplikasi!');
                 }}
-                className="p-2.5 rounded-xl text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 border border-slate-200 dark:border-slate-700 min-h-[42px] min-w-[42px] flex items-center justify-center transition-colors"
+                className="p-2.5 rounded-xl text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 border border-slate-200 dark:border-slate-700 min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors"
                 title="Duplikat Kuis Ini"
               >
                 <CopyPlus className="w-4 h-4" />
@@ -411,7 +411,7 @@ export const QuizDetail: React.FC<QuizDetailProps> = ({
                   playClick();
                   setShowDeleteModal(true);
                 }}
-                className="p-2.5 rounded-xl text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-slate-200 dark:border-slate-700 min-h-[42px] min-w-[42px] flex items-center justify-center transition-colors"
+                className="p-2.5 rounded-xl text-slate-500 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-slate-200 dark:border-slate-700 min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors"
                 title="Hapus Kuis Ini"
               >
                 <Trash2 className="w-4 h-4" />
@@ -517,7 +517,7 @@ export const QuizDetail: React.FC<QuizDetailProps> = ({
                   type="button"
                   onClick={handleExportCSV}
                   disabled={submissions.length === 0}
-                  className="px-3.5 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border border-emerald-200 dark:border-emerald-800/80 font-bold text-xs sm:text-sm flex items-center gap-1.5 transition-colors disabled:opacity-40 min-h-[40px]"
+                  className="px-3.5 py-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border border-emerald-200 dark:border-emerald-800/80 font-bold text-xs sm:text-sm flex items-center gap-1.5 transition-colors disabled:opacity-40 min-h-[44px]"
                 >
                   <Download className="w-4 h-4" />
                   <span>Unduh Rekap (CSV / Excel)</span>
@@ -609,7 +609,7 @@ export const QuizDetail: React.FC<QuizDetailProps> = ({
                   playClick();
                   onEditQuiz(quiz);
                 }}
-                className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm flex items-center gap-1.5 shadow-sm min-h-[40px]"
+                className="px-3.5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm flex items-center gap-1.5 shadow-sm min-h-[44px]"
               >
                 <Pencil className="w-3.5 h-3.5" />
                 <span>Edit / Tambah Soal di Creator</span>

@@ -214,13 +214,13 @@ export const SubjectDropdown: React.FC<SubjectDropdownProps> = ({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Cari mata pelajaran..."
-              className="w-full pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-bold text-xs focus:border-blue-500 focus:outline-none min-h-[36px]"
+              className="w-full pl-8 pr-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-bold text-xs focus:border-blue-500 focus:outline-none min-h-[44px]"
             />
           </div>
 
           {/* Filter Tab Jenjang: SD, SMP, SMA, Semua */}
           {!searchQuery.trim() && (
-            <div className="flex items-center gap-1 border-b border-slate-100 dark:border-slate-750 pb-1.5 shrink-0 overflow-x-auto scrollbar-none">
+            <div className="flex items-center gap-1.5 border-b border-slate-100 dark:border-slate-750 pb-2 shrink-0 overflow-x-auto scrollbar-none">
               {(['SD', 'SMP', 'SMA', 'semua'] as const).map((tab) => {
                 const isActive = activeTab === tab;
                 const label = tab === 'semua' ? 'Semua' : tab;
@@ -232,7 +232,7 @@ export const SubjectDropdown: React.FC<SubjectDropdownProps> = ({
                       if (playClick) playClick();
                       setActiveTab(tab);
                     }}
-                    className={`px-3 py-1 rounded-lg text-[11px] font-extrabold transition-all min-h-[30px] btn-press ${
+                    className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all min-h-[44px] btn-press flex items-center justify-center ${
                       isActive
                         ? 'bg-blue-600 text-white shadow-xs'
                         : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-750'

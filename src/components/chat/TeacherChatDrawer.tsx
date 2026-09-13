@@ -206,7 +206,7 @@ export const TeacherChatDrawer: React.FC<TeacherChatDrawerProps> = ({
             <button
               type="button"
               onClick={onToggleChatMute}
-              className={`p-2 rounded-xl text-xs font-bold transition-all min-h-[40px] min-w-[40px] flex items-center justify-center gap-1.5 ${
+              className={`p-2.5 rounded-xl text-xs font-bold transition-all min-h-[44px] min-w-[44px] flex items-center justify-center gap-1.5 ${
                 isChatMuted
                   ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-300 dark:border-rose-800'
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
@@ -224,7 +224,7 @@ export const TeacherChatDrawer: React.FC<TeacherChatDrawerProps> = ({
                 playClick();
                 onClose();
               }}
-              className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
+              className="p-2.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
               aria-label="Tutup Obrolan"
             >
               <X className="w-5 h-5" />
@@ -348,7 +348,7 @@ export const TeacherChatDrawer: React.FC<TeacherChatDrawerProps> = ({
           <button
             type="submit"
             disabled={!inputText.trim() || isSending}
-            className="p-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white rounded-xl font-bold min-h-[42px] min-w-[42px] flex items-center justify-center transition-colors btn-press shadow-xs flex-shrink-0"
+            className="p-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white rounded-xl font-bold min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors btn-press shadow-xs flex-shrink-0"
             title="Kirim Pesan"
             aria-label="Kirim Pesan"
           >
