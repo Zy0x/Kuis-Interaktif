@@ -307,6 +307,17 @@ export const App: React.FC = () => {
     };
   }, [activeQuiz, activeSession]);
 
+  // Sinkronisasi global auth: Saat logout penuh terjadi di tab/komponen mana pun
+  useEffect(() => {
+    const handleAuthSignedOut = () => {
+      setTeacher(null);
+    };
+    window.addEventListener('kuis_auth_signed_out', handleAuthSignedOut);
+    return () => {
+      window.removeEventListener('kuis_auth_signed_out', handleAuthSignedOut);
+    };
+  }, []);
+
   const handleSelectQuiz = (quiz: Quiz, mode?: GameMode) => {
     setActiveQuiz(quiz);
     setActiveGameMode(mode || quiz.defaultGameMode || 'standard');
@@ -396,23 +407,41 @@ export const App: React.FC = () => {
   };
 
   const handleTeacherLoginSuccess = (teacherProfile: TeacherProfile) => {
+    // Pastikan session siswa lokal direset ke mode tamu agar tidak bentrok dengan akun guru
+    const currentStudent = DataManager.getPlayerProfile();
+    if (currentStudent.isLoggedIn) {
+      DataManager.savePlayerProfile({
+        ...currentStudent,
+        isLoggedIn: false,
+      });
+    }
     setTeacher(teacherProfile);
     playCelebration();
+    setIsAuthModalOpen(false);
     setCurrentScreen('teacher-dashboard');
     saveNavigationState({ screen: 'teacher-dashboard', replace: false });
   };
 
-  const handleStudentLoginSuccess = () => {
+  const handleStudentLoginSuccess = (studentProfile?: any) => {
+    // Hapus status pendidik di App state & local storage agar peran berganti murni ke siswa
+    setTeacher(null);
+    DataManager.setTeacherProfile(null);
     playCelebration();
-    // Modal will close and student session is persisted
+    setIsAuthModalOpen(false);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('kuis_student_logged_in', { detail: { profile: studentProfile } }));
+    }
   };
 
-  const handleTeacherLogout = async () => {
-    await DataManager.signOutTeacher();
+  const handleFullLogout = async () => {
+    await DataManager.signOutAll();
     setTeacher(null);
     clearNavigationState();
     setCurrentScreen('home');
   };
+
+  const handleTeacherLogout = handleFullLogout;
+  const handleStudentLogout = handleFullLogout;
 
   const handleLaunchSmartboard = (quiz: Quiz) => {
     setActiveQuiz(quiz);
@@ -608,6 +637,7 @@ export const App: React.FC = () => {
           teacher={teacher}
           onTeacherUpdate={(updated) => setTeacher(updated)}
           onTeacherLogout={handleTeacherLogout}
+          onStudentLogout={handleStudentLogout}
           onPrintWorksheet={handlePrintWorksheet}
           isDark={isDark}
           onToggleTheme={toggleTheme}

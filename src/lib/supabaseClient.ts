@@ -1043,6 +1043,13 @@ export const DataManager = {
             grade: pData?.grade_level || current.grade || 1,
           };
           this.savePlayerProfile(studentProfile);
+          // Bersihkan sesi profil guru aktif agar peran tidak tumpang-tindih saat email yang sama dipakai
+          this.setTeacherProfile(null);
+          if (typeof window !== 'undefined') {
+            try {
+              window.dispatchEvent(new CustomEvent('kuis_student_logged_in', { detail: { profile: studentProfile } }));
+            } catch {}
+          }
           return { success: true, profile: studentProfile };
         }
       } catch (err: unknown) {
@@ -1061,6 +1068,12 @@ export const DataManager = {
       nickname: email.split('@')[0],
     };
     this.savePlayerProfile(mockStudent);
+    this.setTeacherProfile(null);
+    if (typeof window !== 'undefined') {
+      try {
+        window.dispatchEvent(new CustomEvent('kuis_student_logged_in', { detail: { profile: mockStudent } }));
+      } catch {}
+    }
     return { success: true, profile: mockStudent };
   },
 
@@ -1105,6 +1118,12 @@ export const DataManager = {
             grade: gradeLevel,
           };
           this.savePlayerProfile(studentProfile);
+          this.setTeacherProfile(null);
+          if (typeof window !== 'undefined') {
+            try {
+              window.dispatchEvent(new CustomEvent('kuis_student_logged_in', { detail: { profile: studentProfile } }));
+            } catch {}
+          }
           return { success: true, profile: studentProfile };
         }
       } catch (err: unknown) {
@@ -1122,6 +1141,12 @@ export const DataManager = {
       grade: gradeLevel,
     };
     this.savePlayerProfile(mockStudent);
+    this.setTeacherProfile(null);
+    if (typeof window !== 'undefined') {
+      try {
+        window.dispatchEvent(new CustomEvent('kuis_student_logged_in', { detail: { profile: mockStudent } }));
+      } catch {}
+    }
     return { success: true, profile: mockStudent };
   },
 
@@ -1133,6 +1158,9 @@ export const DataManager = {
         // ignore
       }
     }
+    // Hapus juga profil guru di penyimpanan lokal agar tidak ada sesi silang tersisa
+    this.setTeacherProfile(null);
+
     const current = this.getPlayerProfile();
     const guestProfile: PlayerProfile = {
       nickname: current.nickname,
@@ -1143,7 +1171,18 @@ export const DataManager = {
       isLoggedIn: false,
     };
     this.savePlayerProfile(guestProfile);
+
+    if (typeof window !== 'undefined') {
+      try {
+        window.dispatchEvent(new CustomEvent('kuis_auth_signed_out'));
+      } catch {}
+    }
+
     return guestProfile;
+  },
+
+  async signOutAll(): Promise<PlayerProfile> {
+    return this.signOutStudent();
   },
 
   // 7. Save Quiz Attempt & Update Leaderboard
@@ -1645,6 +1684,14 @@ export const DataManager = {
             schoolName: finalSchoolName,
           };
           this.setTeacherProfile(profile);
+          // Reset status login siswa jika ada agar sesi tidak bertabrakan
+          const currentStudent = this.getPlayerProfile();
+          if (currentStudent.isLoggedIn) {
+            this.savePlayerProfile({
+              ...currentStudent,
+              isLoggedIn: false,
+            });
+          }
           if (cleanEmail.toLowerCase() === MASTER_TEACHER_EMAIL.toLowerCase()) {
             this.claimMasterTeacherQuizzes(profile.id, profile.fullName);
           }
@@ -1664,6 +1711,13 @@ export const DataManager = {
       schoolName: 'SD Kreatif Nusantara',
     };
     this.setTeacherProfile(mockTeacher);
+    const currentStudent = this.getPlayerProfile();
+    if (currentStudent.isLoggedIn) {
+      this.savePlayerProfile({
+        ...currentStudent,
+        isLoggedIn: false,
+      });
+    }
     if (cleanEmail.toLowerCase() === MASTER_TEACHER_EMAIL.toLowerCase()) {
       this.claimMasterTeacherQuizzes(mockTeacher.id, mockTeacher.fullName);
     }
@@ -1695,6 +1749,13 @@ export const DataManager = {
             schoolName,
           };
           this.setTeacherProfile(profile);
+          const currentStudent = this.getPlayerProfile();
+          if (currentStudent.isLoggedIn) {
+            this.savePlayerProfile({
+              ...currentStudent,
+              isLoggedIn: false,
+            });
+          }
 
           // Upsert to profiles_teacher table in Supabase
           try {
@@ -1727,6 +1788,13 @@ export const DataManager = {
       schoolName,
     };
     this.setTeacherProfile(mockTeacher);
+    const currentStudent = this.getPlayerProfile();
+    if (currentStudent.isLoggedIn) {
+      this.savePlayerProfile({
+        ...currentStudent,
+        isLoggedIn: false,
+      });
+    }
     if (cleanEmail.toLowerCase() === MASTER_TEACHER_EMAIL.toLowerCase()) {
       this.claimMasterTeacherQuizzes(mockTeacher.id, mockTeacher.fullName);
     }
@@ -1742,6 +1810,24 @@ export const DataManager = {
       }
     }
     this.setTeacherProfile(null);
+    const current = this.getPlayerProfile();
+    if (current.isLoggedIn) {
+      const guestProfile: PlayerProfile = {
+        nickname: current.nickname,
+        avatarId: current.avatarId,
+        totalScore: current.totalScore,
+        quizzesCompleted: current.quizzesCompleted,
+        starsEarned: current.starsEarned,
+        isLoggedIn: false,
+      };
+      this.savePlayerProfile(guestProfile);
+    }
+
+    if (typeof window !== 'undefined') {
+      try {
+        window.dispatchEvent(new CustomEvent('kuis_auth_signed_out'));
+      } catch {}
+    }
   },
 
   // 11. Quick Math Quiz Generator

@@ -35,6 +35,7 @@ interface MobileProfileSheetProps {
   onOpenProfileModal: () => void;
   onOpenTeacherProfileModal: () => void;
   onTeacherLogout?: () => void;
+  onStudentLogout?: () => void;
   playClick: () => void;
 }
 
@@ -52,6 +53,7 @@ export const MobileProfileSheet: React.FC<MobileProfileSheetProps> = ({
   onOpenProfileModal,
   onOpenTeacherProfileModal,
   onTeacherLogout,
+  onStudentLogout,
   playClick,
 }) => {
   useBodyScrollLock(isOpen);
@@ -284,7 +286,11 @@ export const MobileProfileSheet: React.FC<MobileProfileSheetProps> = ({
                 onClick={() => {
                   playClick();
                   onClose();
-                  onTeacherLogout?.();
+                  if (onTeacherLogout) {
+                    onTeacherLogout();
+                  } else if (onStudentLogout) {
+                    onStudentLogout();
+                  }
                 }}
                 className="w-full py-2.5 px-4 rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 border border-rose-200/80 dark:border-rose-900/50 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 min-h-[44px] transition-colors"
               >
@@ -316,9 +322,13 @@ export const MobileProfileSheet: React.FC<MobileProfileSheetProps> = ({
                 onClick={() => {
                   playClick();
                   onClose();
-                  onTeacherLogout?.();
+                  if (onStudentLogout) {
+                    onStudentLogout();
+                  } else if (onTeacherLogout) {
+                    onTeacherLogout();
+                  }
                 }}
-                className="w-full py-2.5 px-4 rounded-xl text-slate-600 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 min-h-[44px] transition-colors"
+                className="w-full py-2.5 px-4 rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 border border-rose-200/80 dark:border-rose-900/50 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 min-h-[44px] transition-colors"
               >
                 <LogOut className="w-4 h-4" />
                 <span>Keluar Akun Siswa</span>

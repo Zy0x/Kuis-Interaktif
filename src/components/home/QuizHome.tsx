@@ -48,6 +48,7 @@ interface QuizHomeProps {
   teacher: TeacherProfile | null;
   onTeacherUpdate?: (teacher: TeacherProfile) => void;
   onTeacherLogout?: () => void;
+  onStudentLogout?: () => void;
   onPrintWorksheet?: (quiz: Quiz) => void;
   isDark: boolean;
   onToggleTheme: () => void;
@@ -64,6 +65,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
   teacher,
   onTeacherUpdate,
   onTeacherLogout,
+  onStudentLogout,
   onPrintWorksheet,
   isDark,
   onToggleTheme,
@@ -80,6 +82,26 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
   const [isTeacherProfileModalOpen, setIsTeacherProfileModalOpen] = useState(false);
   const [isMobileProfileSheetOpen, setIsMobileProfileSheetOpen] = useState(false);
   const [rulesModalQuiz, setRulesModalQuiz] = useState<Quiz | null>(null);
+
+  // Sinkronisasi status autentikasi siswa & guru lintas event & komponen
+  useEffect(() => {
+    const handleAuthSignedOut = () => {
+      setProfile(DataManager.getPlayerProfile());
+    };
+    const handleStudentLogin = (e: any) => {
+      if (e.detail?.profile) {
+        setProfile(e.detail.profile);
+      } else {
+        setProfile(DataManager.getPlayerProfile());
+      }
+    };
+    window.addEventListener('kuis_auth_signed_out', handleAuthSignedOut);
+    window.addEventListener('kuis_student_logged_in', handleStudentLogin);
+    return () => {
+      window.removeEventListener('kuis_auth_signed_out', handleAuthSignedOut);
+      window.removeEventListener('kuis_student_logged_in', handleStudentLogin);
+    };
+  }, []);
 
   // Status Formulir Edit Profil Pendidik
   const [isEditingTeacherProfile, setIsEditingTeacherProfile] = useState(false);
@@ -370,11 +392,17 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
 
   const handleStudentSignOut = async () => {
     playClick();
-    const guest = await DataManager.signOutStudent();
+    const guest = await DataManager.signOutAll();
     setProfile(guest);
     setTempNickname(isCustomName(guest.nickname) ? guest.nickname : '');
     setTempAvatar(guest.avatarId);
     setProfileTab('guest');
+    setIsProfileModalOpen(false);
+    if (onStudentLogout) {
+      onStudentLogout();
+    } else if (onTeacherLogout) {
+      onTeacherLogout();
+    }
   };
 
   const [selectedGameMode, setSelectedGameMode] = useState<GameMode>('standard');
@@ -1264,24 +1292,33 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                     </button>
                   </div>
                 ) : (
-                  <div className="pt-1 flex items-center justify-between text-xs">
-                    <span className="text-slate-500 dark:text-slate-400 font-medium">Prestasi tersimpan di akun.</span>
+                  <div className="pt-2 flex items-center justify-between p-3 rounded-2xl bg-rose-50/70 dark:bg-rose-950/30 border border-rose-100 dark:border-rose-900/40">
+                    <div className="text-[11px] text-slate-600 dark:text-slate-400 min-w-0 pr-2">
+                      <span className="font-bold block text-slate-900 dark:text-white truncate">
+                        {isCustomName(profile.nickname) ? profile.nickname : 'Akun Siswa'}
+                      </span>
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 truncate block">
+                        {profile.email || 'Terhubung'}
+                      </span>
+                    </div>
                     <button
                       type="button"
                       onClick={handleStudentSignOut}
-                      className="text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 font-bold min-h-[44px] px-3 py-1 inline-flex items-center hover:underline rounded-xl btn-press"
+                      className="text-rose-600 dark:text-rose-400 hover:text-white hover:bg-rose-600 dark:hover:bg-rose-600 font-bold text-xs min-h-[44px] px-3.5 py-1.5 inline-flex items-center gap-1.5 border border-rose-200 dark:border-rose-800 rounded-xl transition-all btn-press shadow-2xs shrink-0"
+                      title="Keluar Akun Siswa"
+                      aria-label="Keluar Akun Siswa"
                     >
-                      Keluar Akun
+                      <LogOut className="w-3.5 h-3.5" />
+                      <span>Keluar Akun</span>
                     </button>
                   </div>
-
                 )}
 
                 <div className="pt-2 flex gap-2.5">
                   <button
                     type="button"
                     onClick={() => setIsProfileModalOpen(false)}
-                    className="flex-1 py-2.5 rounded-xl font-semibold text-xs sm:text-sm text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 min-h-[44px]"
+                    className="flex-1 py-2.5 rounded-xl font-semibold text-xs sm:text-sm text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 min-h-[44px]"
                   >
                     Batal
                   </button>
@@ -1317,14 +1354,17 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                       <button
                         type="button"
                         onClick={handleStudentSignOut}
-                        className="flex-1 py-2.5 rounded-xl font-bold text-xs text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/30 hover:bg-rose-100 dark:hover:bg-rose-900/50 border border-rose-200 dark:border-rose-900 min-h-[44px]"
+                        className="flex-1 py-2.5 rounded-xl font-bold text-xs text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/30 hover:bg-rose-100 dark:hover:bg-rose-900/50 border border-rose-200 dark:border-rose-900 min-h-[44px] flex items-center justify-center gap-1.5 btn-press"
+                        title="Keluar Akun Siswa"
+                        aria-label="Keluar Akun Siswa"
                       >
-                        Keluar ke Mode Tamu
+                        <LogOut className="w-4 h-4" />
+                        <span>Keluar Akun Siswa</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => setProfileTab('guest')}
-                        className="flex-1 py-2.5 rounded-xl font-bold text-xs text-white bg-blue-600 hover:bg-blue-700 min-h-[44px]"
+                        className="flex-1 py-2.5 rounded-xl font-bold text-xs text-white bg-blue-600 hover:bg-blue-700 min-h-[44px] btn-press"
                       >
                         Tutup
                       </button>
@@ -1760,6 +1800,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
         }}
         onOpenTeacherProfileModal={() => setIsTeacherProfileModalOpen(true)}
         onTeacherLogout={onTeacherLogout}
+        onStudentLogout={handleStudentSignOut}
         playClick={playClick}
       />
 

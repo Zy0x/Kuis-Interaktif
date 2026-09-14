@@ -1,6 +1,31 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.0] - 2026-09-14
+### Perbaikan Menyeluruh Sistem Logout & Isolasi Sesi Akun Multi-Peran (Guru & Siswa) (Rule 1, Rule 2, Rule 4, Rule 8, Rule 9, Rule 11 & Rule 15)
+
+#### 1. Isolasi Bersih Sesi Peran Guru dan Siswa (supabaseClient.ts & App.tsx)
+- **Pencegahan Sesi Silang / Tumpang-Tindih**: Saat pengguna masuk sebagai Siswa (`signInStudent` / `signUpStudent`), sesi lokal profil pendidik (`STORAGE_KEY_TEACHER_PROFILE`) dan state `teacher` pada `App.tsx` secara otomatis dibersihkan total.
+- **Penetapan Peran Murni**: Saat pengguna masuk sebagai Guru (`signInTeacher` / `signUpTeacher`), status siswa langsung diatur kembali ke mode tamu (`isLoggedIn: false`) agar peran tidak saling menimpa tampilan antarmuka.
+- **Metode Logout Komprehensif (`signOutAll`)**: Menyediakan fungsi `DataManager.signOutAll()` yang secara serentak mencabut sesi cloud Supabase, membersihkan token guru, mereset profil siswa ke mode tamu, dan menghapus sisa navigasi sensitif.
+
+#### 2. Perbaikan Kritis Logout Siswa di Perangkat Seluler (MobileProfileSheet.tsx)
+- **Resolusi Handler Logout Mobile**: Memperbaiki kekeliruan pemanggilan fungsi di mana tombol "Keluar Akun Siswa" pada panel lembar profil mobile sebelumnya memanggil fungsi logout guru. Kini tombol terhubung langsung ke `onStudentLogout` dan fallback pembersihan total.
+- **Penyelarasan Props Komponen**: Menambahkan interface `onStudentLogout?: () => void;` pada `MobileProfileSheetProps` dan mengintegrasikannya langsung dari `QuizHome.tsx`.
+
+#### 3. Redesain Tombol Logout Ramah Pengguna & Touch-First (QuizHome.tsx)
+- **Tombol Keluar Akun Tab 1 (Profil Saya)**: Menggantikan link teks sederhana dengan kartu ringkasan status akun berlatar lembut lengkap dengan tombol *"Keluar Akun"* berikon `LogOut`, border berpenampilan tegas, dan target sentuh minimal 44×44 px.
+- **Tombol Keluar Akun Tab 2 (Masuk/Daftar)**: Menata ulang tombol *"Keluar Akun Siswa"* dengan ikon logout profesional dan responsivitas sentuhan instan.
+- **Modal Profil Guru**: Memastikan aksi *"Keluar Akun Guru (Logout)"* memicu pembersihan menyeluruh ke mode tamu.
+
+#### 4. Sinkronisasi Real-Time Lintas Komponen & Tab Browser
+- **Event `kuis_auth_signed_out`**: Dipancarkan seketika saat aksi logout dilakukan di bagian mana pun dari sistem, memastikan seluruh komponen (`App`, `QuizHome`, `TeacherDashboard`) langsung memperbarui status antarmuka ke mode tamu tanpa perlu me-refresh halaman.
+- **Event `kuis_student_logged_in`**: Menjamin profil siswa yang baru login langsung tersinkronkan ke seluruh panel navigasi.
+
+#### 5. Pembaruan Versi & Siklus Rilis (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.0` (`package.json`) mengikuti aturan batas siklus `x.x.99` ke `x.x+1.0`.
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.0` (`public/sw.js`).
+
 ## [2.3.99] - 2026-09-14
 ### Presisi Tampilan Antar-Platform & Responsivitas Penuh Ruang Tunggu Siswa: Mobile-S/M/L hingga Desktop & Ultra-Wide 4K (Rule 1, Rule 2, Rule 4, Rule 5, Rule 8 & Rule 15)
 
