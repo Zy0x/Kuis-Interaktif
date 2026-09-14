@@ -1,16 +1,19 @@
-import React, { useState, useEffect, useRef } from 'react';
-import type { SessionChatMessage } from '../../types/quiz';
+﻿import React, { useState, useEffect, useRef, useCallback } from 'react';
+import type { SessionChatMessage, ChatReplyRef } from '../../types/quiz';
 import { DataManager, supabase, getLiveRealtimeChannel } from '../../lib/supabaseClient';
 import { AVATAR_MAP } from '../../data/seedQuizzes';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 import { useBackHandler } from '../../lib/navigationHistory';
+import { useSwipeToReply } from '../../hooks/useSwipeToReply';
+import { QuotedMessageBubble } from './QuotedMessageBubble';
 import { 
   X, 
   Send, 
   MessageSquare, 
   VolumeX, 
   Sparkles, 
-  CheckCheck
+  CheckCheck,
+  CornerUpLeft
 } from 'lucide-react';
 
 interface StudentChatDrawerProps {
@@ -26,12 +29,12 @@ interface StudentChatDrawerProps {
 }
 
 const PRESET_QUICK_MESSAGES = [
-  'Siap belajar! 🚀',
-  'Semangat teman-teman! 💪',
-  'Bismillah lancar! 🤲',
-  'Kuis seru banget! ⭐',
-  'Pasti bisa nilai 100! 🎯',
-  'Halo semuanya! 👋',
+  'Siap belajar! ðŸš€',
+  'Semangat teman-teman! ðŸ’ª',
+  'Bismillah lancar! ðŸ¤²',
+  'Kuis seru banget! â­',
+  'Pasti bisa nilai 100! ðŸŽ¯',
+  'Halo semuanya! ðŸ‘‹',
 ];
 
 const formatChatTime = (timestamp?: number): string => {
@@ -41,7 +44,185 @@ const formatChatTime = (timestamp?: number): string => {
   return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 };
 
+// â”€â”€â”€ Sub-component: individual message bubble with swipe + hover reply â”€â”€â”€â”€â”€â”€â”€â”€
+interface ChatMessageItemProps {
+  m: SessionChatMessage;
+  studentName: string;
+  hoveredMsgId: string | null;
+  isChatMuted: boolean;
+  sessionStatus: string;
+  onHoverEnter: (id: string) => void;
+  onHoverLeave: () => void;
+  onReply: (msg: SessionChatMessage) => void;
+  onJump: (msgId: string) => void;
+  setRef: (el: HTMLDivElement | null) => void;
+}
+
+const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
+  m, studentName, hoveredMsgId, isChatMuted, sessionStatus,
+  onHoverEnter, onHoverLeave, onReply, onJump, setRef,
+}) => {
+  const mAvatar = (m.avatarId && AVATAR_MAP[m.avatarId]) || (m.isTeacher ? 'ðŸ‘¨â€ðŸ«' : 'ðŸ¦');
+  const isMe = m.studentName.trim().toLowerCase() === studentName.trim().toLowerCase() && !m.isTeacher;
+  const isTeacherMsg = Boolean(m.isTeacher);
+  const timeStr = formatChatTime(m.createdAt);
+  const isHovered = hoveredMsgId === m.id;
+
+  const { handlers: swipeHandlers } = useSwipeToReply({
+    onReply: () => onReply(m),
+    disabled: isChatMuted || sessionStatus === 'finished',
+  });
+
+  const ReplyBtn = (
+    <button
+      type="button"
+      title="Balas pesan ini"
+      aria-label="Balas pesan"
+      onClick={() => onReply(m)}
+      className={[
+        'p-1.5 rounded-xl transition-all duration-150',
+        'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400',
+        'hover:bg-indigo-100 dark:hover:bg-indigo-900/40 hover:text-indigo-600 dark:hover:text-indigo-400',
+        'shrink-0 min-w-[32px] min-h-[32px] flex items-center justify-center',
+        isHovered ? 'opacity-100 scale-100' : 'opacity-0 scale-90 pointer-events-none',
+        'transition-opacity transition-transform',
+      ].join(' ')}
+    >
+      <CornerUpLeft className="w-3.5 h-3.5" />
+    </button>
+  );
+
+  if (isTeacherMsg) {
+    return (
+      <div
+        ref={setRef}
+        className="flex flex-col items-start w-full my-1.5 animate-fade-in group"
+        onMouseEnter={() => onHoverEnter(m.id)}
+        onMouseLeave={onHoverLeave}
+        {...swipeHandlers}
+      >
+        <div className="flex items-start gap-2.5 max-w-[92%] mr-auto w-full">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400 to-amber-500 text-white flex items-center justify-center text-sm shadow-xs border border-amber-300 shrink-0 select-none mt-0.5">
+            {mAvatar}
+          </div>
+          <div className="flex items-end gap-1.5 flex-1 min-w-0">
+            <div className="bg-amber-50/90 dark:bg-amber-950/50 border border-amber-200/90 dark:border-amber-800/60 rounded-2xl rounded-tl-xs p-3 shadow-2xs flex-1 min-w-0">
+              {m.replyTo && (
+                <QuotedMessageBubble
+                  replyTo={m.replyTo}
+                  currentUserName={studentName}
+                  onClick={() => onJump(m.replyTo!.id)}
+                  variant="embed"
+                />
+              )}
+              <div className="flex items-center justify-between gap-1.5 mb-1">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="font-black text-xs text-amber-950 dark:text-amber-200 truncate">{m.studentName}</span>
+                  <span className="px-1.5 py-0.2 rounded-md text-[9px] font-black uppercase tracking-wider bg-amber-500 text-white shadow-2xs flex items-center gap-0.5 shrink-0">
+                    <Sparkles className="w-2.5 h-2.5" /><span>Guru</span>
+                  </span>
+                </div>
+                {timeStr && <span className="text-amber-700/70 dark:text-amber-400/70 text-[9.5px] font-semibold shrink-0">{timeStr}</span>}
+              </div>
+              <p className="leading-relaxed font-medium text-xs text-amber-950 dark:text-amber-100 break-words whitespace-pre-wrap">{m.text}</p>
+            </div>
+            {ReplyBtn}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (isMe) {
+    return (
+      <div
+        ref={setRef}
+        className="flex flex-col items-end w-full my-1.5 animate-fade-in group"
+        onMouseEnter={() => onHoverEnter(m.id)}
+        onMouseLeave={onHoverLeave}
+        {...swipeHandlers}
+      >
+        <div className="flex items-end justify-end gap-2 max-w-[88%] ml-auto">
+          <button
+            type="button"
+            onClick={() => onReply(m)}
+            aria-label="Balas pesan"
+            className={[
+              'p-1.5 rounded-xl transition-all duration-150',
+              'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400',
+              'hover:bg-indigo-100 dark:hover:bg-indigo-900/40 hover:text-indigo-600',
+              'shrink-0 min-w-[32px] min-h-[32px] flex items-center justify-center',
+              isHovered ? 'opacity-100 scale-100' : 'opacity-0 scale-90 pointer-events-none',
+              'transition-opacity transition-transform',
+            ].join(' ')}
+          >
+            <CornerUpLeft className="w-3.5 h-3.5" />
+          </button>
+          <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-2xl rounded-tr-xs p-3 shadow-sm flex-1 min-w-0">
+            {m.replyTo && (
+              <div className="mb-2">
+                <QuotedMessageBubble
+                  replyTo={m.replyTo}
+                  currentUserName={studentName}
+                  onClick={() => onJump(m.replyTo!.id)}
+                  variant="embed"
+                />
+              </div>
+            )}
+            <div className="flex items-center justify-end gap-1.5 mb-1 text-[10px] font-bold text-purple-200/90">
+              <span className="bg-purple-700/70 px-1.5 py-0.2 rounded text-[9px] font-black uppercase tracking-wider text-purple-100">KAMU</span>
+              <span className="text-xs select-none">{mAvatar}</span>
+            </div>
+            <p className="leading-relaxed break-words whitespace-pre-wrap text-white font-medium">{m.text}</p>
+            <div className="flex items-center justify-end gap-1 text-[9px] text-purple-200/80 mt-1">
+              <span>{timeStr}</span>
+              <CheckCheck className="w-3 h-3 text-purple-200" />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Teman sekelas
+  return (
+    <div
+      ref={setRef}
+      className="flex flex-col items-start w-full my-1.5 animate-fade-in group"
+      onMouseEnter={() => onHoverEnter(m.id)}
+      onMouseLeave={onHoverLeave}
+      {...swipeHandlers}
+    >
+      <div className="flex items-start justify-start gap-2.5 max-w-[88%] mr-auto w-full">
+        <div className="w-8 h-8 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-base shadow-2xs shrink-0 select-none mt-0.5">
+          {mAvatar}
+        </div>
+        <div className="flex items-end gap-1.5 flex-1 min-w-0">
+          <div className="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200/90 dark:border-slate-700 rounded-2xl rounded-tl-xs p-3 shadow-xs flex-1 min-w-0">
+            {m.replyTo && (
+              <QuotedMessageBubble
+                replyTo={m.replyTo}
+                currentUserName={studentName}
+                onClick={() => onJump(m.replyTo!.id)}
+                variant="embed"
+              />
+            )}
+            <div className="flex items-center gap-1.5 mb-1 text-[10px] font-bold">
+              <span className="text-slate-800 dark:text-slate-200 truncate">{m.studentName}</span>
+              <span className="text-slate-400 text-[9px] ml-auto">{timeStr}</span>
+            </div>
+            <p className="leading-relaxed text-slate-700 dark:text-slate-200 break-words whitespace-pre-wrap">{m.text}</p>
+          </div>
+          {ReplyBtn}
+        </div>
+      </div>
+    </div>
+  );
+};
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
 export const StudentChatDrawer: React.FC<StudentChatDrawerProps> = ({
+
   isOpen,
   onClose,
   sessionId,
@@ -68,10 +249,13 @@ export const StudentChatDrawer: React.FC<StudentChatDrawerProps> = ({
 
   const [inputText, setInputText] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<ChatReplyRef | null>(null);
+  const [hoveredMsgId, setHoveredMsgId] = useState<string | null>(null);
   const sendingRef = useRef(false);
   const lastSentRef = useRef<{ text: string; time: number }>({ text: '', time: 0 });
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const messageRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   useBodyScrollLock(isOpen);
   useBackHandler('student-chat-drawer', 70, () => {
@@ -87,6 +271,26 @@ export const StudentChatDrawer: React.FC<StudentChatDrawerProps> = ({
       }
     }, 60);
   };
+
+  // Jump to original message & flash highlight
+  const scrollToMessage = useCallback((msgId: string) => {
+    const el = messageRefs.current.get(msgId);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.classList.add('animate-reply-highlight');
+    setTimeout(() => el.classList.remove('animate-reply-highlight'), 1600);
+  }, []);
+
+  // Start reply mode
+  const startReply = useCallback((msg: SessionChatMessage) => {
+    setReplyingTo({
+      id: msg.id,
+      studentName: msg.studentName,
+      text: msg.text,
+      isTeacher: msg.isTeacher,
+    });
+    setTimeout(() => inputRef.current?.focus(), 100);
+  }, []);
 
   // Sync messages in real-time
   useEffect(() => {
@@ -200,11 +404,15 @@ export const StudentChatDrawer: React.FC<StudentChatDrawerProps> = ({
     setIsSending(true);
     playClick();
 
+    const currentReply = replyingTo;
+    setReplyingTo(null);
+
     try {
       const newMsg = await DataManager.sendSessionChatMessage(sessionId, {
         studentName,
         avatarId,
         text: clean,
+        replyTo: currentReply ?? undefined,
       });
 
       if (newMsg) {
@@ -231,6 +439,7 @@ export const StudentChatDrawer: React.FC<StudentChatDrawerProps> = ({
       setIsSending(false);
     }
   };
+
 
   if (!isOpen) return null;
 
@@ -264,7 +473,7 @@ export const StudentChatDrawer: React.FC<StudentChatDrawerProps> = ({
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 font-medium flex items-center gap-1 mt-0.5">
                 <span className="text-purple-600 dark:text-purple-400 font-bold">{messages.length} Pesan</span>
-                <span>• Terpantau Guru</span>
+                <span>â€¢ Terpantau Guru</span>
               </p>
             </div>
           </div>
@@ -302,7 +511,7 @@ export const StudentChatDrawer: React.FC<StudentChatDrawerProps> = ({
           {messages.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400 dark:text-slate-500 space-y-2">
               <div className="w-12 h-12 rounded-2xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 flex items-center justify-center text-2xl shadow-xs">
-                💬
+                ðŸ’¬
               </div>
               <p className="text-sm font-bold text-slate-700 dark:text-slate-300">Belum Ada Obrolan</p>
               <p className="text-xs max-w-xs text-slate-400 dark:text-slate-500">
@@ -310,100 +519,26 @@ export const StudentChatDrawer: React.FC<StudentChatDrawerProps> = ({
               </p>
             </div>
           ) : (
-            messages.map((m) => {
-              const mAvatar = (m.avatarId && AVATAR_MAP[m.avatarId]) || (m.isTeacher ? '👨‍🏫' : '🦁');
-              const isMe = m.studentName.trim().toLowerCase() === studentName.trim().toLowerCase() && !m.isTeacher;
-              const isTeacher = Boolean(m.isTeacher);
-              const timeStr = formatChatTime(m.createdAt);
-
-              // 1. KATEGORI: PESAN GURU (Aksen Emas Terhormat, Mahkota)
-              if (isTeacher) {
-                return (
-                  <div key={m.id} className="flex flex-col items-start w-full my-1.5 animate-fade-in">
-                    <div className="flex items-start gap-2.5 max-w-[92%] mr-auto">
-                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400 to-amber-500 text-white flex items-center justify-center text-sm shadow-xs border border-amber-300 shrink-0 select-none mt-0.5">
-                        {mAvatar}
-                      </div>
-
-                      <div className="bg-amber-50/90 dark:bg-amber-950/50 border border-amber-200/90 dark:border-amber-800/60 rounded-2xl rounded-tl-xs p-3 shadow-2xs flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-1.5 mb-1">
-                          <div className="flex items-center gap-1.5 min-w-0">
-                            <span className="font-black text-xs text-amber-950 dark:text-amber-200 truncate">
-                              {m.studentName}
-                            </span>
-                            <span className="px-1.5 py-0.2 rounded-md text-[9px] font-black uppercase tracking-wider bg-amber-500 text-white shadow-2xs flex items-center gap-0.5 shrink-0">
-                              <Sparkles className="w-2.5 h-2.5" />
-                              <span>Guru</span>
-                            </span>
-                          </div>
-                          {timeStr && (
-                            <span className="text-amber-700/70 dark:text-amber-400/70 text-[9.5px] font-semibold shrink-0">
-                              {timeStr}
-                            </span>
-                          )}
-                        </div>
-                        <p className="leading-relaxed font-medium text-xs text-amber-950 dark:text-amber-100 break-words whitespace-pre-wrap">
-                          {m.text}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                );
-              }
-
-              // 2. KATEGORI: PESAN KAMU / SENDIRI (Rata Kanan, Gradien Ungu Modern)
-              if (isMe) {
-                return (
-                  <div key={m.id} className="flex flex-col items-end w-full my-1.5 animate-fade-in">
-                    <div className="flex items-end justify-end gap-2 max-w-[88%] ml-auto">
-                      <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-2xl rounded-tr-xs p-3 shadow-sm flex-1 min-w-0">
-                        <div className="flex items-center justify-end gap-1.5 mb-1 text-[10px] font-bold text-purple-200/90">
-                          <span className="bg-purple-700/70 px-1.5 py-0.2 rounded text-[9px] font-black uppercase tracking-wider text-purple-100">
-                            KAMU
-                          </span>
-                          <span className="text-xs select-none">{mAvatar}</span>
-                        </div>
-                        <p className="leading-relaxed break-words whitespace-pre-wrap text-white font-medium">
-                          {m.text}
-                        </p>
-                        <div className="flex items-center justify-end gap-1 text-[9px] text-purple-200/80 mt-1">
-                          <span>{timeStr}</span>
-                          <CheckCheck className="w-3 h-3 text-purple-200" />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              }
-
-              // 3. KATEGORI: TEMAN SEKELAS (Rata Kiri, Soft Neutral Bubble)
-              return (
-                <div key={m.id} className="flex flex-col items-start w-full my-1.5 animate-fade-in">
-                  <div className="flex items-start justify-start gap-2.5 max-w-[88%] mr-auto">
-                    <div className="w-8 h-8 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-base shadow-2xs shrink-0 select-none mt-0.5">
-                      {mAvatar}
-                    </div>
-
-                    <div className="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200/90 dark:border-slate-700 rounded-2xl rounded-tl-xs p-3 shadow-xs">
-                      <div className="flex items-center gap-1.5 mb-1 text-[10px] font-bold">
-                        <span className="text-slate-800 dark:text-slate-200 truncate">
-                          {m.studentName}
-                        </span>
-                        <span className="text-slate-400 text-[9px] ml-auto">
-                          {timeStr}
-                        </span>
-                      </div>
-                      <p className="leading-relaxed text-slate-700 dark:text-slate-200 break-words whitespace-pre-wrap">
-                        {m.text}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              );
-            })
+            messages.map((m) => (
+              <ChatMessageItem
+                key={m.id}
+                m={m}
+                studentName={studentName}
+                hoveredMsgId={hoveredMsgId}
+                isChatMuted={isChatMuted}
+                sessionStatus={sessionStatus}
+                onHoverEnter={setHoveredMsgId}
+                onHoverLeave={() => setHoveredMsgId(null)}
+                onReply={startReply}
+                onJump={scrollToMessage}
+                setRef={(el) => {
+                  if (el) messageRefs.current.set(m.id, el);
+                  else messageRefs.current.delete(m.id);
+                }}
+              />
+            ))
           )}
         </div>
-
         {/* Quick Chips & Chat Input */}
         <div className="p-3 sm:p-4 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-3">
           {/* Quick Preset Message Chips */}
@@ -420,6 +555,28 @@ export const StudentChatDrawer: React.FC<StudentChatDrawerProps> = ({
                   {msg}
                 </button>
               ))}
+            </div>
+          )}
+
+          {/* Reply Preview Bar */}
+          {replyingTo && (
+            <div className="flex items-center gap-2 animate-reply-preview-in">
+              <div className="flex-1 min-w-0">
+                <QuotedMessageBubble
+                  replyTo={replyingTo}
+                  currentUserName={studentName}
+                  variant="preview"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => setReplyingTo(null)}
+                className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors shrink-0 min-w-[36px] min-h-[36px] flex items-center justify-center"
+                aria-label="Batal balas"
+                title="Batal balas"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
           )}
 

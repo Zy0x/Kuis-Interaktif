@@ -1,7 +1,34 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.5] - 2026-09-14
+### Fitur Reply / Kutip Pesan Obrolan (Swipe Mobile & Hover Desktop) + Redesain Responsif Header Host & Grid Reaksi Mobile (Rule 1, Rule 2, Rule 4, Rule 5 & Rule 15)
+
+#### 1. Fitur Balas / Kutip Pesan Obrolan Kelas (StudentChatDrawer.tsx & TeacherChatDrawer.tsx)
+- **Gestur Sentuh Mobile (Swipe to Reply)**: Mengimplementasikan custom hook `useSwipeToReply.ts` yang mendeteksi sapuan jari ke kanan pada gelembung pesan chat di perangkat mobile/touchscreen, disertai haptic vibration lembut dan transisi transform halus.
+- **Interaksi Hover Desktop**: Tombol balas (`CornerUpLeft`) otomatis muncul secara elegan saat kursor mouse diarahkan ke gelembung pesan di mode desktop.
+- **Bilah Pratinjau Balasan (Reply Preview Bar)**: Menampilkan panel pratinjau pesan yang sedang dibalas di atas kolom input chat lengkap dengan nama pengirim, kutipan teks ringkas, serta tombol batal (`X`).
+- **Gelembung Kutipan Tersemat (QuotedMessageBubble.tsx)**: Pesan balasan menampilkan gelembung kutipan tersemat (warna emas untuk guru, ungu/biru untuk siswa) dengan pemotongan teks rapi (80 karakter + ellipsis).
+- **Lompat ke Pesan Asli (Jump to Message)**: Mengetuk gelembung kutipan akan langsung menggulir layar secara mulus (`scrollIntoView`) ke pesan yang dikutip dan menyalakan efek sorotan kilat (`animate-reply-highlight`).
+- **Penyimpanan Persisten Lintas Perangkat**: Metadata kutipan disimpan ke Supabase via properti `replyTo` (`id`, `studentName`, `text`, `isTeacher`) pada `SessionChatMessage`.
+
+#### 2. Perbaikan Tampilan Mobile Ruang Kendali Guru (WaygroundHostView.tsx)
+- **Restrukturisasi Header 2-Baris Responsif**: Mengatasi masalah teks saling tumpuk di layar mobile (di mana 6 tombol kontrol kanan sebelumnya menimpa tombol kembali, judul ruang, dan badge status `RUANG TUNGGU`).
+  - *Baris 1 (Identitas & Darurat)*: Tombol Kembali (`ArrowLeft` 44×44px), Badge Status (`RUANG TUNGGU` / `LIVE`), Judul Kuis terpotong rapi, dan tombol aksi krusial (`Jeda/Lanjut` & `Akhiri Kuis`).
+  - *Baris 2 (Toolbar Kontrol)*: Badge PIN mandiri (`PIN: 871026` + salin), Tombol `Chat Kelas` (lengkap dengan badge unread), Sakelar `Mute Chat`, dan Tombol `+3 Siswa Tes`.
+  - *Desktop (`md:`)*: Kedua baris melebur kembali secara otomatis menjadi bilah horizontal tunggal yang luas.
+- **Pembersihan Scrollbar Tab Sub-Navigasi**: Menambahkan kelas `no-scrollbar scrollbar-none` pada wadah tab leaderboard/matriks sehingga tidak menyisakan garis abu-abu aneh di peramban mobile.
+
+#### 3. Penataan Grid Reaksi Guru di Ruang Tunggu (QuizizzReactionButtonRow.tsx)
+- **Grid Seimbang 4×2 di Mobile**: Mengganti tata letak pembungkus bebas yang sebelumnya menyebabkan emoji ke-8 (`💯`) turun sendirian di baris kedua menjadi sistem grid simetris 4 kolom × 2 baris (`grid grid-cols-4 sm:flex`).
+- **Kenyamanan Sentuhan (Touch-First)**: Setiap tombol reaksi memenuhi standar target sentuh minimum 44×44 px dengan pemusatan rapi.
+
+#### 4. Pembaruan Versi & PWA Service Worker (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.5` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.5` (`public/sw.js`).
+
 ## [2.4.4] - 2026-09-14
+
 ### Sinkronisasi Reaksi & Obrolan Lintas Perangkat via Supabase Realtime Broadcast + Penyederhanaan Desain Bubble Chat Guru (Rule 1, Rule 2, Rule 4, Rule 5 & Rule 15)
 
 #### 1. Perbaikan Reaksi Emoji Siswa Tidak Tampil di Perangkat Lain (supabaseClient.ts, QuizizzReactionOverlay.tsx, WaygroundHostView.tsx, StudentWaitingRoom.tsx)

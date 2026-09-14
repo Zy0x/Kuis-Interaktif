@@ -290,4 +290,25 @@ textarea::-webkit-resizer {
   will-change: transform;
 }
 
+/* Reply highlight flash — fires when jump-to-message */
+@keyframes reply-highlight-flash {
+  0%   { background-color: transparent; }
+  25%  { background-color: rgba(251, 191, 36, 0.35); } /* amber */
+  75%  { background-color: rgba(251, 191, 36, 0.25); }
+  100% { background-color: transparent; }
+}
 
+.animate-reply-highlight {
+  animation: reply-highlight-flash 1.5s ease-in-out forwards;
+  border-radius: 0.75rem;
+}
+
+/* Reply preview bar slide-in from bottom */
+@keyframes reply-preview-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-reply-preview-in {
+  animation: reply-preview-in 180ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}

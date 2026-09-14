@@ -276,89 +276,120 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col select-none animate-fade-in font-sans">
       {/* Top Wayground Host Bar */}
       <header className="w-full bg-slate-900/95 backdrop-blur-md border-b border-slate-800 px-3 sm:px-6 lg:px-8 py-2.5 sm:py-3 sticky top-0 z-30 shadow-xl">
-        <div className="w-full max-w-[2000px] mx-auto flex items-center justify-between gap-2 sm:gap-4">
+        <div className="w-full max-w-[2000px] mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-2.5 md:gap-4">
           
-          {/* Left: Back & Title */}
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-            <button
-              type="button"
-              onClick={() => {
-                playClick();
-                onBack();
-              }}
-              className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center flex-shrink-0"
-              title="Kembali ke Dashboard"
-              aria-label="Kembali ke Dashboard"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
+          {/* Baris 1 di Mobile / Bagian Kiri di Desktop */}
+          <div className="flex items-center justify-between gap-2 sm:gap-3 min-w-0 w-full md:w-auto">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 md:flex-initial">
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  onBack();
+                }}
+                className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center flex-shrink-0"
+                title="Kembali ke Dashboard"
+                aria-label="Kembali ke Dashboard"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
 
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[10px] sm:text-xs font-black tracking-wider uppercase">
-                  {session.status === 'active' ? (
-                    <>
-                      <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
-                      <span>LIVE WAYGROUND</span>
-                    </>
-                  ) : session.status === 'paused' ? (
-                    <>
-                      <Pause className="w-2.5 h-2.5 text-amber-400" />
-                      <span className="text-amber-300">DIJEDA</span>
-                    </>
-                  ) : session.status === 'waiting' ? (
-                    <>
-                      <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-                      <span className="text-amber-300">RUANG TUNGGU</span>
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 className="w-2.5 h-2.5 text-emerald-400" />
-                      <span className="text-emerald-300">SELESAI</span>
-                    </>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[10px] sm:text-xs font-black tracking-wider uppercase flex-shrink-0">
+                    {session.status === 'active' ? (
+                      <>
+                        <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
+                        <span>LIVE WAYGROUND</span>
+                      </>
+                    ) : session.status === 'paused' ? (
+                      <>
+                        <Pause className="w-2.5 h-2.5 text-amber-400" />
+                        <span className="text-amber-300">DIJEDA</span>
+                      </>
+                    ) : session.status === 'waiting' ? (
+                      <>
+                        <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                        <span className="text-amber-300">RUANG TUNGGU</span>
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="w-2.5 h-2.5 text-emerald-400" />
+                        <span className="text-emerald-300">SELESAI</span>
+                      </>
+                    )}
+                  </span>
+                  <span className="text-xs text-slate-400 hidden sm:inline">|</span>
+                  <span className="text-xs text-slate-300 font-semibold truncate hidden sm:inline max-w-[220px]">
+                    {quiz.title}
+                  </span>
+
+                  {/* Session Settings Badges (Desktop) */}
+                  {session.settings?.showAnswersMode === 'exam_strict' && (
+                    <span className="px-2 py-0.5 rounded-md bg-indigo-950/80 border border-indigo-500/50 text-indigo-300 text-[10px] font-bold hidden md:inline-flex items-center gap-1">
+                      <span>🔒</span>
+                      <span>Kunci Dirahasiakan</span>
+                    </span>
                   )}
-                </span>
-                <span className="text-xs text-slate-400 hidden sm:inline">|</span>
-                <span className="text-xs text-slate-300 font-semibold truncate hidden sm:inline max-w-[220px]">
-                  {quiz.title}
-                </span>
-
-                {/* Session Settings Badges */}
-                {session.settings?.showAnswersMode === 'exam_strict' && (
-                  <span className="px-2 py-0.5 rounded-md bg-indigo-950/80 border border-indigo-500/50 text-indigo-300 text-[10px] font-bold flex items-center gap-1">
-                    <span>🔒</span>
-                    <span className="hidden md:inline">Kunci Dirahasiakan</span>
-                  </span>
-                )}
-                {session.settings?.showAnswersMode === 'status_only' && (
-                  <span className="px-2 py-0.5 rounded-md bg-amber-950/80 border border-amber-500/50 text-amber-300 text-[10px] font-bold flex items-center gap-1">
-                    <span>🟡</span>
-                    <span className="hidden md:inline">Hanya Status</span>
-                  </span>
-                )}
-                {session.settings?.tabSwitchDetection && (
-                  <span className="px-2 py-0.5 rounded-md bg-rose-950/80 border border-rose-500/50 text-rose-300 text-[10px] font-bold flex items-center gap-1">
-                    <span>👁️</span>
-                    <span className="hidden md:inline">Anti-Mencontek</span>
-                  </span>
-                )}
-                {session.settings?.maxAttempts === 1 && (
-                  <span className="px-2 py-0.5 rounded-md bg-purple-950/80 border border-purple-500/50 text-purple-300 text-[10px] font-bold flex items-center gap-1">
-                    <span>🚫</span>
-                    <span className="hidden md:inline">1x Percobaan</span>
-                  </span>
-                )}
+                  {session.settings?.tabSwitchDetection && (
+                    <span className="px-2 py-0.5 rounded-md bg-rose-950/80 border border-rose-500/50 text-rose-300 text-[10px] font-bold hidden md:inline-flex items-center gap-1">
+                      <span>👁️</span>
+                      <span>Anti-Mencontek</span>
+                    </span>
+                  )}
+                </div>
+                <h1 className="text-xs sm:text-base font-black text-white truncate max-w-[190px] sm:max-w-md">
+                  Ruang Kendali Host
+                </h1>
               </div>
-              <h1 className="text-sm sm:text-base font-black text-white truncate max-w-[260px] sm:max-w-md">
-                Ruang Kendali Host
-              </h1>
+            </div>
+
+            {/* Tombol Darurat/Aksi Utama di Mobile (Pojok Kanan Baris 1) */}
+            <div className="flex items-center gap-1.5 flex-shrink-0 md:hidden">
+              {/* Pause / Resume Button (Mobile) */}
+              {session.status !== 'finished' && (
+                <button
+                  type="button"
+                  onClick={handleTogglePause}
+                  className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-bold min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors"
+                  title={session.status === 'paused' ? 'Lanjutkan Kuis' : 'Jeda Kuis'}
+                >
+                  {session.status === 'paused' ? (
+                    <Play className="w-4 h-4 text-emerald-400" />
+                  ) : (
+                    <Pause className="w-4 h-4 text-amber-400" />
+                  )}
+                </button>
+              )}
+
+              {/* End Session Button or View Recap (Mobile) */}
+              {session.status !== 'finished' ? (
+                <button
+                  type="button"
+                  onClick={() => setConfirmEndModal(true)}
+                  className="px-3 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold min-h-[44px] flex items-center gap-1 shadow-md shadow-rose-950/40 transition-colors"
+                  title="Akhiri Kuis"
+                >
+                  <Square className="w-3.5 h-3.5 fill-current" />
+                  <span className="text-[11px]">Akhiri</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => onViewRecap(session)}
+                  className="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold min-h-[44px] flex items-center gap-1.5 shadow-md transition-colors"
+                >
+                  <FileSpreadsheet className="w-4 h-4" />
+                  <span>Rekapan</span>
+                </button>
+              )}
             </div>
           </div>
 
-          {/* Right: Actions & Integrated Compact PIN */}
-          <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
-            {/* PIN Badge Ringkas & Rapi (Selalu Konsisten) */}
-            <div className="flex items-center gap-1.5 bg-slate-800/90 border border-slate-700/80 px-2.5 sm:px-3 py-1.5 rounded-xl shadow-xs">
+          {/* Baris 2 di Mobile / Bagian Kanan di Desktop */}
+          <div className="flex items-center justify-between md:justify-end gap-1.5 sm:gap-2 w-full md:w-auto pt-2 md:pt-0 border-t border-slate-800/80 md:border-t-0">
+            {/* PIN Badge Ringkas & Rapi */}
+            <div className="flex items-center gap-1.5 bg-slate-800/90 border border-slate-700/80 px-2.5 sm:px-3 py-1.5 rounded-xl shadow-xs flex-shrink-0">
               <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">PIN:</span>
               <span className="font-mono font-black text-amber-300 tracking-wider text-sm sm:text-base">
                 {session.pinCode}
@@ -370,108 +401,114 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                 title="Salin PIN Ruang"
                 aria-label="Salin PIN Ruang"
               >
-                {copiedPin ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                {copiedPin ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-slate-400" />}
               </button>
             </div>
 
-            {/* Tombol Buka Ruang Chat Kelas Guru */}
-            {session.status !== 'finished' && (
+            {/* Toolbar Kontrol Host */}
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              {/* Tombol Buka Ruang Chat Kelas Guru */}
+              {session.status !== 'finished' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    setIsChatDrawerOpen(true);
+                  }}
+                  className={`relative p-2.5 sm:px-3 py-2 rounded-xl border text-xs font-bold min-h-[44px] flex items-center gap-1.5 transition-colors ${
+                    session.isChatMuted || session.settings?.isChatMuted
+                      ? 'border-rose-500/40 bg-rose-500/10 text-rose-300 hover:bg-rose-500/20'
+                      : 'border-blue-500/40 bg-blue-600/20 hover:bg-blue-600/30 text-blue-200'
+                  }`}
+                  title="Buka Ruang Obrolan Kelas"
+                  aria-label="Buka Ruang Obrolan Kelas"
+                >
+                  <MessageSquare className="w-4 h-4 text-blue-400" />
+                  <span className="hidden md:inline">Chat Kelas</span>
+                  {session.chatMessages && session.chatMessages.length > 0 && (
+                    <span className="px-1.5 py-0.2 rounded-full bg-blue-500 text-white text-[10px] font-black">
+                      {session.chatMessages.length}
+                    </span>
+                  )}
+                </button>
+              )}
+
+              {/* Quick Chat Mute / Unmute Toggle */}
+              {isTeacherLed && session.status !== 'finished' && (
+                <button
+                  type="button"
+                  onClick={handleToggleChatMute}
+                  className={`p-2 sm:px-2.5 py-2 rounded-xl border text-xs font-bold min-h-[44px] flex items-center gap-1.5 transition-colors ${
+                    session.isChatMuted || session.settings?.isChatMuted
+                      ? 'bg-rose-500/20 border-rose-500/40 text-rose-300 hover:bg-rose-500/30'
+                      : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'
+                  }`}
+                  title={session.isChatMuted || session.settings?.isChatMuted ? 'Buka Kunci Obrolan Siswa' : 'Bungkam Obrolan Siswa'}
+                  aria-label={session.isChatMuted || session.settings?.isChatMuted ? 'Buka Kunci Obrolan Siswa' : 'Bungkam Obrolan Siswa'}
+                >
+                  {session.isChatMuted || session.settings?.isChatMuted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
+                  <span className="hidden xl:inline">{session.isChatMuted || session.settings?.isChatMuted ? 'Terkunci' : 'Chat Aktif'}</span>
+                </button>
+              )}
+
+              {/* Simulation student button */}
               <button
                 type="button"
-                onClick={() => {
-                  playClick();
-                  setIsChatDrawerOpen(true);
-                }}
-                className={`relative p-2.5 sm:px-3 py-2 rounded-xl border text-xs font-bold min-h-[44px] flex items-center gap-1.5 transition-colors ${
-                  session.isChatMuted || session.settings?.isChatMuted
-                    ? 'border-rose-500/40 bg-rose-500/10 text-rose-300 hover:bg-rose-500/20'
-                    : 'border-blue-500/40 bg-blue-600/20 hover:bg-blue-600/30 text-blue-200'
-                }`}
-                title="Buka Ruang Obrolan Kelas"
-                aria-label="Buka Ruang Obrolan Kelas"
+                onClick={handleSimulateStudents}
+                disabled={isSimulating || session.status === 'finished'}
+                className="p-2 sm:px-3 py-2 rounded-xl bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-500/40 text-indigo-200 text-xs font-bold min-h-[44px] flex items-center gap-1.5 transition-colors disabled:opacity-50"
+                title="Simulasi 3 Murid Bergabung (Uji Coba Kelas)"
+                aria-label="Simulasi 3 Murid Bergabung"
               >
-                <MessageSquare className="w-4 h-4 text-blue-400" />
-                <span className="hidden md:inline">Chat Kelas</span>
-                {session.chatMessages && session.chatMessages.length > 0 && (
-                  <span className="px-1.5 py-0.2 rounded-full bg-blue-500 text-white text-[10px] font-black">
-                    {session.chatMessages.length}
-                  </span>
+                <UserPlus className="w-4 h-4 text-indigo-400" />
+                <span className="hidden lg:inline">+3 Siswa Tes</span>
+              </button>
+
+              {/* Desktop-only: Pause & End Session */}
+              <div className="hidden md:flex items-center gap-1.5 sm:gap-2">
+                {session.status !== 'finished' && (
+                  <button
+                    type="button"
+                    onClick={handleTogglePause}
+                    className="p-2 sm:px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-bold min-h-[44px] min-w-[44px] flex items-center justify-center gap-1.5 transition-colors"
+                    title={session.status === 'paused' ? 'Lanjutkan Kuis' : 'Jeda Kuis'}
+                  >
+                    {session.status === 'paused' ? (
+                      <>
+                        <Play className="w-4 h-4 text-emerald-400" />
+                        <span className="hidden sm:inline text-emerald-300">Lanjut</span>
+                      </>
+                    ) : (
+                      <>
+                        <Pause className="w-4 h-4 text-amber-400" />
+                        <span className="hidden sm:inline text-amber-300">Jeda</span>
+                      </>
+                    )}
+                  </button>
                 )}
-              </button>
-            )}
 
-            {/* Quick Chat Mute / Unmute Toggle */}
-            {isTeacherLed && session.status !== 'finished' && (
-              <button
-                type="button"
-                onClick={handleToggleChatMute}
-                className={`p-2 sm:px-2.5 py-2 rounded-xl border text-xs font-bold min-h-[44px] flex items-center gap-1.5 transition-colors ${
-                  session.isChatMuted || session.settings?.isChatMuted
-                    ? 'bg-rose-500/20 border-rose-500/40 text-rose-300 hover:bg-rose-500/30'
-                    : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'
-                }`}
-                title={session.isChatMuted || session.settings?.isChatMuted ? 'Buka Kunci Obrolan Siswa' : 'Bungkam Obrolan Siswa'}
-              >
-                {session.isChatMuted || session.settings?.isChatMuted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
-                <span className="hidden xl:inline">{session.isChatMuted || session.settings?.isChatMuted ? 'Terkunci' : 'Chat Aktif'}</span>
-              </button>
-            )}
-
-            {/* Simulation student button */}
-            <button
-              type="button"
-              onClick={handleSimulateStudents}
-              disabled={isSimulating || session.status === 'finished'}
-              className="px-2.5 sm:px-3 py-2 rounded-xl bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-500/40 text-indigo-200 text-xs font-bold min-h-[44px] flex items-center gap-1.5 transition-colors disabled:opacity-50"
-              title="Simulasi 3 Murid Bergabung (Uji Coba Kelas)"
-            >
-              <UserPlus className="w-4 h-4 text-indigo-400" />
-              <span className="hidden lg:inline">+3 Siswa Tes</span>
-            </button>
-
-            {/* Pause / Resume Button */}
-            {session.status !== 'finished' && (
-              <button
-                type="button"
-                onClick={handleTogglePause}
-                className="p-2 sm:px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-bold min-h-[44px] min-w-[44px] flex items-center justify-center gap-1.5 transition-colors"
-                title={session.status === 'paused' ? 'Lanjutkan Kuis' : 'Jeda Kuis'}
-              >
-                {session.status === 'paused' ? (
-                  <>
-                    <Play className="w-4 h-4 text-emerald-400" />
-                    <span className="hidden sm:inline text-emerald-300">Lanjut</span>
-                  </>
+                {session.status !== 'finished' ? (
+                  <button
+                    type="button"
+                    onClick={() => setConfirmEndModal(true)}
+                    className="px-3 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold min-h-[44px] flex items-center gap-1.5 shadow-md shadow-rose-950/40 transition-colors"
+                    title="Akhiri Kuis & Buka Rekapan Nilai"
+                  >
+                    <Square className="w-3.5 h-3.5 fill-current" />
+                    <span className="hidden sm:inline">Akhiri Kuis</span>
+                  </button>
                 ) : (
-                  <>
-                    <Pause className="w-4 h-4 text-amber-400" />
-                    <span className="hidden sm:inline text-amber-300">Jeda</span>
-                  </>
+                  <button
+                    type="button"
+                    onClick={() => onViewRecap(session)}
+                    className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold min-h-[44px] flex items-center gap-1.5 shadow-md transition-colors"
+                  >
+                    <FileSpreadsheet className="w-4 h-4" />
+                    <span>Buka Rekapan</span>
+                  </button>
                 )}
-              </button>
-            )}
-
-            {/* End Session Button or View Recap */}
-            {session.status !== 'finished' ? (
-              <button
-                type="button"
-                onClick={() => setConfirmEndModal(true)}
-                className="px-3 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold min-h-[44px] flex items-center gap-1.5 shadow-md shadow-rose-950/40 transition-colors"
-                title="Akhiri Kuis & Buka Rekapan Nilai"
-              >
-                <Square className="w-3.5 h-3.5 fill-current" />
-                <span className="hidden sm:inline">Akhiri Kuis</span>
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => onViewRecap(session)}
-                className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold min-h-[44px] flex items-center gap-1.5 shadow-md transition-colors"
-              >
-                <FileSpreadsheet className="w-4 h-4" />
-                <span>Buka Rekapan</span>
-              </button>
-            )}
+              </div>
+            </div>
           </div>
 
         </div>
@@ -590,7 +627,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
 
       {/* Main Sub-tabs Selector */}
       <nav className="bg-slate-900/60 px-3 sm:px-6 lg:px-8 border-b border-slate-800">
-        <div className="w-full max-w-[2000px] mx-auto flex items-center gap-2 overflow-x-auto py-2">
+        <div className="w-full max-w-[2000px] mx-auto flex items-center gap-2 overflow-x-auto py-2 no-scrollbar scrollbar-none">
           <button
             type="button"
             onClick={() => {

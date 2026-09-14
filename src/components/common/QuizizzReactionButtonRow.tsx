@@ -98,7 +98,7 @@ export const QuizizzReactionButtonRow: React.FC<QuizizzReactionButtonRowProps> =
           {title}
         </span>
       )}
-      <div className="flex items-center justify-center gap-1.5 sm:gap-2 flex-wrap">
+      <div className="grid grid-cols-4 sm:flex sm:flex-wrap sm:items-center sm:justify-center gap-2 sm:gap-2 w-full max-w-xs sm:max-w-none justify-items-center">
         {QUIZIZZ_REACTIONS.map((r) => {
           const isPressed = activePressedEmoji === r.emoji;
           return (
@@ -106,7 +106,7 @@ export const QuizizzReactionButtonRow: React.FC<QuizizzReactionButtonRowProps> =
               key={r.emoji}
               type="button"
               onClick={() => handleSendReaction(r.emoji)}
-              className={`rounded-2xl transition-all select-none flex items-center justify-center transform active:scale-90 hover:scale-110 btn-press ${
+              className={`rounded-2xl transition-all select-none flex items-center justify-center transform active:scale-90 hover:scale-110 btn-press w-full max-w-[52px] sm:max-w-none ${
                 compact
                   ? 'p-2 text-lg sm:text-xl min-h-[44px] min-w-[44px] bg-slate-100/90 dark:bg-slate-800/90 hover:bg-amber-100/80 dark:hover:bg-amber-950/60 border border-slate-200/80 dark:border-slate-700/80'
                   : 'px-3 py-2 sm:px-3.5 sm:py-2.5 text-xl sm:text-2xl min-h-[44px] min-w-[44px] bg-white dark:bg-slate-850 hover:bg-blue-50 dark:hover:bg-blue-950/50 border border-slate-200/90 dark:border-slate-800 shadow-xs'

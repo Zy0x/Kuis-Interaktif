@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
-import type { SessionChatMessage } from '../../types/quiz';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import type { SessionChatMessage, ChatReplyRef } from '../../types/quiz';
 import { DataManager, getLiveRealtimeChannel } from '../../lib/supabaseClient';
 import { AVATAR_MAP } from '../../data/seedQuizzes';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 import { useBackHandler } from '../../lib/navigationHistory';
+import { useSwipeToReply } from '../../hooks/useSwipeToReply';
+import { QuotedMessageBubble } from './QuotedMessageBubble';
 import { 
   X, 
   Send, 
@@ -12,7 +14,8 @@ import {
   VolumeX, 
   Sparkles, 
   Users, 
-  ShieldAlert
+  ShieldAlert,
+  CornerUpLeft
 } from 'lucide-react';
 
 interface TeacherChatDrawerProps {
@@ -34,6 +37,105 @@ const QUICK_ANNOUNCEMENTS = [
   '⏳ Waktu hampir habis, periksa jawabanmu!',
   '👏 Hebat semuanya! Kerja bagus!',
 ];
+// ─── Sub-component: Teacher individual message bubble with swipe + hover reply ─
+interface TeacherChatMessageItemProps {
+  m: SessionChatMessage;
+  teacherName: string;
+  hoveredMsgId: string | null;
+  onHoverEnter: (id: string) => void;
+  onHoverLeave: () => void;
+  onReply: (msg: SessionChatMessage) => void;
+  onJump: (msgId: string) => void;
+  setRef: (el: HTMLDivElement | null) => void;
+}
+
+const TeacherChatMessageItem: React.FC<TeacherChatMessageItemProps> = ({
+  m, teacherName, hoveredMsgId,
+  onHoverEnter, onHoverLeave, onReply, onJump, setRef,
+}) => {
+  const avatar = (m.avatarId && AVATAR_MAP[m.avatarId]) || (m.isTeacher ? '👨‍🏫' : '🦁');
+  const isTeacherMsg = Boolean(m.isTeacher);
+  const isHovered = hoveredMsgId === m.id;
+  const timeStr = new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  const { handlers: swipeHandlers } = useSwipeToReply({
+    onReply: () => onReply(m),
+  });
+
+  const ReplyBtn = (
+    <button
+      type="button"
+      title="Balas pesan ini"
+      aria-label="Balas pesan"
+      onClick={() => onReply(m)}
+      className={[
+        'p-1.5 rounded-xl transition-all duration-150',
+        'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400',
+        'hover:bg-blue-100 dark:hover:bg-blue-900/40 hover:text-blue-600 dark:hover:text-blue-400',
+        'shrink-0 min-w-[32px] min-h-[32px] flex items-center justify-center',
+        isHovered ? 'opacity-100 scale-100' : 'opacity-0 scale-90 pointer-events-none',
+        'transition-opacity transition-transform',
+      ].join(' ')}
+    >
+      <CornerUpLeft className="w-3.5 h-3.5" />
+    </button>
+  );
+
+  return (
+    <div
+      ref={setRef}
+      className="w-full my-1.5 animate-fade-in group"
+      onMouseEnter={() => onHoverEnter(m.id)}
+      onMouseLeave={onHoverLeave}
+      {...swipeHandlers}
+    >
+      <div
+        className={`flex gap-2.5 items-start ${
+          isTeacherMsg ? 'flex-row-reverse' : 'flex-row'
+        }`}
+      >
+        <div className="w-8 h-8 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-base shadow-2xs flex-shrink-0 select-none mt-0.5">
+          {avatar}
+        </div>
+
+        <div className={`flex items-end gap-1.5 max-w-[85%] ${isTeacherMsg ? 'flex-row-reverse' : 'flex-row'}`}>
+          <div
+            className={`rounded-2xl p-3 text-xs flex-1 min-w-0 ${
+              isTeacherMsg
+                ? 'bg-blue-600 text-white rounded-tr-xs shadow-xs'
+                : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200/80 dark:border-slate-750 rounded-tl-xs shadow-2xs'
+            }`}
+          >
+            {m.replyTo && (
+              <QuotedMessageBubble
+                replyTo={m.replyTo}
+                currentUserName={teacherName}
+                onClick={() => onJump(m.replyTo!.id)}
+                variant="embed"
+              />
+            )}
+            <div className="flex items-center gap-1.5 mb-1">
+              <span className={`font-extrabold truncate ${isTeacherMsg ? 'text-blue-100' : 'text-slate-900 dark:text-white'}`}>
+                {m.studentName}
+              </span>
+              {isTeacherMsg && (
+                <span className="px-1.5 py-0.2 rounded text-[9px] font-black bg-amber-400 text-amber-950 flex-shrink-0">
+                  Guru 👑
+                </span>
+              )}
+            </div>
+            <p className="leading-relaxed break-words whitespace-pre-wrap">{m.text}</p>
+            <div className={`text-[10px] mt-1 text-right ${isTeacherMsg ? 'text-blue-200' : 'text-slate-400'}`}>
+              {timeStr}
+            </div>
+          </div>
+          {ReplyBtn}
+        </div>
+      </div>
+    </div>
+  );
+};
+// ─────────────────────────────────────────────────────────────────────────────
 
 export const TeacherChatDrawer: React.FC<TeacherChatDrawerProps> = ({
   isOpen,
@@ -60,10 +162,13 @@ export const TeacherChatDrawer: React.FC<TeacherChatDrawerProps> = ({
   });
   const [inputText, setInputText] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<ChatReplyRef | null>(null);
+  const [hoveredMsgId, setHoveredMsgId] = useState<string | null>(null);
   const sendingRef = useRef(false);
   const lastSentRef = useRef<{ text: string; time: number }>({ text: '', time: 0 });
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const messageRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   useBodyScrollLock(isOpen);
   useBackHandler('teacher-chat-drawer', 70, () => {
@@ -79,6 +184,26 @@ export const TeacherChatDrawer: React.FC<TeacherChatDrawerProps> = ({
       }
     }, 50);
   };
+
+  // Jump to original message & flash highlight
+  const scrollToMessage = useCallback((msgId: string) => {
+    const el = messageRefs.current.get(msgId);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.classList.add('animate-reply-highlight');
+    setTimeout(() => el.classList.remove('animate-reply-highlight'), 1600);
+  }, []);
+
+  // Start reply mode
+  const startReply = useCallback((msg: SessionChatMessage) => {
+    setReplyingTo({
+      id: msg.id,
+      studentName: msg.studentName,
+      text: msg.text,
+      isTeacher: msg.isTeacher,
+    });
+    setTimeout(() => inputRef.current?.focus(), 100);
+  }, []);
 
   // Sync messages in real-time
   useEffect(() => {
@@ -217,12 +342,16 @@ export const TeacherChatDrawer: React.FC<TeacherChatDrawerProps> = ({
     setIsSending(true);
     playClick();
 
+    const currentReply = replyingTo;
+    setReplyingTo(null);
+
     try {
       const newMsg = await DataManager.sendSessionChatMessage(sessionId, {
         studentName: teacherName || 'Guru (Host)',
         avatarId: 'owl',
         text: clean,
         isTeacher: true,
+        replyTo: currentReply ?? undefined,
       });
 
       if (newMsg) {
@@ -346,46 +475,22 @@ export const TeacherChatDrawer: React.FC<TeacherChatDrawerProps> = ({
               </p>
             </div>
           ) : (
-            messages.map((m) => {
-              const avatar = (m.avatarId && AVATAR_MAP[m.avatarId]) || (m.isTeacher ? '👨‍🏫' : '🦁');
-              const isTeacherMsg = Boolean(m.isTeacher);
-
-              return (
-                <div
-                  key={m.id}
-                  className={`flex gap-2.5 items-start ${
-                    isTeacherMsg ? 'flex-row-reverse' : 'flex-row'
-                  }`}
-                >
-                  <div className="w-8 h-8 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-base shadow-2xs flex-shrink-0 select-none">
-                    {avatar}
-                  </div>
-
-                  <div
-                    className={`max-w-[80%] rounded-2xl p-3 text-xs ${
-                      isTeacherMsg
-                        ? 'bg-blue-600 text-white rounded-tr-xs shadow-xs'
-                        : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200/80 dark:border-slate-750 rounded-tl-xs shadow-2xs'
-                    }`}
-                  >
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <span className={`font-extrabold truncate ${isTeacherMsg ? 'text-blue-100' : 'text-slate-900 dark:text-white'}`}>
-                        {m.studentName}
-                      </span>
-                      {isTeacherMsg && (
-                        <span className="px-1.5 py-0.2 rounded text-[9px] font-black bg-amber-400 text-amber-950 flex-shrink-0">
-                          Guru 👑
-                        </span>
-                      )}
-                    </div>
-                    <p className="leading-relaxed break-words whitespace-pre-wrap">{m.text}</p>
-                    <div className={`text-[10px] mt-1 text-right ${isTeacherMsg ? 'text-blue-200' : 'text-slate-400'}`}>
-                      {new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </div>
-                  </div>
-                </div>
-              );
-            })
+            messages.map((m) => (
+              <TeacherChatMessageItem
+                key={m.id}
+                m={m}
+                teacherName={teacherName}
+                hoveredMsgId={hoveredMsgId}
+                onHoverEnter={setHoveredMsgId}
+                onHoverLeave={() => setHoveredMsgId(null)}
+                onReply={startReply}
+                onJump={scrollToMessage}
+                setRef={(el) => {
+                  if (el) messageRefs.current.set(m.id, el);
+                  else messageRefs.current.delete(m.id);
+                }}
+              />
+            ))
           )}
         </div>
 
@@ -409,6 +514,28 @@ export const TeacherChatDrawer: React.FC<TeacherChatDrawerProps> = ({
             ))}
           </div>
         </div>
+
+        {/* Reply Preview Bar */}
+        {replyingTo && (
+          <div className="px-3 sm:px-4 py-2 bg-slate-50 dark:bg-slate-850 border-t border-slate-200 dark:border-slate-800 flex items-center gap-2 animate-reply-preview-in">
+            <div className="flex-1 min-w-0">
+              <QuotedMessageBubble
+                replyTo={replyingTo}
+                currentUserName={teacherName}
+                variant="preview"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => setReplyingTo(null)}
+              className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors shrink-0 min-w-[36px] min-h-[36px] flex items-center justify-center"
+              aria-label="Batal balas"
+              title="Batal balas"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
 
         {/* Chat Input Footer */}
         <form

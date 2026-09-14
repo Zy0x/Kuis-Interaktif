@@ -290,6 +290,13 @@ export interface SessionLiveReaction {
   createdAt: number;
 }
 
+export interface ChatReplyRef {
+  id: string;
+  studentName: string;
+  text: string;
+  isTeacher?: boolean;
+}
+
 export interface SessionChatMessage {
   id: string;
   studentName: string;
@@ -297,6 +304,7 @@ export interface SessionChatMessage {
   text: string;
   isTeacher?: boolean;
   createdAt: number;
+  replyTo?: ChatReplyRef;
 }
 
 export interface QuizSessionSettings {

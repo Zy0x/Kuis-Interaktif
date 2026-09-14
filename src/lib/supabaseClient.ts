@@ -2384,6 +2384,7 @@ export const DataManager = {
       text: cleanText,
       isTeacher: message.isTeacher,
       createdAt: Date.now(),
+      replyTo: message.replyTo,
     };
 
     // Filter out any historical consecutive duplicate messages
