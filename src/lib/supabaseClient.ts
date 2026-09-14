@@ -2521,6 +2521,79 @@ export const DataManager = {
     return local;
   },
 
+  async fetchSessionByPin(pin: string): Promise<QuizSession | null> {
+    if (!pin) return null;
+    const cleanPin = pin.trim().toUpperCase();
+    const all = this.getActiveSessions();
+    const local = all.find((s) => s.pinCode === cleanPin);
+
+    if (supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('quiz_sessions')
+          .select(`
+            *,
+            quiz_session_participants (*)
+          `)
+          .eq('pin_code', cleanPin)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (data && !error) {
+          const parts: QuizSessionParticipant[] = (data.quiz_session_participants || []).map((p: any) => ({
+            id: p.id,
+            name: p.student_name,
+            avatarId: p.avatar_id,
+            currentQuestionIndex: p.current_question_index,
+            totalQuestions: data.total_questions || 0,
+            score: p.score,
+            stars: p.stars,
+            correctCount: p.correct_count,
+            incorrectCount: p.incorrect_count,
+            streak: p.streak,
+            finished: p.finished,
+            timeSpentSec: p.time_spent_sec,
+            answers: p.answers || {},
+            tabSwitchCount: p.tab_switch_count ?? 0,
+            joinedAt: p.joined_at,
+            lastActiveAt: p.last_active_at,
+          }));
+
+          return {
+            id: data.id,
+            quizId: data.quiz_id,
+            quizTitle: data.quiz_title,
+            quizCover: data.quiz_cover || '⭐',
+            subject: data.subject || 'Umum',
+            grade: data.grade || 'Semua Kelas',
+            pinCode: data.pin_code,
+            teacherId: data.teacher_id,
+            teacherEmail: data.teacher_email,
+            teacherName: data.teacher_name,
+            status: data.status,
+            createdAt: data.created_at,
+            startedAt: data.started_at,
+            endedAt: data.ended_at,
+            settings: data.settings || {},
+            participants: parts.length > 0 ? parts : (local?.participants || []),
+            totalQuestions: data.total_questions || 0,
+            currentQuestionIndex: data.current_question_index ?? 0,
+            questionState: data.question_state || 'answering',
+            reactions: Array.isArray(data.reactions) ? data.reactions : (local?.reactions || []),
+            chatMessages: Array.isArray(data.chat_messages) ? data.chat_messages : (local?.chatMessages || []),
+            isChatMuted: Boolean(data.is_chat_muted ?? local?.isChatMuted),
+            lastHeartbeat: data.last_heartbeat,
+          };
+        }
+      } catch (err) {
+        console.warn('fetchSessionByPin Supabase notice:', err);
+      }
+    }
+
+    return local || null;
+  },
+
   async fetchActiveSessionById(sessionId: string): Promise<QuizSession | null> {
     if (!sessionId) return null;
     const cleanId = sessionId.trim();

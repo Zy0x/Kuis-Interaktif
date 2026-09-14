@@ -287,6 +287,13 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
         }
       }
 
+      // 1b. Cek apakah PIN ini milik sesi yang sudah SELESAI
+      const finishedSession = await DataManager.fetchSessionByPin(cleanPin);
+      if (finishedSession && finishedSession.status === 'finished') {
+        setPinError('Sesi kuis untuk PIN ini telah selesai/diakhiri oleh Guru. Silakan minta PIN sesi kuis yang baru kepada gurumu.');
+        return;
+      }
+
       // 2. Prioritas Kedua: Cek apakah kode merupakan PIN Kuis Master
       const match = await DataManager.getQuizByPin(cleanPin);
       if (match) {

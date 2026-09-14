@@ -169,6 +169,16 @@ export const App: React.FC = () => {
           }
         }
 
+        // Cek jika PIN merujuk ke sesi kelas live yang sudah selesai
+        const finishedSession = await DataManager.fetchSessionByPin(pinToMatch);
+        if (finishedSession && finishedSession.status === 'finished') {
+          console.warn('Akses ditolak: PIN merujuk ke sesi yang telah selesai.');
+          setPrivateQuizAlertModal('Sesi kuis untuk PIN ini telah selesai/diakhiri oleh Guru. Silakan minta PIN sesi yang baru kepada gurumu.');
+          setCurrentScreen('home');
+          clearNavigationState();
+          return;
+        }
+
         // Jika bukan sesi live, periksa kuis master
         DataManager.getQuizByPin(pinToMatch).then((q) => {
           if (q) {

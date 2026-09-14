@@ -57,8 +57,20 @@ export const StudentWaitingRoom: React.FC<StudentWaitingRoomProps> = ({
 }) => {
   const [session, setSession] = useState<QuizSession>(initialSession);
   const [chatText, setChatText] = useState('');
-  const [isSessionEndedModalOpen, setIsSessionEndedModalOpen] = useState(false);
+  const [isSessionEndedModalOpen, setIsSessionEndedModalOpen] = useState(() => initialSession?.status === 'finished');
   const chatScrollRef = useRef<HTMLDivElement>(null);
+
+  // Pantau jika status sesi berubah menjadi finished
+  useEffect(() => {
+    if (session.status === 'finished') {
+      setIsSessionEndedModalOpen(true);
+      try {
+        sessionStorage.removeItem(`kuis_student_waiting_quiz_${quiz.id}`);
+        if (quiz.pinCode) sessionStorage.removeItem(`kuis_student_waiting_pin_${quiz.pinCode}`);
+        if (session.id) sessionStorage.removeItem(`kuis_student_waiting_${session.id}`);
+      } catch {}
+    }
+  }, [session.status, quiz.id, quiz.pinCode, session.id]);
 
   // Sync session in real time
   useEffect(() => {
@@ -122,6 +134,7 @@ export const StudentWaitingRoom: React.FC<StudentWaitingRoomProps> = ({
   }, [session.id, session.pinCode, onStartQuiz]);
 
   const handleSendChatMessage = async (textToSend: string) => {
+    if (session.status === 'finished' || isSessionEndedModalOpen) return;
     const clean = textToSend.trim();
     if (!clean) return;
     playClick();
@@ -505,6 +518,11 @@ export const StudentWaitingRoom: React.FC<StudentWaitingRoomProps> = ({
               onClick={() => {
                 playClick();
                 setIsSessionEndedModalOpen(false);
+                try {
+                  sessionStorage.removeItem(`kuis_student_waiting_quiz_${quiz.id}`);
+                  if (quiz.pinCode) sessionStorage.removeItem(`kuis_student_waiting_pin_${quiz.pinCode}`);
+                  if (session.id) sessionStorage.removeItem(`kuis_student_waiting_${session.id}`);
+                } catch {}
                 onBackToHome();
               }}
               className="w-full py-3 px-4 rounded-xl font-bold text-sm text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 min-h-[48px] shadow-sm flex items-center justify-center gap-2 transition-colors btn-press"

@@ -1,6 +1,32 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.98] - 2026-09-14
+### Proteksi Akses & Pemblokiran Masuk Siswa ke Sesi Kuis yang Telah Selesai (Rule 1, Rule 2, Rule 8, Rule 9, Rule 11 & Rule 15)
+
+#### 1. Pemblokiran Masuk Siswa ke Sesi Selesai (StudentLobby.tsx)
+- **Deteksi Sesi Selesai Multilapis**: Menambahkan evaluasi komprehensif `isSessionEnded` yang memeriksa status `liveSession`, `activeSession`, penyimpanan sesi lokal, serta pengecekan awalan (mount check) ke cloud Supabase.
+- **Tampilan Khusus "Sesi Kuis Telah Berakhir 🏁"**: Jika status sesi adalah `finished`, formulir pengisian nama, pilihan avatar, dan tombol mulai kuis disembunyikan sepenuhnya dan digantikan oleh kartu pemberitahuan resmi yang ramah anak.
+- **Pembersihan Otomatis Storage Menunggu**: Memanggil `clearWaitingSessionStorage()` seketika saat sesi terdeteksi selesai sehingga siswa tidak terjebak kembali dalam ruang tunggu saat halaman dimuat ulang (reload).
+- **Indikator Lencana PIN Sesi Selesai**: Badge PIN sesi di bagian atas lobi kini menampilkan label jelas `(Selesai)` dengan lencana abu-abu/hijau ketika sesi telah diakhiri Guru.
+
+#### 2. Pencegahan Ruang Tunggu Tanpa Host / Belum Dibuka (StudentLobby.tsx)
+- **Eliminasi Ruang Tunggu "Hantu"**: Memperbaiki kondisi `isTeacherLedWaiting` dengan menghapus toleransi `!liveSession`. Pada mode dipandu guru (`teacher_led`), siswa hanya diizinkan masuk jika sesi benar-benar berstatus `waiting` yang dibuka oleh Guru.
+- **Tampilan "Ruang Kelas Belum Dimulai ⏳"**: Ketika kuis bermode dipandu guru namun Guru belum membuka sesi live, lobi menampilkan status menunggu dengan tombol **"Segarkan Status"** dan **"Kembali ke Beranda"**, mencegah siswa masuk sendirian tanpa Guru.
+
+#### 3. Penegakan Status Selesai di Ruang Tunggu Siswa (StudentWaitingRoom.tsx)
+- **Inisialisasi Modal Selesai Akurat**: Menginisialisasi `isSessionEndedModalOpen` berdasarkan kondisi awal `initialSession?.status === 'finished'`, sehingga siswa yang membuka atau me-refresh ruang tunggu sesi selesai langsung melihat modal penutupan.
+- **Nonaktifkan Obrolan & Reaksi Pasca-Selesai**: Menonaktifkan input chat, pesan instan preset, dan tombol reaksi secara ketat saat sesi berstatus `finished`.
+- **Navigasi Bersih**: Tombol "Kembali ke Beranda" pada modal selesai kini membersihkan seluruh session storage ruang tunggu sebelum mengarahkan siswa ke halaman awal.
+
+#### 4. Validasi PIN Sesi Selesai pada Beranda & URL (QuizHome.tsx, App.tsx & supabaseClient.ts)
+- **Pemeriksaan PIN Sesi Selesai di Input Beranda**: Menambahkan metode `DataManager.fetchSessionByPin()` yang memverifikasi kode PIN terhadap seluruh sesi. Jika PIN merujuk ke sesi yang sudah berstatus `finished`, sistem menampilkan pesan error informatif: *"Sesi kuis untuk PIN ini telah selesai/diakhiri oleh Guru. Silakan minta PIN sesi kuis yang baru kepada gurumu."*
+- **Proteksi Akses URL Langsung**: Jika parameter URL `?pin=...` merujuk ke sesi yang telah selesai, sistem menampilkan modal pemberitahuan resmi dan mengarahkan kembali ke beranda secara aman.
+
+#### 5. Pembaruan Versi & Cache Service Worker (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.3.98` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.3.98` (`public/sw.js`).
+
 ## [2.3.97] - 2026-09-14
 ### Akses Kembali Cepat Guru ke Ruang Tunggu & Sesi Live Aktif: Banner Cepat Dashboard, Perbaikan Klasifikasi Status Waiting, dan Tombol Masuk Ruang Tunggu (Rule 1, Rule 2, Rule 4 & Rule 15)
 

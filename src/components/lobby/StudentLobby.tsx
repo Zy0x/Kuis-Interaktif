@@ -22,7 +22,8 @@ import {
   Info,
   Calendar,
   GraduationCap,
-  FileText
+  FileText,
+  RefreshCw
 } from 'lucide-react';
 
 export interface StudentLobbyProps {
@@ -128,6 +129,29 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
       const found = (quiz.pinCode ? DataManager.getActiveSessionByPin(quiz.pinCode) : null) || DataManager.getActiveSessionByQuizId(quiz.id);
       if (found) setLiveSession(found);
     }
+
+    const checkSessionStatusOnMount = async () => {
+      const pinToCheck = activeSession?.pinCode || (quiz.pinCode && quiz.pinCode.length === 6 ? quiz.pinCode : null);
+      if (pinToCheck) {
+        try {
+          const cloudSession = await DataManager.fetchSessionByPin(pinToCheck);
+          if (cloudSession) {
+            setLiveSession(cloudSession);
+          }
+        } catch {}
+      } else if (liveSession?.id || activeSession?.id) {
+        const sid = liveSession?.id || activeSession?.id;
+        if (sid) {
+          try {
+            const cloudSession = await DataManager.fetchActiveSessionById(sid);
+            if (cloudSession) {
+              setLiveSession(cloudSession);
+            }
+          } catch {}
+        }
+      }
+    };
+    checkSessionStatusOnMount();
   }, [activeSession, quiz.id, quiz.pinCode]);
 
   useEffect(() => {
@@ -143,6 +167,10 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
       ) {
         setLiveSession(session);
         setLiveSettings(session.settings);
+        if (session.status === 'finished') {
+          clearWaitingSessionStorage();
+          setIsInWaitingRoom(false);
+        }
       }
     };
 
@@ -178,6 +206,13 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
       if (liveSession?.id) {
         try {
           const freshCloud = await DataManager.fetchActiveSessionById(liveSession.id);
+          if (freshCloud) {
+            handleSync(freshCloud);
+          }
+        } catch {}
+      } else if (quiz.pinCode && quiz.pinCode.length === 6) {
+        try {
+          const freshCloud = await DataManager.fetchSessionByPin(quiz.pinCode);
           if (freshCloud) {
             handleSync(freshCloud);
           }
@@ -263,8 +298,43 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
     );
   }, [effectiveSettings.maxAttempts, nickname, liveSession?.participants]);
 
+  // Cek secara komprehensif apakah sesi kuis telah selesai (finished)
+  const isSessionEnded = useMemo(() => {
+    // 1. liveSession atau activeSession eksplisit finished
+    if (liveSession?.status === 'finished' || activeSession?.status === 'finished') {
+      return true;
+    }
+    // 2. Cek sesi lokal berdasarkan PIN sesi atau quizId
+    const all = DataManager.getActiveSessions();
+    const pin = activeSession?.pinCode || (quiz.pinCode && quiz.pinCode.length === 6 ? quiz.pinCode : null);
+    if (pin) {
+      const matchPin = all.find((s) => s.pinCode === pin);
+      if (matchPin && matchPin.status === 'finished') {
+        return true;
+      }
+    }
+    // 3. Jika mode dipandu guru dan sesi terbaru kuis ini berstatus finished tanpa ada sesi aktif baru
+    if (effectiveSettings.executionMode === 'teacher_led') {
+      const latestQuizSession = all.find((s) => s.quizId === quiz.id);
+      if (latestQuizSession && latestQuizSession.status === 'finished') {
+        const hasActiveOrWaiting = all.some(
+          (s) => s.quizId === quiz.id && (s.status === 'active' || s.status === 'waiting' || s.status === 'paused')
+        );
+        if (!hasActiveOrWaiting) return true;
+      }
+    }
+    return false;
+  }, [liveSession?.status, activeSession?.status, activeSession?.pinCode, quiz.pinCode, quiz.id, effectiveSettings.executionMode]);
+
   // Cek apakah mode dipandu guru dan sesi masih berstatus waiting
-  const isTeacherLedWaiting = effectiveSettings.executionMode === 'teacher_led' && (!liveSession || liveSession.status === 'waiting');
+  const isTeacherLedWaiting = effectiveSettings.executionMode === 'teacher_led' && (liveSession?.status === 'waiting') && !isSessionEnded;
+
+  // Cek apakah mode dipandu guru tetapi ruang tunggu belum dibuka oleh guru
+  const isWaitingForTeacherToOpen = useMemo(() => {
+    if (isSessionEnded) return false;
+    if (effectiveSettings.executionMode !== 'teacher_led') return false;
+    return !liveSession || liveSession.status !== 'waiting';
+  }, [isSessionEnded, effectiveSettings.executionMode, liveSession]);
 
   const clearWaitingSessionStorage = () => {
     try {
@@ -274,6 +344,14 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
       if (activeSession?.id) sessionStorage.removeItem(`kuis_student_waiting_${activeSession.id}`);
     } catch {}
   };
+
+  // Bersihkan status ruang tunggu seketika jika sesi telah selesai
+  useEffect(() => {
+    if (isSessionEnded) {
+      clearWaitingSessionStorage();
+      setIsInWaitingRoom(false);
+    }
+  }, [isSessionEnded]);
 
   const handleStartQuizFromWaiting = () => {
     clearWaitingSessionStorage();
@@ -295,7 +373,7 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
 
   // Jika dipulihkan dari refresh dan peserta belum terdaftar di sesi, daftarkan ulang otomatis
   useEffect(() => {
-    if (isInWaitingRoom && liveSession && savedFinalName) {
+    if (isInWaitingRoom && liveSession && savedFinalName && !isSessionEnded) {
       const alreadyJoined = (liveSession.participants || []).some(
         (p) => p.name.trim().toLowerCase() === savedFinalName.trim().toLowerCase()
       );
@@ -306,11 +384,11 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
         }).catch(() => {});
       }
     }
-  }, [isInWaitingRoom, liveSession?.id, savedFinalName, selectedAvatar]);
+  }, [isInWaitingRoom, liveSession?.id, savedFinalName, selectedAvatar, isSessionEnded]);
 
   const handleStart = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isAttemptLimitReached) return;
+    if (isSessionEnded || isWaitingForTeacherToOpen || isAttemptLimitReached) return;
     playClick();
     const cleanNick = nickname.trim() || (isCustom ? profile.nickname : 'Siswa Pintar');
     const finalName = rollNumber.trim() ? `${rollNumber.trim()}. ${cleanNick}` : cleanNick;
@@ -353,7 +431,7 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
   const pinDisplay = activeSession?.pinCode || quiz.pinCode || '1001';
   const teacherName = activeSession?.teacherName || quiz.creatorName || 'Bapak/Ibu Guru';
 
-  if (isInWaitingRoom && liveSession) {
+  if (isInWaitingRoom && liveSession && !isSessionEnded) {
     return (
       <StudentWaitingRoom
         quiz={quiz}
@@ -406,10 +484,17 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
           {/* ======================================================== */}
           <div className="text-center space-y-2">
             {/* PIN Badge */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/60 text-blue-700 dark:text-blue-300 text-xs font-bold">
-              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-              <span>PIN Sesi: <strong className="font-mono text-sm tracking-wider text-blue-900 dark:text-blue-100">{pinDisplay}</strong></span>
-            </div>
+            {isSessionEnded ? (
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                <span>PIN Sesi: <strong className="font-mono text-sm tracking-wider text-slate-900 dark:text-slate-100">{pinDisplay}</strong> (Selesai)</span>
+              </div>
+            ) : (
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/60 text-blue-700 dark:text-blue-300 text-xs font-bold">
+                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                <span>PIN Sesi: <strong className="font-mono text-sm tracking-wider text-blue-900 dark:text-blue-100">{pinDisplay}</strong></span>
+              </div>
+            )}
 
             {/* Quiz Cover */}
             <QuizCoverDisplay
@@ -554,133 +639,225 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
             </div>
           </div>
 
-          {/* Form Pendaftaran Siswa */}
-          <form onSubmit={handleStart} className="space-y-5 pt-3 border-t border-slate-200/80 dark:border-slate-800">
-            
-            {/* ======================================================== */}
-            {/* 2. ISI NAMA                                              */}
-            {/* ======================================================== */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center justify-between">
-                <span className="flex items-center gap-1.5">
-                  <User className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                  <span>Nama / Nama Panggilan Siswa:</span>
-                </span>
-                <span className="text-[11px] font-normal text-slate-400 dark:text-slate-500">Wajib diisi</span>
-              </label>
-              <input
-                type="text"
-                maxLength={20}
-                value={nickname}
-                onChange={(e) => setNickname(e.target.value)}
-                placeholder="Ketik namamu di sini..."
-                required
-                className="w-full px-4 py-3 rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-900/40 focus:outline-none font-bold text-sm sm:text-base text-slate-900 dark:text-white min-h-[48px] transition-all shadow-xs"
-              />
-            </div>
+          {isSessionEnded ? (
+            /* ======================================================== */
+            /* BLOKIR AKSES: Sesi Kuis Telah Selesai                   */
+            /* ======================================================== */
+            <div className="text-center py-6 px-4 space-y-5 animate-fade-in">
+              <div className="w-20 h-20 mx-auto rounded-3xl bg-amber-50 dark:bg-amber-950/60 border-2 border-amber-200 dark:border-amber-800/60 flex items-center justify-center text-4xl shadow-md select-none">
+                🏁
+              </div>
+              <div className="space-y-2 max-w-md mx-auto">
+                <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-black uppercase tracking-wider">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                  <span>Status: Sesi Telah Selesai</span>
+                </div>
+                <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
+                  Sesi Kuis Telah Berakhir
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                  Bapak/Ibu Guru telah menyelesaikan atau menutup sesi kuis ini. Siswa tidak dapat lagi masuk ke ruang tunggu atau mengerjakan kuis pada sesi ini.
+                </p>
+              </div>
 
-            {/* Nomor Absen (Jika Mode PR atau Diaktifkan Guru) */}
-            {(effectiveSettings.requireStudentInfo || effectiveSettings.pacingType === 'homework') && (
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    clearWaitingSessionStorage();
+                    onBackToHome();
+                  }}
+                  className="w-full py-3.5 px-6 rounded-2xl font-black text-sm sm:text-base text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 shadow-md shadow-blue-500/20 min-h-[48px] flex items-center justify-center gap-2 transition-all btn-press"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                  <span>Kembali ke Beranda / Katalog Kuis</span>
+                </button>
+              </div>
+            </div>
+          ) : isWaitingForTeacherToOpen ? (
+            /* ======================================================== */
+            /* TAMPILAN: Menunggu Guru Membuka Ruang Tunggu            */
+            /* ======================================================== */
+            <div className="text-center py-6 px-4 space-y-5 animate-fade-in">
+              <div className="w-16 h-16 mx-auto rounded-2xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800/60 flex items-center justify-center text-3xl shadow-sm select-none">
+                ⏳
+              </div>
+              <div className="space-y-2 max-w-md mx-auto">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 text-xs font-bold uppercase tracking-wider">
+                  <Clock className="w-3.5 h-3.5 animate-pulse text-amber-500" />
+                  <span>Menunggu Guru Membuka Ruang Tunggu</span>
+                </div>
+                <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
+                  Ruang Kelas Belum Dimulai
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                  Kuis ini menggunakan mode dipandu guru. Bapak/Ibu Guru belum membuka sesi ruang tunggu di depan kelas. Silakan tunggu sebentar atau periksa kembali PIN kuis dari gurumu.
+                </p>
+              </div>
+
+              <div className="pt-2 flex flex-col sm:flex-row gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    clearWaitingSessionStorage();
+                    onBackToHome();
+                  }}
+                  className="flex-1 py-3 px-4 rounded-xl font-bold text-xs sm:text-sm text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 min-h-[48px] flex items-center justify-center gap-2 transition-colors btn-press"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Kembali ke Beranda</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    playClick();
+                    const pinToCheck = activeSession?.pinCode || (quiz.pinCode && quiz.pinCode.length === 6 ? quiz.pinCode : null);
+                    if (pinToCheck) {
+                      const fresh = await DataManager.fetchActiveSessionByPin(pinToCheck);
+                      if (fresh) setLiveSession(fresh);
+                    } else if (quiz.id) {
+                      const fresh = DataManager.getActiveSessionByQuizId(quiz.id);
+                      if (fresh) setLiveSession(fresh);
+                    }
+                  }}
+                  className="flex-1 py-3 px-4 rounded-xl font-bold text-xs sm:text-sm text-white bg-blue-600 hover:bg-blue-700 min-h-[48px] flex items-center justify-center gap-2 transition-colors btn-press"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  <span>Segarkan Status</span>
+                </button>
+              </div>
+            </div>
+          ) : (
+            /* Form Pendaftaran Siswa */
+            <form onSubmit={handleStart} className="space-y-5 pt-3 border-t border-slate-200/80 dark:border-slate-800">
+              
+              {/* ======================================================== */}
+              {/* 2. ISI NAMA                                              */}
+              {/* ======================================================== */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center justify-between">
                   <span className="flex items-center gap-1.5">
-                    <FileText className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-                    <span>Nomor Absen Siswa:</span>
+                    <User className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                    <span>Nama / Nama Panggilan Siswa:</span>
                   </span>
-                  <span className="text-[11px] font-normal text-slate-400 dark:text-slate-500">Wajib untuk rekap tugas</span>
+                  <span className="text-[11px] font-normal text-slate-400 dark:text-slate-500">Wajib diisi</span>
                 </label>
                 <input
                   type="text"
-                  maxLength={5}
-                  value={rollNumber}
-                  onChange={(e) => setRollNumber(e.target.value)}
-                  placeholder="Contoh: 15"
-                  required={Boolean(effectiveSettings.requireStudentInfo)}
-                  className="w-full px-4 py-3 rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/40 focus:outline-none font-bold text-sm sm:text-base text-slate-900 dark:text-white min-h-[48px] transition-all shadow-xs"
+                  maxLength={20}
+                  value={nickname}
+                  onChange={(e) => setNickname(e.target.value)}
+                  placeholder="Ketik namamu di sini..."
+                  required
+                  className="w-full px-4 py-3 rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-900/40 focus:outline-none font-bold text-sm sm:text-base text-slate-900 dark:text-white min-h-[48px] transition-all shadow-xs"
                 />
               </div>
-            )}
 
-            {/* ======================================================== */}
-            {/* 3. PILIH MASKOT                                          */}
-            {/* ======================================================== */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2 flex items-center justify-between">
-                <span>Pilih Maskot Favorit:</span>
-                <span className="text-[11px] font-normal text-slate-400 dark:text-slate-500">Karakter belajarmu</span>
-              </label>
-              <div className="grid grid-cols-4 gap-2 sm:gap-2.5">
-                {AVATAR_LIST.map((avatar) => {
-                  const isSelected = selectedAvatar === avatar.id;
-                  return (
-                    <button
-                      type="button"
-                      key={avatar.id}
-                      onClick={() => {
-                        playClick();
-                        setSelectedAvatar(avatar.id);
-                      }}
-                      className={`p-2.5 rounded-2xl flex flex-col items-center justify-center border transition-all min-h-[58px] ${
-                        isSelected
-                          ? 'bg-blue-50 dark:bg-blue-900/40 border-blue-500 ring-2 ring-blue-400 shadow-sm'
-                          : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750'
-                      }`}
-                    >
-                      <span className="text-2xl sm:text-3xl select-none leading-none">{avatar.emoji}</span>
-                      <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-300 mt-1 truncate max-w-full">
-                        {avatar.name.split(' ')[0]}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Peringatan jika batas pengerjaan 1x sudah selesai */}
-            {isAttemptLimitReached && (
-              <div className="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 flex items-start gap-2.5 text-amber-900 dark:text-amber-200 text-xs animate-shake">
-                <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+              {/* Nomor Absen (Jika Mode PR atau Diaktifkan Guru) */}
+              {(effectiveSettings.requireStudentInfo || effectiveSettings.pacingType === 'homework') && (
                 <div>
-                  <p className="font-bold">Kamu sudah menyelesaikan kuis ini!</p>
-                  <p className="text-[11px] text-amber-700 dark:text-amber-300 mt-0.5 leading-relaxed">
-                    Sesi ini dibatasi 1x percobaan oleh guru. Lembar jawabanmu telah tersimpan dengan aman pada rekapan nilai kelas.
-                  </p>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <FileText className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                      <span>Nomor Absen Siswa:</span>
+                    </span>
+                    <span className="text-[11px] font-normal text-slate-400 dark:text-slate-500">Wajib untuk rekap tugas</span>
+                  </label>
+                  <input
+                    type="text"
+                    maxLength={5}
+                    value={rollNumber}
+                    onChange={(e) => setRollNumber(e.target.value)}
+                    placeholder="Contoh: 15"
+                    required={Boolean(effectiveSettings.requireStudentInfo)}
+                    className="w-full px-4 py-3 rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/40 focus:outline-none font-bold text-sm sm:text-base text-slate-900 dark:text-white min-h-[48px] transition-all shadow-xs"
+                  />
+                </div>
+              )}
+
+              {/* ======================================================== */}
+              {/* 3. PILIH MASKOT                                          */}
+              {/* ======================================================== */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2 flex items-center justify-between">
+                  <span>Pilih Maskot Favorit:</span>
+                  <span className="text-[11px] font-normal text-slate-400 dark:text-slate-500">Karakter belajarmu</span>
+                </label>
+                <div className="grid grid-cols-4 gap-2 sm:gap-2.5">
+                  {AVATAR_LIST.map((avatar) => {
+                    const isSelected = selectedAvatar === avatar.id;
+                    return (
+                      <button
+                        type="button"
+                        key={avatar.id}
+                        onClick={() => {
+                          playClick();
+                          setSelectedAvatar(avatar.id);
+                        }}
+                        className={`p-2.5 rounded-2xl flex flex-col items-center justify-center border transition-all min-h-[58px] ${
+                          isSelected
+                            ? 'bg-blue-50 dark:bg-blue-900/40 border-blue-500 ring-2 ring-blue-400 shadow-sm'
+                            : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750'
+                        }`}
+                      >
+                        <span className="text-2xl sm:text-3xl select-none leading-none">{avatar.emoji}</span>
+                        <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-300 mt-1 truncate max-w-full">
+                          {avatar.name.split(' ')[0]}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
-            )}
 
-            {/* ======================================================== */}
-            {/* 4. MULAI / MASUK                                         */}
-            {/* ======================================================== */}
-            <div className="pt-1">
-              <button
-                type="submit"
-                disabled={isAttemptLimitReached}
-                className={`w-full py-3.5 px-6 rounded-2xl font-black text-sm sm:text-base flex items-center justify-center gap-2 min-h-[52px] transition-all ${
-                  isAttemptLimitReached
-                    ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed border border-slate-300 dark:border-slate-700'
-                    : 'text-white bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:via-indigo-700 hover:to-blue-800 shadow-lg shadow-blue-500/25 btn-press'
-                }`}
-              >
-                {isAttemptLimitReached ? (
-                  <>
-                    <CheckCircle2 className="w-5 h-5 text-slate-400" />
-                    <span>Ujian Sudah Selesai Dikerjakan</span>
-                  </>
-                ) : isTeacherLedWaiting ? (
-                  <>
-                    <Users className="w-5 h-5 text-white" />
-                    <span>Masuk ke Ruang Tunggu Kuis</span>
-                  </>
-                ) : (
-                  <>
-                    <Play className="w-5 h-5 fill-white text-white" />
-                    <span>Mulai Mengerjakan Kuis Sekarang</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </form>
+              {/* Peringatan jika batas pengerjaan 1x sudah selesai */}
+              {isAttemptLimitReached && (
+                <div className="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 flex items-start gap-2.5 text-amber-900 dark:text-amber-200 text-xs animate-shake">
+                  <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-bold">Kamu sudah menyelesaikan kuis ini!</p>
+                    <p className="text-[11px] text-amber-700 dark:text-amber-300 mt-0.5 leading-relaxed">
+                      Sesi ini dibatasi 1x percobaan oleh guru. Lembar jawabanmu telah tersimpan dengan aman pada rekapan nilai kelas.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* ======================================================== */}
+              {/* 4. MULAI / MASUK                                         */}
+              {/* ======================================================== */}
+              <div className="pt-1">
+                <button
+                  type="submit"
+                  disabled={isAttemptLimitReached}
+                  className={`w-full py-3.5 px-6 rounded-2xl font-black text-sm sm:text-base flex items-center justify-center gap-2 min-h-[52px] transition-all ${
+                    isAttemptLimitReached
+                      ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed border border-slate-300 dark:border-slate-700'
+                      : 'text-white bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:via-indigo-700 hover:to-blue-800 shadow-lg shadow-blue-500/25 btn-press'
+                  }`}
+                >
+                  {isAttemptLimitReached ? (
+                    <>
+                      <CheckCircle2 className="w-5 h-5 text-slate-400" />
+                      <span>Ujian Sudah Selesai Dikerjakan</span>
+                    </>
+                  ) : isTeacherLedWaiting ? (
+                    <>
+                      <Users className="w-5 h-5 text-white" />
+                      <span>Masuk ke Ruang Tunggu Kuis</span>
+                    </>
+                  ) : (
+                    <>
+                      <Play className="w-5 h-5 fill-white text-white" />
+                      <span>Mulai Mengerjakan Kuis Sekarang</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          )}
 
         </div>
       </main>
