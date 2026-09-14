@@ -39,10 +39,12 @@ import { TrueFalsePresetDropdown } from './TrueFalsePresetDropdown';
 import { ResizableTextarea } from '../common/ResizableTextarea';
 import { AutoResizeTextarea } from '../common/AutoResizeTextarea';
 import { ConfirmDeleteModal } from '../common/ConfirmDeleteModal';
+import { DataManager } from '../../lib/supabaseClient';
 
 interface QuizCreatorProps {
   onBack: () => void;
   onSaveQuiz: (newQuiz: Quiz) => void;
+  onAutoSaveQuiz?: (updatedQuiz: Quiz) => void;
   playClick: () => void;
   playCorrect?: (streak?: number) => void;
   playWrong?: () => void;
@@ -117,6 +119,7 @@ const loadDraft = (): CreatorDraft | null => {
 export const QuizCreator: React.FC<QuizCreatorProps> = ({
   onBack,
   onSaveQuiz,
+  onAutoSaveQuiz,
   playClick,
   playCorrect,
   playWrong,
@@ -214,14 +217,107 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
 
+  // Auto-save state saat mode pengeditan kuis aktif
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const isSavingRef = useRef<boolean>(false);
+  const pendingSaveRef = useRef<{ questions: QuizQuestion[]; customToastMsg?: string; silent?: boolean; extraQuizFields?: Partial<Quiz> } | null>(null);
+
   const showToast = (msg: string) => {
     setNoticeMessage(msg);
   };
 
+  const buildQuizObject = (
+    currentQuestions: QuizQuestion[] = questions,
+    extraFields?: Partial<Quiz>
+  ): Quiz => {
+    return {
+      id: editingQuiz?.id || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : ('quiz_' + Date.now())),
+      title: title.trim() || editingQuiz?.title || 'Kuis Tanpa Judul',
+      description: description.trim() || editingQuiz?.description || '',
+      subject: subject || editingQuiz?.subject || 'Matematika',
+      grade: grade ?? editingQuiz?.grade ?? 3,
+      educationLevel: educationLevel || editingQuiz?.educationLevel || (grade >= 10 ? 'SMA' : grade >= 7 ? 'SMP' : 'SD'),
+      durationPerQuestionSec: durationPerQuestionSec || editingQuiz?.durationPerQuestionSec || 30,
+      coverEmoji: coverEmoji || editingQuiz?.coverEmoji || '🍎',
+      badgeTitle: badgeTitle.trim() || editingQuiz?.badgeTitle || 'Bintang Pintar',
+      themeColor: editingQuiz?.themeColor || '#2563eb',
+      visibility: visibility || editingQuiz?.visibility || 'public',
+      defaultGameMode: defaultGameMode || editingQuiz?.defaultGameMode || 'standard',
+      shuffleQuestions: shuffleQuestions ?? editingQuiz?.shuffleQuestions ?? false,
+      shuffleOptions: shuffleOptions ?? editingQuiz?.shuffleOptions ?? false,
+      questions: currentQuestions,
+      pinCode: editingQuiz?.pinCode || Math.floor(1000 + Math.random() * 9000).toString(),
+      isPublished: true,
+      creatorId: editingQuiz?.creatorId || 'teacher_custom',
+      creatorName: editingQuiz?.creatorName || 'Guru Kuis',
+      createdAt: editingQuiz?.createdAt || new Date().toISOString(),
+      driveFolderId: editingQuiz?.driveFolderId,
+      ...extraFields,
+    };
+  };
+
+  const autoSaveQuiz = async (
+    updatedQuestions: QuizQuestion[],
+    customToastMsg?: string,
+    opts?: { silent?: boolean; extraQuizFields?: Partial<Quiz> }
+  ) => {
+    if (!editingQuiz) return;
+
+    if (isSavingRef.current) {
+      pendingSaveRef.current = {
+        questions: updatedQuestions,
+        customToastMsg,
+        silent: opts?.silent,
+        extraQuizFields: opts?.extraQuizFields,
+      };
+      return;
+    }
+
+    isSavingRef.current = true;
+    setAutoSaveStatus('saving');
+
+    const quizToSave = buildQuizObject(updatedQuestions, opts?.extraQuizFields);
+
+    try {
+      await DataManager.saveCustomQuiz(quizToSave);
+      setAutoSaveStatus('saved');
+      setLastSavedAt(new Date());
+      if (onAutoSaveQuiz) {
+        onAutoSaveQuiz(quizToSave);
+      }
+      if (!opts?.silent) {
+        showToast(customToastMsg || '💾 Soal otomatis tersimpan ke kuis!');
+      }
+      setTimeout(() => {
+        setAutoSaveStatus((curr) => (curr === 'saved' ? 'idle' : curr));
+      }, 3000);
+    } catch (err: any) {
+      console.warn('Auto-save error:', err);
+      setAutoSaveStatus('error');
+      showToast('⚠️ Gagal menyimpan otomatis: ' + (err?.message || 'Coba lagi'));
+    } finally {
+      isSavingRef.current = false;
+      if (pendingSaveRef.current) {
+        const next = pendingSaveRef.current;
+        pendingSaveRef.current = null;
+        autoSaveQuiz(next.questions, next.customToastMsg, {
+          silent: next.silent,
+          extraQuizFields: next.extraQuizFields,
+        });
+      }
+    }
+  };
+
   const handleImportAiQuestions = (newQuestions: QuizQuestion[]) => {
     playClick();
-    setQuestions((prev) => [...prev, ...newQuestions]);
-    showToast(`${newQuestions.length} butir soal berhasil ditambahkan ke bank soal!`);
+    const updated = [...questions, ...newQuestions];
+    setQuestions(updated);
+    if (editingQuiz) {
+      autoSaveQuiz(updated, `✨ ${newQuestions.length} butir soal AI berhasil ditambahkan & kuis otomatis tersimpan!`);
+    } else {
+      showToast(`${newQuestions.length} butir soal berhasil ditambahkan ke bank soal!`);
+    }
   };
 
   useEffect(() => {
@@ -427,7 +523,11 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
       points: idx < remainder ? base + 1 : base,
     }));
     setQuestions(updated);
-    showToast(`⚖️ Berhasil membagi rata 100 poin untuk ${n} butir soal!`);
+    if (editingQuiz) {
+      autoSaveQuiz(updated, `⚖️ Berhasil membagi rata 100 poin & kuis otomatis tersimpan!`);
+    } else {
+      showToast(`⚖️ Berhasil membagi rata 100 poin untuk ${n} butir soal!`);
+    }
   };
 
   // Monitor scroll untuk Smart Floating Action FAB:
@@ -471,6 +571,10 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   // Simpan draf kuis secara manual dan tampilkan feedback toast
   const handleSaveDraftManual = () => {
     playClick();
+    if (editingQuiz) {
+      autoSaveQuiz(questions, '💾 Seluruh butir soal & perubahan kuis berhasil disimpan!');
+      return;
+    }
     try {
       const data: CreatorDraft = {
         currentStep,
@@ -957,8 +1061,13 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
       id: 'q_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
       text: q.text + ' (Salinan)',
     };
-    setQuestions((prev) => [...prev, dup]);
-    showToast('Soal berhasil diduplikasi.');
+    const updated = [...questions, dup];
+    setQuestions(updated);
+    if (editingQuiz) {
+      autoSaveQuiz(updated, 'Soal berhasil diduplikasi & kuis otomatis tersimpan.');
+    } else {
+      showToast('Soal berhasil diduplikasi.');
+    }
   };
 
   const handleDeleteQuestion = (id: string) => {
@@ -970,12 +1079,17 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     if (!questionIdToDelete) return;
     playClick();
     const targetId = questionIdToDelete;
-    setQuestions((prev) => prev.filter((q) => q.id !== targetId));
+    const updated = questions.filter((q) => q.id !== targetId);
+    setQuestions(updated);
     if (editingQuestionId === targetId) {
       handleCancelEditImmediate();
     }
     setQuestionIdToDelete(null);
-    showToast('Soal telah berhasil dihapus dari bank soal.');
+    if (editingQuiz) {
+      autoSaveQuiz(updated, 'Soal telah dihapus & kuis otomatis tersimpan.');
+    } else {
+      showToast('Soal telah berhasil dihapus dari bank soal.');
+    }
   };
 
   const handleMoveQuestion = (index: number, direction: 'up' | 'down') => {
@@ -986,6 +1100,9 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     const [moved] = reordered.splice(index, 1);
     reordered.splice(targetIndex, 0, moved);
     setQuestions(reordered);
+    if (editingQuiz) {
+      autoSaveQuiz(reordered, 'Urutan soal diperbarui & kuis otomatis tersimpan.', { silent: true });
+    }
   };
 
   const executeNavigation = (
@@ -1135,11 +1252,19 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     if (editingQuestionId) {
       updatedQuestions = questions.map((q) => (q.id === editingQuestionId ? questionObj : q));
       setQuestions(updatedQuestions);
-      showToast('💾 Perubahan butir soal berhasil disimpan!');
+      if (editingQuiz) {
+        autoSaveQuiz(updatedQuestions, '💾 Perubahan butir soal berhasil disimpan & kuis otomatis tersimpan!');
+      } else {
+        showToast('💾 Perubahan butir soal berhasil disimpan!');
+      }
     } else {
       updatedQuestions = [...questions, questionObj];
       setQuestions(updatedQuestions);
-      showToast('💾 Butir soal baru berhasil disimpan!');
+      if (editingQuiz) {
+        autoSaveQuiz(updatedQuestions, '✨ Butir soal baru berhasil disimpan & kuis otomatis tersimpan!');
+      } else {
+        showToast('💾 Butir soal baru berhasil disimpan!');
+      }
     }
 
     const nav = pendingNavigation;
@@ -1176,12 +1301,23 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     const questionObj = validateAndBuildCurrentQuestion();
     if (!questionObj) return;
 
+    let updatedQuestions: QuizQuestion[];
     if (editingQuestionId) {
-      setQuestions((prev) => prev.map((q) => (q.id === editingQuestionId ? questionObj : q)));
-      showToast('Soal berhasil diperbarui.');
+      updatedQuestions = questions.map((q) => (q.id === editingQuestionId ? questionObj : q));
+      setQuestions(updatedQuestions);
+      if (editingQuiz) {
+        autoSaveQuiz(updatedQuestions, '💾 Soal berhasil diperbarui & kuis otomatis tersimpan!');
+      } else {
+        showToast('Soal berhasil diperbarui.');
+      }
     } else {
-      setQuestions((prev) => [...prev, questionObj]);
-      showToast('Soal baru berhasil ditambahkan.');
+      updatedQuestions = [...questions, questionObj];
+      setQuestions(updatedQuestions);
+      if (editingQuiz) {
+        autoSaveQuiz(updatedQuestions, '✨ Butir soal baru berhasil ditambahkan & kuis otomatis tersimpan!');
+      } else {
+        showToast('Soal baru berhasil ditambahkan.');
+      }
     }
 
     if (afterSave === 'continue') {
@@ -1214,28 +1350,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
 
   // Aksi simpan sesungguhnya setelah konfirmasi di PublishQuizModal
   const handleConfirmPublish = () => {
-    const finalQuiz: Quiz = {
-      id: editingQuiz?.id || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : ('quiz_' + Date.now())),
-      title: title.trim(),
-      description: description.trim(),
-      subject,
-      grade,
-      educationLevel: educationLevel || (grade >= 10 ? 'SMA' : grade >= 7 ? 'SMP' : 'SD'),
-      durationPerQuestionSec,
-      coverEmoji,
-      badgeTitle: badgeTitle.trim() || 'Bintang Pintar',
-      themeColor: editingQuiz?.themeColor || '#2563eb',
-      visibility,
-      defaultGameMode,
-      shuffleQuestions,
-      shuffleOptions,
-      questions,
-      pinCode: editingQuiz?.pinCode || Math.floor(1000 + Math.random() * 9000).toString(),
-      isPublished: true,
-      creatorId: editingQuiz?.creatorId || 'teacher_custom',
-      creatorName: editingQuiz?.creatorName || 'Guru Kuis',
-      createdAt: editingQuiz?.createdAt || new Date().toISOString(),
-    };
+    const finalQuiz: Quiz = buildQuizObject(questions);
 
     try {
       localStorage.removeItem(DRAFT_STORAGE_KEY);
@@ -1299,21 +1414,29 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                 <div className="hidden xs:flex w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 items-center justify-center font-bold shadow-xs shrink-0">
                   <Edit3 className="w-4 h-4" />
                 </div>
-                <h1 className="text-sm sm:text-base font-black text-slate-900 dark:text-white truncate">
-                  {editingQuestionId ? (
-                    <>
-                      <span>Edit </span>
-                      <span className="hidden sm:inline">Butir </span>
-                      <span>Soal</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>Tambah </span>
-                      <span className="hidden sm:inline">Butir </span>
-                      <span>Soal</span>
-                    </>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-sm sm:text-base font-black text-slate-900 dark:text-white truncate">
+                    {editingQuestionId ? (
+                      <>
+                        <span>Edit </span>
+                        <span className="hidden sm:inline">Butir </span>
+                        <span>Soal</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Tambah </span>
+                        <span className="hidden sm:inline">Butir </span>
+                        <span>Soal</span>
+                      </>
+                    )}
+                  </h1>
+                  {editingQuiz && (
+                    <span className="hidden md:inline-flex items-center gap-1 text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 px-2 py-0.5 rounded-md border border-blue-200 dark:border-blue-800">
+                      <Sparkles className="w-3 h-3" />
+                      Auto-save aktif
+                    </span>
                   )}
-                </h1>
+                </div>
               </div>
             </div>
           ) : (
@@ -1329,15 +1452,47 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
               </button>
 
               <div className="min-w-0">
-                <h1 className="text-sm sm:text-base font-black text-slate-900 dark:text-white truncate">
-                  {aiFunnelActive
-                    ? 'Asisten Racik Kuis AI ⚡'
-                    : editingQuiz 
-                      ? 'Edit Kuis ✏️' 
-                      : isAiMode 
-                        ? 'Studio Kuis AI ⚡' 
-                        : 'Studio Kuis Guru 🧑‍🏫'}
-                </h1>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-sm sm:text-base font-black text-slate-900 dark:text-white truncate">
+                    {aiFunnelActive
+                      ? 'Asisten Racik Kuis AI ⚡'
+                      : editingQuiz 
+                        ? 'Edit Kuis ✏️' 
+                        : isAiMode 
+                          ? 'Studio Kuis AI ⚡' 
+                          : 'Studio Kuis Guru 🧑‍🏫'}
+                  </h1>
+
+                  {/* Indikator Auto-Save Presisi (Muncul khusus saat edit kuis) */}
+                  {editingQuiz && (
+                    <div className="hidden xs:inline-flex items-center gap-1.5 transition-all duration-200 select-none">
+                      {autoSaveStatus === 'saving' && (
+                        <span className="inline-flex items-center gap-1.5 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-2 py-0.5 rounded-md border border-amber-200 dark:border-amber-800 text-[11px] font-bold animate-pulse">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping shrink-0" />
+                          <span>Menyimpan...</span>
+                        </span>
+                      )}
+                      {autoSaveStatus === 'saved' && (
+                        <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800 text-[11px] font-bold">
+                          <Check className="w-3 h-3 text-emerald-500 shrink-0" />
+                          <span>Tersimpan Otomatis</span>
+                        </span>
+                      )}
+                      {autoSaveStatus === 'error' && (
+                        <span className="inline-flex items-center gap-1 text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/60 px-2 py-0.5 rounded-md border border-rose-200 dark:border-rose-800 text-[11px] font-bold">
+                          <AlertCircle className="w-3 h-3 text-rose-500 shrink-0" />
+                          <span>Gagal Simpan</span>
+                        </span>
+                      )}
+                      {autoSaveStatus === 'idle' && (
+                        <span className="inline-flex items-center gap-1 text-slate-500 dark:text-slate-400 bg-slate-100/70 dark:bg-slate-800/70 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700 text-[11px] font-bold">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-500 shrink-0" />
+                          <span>{lastSavedAt ? `Tersimpan ${lastSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'Auto-save aktif'}</span>
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
                 <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium truncate hidden xs:block">
                   {aiFunnelActive 
                     ? (aiFunnelStage === 1 
@@ -2106,7 +2261,12 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                 isAiMode={false}
                 quizPin={activeQuizPin}
                 quizId={activeQuizId}
-                onNext={() => setCurrentStep(2)}
+                onNext={() => {
+                  if (editingQuiz) {
+                    autoSaveQuiz(questions, '💾 Pengaturan kuis berhasil disimpan!');
+                  }
+                  setCurrentStep(2);
+                }}
                 onBack={onBack}
                 playClick={playClick}
               />
@@ -2850,15 +3010,41 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
 
             {/* Bottom Bar: Bank Soal Navigation */}
             <div className="flex justify-between items-center pt-4 border-t border-slate-200 dark:border-slate-800 gap-3">
-              <button
-                type="button"
-                onClick={handleSaveDraftManual}
-                className="px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750 min-h-[44px] flex items-center gap-2 transition-colors btn-press shadow-2xs"
-                title="Simpan draf kuis untuk dilanjutkan nanti"
-              >
-                <Save className="w-4 h-4 text-slate-500 dark:text-slate-400" />
-                <span>Simpan Draf</span>
-              </button>
+              {editingQuiz ? (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      onBack();
+                    }}
+                    className="px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750 min-h-[44px] flex items-center gap-2 transition-colors btn-press shadow-2xs"
+                    title="Selesai mengedit dan kembali ke Dasbor Guru"
+                  >
+                    <ArrowLeft className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                    <span>Selesai & Kembali</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveDraftManual}
+                    className="hidden sm:flex px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 min-h-[44px] items-center gap-1.5 transition-colors btn-press"
+                    title="Simpan seluruh butir soal sekarang"
+                  >
+                    <Save className="w-4 h-4 text-slate-400" />
+                    <span>Simpan Sekarang</span>
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleSaveDraftManual}
+                  className="px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750 min-h-[44px] flex items-center gap-2 transition-colors btn-press shadow-2xs"
+                  title="Simpan draf kuis untuk dilanjutkan nanti"
+                >
+                  <Save className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                  <span>Simpan Draf</span>
+                </button>
+              )}
 
               <button
                 type="button"

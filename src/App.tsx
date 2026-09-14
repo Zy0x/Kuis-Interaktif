@@ -718,6 +718,9 @@ export const App: React.FC = () => {
               saveNavigationState({ screen: 'teacher-dashboard', replace: false });
             }}
             onSaveQuiz={handleSaveCreatedQuiz}
+            onAutoSaveQuiz={(updatedQuiz) => {
+              setEditingQuiz(updatedQuiz);
+            }}
             isDark={isDark}
             onToggleTheme={toggleTheme}
             playClick={playClick}

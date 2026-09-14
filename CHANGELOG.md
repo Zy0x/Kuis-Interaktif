@@ -1,6 +1,29 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.15] - 2026-09-15
+### Auto-Save Kuis Real-Time Saat Edit & Tambah Butir Soal di Bank Soal (Rule 1, Rule 2, Rule 4, Rule 6, Rule 9, Rule 11 & Rule 15)
+
+#### 1. Penyimpanan Otomatis Kuis Real-Time (*Real-Time Auto-Save*)
+- **Studio Pembuat Kuis (`QuizCreator.tsx`)**: Menerapkan mekanisme penyimpanan otomatis (*auto-save*) saat guru mengedit kuis yang sudah ada. Setiap kali butir soal selesai diperbarui atau butir soal baru berhasil disimpan di Bank Soal, kuis langsung tersimpan ke penyimpanan lokal dan tersinkronisasi ke cloud database Supabase secara instan di latar belakang tanpa mengharuskan pengguna membuka tab "3. Simpan" (*Pratinjau & Simpan*).
+- **Cakupan Auto-Save Lengkap di Bank Soal**:
+  - Menyimpan otomatis saat butir soal selesai diedit (*Save Question*).
+  - Menyimpan otomatis saat butir soal baru ditambahkan dan disimpan (*Add Question*).
+  - Menyimpan otomatis saat butir soal diimpor dari Bank Soal AI (*AI Question Generator*).
+  - Menyimpan otomatis saat butir soal disalin/diduplikasi (*Duplicate Question*).
+  - Menyimpan otomatis saat butir soal dihapus (*Delete Question*).
+  - Menyimpan otomatis saat susunan urutan soal dipindahkan (*Reorder Questions*).
+  - Menyimpan otomatis saat fitur pembagian rata 100 poin dieksekusi.
+  - Menyimpan otomatis saat informasi identitas kuis di Tahap 1 diubah dan dilanjutkan ke Bank Soal.
+
+#### 2. Antarmuka Visual & Status Auto-Save yang Informatif
+- **Lencana Status Auto-Save di Header (`QuizCreator.tsx`)**: Menampilkan indikator status interaktif yang elegan dan adaptif (ikon berkedip *Menyimpan...*, centang hijau *Tersimpan Otomatis*, jam tersimpan terakhir, serta peringatan jika terjadi kendala).
+- **Navigasi Cepat Selesai & Kembali**: Menambahkan tombol *Selesai & Kembali* di bilah navigasi bawah Bank Soal khusus mode edit kuis, memungkinkan guru langsung kembali ke Dasbor Guru dengan rasa aman karena seluruh perubahan telah tersimpan penuh.
+
+#### 3. Pembaruan Versi & PWA Service Worker (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.15` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.15` (`public/sw.js`).
+
 ## [2.4.14] - 2026-09-14
 ### Token Perangkat Unik & Smart Auto-Disambiguation Nama Peserta Ala Standard Quizizz & Kahoot (Rule 1, Rule 2, Rule 4, Rule 7, Rule 9 & Rule 15)
 
