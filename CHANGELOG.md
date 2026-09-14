@@ -1,6 +1,32 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.2] - 2026-09-14
+### Redesain Ruang Tunggu Siswa: Side Panel Obrolan (Chat Drawer), Floating Action Button (FAB), & Galeri Peserta Luas (Rule 1, Rule 2, Rule 4, Rule 5, Rule 7, Rule 8 & Rule 15)
+
+#### 1. Transformasi Obrolan Siswa Menjadi Slide-Over Drawer (StudentChatDrawer.tsx)
+- **Side Panel Modern**: Menggantikan kolom statis 2-kolom yang sempit dengan komponen slide-over drawer independen berkecepatan tinggi (lebar optimal 440px di desktop/tablet dan full-width di mobile/smartphone).
+- **Animasi Halus & Ringan**: Dilengkapi transisi CSS `animate-slide-left-in` berdurasi 260ms, backdrop blur elegan, serta scroll lock (`useBodyScrollLock`) dan integrasi tombol kembali fisik/gesture Android (`useBackHandler`).
+- **Penyajian Pesan Berjenjang**: 
+  - *Pesan Guru*: Aksen border emas, highlight gradasi amber, dan mahkota kehormatan `👑`.
+  - *Pesan Kamu*: Bubble ungu-indigo rata kanan dengan indikator keterkiriman ganda `CheckCheck`.
+  - *Pesan Teman Sekelas*: Bubble netral lembut dengan avatar 3D dan label teman.
+- **Fitur Pesan Cepat & Kontrol Status**: Chip pesan positif siap kirim (touch target >= 44px) dan indikator status otomatis saat obrolan dibungkam oleh Guru.
+
+#### 2. Floating Action Button (FAB) Obrolan Interaktif
+- **Penempatan Ergonomis**: Tombol mengambang modern diposisikan pada sudut kanan bawah (`fixed bottom-6 right-6 z-40`) dengan ukuran thumb-zone optimal (56×56 px hingga 64×64 px), memenuhi standar touch-first.
+- **Penghitung Pesan Baru (Unread Badge)**: Lencana notifikasi merah dinamis menampilkan jumlah pesan baru yang belum dibaca saat laci obrolan tertutup.
+- **Koneksi Cepat Notifikasi Ala Zoom**: Notifikasi toast pesan masuk (`ZoomChatToast`) kini langsung membuka laci obrolan saat diklik oleh siswa.
+
+#### 3. Galeri Teman Sekelas Luas & Responsif (StudentWaitingRoom.tsx)
+- **Panggung Utama Bebas Dead-Space**: Mengubah panggung utama ruang tunggu menjadi galeri peserta berkapasitas besar dan dinamis dengan grid adaptif (`grid-cols-2` hingga `8-cols` di layar Ultra-Wide 4K).
+- **Identitas Kartu Peserta Jelas**: Menampilkan kartu peserta interaktif dengan avatar 3D besar, status tersambung live dengan indikator hijau berkedip, serta kartu khusus tersorot untuk profil diri sendiri bertuliskan "Kamu".
+- **Kenyamanan Visual**: Tidak ada lagi bidang kosong terbuang di sisi kanan atau kiri, memberikan pengalaman menunggu yang interaktif, lega, dan menyenangkan.
+
+#### 4. Pembaruan Versi & PWA Service Worker (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.2` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.2` (`public/sw.js`).
+
 ## [2.4.1] - 2026-09-14
 ### Penyelarasan Subjudul & Identitas Universal Seluruh Jenjang Pendidikan: SD • SMP • SMA (Rule 2, Rule 4, Rule 7 & Rule 15)
 

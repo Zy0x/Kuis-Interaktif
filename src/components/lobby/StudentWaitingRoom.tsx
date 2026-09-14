@@ -6,15 +6,15 @@ import { ThemeToggle } from '../common/ThemeToggle';
 import { QuizizzReactionOverlay } from '../common/QuizizzReactionOverlay';
 import { QuizizzReactionButtonRow } from '../common/QuizizzReactionButtonRow';
 import { ZoomChatToast } from '../common/ZoomChatToast';
+import { StudentChatDrawer } from '../chat/StudentChatDrawer';
 import { 
   ArrowLeft, 
   Sparkles, 
   Users, 
-  Send, 
   MessageCircle, 
   VolumeX,
-  Volume2,
-  CheckCheck
+  Radio,
+  Smile
 } from 'lucide-react';
 
 export interface StudentWaitingRoomProps {
@@ -29,21 +29,6 @@ export interface StudentWaitingRoomProps {
   onToggleTheme?: () => void;
 }
 
-const PRESET_QUICK_MESSAGES = [
-  'Siap belajar! 🚀',
-  'Semangat teman-teman! 💪',
-  'Bismillah lancar! 🤲',
-  'Kuis seru banget! ⭐',
-  'Pasti bisa nilai 100! 🎯',
-];
-
-const formatChatTime = (timestamp?: number): string => {
-  if (!timestamp) return '';
-  const d = new Date(timestamp);
-  if (isNaN(d.getTime())) return '';
-  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-};
-
 export const StudentWaitingRoom: React.FC<StudentWaitingRoomProps> = ({
   quiz,
   session: initialSession,
@@ -56,9 +41,11 @@ export const StudentWaitingRoom: React.FC<StudentWaitingRoomProps> = ({
   onToggleTheme = () => {},
 }) => {
   const [session, setSession] = useState<QuizSession>(initialSession);
-  const [chatText, setChatText] = useState('');
+  const [isChatDrawerOpen, setIsChatDrawerOpen] = useState(false);
+  const [unreadChatCount, setUnreadChatCount] = useState(0);
   const [isSessionEndedModalOpen, setIsSessionEndedModalOpen] = useState(() => initialSession?.status === 'finished');
-  const chatScrollRef = useRef<HTMLDivElement>(null);
+  
+  const lastSeenChatCountRef = useRef(initialSession?.chatMessages?.length || 0);
 
   // Pantau jika status sesi berubah menjadi finished
   useEffect(() => {
@@ -133,31 +120,38 @@ export const StudentWaitingRoom: React.FC<StudentWaitingRoomProps> = ({
     };
   }, [session.id, session.pinCode, onStartQuiz]);
 
-  const handleSendChatMessage = async (textToSend: string) => {
-    if (session.status === 'finished' || isSessionEndedModalOpen) return;
-    const clean = textToSend.trim();
-    if (!clean) return;
+  // Hitung pesan belum dibaca untuk Floating Chat Button
+  useEffect(() => {
+    const currentCount = session.chatMessages?.length || 0;
+    if (isChatDrawerOpen) {
+      lastSeenChatCountRef.current = currentCount;
+      setUnreadChatCount(0);
+    } else {
+      const diff = currentCount - lastSeenChatCountRef.current;
+      setUnreadChatCount(diff > 0 ? diff : 0);
+    }
+  }, [session.chatMessages, isChatDrawerOpen]);
+
+  const handleOpenChatDrawer = () => {
     playClick();
-    await DataManager.sendSessionChatMessage(session.id, {
-      studentName,
-      avatarId,
-      text: clean,
-    });
-    setChatText('');
-    setTimeout(() => {
-      if (chatScrollRef.current) {
-        chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
-      }
-    }, 100);
+    setIsChatDrawerOpen(true);
+    lastSeenChatCountRef.current = session.chatMessages?.length || 0;
+    setUnreadChatCount(0);
+  };
+
+  const handleCloseChatDrawer = () => {
+    playClick();
+    setIsChatDrawerOpen(false);
+    lastSeenChatCountRef.current = session.chatMessages?.length || 0;
+    setUnreadChatCount(0);
   };
 
   const myAvatar = AVATAR_MAP[avatarId] || '🦁';
   const participants = session.participants || [];
   const isChatMuted = Boolean(session.settings?.isChatMuted);
-  const chatMessages = session.chatMessages || [];
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col justify-between select-none relative overflow-hidden">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col justify-between select-none relative overflow-x-hidden">
       {/* Quizizz-Grade Floating Reactions Overlay */}
       <QuizizzReactionOverlay sessionId={session.id} />
 
@@ -268,265 +262,150 @@ export const StudentWaitingRoom: React.FC<StudentWaitingRoomProps> = ({
           </div>
         </div>
 
-        {/* 2-Columns: Teman Sekelas (4/12 cols) & Obrolan Kelas (8/12 cols) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 w-full flex-1">
-          
-          {/* Kolom Kiri: Teman Sekelas yang Sudah Join */}
-          <div className="lg:col-span-5 xl:col-span-4 2xl:col-span-4 bg-white dark:bg-slate-900 rounded-3xl p-4 sm:p-5 border border-slate-200/90 dark:border-slate-800 shadow-sm flex flex-col h-[440px] sm:h-[480px] lg:h-[560px] xl:h-[620px]">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-              <span className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                <Users className="w-4 h-4 text-blue-500" />
-                <span>Teman yang Sudah Masuk</span>
-              </span>
-              <span className="px-2.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-bold text-xs">
-                {participants.length} Siswa
-              </span>
+        {/* Galeri Teman Sekelas (Showcase Arena) - Lebar Penuh, Rapi, & Responsif */}
+        <section 
+          aria-labelledby="participants-heading"
+          className="bg-white dark:bg-slate-900 rounded-3xl p-4 sm:p-6 lg:p-7 border border-slate-200/90 dark:border-slate-800 shadow-sm flex flex-col flex-1 min-h-[380px] sm:min-h-[440px]"
+        >
+          {/* Header Galeri */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-2xl bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-300 flex items-center justify-center shrink-0 shadow-2xs">
+                <Users className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 id="participants-heading" className="text-sm sm:text-base font-black text-slate-800 dark:text-slate-100 tracking-tight">
+                  Teman Sekelas yang Sudah Bergabung
+                </h2>
+                <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">
+                  Semua peserta yang terhubung di ruang tunggu ini akan bersaing secara sehat
+                </p>
+              </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto pt-3 pr-1">
-              {participants.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400 dark:text-slate-500 space-y-2">
-                  <Users className="w-8 h-8 opacity-40" />
-                  <p className="text-xs font-semibold">Belum ada peserta lain yang masuk...</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-2">
-                  {participants.map((p) => {
-                    const pAvatar = AVATAR_MAP[p.avatarId] || '⭐';
-                    const isMe = p.name.trim().toLowerCase() === studentName.trim().toLowerCase();
-                    return (
-                      <div
-                        key={p.id}
-                        className={`p-2.5 rounded-2xl flex items-center gap-2.5 border transition-all ${
-                          isMe
-                            ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-300 dark:border-blue-800 ring-1 ring-blue-400/30'
-                            : 'bg-slate-50 dark:bg-slate-800/50 border-slate-200/70 dark:border-slate-800 hover:bg-slate-100/70 dark:hover:bg-slate-800'
-                        }`}
-                      >
-                        <div className="w-8 h-8 rounded-xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 flex items-center justify-center text-lg shrink-0 shadow-2xs select-none">
-                          {pAvatar}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate block">
-                            {p.name}
-                          </span>
-                          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                            <span>Tersambung</span>
-                          </span>
-                        </div>
-                        {isMe && (
-                          <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/60 px-2 py-0.5 rounded-md shrink-0">
-                            Kamu
-                          </span>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+            <div className="flex items-center gap-2 self-start sm:self-auto">
+              <span className="px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-900 text-blue-700 dark:text-blue-300 font-bold text-xs flex items-center gap-1.5 shadow-2xs">
+                <Users className="w-3.5 h-3.5 text-blue-500" />
+                <span>{participants.length} Siswa</span>
+              </span>
+              <span className="px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900 text-emerald-700 dark:text-emerald-300 font-bold text-xs flex items-center gap-1.5 shadow-2xs">
+                <Radio className="w-3 h-3 text-emerald-500 animate-pulse" />
+                <span className="hidden xs:inline">Ruang Aktif</span>
+              </span>
             </div>
           </div>
 
-          {/* Kolom Kanan: Obrolan Kelas Positif */}
-          <div className="lg:col-span-7 xl:col-span-8 2xl:col-span-8 bg-white dark:bg-slate-900 rounded-3xl p-4 sm:p-5 border border-slate-200/90 dark:border-slate-800 shadow-sm flex flex-col h-[480px] sm:h-[520px] lg:h-[560px] xl:h-[620px]">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                  <MessageCircle className="w-4 h-4 text-purple-500" />
-                  <span>Obrolan Kelas</span>
-                </span>
-                <span className="px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 font-bold text-[10px]">
-                  {chatMessages.length} Pesan
-                </span>
-              </div>
-              {isChatMuted ? (
-                <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1 bg-amber-50 dark:bg-amber-950/60 px-2 py-0.5 rounded-full">
-                  <VolumeX className="w-3 h-3" />
-                  <span>Dibungkam Guru</span>
-                </span>
-              ) : (
-                <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full">
-                  <Volume2 className="w-3 h-3" />
-                  <span>Terpantau Guru</span>
-                </span>
-              )}
-            </div>
-
-            {/* Message List */}
-            <div ref={chatScrollRef} className="flex-1 overflow-y-auto space-y-3 py-2.5 px-1 sm:px-2 text-xs">
-              {chatMessages.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400 dark:text-slate-500 space-y-2">
-                  <div className="w-10 h-10 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xl shadow-2xs">
-                    💬
-                  </div>
-                  <p className="text-xs font-bold text-slate-600 dark:text-slate-400">Belum ada pesan</p>
-                  <p className="text-[11px] max-w-xs leading-relaxed">
-                    Kirim salam atau kata semangat untuk teman-teman dan guru!
+          {/* Grid Peserta */}
+          <div className="flex-1 py-4">
+            {participants.length === 0 ? (
+              <div className="h-full min-h-[240px] flex flex-col items-center justify-center text-center p-6 text-slate-400 dark:text-slate-500 space-y-3">
+                <div className="w-16 h-16 rounded-3xl bg-slate-100 dark:bg-slate-800/80 flex items-center justify-center text-3xl shadow-xs">
+                  <Smile className="w-8 h-8 text-slate-400 opacity-60" />
+                </div>
+                <div className="space-y-1 max-w-sm">
+                  <p className="text-sm font-bold text-slate-700 dark:text-slate-300">Belum ada teman lain yang masuk</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Ajak teman sekelasmu untuk memasukkan PIN <strong className="font-mono text-blue-600 dark:text-blue-400 font-black">{session.pinCode}</strong> di perangkat mereka!
                   </p>
                 </div>
-              ) : (
-                chatMessages.map((m) => {
-                  const mAvatar = AVATAR_MAP[m.avatarId] || (m.isTeacher ? '👨‍🏫' : '💬');
-                  const isTeacher = Boolean(m.isTeacher);
-                  const isMe = !isTeacher && m.studentName.trim().toLowerCase() === studentName.trim().toLowerCase();
-                  const timeStr = formatChatTime(m.createdAt);
-
-                  // 1. KATEGORI: GURU (Autoritatif, Berkelas, Spotlight Emas / Amber)
-                  if (isTeacher) {
-                    return (
-                      <div key={m.id} className="flex flex-col items-start w-full my-1 animate-fade-in">
-                        <div className="flex items-start gap-2 max-w-[95%] sm:max-w-[88%] mr-auto">
-                          {/* Avatar Guru dengan Badge Mahkota */}
-                          <div className="relative shrink-0 mt-0.5 select-none">
-                            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400 to-amber-500 text-white flex items-center justify-center text-sm shadow-xs border border-amber-300">
-                              {mAvatar}
-                            </div>
-                            <span className="absolute -top-1.5 -right-1.5 text-[11px] leading-none select-none filter drop-shadow">
-                              👑
-                            </span>
-                          </div>
-
-                          {/* Bubble Pesan Guru */}
-                          <div className="bg-gradient-to-br from-amber-50 via-amber-50/90 to-orange-50/40 dark:from-amber-950/60 dark:via-amber-950/40 dark:to-slate-900 border border-amber-300/90 dark:border-amber-700/80 border-l-4 border-l-amber-500 rounded-2xl rounded-tl-xs p-3 shadow-xs text-amber-950 dark:text-amber-100 flex-1 min-w-0">
-                            <div className="flex items-center justify-between gap-1.5 mb-1 pb-1 border-b border-amber-200/70 dark:border-amber-800/60">
-                              <div className="flex items-center gap-1.5 min-w-0">
-                                <span className="font-black text-xs text-amber-950 dark:text-amber-200 truncate">
-                                  {m.studentName}
-                                </span>
-                                <span className="px-1.5 py-0.2 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-500 text-white shadow-2xs flex items-center gap-0.5 shrink-0">
-                                  <Sparkles className="w-2.5 h-2.5" />
-                                  <span>Guru</span>
-                                </span>
-                              </div>
-                            </div>
-                            <p className="text-xs font-semibold leading-relaxed break-words whitespace-pre-wrap text-amber-950 dark:text-amber-100">
-                              {m.text}
-                            </p>
-                            <div className="flex items-center justify-between text-[9.5px] text-amber-700/80 dark:text-amber-400/80 mt-1.5 pt-0.5">
-                              <span className="font-bold flex items-center gap-1 opacity-80 text-[9px]">
-                                <Sparkles className="w-2.5 h-2.5" />
-                                <span>Pesan Guru</span>
-                              </span>
-                              {timeStr && <span>{timeStr}</span>}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  }
-
-                  // 2. KATEGORI: DIRI SENDIRI / "KAMU" (Rata Kanan, Modern Gradient Bubble)
-                  if (isMe) {
-                    return (
-                      <div key={m.id} className="flex flex-col items-end w-full my-1 animate-fade-in">
-                        <div className="flex items-end justify-end gap-1.5 max-w-[88%] sm:max-w-[80%] ml-auto">
-                          <div className="bg-gradient-to-r from-purple-600 to-indigo-600 dark:from-purple-600 dark:to-indigo-500 text-white rounded-2xl rounded-tr-xs p-3 shadow-sm flex-1 min-w-0">
-                            <div className="flex items-center justify-end gap-1.5 mb-1 text-[10px] font-bold text-purple-200/90">
-                              <span className="bg-purple-700/70 dark:bg-purple-800/70 px-1.5 py-0.2 rounded text-[9px] font-black uppercase tracking-wider text-purple-100">
-                                Kamu
-                              </span>
-                              <span>{mAvatar}</span>
-                            </div>
-                            <p className="text-xs font-normal leading-relaxed break-words whitespace-pre-wrap text-white">
-                              {m.text}
-                            </p>
-                            <div className="flex items-center justify-end gap-1 text-[9.5px] text-purple-200/80 mt-1.5">
-                              {timeStr && <span>{timeStr}</span>}
-                              <CheckCheck className="w-3 h-3 text-purple-200/90" />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  }
-
-                  // 3. KATEGORI: ORANG LAIN / TEMAN SEKELAS (Rata Kiri, Soft Neutral Bubble + Avatar Siswa)
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 3xl:grid-cols-8 gap-3 sm:gap-4">
+                {participants.map((p) => {
+                  const pAvatar = AVATAR_MAP[p.avatarId] || '⭐';
+                  const isMe = p.name.trim().toLowerCase() === studentName.trim().toLowerCase();
                   return (
-                    <div key={m.id} className="flex flex-col items-start w-full my-1 animate-fade-in">
-                      <div className="flex items-start justify-start gap-2 max-w-[88%] sm:max-w-[80%] mr-auto">
-                        {/* Avatar Teman */}
-                        <div className="w-7 h-7 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-sm shadow-2xs shrink-0 select-none mt-0.5">
-                          {mAvatar}
-                        </div>
+                    <div
+                      key={p.id}
+                      className={`relative p-3 sm:p-3.5 rounded-2xl flex flex-col items-center text-center gap-2 border transition-all duration-200 hover:-translate-y-0.5 shadow-2xs ${
+                        isMe
+                          ? 'bg-gradient-to-b from-blue-50/90 to-indigo-50/50 dark:from-blue-950/60 dark:to-slate-900 border-blue-300 dark:border-blue-700 ring-2 ring-blue-400/40 shadow-blue-500/10'
+                          : 'bg-white dark:bg-slate-800/60 border-slate-200/80 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50/80 dark:hover:bg-slate-800'
+                      }`}
+                    >
+                      {/* Badge "Kamu" jika profil diri sendiri */}
+                      {isMe && (
+                        <span className="absolute -top-2 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-blue-600 text-white shadow-xs">
+                          Kamu
+                        </span>
+                      )}
 
-                        {/* Bubble Teman */}
-                        <div className="bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 shadow-2xs rounded-2xl rounded-tl-xs p-3 text-slate-800 dark:text-slate-100 flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5 mb-1">
-                            <span className="font-black text-[11px] text-indigo-600 dark:text-indigo-400 truncate">
-                              {m.studentName}
-                            </span>
-                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md bg-slate-100 dark:bg-slate-700/80 text-slate-500 dark:text-slate-400">
-                              Teman
-                            </span>
-                          </div>
-                          <p className="text-xs font-normal leading-relaxed break-words whitespace-pre-wrap text-slate-800 dark:text-slate-200">
-                            {m.text}
-                          </p>
-                          {timeStr && (
-                            <div className="text-[9.5px] text-slate-400 dark:text-slate-500 mt-1.5 text-right">
-                              {timeStr}
-                            </div>
-                          )}
-                        </div>
+                      {/* Avatar Peserta */}
+                      <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center text-2xl sm:text-3xl shadow-sm select-none border ${
+                        isMe 
+                          ? 'bg-white dark:bg-slate-800 border-blue-200 dark:border-blue-800' 
+                          : 'bg-slate-50 dark:bg-slate-800 border-slate-200/80 dark:border-slate-700'
+                      }`}>
+                        {pAvatar}
+                      </div>
+
+                      {/* Informasi Nama Siswa */}
+                      <div className="w-full min-w-0">
+                        <span 
+                          className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100 truncate block px-1"
+                          title={p.name}
+                        >
+                          {p.name}
+                        </span>
+                        <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center justify-center gap-1 mt-0.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                          <span>Tersambung</span>
+                        </span>
                       </div>
                     </div>
                   );
-                })
-              )}
-            </div>
-
-            {/* Quick Chips & Chat Input */}
-            {!isChatMuted && (
-              <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
-                {/* Preset Chips */}
-                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-                  {PRESET_QUICK_MESSAGES.map((msg) => (
-                    <button
-                      key={msg}
-                      type="button"
-                      disabled={session.status === 'finished' || isSessionEndedModalOpen}
-                      onClick={() => handleSendChatMessage(msg)}
-                      className="px-3 py-2 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 text-xs font-bold hover:bg-purple-100 dark:hover:bg-purple-900/60 border border-purple-200 dark:border-purple-800 whitespace-nowrap min-h-[44px] flex items-center justify-center btn-press disabled:opacity-40"
-                    >
-                      {msg}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Input form */}
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    handleSendChatMessage(chatText);
-                  }}
-                  className="flex items-center gap-2"
-                >
-                  <input
-                    type="text"
-                    maxLength={100}
-                    value={chatText}
-                    disabled={session.status === 'finished' || isSessionEndedModalOpen}
-                    onChange={(e) => setChatText(e.target.value)}
-                    placeholder={session.status === 'finished' ? 'Sesi telah berakhir...' : 'Ketik pesan positif...'}
-                    className="flex-1 px-4 py-3 rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-purple-500 text-slate-900 dark:text-white min-h-[48px] shadow-xs"
-                  />
-                  <button
-                    type="submit"
-                    disabled={!chatText.trim() || session.status === 'finished' || isSessionEndedModalOpen}
-                    className="p-3 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-bold disabled:opacity-40 min-h-[48px] min-w-[48px] flex items-center justify-center transition-colors btn-press shrink-0 shadow-sm"
-                    aria-label="Kirim Pesan"
-                  >
-                    <Send className="w-4 h-4" />
-                  </button>
-                </form>
+                })}
               </div>
             )}
           </div>
-
-        </div>
+        </section>
 
       </main>
+
+      {/* Floating Action Button (FAB) Obrolan Kelas - Pojok Kanan Bawah */}
+      <div className="fixed bottom-6 right-6 z-40 flex items-center group">
+        {/* Tooltip Pill on Tablet / Desktop */}
+        <span className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 mr-2 rounded-xl bg-slate-900/90 dark:bg-white/95 text-white dark:text-slate-900 text-xs font-bold shadow-xl backdrop-blur-sm pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap">
+          <MessageCircle className="w-3.5 h-3.5 text-purple-400 dark:text-purple-600" />
+          <span>Obrolan Kelas</span>
+          {isChatMuted && <span className="text-rose-400 dark:text-rose-600 text-[10px]">(Dibungkam)</span>}
+        </span>
+
+        {/* Main Floating Action Button */}
+        <button
+          type="button"
+          onClick={handleOpenChatDrawer}
+          className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-tr from-purple-600 via-indigo-600 to-purple-500 hover:from-purple-500 hover:to-indigo-500 text-white shadow-2xl shadow-purple-500/30 flex items-center justify-center btn-press hover:scale-105 active:scale-95 transition-all duration-200 border-2 border-white/30 dark:border-slate-800 focus:outline-none focus:ring-4 focus:ring-purple-400/50"
+          aria-label="Buka Obrolan Kelas"
+          title="Buka Obrolan Kelas"
+        >
+          {isChatMuted ? (
+            <VolumeX className="w-6 h-6 sm:w-7 sm:h-7 text-amber-300" />
+          ) : (
+            <MessageCircle className="w-6 h-6 sm:w-7 sm:h-7" />
+          )}
+
+          {/* Unread Counter Badge */}
+          {unreadChatCount > 0 && !isChatDrawerOpen && (
+            <span className="absolute -top-1 -right-1 px-1.5 min-w-[22px] h-[22px] bg-rose-500 text-white text-[11px] font-black rounded-full flex items-center justify-center border-2 border-white dark:border-slate-900 shadow-md animate-bounce">
+              {unreadChatCount > 99 ? '99+' : unreadChatCount}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {/* Slide-Over Side Panel (Drawer) Obrolan Siswa */}
+      <StudentChatDrawer
+        isOpen={isChatDrawerOpen}
+        onClose={handleCloseChatDrawer}
+        sessionId={session.id}
+        studentName={studentName}
+        avatarId={avatarId}
+        isChatMuted={isChatMuted}
+        sessionStatus={session.status}
+        isSessionEndedModalOpen={isSessionEndedModalOpen}
+        playClick={playClick}
+      />
 
       {/* Footer */}
       <footer className="w-full py-2.5 text-center text-[11px] text-slate-400 dark:text-slate-500">
@@ -536,11 +415,7 @@ export const StudentWaitingRoom: React.FC<StudentWaitingRoomProps> = ({
       {/* Popup Chat Masuk Ala Zoom */}
       <ZoomChatToast
         sessionId={session.id}
-        onOpenChat={() => {
-          if (chatScrollRef.current) {
-            chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
-          }
-        }}
+        onOpenChat={handleOpenChatDrawer}
         currentUserName={studentName}
       />
 
