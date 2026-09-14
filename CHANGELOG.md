@@ -1,6 +1,23 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.3] - 2026-09-14
+### Restrukturisasi Hierarki Modal: Pengkhususan Modal Profil Siswa & Navigasi Terpadu Masuk/Daftar (Rule 1, Rule 2, Rule 4, Rule 8, Rule 9 & Rule 15)
+
+#### 1. Pengkhususan Modal Profil Siswa Tanpa Redundansi (QuizHome.tsx)
+- **Penghapusan Tab Duplikasi**: Menghapus switcher tab kaku di dalam modal profil siswa (`[ Profil & Maskot ]` dan `[ Masuk / Daftar ]`) sehingga modal sepenuhnya fokus murni pada pengelolaan profil pribadi siswa (Nama Panggilan, Maskot Hewan, Status Akun/Tamu, dan Jumlah Bintang ⭐).
+- **Pembersihan Kode Redundan**: Menghapus form autentikasi lokal siswa di dalam `QuizHome.tsx` yang sebelumnya menduplikasi fungsionalitas modal login utama.
+- **Hierarki Navigasi Bersih**: Tombol *"Masuk / Daftar"* pada kartu helper akun kini langsung menutup modal profil dan secara elegan mengarahkan pengguna ke **Modal Masuk / Daftar Akun Terpadu** (`UnifiedAuthModal`) dengan tab Siswa/Pelajar aktif.
+
+#### 2. Penyelarasan Modal Masuk / Daftar Terpadu (UnifiedAuthModal.tsx)
+- **Sinkronisasi Tab Otomatis**: Memastikan `activeTab` selalu tersinkronisasi instan dengan prop `initialTab` saat modal dibuka, sehingga pengguna langsung melihat form login/register siswa tanpa perlu beralih manual.
+- **Dukungan Jenjang Universal (SD • SMP • SMA)**: Memperbarui pemilih tingkat kelas pada pendaftaran siswa agar mencakup seluruh jenjang pendidikan formal: SD (Kelas 1-6), SMP (Kelas 7-9), dan SMA/SMK (Kelas 10-12).
+- **Prapengisian Nama Panggilan Otomatis**: Nama panggilan siswa yang sudah diisi di mode tamu secara otomatis terisi ke form pendaftaran akun siswa baru.
+
+#### 3. Pembaruan Versi & PWA Service Worker (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.3` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.3` (`public/sw.js`).
+
 ## [2.4.2] - 2026-09-14
 ### Redesain Ruang Tunggu Siswa: Side Panel Obrolan (Chat Drawer), Floating Action Button (FAB), & Galeri Peserta Luas (Rule 1, Rule 2, Rule 4, Rule 5, Rule 7, Rule 8 & Rule 15)
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DataManager } from '../../lib/supabaseClient';
 import type { TeacherProfile, PlayerProfile } from '../../types/quiz';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
@@ -63,6 +63,17 @@ export const UnifiedAuthModal: React.FC<UnifiedAuthModalProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setActiveTab(initialTab);
+      setErrorMessage(null);
+      const current = DataManager.getPlayerProfile();
+      if (current.nickname && current.nickname !== 'Saya' && current.nickname !== 'Pengunjung') {
+        setStudentNickname((prev) => prev || current.nickname);
+      }
+    }
+  }, [initialTab, isOpen]);
 
   if (!isOpen) return null;
 
@@ -408,9 +419,21 @@ export const UnifiedAuthModal: React.FC<UnifiedAuthModalProps> = ({
                       onChange={(e) => setStudentGrade(Number(e.target.value))}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-semibold text-xs sm:text-sm focus:border-emerald-500 focus:outline-none min-h-[44px]"
                     >
-                      {[1, 2, 3, 4, 5, 6].map((g) => (
-                        <option key={g} value={g}>Kelas {g}</option>
-                      ))}
+                      <optgroup label="Sekolah Dasar (SD / MI)">
+                        {[1, 2, 3, 4, 5, 6].map((g) => (
+                          <option key={g} value={g}>Kelas {g} SD</option>
+                        ))}
+                      </optgroup>
+                      <optgroup label="Sekolah Menengah Pertama (SMP / MTs)">
+                        {[7, 8, 9].map((g) => (
+                          <option key={g} value={g}>Kelas {g} SMP</option>
+                        ))}
+                      </optgroup>
+                      <optgroup label="Sekolah Menengah Atas / Kejuruan (SMA / SMK)">
+                        {[10, 11, 12].map((g) => (
+                          <option key={g} value={g}>Kelas {g} SMA / SMK</option>
+                        ))}
+                      </optgroup>
                     </select>
                   </div>
                 </>

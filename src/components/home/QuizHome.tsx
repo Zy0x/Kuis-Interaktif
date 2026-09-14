@@ -172,14 +172,6 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
   const [pinError, setPinError] = useState<string | null>(null);
   const [isPinLoading, setIsPinLoading] = useState(false);
 
-  // Student Cloud Auth State (Mode Tamu is Default)
-  const [profileTab, setProfileTab] = useState<'guest' | 'login' | 'register'>('guest');
-  const [studentEmail, setStudentEmail] = useState('');
-  const [studentPassword, setStudentPassword] = useState('');
-  const [studentGrade, setStudentGrade] = useState(1);
-  const [studentAuthLoading, setStudentAuthLoading] = useState(false);
-  const [studentAuthError, setStudentAuthError] = useState<string | null>(null);
-
   // Ambil kuis terbaru dari Supabase Cloud saat komponen dimuat
   useEffect(() => {
     DataManager.fetchQuizzesFromCloud({ publicOnly: true })
@@ -205,10 +197,6 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
   // 2. Level 1 (Prioritas 100): Modal Profil Siswa
   useBackHandler('home-profile-modal', 100, () => {
     if (isProfileModalOpen) {
-      if (profileTab !== 'guest') {
-        setProfileTab('guest');
-        return true;
-      }
       setIsProfileModalOpen(false);
       return true;
     }
@@ -337,66 +325,12 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
     }
   };
 
-  const handleStudentSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
-    playClick();
-    setStudentAuthError(null);
-    setStudentAuthLoading(true);
-    try {
-      const res = await DataManager.signInStudent(studentEmail, studentPassword);
-      if (res.success && res.profile) {
-        setProfile(res.profile);
-        setTempNickname(isCustomName(res.profile.nickname) ? res.profile.nickname : '');
-        setTempAvatar(res.profile.avatarId);
-        setProfileTab('guest');
-        setIsProfileModalOpen(false);
-      } else {
-        setStudentAuthError(res.error || 'Email atau kata sandi tidak sesuai.');
-      }
-    } catch {
-      setStudentAuthError('Gagal menghubungi server.');
-    } finally {
-      setStudentAuthLoading(false);
-    }
-  };
-
-  const handleStudentSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    playClick();
-    if (studentPassword.length < 6) {
-      setStudentAuthError('Kata sandi minimal 6 karakter.');
-      return;
-    }
-    setStudentAuthError(null);
-    setStudentAuthLoading(true);
-    try {
-      const res = await DataManager.signUpStudent(
-        studentEmail,
-        studentPassword,
-        tempNickname.trim() || 'Saya',
-        studentGrade
-      );
-      if (res.success && res.profile) {
-        setProfile(res.profile);
-        setProfileTab('guest');
-        setIsProfileModalOpen(false);
-      } else {
-        setStudentAuthError(res.error || 'Gagal mendaftar akun siswa.');
-      }
-    } catch {
-      setStudentAuthError('Gagal mendaftar akun siswa.');
-    } finally {
-      setStudentAuthLoading(false);
-    }
-  };
-
   const handleStudentSignOut = async () => {
     playClick();
     const guest = await DataManager.signOutAll();
     setProfile(guest);
     setTempNickname(isCustomName(guest.nickname) ? guest.nickname : '');
     setTempAvatar(guest.avatarId);
-    setProfileTab('guest');
     setIsProfileModalOpen(false);
     if (onStudentLogout) {
       onStudentLogout();
@@ -1164,7 +1098,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
             {/* Header */}
             <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between flex-shrink-0">
               <div>
-                <h3 className="font-bold text-slate-900 dark:text-white text-base">Profil & Akun Siswa</h3>
+                <h3 className="font-bold text-slate-900 dark:text-white text-base">Profil Siswa</h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
                   {profile.isLoggedIn ? 'Akun Siswa Terhubung' : 'Mode Tamu (Default Aktif)'}
                 </p>
@@ -1179,331 +1113,124 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
               </button>
             </div>
 
-            {/* Mode Switcher Tabs */}
-            <div className="flex border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 p-1.5 gap-1.5 flex-shrink-0">
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  setProfileTab('guest');
-                }}
-                className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all min-h-[44px] ${
-                  profileTab === 'guest'
-                    ? 'bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-400 shadow-sm'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                }`}
-              >
-                Profil & Maskot
-              </button>
+            {/* Profile Content Form */}
+            <form onSubmit={handleSaveProfile} className="p-5 space-y-4 overflow-y-auto flex-1">
+              {/* Status Badge */}
+              <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 text-xs">
+                <span className="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                  <span className={`w-2 h-2 rounded-full ${profile.isLoggedIn ? 'bg-emerald-500' : 'bg-blue-500'}`} />
+                  {profile.isLoggedIn ? `Akun: ${profile.email}` : 'Mode Tamu'}
+                </span>
+                <span className="font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                  <Trophy className="w-3.5 h-3.5" /> {profile.starsEarned} ⭐
+                </span>
+              </div>
 
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  setProfileTab(profile.isLoggedIn ? 'guest' : 'login');
-                }}
-                className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all min-h-[44px] ${
-                  profileTab !== 'guest' || profile.isLoggedIn
-                    ? 'bg-white dark:bg-slate-800 text-blue-700 dark:text-blue-400 shadow-sm'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                }`}
-              >
-                {profile.isLoggedIn ? 'Akun Siswa' : 'Masuk / Daftar'}
-              </button>
-            </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                  Nama Panggilan Siswa (Maksimal 12 Karakter)
+                </label>
+                <input
+                  type="text"
+                  maxLength={12}
+                  value={tempNickname}
+                  onChange={(e) => setTempNickname(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none font-bold text-sm text-slate-900 dark:text-white min-h-[44px]"
+                />
+                <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1 font-medium">
+                  Kosongkan jika ingin tetap menggunakan profil &quot;Saya&quot;.
+                </p>
+              </div>
 
-            {/* TAB 1: Mode Tamu (Profil & Maskot) */}
-            {profileTab === 'guest' && (
-              <form onSubmit={handleSaveProfile} className="p-5 space-y-4 overflow-y-auto flex-1">
-                {/* Status Badge */}
-                <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 text-xs">
-                  <span className="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                    <span className={`w-2 h-2 rounded-full ${profile.isLoggedIn ? 'bg-emerald-500' : 'bg-blue-500'}`} />
-                    {profile.isLoggedIn ? `Akun: ${profile.email}` : 'Mode Tamu'}
-                  </span>
-                  <span className="font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                    <Trophy className="w-3.5 h-3.5" /> {profile.starsEarned} ⭐
-                  </span>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">
+                  Pilih Maskot Hewan
+                </label>
+                <div className="grid grid-cols-4 gap-2">
+                  {AVATAR_LIST.map((avatar) => {
+                    const isSelected = tempAvatar === avatar.id;
+                    return (
+                      <button
+                        type="button"
+                        key={avatar.id}
+                        onClick={() => {
+                          playClick();
+                          setTempAvatar(avatar.id);
+                        }}
+                        className={`p-2.5 rounded-2xl flex flex-col items-center justify-center border transition-all min-h-[60px] ${
+                          isSelected
+                            ? 'bg-blue-50 dark:bg-blue-900/40 border-blue-500 ring-2 ring-blue-400 shadow-sm'
+                            : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750'
+                        }`}
+                      >
+                        <span className="text-2xl select-none">{avatar.emoji}</span>
+                        <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-300 mt-1 truncate max-w-full">
+                          {avatar.name.split(' ')[0]}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
+              </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                    Nama Panggilan Siswa (Maksimal 12 Karakter)
-                  </label>
-                  <input
-                    type="text"
-                    maxLength={12}
-                    value={tempNickname}
-                    onChange={(e) => setTempNickname(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none font-bold text-sm text-slate-900 dark:text-white min-h-[44px]"
-                  />
-                  <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1 font-medium">
-                    Kosongkan jika ingin tetap menggunakan profil &quot;Saya&quot;.
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">
-                    Pilih Maskot Hewan
-                  </label>
-                  <div className="grid grid-cols-4 gap-2">
-                    {AVATAR_LIST.map((avatar) => {
-                      const isSelected = tempAvatar === avatar.id;
-                      return (
-                        <button
-                          type="button"
-                          key={avatar.id}
-                          onClick={() => {
-                            playClick();
-                            setTempAvatar(avatar.id);
-                          }}
-                          className={`p-2.5 rounded-2xl flex flex-col items-center justify-center border transition-all min-h-[60px] ${
-                            isSelected
-                              ? 'bg-blue-50 dark:bg-blue-900/40 border-blue-500 ring-2 ring-blue-400 shadow-sm'
-                              : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750'
-                          }`}
-                        >
-                          <span className="text-2xl select-none">{avatar.emoji}</span>
-                          <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-300 mt-1 truncate max-w-full">
-                            {avatar.name.split(' ')[0]}
-                          </span>
-                        </button>
-                      );
-                    })}
+              {/* Account Helper Card */}
+              {!profile.isLoggedIn ? (
+                <div className="p-3.5 rounded-2xl bg-blue-50/80 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/60 flex items-center justify-between gap-3 shadow-2xs">
+                  <div className="text-[11px] text-blue-900 dark:text-blue-200 min-w-0">
+                    <span className="font-bold block text-xs">Simpan prestasi belajar Anda</span>
+                    <span className="text-slate-600 dark:text-slate-400">Masuk dengan akun siswa.</span>
                   </div>
-                </div>
-
-                {/* Account helper */}
-                {!profile.isLoggedIn ? (
-                  <div className="p-3 rounded-2xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/60 flex items-center justify-between gap-2">
-                    <div className="text-[11px] text-blue-900 dark:text-blue-200">
-                      <span className="font-bold block">Simpan prestasi belajar Anda</span>
-                      <span>Masuk dengan akun siswa.</span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        playClick();
-                        setProfileTab('login');
-                      }}
-                      className="px-3.5 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-xs hover:bg-blue-700 min-h-[44px] flex items-center justify-center whitespace-nowrap"
-                    >
-                      Masuk / Daftar
-                    </button>
-                  </div>
-                ) : (
-                  <div className="pt-2 flex items-center justify-between p-3 rounded-2xl bg-rose-50/70 dark:bg-rose-950/30 border border-rose-100 dark:border-rose-900/40">
-                    <div className="text-[11px] text-slate-600 dark:text-slate-400 min-w-0 pr-2">
-                      <span className="font-bold block text-slate-900 dark:text-white truncate">
-                        {isCustomName(profile.nickname) ? profile.nickname : 'Akun Siswa'}
-                      </span>
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400 truncate block">
-                        {profile.email || 'Terhubung'}
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleStudentSignOut}
-                      className="text-rose-600 dark:text-rose-400 hover:text-white hover:bg-rose-600 dark:hover:bg-rose-600 font-bold text-xs min-h-[44px] px-3.5 py-1.5 inline-flex items-center gap-1.5 border border-rose-200 dark:border-rose-800 rounded-xl transition-all btn-press shadow-2xs shrink-0"
-                      title="Keluar Akun Siswa"
-                      aria-label="Keluar Akun Siswa"
-                    >
-                      <LogOut className="w-3.5 h-3.5" />
-                      <span>Keluar Akun</span>
-                    </button>
-                  </div>
-                )}
-
-                <div className="pt-2 flex gap-2.5">
                   <button
                     type="button"
-                    onClick={() => setIsProfileModalOpen(false)}
-                    className="flex-1 py-2.5 rounded-xl font-semibold text-xs sm:text-sm text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 min-h-[44px]"
+                    onClick={() => {
+                      playClick();
+                      setIsProfileModalOpen(false);
+                      onOpenAuthModal?.('student');
+                    }}
+                    className="px-3.5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold text-xs min-h-[44px] flex items-center justify-center whitespace-nowrap btn-press shadow-xs shrink-0"
                   >
-                    Batal
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex-1 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-sm min-h-[44px] btn-press"
-                  >
-                    Simpan Profil
+                    Masuk / Daftar
                   </button>
                 </div>
-              </form>
-            )}
-
-            {/* TAB 2: Login / Daftar Akun Siswa */}
-            {profileTab !== 'guest' && (
-              <div className="p-5 space-y-4 overflow-y-auto flex-1">
-                {profile.isLoggedIn ? (
-                  <div className="space-y-4 text-center py-4">
-                    <div className="w-14 h-14 rounded-2xl bg-emerald-100 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto text-2xl">
-                      <CheckCircle2 className="w-8 h-8" />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-base text-slate-900 dark:text-white">
-                        {isCustomName(profile.nickname) ? profile.nickname : 'Saya'}
-                      </h4>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{profile.email}</p>
-                      <p className="text-xs font-bold text-amber-600 dark:text-amber-400 mt-2">
-                        {profile.starsEarned} Bintang Terkumpul
-                      </p>
-                    </div>
-
-                    <div className="pt-4 flex gap-2.5">
-                      <button
-                        type="button"
-                        onClick={handleStudentSignOut}
-                        className="flex-1 py-2.5 rounded-xl font-bold text-xs text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/30 hover:bg-rose-100 dark:hover:bg-rose-900/50 border border-rose-200 dark:border-rose-900 min-h-[44px] flex items-center justify-center gap-1.5 btn-press"
-                        title="Keluar Akun Siswa"
-                        aria-label="Keluar Akun Siswa"
-                      >
-                        <LogOut className="w-4 h-4" />
-                        <span>Keluar Akun Siswa</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setProfileTab('guest')}
-                        className="flex-1 py-2.5 rounded-xl font-bold text-xs text-white bg-blue-600 hover:bg-blue-700 min-h-[44px] btn-press"
-                      >
-                        Tutup
-                      </button>
-                    </div>
+              ) : (
+                <div className="flex items-center justify-between p-3.5 rounded-2xl bg-rose-50/70 dark:bg-rose-950/30 border border-rose-100 dark:border-rose-900/40">
+                  <div className="text-[11px] text-slate-600 dark:text-slate-400 min-w-0 pr-2">
+                    <span className="font-bold block text-slate-900 dark:text-white truncate">
+                      {isCustomName(profile.nickname) ? profile.nickname : 'Akun Siswa'}
+                    </span>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 truncate block">
+                      {profile.email || 'Terhubung'}
+                    </span>
                   </div>
-                ) : (
-                  <form
-                    onSubmit={profileTab === 'login' ? handleStudentSignIn : handleStudentSignUp}
-                    className="space-y-3.5"
+                  <button
+                    type="button"
+                    onClick={handleStudentSignOut}
+                    className="text-rose-600 dark:text-rose-400 hover:text-white hover:bg-rose-600 dark:hover:bg-rose-600 font-bold text-xs min-h-[44px] px-3.5 py-1.5 inline-flex items-center gap-1.5 border border-rose-200 dark:border-rose-800 rounded-xl transition-all btn-press shadow-2xs shrink-0"
+                    title="Keluar Akun Siswa"
+                    aria-label="Keluar Akun Siswa"
                   >
-                    {studentAuthError && (
-                      <div className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2 animate-fade-in">
-                        <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                        <span>{studentAuthError}</span>
-                      </div>
-                    )}
+                    <LogOut className="w-3.5 h-3.5" />
+                    <span>Keluar Akun</span>
+                  </button>
+                </div>
+              )}
 
-                    <div className="flex bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          playClick();
-                          setProfileTab('login');
-                          setStudentAuthError(null);
-                        }}
-                        className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all min-h-[44px] flex items-center justify-center ${
-                          profileTab === 'login'
-                            ? 'bg-white dark:bg-slate-700 text-blue-700 dark:text-blue-300 shadow-sm'
-                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                        }`}
-                      >
-                        Masuk Siswa
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          playClick();
-                          setProfileTab('register');
-                          setStudentAuthError(null);
-                        }}
-                        className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all min-h-[44px] flex items-center justify-center ${
-                          profileTab === 'register'
-                            ? 'bg-white dark:bg-slate-700 text-blue-700 dark:text-blue-300 shadow-sm'
-                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                        }`}
-                      >
-                        Daftar Akun Baru
-                      </button>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                        Alamat Email Siswa
-                      </label>
-                      <input
-                        type="email"
-                        value={studentEmail}
-                        onChange={(e) => setStudentEmail(e.target.value)}
-                        required
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none font-semibold text-xs sm:text-sm text-slate-900 dark:text-white min-h-[44px]"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                        Kata Sandi
-                      </label>
-                      <input
-                        type="password"
-                        value={studentPassword}
-                        onChange={(e) => setStudentPassword(e.target.value)}
-                        required
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none font-semibold text-xs sm:text-sm text-slate-900 dark:text-white min-h-[44px]"
-                      />
-                    </div>
-
-                    {profileTab === 'register' && (
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                          Tingkat Kelas
-                        </label>
-                        <select
-                          value={studentGrade}
-                          onChange={(e) => setStudentGrade(Number(e.target.value))}
-                          className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none font-bold text-xs sm:text-sm text-slate-900 dark:text-white min-h-[44px]"
-                        >
-                          <optgroup label="Sekolah Dasar (SD / MI)">
-                            {[1, 2, 3, 4, 5, 6].map((g) => (
-                              <option key={g} value={g}>
-                                Kelas {g} SD
-                              </option>
-                            ))}
-                          </optgroup>
-                          <optgroup label="Sekolah Menengah Pertama (SMP / MTs)">
-                            {[7, 8, 9].map((g) => (
-                              <option key={g} value={g}>
-                                Kelas {g} SMP
-                              </option>
-                            ))}
-                          </optgroup>
-                          <optgroup label="Sekolah Menengah Atas / Kejuruan (SMA / SMK)">
-                            {[10, 11, 12].map((g) => (
-                              <option key={g} value={g}>
-                                Kelas {g} SMA / SMK
-                              </option>
-                            ))}
-                          </optgroup>
-                        </select>
-                      </div>
-                    )}
-
-                    <div className="pt-2 space-y-2">
-                      <button
-                        type="submit"
-                        disabled={studentAuthLoading}
-                        className="w-full py-2.5 rounded-xl font-bold text-xs sm:text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-sm min-h-[44px] btn-press disabled:opacity-50"
-                      >
-                        {studentAuthLoading
-                          ? 'Memproses...'
-                          : profileTab === 'login'
-                          ? 'Masuk ke Akun Siswa'
-                          : 'Daftar & Hubungkan Akun'}
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          playClick();
-                          setProfileTab('guest');
-                        }}
-                        className="w-full py-2.5 px-4 rounded-xl text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors min-h-[44px] flex items-center justify-center btn-press"
-                      >
-                        Tetap Gunakan Mode Tamu
-                      </button>
-                    </div>
-                  </form>
-                )}
+              <div className="pt-2 flex gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setIsProfileModalOpen(false)}
+                  className="flex-1 py-2.5 rounded-xl font-semibold text-xs sm:text-sm text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 min-h-[44px]"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-sm min-h-[44px] btn-press"
+                >
+                  Simpan Profil
+                </button>
               </div>
-            )}
+            </form>
           </div>
         </div>
       )}
