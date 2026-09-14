@@ -2231,6 +2231,19 @@ export const DataManager = {
 
     if (!cleanText) return null;
 
+    const currentChat = existing[idx].chatMessages || [];
+
+    // Guard: Prevent rapid duplicate messages within 800ms with identical text from same sender
+    const lastMsg = currentChat[currentChat.length - 1];
+    if (
+      lastMsg &&
+      lastMsg.studentName === message.studentName &&
+      lastMsg.text === cleanText &&
+      Date.now() - lastMsg.createdAt < 800
+    ) {
+      return lastMsg;
+    }
+
     const newMsg: SessionChatMessage = {
       id: 'chat_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
       studentName: message.studentName,
@@ -2240,9 +2253,15 @@ export const DataManager = {
       createdAt: Date.now(),
     };
 
-    const currentChat = existing[idx].chatMessages || [];
+    // Filter out any historical consecutive duplicate messages
+    const dedupedChat = currentChat.filter((msg, i, arr) => {
+      if (i === 0) return true;
+      const prev = arr[i - 1];
+      return !(prev.studentName === msg.studentName && prev.text === msg.text && Math.abs(msg.createdAt - prev.createdAt) < 1000);
+    });
+
     // Keep last 50 chat messages
-    existing[idx].chatMessages = [...currentChat.slice(-49), newMsg];
+    existing[idx].chatMessages = [...dedupedChat.slice(-49), newMsg];
 
     try {
       localStorage.setItem(STORAGE_KEY_QUIZ_SESSIONS, JSON.stringify(existing));

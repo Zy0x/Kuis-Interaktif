@@ -47,10 +47,21 @@ export const TeacherChatDrawer: React.FC<TeacherChatDrawerProps> = ({
 }) => {
   const [messages, setMessages] = useState<SessionChatMessage[]>(() => {
     const session = DataManager.getActiveSessionById(sessionId);
-    return session?.chatMessages || [];
+    const raw = session?.chatMessages || [];
+    return raw.filter((msg, idx, arr) => {
+      if (idx === 0) return true;
+      const prev = arr[idx - 1];
+      return !(
+        prev.studentName === msg.studentName &&
+        prev.text === msg.text &&
+        Math.abs(msg.createdAt - prev.createdAt) < 1000
+      );
+    });
   });
   const [inputText, setInputText] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const sendingRef = useRef(false);
+  const lastSentRef = useRef<{ text: string; time: number }>({ text: '', time: 0 });
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -76,7 +87,16 @@ export const TeacherChatDrawer: React.FC<TeacherChatDrawerProps> = ({
     const refreshMessages = () => {
       const session = DataManager.getActiveSessionById(sessionId);
       if (session && session.chatMessages) {
-        setMessages(session.chatMessages);
+        const cleanMsgs = session.chatMessages.filter((msg, idx, arr) => {
+          if (idx === 0) return true;
+          const prev = arr[idx - 1];
+          return !(
+            prev.studentName === msg.studentName &&
+            prev.text === msg.text &&
+            Math.abs(msg.createdAt - prev.createdAt) < 1000
+          );
+        });
+        setMessages(cleanMsgs);
         scrollToBottom();
       }
     };
@@ -89,6 +109,15 @@ export const TeacherChatDrawer: React.FC<TeacherChatDrawerProps> = ({
       if (detail?.sessionId === sessionId && detail?.message) {
         setMessages((prev) => {
           if (prev.some((m) => m.id === detail.message.id)) return prev;
+          const last = prev[prev.length - 1];
+          if (
+            last &&
+            last.studentName === detail.message.studentName &&
+            last.text === detail.message.text &&
+            Math.abs(detail.message.createdAt - last.createdAt) < 1000
+          ) {
+            return prev;
+          }
           return [...prev, detail.message];
         });
         scrollToBottom();
@@ -106,6 +135,15 @@ export const TeacherChatDrawer: React.FC<TeacherChatDrawerProps> = ({
           if (event.data?.type === 'NEW_CHAT_MESSAGE' && event.data?.sessionId === sessionId && event.data?.message) {
             setMessages((prev) => {
               if (prev.some((m) => m.id === event.data.message.id)) return prev;
+              const last = prev[prev.length - 1];
+              if (
+                last &&
+                last.studentName === event.data.message.studentName &&
+                last.text === event.data.message.text &&
+                Math.abs(event.data.message.createdAt - last.createdAt) < 1000
+              ) {
+                return prev;
+              }
               return [...prev, event.data.message];
             });
             scrollToBottom();
@@ -135,10 +173,18 @@ export const TeacherChatDrawer: React.FC<TeacherChatDrawerProps> = ({
 
   const handleSendMessage = async (textToSend: string) => {
     const clean = textToSend.trim();
-    if (!clean || isSending) return;
+    if (!clean || sendingRef.current) return;
 
-    playClick();
+    // Debounce rapid repeated clicks within 800ms
+    const now = Date.now();
+    if (lastSentRef.current.text === clean && now - lastSentRef.current.time < 800) {
+      return;
+    }
+    lastSentRef.current = { text: clean, time: now };
+
+    sendingRef.current = true;
     setIsSending(true);
+    playClick();
 
     try {
       const newMsg = await DataManager.sendSessionChatMessage(sessionId, {
@@ -149,13 +195,26 @@ export const TeacherChatDrawer: React.FC<TeacherChatDrawerProps> = ({
       });
 
       if (newMsg) {
-        setMessages((prev) => [...prev, newMsg]);
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === newMsg.id)) return prev;
+          const last = prev[prev.length - 1];
+          if (
+            last &&
+            last.studentName === newMsg.studentName &&
+            last.text === newMsg.text &&
+            Math.abs(newMsg.createdAt - last.createdAt) < 1000
+          ) {
+            return prev;
+          }
+          return [...prev, newMsg];
+        });
         setInputText('');
         scrollToBottom();
       }
     } catch (err) {
       console.warn('Gagal mengirim pesan chat:', err);
     } finally {
+      sendingRef.current = false;
       setIsSending(false);
     }
   };

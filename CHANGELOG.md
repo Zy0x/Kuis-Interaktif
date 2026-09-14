@@ -1,6 +1,26 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.92] - 2026-09-14
+### Perbaikan Integritas Obrolan Kelas: Eliminasi Pengiriman Ganda Pesan Preset Guru (Double Chat Dispatch) & Sistem Deduplikasi Otomatis (Rule 2, Rule 9, Rule 11 & Rule 14)
+
+#### 1. Penguncian Sinkron & Debounce Tombol Pesan Cepat (TeacherChatDrawer.tsx) (Rule 2 & Rule 14)
+- **Synchronous Execution Guard**:
+  - Menggantikan pelindung berbasis state murni dengan `sendingRef` sinkron langsung guna mencegah eksekusi ganda akibat ketukan cepat atau event klik berlapis pada perangkat sentuh.
+  - Menerapkan *debounce guard* 800ms pada `lastSentRef` untuk mencegah pengiriman pesan identik yang dipicu berulang dalam selang waktu sangat singkat.
+- **Eliminasi Penambahan State Ganda**:
+  - Menyelaraskan alur `setMessages` dengan verifikasi keberadaan ID (`prev.some(m => m.id === newMsg.id)`), mencegah pesan yang sudah ditambahkan oleh event listener lokal `kuis_chat_message` dimasukkan kembali saat *promise* penyimpanan selesai.
+  - Menambahkan pembersih otomatis duplikasi riwayat pesan saat inisialisasi maupun penyegaran laci obrolan.
+
+#### 2. Proteksi Ganda Lapisan Penyimpanan Data (supabaseClient.ts) (Rule 9 & Rule 11)
+- **Deduplikasi Pesan Sesi di Level Storage**:
+  - Menambahkan pemeriksaan penjaga pada fungsi `sendSessionChatMessage`: mengembalikan pesan yang sudah ada jika terdeteksi pengiriman pesan identik dari pengirim yang sama dalam rentang < 800ms.
+  - Membersihkan rekaman pesan duplikat berurutan dari sesi aktif di `localStorage` dan Supabase secara otomatis saat pesan baru dikirimkan.
+
+#### 3. Sinkronisasi Versi & Service Worker Cache (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.3.92` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.3.92` (`public/sw.js`).
+
 ## [2.3.91] - 2026-09-14
 ### Standardisasi Terminologi Perangkat Fleksibel: Pembaruan Format Partisipasi Siswa "Individu (1 device)" (Rule 2, Rule 3 & Rule 4)
 
