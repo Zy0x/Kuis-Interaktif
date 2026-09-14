@@ -28,7 +28,8 @@ import {
   VolumeX,
   Volume2,
   MessageSquare,
-  Sparkles
+  Sparkles,
+  Clock
 } from 'lucide-react';
 
 interface WaygroundHostViewProps {
@@ -56,6 +57,11 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
   const [confirmEndModal, setConfirmEndModal] = useState(false);
   const [currentDisplayQuestionIdx, setCurrentDisplayQuestionIdx] = useState(0);
   const [isChatDrawerOpen, setIsChatDrawerOpen] = useState(false);
+  const [confirmAdvanceModal, setConfirmAdvanceModal] = useState<{
+    targetIndex: number;
+    direction: 'next' | 'prev';
+  } | null>(null);
+  const [hostCountdownSec, setHostCountdownSec] = useState<number | null>(null);
 
   const isTeacherLed = session.settings?.executionMode === 'teacher_led';
 
@@ -144,6 +150,34 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
     if (updated) {
       setSession(updated);
     }
+  };
+
+  // Efek hitung mundur visual 3 detik di sisi Host Guru untuk sinkronisasi dengan siswa
+  useEffect(() => {
+    if (hostCountdownSec === null) return;
+    if (hostCountdownSec <= 0) {
+      const timer = setTimeout(() => setHostCountdownSec(null), 800);
+      return () => clearTimeout(timer);
+    }
+    const interval = setTimeout(() => {
+      setHostCountdownSec((prev) => (prev !== null && prev > 0 ? prev - 1 : null));
+    }, 1000);
+    return () => clearTimeout(interval);
+  }, [hostCountdownSec]);
+
+  const promptAdvanceQuestion = (targetIndex: number, direction: 'next' | 'prev') => {
+    if (playClick) playClick();
+    if (targetIndex === (session.currentQuestionIndex ?? 0)) return;
+    setConfirmAdvanceModal({ targetIndex, direction });
+  };
+
+  const handleConfirmAdvance = async () => {
+    if (!confirmAdvanceModal) return;
+    const { targetIndex } = confirmAdvanceModal;
+    setConfirmAdvanceModal(null);
+    await handleAdvanceQuestion(targetIndex);
+    // Aktifkan indikator hitung mundur 3 detik di bar kontrol guru
+    setHostCountdownSec(3);
   };
 
   const handleToggleChatMute = async () => {
@@ -773,34 +807,45 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleAdvanceQuestion(Math.max(0, (session.currentQuestionIndex ?? 0) - 1))}
-                    disabled={(session.currentQuestionIndex ?? 0) === 0}
-                    className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold disabled:opacity-40 min-h-[44px] flex items-center gap-1.5 transition-colors"
-                  >
-                    <ArrowLeft className="w-3.5 h-3.5" />
-                    <span>Sebelumnya</span>
-                  </button>
-
-                  {(session.currentQuestionIndex ?? 0) < totalQuestions - 1 ? (
-                    <button
-                      type="button"
-                      onClick={() => handleAdvanceQuestion((session.currentQuestionIndex ?? 0) + 1)}
-                      className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-black min-h-[44px] flex items-center gap-1.5 shadow-md shadow-blue-950/50 transition-colors"
-                    >
-                      <span>Buka Soal Berikutnya</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </button>
+                  {hostCountdownSec !== null ? (
+                    <div className="px-4 py-2 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-black min-h-[44px] flex items-center gap-2 animate-pulse">
+                      <Clock className="w-4 h-4 text-amber-400 animate-spin" style={{ animationDuration: '3s' }} />
+                      <span>Countdown Siswa: {hostCountdownSec > 0 ? `${hostCountdownSec}s...` : 'Mulai!'}</span>
+                    </div>
                   ) : (
-                    <button
-                      type="button"
-                      onClick={() => setConfirmEndModal(true)}
-                      className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black min-h-[44px] flex items-center gap-1.5 shadow-md transition-colors"
-                    >
-                      <Square className="w-3.5 h-3.5 fill-current" />
-                      <span>Selesaikan Kuis</span>
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => promptAdvanceQuestion(Math.max(0, (session.currentQuestionIndex ?? 0) - 1), 'prev')}
+                        disabled={(session.currentQuestionIndex ?? 0) === 0}
+                        className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-200 text-xs font-bold disabled:opacity-40 min-h-[44px] flex items-center gap-1.5 transition-colors"
+                        title="Kembali ke Soal Sebelumnya (dengan konfirmasi)"
+                      >
+                        <ArrowLeft className="w-3.5 h-3.5" />
+                        <span>Sebelumnya</span>
+                      </button>
+
+                      {(session.currentQuestionIndex ?? 0) < totalQuestions - 1 ? (
+                        <button
+                          type="button"
+                          onClick={() => promptAdvanceQuestion((session.currentQuestionIndex ?? 0) + 1, 'next')}
+                          className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white text-xs font-black min-h-[44px] flex items-center gap-1.5 shadow-md shadow-blue-950/50 transition-colors"
+                          title="Buka Soal Berikutnya (dengan konfirmasi & hitung mundur 3s)"
+                        >
+                          <span>Buka Soal Berikutnya</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setConfirmEndModal(true)}
+                          className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white text-xs font-black min-h-[44px] flex items-center gap-1.5 shadow-md transition-colors"
+                        >
+                          <Square className="w-3.5 h-3.5 fill-current" />
+                          <span>Selesaikan Kuis</span>
+                        </button>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
@@ -1044,13 +1089,13 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                   onClick={() => {
                     const nextIdx = Math.max(0, currentDisplayQuestionIdx - 1);
                     if (isTeacherLed) {
-                      handleAdvanceQuestion(nextIdx);
+                      promptAdvanceQuestion(nextIdx, 'prev');
                     } else {
                       setCurrentDisplayQuestionIdx(nextIdx);
                     }
                   }}
-                  disabled={currentDisplayQuestionIdx === 0}
-                  className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold disabled:opacity-40 min-h-[44px]"
+                  disabled={currentDisplayQuestionIdx === 0 || hostCountdownSec !== null}
+                  className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-xs font-bold disabled:opacity-40 min-h-[44px] transition-colors"
                 >
                   ◀ Sebelumnya
                 </button>
@@ -1059,13 +1104,13 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                   onClick={() => {
                     const nextIdx = Math.min(quiz.questions.length - 1, currentDisplayQuestionIdx + 1);
                     if (isTeacherLed) {
-                      handleAdvanceQuestion(nextIdx);
+                      promptAdvanceQuestion(nextIdx, 'next');
                     } else {
                       setCurrentDisplayQuestionIdx(nextIdx);
                     }
                   }}
-                  disabled={currentDisplayQuestionIdx === quiz.questions.length - 1}
-                  className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold disabled:opacity-40 min-h-[44px]"
+                  disabled={currentDisplayQuestionIdx === quiz.questions.length - 1 || hostCountdownSec !== null}
+                  className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white text-xs font-bold disabled:opacity-40 min-h-[44px] transition-colors"
                 >
                   Selanjutnya ▶
                 </button>
@@ -1120,6 +1165,73 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
         )}
 
       </main>
+
+      {/* Confirmation Modal to Advance / Rewind Question in Teacher-Led Mode */}
+      {confirmAdvanceModal && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="bg-slate-900 rounded-3xl p-6 border border-slate-800 max-w-md w-full space-y-4 shadow-2xl animate-scale-up">
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl mx-auto shadow-inner ${
+              confirmAdvanceModal.direction === 'next'
+                ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+            }`}>
+              {confirmAdvanceModal.direction === 'next' ? (
+                <ArrowRight className="w-6 h-6" />
+              ) : (
+                <ArrowLeft className="w-6 h-6" />
+              )}
+            </div>
+
+            <div className="text-center space-y-2">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-slate-300 text-[11px] font-bold">
+                <span>
+                  {confirmAdvanceModal.direction === 'next' ? 'Lanjut ke' : 'Kembali ke'} Soal {confirmAdvanceModal.targetIndex + 1} dari {totalQuestions}
+                </span>
+              </div>
+              
+              <h3 className="text-lg font-black text-white">
+                {confirmAdvanceModal.direction === 'next'
+                  ? 'Buka Soal Berikutnya?'
+                  : 'Kembali ke Soal Sebelumnya?'}
+              </h3>
+              
+              <p className="text-xs text-slate-300 leading-relaxed">
+                {confirmAdvanceModal.direction === 'next'
+                  ? 'Siswa akan menerima hitung mundur 3 detik sebelum soal baru aktif agar memiliki waktu bersiap. Pastikan seluruh siswa sudah siap melanjutkan.'
+                  : 'Tampilan di seluruh perangkat siswa akan disinkronkan kembali ke nomor soal ini dengan hitung mundur 3 detik.'}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  if (playClick) playClick();
+                  setConfirmAdvanceModal(null);
+                }}
+                className="py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-300 font-bold text-xs min-h-[44px] transition-colors"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmAdvance}
+                className={`py-2.5 px-4 rounded-xl font-black text-xs text-white min-h-[44px] shadow-md transition-colors ${
+                  confirmAdvanceModal.direction === 'next'
+                    ? 'bg-blue-600 hover:bg-blue-500 active:bg-blue-700 shadow-blue-900/40'
+                    : 'bg-amber-600 hover:bg-amber-500 active:bg-amber-700 shadow-amber-900/40'
+                }`}
+              >
+                {confirmAdvanceModal.direction === 'next' ? 'Ya, Buka Soal' : 'Ya, Kembali ke Soal'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Confirmation Modal to End Session */}
       {confirmEndModal && (

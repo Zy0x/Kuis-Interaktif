@@ -10,6 +10,7 @@ import type {
   QuizSession
 } from '../../types/quiz';
 import { InterQuestionWaitingLounge } from './InterQuestionWaitingLounge';
+import { Countdown321Overlay } from './Countdown321Overlay';
 import { useBackHandler } from '../../lib/navigationHistory';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 import { ThemeToggle } from '../common/ThemeToggle';
@@ -306,6 +307,34 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [isMobileToolsOpen, setIsMobileToolsOpen] = useState(false);
 
+  // Mode Dipandu Guru: Hitung Mundur 3 Detik (3, 2, 1, Mulai!) sebelum butir soal aktif
+  const [showCountdown, setShowCountdown] = useState<boolean>(() => {
+    return activeSettings.executionMode === 'teacher_led' && !isPreview;
+  });
+  const lastCountdownQuestionRef = useRef<number>(currentIndex);
+
+  // Trigger hitung mundur 3 detik setiap kali nomor soal berganti di mode dipandu guru
+  useEffect(() => {
+    if (activeSettings.executionMode === 'teacher_led' && !isPreview) {
+      if (lastCountdownQuestionRef.current !== currentIndex) {
+        lastCountdownQuestionRef.current = currentIndex;
+        setShowCountdown(true);
+      }
+    }
+  }, [currentIndex, activeSettings.executionMode, isPreview]);
+
+  // Dialog konfirmasi navigasi soal khusus Guru di Mode Dipandu Guru
+  const [confirmTeacherNavModal, setConfirmTeacherNavModal] = useState<{
+    targetIndex: number;
+    direction: 'next' | 'prev';
+  } | null>(null);
+
+  const promptTeacherNav = (targetIndex: number, direction: 'next' | 'prev') => {
+    if (playClick) playClick();
+    if (targetIndex === currentIndex) return;
+    setConfirmTeacherNavModal({ targetIndex, direction });
+  };
+
   const { 
     handleRef: mobileToolsHandleRef, 
     drawerStyle: mobileToolsDrawerStyle, 
@@ -508,7 +537,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 
   // Timer effect
   useEffect(() => {
-    if (isAnswerConfirmed || isPaused || isGameOver) {
+    if (isAnswerConfirmed || isPaused || isGameOver || showCountdown) {
       if (timerRef.current) clearInterval(timerRef.current);
       return;
     }
@@ -535,7 +564,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [currentIndex, isAnswerConfirmed, isPaused, isGameOver, gameMode, defaultDurationSec, playTick, activeSettings.executionMode, activeSettings.teacherPacingSubMode]);
+  }, [currentIndex, isAnswerConfirmed, isPaused, isGameOver, showCountdown, gameMode, defaultDurationSec, playTick, activeSettings.executionMode, activeSettings.teacherPacingSubMode]);
 
   const normalizeAnswer = (text: string) => {
     return text
@@ -562,7 +591,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     customMatchedCount?: number,
     customTotalPairs?: number
   ) => {
-    if (isAnswerConfirmed) return;
+    if (isAnswerConfirmed || showCountdown) return;
     if (timerRef.current) clearInterval(timerRef.current);
 
     setSelectedOption(optionIndex);
@@ -744,7 +773,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     } catch {}
   };
 
-  const handleNext = () => {
+  const executeAdvanceToNext = () => {
     playClick();
 
     // In teacher-led mode, advance the session in real time so all students advance together!
@@ -804,14 +833,29 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
       setSelectedLeft(null);
       setMatchedPairs(new Set());
       setWrongPairAttempt(null);
+      if (activeSettings.executionMode === 'teacher_led' && !isPreview) {
+        setShowCountdown(true);
+      }
     }
   };
 
-  const handlePrev = () => {
+  const handleNext = () => {
+    if (isTeacher && activeSettings.executionMode === 'teacher_led') {
+      promptTeacherNav(isLastQuestion ? activeQuestions.length : currentIndex + 1, 'next');
+      return;
+    }
+    executeAdvanceToNext();
+  };
+
+  const executeAdvanceToPrev = () => {
     if (currentIndex <= 0) return;
     if (playClick) playClick();
     setDucked(false);
     const prevIdx = currentIndex - 1;
+    const targetSessionId = activeSessionId || liveSession?.id;
+    if (isTeacher && activeSettings.executionMode === 'teacher_led' && targetSessionId) {
+      DataManager.advanceSessionQuestion(targetSessionId, prevIdx);
+    }
     const prevQuestion = activeQuestions[prevIdx];
     const prevDuration = getQuestionDuration(prevQuestion);
     setCurrentIndex(prevIdx);
@@ -826,6 +870,18 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     setSelectedLeft(null);
     setMatchedPairs(new Set());
     setWrongPairAttempt(null);
+    if (activeSettings.executionMode === 'teacher_led' && !isPreview) {
+      setShowCountdown(true);
+    }
+  };
+
+  const handlePrev = () => {
+    if (currentIndex <= 0) return;
+    if (isTeacher && activeSettings.executionMode === 'teacher_led') {
+      promptTeacherNav(currentIndex - 1, 'prev');
+      return;
+    }
+    executeAdvanceToPrev();
   };
 
   const handleJumpToQuestion = (targetIdx: number) => {
@@ -846,6 +902,26 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     setSelectedLeft(null);
     setMatchedPairs(new Set());
     setWrongPairAttempt(null);
+    if (activeSettings.executionMode === 'teacher_led' && !isPreview) {
+      setShowCountdown(true);
+    }
+  };
+
+  const handleConfirmTeacherNav = () => {
+    if (!confirmTeacherNavModal) return;
+    const { targetIndex, direction } = confirmTeacherNavModal;
+    setConfirmTeacherNavModal(null);
+    if (direction === 'next') {
+      executeAdvanceToNext();
+    } else if (direction === 'prev') {
+      executeAdvanceToPrev();
+    } else {
+      const targetSessionId = activeSessionId || liveSession?.id;
+      if (targetSessionId) {
+        DataManager.advanceSessionQuestion(targetSessionId, targetIndex);
+      }
+      handleJumpToQuestion(targetIndex);
+    }
   };
 
   // Real-time listener for settings and question changes dispatched by teacher
@@ -868,14 +944,16 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
         if (sess.settings?.executionMode === 'teacher_led' && !isTeacher) {
           if (
             typeof sess.currentQuestionIndex === 'number' &&
-            sess.currentQuestionIndex > currentIndex
+            sess.currentQuestionIndex !== currentIndex &&
+            sess.currentQuestionIndex >= 0 &&
+            sess.currentQuestionIndex < activeQuestions.length
           ) {
             setShowWaitingLounge(false);
             handleJumpToQuestion(sess.currentQuestionIndex);
           }
           if (sess.status === 'finished') {
             setShowWaitingLounge(false);
-            handleNext();
+            executeAdvanceToNext();
           }
         }
       }
@@ -1080,7 +1158,14 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                 {canTeacherReveal || activeSettings.executionMode === 'teacher_led' ? (
                   <select
                     value={currentIndex}
-                    onChange={(e) => handleJumpToQuestion(Number(e.target.value))}
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      if (isTeacher && activeSettings.executionMode === 'teacher_led') {
+                        promptTeacherNav(val, val > currentIndex ? 'next' : 'prev');
+                      } else {
+                        handleJumpToQuestion(val);
+                      }
+                    }}
                     className="text-[11px] sm:text-xs font-black text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/70 border border-blue-200/80 dark:border-blue-900/80 px-2.5 py-1.5 rounded-xl cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500 min-h-[44px] inline-flex items-center"
                     title="Lompat ke Nomor Soal Tertentu (Khusus Guru)"
                     aria-label="Pilih Nomor Soal"
@@ -2183,6 +2268,95 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
           playClick={playClick}
           playCorrect={playCorrect}
         />
+      )}
+
+      {/* Hitung Mundur 3 Detik Sebelum Memulai Soal di Mode Dipandu Guru */}
+      {showCountdown && activeSettings.executionMode === 'teacher_led' && !isGameOver && !isPreview && (
+        <Countdown321Overlay
+          questionNumber={currentIndex + 1}
+          totalQuestions={activeQuestions.length}
+          onComplete={() => setShowCountdown(false)}
+          isMuted={isMuted}
+        />
+      )}
+
+      {/* Modal Konfirmasi Navigasi Soal Guru di Mode Dipandu Guru */}
+      {confirmTeacherNavModal && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="bg-slate-900 rounded-3xl p-6 border border-slate-800 max-w-md w-full space-y-4 shadow-2xl animate-scale-up">
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl mx-auto shadow-inner ${
+              confirmTeacherNavModal.direction === 'next'
+                ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+            }`}>
+              {confirmTeacherNavModal.direction === 'next' ? (
+                <ArrowRight className="w-6 h-6" />
+              ) : (
+                <ArrowLeft className="w-6 h-6" />
+              )}
+            </div>
+
+            <div className="text-center space-y-2">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-slate-300 text-[11px] font-bold">
+                <span>
+                  {confirmTeacherNavModal.direction === 'next'
+                    ? confirmTeacherNavModal.targetIndex >= activeQuestions.length
+                      ? 'Menuju Akhir Kuis'
+                      : `Lanjut ke Soal ${confirmTeacherNavModal.targetIndex + 1} dari ${activeQuestions.length}`
+                    : `Kembali ke Soal ${confirmTeacherNavModal.targetIndex + 1} dari ${activeQuestions.length}`}
+                </span>
+              </div>
+              
+              <h3 className="text-lg font-black text-white">
+                {confirmTeacherNavModal.direction === 'next'
+                  ? confirmTeacherNavModal.targetIndex >= activeQuestions.length
+                    ? 'Selesaikan & Buat Rekap Kuis?'
+                    : 'Buka Soal Berikutnya?'
+                  : 'Kembali ke Soal Sebelumnya?'}
+              </h3>
+              
+              <p className="text-xs text-slate-300 leading-relaxed">
+                {confirmTeacherNavModal.direction === 'next'
+                  ? confirmTeacherNavModal.targetIndex >= activeQuestions.length
+                    ? 'Seluruh siswa akan diarahkan ke layar perolehan nilai akhir dan sesi kuis akan ditutup.'
+                    : 'Siswa akan menerima hitung mundur 3 detik sebelum soal baru aktif agar memiliki waktu bersiap.'
+                  : 'Tampilan di seluruh perangkat siswa akan disinkronkan kembali ke soal ini dengan hitung mundur 3 detik.'}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  if (playClick) playClick();
+                  setConfirmTeacherNavModal(null);
+                }}
+                className="py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-300 font-bold text-xs min-h-[44px] transition-colors"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmTeacherNav}
+                className={`py-2.5 px-4 rounded-xl font-black text-xs text-white min-h-[44px] shadow-md transition-colors ${
+                  confirmTeacherNavModal.direction === 'next'
+                    ? 'bg-blue-600 hover:bg-blue-500 active:bg-blue-700 shadow-blue-900/40'
+                    : 'bg-amber-600 hover:bg-amber-500 active:bg-amber-700 shadow-amber-900/40'
+                }`}
+              >
+                {confirmTeacherNavModal.direction === 'next'
+                  ? confirmTeacherNavModal.targetIndex >= activeQuestions.length
+                    ? 'Ya, Selesaikan'
+                    : 'Ya, Buka Soal'
+                  : 'Ya, Kembali ke Soal'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Quizizz-Grade Floating Live Reactions Overlay di Arena */}

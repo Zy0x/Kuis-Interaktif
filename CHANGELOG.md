@@ -1,5 +1,25 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
+## [2.4.13] - 2026-09-14
+### Konfirmasi Ganti Soal Guru & Hitung Mundur 3 Detik Mode Dipandu Guru (Rule 1, Rule 2, Rule 5, Rule 7 & Rule 15)
+
+#### 1. Dialog Konfirmasi Navigasi Soal Guru (Next & Prev)
+- **Papan Kendali Guru (`WaygroundHostView.tsx`)**: Menambahkan modal konfirmasi sebelum guru berpindah ke soal berikutnya (*Next*) ataupun kembali ke soal sebelumnya (*Prev*). Guru diberikan informasi ringkas nomor soal tujuan untuk mencegah salah tekan (*accidental click*) dan loncatan berulang yang dapat memicu lag saat berganti soal secara cepat.
+- **Layar Presentasi Guru di Arena (`QuizArena.tsx`)**: Mengintegrasikan modal konfirmasi navigasi yang sama ketika guru memimpin kuis langsung melalui tampilan arena kelas interaktif.
+- **Bilah Cooldown Visual Host**: Menampilkan status indikator hitung mundur siswa di sisi guru segera setelah navigasi dikonfirmasi agar guru mengetahui seluruh siswa sedang bersiap.
+
+#### 2. Animasi Hitung Mundur 3 Detik (*Countdown 3-2-1*) Sebelum Soal Aktif
+- **Komponen Overlay Baru (`Countdown321Overlay.tsx`)**: Menghadirkan animasi hitung mundur layar penuh yang modern, bersih, dan touch-friendly (3... 2... 1... Mulai! 🚀) dengan efek suara sintetis berjenjang menggunakan Web Audio API tanpa dependensi berkas eksternal.
+- **Pembekuan Timer & Penguncian Jawaban**: Selama 3 detik hitung mundur berjalan, timer durasi soal ditahan dan tombol pilihan jawaban dikunci sehingga seluruh siswa memiliki waktu persiapan membaca yang adil dan serempak.
+
+#### 3. Sinkronisasi Mundur Dua Arah (*Bidirectional Sync*)
+- **Arena Kuis (`QuizArena.tsx`)**: Menyelaraskan pendengar sinkronisasi realtime multi-perangkat agar jika guru kembali ke nomor soal sebelumnya (*Prev*), perangkat seluruh siswa serentak kembali ke nomor soal tersebut disertai animasi hitung mundur 3 detik.
+- **Ruang Jeda Antar-Soal (`InterQuestionWaitingLounge.tsx`)**: Memperbarui deteksi indeks soal di ruang tunggu agar merespons perpindahan maju maupun mundur dari guru secara instan.
+
+#### 4. Pembaruan Versi & PWA Service Worker (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.13` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.13` (`public/sw.js`).
+
 ## [2.4.12] - 2026-09-14
 ### Perluasan Batas Panjang Nama Panggilan Siswa & Tamu Hingga 50 Karakter (Rule 1, Rule 2, Rule 4, Rule 7 & Rule 15)
 

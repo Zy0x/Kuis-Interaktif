@@ -224,10 +224,11 @@ export const InterQuestionWaitingLounge: React.FC<InterQuestionWaitingLoungeProp
       if (updated.id === session.id || updated.pinCode === session.pinCode) {
         setSession(updated);
 
-        // Advance synchronously when teacher updates currentQuestionIndex
+        // Synchronously advance or rewind when teacher updates currentQuestionIndex
         if (
           typeof updated.currentQuestionIndex === 'number' &&
-          updated.currentQuestionIndex > questionIndex
+          updated.currentQuestionIndex !== questionIndex &&
+          updated.currentQuestionIndex >= 0
         ) {
           onAdvanceToQuestion(updated.currentQuestionIndex);
         }
