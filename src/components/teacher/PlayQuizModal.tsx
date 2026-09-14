@@ -759,7 +759,7 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
                       }`}
                     >
                       <User className="w-3.5 h-3.5" />
-                      <span>Individu (1 HP)</span>
+                      <span>Individu (1 device)</span>
                     </button>
 
                     <button

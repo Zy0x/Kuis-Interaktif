@@ -1,6 +1,19 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.91] - 2026-09-14
+### Standardisasi Terminologi Perangkat Fleksibel: Pembaruan Format Partisipasi Siswa "Individu (1 device)" (Rule 2, Rule 3 & Rule 4)
+
+#### 1. Penyempurnaan Teks Format Partisipasi Modal Main Kuis (PlayQuizModal.tsx) (Rule 2 & Rule 3)
+- **Standardisasi Istilah Perangkat Netral & Modern**:
+  - Mengubah label opsi partisipasi dari `Individu (1 HP)` menjadi `Individu (1 device)`.
+  - Memastikan terminologi lebih inklusif dan representatif untuk berbagai ragam perangkat yang digunakan siswa di sekolah maupun rumah (seperti Chromebook, laptop, tablet, iPad, maupun smartphone).
+  - Menjaga kejelasan visual, hierarki antarmuka, dan target sentuh ergonomis minimal 44×44 px (`min-h-[44px]`).
+
+#### 2. Sinkronisasi Versi & Service Worker Cache (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.3.91` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.3.91` (`public/sw.js`).
+
 ## [2.3.90] - 2026-09-14
 ### Audit Komprehensif & Standarisasi Menyeluruh Seluruh Tombol Proyek (494 Tombol, 41 Berkas): 100% Kepatuhan Touch-First 44×44 px, Eksplisit Atribut Type, dan Semantik Aksesibilitas ARIA (Rule 1, Rule 2, Rule 4 & Rule 8)
 
