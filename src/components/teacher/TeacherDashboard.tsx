@@ -823,8 +823,9 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                           e.stopPropagation();
                           handleCopyPin(quiz.pinCode || '1001');
                         }}
-                        className="p-1 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-lg text-slate-500 hover:text-blue-600 transition-colors"
+                        className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-lg text-slate-500 hover:text-blue-600 transition-colors"
                         title="Salin PIN"
+                        aria-label="Salin PIN Kuis"
                       >
                         {copiedPin === (quiz.pinCode || '1001') ? (
                           <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
@@ -988,14 +989,14 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
             </div>
 
             {/* Sub-Filter Pills */}
-            <div className="flex items-center gap-1.5 p-1 bg-slate-200/70 dark:bg-slate-800/80 rounded-2xl self-start sm:self-auto text-xs font-bold">
+            <div className="flex items-center gap-1.5 p-1 bg-slate-200/70 dark:bg-slate-800/80 rounded-2xl self-start sm:self-auto text-xs font-bold flex-wrap">
               <button
                 type="button"
                 onClick={() => {
                   playClick();
                   setSessionFilter('all');
                 }}
-                className={`px-3 py-1.5 rounded-xl transition-all ${
+                className={`px-3.5 py-2 rounded-xl transition-all min-h-[44px] flex items-center justify-center ${
                   sessionFilter === 'all'
                     ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -1009,7 +1010,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                   playClick();
                   setSessionFilter('active');
                 }}
-                className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 ${
+                className={`px-3.5 py-2 rounded-xl transition-all min-h-[44px] flex items-center gap-1.5 justify-center ${
                   sessionFilter === 'active'
                     ? 'bg-white dark:bg-slate-900 text-rose-600 dark:text-rose-400 shadow-xs'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -1024,7 +1025,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                   playClick();
                   setSessionFilter('finished');
                 }}
-                className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 ${
+                className={`px-3.5 py-2 rounded-xl transition-all min-h-[44px] flex items-center gap-1.5 justify-center ${
                   sessionFilter === 'finished'
                     ? 'bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-xs'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'

@@ -498,6 +498,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
 
               {/* Audio Toggle Button */}
               <button
+                type="button"
                 onClick={() => {
                   playClick();
                   onToggleMute();
@@ -513,6 +514,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
               {teacher ? (
                 /* Guru Pill */
                 <button
+                  type="button"
                   onClick={() => {
                     playClick();
                     setIsTeacherProfileModalOpen(true);
@@ -537,6 +539,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
               ) : profile.isLoggedIn ? (
                 /* Siswa Pill (Logged In) */
                 <button
+                  type="button"
                   onClick={() => {
                     playClick();
                     setTempNickname(isCustomName(profile.nickname) ? profile.nickname : '');
@@ -565,6 +568,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                 /* Mode Tamu: Masuk / Akun Button + Guest Avatar Quick Customizer */
                 <div className="flex items-center gap-2">
                   <button
+                    type="button"
                     onClick={() => {
                       playClick();
                       if (onOpenAuthModal) {
@@ -581,6 +585,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                   </button>
 
                   <button
+                    type="button"
                     onClick={() => {
                       playClick();
                       setTempNickname(isCustomName(profile.nickname) ? profile.nickname : '');
@@ -792,6 +797,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
               return (
                 <button
                   key={grade}
+                  type="button"
                   onClick={() => {
                     playClick();
                     setSelectedGrade(grade);
@@ -822,6 +828,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                 return (
                   <button
                     key={subj}
+                    type="button"
                     onClick={() => {
                       playClick();
                       setSelectedSubject(subj);
@@ -911,6 +918,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
 
                     <div className="flex items-center gap-2">
                       <button
+                        type="button"
                         onClick={() => handleStartWithRules(quiz)}
                         className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-xl shadow-sm transition-colors flex items-center justify-center gap-1.5 min-h-[46px] btn-press text-xs sm:text-sm"
                       >
@@ -947,6 +955,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
               <h4 className="text-base font-bold text-slate-800 dark:text-slate-200 mb-1">Belum Ada Kuis untuk Kategori Ini</h4>
               <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">Coba pilih jenjang kelas atau mata pelajaran lainnya.</p>
               <button
+                type="button"
                 onClick={() => {
                   playClick();
                   setSelectedGrade('Semua');
@@ -1000,6 +1009,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                 </div>
               </div>
               <button
+                type="button"
                 onClick={() => setRulesModalQuiz(null)}
                 className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center flex-shrink-0"
                 aria-label="Tutup Aturan"
@@ -1041,27 +1051,27 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
               </div>
 
               {/* Game Mode Picker */}
-              <div className="pt-1">
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+              <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
                   Pilih Mode Permainan:
                 </label>
-                <div className="grid grid-cols-3 gap-1.5">
+                <div className="grid grid-cols-3 gap-2">
                   {[
                     { mode: 'standard' as GameMode, label: 'Standar ⏱️', desc: 'Dengan Timer' },
                     { mode: 'survival_3hearts' as GameMode, label: '3 Hati ❤️', desc: 'Survival' },
                     { mode: 'untimed' as GameMode, label: 'Santai 🧘', desc: 'Bebas Waktu' },
                   ].map((m) => (
                     <button
-                      type="button"
                       key={m.mode}
+                      type="button"
                       onClick={() => {
                         playClick();
                         setSelectedGameMode(m.mode);
                       }}
-                      className={`p-2 rounded-xl border text-center transition-all min-h-[46px] flex flex-col items-center justify-center ${
+                      className={`p-2.5 rounded-xl border text-center transition-all min-h-[44px] flex flex-col items-center justify-center ${
                         selectedGameMode === m.mode
                           ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-bold ring-1 ring-blue-400'
-                          : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50'
+                          : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-750'
                       }`}
                     >
                       <span className="text-xs font-bold leading-tight">{m.label}</span>
@@ -1075,12 +1085,14 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
             {/* Footer Buttons */}
             <div className="p-4 bg-slate-50 dark:bg-slate-850 border-t border-slate-100 dark:border-slate-800 flex gap-2.5 flex-shrink-0">
               <button
+                type="button"
                 onClick={() => setRulesModalQuiz(null)}
                 className="flex-1 py-2.5 px-4 rounded-xl font-semibold text-xs sm:text-sm text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-750 min-h-[44px]"
               >
                 Kembali
               </button>
               <button
+                type="button"
                 onClick={() => {
                   const q = rulesModalQuiz;
                   setRulesModalQuiz(null);
@@ -1123,6 +1135,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                 </p>
               </div>
               <button
+                type="button"
                 onClick={() => setIsProfileModalOpen(false)}
                 className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center"
                 aria-label="Tutup"
@@ -1322,7 +1335,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                       </div>
                     )}
 
-                    <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl gap-1">
+                    <div className="flex bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl gap-1.5">
                       <button
                         type="button"
                         onClick={() => {
@@ -1330,10 +1343,10 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                           setProfileTab('login');
                           setStudentAuthError(null);
                         }}
-                        className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                        className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all min-h-[44px] flex items-center justify-center ${
                           profileTab === 'login'
                             ? 'bg-white dark:bg-slate-700 text-blue-700 dark:text-blue-300 shadow-sm'
-                            : 'text-slate-600 dark:text-slate-400'
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                         }`}
                       >
                         Masuk Siswa
@@ -1345,10 +1358,10 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                           setProfileTab('register');
                           setStudentAuthError(null);
                         }}
-                        className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                        className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all min-h-[44px] flex items-center justify-center ${
                           profileTab === 'register'
                             ? 'bg-white dark:bg-slate-700 text-blue-700 dark:text-blue-300 shadow-sm'
-                            : 'text-slate-600 dark:text-slate-400'
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                         }`}
                       >
                         Daftar Akun Baru
@@ -1435,7 +1448,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                           playClick();
                           setProfileTab('guest');
                         }}
-                        className="w-full py-2 text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-colors"
+                        className="w-full py-2.5 px-4 rounded-xl text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors min-h-[44px] flex items-center justify-center btn-press"
                       >
                         Tetap Gunakan Mode Tamu
                       </button>
@@ -1486,6 +1499,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                 </div>
               </div>
               <button
+                type="button"
                 onClick={() => setIsTeacherProfileModalOpen(false)}
                 className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center flex-shrink-0"
                 aria-label="Tutup Profil Guru"
@@ -1633,6 +1647,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
 
                   <div className="pt-2 space-y-2.5">
                     <button
+                      type="button"
                       onClick={() => {
                         playClick();
                         setIsTeacherProfileModalOpen(false);
@@ -1646,6 +1661,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
 
                     {onTeacherLogout && (
                       <button
+                        type="button"
                         onClick={() => {
                           playClick();
                           setIsTeacherProfileModalOpen(false);

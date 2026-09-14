@@ -312,7 +312,7 @@ export const TeacherChatDrawer: React.FC<TeacherChatDrawerProps> = ({
                 type="button"
                 onClick={() => handleQuickChip(ann)}
                 disabled={isSending}
-                className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-950/40 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-800 whitespace-nowrap transition-colors flex-shrink-0"
+                className="px-3 py-2 min-h-[44px] rounded-xl text-xs font-semibold bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-950/40 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-800 whitespace-nowrap transition-colors flex-shrink-0 flex items-center justify-center btn-press"
               >
                 {ann}
               </button>

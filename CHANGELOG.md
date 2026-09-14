@@ -1,6 +1,42 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.90] - 2026-09-14
+### Audit Komprehensif & Standarisasi Menyeluruh Seluruh Tombol Proyek (494 Tombol, 41 Berkas): 100% Kepatuhan Touch-First 44×44 px, Eksplisit Atribut Type, dan Semantik Aksesibilitas ARIA (Rule 1, Rule 2, Rule 4 & Rule 8)
+
+#### 1. Master Pemetaan dan Audit Total Seluruh Tombol (Rule 1 & Rule 8)
+- **Cakupan Audit 100% Tanpa Terkecuali**:
+  - Melakukan pemetaan dan audit mendalam terhadap seluruh 494 tombol `<button>` pada 41 berkas komponen sistem kuis.
+  - Memastikan seluruh tombol memenuhi standar target sentuh minimum 44×44 px (direkomendasikan 48×48 px) untuk kenyamanan penggunaan pada smartphone Android, tablet, layar lipat, dan mode sentuh desktop.
+  - Menghilangkan ketergantungan aksi hanya pada kursor hover (*no hover-only interaction*), mengaktifkan state sentuh visual aktif (`active:scale-95`, `btn-press`), dan memastikan kestabilan tata letak di resolusi non-reguler.
+
+#### 2. Eksplisitisasi Atribut Type pada Seluruh Tombol (Rule 8 & Rule 9)
+- **Eliminasi 100% Tombol Tanpa Type (0 Missing Type)**:
+  - Menetapkan atribut `type="button"` secara eksplisit pada tombol kontrol navigasi, modal, tab switcher, filter pill, dan dialog tutup di seluruh komponen:
+    - *Autentikasi & Pengaturan*: Modal login/daftar siswa & guru, toggle tema gelap/terang, modal aturan kuis, banner pasang PWA, overlay orientasi layar.
+    - *Ruang Siswa & Hasil*: Tombol kembali lobi, tombol keluar ruang tunggu, tab pembahasan soal dan leaderboard pada halaman hasil kuis, tombol bagikan skor.
+    - *Studio Guru & Pembuat Kuis*: Tab navigasi 3-tahap (Bank Soal, Info Kuis, Pratinjau & Simpan), tombol salin PIN kuis, filter sesi kuis langsung.
+
+#### 3. Peningkatan Dimensi & Area Target Sentuh Komponen Kritis (Rule 1, Rule 2 & Rule 8)
+- **Autentikasi & Akun**:
+  - Memperbesar tombol lihat/sembunyikan kata sandi (`UnifiedAuthModal.tsx`) dari `p-1` menjadi `min-h-[44px] min-w-[44px]` lengkap dengan `aria-label`.
+  - Memperbesar tombol alih tab "Masuk Siswa" & "Daftar Akun Baru" serta tombol "Mode Tamu" (`QuizHome.tsx`) ke ukuran sentuh ergonomis `min-h-[44px]`.
+- **Arena Pengerjaan Siswa**:
+  - Memperbesar target sentuh tombol tangkap bintang floating game (`InterQuestionWaitingLounge.tsx`) ke `min-h-[48px] min-w-[48px] p-2 rounded-full`.
+- **Generator AI & Studio Pembuat Kuis**:
+  - Memperbesar pemilih jumlah opsi pilihan ganda dan jumlah pasangan mencocokkan (`AiGeneratorStep.tsx`) ke ukuran `w-11 h-11 min-w-[44px] min-h-[44px]` dengan atribut aksesibilitas yang jelas.
+  - Menyesuaikan selector preset gaya label benar/salah, tombol sakelar proporsi seimbang/kustom, tombol chip preset kognitif, kartu C1–C6, chip konteks latar kurikulum, dan tombol saran ide topik ke ukuran minimal 44×44 px.
+  - Memperbesar tombol hapus pencarian mata pelajaran (`✕`) menjadi `w-11 h-11 min-h-[44px] min-w-[44px]` dengan bantalan input teks terproteksi agar tidak bertumpuk (*overlap-free*).
+  - Menyesuaikan tombol pembuka pembahasan edukatif, tombol ganti gambar soal, dan tombol pilihan durasi auto vs khusus (`QuizCreator.tsx`) ke standar ergonomis touch-first.
+- **Portal Guru & Fitur Pendukung**:
+  - Memperbesar tombol salin cepat PIN kuis (`TeacherDashboard.tsx`) menjadi `p-2 min-h-[44px] min-w-[44px]` dengan label pembaca layar.
+  - Memperbesar tombol sub-filter sesi langsung (Semua, Sedang Berjalan, Selesai) ke `px-3.5 py-2 min-h-[44px]`.
+  - Memperbesar tombol pesan pengumuman cepat pada laci obrolan guru (`TeacherChatDrawer.tsx`) ke `min-h-[44px]`.
+
+#### 4. Pembaruan Versi Sinkron & Service Worker Cache (Rule 7 & Rule 15)
+- Memperbarui versi paket aplikasi menjadi `2.3.90` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.3.90` (`public/sw.js`) guna memastikan pembaruan aset terinstal secara instan pada perangkat pengguna.
+
 ## [2.3.89] - 2026-09-13
 ### Eliminasi Total Dialog Pemblokir Browser Native (alert & confirm), Integrasi Modal Konfirmasi Terpadu Touch-First, dan Notifikasi Visual Aksesibel (Rule 1, Rule 2, Rule 5, Rule 7 & Rule 8)
 

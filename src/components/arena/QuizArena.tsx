@@ -1025,6 +1025,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
           {/* Left: Exit Button & Question Info */}
           <div className="flex items-center gap-1 sm:gap-2 min-w-0 flex-shrink">
             <button
+              type="button"
               onClick={() => {
                 if (playClick) playClick();
                 if (isPreview) {
@@ -1150,6 +1151,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 
             {/* Play/Pause Button (Always available for immediate teacher/student control) */}
             <button
+              type="button"
               onClick={() => {
                 playClick();
                 setIsPaused(!isPaused);
@@ -1167,11 +1169,12 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 
             {/* Mobile Tools Drawer Trigger (<sm) */}
             <button
+              type="button"
               onClick={() => {
                 playClick();
                 setIsMobileToolsOpen(true);
               }}
-              className="p-2 sm:hidden text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors"
+              className="p-2 sm:hidden text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors"
               title="Menu Pengaturan & Alat Kuis"
               aria-label="Menu Pengaturan & Alat Kuis"
             >
@@ -1185,6 +1188,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 
               {/* Voting Poll Toggle */}
               <button
+                type="button"
                 onClick={() => {
                   playClick();
                   setIsPollOpen(!isPollOpen);
@@ -1202,6 +1206,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 
               {/* SFX Audio Toggle */}
               <button
+                type="button"
                 onClick={() => {
                   playClick();
                   onToggleMute();
@@ -1215,6 +1220,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 
               {/* In-Game Procedural BGM Music Toggle */}
               <button
+                type="button"
                 onClick={() => {
                   playClick();
                   toggleBgmMute();
@@ -1237,6 +1243,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 
               {/* Fullscreen Smartboard IFP Toggle */}
               <button
+                type="button"
                 onClick={toggleFullscreen}
                 className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors"
                 title={isFullscreen ? 'Keluar Layar Penuh' : 'Layar Penuh Smartboard (F11)'}
@@ -1592,6 +1599,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
               return (
                 <button
                   key={idx}
+                  type="button"
                   disabled={isAnswerConfirmed}
                   onClick={() => handleAnswerSelect(idx)}
                   className={`w-full p-3 sm:p-4 xl:p-5 3xl:p-6 rounded-2xl text-left flex items-center justify-between transition-all min-h-[48px] sm:min-h-[56px] xl:min-h-[64px] 2xl:min-h-[72px] 3xl:min-h-[80px] btn-press ${btnStyle}`}
@@ -1770,6 +1778,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
             </div>
           ) : (
             <button
+              type="button"
               disabled={!isAnswerConfirmed && !(canTeacherReveal || activeSettings.executionMode === 'teacher_led')}
               onClick={handleNext}
               className={`flex-1 sm:flex-initial sm:min-w-[200px] xl:min-w-[240px] px-6 py-2.5 sm:py-3 rounded-2xl font-bold text-xs sm:text-sm xl:text-base flex items-center justify-center gap-2 transition-all min-h-[46px] sm:min-h-[50px] btn-press ${
@@ -1812,6 +1821,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                 <p className="text-xs text-slate-500 dark:text-slate-400">Sesuaikan tampilan & audio kuis</p>
               </div>
               <button
+                type="button"
                 onClick={() => {
                   playClick();
                   setIsMobileToolsOpen(false);
@@ -1827,6 +1837,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
               {/* Tombol Edit Soal (Khusus Mode Pratinjau Guru) */}
               {isPreview && onEditQuestion && (
                 <button
+                  type="button"
                   onClick={() => {
                     if (playClick) playClick();
                     setIsMobileToolsOpen(false);
@@ -1841,6 +1852,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 
               {/* Toggle Tema */}
               <button
+                type="button"
                 onClick={() => {
                   if (playClick) playClick();
                   onToggleTheme();
@@ -1863,6 +1875,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 
               {/* Toggle SFX */}
               <button
+                type="button"
                 onClick={() => {
                   playClick();
                   onToggleMute();
@@ -1885,6 +1898,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 
               {/* Toggle BGM */}
               <button
+                type="button"
                 onClick={() => {
                   playClick();
                   toggleBgmMute();
@@ -1907,6 +1921,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 
               {/* Toggle Fullscreen */}
               <button
+                type="button"
                 onClick={() => {
                   toggleFullscreen();
                   setIsMobileToolsOpen(false);
@@ -1929,6 +1944,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 
               {/* Toggle Polling */}
               <button
+                type="button"
                 onClick={() => {
                   playClick();
                   setIsPollOpen(!isPollOpen);
@@ -1952,6 +1968,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
             </div>
 
             <button
+              type="button"
               onClick={() => {
                 playClick();
                 setIsMobileToolsOpen(false);
@@ -1989,12 +2006,14 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
             </p>
             <div className="flex gap-2.5 pt-2">
               <button
+                type="button"
                 onClick={() => setShowExitConfirm(false)}
                 className="flex-1 py-2.5 rounded-xl font-semibold text-xs text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 min-h-[44px] transition-colors"
               >
                 Lanjutkan Kuis
               </button>
               <button
+                type="button"
                 onClick={() => {
                   stopBgm();
                   try {

@@ -113,7 +113,7 @@ const StarCatcherGame: React.FC<{ playClick: () => void; playCorrect?: () => voi
           key={s.id}
           type="button"
           onClick={() => handleCatchStar(s.id)}
-          className="absolute transform -translate-x-1/2 -translate-y-1/2 transition-all active:scale-125 cursor-pointer text-3xl select-none hover:opacity-90"
+          className="absolute transform -translate-x-1/2 -translate-y-1/2 transition-all active:scale-125 cursor-pointer text-3xl select-none hover:opacity-90 min-h-[48px] min-w-[48px] p-2 rounded-full flex items-center justify-center btn-press"
           style={{
             left: `${s.x}%`,
             top: `${s.y}%`,

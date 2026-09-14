@@ -162,6 +162,7 @@ export const QuizResult: React.FC<QuizResultProps> = ({
         {/* Tab Selector */}
         <div className="flex rounded-xl bg-white dark:bg-slate-900 p-1 border border-slate-200 dark:border-slate-800 shadow-sm">
           <button
+            type="button"
             onClick={() => {
               playClick();
               setActiveTab('review');
@@ -176,6 +177,7 @@ export const QuizResult: React.FC<QuizResultProps> = ({
             <span>Pembahasan Soal</span>
           </button>
           <button
+            type="button"
             onClick={() => {
               playClick();
               setActiveTab('leaderboard');
@@ -350,6 +352,7 @@ export const QuizResult: React.FC<QuizResultProps> = ({
       <footer className="sticky bottom-0 w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200/80 dark:border-slate-800 p-2.5 xs:p-3 sm:p-3.5 z-20 shadow-lg pb-[max(env(safe-area-inset-bottom),0.625rem)]">
         <div className="max-w-2xl lg:max-w-4xl xl:max-w-5xl 2xl:max-w-6xl mx-auto flex items-center gap-1.5 xs:gap-2.5">
           <button
+            type="button"
             onClick={() => {
               playClick();
               onGoHome();
@@ -361,6 +364,7 @@ export const QuizResult: React.FC<QuizResultProps> = ({
           </button>
 
           <button
+            type="button"
             onClick={() => {
               playClick();
               onReplay();
@@ -372,6 +376,7 @@ export const QuizResult: React.FC<QuizResultProps> = ({
           </button>
 
           <button
+            type="button"
             onClick={handleShare}
             className="p-2 xs:p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 min-h-[44px] min-w-[44px] flex items-center justify-center btn-press flex-shrink-0"
             title="Bagikan Skor"

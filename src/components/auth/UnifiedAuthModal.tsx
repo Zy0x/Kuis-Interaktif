@@ -172,6 +172,7 @@ export const UnifiedAuthModal: React.FC<UnifiedAuthModalProps> = ({
             </p>
           </div>
           <button
+            type="button"
             onClick={() => {
               playClick();
               onClose();
@@ -326,8 +327,9 @@ export const UnifiedAuthModal: React.FC<UnifiedAuthModalProps> = ({
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-                    title={showPassword ? 'Sembunyikan' : 'Perlihatkan'}
+                    className="absolute right-1 top-1/2 -translate-y-1/2 p-2.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors btn-press"
+                    title={showPassword ? 'Sembunyikan Kata Sandi' : 'Perlihatkan Kata Sandi'}
+                    aria-label={showPassword ? 'Sembunyikan Kata Sandi' : 'Perlihatkan Kata Sandi'}
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -448,8 +450,9 @@ export const UnifiedAuthModal: React.FC<UnifiedAuthModalProps> = ({
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-                    title={showPassword ? 'Sembunyikan' : 'Perlihatkan'}
+                    className="absolute right-1 top-1/2 -translate-y-1/2 p-2.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors btn-press"
+                    title={showPassword ? 'Sembunyikan Kata Sandi' : 'Perlihatkan Kata Sandi'}
+                    aria-label={showPassword ? 'Sembunyikan Kata Sandi' : 'Perlihatkan Kata Sandi'}
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>

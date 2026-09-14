@@ -321,7 +321,7 @@ export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
               <button
                 type="button"
                 onClick={() => { playClick(); setShowDescriptionSuggestions((p) => !p); }}
-                className="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 shrink-0"
+                className="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 shrink-0 px-2.5 py-1.5 min-h-[44px] rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors"
               >
                 <span>💡 {showDescriptionSuggestions ? 'Tutup' : 'Saran'}</span>
                 {showDescriptionSuggestions ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}

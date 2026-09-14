@@ -28,6 +28,7 @@ export const WorksheetPrintView: React.FC<WorksheetPrintViewProps> = ({
       {/* Non-Printable Top Bar */}
       <header className="print:hidden w-full bg-white border-b border-slate-200 px-3 sm:px-8 py-2.5 sm:py-3 sticky top-0 z-30 shadow-sm flex items-center justify-between gap-2">
         <button
+          type="button"
           onClick={() => {
             playClick();
             onBack();
@@ -45,6 +46,7 @@ export const WorksheetPrintView: React.FC<WorksheetPrintViewProps> = ({
         </div>
 
         <button
+          type="button"
           onClick={handlePrint}
           className="flex items-center gap-1.5 px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md min-h-[44px] btn-press flex-shrink-0"
         >

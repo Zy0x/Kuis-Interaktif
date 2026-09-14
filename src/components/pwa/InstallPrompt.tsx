@@ -83,6 +83,7 @@ export const InstallPrompt: React.FC = () => {
       </div>
       <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
         <button
+          type="button"
           onClick={handleInstall}
           className="px-2.5 xs:px-3 py-1.5 xs:py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl flex items-center gap-1 sm:gap-1.5 shadow-sm transition-colors min-h-[44px] btn-press"
         >
@@ -90,6 +91,7 @@ export const InstallPrompt: React.FC = () => {
           <span>Pasang</span>
         </button>
         <button
+          type="button"
           onClick={handleClose}
           className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
           aria-label="Tutup Banner Install"

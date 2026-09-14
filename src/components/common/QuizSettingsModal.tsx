@@ -212,6 +212,7 @@ export const QuizSettingsModal: React.FC<QuizSettingsModalProps> = ({
           </div>
 
           <button
+            type="button"
             onClick={() => {
               playClick();
               onClose();

@@ -99,6 +99,7 @@ export const MobileProfileSheet: React.FC<MobileProfileSheetProps> = ({
         <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800/80">
           <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Menu & Profil</span>
           <button
+            type="button"
             onClick={handleClose}
             className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
             aria-label="Tutup Panel Profil"
@@ -185,6 +186,7 @@ export const MobileProfileSheet: React.FC<MobileProfileSheetProps> = ({
           <div className="grid grid-cols-2 gap-2.5">
             {/* Theme Toggle Tile */}
             <button
+              type="button"
               onClick={() => {
                 playClick();
                 onToggleTheme();
@@ -210,6 +212,7 @@ export const MobileProfileSheet: React.FC<MobileProfileSheetProps> = ({
 
             {/* Audio SFX Toggle Tile */}
             <button
+              type="button"
               onClick={() => {
                 playClick();
                 onToggleMute();
@@ -245,6 +248,7 @@ export const MobileProfileSheet: React.FC<MobileProfileSheetProps> = ({
             /* Teacher Specific Actions */
             <>
               <button
+                type="button"
                 onClick={() => {
                   playClick();
                   onClose();
@@ -260,6 +264,7 @@ export const MobileProfileSheet: React.FC<MobileProfileSheetProps> = ({
               </button>
 
               <button
+                type="button"
                 onClick={() => {
                   playClick();
                   onClose();
@@ -275,6 +280,7 @@ export const MobileProfileSheet: React.FC<MobileProfileSheetProps> = ({
               </button>
 
               <button
+                type="button"
                 onClick={() => {
                   playClick();
                   onClose();
@@ -290,6 +296,7 @@ export const MobileProfileSheet: React.FC<MobileProfileSheetProps> = ({
             /* Registered Student Actions */
             <>
               <button
+                type="button"
                 onClick={() => {
                   playClick();
                   onClose();
@@ -305,6 +312,7 @@ export const MobileProfileSheet: React.FC<MobileProfileSheetProps> = ({
               </button>
 
               <button
+                type="button"
                 onClick={() => {
                   playClick();
                   onClose();
@@ -320,6 +328,7 @@ export const MobileProfileSheet: React.FC<MobileProfileSheetProps> = ({
             /* Guest Actions */
             <>
               <button
+                type="button"
                 onClick={() => {
                   playClick();
                   onClose();
@@ -335,6 +344,7 @@ export const MobileProfileSheet: React.FC<MobileProfileSheetProps> = ({
               </button>
 
               <button
+                type="button"
                 onClick={() => {
                   playClick();
                   onClose();

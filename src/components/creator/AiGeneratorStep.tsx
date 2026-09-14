@@ -2381,7 +2381,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
               onStageChange(1);
             }}
             title="Klik untuk ubah mapel atau kelas pada Tahap 1"
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200/70 dark:border-blue-900/50 hover:bg-blue-100/70 dark:hover:bg-blue-900/60 text-blue-950 dark:text-blue-100 text-xs font-bold max-w-full transition-colors cursor-pointer group text-left shadow-2xs"
+            className="inline-flex items-center gap-2 px-3.5 py-2.5 min-h-[44px] rounded-xl bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200/70 dark:border-blue-900/50 hover:bg-blue-100/70 dark:hover:bg-blue-900/60 text-blue-950 dark:text-blue-100 text-xs font-bold max-w-full transition-colors cursor-pointer group text-left shadow-2xs"
           >
             <span className="text-base shrink-0">{EMOJI_BY_SUBJECT[subject]}</span>
             <span className="truncate">{subject}</span>
@@ -2464,7 +2464,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                             onTopicChange(rec.topic);
                             if (rec.context) setContextNotes(rec.context);
                           }}
-                          className={`text-[11px] sm:text-xs px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl border text-left transition-all btn-press flex items-start gap-1.5 group whitespace-normal break-words shrink-0 sm:shrink max-w-[280px] sm:max-w-none shadow-2xs ${
+                          className={`text-[11px] sm:text-xs px-3 py-2.5 min-h-[44px] rounded-xl border text-left transition-all btn-press flex items-start gap-1.5 group whitespace-normal break-words shrink-0 sm:shrink max-w-[280px] sm:max-w-none shadow-2xs ${
                             isSelected
                               ? 'bg-blue-50/70 dark:bg-blue-950/40 border-blue-400/80 dark:border-blue-600/80 text-blue-700 dark:text-blue-300 font-bold'
                               : 'bg-slate-100/50 dark:bg-slate-900/40 hover:bg-white dark:hover:bg-slate-850 border-slate-200/80 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-300 hover:border-blue-300 dark:hover:border-blue-700'
@@ -2725,13 +2725,14 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                       <span className="block text-xs font-bold text-slate-800 dark:text-slate-200 leading-snug">Jumlah Opsi Pilihan Ganda</span>
                       <span className="text-[11px] text-slate-400 dark:text-slate-500">A, B, C — atau hingga A, B, C, D, E</span>
                     </div>
-                    <div className="flex items-center gap-1 shrink-0 p-1 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+                    <div className="flex items-center gap-1.5 shrink-0 p-1 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
                       {([3, 4, 5] as const).map((n) => (
                         <button
                           key={n}
                           type="button"
                           onClick={() => { playClick(); setMcOptionCount(n); }}
-                          className={`w-9 h-8 rounded-lg text-xs font-extrabold transition-all btn-press ${
+                          aria-label={`${n} Pilihan Opsi`}
+                          className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl text-xs font-extrabold flex items-center justify-center transition-all btn-press ${
                             mcOptionCount === n
                               ? 'bg-blue-600 text-white shadow-xs'
                               : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
@@ -2761,7 +2762,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                           key={val}
                           type="button"
                           onClick={() => { playClick(); setTrueFalseStyle(val); }}
-                          className={`flex-1 h-8 rounded-lg text-[11px] font-bold transition-all btn-press whitespace-nowrap ${
+                          className={`flex-1 min-h-[44px] py-2 px-2.5 rounded-xl text-xs font-bold transition-all btn-press whitespace-nowrap flex items-center justify-center ${
                             trueFalseStyle === val
                               ? 'bg-emerald-600 text-white shadow-xs'
                               : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
@@ -2781,13 +2782,14 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                       <span className="block text-xs font-bold text-slate-800 dark:text-slate-200 leading-snug">Jumlah Pasangan Kartu</span>
                       <span className="text-[11px] text-slate-400 dark:text-slate-500">Berapa pasang kiri-kanan per soal</span>
                     </div>
-                    <div className="flex items-center gap-1 shrink-0 p-1 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+                    <div className="flex items-center gap-1.5 shrink-0 p-1 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
                       {([3, 4, 5] as const).map((n) => (
                         <button
                           key={n}
                           type="button"
                           onClick={() => { playClick(); setMatchingPairCount(n); }}
-                          className={`w-9 h-8 rounded-lg text-xs font-extrabold transition-all btn-press ${
+                          aria-label={`${n} Pasangan Kartu`}
+                          className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl text-xs font-extrabold flex items-center justify-center transition-all btn-press ${
                             matchingPairCount === n
                               ? 'bg-purple-600 text-white shadow-xs'
                               : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
@@ -2823,7 +2825,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                         playClick();
                         setProportionMode('balanced');
                       }}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      className={`px-3.5 py-2 min-h-[44px] rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
                         proportionMode === 'balanced'
                           ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs font-extrabold'
                           : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -2838,7 +2840,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                         setProportionMode('custom');
                         handleAutoDistributeProportions(currentTotalQuestions, selectedQuestionTypes);
                       }}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      className={`px-3.5 py-2 min-h-[44px] rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
                         proportionMode === 'custom'
                           ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs font-extrabold'
                           : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -3028,7 +3030,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                           key={p.id}
                           type="button"
                           onClick={() => { playClick(); setCognitiveFocus(p.id); }}
-                          className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all btn-press border ${
+                          className={`px-3.5 py-2.5 min-h-[44px] rounded-full text-xs font-bold transition-all btn-press border flex items-center justify-center ${
                             active
                               ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
                               : 'bg-white dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500'
@@ -3063,7 +3065,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                                   return next;
                                 });
                               }}
-                              className={`py-2 px-1 rounded-xl border text-center transition-all btn-press ${
+                              className={`py-2.5 px-2 min-h-[48px] rounded-xl border flex flex-col items-center justify-center text-center transition-all btn-press ${
                                 active
                                   ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300'
                                   : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600'
@@ -3124,7 +3126,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                           key={ctx.id}
                           type="button"
                           onClick={() => { playClick(); setKurmerContext(ctx.id); }}
-                          className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition-all btn-press border ${
+                          className={`px-3 py-2 min-h-[44px] rounded-full text-xs font-semibold transition-all btn-press border flex items-center justify-center ${
                             active
                               ? 'bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 border-slate-800 dark:border-slate-200'
                               : 'bg-white dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-500'
@@ -3517,7 +3519,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                     playClick();
                     setShowSpecificCloudModels(!showSpecificCloudModels);
                   }}
-                  className="inline-flex items-center gap-2 text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors py-1.5 px-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-850 btn-press"
+                  className="inline-flex items-center gap-2 text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors py-2 px-3 min-h-[44px] rounded-xl hover:bg-slate-100 dark:hover:bg-slate-850 btn-press"
                 >
                   <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showSpecificCloudModels || selectedEngine === 'deepseek' || selectedEngine === 'groq' || selectedEngine === 'gemini' ? 'rotate-180 text-blue-500' : ''}`} />
                   <span>Pilih Model Cloud Tertentu (DeepSeek, Groq, Gemini)</span>
@@ -3748,7 +3750,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                         playClick();
                         setSelectedEngine('prompt');
                       }}
-                      className="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300 font-bold text-xs hover:bg-rose-100 dark:hover:bg-rose-900/50 transition-colors inline-flex items-center justify-center gap-1.5 shadow-2xs shrink-0 self-start sm:self-center btn-press"
+                      className="px-3.5 py-2.5 min-h-[44px] rounded-xl bg-white dark:bg-slate-900 border border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300 font-bold text-xs hover:bg-rose-100 dark:hover:bg-rose-900/50 transition-colors inline-flex items-center justify-center gap-1.5 shadow-2xs shrink-0 self-start sm:self-center btn-press"
                     >
                       <span>Gunakan Prompt / Berkas</span>
                     </button>
@@ -3775,7 +3777,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                         playClick();
                         setSelectedEngine('local');
                       }}
-                      className="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-amber-300 dark:border-amber-800 text-amber-700 dark:text-amber-300 font-bold text-xs hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors inline-flex items-center justify-center gap-1.5 shadow-2xs shrink-0 self-start sm:self-center btn-press"
+                      className="px-3.5 py-2.5 min-h-[44px] rounded-xl bg-white dark:bg-slate-900 border border-amber-300 dark:border-amber-800 text-amber-700 dark:text-amber-300 font-bold text-xs hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors inline-flex items-center justify-center gap-1.5 shadow-2xs shrink-0 self-start sm:self-center btn-press"
                     >
                       <span>Beralih ke Lokal</span>
                     </button>
@@ -3802,7 +3804,7 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                         playClick();
                         setSelectedEngine('local');
                       }}
-                      className="px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300 font-bold text-xs hover:bg-rose-100 dark:hover:bg-rose-900/50 transition-colors inline-flex items-center justify-center gap-1.5 shadow-2xs shrink-0 self-start sm:self-center btn-press"
+                      className="px-3.5 py-2.5 min-h-[44px] rounded-xl bg-white dark:bg-slate-900 border border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300 font-bold text-xs hover:bg-rose-100 dark:hover:bg-rose-900/50 transition-colors inline-flex items-center justify-center gap-1.5 shadow-2xs shrink-0 self-start sm:self-center btn-press"
                     >
                       <span>Gunakan Mesin Lokal Saja</span>
                     </button>
@@ -4083,13 +4085,14 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                   value={subjectSearchQuery}
                   onChange={(e) => setSubjectSearchQuery(e.target.value)}
                   placeholder="Cari mata pelajaran (misal: inggris, pjok, seni, agama, informatika)..."
-                  className="w-full pl-10 pr-9 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs sm:text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-blue-500 font-medium"
+                  className="w-full pl-10 pr-11 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs sm:text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-blue-500 font-medium"
                 />
                 {subjectSearchQuery && (
                   <button
                     type="button"
                     onClick={() => setSubjectSearchQuery('')}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs font-bold"
+                    className="absolute right-0.5 top-1/2 -translate-y-1/2 w-11 h-11 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-sm font-bold"
+                    aria-label="Hapus teks pencarian"
                   >
                     ✕
                   </button>

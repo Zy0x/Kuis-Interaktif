@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { Sun, Moon } from 'lucide-react';
 
 interface ThemeToggleProps {
@@ -21,6 +21,7 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
 
   return (
     <button
+      type="button"
       onClick={handleClick}
       className={`p-2.5 rounded-xl transition-all min-h-[44px] min-w-[44px] flex items-center justify-center btn-press border ${
         isDark

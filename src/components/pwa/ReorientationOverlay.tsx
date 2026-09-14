@@ -73,6 +73,7 @@ export const ReorientationOverlay: React.FC = () => {
         </div>
       </div>
       <button
+        type="button"
         onClick={handleDismiss}
         className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-slate-400 hover:text-white rounded-xl hover:bg-slate-800/80 transition-colors shrink-0 ml-2"
         aria-label="Tutup saran orientasi"
