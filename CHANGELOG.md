@@ -1,7 +1,25 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.6] - 2026-09-14
+### Pembersihan & Penyederhanaan Obrolan: Penghapusan Pengumuman Cepat Guru & Chip Pesan Cepat Murid (Rule 1, Rule 2, Rule 4, Rule 6 & Rule 15)
+
+#### 1. Penghapusan Pengumuman Cepat Guru (TeacherChatDrawer.tsx)
+- **Menghilangkan Bilah Chip Pengumuman**: Menghapus daftar `QUICK_ANNOUNCEMENTS`, fungsi `handleQuickChip`, dan komponen baris tombol chip cepat pengumuman guru di atas kolom input chat.
+- **Pembersihan Tampilan Panel Obrolan**: Area bawah drawer obrolan guru kini lebih lega, bersih, dan fokus langsung pada pengetikan instruksi guru serta bilah pratinjau balasan (*reply preview bar*).
+- **Penyesuaian Teks Panduan Kosong**: Memperbarui teks pada keadaan belum ada obrolan menjadi ramah dan relevan tanpa referensi chip cepat.
+
+#### 2. Penghapusan Chip Pesan Cepat Murid (StudentChatDrawer.tsx)
+- **Menghilangkan Baris Chip Preset Siswa**: Menghapus daftar `PRESET_QUICK_MESSAGES` dan baris tombol pintasan pesan cepat siswa di atas input chat.
+- **Optimalisasi Ruang Layar Mobile**: Mengurangi penggunaan ruang vertikal pada layar smartphone sehingga riwayat gelembung obrolan kelas tampil lebih luas dan tidak terdesak oleh deretan tombol preset.
+- **Penyelarasan Teks Status Kosong**: Memperbarui deskripsi keadaan obrolan kosong agar mengarahkan siswa mengetik sapaan langsung melalui kolom chat.
+
+#### 3. Pembaruan Versi & PWA Service Worker (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.6` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.6` (`public/sw.js`).
+
 ## [2.4.5] - 2026-09-14
+
 ### Fitur Reply / Kutip Pesan Obrolan (Swipe Mobile & Hover Desktop) + Redesain Responsif Header Host & Grid Reaksi Mobile (Rule 1, Rule 2, Rule 4, Rule 5 & Rule 15)
 
 #### 1. Fitur Balas / Kutip Pesan Obrolan Kelas (StudentChatDrawer.tsx & TeacherChatDrawer.tsx)

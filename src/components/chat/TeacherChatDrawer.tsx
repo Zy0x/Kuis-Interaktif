@@ -12,7 +12,6 @@ import {
   MessageSquare, 
   Volume2, 
   VolumeX, 
-  Sparkles, 
   Users, 
   ShieldAlert,
   CornerUpLeft
@@ -29,14 +28,6 @@ interface TeacherChatDrawerProps {
   playClick: () => void;
 }
 
-const QUICK_ANNOUNCEMENTS = [
-  '🌟 Selamat datang di kuis kita!',
-  '📝 Baca soal dengan tenang & teliti ya!',
-  '🚀 Kuis akan segera dimulai, bersiap!',
-  '💪 Tetap semangat dan fokus!',
-  '⏳ Waktu hampir habis, periksa jawabanmu!',
-  '👏 Hebat semuanya! Kerja bagus!',
-];
 // ─── Sub-component: Teacher individual message bubble with swipe + hover reply ─
 interface TeacherChatMessageItemProps {
   m: SessionChatMessage;
@@ -379,10 +370,6 @@ export const TeacherChatDrawer: React.FC<TeacherChatDrawerProps> = ({
     }
   };
 
-  const handleQuickChip = (chipText: string) => {
-    handleSendMessage(chipText);
-  };
-
   if (!isOpen) return null;
 
   return (
@@ -471,7 +458,7 @@ export const TeacherChatDrawer: React.FC<TeacherChatDrawerProps> = ({
               </div>
               <p className="text-sm font-bold text-slate-600 dark:text-slate-400">Belum ada obrolan</p>
               <p className="text-xs max-w-xs">
-                Kirim pesan sambutan atau instruksi kepada siswa melalui kotak di bawah atau gunakan chip cepat.
+                Kirim pesan sambutan atau instruksi kepada siswa melalui kotak di bawah.
               </p>
             </div>
           ) : (
@@ -492,27 +479,6 @@ export const TeacherChatDrawer: React.FC<TeacherChatDrawerProps> = ({
               />
             ))
           )}
-        </div>
-
-        {/* Quick Announcement Chips for Teacher */}
-        <div className="p-2.5 bg-slate-100/80 dark:bg-slate-850 border-t border-slate-200/80 dark:border-slate-800">
-          <div className="flex items-center gap-1 text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1.5 px-1">
-            <Sparkles className="w-3 h-3 text-amber-500" />
-            <span>Pengumuman Cepat Guru:</span>
-          </div>
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
-            {QUICK_ANNOUNCEMENTS.map((ann, idx) => (
-              <button
-                key={idx}
-                type="button"
-                onClick={() => handleQuickChip(ann)}
-                disabled={isSending}
-                className="px-3 py-2 min-h-[44px] rounded-xl text-xs font-semibold bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-950/40 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-800 whitespace-nowrap transition-colors flex-shrink-0 flex items-center justify-center btn-press"
-              >
-                {ann}
-              </button>
-            ))}
-          </div>
         </div>
 
         {/* Reply Preview Bar */}

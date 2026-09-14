@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import type { SessionChatMessage, ChatReplyRef } from '../../types/quiz';
 import { DataManager, supabase, getLiveRealtimeChannel } from '../../lib/supabaseClient';
 import { AVATAR_MAP } from '../../data/seedQuizzes';
@@ -27,15 +27,6 @@ interface StudentChatDrawerProps {
   isSessionEndedModalOpen?: boolean;
   playClick: () => void;
 }
-
-const PRESET_QUICK_MESSAGES = [
-  'Siap belajar! ðŸš€',
-  'Semangat teman-teman! ðŸ’ª',
-  'Bismillah lancar! ðŸ¤²',
-  'Kuis seru banget! â­',
-  'Pasti bisa nilai 100! ðŸŽ¯',
-  'Halo semuanya! ðŸ‘‹',
-];
 
 const formatChatTime = (timestamp?: number): string => {
   if (!timestamp) return '';
@@ -515,7 +506,7 @@ export const StudentChatDrawer: React.FC<StudentChatDrawerProps> = ({
               </div>
               <p className="text-sm font-bold text-slate-700 dark:text-slate-300">Belum Ada Obrolan</p>
               <p className="text-xs max-w-xs text-slate-400 dark:text-slate-500">
-                Kirim sapaan semangat atau pesan positif kepada teman sekelasmu menggunakan tombol di bawah!
+                Ketik sapaan semangat atau pesan positif kepada teman sekelasmu melalui kolom di bawah!
               </p>
             </div>
           ) : (
@@ -539,25 +530,8 @@ export const StudentChatDrawer: React.FC<StudentChatDrawerProps> = ({
             ))
           )}
         </div>
-        {/* Quick Chips & Chat Input */}
+        {/* Chat Input Area */}
         <div className="p-3 sm:p-4 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-3">
-          {/* Quick Preset Message Chips */}
-          {!isChatMuted && (
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-hover">
-              {PRESET_QUICK_MESSAGES.map((msg) => (
-                <button
-                  key={msg}
-                  type="button"
-                  disabled={sessionStatus === 'finished' || isSessionEndedModalOpen || isSending}
-                  onClick={() => handleSendMessage(msg)}
-                  className="px-3 py-1.5 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 text-xs font-bold hover:bg-purple-100 dark:hover:bg-purple-900/60 border border-purple-200 dark:border-purple-800 whitespace-nowrap min-h-[38px] flex items-center justify-center btn-press disabled:opacity-40 shrink-0"
-                >
-                  {msg}
-                </button>
-              ))}
-            </div>
-          )}
-
           {/* Reply Preview Bar */}
           {replyingTo && (
             <div className="flex items-center gap-2 animate-reply-preview-in">
