@@ -1,5 +1,21 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
+## [2.4.12] - 2026-09-14
+### Perluasan Batas Panjang Nama Panggilan Siswa & Tamu Hingga 50 Karakter (Rule 1, Rule 2, Rule 4, Rule 7 & Rule 15)
+
+#### 1. Perluasan Batas Karakter Nama Panggilan (Maksimal 50 Karakter)
+- **Modal Profil Siswa & Tamu (`QuizHome.tsx`)**: Meningkatkan batas input nama panggilan dari sebelumnya 12 karakter menjadi 50 karakter (`maxLength={50}`) disertai indikator penghitung karakter real-time (`{length}/50`) dan label deskriptif yang jelas.
+- **Formulir Pendaftaran Siswa (`UnifiedAuthModal.tsx`)**: Menetapkan batas maksimal nama panggilan menjadi 50 karakter (`maxLength={50}`) dengan teks petunjuk dan indikator jumlah karakter yang presisi.
+- **Lobi Ruang Belajar Siswa (`StudentLobby.tsx`)**: Menyelaraskan batas pengisian nama siswa pada saat memasukkan PIN atau bergabung ke kuis menjadi 50 karakter (`maxLength={50}`).
+
+#### 2. Ketahanan Tata Letak & Responsivitas Teks Panjang (Rule 1 & Rule 2)
+- **Pemotongan Teks Anggun (*Graceful Truncation*)**: Menambahkan pembatas lebar maksimal dan efek elipsis (`truncate`) pada tombol profil tamu dan pill identitas di bilah navigasi atas beranda agar nama panjang (hingga 50 karakter) tidak merusak tata letak di layar ponsel Android, tablet, maupun desktop.
+- **Penyelarasan Ruang Tunggu**: Memastikan nama panjang tetap tersaji rapi dengan pembungkusan kata alami (*break-words*) di seluruh kartu ucapan dan papan partisipasi kelas.
+
+#### 3. Pembaruan Versi & PWA Service Worker (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.12` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.12` (`public/sw.js`).
+
 ## [2.4.11] - 2026-09-14
 ### Perbaikan Blank Screen Masuk Kuis Tamu, Pelindung Butir Soal Kosong, & ErrorBoundary Terpadu (Rule 1, Rule 2, Rule 6, Rule 8, Rule 9 & Rule 15)
 

@@ -856,11 +856,11 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
                     <User className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                     <span>Nama / Nama Panggilan Siswa:</span>
                   </span>
-                  <span className="text-[11px] font-normal text-slate-400 dark:text-slate-500">Wajib diisi</span>
+                  <span className="text-[11px] font-normal text-slate-400 dark:text-slate-500">{nickname.length}/50 (Maks. 50)</span>
                 </label>
                 <input
                   type="text"
-                  maxLength={20}
+                  maxLength={50}
                   value={nickname}
                   onChange={(e) => setNickname(e.target.value)}
                   placeholder="Ketik namamu di sini..."

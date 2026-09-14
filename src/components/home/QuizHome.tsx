@@ -579,8 +579,8 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                     title="Mode Tamu: Klik untuk sesuaikan nama/karakter"
                     aria-label="Pengaturan Profil Mode Tamu"
                   >
-                    <span className="text-lg select-none">{currentAvatar.emoji}</span>
-                    <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                    <span className="text-lg select-none flex-shrink-0">{currentAvatar.emoji}</span>
+                    <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 max-w-[100px] sm:max-w-[160px] truncate">
                       {isCustomName(profile.nickname) ? profile.nickname : 'Tamu'}
                     </span>
                   </button>
@@ -1189,12 +1189,15 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                  Nama Panggilan Siswa (Maksimal 12 Karakter)
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center justify-between">
+                  <span>Nama Panggilan Siswa (Maksimal 50 Karakter)</span>
+                  <span className="text-[11px] font-normal text-slate-400 dark:text-slate-500">
+                    {tempNickname.length}/50
+                  </span>
                 </label>
                 <input
                   type="text"
-                  maxLength={12}
+                  maxLength={50}
                   value={tempNickname}
                   onChange={(e) => setTempNickname(e.target.value)}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none font-bold text-sm text-slate-900 dark:text-white min-h-[44px]"
