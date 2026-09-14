@@ -1,7 +1,27 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
-## [2.3.96] - 2026-09-14
+## [2.3.97] - 2026-09-14
+### Akses Kembali Cepat Guru ke Ruang Tunggu & Sesi Live Aktif: Banner Cepat Dashboard, Perbaikan Klasifikasi Status Waiting, dan Tombol Masuk Ruang Tunggu (Rule 1, Rule 2, Rule 4 & Rule 15)
+
+#### 1. Banner Sesi Aktif di Dashboard Guru (TeacherDashboard.tsx) (Rule 1, Rule 2 & Rule 4)
+- **Akses Langsung 1-Klik**: Menambahkan banner notifikasi khusus di bagian paling atas Dashboard Guru (tampil di tab *Koleksi Kuis* maupun *Sesi Live*) setiap kali ada sesi kuis yang sedang aktif atau dalam status ruang tunggu dipimpin oleh Guru.
+- **Informasi Lengkap & Aksi Nyata**: Menampilkan judul kuis, status ruang tunggu dengan indikator berdenyut (`⏳`), PIN Ruang Kelas, dan jumlah siswa terhubung, disertai tombol utama berukuran ergonomis minimal 48 px **"Kembali ke Ruang Tunggu"** / **"Buka Layar Pantau Live"** serta tombol opsi **"Akhiri"**.
+- **Solusi Sempurna Saat Guru Keluar**: Guru kini tidak akan lagi kehilangan jejak ruang tunggu ketika keluar sementara ke katalog kuis atau halaman dashboard utama.
+
+#### 2. Perbaikan Klasifikasi Status Ruang Tunggu Siswa (TeacherDashboard.tsx) (Rule 2 & Rule 11)
+- **Eliminasi Kesalahan Badge 'Selesai'**: Memperbaiki logika evaluasi status kartu sesi di tab *Kuis Aktif & Sesi Live*. Sebelumnya sesi yang baru dibuat dengan status `'waiting'` secara keliru masuk ke fallback label `SELESAI` dan tombol rekap.
+- **Badge Status Akurat**:
+  - `status === 'waiting'`: Ditandai dengan lencana berwarna amber `⏳ RUANG TUNGGU` dan ring glow emas.
+  - `status === 'active'`: Ditandai dengan lencana merah `🔴 LIVE WAYGROUND`.
+  - `status === 'paused'`: Ditandai dengan lencana `⏸️ DIJEDA`.
+  - `status === 'finished'`: Ditandai dengan lencana hijau `✓ SELESAI`.
+- **Akurasi Filter & Tab Counter**: Filter tab *Sedang Berjalan* kini secara tepat menghitung seluruh sesi aktif, dijeda, maupun ruang tunggu (`liveSessionsCount`), sehingga tidak lagi menampilkan angka 0 canggung ketika sesi sedang menunggu siswa.
+- **Tombol Masuk Ruang Tunggu**: Kartu sesi dengan status ruang tunggu kini menampilkan tombol aksi utama **"Masuk ke Ruang Tunggu (Wayground)"** bergradasi oranye-amber yang langsung membuka layar kendali Guru.
+
+#### 3. Sinkronisasi Versi & Service Worker Cache (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.3.97` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.3.97` (`public/sw.js`).
 ### Persistensi Menyeluruh Ruang Tunggu Host & Peserta: Proteksi Sesi Aktif dari Muat Ulang Halaman (F5/Reload Resistance) di Seluruh Alur Aplikasi (Rule 1, Rule 2, Rule 6, Rule 11 & Rule 15)
 
 #### 1. Ruang Tunggu Guru / Layar Pantau Host (TeacherDashboard.tsx & WaygroundHostView.tsx)

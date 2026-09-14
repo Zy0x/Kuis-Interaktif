@@ -422,16 +422,20 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   };
 
   const liveSessionsCount = useMemo(
-    () => sessions.filter((s) => s.status === 'active' || s.status === 'paused').length,
+    () => sessions.filter((s) => s.status === 'active' || s.status === 'paused' || s.status === 'waiting').length,
     [sessions]
   );
   const finishedSessionsCount = useMemo(
     () => sessions.filter((s) => s.status === 'finished').length,
     [sessions]
   );
+  const activeHostSessions = useMemo(
+    () => sessions.filter((s) => s.status === 'active' || s.status === 'paused' || s.status === 'waiting'),
+    [sessions]
+  );
   const filteredSessions = useMemo(() => {
     if (sessionFilter === 'active') {
-      return sessions.filter((s) => s.status === 'active' || s.status === 'paused');
+      return sessions.filter((s) => s.status === 'active' || s.status === 'paused' || s.status === 'waiting');
     }
     if (sessionFilter === 'finished') {
       return sessions.filter((s) => s.status === 'finished');
@@ -766,6 +770,77 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
       {/* Main Container */}
       <main className="w-full max-w-[2000px] mx-auto px-3 xs:px-4 sm:px-8 lg:px-12 pt-5 sm:pt-6 space-y-6 flex-1">
         
+        {/* BANNER SESI AKTIF: Akses Cepat Kembali ke Ruang Tunggu / Layar Pantau Host */}
+        {activeHostSessions.length > 0 && (
+          <div className="bg-gradient-to-r from-blue-700 via-indigo-700 to-purple-800 rounded-3xl p-4 sm:p-5 text-white shadow-xl border border-blue-400/40 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 animate-fade-in relative overflow-hidden">
+            {/* Glow accent */}
+            <div className="absolute -right-10 -bottom-10 w-48 h-48 bg-white/10 rounded-full blur-2xl pointer-events-none" />
+
+            <div className="flex items-start sm:items-center gap-3.5 min-w-0 z-10">
+              <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 flex items-center justify-center text-2xl flex-shrink-0 shadow-inner">
+                {activeHostSessions[0].status === 'waiting' ? (
+                  <Clock className="w-6 h-6 text-amber-300 animate-pulse" />
+                ) : (
+                  <Radio className="w-6 h-6 text-rose-300 animate-pulse" />
+                )}
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap mb-1">
+                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                    activeHostSessions[0].status === 'waiting'
+                      ? 'bg-amber-400/30 border border-amber-300/50 text-amber-200'
+                      : 'bg-rose-500/35 border border-rose-400/50 text-rose-200'
+                  }`}>
+                    <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+                    {activeHostSessions[0].status === 'waiting' ? 'RUANG TUNGGU SEDANG BERLANGSUNG' : 'SESI LIVE BERJALAN'}
+                  </span>
+                  <span className="text-xs font-mono font-black bg-black/25 px-2 py-0.5 rounded-lg border border-white/15 text-white">
+                    PIN: {activeHostSessions[0].pinCode}
+                  </span>
+                  <span className="text-xs text-blue-100 font-medium">
+                    {activeHostSessions[0].participants.length} Siswa Tergabung
+                  </span>
+                </div>
+                <h3 className="font-black text-sm sm:text-base leading-tight truncate">
+                  {activeHostSessions[0].quizTitle}
+                </h3>
+                <p className="text-xs text-blue-100/90 line-clamp-1 mt-0.5">
+                  {activeHostSessions[0].status === 'waiting'
+                    ? 'Siswa sedang menunggu di ruang tunggu. Tekan tombol di samping untuk kembali memimpin sesi.'
+                    : 'Kuis interaktif sedang dipandu oleh Anda. Tekan tombol di samping untuk membuka layar kendali.'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 w-full md:w-auto flex-shrink-0 z-10">
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setSelectedSessionForHost(activeHostSessions[0]);
+                }}
+                className="flex-1 md:flex-initial px-5 py-3 rounded-2xl bg-white text-indigo-950 hover:bg-blue-50 text-xs sm:text-sm font-black shadow-md transition-all flex items-center justify-center gap-2 btn-press min-h-[48px]"
+              >
+                <Tv className="w-4 h-4 text-indigo-600" />
+                <span>
+                  {activeHostSessions[0].status === 'waiting'
+                    ? 'Kembali ke Ruang Tunggu'
+                    : 'Buka Layar Pantau Live'}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleEndSessionDirectly(activeHostSessions[0].id)}
+                className="px-3.5 py-3 rounded-2xl bg-white/15 hover:bg-rose-600/70 border border-white/25 text-white text-xs font-bold transition-all min-h-[48px]"
+                title="Akhiri sesi ini"
+              >
+                Akhiri
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* TAB 1: KOLEKSI KUIS */}
         {activeMainTab === 'collection' && (
           <div className="space-y-6">
@@ -1225,7 +1300,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {filteredSessions.map((s) => {
-                const isLive = s.status === 'active' || s.status === 'paused';
+                const isLive = s.status === 'active' || s.status === 'paused' || s.status === 'waiting';
                 const partCount = s.participants.length;
                 const finishedCount = s.participants.filter((p) => p.finished).length;
 
@@ -1233,8 +1308,10 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                   <div
                     key={s.id}
                     className={`bg-white dark:bg-slate-900 rounded-3xl p-5 border transition-all flex flex-col justify-between gap-4 shadow-xs hover:shadow-md ${
-                      isLive
+                      s.status === 'active'
                         ? 'border-rose-400/80 dark:border-rose-500/50 ring-1 ring-rose-400/30'
+                        : s.status === 'waiting'
+                        ? 'border-amber-400/80 dark:border-amber-500/50 ring-1 ring-amber-400/30'
                         : 'border-slate-200 dark:border-slate-800'
                     }`}
                   >
@@ -1244,6 +1321,8 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                         className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black tracking-wider uppercase border ${
                           s.status === 'active'
                             ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-300 border-rose-200 dark:border-rose-800'
+                            : s.status === 'waiting'
+                            ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-300 border-amber-200 dark:border-amber-800'
                             : s.status === 'paused'
                             ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-300 border-amber-200 dark:border-amber-800'
                             : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
@@ -1253,6 +1332,11 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                           <>
                             <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
                             <span>LIVE WAYGROUND</span>
+                          </>
+                        ) : s.status === 'waiting' ? (
+                          <>
+                            <Clock className="w-2.5 h-2.5 text-amber-500 animate-pulse" />
+                            <span>RUANG TUNGGU</span>
                           </>
                         ) : s.status === 'paused' ? (
                           <>
@@ -1335,10 +1419,18 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                               playClick();
                               setSelectedSessionForHost(s);
                             }}
-                            className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-black flex items-center justify-center gap-2 shadow-xs transition-all btn-press min-h-[44px]"
+                            className={`w-full py-2.5 px-4 rounded-xl text-white text-xs font-black flex items-center justify-center gap-2 shadow-xs transition-all btn-press min-h-[44px] ${
+                              s.status === 'waiting'
+                                ? 'bg-gradient-to-r from-amber-500 via-orange-600 to-amber-600 hover:from-amber-600 hover:to-orange-700'
+                                : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700'
+                            }`}
                           >
                             <Tv className="w-4 h-4" />
-                            <span>Buka Layar Pantau (Wayground)</span>
+                            <span>
+                              {s.status === 'waiting'
+                                ? 'Masuk ke Ruang Tunggu (Wayground)'
+                                : 'Buka Layar Pantau (Wayground)'}
+                            </span>
                           </button>
 
                           <div className="grid grid-cols-2 gap-2">
