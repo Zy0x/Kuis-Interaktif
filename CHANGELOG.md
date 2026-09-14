@@ -1,6 +1,34 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.99] - 2026-09-14
+### Presisi Tampilan Antar-Platform & Responsivitas Penuh Ruang Tunggu Siswa: Mobile-S/M/L hingga Desktop & Ultra-Wide 4K (Rule 1, Rule 2, Rule 4, Rule 5, Rule 8 & Rule 15)
+
+#### 1. Eliminasi Celah Kosong di Layar Lebar & Ultra-Wide (StudentWaitingRoom.tsx)
+- **Fluid Layout Max-W 2000px**: Mengganti batasan kaku `max-w-4xl` (896px) pada `<header>` dan `<main>` menjadi fluid container `max-w-[2000px]` dengan padding responsif bertingkat (`px-3 sm:px-6 md:px-8 lg:px-12`).
+- **Pemanfaatan Ruang Optimal**: Menghilangkan ruang kosong mati di sisi kiri dan kanan pada monitor desktop 1080p, QHD 1440p, monitor Ultra-Wide 21:9 / 32:9, hingga 4K UHD tanpa distorsi visual.
+- **Konsistensi Arsitektur Layout**: Menyelaraskan standar layout ruang tunggu siswa dengan komponen utama lainnya seperti *WaygroundHostView* dan *TeacherDashboard*.
+
+#### 2. Restrukturisasi Header Responsif & Touch-First Ergonomis
+- **Tombol Navigasi Adaptif**: Tombol "Keluar Ruang" di pojok kiri atas kini mengadopsi teks fleksibel (`Keluar` di Mobile-S/XS, `Keluar Ruang` di layar yang lebih lebar) dengan target sentuh minimal 44×44 px.
+- **Breadcrumb Judul Kuis & Lencana Kelas**: Menambahkan tampilan judul kuis dengan pemotongan teks aman (`truncate`) serta badge "Ruang Tunggu Kelas" pada layar tablet dan desktop.
+- **PIN Sesi & Theme Toggle Terpadu**: Komponen penunjuk PIN sesi dan tombol ganti tema tersusun rapi di sisi kanan dengan kontras tinggi di mode terang maupun gelap.
+
+#### 3. Hero Banner Adaptif "Menunggu Guru"
+- **Tata Letak 2-Sayap di Layar Lebar**: Pada layar desktop/wide (`lg:` ke atas), banner otomatis beralih dari tumpukan vertikal ke komposisi 2-sayap (Sayap kiri: Avatar maskot 3D, sapaan personal siswa, dan chip detail kuis; Sayap kanan: Indikator status berdenyut dengan animasi ping, subteks petunjuk, dan tombol reaksi instan).
+- **Mobile-First Touch Precision**: Pada Mobile-S (320px) hingga tablet, layout tetap terpusat rapi tanpa pembengkakan elemen ataupun overflow horizontal.
+- **Efek Glow Halus**: Menambahkan ambient glow berdenyut ringan yang estetis tanpa membebani performa perangkat spesifikasi rendah.
+
+#### 4. Grid Teman Sekelas & Obrolan Kelas Terdistribusi Proporsional
+- **Grid Asimetris 12 Kolom (`5 : 7` / `4 : 8`)**: Mengganti pembagian grid `md:grid-cols-2` yang sempit dengan tata letak adaptif (`lg:col-span-5 xl:col-span-4` untuk daftar teman, `lg:col-span-7 xl:col-span-8` untuk obrolan kelas).
+- **Daftar Teman Multi-Kolom**: Peserta yang tersambung kini ditata dalam grid 1 atau 2 kolom (`sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2`) dengan indikator titik hijau berdenyut "Tersambung" dan lencana khusus "Kamu".
+- **Obrolan Kelas Modern & Ergonomis**: Memperluas area gelembung obrolan (chat) dengan pembedaan visual tegas antara Guru (aksen emas & mahkota), Diri Sendiri (bubble gradien ungu kanan), dan Teman (bubble slate kiri).
+- **Touch Targets >= 48 px**: Input chat dan tombol kirim ditingkatkan ukurannya menjadi minimal 48 px sesuai pedoman Rule 1 & Rule 2, lengkap dengan chip preset pesan instan yang dapat digeser secara horizontal.
+
+#### 5. Pembaruan Versi & Cache Service Worker (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.3.99` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.3.99` (`public/sw.js`).
+
 ## [2.3.98] - 2026-09-14
 ### Proteksi Akses & Pemblokiran Masuk Siswa ke Sesi Kuis yang Telah Selesai (Rule 1, Rule 2, Rule 8, Rule 9, Rule 11 & Rule 15)
 
