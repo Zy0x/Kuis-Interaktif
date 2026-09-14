@@ -82,6 +82,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
   const [isTeacherProfileModalOpen, setIsTeacherProfileModalOpen] = useState(false);
   const [isMobileProfileSheetOpen, setIsMobileProfileSheetOpen] = useState(false);
   const [rulesModalQuiz, setRulesModalQuiz] = useState<Quiz | null>(null);
+  const [emptyQuizAlert, setEmptyQuizAlert] = useState<string | null>(null);
 
   // Sinkronisasi status autentikasi siswa & guru lintas event & komponen
   useEffect(() => {
@@ -193,6 +194,15 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
     }
     return false;
   }, Boolean(rulesModalQuiz));
+
+  // 1b. Level 1 (Prioritas 100): Modal Kuis Kosong
+  useBackHandler('home-empty-quiz-modal', 100, () => {
+    if (emptyQuizAlert) {
+      setEmptyQuizAlert(null);
+      return true;
+    }
+    return false;
+  }, Boolean(emptyQuizAlert));
 
   // 2. Level 1 (Prioritas 100): Modal Profil Siswa
   useBackHandler('home-profile-modal', 100, () => {
@@ -343,6 +353,10 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
 
   const handleStartWithRules = (quiz: Quiz) => {
     playClick();
+    if (!quiz.questions || quiz.questions.length === 0) {
+      setEmptyQuizAlert(`Kuis "${quiz.title}" belum memiliki butir soal yang dapat dikerjakan saat ini. Silakan pilih kuis lainnya.`);
+      return;
+    }
     setSelectedGameMode(quiz.defaultGameMode || 'standard');
     setRulesModalQuiz(quiz);
   };
@@ -878,7 +892,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                   <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-3">
                     <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-medium">
                       <span className="flex items-center gap-1">
-                        <HelpCircle className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" /> {quiz.questions.length} Soal
+                        <HelpCircle className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" /> {quiz.questions?.length || 0} Soal
                       </span>
                       <span className="flex items-center gap-1">
                         <Clock className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" /> {quiz.durationPerQuestionSec}s / soal
@@ -889,11 +903,15 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                       <button
                         type="button"
                         onClick={() => handleStartWithRules(quiz)}
-                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-xl shadow-sm transition-colors flex items-center justify-center gap-1.5 min-h-[46px] btn-press text-xs sm:text-sm"
+                        className={`flex-1 font-bold py-2.5 px-4 rounded-xl shadow-sm transition-colors flex items-center justify-center gap-1.5 min-h-[46px] btn-press text-xs sm:text-sm ${
+                          (!quiz.questions || quiz.questions.length === 0)
+                            ? 'bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-slate-750'
+                            : 'bg-blue-600 hover:bg-blue-700 text-white'
+                        }`}
                       >
-                        <Play className="w-4 h-4 fill-white" />
-                        <span>Mulai Kuis</span>
-                        <ChevronRight className="w-4 h-4" />
+                        <Play className="w-4 h-4 fill-current" />
+                        <span>{(!quiz.questions || quiz.questions.length === 0) ? 'Belum Ada Soal' : 'Mulai Kuis'}</span>
+                        {quiz.questions && quiz.questions.length > 0 && <ChevronRight className="w-4 h-4" />}
                       </button>
 
                       {Boolean(teacher) && (
@@ -1064,15 +1082,59 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                 type="button"
                 onClick={() => {
                   const q = rulesModalQuiz;
+                  if (!q || !q.questions || q.questions.length === 0) {
+                    setRulesModalQuiz(null);
+                    setEmptyQuizAlert('Kuis ini belum memiliki butir soal yang dapat dikerjakan.');
+                    return;
+                  }
                   setRulesModalQuiz(null);
                   onSelectQuiz(q, selectedGameMode);
                 }}
-                className="flex-[2] py-2.5 px-4 rounded-xl font-bold text-xs sm:text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-sm flex items-center justify-center gap-2 min-h-[44px] btn-press"
+                disabled={!rulesModalQuiz?.questions || rulesModalQuiz.questions.length === 0}
+                className="flex-[2] py-2.5 px-4 rounded-xl font-bold text-xs sm:text-sm text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm flex items-center justify-center gap-2 min-h-[44px] btn-press"
               >
                 <CheckCircle2 className="w-4 h-4" />
                 <span>Mulai Kuis</span>
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Peringatan Kuis Kosong (Rule 1 & Rule 8: Elegan & Touch-First) */}
+      {emptyQuizAlert && (
+        <div
+          className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 sm:p-6 modal-wrapper overscroll-contain"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="empty-quiz-alert-title"
+        >
+          <div
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm animate-backdrop-fade touch-none"
+            onClick={() => setEmptyQuizAlert(null)}
+          />
+          <div className="relative z-10 bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-7 max-w-sm w-full shadow-2xl border border-slate-200 dark:border-slate-800 text-center space-y-4 animate-scale-in">
+            <div className="w-14 h-14 mx-auto rounded-2xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-900/60 flex items-center justify-center text-amber-500 text-2xl shadow-xs">
+              ⚠️
+            </div>
+            <div className="space-y-1.5">
+              <h4 id="empty-quiz-alert-title" className="text-lg font-bold text-slate-900 dark:text-white leading-tight">
+                Kuis Belum Siap
+              </h4>
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                {emptyQuizAlert}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                setEmptyQuizAlert(null);
+              }}
+              className="w-full py-3 px-4 rounded-xl font-bold text-sm text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 min-h-[48px] shadow-sm flex items-center justify-center gap-2 transition-colors btn-press"
+            >
+              Mengerti
+            </button>
           </div>
         </div>
       )}

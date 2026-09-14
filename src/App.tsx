@@ -140,6 +140,14 @@ export const App: React.FC = () => {
             return;
           }
 
+          if ((currentScreen === 'arena' || initialNav.screen === 'arena') && (!q.questions || q.questions.length === 0)) {
+            console.warn('Kuis tidak memiliki butir soal untuk dimainkan, kembali ke beranda.');
+            setPrivateQuizAlertModal(`Kuis "${q.title}" belum memiliki butir soal yang dapat dikerjakan saat ini. Silakan pilih kuis lainnya.`);
+            setCurrentScreen('home');
+            clearNavigationState();
+            return;
+          }
+
           const settings = resolveSettings(session, q);
           setActiveQuiz(q);
           if (currentScreen === 'creator' || initialNav.screen === 'creator') {
@@ -321,6 +329,11 @@ export const App: React.FC = () => {
   }, []);
 
   const handleSelectQuiz = (quiz: Quiz, mode?: GameMode) => {
+    if (!quiz.questions || quiz.questions.length === 0) {
+      console.warn('Percobaan memulai kuis tanpa butir soal dicegah.');
+      setPrivateQuizAlertModal(`Kuis "${quiz.title}" belum memiliki butir soal yang dapat dikerjakan saat ini. Silakan pilih kuis lainnya.`);
+      return;
+    }
     setActiveQuiz(quiz);
     setActiveGameMode(mode || quiz.defaultGameMode || 'standard');
     setCurrentScreen('arena');

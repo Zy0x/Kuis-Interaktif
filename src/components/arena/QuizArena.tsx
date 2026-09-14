@@ -1015,7 +1015,39 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     }
   };
 
-  const progressPercent = ((currentIndex + 1) / activeQuestions.length) * 100;
+  const progressPercent = activeQuestions.length > 0 ? ((currentIndex + 1) / activeQuestions.length) * 100 : 0;
+
+  // Fallback Pengaman Jika Kuis Tidak Memiliki Butir Soal (Rule 1, Rule 2 & Pencegahan Blank Screen)
+  if (!activeQuestions || activeQuestions.length === 0 || !question) {
+    return (
+      <div className="fixed inset-0 z-50 w-full h-full flex items-center justify-center p-4 sm:p-6 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 select-none">
+        <div className="max-w-md w-full bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-200 dark:border-slate-800 text-center space-y-5 animate-scale-in">
+          <div className="w-16 h-16 mx-auto rounded-2xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-900/60 flex items-center justify-center text-3xl shadow-xs">
+            📝
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white leading-tight">
+              Kuis Belum Memiliki Soal
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+              Kuis <strong>&ldquo;{quiz.title}&rdquo;</strong> belum memiliki butir soal yang dapat dikerjakan saat ini. Silakan pilih kuis lainnya atau hubungi guru pembuat kuis.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              if (playClick) playClick();
+              onExit();
+            }}
+            className="w-full py-3 px-4 rounded-xl font-bold text-xs sm:text-sm text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 shadow-md shadow-blue-500/20 active:scale-98 transition-all min-h-[46px] flex items-center justify-center gap-2 btn-press"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Kembali ke Beranda</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-30 w-full h-full h-[100dvh] overflow-hidden bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col justify-between select-none">

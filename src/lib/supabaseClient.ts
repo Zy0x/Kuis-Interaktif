@@ -287,7 +287,7 @@ export const DataManager = {
 
       // If public catalog filter is requested (for student & guest dashboard)
       if (options?.publicOnly) {
-        all = all.filter((q) => q.visibility !== 'private');
+        all = all.filter((q) => q.visibility !== 'private' && Array.isArray(q.questions) && q.questions.length > 0);
       }
 
       return all;
@@ -486,6 +486,9 @@ export const DataManager = {
       const allQuizzesCombined = [...cloudQuizzes, ...activeSeeds];
 
       let finalQuizzes = allQuizzesCombined;
+      if (options?.publicOnly) {
+        finalQuizzes = finalQuizzes.filter((q) => q.visibility !== 'private' && Array.isArray(q.questions) && q.questions.length > 0);
+      }
       if (options?.teacherEmail) {
         const isMaster = options.teacherEmail.trim().toLowerCase() === MASTER_TEACHER_EMAIL.toLowerCase();
         if (!isMaster && options.teacherId) {

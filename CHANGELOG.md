@@ -1,5 +1,26 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
+## [2.4.11] - 2026-09-14
+### Perbaikan Blank Screen Masuk Kuis Tamu, Pelindung Butir Soal Kosong, & ErrorBoundary Terpadu (Rule 1, Rule 2, Rule 6, Rule 8, Rule 9 & Rule 15)
+
+#### 1. Perbaikan Akar Masalah Layar Hitam / Blank Screen di Arena Kuis (`QuizArena.tsx`)
+- **Penanganan Kuis Tanpa Butir Soal**: Memperbaiki galat fatal runtime `TypeError: Cannot read properties of undefined (reading 'points')` yang terjadi saat pengguna/tamu mencoba masuk ke kuis yang belum memiliki butir soal (0 pertanyaan).
+- **Tampilan Cadangan Bersih & Informatif**: Menambahkan fallback UI interaktif di `QuizArena` apabila butir soal kosong, menampilkan pesan ramah: *"Kuis Belum Memiliki Soal"* dengan tombol *"Kembali ke Beranda"*, sehingga sistem tidak lagi mengalami unmount atau layar hitam.
+- **Normalisasi Kalkulasi Progres**: Menghindari pembagian dengan nol (`0/0` yang menghasilkan `Infinity`) pada `progressPercent` saat daftar soal kosong.
+
+#### 2. Pelindung Navigasi & Beranda (`QuizHome.tsx` & `App.tsx`)
+- **Penyaringan Katalog Publik**: Memperbarui `getAllQuizzes` dan `fetchQuizzesFromCloud` pada `supabaseClient.ts` untuk menyaring dan mengecualikan kuis dengan 0 pertanyaan dari katalog publik siswa dan tamu.
+- **Validasi Tombol & Modal Aturan**: Mencegah peluncuran kuis kosong dari tombol kartu di beranda maupun modal aturan, serta menampilkan modal pemberitahuan ramah pengguna: *"Kuis Belum Siap: Kuis ini belum memiliki butir soal yang dapat dikerjakan saat ini."*.
+- **Pembersihan Metadata Kuis Uji**: Memperbarui status kuis pengujian nir-soal pada basis data menjadi privat dan tidak terpublikasi.
+
+#### 3. Penerapan `ErrorBoundary` Global (`main.tsx` & `ErrorBoundary.tsx`)
+- **Pencegahan Blank Screen Menyeluruh**: Mengintegrasikan komponen `ErrorBoundary` terpadu pada root aplikasi React untuk menangkap seluruh galat render runtime yang tidak terduga.
+- **Pemulihan Mandiri Pengguna**: Menyediakan tombol *"Segarkan Halaman"* dan *"Kembali ke Beranda"* dengan pembersihan otomatis status navigasi yang rusak, menjamin aplikasi tidak pernah terperangkap pada kondisi layar kosong tanpa respon.
+
+#### 4. Pembaruan Versi & PWA Service Worker (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.11` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.11` (`public/sw.js`).
+
 ## [2.4.10] - 2026-09-14
 ### Eliminasi Tombol Reaksi Mengambang Redundan & Optimalisasi Kerapian Antarmuka Ruang Sesi (Rule 1, Rule 2, Rule 4, Rule 5, Rule 7 & Rule 15)
 
