@@ -474,7 +474,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                 Kuis <span className="text-blue-600 dark:text-blue-400 font-extrabold">Seru</span>
               </h1>
               <p className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-0.5 hidden xs:block truncate">
-                Media Belajar Interaktif Kelas 1 - 6
+                Media Belajar Interaktif SD • SMP • SMA
               </p>
             </div>
           </div>

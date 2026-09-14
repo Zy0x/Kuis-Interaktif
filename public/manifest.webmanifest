@@ -1,8 +1,8 @@
-﻿{
+{
   "id": "/",
-  "name": "Kuis SD Seru - Belajar Asyik",
-  "short_name": "Kuis SD",
-  "description": "Kuis interaktif ramah anak untuk siswa SD kelas 1 hingga 6",
+  "name": "Kuis Seru - Belajar Asyik",
+  "short_name": "Kuis Seru",
+  "description": "Media kuis edukatif interaktif menyenangkan untuk jenjang SD, SMP, dan SMA",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

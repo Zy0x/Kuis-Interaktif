@@ -31,7 +31,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onFinish }) => {
             <span className="text-6xl sm:text-7xl select-none">⭐</span>
           </div>
           <div className="absolute -bottom-2 -right-2 bg-amber-400 text-slate-900 text-xs sm:text-sm font-black px-3 py-1 rounded-full shadow-lg border-2 border-white">
-            Kelas 1 - 6
+            SD • SMP • SMA
           </div>
         </div>
 

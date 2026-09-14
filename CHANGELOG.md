@@ -1,6 +1,23 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.1] - 2026-09-14
+### Penyelarasan Subjudul & Identitas Universal Seluruh Jenjang Pendidikan: SD • SMP • SMA (Rule 2, Rule 4, Rule 7 & Rule 15)
+
+#### 1. Pembaruan Subjudul Navbar Beranda (QuizHome.tsx)
+- **Tagline Universal**: Memperbarui teks subjudul di bawah logo utama dari semula *"Media Belajar Interaktif Kelas 1 - 6"* menjadi *"Media Belajar Interaktif SD • SMP • SMA"*.
+- **Representasi Akurat**: Mencerminkan cakupan fitur dan koleksi kuis yang kini telah menyeluruh dan mendukung jenjang Sekolah Dasar (SD/MI), Sekolah Menengah Pertama (SMP/MTs), hingga Sekolah Menengah Atas (SMA/SMK/MA).
+
+#### 2. Penyelarasan Lencana Layar Pembuka (SplashScreen.tsx)
+- **Badge Animasi Logo**: Mengganti lencana di sudut avatar bintang pada splash screen animasi dari *"Kelas 1 - 6"* menjadi *"SD • SMP • SMA"* dengan kontras tajam berlatar emas amber.
+
+#### 3. Metadata Aplikasi Web & PWA Manifest (index.html & manifest.webmanifest)
+- **Deskripsi & Judul Web**: Memperbarui meta deskripsi, judul aplikasi web mobile (`apple-mobile-web-app-title`), dan nama ringkas PWA menjadi representasi inklusif kuis edukatif interaktif jenjang SD, SMP, dan SMA.
+
+#### 4. Pembaruan Versi & Cache Service Worker (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.1` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.1` (`public/sw.js`).
+
 ## [2.4.0] - 2026-09-14
 ### Perbaikan Menyeluruh Sistem Logout & Isolasi Sesi Akun Multi-Peran (Guru & Siswa) (Rule 1, Rule 2, Rule 4, Rule 8, Rule 9, Rule 11 & Rule 15)
 
