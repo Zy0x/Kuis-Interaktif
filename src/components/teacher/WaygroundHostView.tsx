@@ -27,7 +27,8 @@ import {
   FileSpreadsheet,
   VolumeX,
   Volume2,
-  MessageSquare
+  MessageSquare,
+  Sparkles
 } from 'lucide-react';
 
 interface WaygroundHostViewProps {
@@ -354,38 +355,24 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
             </div>
           </div>
 
-          {/* Center: Prominent PIN Code */}
-          <div className="hidden md:flex items-center gap-2 bg-slate-800/90 px-3.5 py-1.5 rounded-2xl border border-slate-700 shadow-inner">
-            <div className="text-right">
-              <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">PIN Ruang</div>
-              <div className="font-mono text-lg font-black tracking-widest text-amber-300">
-                {session.pinCode}
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={handleCopyPin}
-              className="p-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-200 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
-              title="Salin PIN"
-            >
-              {copiedPin ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-            </button>
-          </div>
-
-          {/* Right: Actions */}
+          {/* Right: Actions & Integrated Compact PIN */}
           <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
-            {/* Start Quiz button for teacher led waiting state */}
-            {isTeacherLed && session.status === 'waiting' && (
+            {/* PIN Badge Ringkas & Rapi (Selalu Konsisten) */}
+            <div className="flex items-center gap-1.5 bg-slate-800/90 border border-slate-700/80 px-2.5 sm:px-3 py-1.5 rounded-xl shadow-xs">
+              <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">PIN:</span>
+              <span className="font-mono font-black text-amber-300 tracking-wider text-sm sm:text-base">
+                {session.pinCode}
+              </span>
               <button
                 type="button"
-                onClick={handleStartQuiz}
-                className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black min-h-[44px] flex items-center gap-2 shadow-lg shadow-emerald-950/60 animate-pulse transition-all"
-                title="Mulai Kuis dan Izinkan Seluruh Siswa Menjawab Soal 1"
+                onClick={handleCopyPin}
+                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700 transition-colors min-w-[28px] min-h-[28px] flex items-center justify-center btn-press"
+                title="Salin PIN Ruang"
+                aria-label="Salin PIN Ruang"
               >
-                <Play className="w-4 h-4 fill-white" />
-                <span>Mulai Kuis</span>
+                {copiedPin ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
               </button>
-            )}
+            </div>
 
             {/* Tombol Buka Ruang Chat Kelas Guru */}
             {session.status !== 'finished' && (
@@ -488,87 +475,116 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
           </div>
 
         </div>
-
-        {/* Mobile PIN strip */}
-        <div className="md:hidden mt-2 pt-2 border-t border-slate-800 flex items-center justify-between text-xs">
-          <div className="flex items-center gap-2">
-            <span className="text-slate-400">PIN Masuk Siswa:</span>
-            <span className="font-mono font-black text-amber-300 tracking-wider text-sm">
-              {session.pinCode}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handleCopyPin}
-              className="min-h-[44px] px-3 py-1.5 rounded-xl bg-slate-800 text-slate-200 font-bold text-xs inline-flex items-center gap-1.5 hover:bg-slate-750 transition-colors btn-press"
-            >
-              {copiedPin ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-              <span>{copiedPin ? 'Tersalin' : 'Salin PIN'}</span>
-            </button>
-            <button
-              type="button"
-              onClick={handleCopyLink}
-              className="min-h-[44px] px-3 py-1.5 rounded-xl bg-slate-800 text-slate-200 font-bold text-xs inline-flex items-center gap-1.5 hover:bg-slate-750 transition-colors btn-press"
-            >
-              {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Share2 className="w-3.5 h-3.5" />}
-              <span>{copiedLink ? 'Link Tersalin' : 'Tautan'}</span>
-            </button>
-          </div>
-
-        </div>
       </header>
 
       {/* Metric Quick Strip */}
       <section className="bg-slate-900 border-b border-slate-800 px-3 sm:px-6 lg:px-8 py-2.5">
         <div className="w-full max-w-[2000px] mx-auto grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 text-xs">
-          <div className="bg-slate-800/60 rounded-xl p-2.5 flex items-center gap-2.5 border border-slate-700/50">
-            <div className="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold">
-              <Users className="w-4 h-4" />
-            </div>
-            <div>
-              <div className="text-[10px] text-slate-400 uppercase font-bold">Siswa Terhubung</div>
-              <div className="text-sm sm:text-base font-black text-white">
-                {session.participants.length} <span className="text-xs font-normal text-slate-400">anak</span>
+          {session.status === 'waiting' ? (
+            <>
+              {/* Kartu 1: Siswa Terhubung */}
+              <div className="bg-slate-800/60 rounded-xl p-2.5 flex items-center gap-2.5 border border-slate-700/50">
+                <div className="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold">
+                  <Users className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="text-[10px] text-slate-400 uppercase font-bold">Siswa Terhubung</div>
+                  <div className="text-sm sm:text-base font-black text-white">
+                    {session.participants.length} <span className="text-xs font-normal text-slate-400">anak</span>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
 
-          <div className="bg-slate-800/60 rounded-xl p-2.5 flex items-center gap-2.5 border border-slate-700/50">
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
-              <TrendingUp className="w-4 h-4" />
-            </div>
-            <div>
-              <div className="text-[10px] text-slate-400 uppercase font-bold">Akurasi Kelas</div>
-              <div className="text-sm sm:text-base font-black text-emerald-400">
-                {classStats.accuracy}%
+              {/* Kartu 2: Status Sesi */}
+              <div className="bg-slate-800/60 rounded-xl p-2.5 flex items-center gap-2.5 border border-slate-700/50">
+                <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold">
+                  <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" />
+                </div>
+                <div>
+                  <div className="text-[10px] text-slate-400 uppercase font-bold">Status Ruang</div>
+                  <div className="text-sm sm:text-base font-black text-amber-300">
+                    Ruang Tunggu Siap
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
 
-          <div className="bg-slate-800/60 rounded-xl p-2.5 flex items-center gap-2.5 border border-slate-700/50">
-            <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold">
-              <Trophy className="w-4 h-4" />
-            </div>
-            <div>
-              <div className="text-[10px] text-slate-400 uppercase font-bold">Rata-rata Skor</div>
-              <div className="text-sm sm:text-base font-black text-amber-300">
-                {classStats.avgScore} <span className="text-xs font-normal text-slate-400">/ 100</span>
+              {/* Kartu 3: Total Soal */}
+              <div className="bg-slate-800/60 rounded-xl p-2.5 flex items-center gap-2.5 border border-slate-700/50">
+                <div className="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold">
+                  <BarChart3 className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="text-[10px] text-slate-400 uppercase font-bold">Total Soal Kuis</div>
+                  <div className="text-sm sm:text-base font-black text-indigo-300">
+                    {quiz.questions.length} <span className="text-xs font-normal text-slate-400">butir</span>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
 
-          <div className="bg-slate-800/60 rounded-xl p-2.5 flex items-center gap-2.5 border border-slate-700/50">
-            <div className="w-8 h-8 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold">
-              <CheckCircle2 className="w-4 h-4" />
-            </div>
-            <div>
-              <div className="text-[10px] text-slate-400 uppercase font-bold">Selesai Mengerjakan</div>
-              <div className="text-sm sm:text-base font-black text-purple-300">
-                {classStats.finishedCount} / {session.participants.length}
+              {/* Kartu 4: Format Sesi */}
+              <div className="bg-slate-800/60 rounded-xl p-2.5 flex items-center gap-2.5 border border-slate-700/50">
+                <div className="w-8 h-8 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold">
+                  <Flame className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="text-[10px] text-slate-400 uppercase font-bold">Format Sesi</div>
+                  <div className="text-sm sm:text-base font-black text-purple-300">
+                    {isTeacherLed ? 'Dipandu Guru' : 'Mandiri'}
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
+            </>
+          ) : (
+            <>
+              <div className="bg-slate-800/60 rounded-xl p-2.5 flex items-center gap-2.5 border border-slate-700/50">
+                <div className="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold">
+                  <Users className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="text-[10px] text-slate-400 uppercase font-bold">Siswa Terhubung</div>
+                  <div className="text-sm sm:text-base font-black text-white">
+                    {session.participants.length} <span className="text-xs font-normal text-slate-400">anak</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-slate-800/60 rounded-xl p-2.5 flex items-center gap-2.5 border border-slate-700/50">
+                <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
+                  <TrendingUp className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="text-[10px] text-slate-400 uppercase font-bold">Akurasi Kelas</div>
+                  <div className="text-sm sm:text-base font-black text-emerald-400">
+                    {classStats.accuracy}%
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-slate-800/60 rounded-xl p-2.5 flex items-center gap-2.5 border border-slate-700/50">
+                <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold">
+                  <Trophy className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="text-[10px] text-slate-400 uppercase font-bold">Rata-rata Skor</div>
+                  <div className="text-sm sm:text-base font-black text-amber-300">
+                    {classStats.avgScore} <span className="text-xs font-normal text-slate-400">/ 100</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-slate-800/60 rounded-xl p-2.5 flex items-center gap-2.5 border border-slate-700/50">
+                <div className="w-8 h-8 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold">
+                  <CheckCircle2 className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="text-[10px] text-slate-400 uppercase font-bold">Selesai Mengerjakan</div>
+                  <div className="text-sm sm:text-base font-black text-purple-300">
+                    {classStats.finishedCount} / {session.participants.length}
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </section>
 
@@ -631,33 +647,79 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
         {/* TAB 1: LEADERBOARD LIVE */}
         {activeTab === 'leaderboard' && (
           <div className="space-y-4">
-            {/* Teacher Led: Waiting Room Status Banner */}
-            {isTeacherLed && session.status === 'waiting' && (
-              <div className="bg-gradient-to-r from-blue-950/60 via-indigo-950/60 to-slate-900 border border-blue-500/50 rounded-3xl p-5 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-blue-500/20 border border-blue-500/30 text-blue-400 flex items-center justify-center text-2xl animate-pulse flex-shrink-0">
-                    ⏳
+            {/* Teacher Led: Waiting Room Hero Status & PIN Centerpiece */}
+            {session.status === 'waiting' && (
+              <div className="bg-gradient-to-br from-slate-900 via-blue-950/40 to-slate-900 border border-blue-500/40 rounded-3xl p-5 sm:p-6 shadow-2xl space-y-4">
+                <div className="flex flex-col xl:flex-row items-center justify-between gap-5">
+                  
+                  {/* Kiri: Status Ruang Tunggu & Keterangan */}
+                  <div className="flex items-center gap-4 w-full xl:w-auto">
+                    <div className="w-14 h-14 rounded-2xl bg-blue-500/20 border border-blue-500/40 text-blue-400 flex items-center justify-center text-3xl animate-pulse flex-shrink-0 shadow-inner">
+                      ⏳
+                    </div>
+                    <div className="space-y-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="text-base sm:text-lg font-black text-white tracking-wide">
+                          Ruang Tunggu Kelas Terbuka
+                        </h4>
+                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-black text-xs flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                          <span>{session.participants.length} Siswa Terhubung</span>
+                        </span>
+                      </div>
+                      <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                        Minta siswa membuka aplikasi dan memasukkan PIN di bawah, atau bagikan tautan kuis langsung:
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="text-base sm:text-lg font-black text-white flex items-center gap-2">
-                      <span>Ruang Tunggu Kelas Aktif</span>
-                      <span className="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-xs border border-blue-500/40">
-                        {session.participants.length} Siswa Terhubung
-                      </span>
-                    </h4>
-                    <p className="text-xs sm:text-sm text-slate-300 mt-0.5">
-                      Siswa sedang menunggu di perangkat mereka. Soal belum dibuka hingga Anda menekan tombol di bawah.
-                    </p>
+
+                  {/* Tengah: Box PIN Ruang Kelas yang Sangat Jelas & Konsisten */}
+                  <div className="flex items-center gap-3 bg-slate-950/90 border-2 border-amber-400/60 rounded-2xl px-4 sm:px-5 py-2.5 sm:py-3 shadow-lg shadow-amber-500/10 flex-shrink-0 w-full sm:w-auto justify-between sm:justify-start">
+                    <div>
+                      <div className="text-[10px] uppercase font-black text-amber-400/90 tracking-widest flex items-center gap-1">
+                        <Sparkles className="w-3 h-3 text-amber-400" />
+                        <span>PIN Ruang Kelas</span>
+                      </div>
+                      <div className="font-mono text-2xl sm:text-3xl font-black text-amber-300 tracking-widest select-all">
+                        {session.pinCode}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 border-l border-slate-800 pl-3">
+                      <button
+                        type="button"
+                        onClick={handleCopyPin}
+                        className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold flex items-center gap-1.5 transition-colors border border-slate-700 min-h-[44px] btn-press"
+                        title="Salin PIN"
+                      >
+                        {copiedPin ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-amber-400" />}
+                        <span className="hidden sm:inline">{copiedPin ? 'Tersalin' : 'Salin PIN'}</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleCopyLink}
+                        className="px-3 py-2 rounded-xl bg-blue-600/30 hover:bg-blue-600/50 text-blue-200 text-xs font-bold flex items-center gap-1.5 transition-colors border border-blue-500/40 min-h-[44px] btn-press"
+                        title="Bagikan Tautan Kuis"
+                      >
+                        {copiedLink ? <Check className="w-4 h-4 text-emerald-400" /> : <Share2 className="w-4 h-4 text-blue-400" />}
+                        <span className="hidden sm:inline">{copiedLink ? 'Link Tersalin' : 'Tautan'}</span>
+                      </button>
+                    </div>
                   </div>
+
+                  {/* Kanan: Tombol Hero Mulai Kuis */}
+                  {isTeacherLed && (
+                    <button
+                      type="button"
+                      onClick={handleStartQuiz}
+                      className="w-full xl:w-auto px-6 py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm shadow-xl shadow-emerald-950/60 flex items-center justify-center gap-2.5 transition-all transform active:scale-95 flex-shrink-0 min-h-[48px] btn-press animate-pulse"
+                    >
+                      <Play className="w-5 h-5 fill-white" />
+                      <span>Mulai Kuis Sekarang</span>
+                    </button>
+                  )}
+
                 </div>
-                <button
-                  type="button"
-                  onClick={handleStartQuiz}
-                  className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm shadow-xl shadow-emerald-950/60 flex items-center justify-center gap-2 transition-all transform active:scale-95 flex-shrink-0 min-h-[44px]"
-                >
-                  <Play className="w-5 h-5 fill-white" />
-                  <span>Mulai Kuis Sekarang</span>
-                </button>
               </div>
             )}
 
@@ -722,40 +784,27 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
             )}
 
             {session.participants.length === 0 ? (
-              <div className="bg-slate-900 rounded-3xl border border-slate-800 p-8 sm:p-12 text-center max-w-xl mx-auto space-y-5 shadow-2xl">
-                <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-3xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-4xl animate-bounce">
-                  📱
+              <div className="bg-slate-900/60 rounded-3xl border border-dashed border-slate-750 p-8 sm:p-10 text-center max-w-lg mx-auto space-y-4 shadow-xl">
+                <div className="w-14 h-14 mx-auto rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center text-3xl">
+                  👥
                 </div>
-                <div className="space-y-2">
-                  <h3 className="text-lg sm:text-xl font-black text-white">
-                    Menunggu Siswa Masuk...
-                  </h3>
-                  <p className="text-xs sm:text-sm text-slate-400 max-w-sm mx-auto">
-                    Minta siswa membuka aplikasi di HP/tablet mereka dan masukkan kode PIN berikut:
+                <div className="space-y-1">
+                  <h4 className="text-base font-black text-white">
+                    Belum Ada Siswa Bergabung
+                  </h4>
+                  <p className="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
+                    Siswa yang memasukkan PIN di atas akan langsung muncul di daftar ini secara otomatis.
                   </p>
-                  <div className="inline-block px-6 py-3 rounded-2xl bg-slate-800 border border-slate-700 font-mono text-3xl sm:text-4xl font-black text-amber-300 tracking-widest my-2 shadow-inner">
-                    {session.pinCode}
-                  </div>
                 </div>
-
-                <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
-                  <button
-                    type="button"
-                    onClick={handleCopyLink}
-                    className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-1.5 transition-colors min-h-[44px]"
-                  >
-                    <Share2 className="w-4 h-4" />
-                    <span>{copiedLink ? 'Tautan Tersalin!' : 'Bagikan Tautan Kuis'}</span>
-                  </button>
-
+                <div className="pt-2">
                   <button
                     type="button"
                     onClick={handleSimulateStudents}
                     disabled={isSimulating}
-                    className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-bold flex items-center gap-1.5 transition-colors min-h-[44px]"
+                    className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-750 border border-slate-700 text-indigo-300 text-xs font-bold inline-flex items-center gap-2 transition-colors min-h-[44px] btn-press disabled:opacity-50"
                   >
-                    <UserPlus className="w-4 h-4 text-indigo-400" />
-                    <span>{isSimulating ? 'Memuat Simulasi...' : 'Coba Masukkan Siswa Simulasi'}</span>
+                    <UserPlus className="w-4 h-4" />
+                    <span>{isSimulating ? 'Memuat Simulasi...' : 'Uji Coba Masukkan 3 Siswa Simulasi'}</span>
                   </button>
                 </div>
               </div>

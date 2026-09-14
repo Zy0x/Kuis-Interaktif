@@ -1,6 +1,31 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.95] - 2026-09-14
+### Standardisasi & Harmonisasi Tata Letak Ruang Tunggu Host: Hero Card Terpadu PIN Kelas, Integrasi Kompak Header, dan Metrik Kontekstual (Rule 1, Rule 2, Rule 4 & Rule 8)
+
+#### 1. Hero Card Terpadu Status & PIN Ruang Tunggu Guru (WaygroundHostView.tsx) (Rule 1, Rule 2 & Rule 4)
+- **Eliminasi Inkonsistensi Tata Letak**:
+  - Menggantikan tata letak lama yang terpecah dan mudah hilang (di mana kotak PIN besar di tengah mendadak lenyap begitu ada 1 siswa yang masuk) dengan satu **Hero Waiting Room Card** permanen dan konsisten.
+  - Kartu Hero selalu menampilkan:
+    - Status ruang tunggu kelas terbuka dengan animasi denyut (`⏳`) dan hitungan siswa terhubung secara langsung.
+    - Box PIN Ruang Kelas yang sangat menonjol berukuran besar (`text-2xl sm:text-3xl font-mono font-black text-amber-300`) dengan border emas berlapis yang mudah terbaca dari jauh maupun saat diproyeksikan ke layar proyektor kelas.
+    - Tombol aksi ergonomis minimal 44×44 px: **Salin PIN** dan **Bagikan Tautan Kuis** langsung berdampingan dengan angka PIN.
+    - Tombol utama **Mulai Kuis Sekarang** (`bg-emerald-600`) berukuran penuh dan nyaman dijangkau.
+  - Pada area daftar peserta di bawahnya, jika belum ada siswa yang masuk ditampilkan kartu placeholder rapi yang tidak lagi menduplikasi PIN secara canggung, dan daftar nama siswa akan mengalir lancar begitu siswa bergabung.
+
+#### 2. Penataan Ulang Header Host & Eliminasi Elemen Mengambang Canggung (Rule 1 & Rule 2)
+- Mengintegrasikan PIN Pill ringkas ke dalam grup aksi kanan header navbar sehingga posisi seluruh elemen header simetris, stabil, dan tidak lagi terdorong canggung ke kiri akibat flexbox `justify-between`.
+- Menghilangkan duplikasi tombol "Mulai Kuis" di header navbar saat status ruang tunggu karena sudah terakomodasi secara megah pada kartu utama di bawahnya.
+- Menghilangkan strip PIN mobile berulang di bawah navbar karena PIN Pill di header kini sudah sepenuhnya responsif di ponsel maupun desktop.
+
+#### 3. Metrik Kontekstual Sesi (Quick Strip) (Rule 2 & Rule 4)
+- Menyesuaikan 4 kartu metrik pada fase ruang tunggu agar menampilkan informasi yang relevan (*Siswa Terhubung*, *Status Ruang: Siap*, *Total Soal Kuis*, dan *Format Sesi*) daripada menampilkan statistik 0% yang belum aktif.
+
+#### 4. Sinkronisasi Versi & Service Worker Cache (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.3.95` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.3.95` (`public/sw.js`).
+
 ## [2.3.94] - 2026-09-14
 ### Redesain Modern Antarmuka Obrolan Kelas: Diferensiasi Visual Elegan 3 Peran (Guru, Diri Sendiri, dan Teman Sekelas) (Rule 1, Rule 2, Rule 4 & Rule 8)
 

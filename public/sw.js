@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kuis-sd-seru-v2.3.94';
+const CACHE_NAME = 'kuis-sd-seru-v2.3.95';
 
 const STATIC_ASSETS = [
   '/',
