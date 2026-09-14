@@ -1,5 +1,21 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
+## [2.4.10] - 2026-09-14
+### Eliminasi Tombol Reaksi Mengambang Redundan & Optimalisasi Kerapian Antarmuka Ruang Sesi (Rule 1, Rule 2, Rule 4, Rule 5, Rule 7 & Rule 15)
+
+#### 1. Eliminasi Tombol Reaksi Mengambang (*Floating Reaction Button*) Redundan
+- **Pembersihan Antarmuka Host Guru (`WaygroundHostView.tsx`)**: Menghilangkan tombol reaksi mengambang (*floating reaction action button*) yang sebelumnya muncul di pojok kanan bawah dan bertabrakan dengan papan peringkat / daftar siswa live. Host tetap memiliki baris tombol reaksi lengkap dan interaktif (*QuizizzReactionButtonRow*) yang tertata rapi di panel kendali utama.
+- **Penyelarasan Ruang Tunggu Siswa (`StudentWaitingRoom.tsx`)**: Menghapus tombol reaksi mengambang redundan dari ruang tunggu murid, menjaga antarmuka tetap bersih, lapang, dan fokus pada baris reaksi utama serta daftar teman sekelas.
+- **Penyelarasan Lounge Jeda Soal (`InterQuestionWaitingLounge.tsx`)**: Menghapus tombol reaksi melayang di lounge jeda soal murid karena sudah dilengkapi dengan panel reaksi interaktif horizontal dan laci obrolan kelas.
+- **Preservasi Tombol Reaksi Eksklusif di Arena Kuis (`QuizArena.tsx`)**: Tetap mempertahankan tombol reaksi melayang pada layar pengerjaan soal kuis siswa (`QuizArena.tsx`) sebagai sarana interaksi cepat tanpa mengorbankan ruang baca soal dan pilihan jawaban.
+
+#### 2. Peningkatan Estetika & Ergonomi Mobile (Rule 1 & Rule 2)
+- Menghilangkan tumpang-tindih (*overlap*) elemen antarmuka di perangkat mobile berlayar sempit dan tablet.
+- Memastikan animasi reaksi langsung (*QuizizzReactionOverlay*) tetap aktif secara visual di seluruh ruang sesi tanpa terhalang tombol ganda.
+
+#### 3. Pembaruan Versi & PWA Service Worker (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.10` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.10` (`public/sw.js`).
 
 ## [2.4.9] - 2026-09-14
 ### Perilaku Tombol Enter Murni Baris Baru & Pengiriman Pesan Eksklusif Tombol Kirim di Obrolan Kelas (Rule 1, Rule 2, Rule 4, Rule 5, Rule 7 & Rule 15)

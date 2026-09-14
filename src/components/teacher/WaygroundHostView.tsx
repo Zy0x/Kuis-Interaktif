@@ -5,7 +5,6 @@ import { copyTextToClipboard } from '../../lib/aiQuestionParser';
 import { AVATAR_MAP } from '../../data/seedQuizzes';
 import { QuizizzReactionOverlay } from '../common/QuizizzReactionOverlay';
 import { QuizizzReactionButtonRow } from '../common/QuizizzReactionButtonRow';
-import { FloatingReactionButton } from '../common/FloatingReactionButton';
 import { ZoomChatToast } from '../common/ZoomChatToast';
 import { TeacherChatDrawer } from '../chat/TeacherChatDrawer';
 import { 
@@ -1160,16 +1159,6 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
         <QuizizzReactionOverlay sessionId={session.id} reactions={session.reactions} />
       )}
 
-      {/* Floating Quick Reaction Button for Host (Mobile & Desktop) */}
-      {session.status !== 'finished' && (
-        <FloatingReactionButton
-          sessionId={session.id}
-          senderName={session.teacherName || 'Bapak/Ibu Guru'}
-          isTeacher={true}
-          playClick={playClick}
-          positionClassName="bottom-20 right-4 sm:bottom-24 sm:right-6"
-        />
-      )}
 
       {/* Popup Notifikasi Obrolan Masuk Ala Zoom / Google Meet */}
       <ZoomChatToast

@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { QuizizzReactionOverlay } from '../common/QuizizzReactionOverlay';
 import { QuizizzReactionButtonRow } from '../common/QuizizzReactionButtonRow';
-import { FloatingReactionButton } from '../common/FloatingReactionButton';
+
 
 export interface InterQuestionWaitingLoungeProps {
   session: QuizSession;
@@ -477,15 +477,6 @@ export const InterQuestionWaitingLounge: React.FC<InterQuestionWaitingLoungeProp
 
       </div>
 
-      {/* Floating Reaction Button untuk Murid di Jeda Soal */}
-      <FloatingReactionButton
-        sessionId={session.id}
-        senderName={studentName}
-        avatarId={avatarId}
-        isTeacher={false}
-        playClick={playClick}
-        positionClassName="bottom-20 right-3 sm:bottom-24 sm:right-6"
-      />
     </div>
   );
 };
