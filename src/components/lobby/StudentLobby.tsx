@@ -463,16 +463,27 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
     }
   }, [isInWaitingRoom, liveSession?.status]);
 
-  // Jika dipulihkan dari refresh dan peserta belum terdaftar di sesi, daftarkan ulang otomatis
+  // Jika dipulihkan dari refresh dan peserta belum terdaftar di sesi, daftarkan ulang otomatis dengan token perangkat
   useEffect(() => {
     if (isInWaitingRoom && liveSession && savedFinalName && !isSessionEnded) {
+      const storedToken = DataManager.getSessionParticipant(liveSession.id);
+      const participantId = storedToken?.id || DataManager.getOrCreateSessionParticipantId(liveSession.id);
       const alreadyJoined = (liveSession.participants || []).some(
-        (p) => p.name.trim().toLowerCase() === savedFinalName.trim().toLowerCase()
+        (p) => p.id === participantId
       );
       if (!alreadyJoined) {
         DataManager.addOrUpdateSessionParticipant(liveSession.id, {
+          id: participantId,
           name: savedFinalName,
           avatarId: selectedAvatar,
+        }).then((res) => {
+          if (res?.name && res.name !== savedFinalName) {
+            setSavedFinalName(res.name);
+            DataManager.savePlayerProfile({
+              nickname: res.name,
+              avatarId: selectedAvatar,
+            });
+          }
         }).catch(() => {});
       }
     }
@@ -484,27 +495,36 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
     playClick();
     const cleanNick = nickname.trim() || (isCustom ? profile.nickname : 'Siswa Pintar');
     const finalName = rollNumber.trim() ? `${rollNumber.trim()}. ${cleanNick}` : cleanNick;
-    setSavedFinalName(finalName);
-    DataManager.savePlayerProfile({
-      nickname: finalName,
-      avatarId: selectedAvatar,
-    });
+    
+    let resolvedParticipantName = finalName;
 
     if (liveSession) {
       try {
-        await DataManager.addOrUpdateSessionParticipant(liveSession.id, {
+        const storedToken = DataManager.getSessionParticipant(liveSession.id);
+        const participantId = storedToken?.id || DataManager.getOrCreateSessionParticipantId(liveSession.id);
+        const registered = await DataManager.addOrUpdateSessionParticipant(liveSession.id, {
+          id: participantId,
           name: finalName,
           avatarId: selectedAvatar,
         });
+        if (registered?.name) {
+          resolvedParticipantName = registered.name;
+        }
       } catch (err) {
         console.warn('Failed to add participant in lobby:', err);
       }
     }
 
+    setSavedFinalName(resolvedParticipantName);
+    DataManager.savePlayerProfile({
+      nickname: resolvedParticipantName,
+      avatarId: selectedAvatar,
+    });
+
     if (isTeacherLedWaiting) {
       const payload = {
         isInWaitingRoom: true,
-        studentName: finalName,
+        studentName: resolvedParticipantName,
         avatarId: selectedAvatar,
         timestamp: Date.now(),
       };
@@ -524,12 +544,14 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
   const teacherName = activeSession?.teacherName || quiz.creatorName || 'Bapak/Ibu Guru';
 
   if (isInWaitingRoom && liveSession && !isSessionEnded) {
+    const currentParticipantId = DataManager.getSessionParticipant(liveSession.id)?.id;
     return (
       <StudentWaitingRoom
         quiz={quiz}
         session={liveSession}
         studentName={savedFinalName || nickname || 'Siswa Pintar'}
         avatarId={selectedAvatar}
+        studentParticipantId={currentParticipantId}
         onStartQuiz={handleStartQuizFromWaiting}
         onBackToHome={handleBackToLobbyFromWaiting}
         playClick={playClick}

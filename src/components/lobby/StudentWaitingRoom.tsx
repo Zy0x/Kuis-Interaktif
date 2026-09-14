@@ -23,6 +23,7 @@ export interface StudentWaitingRoomProps {
   session: QuizSession;
   studentName: string;
   avatarId: string;
+  studentParticipantId?: string;
   onStartQuiz: () => void;
   onBackToHome: () => void;
   playClick: () => void;
@@ -35,6 +36,7 @@ export const StudentWaitingRoom: React.FC<StudentWaitingRoomProps> = ({
   session: initialSession,
   studentName,
   avatarId,
+  studentParticipantId,
   onStartQuiz,
   onBackToHome,
   playClick,
@@ -221,6 +223,11 @@ export const StudentWaitingRoom: React.FC<StudentWaitingRoomProps> = ({
                 <h1 className="text-lg sm:text-2xl lg:text-3xl font-black text-slate-900 dark:text-white tracking-tight leading-snug">
                   Kamu Sudah Terdaftar, {studentName}! 🎉
                 </h1>
+                {studentName.match(/\(\d+\)$/) && (
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 text-[11px] font-semibold">
+                    <span>💡 Nama disesuaikan menjadi <strong>{studentName}</strong> agar unik di papan nilai</span>
+                  </div>
+                )}
                 <div className="flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2 flex-wrap text-xs">
                   <span className="px-2.5 py-1 rounded-xl bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 font-bold">
                     {quiz.title}
@@ -314,7 +321,7 @@ export const StudentWaitingRoom: React.FC<StudentWaitingRoomProps> = ({
               <div className="grid grid-cols-2 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 3xl:grid-cols-8 gap-3 sm:gap-4">
                 {participants.map((p) => {
                   const pAvatar = AVATAR_MAP[p.avatarId] || '⭐';
-                  const isMe = p.name.trim().toLowerCase() === studentName.trim().toLowerCase();
+                  const isMe = (studentParticipantId && p.id === studentParticipantId) || p.name.trim().toLowerCase() === studentName.trim().toLowerCase();
                   return (
                     <div
                       key={p.id}

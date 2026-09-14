@@ -189,8 +189,10 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
           const targetSessionId = activeSessionId || liveSession?.id;
           if (targetSessionId) {
             const profile = DataManager.getPlayerProfile();
+            const storedToken = DataManager.getSessionParticipant(targetSessionId);
             DataManager.addOrUpdateSessionParticipant(targetSessionId, {
-              name: profile.nickname || 'Siswa',
+              id: storedToken?.id,
+              name: storedToken?.name || profile.nickname || 'Siswa',
               avatarId: profile.avatarId || 'lion',
               tabSwitchCount: nextCount,
             }).catch(() => {});
@@ -701,8 +703,10 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
             };
           });
 
+          const storedToken = activeSessionId ? DataManager.getSessionParticipant(activeSessionId) : null;
           DataManager.addOrUpdateSessionParticipant(activeSessionId, {
-            name: profile.nickname || 'Siswa',
+            id: storedToken?.id,
+            name: storedToken?.name || profile.nickname || 'Siswa',
             avatarId: profile.avatarId || 'lion',
             currentQuestionIndex: currentIndex + 1,
             totalQuestions: activeQuestions.length,
@@ -798,8 +802,10 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
           const incorrectCount = answersList.length - correctCount;
           const score = Math.round((correctCount / activeQuestions.length) * 100);
           const stars = score >= 85 ? 3 : score >= 60 ? 2 : score > 0 ? 1 : 0;
+          const storedToken = activeSessionId ? DataManager.getSessionParticipant(activeSessionId) : null;
           DataManager.addOrUpdateSessionParticipant(activeSessionId, {
-            name: profile.nickname || 'Siswa',
+            id: storedToken?.id,
+            name: storedToken?.name || profile.nickname || 'Siswa',
             avatarId: profile.avatarId || 'lion',
             currentQuestionIndex: activeQuestions.length,
             totalQuestions: activeQuestions.length,
@@ -2253,7 +2259,11 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
           }
           questionIndex={currentIndex}
           totalQuestions={activeQuestions.length}
-          studentName={DataManager.getPlayerProfile().nickname || 'Siswa Pintar'}
+          studentName={
+            (activeSessionId ? DataManager.getSessionParticipant(activeSessionId)?.name : null) ||
+            DataManager.getPlayerProfile().nickname ||
+            'Siswa Pintar'
+          }
           avatarId={DataManager.getPlayerProfile().avatarId || 'lion'}
           earnedStars={answersList.filter((a) => a.isCorrect).length}
           earnedScore={Math.round((answersList.filter((a) => a.isCorrect).length / activeQuestions.length) * 100)}

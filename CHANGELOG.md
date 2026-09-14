@@ -1,5 +1,24 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
+
+## [2.4.14] - 2026-09-14
+### Token Perangkat Unik & Smart Auto-Disambiguation Nama Peserta Ala Standard Quizizz & Kahoot (Rule 1, Rule 2, Rule 4, Rule 7, Rule 9 & Rule 15)
+
+#### 1. Token Peserta Sesi Berbasis Perangkat (Device Session Token)
+- **Manajemen Sesi Perangkat Unik (`supabaseClient.ts`)**: Menerapkan token peserta sesi unik per perangkat/tab (`part_${Date.now()}_...`) yang tersimpan aman di penyimpanan sesi lokal. Mencegah timpaan data antar-perangkat saat beberapa pengguna tamu masuk dengan nama panggilan yang persis sama di kuis terbuka/publik.
+- **Dukungan Sambung Ulang (*Reconnect*) Mandiri**: Perangkat yang memuat ulang (*refresh*) halaman atau terputus sejenak akan otomatis menyambung kembali menggunakan token sesi yang sama tanpa membuat entri baru atau mengubah nama yang sudah diperoleh.
+
+#### 2. Smart Auto-Disambiguation Nama Ala Standar Quizizz & Kahoot
+- **Penomoran Otomatis Cerdas (`supabaseClient.ts`)**: Ketika pengguna tamu baru masuk dengan nama yang sudah terdaftar oleh perangkat lain dalam sesi yang sama (misal "Budi"), sistem secara otomatis menyesuaikan nama menjadi berakhiran urut ramah pengguna seperti "Budi (2)", "Budi (3)", dst.
+- **Papan Skor & Peringkat Mandiri**: Setiap peserta dengan nama yang disesuaikan memiliki catatan nilai, progres jawaban, dan peringkatnya sendiri tanpa ada benturan ataupun penggabungan nilai yang tidak disengaja.
+
+#### 3. Penanda Jelas & Komunikatif di Ruang Tunggu dan Arena Kuis
+- **Ruang Tunggu Siswa (`StudentWaitingRoom.tsx`)**: Menambahkan penanda identifikasi aktif badge "Kamu" serta notifikasi ramah bila nama disesuaikan secara otomatis agar unik di papan nilai kelas.
+- **Arena & Ruang Jeda Antar-Soal (`QuizArena.tsx`)**: Menyelaraskan sinkronisasi jawaban, deteksi pergantian tab (anti-cheat), dan lounge tunggu antar-soal menggunakan nama unik serta token perangkat yang valid.
+
+#### 4. Pembaruan Versi & PWA Service Worker (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.14` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.14` (`public/sw.js`).
 ## [2.4.13] - 2026-09-14
 ### Konfirmasi Ganti Soal Guru & Hitung Mundur 3 Detik Mode Dipandu Guru (Rule 1, Rule 2, Rule 5, Rule 7 & Rule 15)
 

@@ -670,11 +670,21 @@ export const App: React.FC = () => {
           onStartQuiz={async () => {
             if (activeSession) {
               const profile = DataManager.getPlayerProfile();
+              const storedToken = DataManager.getSessionParticipant(activeSession.id);
+              const participantId = storedToken?.id || DataManager.getOrCreateSessionParticipantId(activeSession.id);
+              const participantName = storedToken?.name || profile.nickname || 'Siswa Pintar';
               try {
-                await DataManager.addOrUpdateSessionParticipant(activeSession.id, {
-                  name: profile.nickname || 'Siswa Pintar',
+                const reg = await DataManager.addOrUpdateSessionParticipant(activeSession.id, {
+                  id: participantId,
+                  name: participantName,
                   avatarId: profile.avatarId || 'lion',
                 });
+                if (reg?.name && reg.name !== profile.nickname) {
+                  DataManager.savePlayerProfile({
+                    nickname: reg.name,
+                    avatarId: profile.avatarId || 'lion',
+                  });
+                }
               } catch (err) {
                 console.warn('Gagal mendaftarkan peserta ke sesi kuis:', err);
               }

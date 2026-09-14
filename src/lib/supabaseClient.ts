@@ -2428,7 +2428,8 @@ export const DataManager = {
   async recordSessionAnswer(
     sessionId: string,
     participantName: string,
-    answer: QuizSessionParticipantAnswer
+    answer: QuizSessionParticipantAnswer,
+    participantId?: string
   ): Promise<QuizSessionParticipant | null> {
     const existing = this.getActiveSessions();
     const sIdx = existing.findIndex((s) => s.id === sessionId);
@@ -2436,7 +2437,7 @@ export const DataManager = {
 
     const session = existing[sIdx];
     const pIdx = session.participants.findIndex(
-      (p) => p.name.trim().toLowerCase() === participantName.trim().toLowerCase()
+      (p) => (participantId && p.id === participantId) || p.name.trim().toLowerCase() === participantName.trim().toLowerCase()
     );
     if (pIdx === -1) return null;
 
@@ -3112,6 +3113,32 @@ export const DataManager = {
     }
   },
 
+  // Manajemen Token Perangkat & Nama Peserta Sesi (Mencegah Tabrakan Nama & Duplikasi Perangkat ala Quizizz & Kahoot)
+  getSessionParticipant(sessionId: string): { id: string; name: string } | null {
+    try {
+      const raw = sessionStorage.getItem(`kuis_part_sess_${sessionId}`);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed?.id) return parsed;
+      }
+    } catch {}
+    return null;
+  },
+
+  saveSessionParticipant(sessionId: string, participant: { id: string; name: string }) {
+    try {
+      sessionStorage.setItem(`kuis_part_sess_${sessionId}`, JSON.stringify(participant));
+    } catch {}
+  },
+
+  getOrCreateSessionParticipantId(sessionId: string): string {
+    const existing = this.getSessionParticipant(sessionId);
+    if (existing?.id) return existing.id;
+    const newId = 'part_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+    this.saveSessionParticipant(sessionId, { id: newId, name: '' });
+    return newId;
+  },
+
   async addOrUpdateSessionParticipant(
     sessionId: string,
     participant: Partial<QuizSessionParticipant> & { name: string; avatarId: string }
@@ -3132,31 +3159,64 @@ export const DataManager = {
 
     const session = sIdx !== -1 ? existing[sIdx] : null;
     const now = new Date().toISOString();
-    const partId = participant.id || 'part_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
+    
+    // Dapatkan token sesi tersimpan di sessionStorage perangkat
+    const storedToken = this.getSessionParticipant(sessionId);
+    const partId = participant.id || storedToken?.id || ('part_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9));
 
     let finalParticipant: QuizSessionParticipant;
 
     if (session) {
-      const pIdx = session.participants.findIndex(
-        (p) => (participant.id && p.id === participant.id) || p.name.trim().toLowerCase() === participant.name.trim().toLowerCase()
-      );
+      // 1. Cari berdasarkan ID peserta terlebih dahulu (Prioritas Utama untuk Reconnect / Update Skor)
+      let pIdx = session.participants.findIndex((p) => p.id === partId);
+
+      // Jika tidak ditemukan lewat ID, cek apakah nama yang tersimpan di sessionStorage perangkat cocok
+      if (pIdx === -1 && storedToken?.name) {
+        pIdx = session.participants.findIndex((p) => p.name.trim().toLowerCase() === storedToken.name.trim().toLowerCase());
+      }
 
       if (pIdx >= 0) {
-        // Update existing participant
+        // Peserta sudah terdaftar pada perangkat ini -> Update progres peserta yang sudah ada
         finalParticipant = {
           ...session.participants[pIdx],
           ...participant,
+          id: session.participants[pIdx].id || partId,
+          // Pertahankan nama unik yang sudah terdaftar di sesi
+          name: session.participants[pIdx].name,
           tabSwitchCount: participant.tabSwitchCount !== undefined 
             ? participant.tabSwitchCount 
             : session.participants[pIdx].tabSwitchCount,
           lastActiveAt: now,
         };
         session.participants[pIdx] = finalParticipant;
+        this.saveSessionParticipant(sessionId, { id: finalParticipant.id, name: finalParticipant.name });
       } else {
+        // 2. Peserta baru mendaftar pada perangkat ini -> Deteksi tabrakan nama (Smart Disambiguation ala Quizizz / Kahoot)
+        const baseName = participant.name.trim();
+        let resolvedName = baseName;
+
+        // Periksa apakah nama sudah digunakan oleh perangkat/peserta lain di sesi ini
+        const isNameTaken = (nameToCheck: string) =>
+          session.participants.some(
+            (p) => p.name.trim().toLowerCase() === nameToCheck.trim().toLowerCase() && p.id !== partId
+          );
+
+        if (isNameTaken(resolvedName)) {
+          // Tambahkan suffix penomoran otomatis: "Budi (2)", "Budi (3)", dst.
+          let counter = 2;
+          while (isNameTaken(`${baseName} (${counter})`)) {
+            counter++;
+          }
+          resolvedName = `${baseName} (${counter})`;
+        }
+
+        // Simpan ke token sesi perangkat
+        this.saveSessionParticipant(sessionId, { id: partId, name: resolvedName });
+
         // Insert new participant
         finalParticipant = {
           id: partId,
-          name: participant.name,
+          name: resolvedName,
           avatarId: participant.avatarId || 'lion',
           currentQuestionIndex: participant.currentQuestionIndex ?? 0,
           totalQuestions: session.totalQuestions,
@@ -3184,9 +3244,11 @@ export const DataManager = {
       broadcastSessionUpdate(existing[sIdx]);
     } else {
       // Fallback jika perangkat belum memiliki cache sesi di localStorage
+      const storedName = storedToken?.name || participant.name;
+      this.saveSessionParticipant(sessionId, { id: partId, name: storedName });
       finalParticipant = {
         id: partId,
-        name: participant.name,
+        name: storedName,
         avatarId: participant.avatarId || 'lion',
         currentQuestionIndex: participant.currentQuestionIndex ?? 0,
         totalQuestions: participant.totalQuestions || 1,
@@ -3238,7 +3300,6 @@ export const DataManager = {
     } else {
       offlineQueue.enqueue('session_participant_upsert', partPayload, 'session_id, student_name');
     }
-
 
     return finalParticipant;
   },
