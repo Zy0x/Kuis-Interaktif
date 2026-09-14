@@ -120,11 +120,13 @@ export const App: React.FC = () => {
   useEffect(() => {
     const pinToMatch = (initialNav.pin || '').trim().toUpperCase();
     if (initialNav.quizId) {
-      DataManager.getQuizById(initialNav.quizId).then((q) => {
+      DataManager.getQuizById(initialNav.quizId).then(async (q) => {
         if (q) {
-          const session = (pinToMatch ? DataManager.getActiveSessionByPin(pinToMatch) : null) || 
+          const session = (pinToMatch ? await DataManager.fetchActiveSessionByPin(pinToMatch) : null) || 
+            (pinToMatch ? DataManager.getActiveSessionByPin(pinToMatch) : null) || 
+            await DataManager.fetchActiveSessionByQuizId(q.id) ||
             DataManager.getActiveSessionByQuizId(q.id) || 
-            (q.pinCode ? DataManager.getActiveSessionByPin(q.pinCode) : null);
+            (q.pinCode ? await DataManager.fetchActiveSessionByPin(q.pinCode) : null);
 
           // PROTEKSI KUIS PRIVAT: Jika kuis privat, tolak akses langsung tanpa sesi kelas live atau kepemilikan guru
           const teacher = DataManager.getTeacherProfile();
@@ -326,8 +328,8 @@ export const App: React.FC = () => {
   };
 
   const handleEnterPinLobby = (quiz: Quiz, session?: QuizSession | null) => {
-    const pin = quiz.pinCode || '';
-    const resolvedSession = session || DataManager.getActiveSessionByPin(pin) || DataManager.getActiveSessionByQuizId(quiz.id);
+    const pin = session?.pinCode || quiz.pinCode || '';
+    const resolvedSession = session || (pin ? DataManager.getActiveSessionByPin(pin) : null) || DataManager.getActiveSessionByQuizId(quiz.id);
     const settings = resolveSettings(resolvedSession, quiz);
 
     setActiveSession(resolvedSession || null);
@@ -335,7 +337,7 @@ export const App: React.FC = () => {
     setActiveGameMode(settings.mode);
     setActiveQuiz(quiz);
     setCurrentScreen('student-lobby');
-    saveNavigationState({ screen: 'student-lobby', quiz, replace: false });
+    saveNavigationState({ screen: 'student-lobby', quiz, pin: resolvedSession?.pinCode || pin, replace: false });
   };
 
   const handleFinishQuiz = (answers: QuizAttemptAnswer[], timeSpent: number) => {

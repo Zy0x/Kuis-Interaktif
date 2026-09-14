@@ -54,6 +54,8 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
     return DataManager.getActiveSessionByQuizId(quiz.id);
   });
   const [liveSettings, setLiveSettings] = useState<QuizSessionSettings | undefined>(sessionSettings);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [refreshNotice, setRefreshNotice] = useState<{ type: 'success' | 'info' | 'error'; message: string } | null>(null);
 
   const profile = DataManager.getPlayerProfile();
   const isCustom = Boolean(
@@ -134,21 +136,35 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
       const pinToCheck = activeSession?.pinCode || (quiz.pinCode && quiz.pinCode.length === 6 ? quiz.pinCode : null);
       if (pinToCheck) {
         try {
-          const cloudSession = await DataManager.fetchSessionByPin(pinToCheck);
+          const cloudSession = await DataManager.fetchActiveSessionByPin(pinToCheck);
           if (cloudSession) {
             setLiveSession(cloudSession);
+            setLiveSettings(cloudSession.settings);
+            return;
           }
         } catch {}
-      } else if (liveSession?.id || activeSession?.id) {
-        const sid = liveSession?.id || activeSession?.id;
-        if (sid) {
-          try {
-            const cloudSession = await DataManager.fetchActiveSessionById(sid);
-            if (cloudSession) {
-              setLiveSession(cloudSession);
-            }
-          } catch {}
-        }
+      }
+      
+      const sid = liveSession?.id || activeSession?.id;
+      if (sid) {
+        try {
+          const cloudSession = await DataManager.fetchActiveSessionById(sid);
+          if (cloudSession) {
+            setLiveSession(cloudSession);
+            setLiveSettings(cloudSession.settings);
+            return;
+          }
+        } catch {}
+      }
+
+      if (quiz.id) {
+        try {
+          const cloudSession = await DataManager.fetchActiveSessionByQuizId(quiz.id);
+          if (cloudSession) {
+            setLiveSession(cloudSession);
+            setLiveSettings(cloudSession.settings);
+          }
+        } catch {}
       }
     };
     checkSessionStatusOnMount();
@@ -212,7 +228,14 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
         } catch {}
       } else if (quiz.pinCode && quiz.pinCode.length === 6) {
         try {
-          const freshCloud = await DataManager.fetchSessionByPin(quiz.pinCode);
+          const freshCloud = await DataManager.fetchActiveSessionByPin(quiz.pinCode);
+          if (freshCloud) {
+            handleSync(freshCloud);
+          }
+        } catch {}
+      } else if (quiz.id) {
+        try {
+          const freshCloud = await DataManager.fetchActiveSessionByQuizId(quiz.id);
           if (freshCloud) {
             handleSync(freshCloud);
           }
@@ -333,7 +356,7 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
   const isWaitingForTeacherToOpen = useMemo(() => {
     if (isSessionEnded) return false;
     if (effectiveSettings.executionMode !== 'teacher_led') return false;
-    return !liveSession || liveSession.status !== 'waiting';
+    return !liveSession || (liveSession.status !== 'waiting' && liveSession.status !== 'active' && liveSession.status !== 'paused');
   }, [isSessionEnded, effectiveSettings.executionMode, liveSession]);
 
   const clearWaitingSessionStorage = () => {
@@ -362,6 +385,75 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
   const handleBackToLobbyFromWaiting = () => {
     clearWaitingSessionStorage();
     setIsInWaitingRoom(false);
+  };
+
+  const handleRefreshStatus = async () => {
+    if (isRefreshing) return;
+    playClick();
+    if (navigator.vibrate) {
+      try {
+        navigator.vibrate([15, 30, 15]);
+      } catch {}
+    }
+    setIsRefreshing(true);
+    setRefreshNotice(null);
+
+    const startTime = Date.now();
+    try {
+      let fresh: QuizSession | null = null;
+      const pinToCheck = activeSession?.pinCode || (quiz.pinCode && quiz.pinCode.length === 6 ? quiz.pinCode : null);
+      if (pinToCheck) {
+        fresh = await DataManager.fetchActiveSessionByPin(pinToCheck);
+      }
+      if (!fresh && (liveSession?.id || activeSession?.id)) {
+        const sid = liveSession?.id || activeSession?.id;
+        if (sid) {
+          fresh = await DataManager.fetchActiveSessionById(sid);
+        }
+      }
+      if (!fresh && quiz.id) {
+        fresh = await DataManager.fetchActiveSessionByQuizId(quiz.id);
+      }
+
+      // Pastikan butir soal termuat jika sebelumnya 0 butir
+      if (!quiz.questions || quiz.questions.length === 0) {
+        try {
+          const fullQuiz = await DataManager.getQuizById(quiz.id);
+          if (fullQuiz && fullQuiz.questions && fullQuiz.questions.length > 0) {
+            quiz.questions = fullQuiz.questions;
+          }
+        } catch {}
+      }
+
+      // Pastikan animasi refresh berputar minimal 650ms agar animasi putar terasa hidup & meyakinkan
+      const elapsed = Date.now() - startTime;
+      if (elapsed < 650) {
+        await new Promise((resolve) => setTimeout(resolve, 650 - elapsed));
+      }
+
+      if (fresh) {
+        setLiveSession(fresh);
+        setLiveSettings(fresh.settings);
+        setRefreshNotice({
+          type: 'success',
+          message: 'Ruang kelas aktif ditemukan! Silakan masukkan nama untuk bergabung.'
+        });
+      } else {
+        setRefreshNotice({
+          type: 'info',
+          message: 'Bapak/Ibu Guru belum membuka sesi kuis ini. Silakan coba kembali sesaat lagi.'
+        });
+      }
+    } catch (err) {
+      console.warn('Refresh status error:', err);
+      setRefreshNotice({
+        type: 'error',
+        message: 'Gagal menghubungi server. Periksa koneksi internet Anda.'
+      });
+    } finally {
+      setIsRefreshing(false);
+      setTimeout(() => setRefreshNotice(null), 5000);
+    }
   };
 
   // Jika guru sudah memulai kuis ketika siswa sedang me-refresh, transisi langsung ke arena
@@ -575,7 +667,9 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
                   <HelpCircle className="w-3.5 h-3.5 text-blue-500" /> Soal
                 </span>
                 <span className="text-base sm:text-lg font-extrabold text-slate-800 dark:text-slate-100 block mt-0.5">
-                  {quiz.questions.length} Butir
+                  {quiz.questions && quiz.questions.length > 0
+                    ? `${quiz.questions.length} Butir`
+                    : (liveSession?.totalQuestions ? `${liveSession.totalQuestions} Butir` : '0 Butir')}
                 </span>
               </div>
 
@@ -711,23 +805,43 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
                 </button>
                 <button
                   type="button"
-                  onClick={async () => {
-                    playClick();
-                    const pinToCheck = activeSession?.pinCode || (quiz.pinCode && quiz.pinCode.length === 6 ? quiz.pinCode : null);
-                    if (pinToCheck) {
-                      const fresh = await DataManager.fetchActiveSessionByPin(pinToCheck);
-                      if (fresh) setLiveSession(fresh);
-                    } else if (quiz.id) {
-                      const fresh = DataManager.getActiveSessionByQuizId(quiz.id);
-                      if (fresh) setLiveSession(fresh);
-                    }
-                  }}
-                  className="flex-1 py-3 px-4 rounded-xl font-bold text-xs sm:text-sm text-white bg-blue-600 hover:bg-blue-700 min-h-[48px] flex items-center justify-center gap-2 transition-colors btn-press"
+                  disabled={isRefreshing}
+                  onClick={handleRefreshStatus}
+                  className={`flex-1 py-3 px-4 rounded-xl font-bold text-xs sm:text-sm text-white min-h-[48px] flex items-center justify-center gap-2.5 transition-all btn-press shadow-md select-none ${
+                    isRefreshing
+                      ? 'bg-blue-600/80 cursor-wait opacity-90'
+                      : 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800'
+                  }`}
+                  aria-label="Segarkan Status Ruang Tunggu"
                 >
-                  <RefreshCw className="w-4 h-4" />
-                  <span>Segarkan Status</span>
+                  <RefreshCw className={`w-4 h-4 shrink-0 transition-transform ${isRefreshing ? 'animate-spin text-amber-300' : ''}`} />
+                  <span>{isRefreshing ? 'Memeriksa Ruang Kelas...' : 'Segarkan Status'}</span>
                 </button>
               </div>
+
+              {/* Status Feedback Banner */}
+              {refreshNotice && (
+                <div 
+                  role="status"
+                  aria-live="polite"
+                  className={`p-3 rounded-2xl text-xs font-bold border flex items-center justify-center gap-2 animate-scale-up ${
+                    refreshNotice.type === 'success'
+                      ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-200 border-emerald-300 dark:border-emerald-800'
+                      : refreshNotice.type === 'error'
+                      ? 'bg-rose-50 dark:bg-rose-950/50 text-rose-800 dark:text-rose-200 border-rose-300 dark:border-rose-800'
+                      : 'bg-blue-50 dark:bg-blue-950/50 text-blue-800 dark:text-blue-200 border-blue-300 dark:border-blue-800'
+                  }`}
+                >
+                  {refreshNotice.type === 'success' ? (
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                  ) : refreshNotice.type === 'error' ? (
+                    <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
+                  ) : (
+                    <Info className="w-4 h-4 text-blue-500 shrink-0" />
+                  )}
+                  <span>{refreshNotice.message}</span>
+                </div>
+              )}
             </div>
           ) : (
             /* Form Pendaftaran Siswa */

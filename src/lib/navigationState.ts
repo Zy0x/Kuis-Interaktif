@@ -27,6 +27,7 @@ export function saveNavigationState(state: {
   screen: ScreenState;
   quiz?: Quiz | null;
   quizId?: string;
+  pin?: string;
   teacherTab?: TeacherTabState;
   creatorMode?: 'ai' | 'manual';
   hostSessionId?: string | null;
@@ -40,7 +41,22 @@ export function saveNavigationState(state: {
   if (typeof window === 'undefined') return;
 
   const quizId = state.quizId || state.quiz?.id;
-  const pin = state.quiz?.pinCode;
+  let pin = state.pin || state.quiz?.pinCode;
+  if (!pin && typeof window !== 'undefined') {
+    const params = new URLSearchParams(window.location.search);
+    const urlPin = params.get('pin');
+    if (urlPin) {
+      pin = urlPin;
+    } else {
+      try {
+        const raw = sessionStorage.getItem(NAV_SESSION_KEY);
+        if (raw) {
+          const s = JSON.parse(raw);
+          if (s.pin) pin = s.pin;
+        }
+      } catch {}
+    }
+  }
 
   // Pertahankan tab aktif guru jika tidak secara eksplisit diubah
   let resolvedTab = state.teacherTab;

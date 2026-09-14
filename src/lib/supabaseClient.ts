@@ -647,7 +647,7 @@ export const DataManager = {
 
     const all = this.getAllQuizzes();
     const local = all.find((q) => q.id === id);
-    if (local) return local;
+    if (local && Array.isArray(local.questions) && local.questions.length > 0) return local;
 
     if (supabase) {
       try {
@@ -2649,6 +2649,100 @@ export const DataManager = {
         }
       } catch (err) {
         console.warn('fetchActiveSessionByPin Supabase notice:', err);
+      }
+    }
+
+    return local;
+  },
+
+  async fetchActiveSessionByQuizId(quizId: string): Promise<QuizSession | null> {
+    if (!quizId) return null;
+    const cleanId = quizId.trim();
+    const local = this.getActiveSessionByQuizId(cleanId);
+
+    if (supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('quiz_sessions')
+          .select(`
+            *,
+            quiz_session_participants (*)
+          `)
+          .eq('quiz_id', cleanId)
+          .in('status', ['waiting', 'active', 'paused'])
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (data && !error) {
+          const nowMs = Date.now();
+          const sessionTime = new Date(data.created_at).getTime();
+          const heartbeatTime = data.last_heartbeat ? new Date(data.last_heartbeat).getTime() : sessionTime;
+          const TEN_MINUTES_MS = 10 * 60 * 1000;
+          const THREE_HOURS_MS = 3 * 60 * 60 * 1000;
+
+          const isStaleActive = data.status === 'active' && (nowMs - heartbeatTime > TEN_MINUTES_MS);
+          const isTooOld = nowMs - sessionTime > THREE_HOURS_MS;
+
+          if (isStaleActive || isTooOld) {
+            return null;
+          }
+
+          const parts: QuizSessionParticipant[] = (data.quiz_session_participants || []).map((p: any) => ({
+            id: p.id,
+            name: p.student_name,
+            avatarId: p.avatar_id,
+            currentQuestionIndex: p.current_question_index,
+            totalQuestions: data.total_questions || 0,
+            score: p.score,
+            stars: p.stars,
+            correctCount: p.correct_count,
+            incorrectCount: p.incorrect_count,
+            streak: p.streak,
+            finished: p.finished,
+            timeSpentSec: p.time_spent_sec,
+            answers: p.answers || {},
+            tabSwitchCount: p.tab_switch_count ?? 0,
+            joinedAt: p.joined_at,
+            lastActiveAt: p.last_active_at,
+          }));
+
+          const session: QuizSession = {
+            id: data.id,
+            quizId: data.quiz_id,
+            quizTitle: data.quiz_title,
+            quizCover: data.quiz_cover || '⭐',
+            subject: data.subject || 'Umum',
+            grade: data.grade || 'Semua Kelas',
+            pinCode: data.pin_code,
+            teacherId: data.teacher_id,
+            teacherEmail: data.teacher_email,
+            teacherName: data.teacher_name,
+            status: data.status,
+            createdAt: data.created_at,
+            startedAt: data.started_at,
+            endedAt: data.ended_at,
+            settings: data.settings || {},
+            participants: parts.length > 0 ? parts : (local?.participants || []),
+            totalQuestions: data.total_questions || 0,
+            currentQuestionIndex: data.current_question_index ?? 0,
+            questionState: data.question_state || 'answering',
+            reactions: Array.isArray(data.reactions) ? data.reactions : (local?.reactions || []),
+            chatMessages: Array.isArray(data.chat_messages) ? data.chat_messages : (local?.chatMessages || []),
+            isChatMuted: Boolean(data.is_chat_muted ?? local?.isChatMuted),
+            lastHeartbeat: data.last_heartbeat,
+          };
+
+          const existing = this.getActiveSessions();
+          const filtered = existing.filter((s) => s.id !== session.id);
+          try {
+            localStorage.setItem(STORAGE_KEY_QUIZ_SESSIONS, JSON.stringify([session, ...filtered]));
+          } catch {}
+
+          return session;
+        }
+      } catch (err) {
+        console.warn('fetchActiveSessionByQuizId Supabase notice:', err);
       }
     }
 

@@ -1,6 +1,27 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.8] - 2026-09-14
+### Perbaikan Sinkronisasi Ruang Tunggu Guru-Murid Antar-Perangkat & Animasi Tombol Segarkan Status (Rule 1, Rule 2, Rule 4, Rule 5, Rule 6 & Rule 15)
+
+#### 1. Sinkronisasi Sesi Aktif Antar-Perangkat via Cloud Supabase (`supabaseClient.ts`)
+- **Penambahan `fetchActiveSessionByQuizId`**: Menyediakan fungsi pencarian sesi aktif di Supabase berbasis `quiz_id` dengan status `waiting`, `active`, atau `paused`. Hal ini memungkinkan perangkat siswa (misal smartphone via jaringan lokal `192.168.x.x`) langsung mendeteksi ruang tunggu yang dibuka oleh guru dari laptop/PC tanpa bergantung pada `localStorage` lokal yang terpisah.
+- **Pemuatan Penuh Butir Soal pada `getQuizById`**: Memperbaiki logika `getQuizById` agar hanya menggunakan cache lokal jika `questions` benar-benar berisi data butir soal. Jika cache lokal kosong (0 butir), sistem secara otomatis memuat butir soal lengkap dari database Supabase.
+
+#### 2. Ketahanan Sesi & Preservasi PIN Game (`navigationState.ts` & `App.tsx`)
+- **Preservasi PIN Sesi Dinamis**: Memperbarui `saveNavigationState` dan `handleEnterPinLobby` agar PIN sesi 6-digit dinamis tetap tersimpan di `sessionStorage` dan URL parameter, sehingga saat siswa melakukan refresh (F5 / reload peramban), sesi kuis tidak hilang.
+- **Pemulihan Sesi Multi-Jalur pada Mount**: Saat halaman dimuat ulang dengan parameter `quiz`, sistem memulihkan sesi aktif melalui `fetchActiveSessionByPin` dan `fetchActiveSessionByQuizId`.
+
+#### 3. Peningkatan Antarmuka & Animasi Segarkan Status (`StudentLobby.tsx`)
+- **Animasi Putar Tombol Segarkan (`RefreshCw`)**: Tombol "Segarkan Status" kini memiliki efek putaran halus (`animate-spin`), umpan balik haptik ganda (`navigator.vibrate`), dan status interaktif "Memeriksa Ruang Kelas...".
+- **Banner Status Hasil Pemeriksaan**: Menampilkan pesan status informatif yang ramah anak (hijau sukses saat ruang kelas ditemukan, biru informasi saat menunggu guru membuka sesi).
+- **Penyesuaian Kondisi Penjaga Status**: Memperbaiki `isWaitingForTeacherToOpen` agar tidak mengunci siswa ketika guru sudah berada di sesi aktif atau jeda.
+- **Polling Otomatis Lobi Siswa**: Polling 2 detik kini otomatis memeriksa `fetchActiveSessionByQuizId` sehingga lobi siswa langsung bertransisi begitu guru membuka sesi tanpa siswa perlu menekan tombol manual.
+
+#### 4. Pembaruan Versi & PWA Service Worker (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.8` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.8` (`public/sw.js`).
+
 ## [2.4.7] - 2026-09-14
 ### Perbaikan & Penyelarasan Tombol Reaksi Guru & Murid di Mobile & Sepanjang Sesi Kuis (Rule 1, Rule 2, Rule 4, Rule 5, Rule 7 & Rule 15)
 
