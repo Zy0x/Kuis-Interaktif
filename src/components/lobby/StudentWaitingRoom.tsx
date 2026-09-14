@@ -13,7 +13,8 @@ import {
   Send, 
   MessageCircle, 
   VolumeX,
-  Volume2
+  Volume2,
+  CheckCheck
 } from 'lucide-react';
 
 export interface StudentWaitingRoomProps {
@@ -35,6 +36,13 @@ const PRESET_QUICK_MESSAGES = [
   'Kuis seru banget! ⭐',
   'Pasti bisa nilai 100! 🎯',
 ];
+
+const formatChatTime = (timestamp?: number): string => {
+  if (!timestamp) return '';
+  const d = new Date(timestamp);
+  if (isNaN(d.getTime())) return '';
+  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+};
 
 export const StudentWaitingRoom: React.FC<StudentWaitingRoomProps> = ({
   quiz,
@@ -283,31 +291,122 @@ export const StudentWaitingRoom: React.FC<StudentWaitingRoomProps> = ({
             </div>
 
             {/* Message List */}
-            <div ref={chatScrollRef} className="flex-1 overflow-y-auto space-y-2 py-2 pr-1 text-xs">
+            <div ref={chatScrollRef} className="flex-1 overflow-y-auto space-y-3 py-2.5 px-1 text-xs">
               {chatMessages.length === 0 ? (
-                <p className="text-[11px] text-slate-400 text-center py-6">
-                  Belum ada pesan. Kirim salam atau kata semangat untuk teman-teman!
-                </p>
+                <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400 dark:text-slate-500 space-y-2">
+                  <div className="w-10 h-10 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xl shadow-2xs">
+                    💬
+                  </div>
+                  <p className="text-xs font-bold text-slate-600 dark:text-slate-400">Belum ada pesan</p>
+                  <p className="text-[11px] max-w-xs leading-relaxed">
+                    Kirim salam atau kata semangat untuk teman-teman dan guru!
+                  </p>
+                </div>
               ) : (
                 chatMessages.map((m) => {
-                  const mAvatar = AVATAR_MAP[m.avatarId] || '💬';
-                  const isMe = m.studentName.trim().toLowerCase() === studentName.trim().toLowerCase();
-                  return (
-                    <div
-                      key={m.id}
-                      className={`p-2 rounded-xl text-xs ${
-                        m.isTeacher
-                          ? 'bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200 font-semibold'
-                          : isMe
-                          ? 'bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 text-purple-900 dark:text-purple-200 font-medium'
-                          : 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-medium'
-                      }`}
-                    >
-                      <div className="flex items-center gap-1 text-[10px] opacity-75 font-bold mb-0.5">
-                        <span>{mAvatar}</span>
-                        <span>{m.studentName} {m.isTeacher ? '(Guru)' : isMe ? '(Kamu)' : ''}</span>
+                  const mAvatar = AVATAR_MAP[m.avatarId] || (m.isTeacher ? '👨‍🏫' : '💬');
+                  const isTeacher = Boolean(m.isTeacher);
+                  const isMe = !isTeacher && m.studentName.trim().toLowerCase() === studentName.trim().toLowerCase();
+                  const timeStr = formatChatTime(m.createdAt);
+
+                  // 1. KATEGORI: GURU (Autoritatif, Berkelas, Spotlight Emas / Amber)
+                  if (isTeacher) {
+                    return (
+                      <div key={m.id} className="flex flex-col items-start w-full my-1 animate-fade-in">
+                        <div className="flex items-start gap-2 max-w-[92%] sm:max-w-[86%] mr-auto">
+                          {/* Avatar Guru dengan Badge Mahkota */}
+                          <div className="relative flex-shrink-0 mt-0.5 select-none">
+                            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400 to-amber-500 text-white flex items-center justify-center text-sm shadow-xs border border-amber-300">
+                              {mAvatar}
+                            </div>
+                            <span className="absolute -top-1.5 -right-1.5 text-[11px] leading-none select-none filter drop-shadow">
+                              👑
+                            </span>
+                          </div>
+
+                          {/* Bubble Pesan Guru */}
+                          <div className="bg-gradient-to-br from-amber-50 via-amber-50/90 to-orange-50/40 dark:from-amber-950/60 dark:via-amber-950/40 dark:to-slate-900 border border-amber-300/90 dark:border-amber-700/80 border-l-4 border-l-amber-500 rounded-2xl rounded-tl-xs p-3 shadow-xs text-amber-950 dark:text-amber-100 flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-1.5 mb-1 pb-1 border-b border-amber-200/70 dark:border-amber-800/60">
+                              <div className="flex items-center gap-1.5 min-w-0">
+                                <span className="font-black text-xs text-amber-950 dark:text-amber-200 truncate">
+                                  {m.studentName}
+                                </span>
+                                <span className="px-1.5 py-0.2 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-500 text-white shadow-2xs flex items-center gap-0.5 flex-shrink-0">
+                                  <Sparkles className="w-2.5 h-2.5" />
+                                  <span>Guru</span>
+                                </span>
+                              </div>
+                            </div>
+                            <p className="text-xs font-semibold leading-relaxed break-words whitespace-pre-wrap text-amber-950 dark:text-amber-100">
+                              {m.text}
+                            </p>
+                            <div className="flex items-center justify-between text-[9.5px] text-amber-700/80 dark:text-amber-400/80 mt-1.5 pt-0.5">
+                              <span className="font-bold flex items-center gap-1 opacity-80 text-[9px]">
+                                <Sparkles className="w-2.5 h-2.5" />
+                                <span>Pesan Guru</span>
+                              </span>
+                              {timeStr && <span>{timeStr}</span>}
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                      <div className="leading-snug break-words">{m.text}</div>
+                    );
+                  }
+
+                  // 2. KATEGORI: DIRI SENDIRI / "KAMU" (Rata Kanan, Modern Gradient Bubble)
+                  if (isMe) {
+                    return (
+                      <div key={m.id} className="flex flex-col items-end w-full my-1 animate-fade-in">
+                        <div className="flex items-end justify-end gap-1.5 max-w-[85%] sm:max-w-[78%] ml-auto">
+                          <div className="bg-gradient-to-r from-purple-600 to-indigo-600 dark:from-purple-600 dark:to-indigo-500 text-white rounded-2xl rounded-tr-xs p-3 shadow-sm flex-1 min-w-0">
+                            <div className="flex items-center justify-end gap-1.5 mb-1 text-[10px] font-bold text-purple-200/90">
+                              <span className="bg-purple-700/70 dark:bg-purple-800/70 px-1.5 py-0.2 rounded text-[9px] font-black uppercase tracking-wider text-purple-100">
+                                Kamu
+                              </span>
+                              <span>{mAvatar}</span>
+                            </div>
+                            <p className="text-xs font-normal leading-relaxed break-words whitespace-pre-wrap text-white">
+                              {m.text}
+                            </p>
+                            <div className="flex items-center justify-end gap-1 text-[9.5px] text-purple-200/80 mt-1.5">
+                              {timeStr && <span>{timeStr}</span>}
+                              <CheckCheck className="w-3 h-3 text-purple-200/90" />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  // 3. KATEGORI: ORANG LAIN / TEMAN SEKELAS (Rata Kiri, Soft Neutral Bubble + Avatar Siswa)
+                  return (
+                    <div key={m.id} className="flex flex-col items-start w-full my-1 animate-fade-in">
+                      <div className="flex items-start justify-start gap-2 max-w-[85%] sm:max-w-[78%] mr-auto">
+                        {/* Avatar Teman */}
+                        <div className="w-7 h-7 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-sm shadow-2xs flex-shrink-0 select-none mt-0.5">
+                          {mAvatar}
+                        </div>
+
+                        {/* Bubble Teman */}
+                        <div className="bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 shadow-2xs rounded-2xl rounded-tl-xs p-3 text-slate-800 dark:text-slate-100 flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 mb-1">
+                            <span className="font-black text-[11px] text-indigo-600 dark:text-indigo-400 truncate">
+                              {m.studentName}
+                            </span>
+                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md bg-slate-100 dark:bg-slate-700/80 text-slate-500 dark:text-slate-400">
+                              Teman
+                            </span>
+                          </div>
+                          <p className="text-xs font-normal leading-relaxed break-words whitespace-pre-wrap text-slate-800 dark:text-slate-200">
+                            {m.text}
+                          </p>
+                          {timeStr && (
+                            <div className="text-[9.5px] text-slate-400 dark:text-slate-500 mt-1.5 text-right">
+                              {timeStr}
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   );
                 })

@@ -1,6 +1,30 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.94] - 2026-09-14
+### Redesain Modern Antarmuka Obrolan Kelas: Diferensiasi Visual Elegan 3 Peran (Guru, Diri Sendiri, dan Teman Sekelas) (Rule 1, Rule 2, Rule 4 & Rule 8)
+
+#### 1. Transformasi Balon Obrolan Khas Aplikasi Pesan Modern (StudentWaitingRoom.tsx & InterQuestionWaitingLounge.tsx) (Rule 1, Rule 2 & Rule 4)
+- **Diri Sendiri / "Kamu" (Rata Kanan - Self Bubble)**:
+  - Diposisikan rata kanan (`items-end`, `ml-auto`) dengan lebar proporsional (`max-w-[85%] sm:max-w-[78%]`) menggantikan kotak kaku selebar 100%.
+  - Menggunakan bentuk balon pesan modern dengan sudut lengkung atas-kanan `rounded-2xl rounded-tr-xs`.
+  - Menggunakan gradien ungu-indigo cerah (`bg-gradient-to-r from-purple-600 to-indigo-600 text-white`) dengan kontras teks putih tajam, header ringkas "Kamu", avatar emoji, dan indikator centang ganda (`CheckCheck`).
+- **Orang Lain / Teman Sekelas (Rata Kiri - Peer Bubble)**:
+  - Diposisikan rata kiri (`items-start`, `mr-auto`) dengan avatar bulat terpisah di sisi kiri (`w-7 h-7 rounded-xl`).
+  - Menggunakan kartu bernuansa netral lembut (`bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700`) dengan sudut lengkung `rounded-2xl rounded-tl-xs`.
+  - Dilengkapi nama pengirim berwarna khusus (`text-indigo-600 dark:text-indigo-400`), badge peran "Teman", teks pesan yang mudah dibaca, serta stempel waktu kirim.
+- **Guru / Host Pendidik (Autoritatif, Berkelas, Spotlight Emas / Amber)**:
+  - Menampilkan estetika instruksi resmi pengawas ruang kuis dengan garis aksen tebal kiri `border-l-4 border-l-amber-500` dan gradien amber lembut.
+  - Avatar Guru dilengkapi lambang mahkota mengambang (`👑`) dan lencana resmi Guru bersinar (`bg-amber-500 text-white`).
+  - Teks instruksi berbobot `font-semibold` dengan label bawah khusus "Pesan Guru" untuk menarik atensi siswa secara instan.
+
+#### 2. Peningkatan Estetika Ruang Jeda Soal (InterQuestionWaitingLounge.tsx) (Rule 2 & Rule 4)
+- Menyelaraskan diferensiasi 3 peran obrolan pada sesi jeda antar-soal sehingga pengalaman chatting antar-siswa dan pengumuman guru selalu konsisten di setiap layar interaktif.
+
+#### 3. Sinkronisasi Versi & Service Worker Cache (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.3.94` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.3.94` (`public/sw.js`).
+
 ## [2.3.93] - 2026-09-14
 ### Optimalisasi Tata Letak & Ergonomi Ruang Tunggu Siswa: Perluasan Dimensi Tinggi Kartu Obrolan Kelas & Daftar Teman Masuk (Rule 1, Rule 2, Rule 4 & Rule 8)
 

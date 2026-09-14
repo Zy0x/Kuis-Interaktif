@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import type { QuizSession } from '../../types/quiz';
 import { DataManager } from '../../lib/supabaseClient';
+import { AVATAR_MAP } from '../../data/seedQuizzes';
 import { 
   Send, 
   MessageCircle, 
@@ -357,23 +358,67 @@ export const InterQuestionWaitingLounge: React.FC<InterQuestionWaitingLoungeProp
           </div>
 
           {/* Messages */}
-          <div ref={chatScrollRef} className="max-h-24 overflow-y-auto space-y-1.5 text-xs pr-1">
+          <div ref={chatScrollRef} className="max-h-36 overflow-y-auto space-y-2 text-xs pr-1">
             {chatMessages.length === 0 ? (
               <p className="text-[10px] text-slate-500 text-center py-2">Kirim reaksi semangat untuk teman-teman!</p>
             ) : (
-              chatMessages.slice(-8).map((m) => {
-                const isMe = m.studentName.trim().toLowerCase() === studentName.trim().toLowerCase();
+              chatMessages.slice(-12).map((m) => {
+                const isTeacher = Boolean(m.isTeacher);
+                const isMe = !isTeacher && m.studentName.trim().toLowerCase() === studentName.trim().toLowerCase();
+                const mAvatar = (m.avatarId && AVATAR_MAP[m.avatarId]) || (isTeacher ? '👨‍🏫' : '💬');
+
+                // 1. Guru
+                if (isTeacher) {
+                  return (
+                    <div key={m.id} className="flex flex-col items-start w-full my-0.5">
+                      <div className="flex items-start gap-1.5 max-w-[90%] mr-auto">
+                        <div className="w-6 h-6 rounded-lg bg-amber-500 text-white flex items-center justify-center text-xs shadow-xs flex-shrink-0 mt-0.5 select-none">
+                          {mAvatar}
+                        </div>
+                        <div className="bg-amber-950/70 border border-amber-500/50 border-l-2 border-l-amber-400 rounded-xl rounded-tl-xs p-2 text-amber-100 flex-1 min-w-0">
+                          <div className="flex items-center gap-1 mb-0.5">
+                            <span className="font-black text-[11px] text-amber-300 truncate">{m.studentName}</span>
+                            <span className="px-1 py-0.2 rounded text-[8px] font-black bg-amber-500 text-white">Guru 👑</span>
+                          </div>
+                          <p className="text-[11px] font-semibold break-words leading-snug">{m.text}</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+
+                // 2. Diri Sendiri (Kamu)
+                if (isMe) {
+                  return (
+                    <div key={m.id} className="flex flex-col items-end w-full my-0.5">
+                      <div className="flex items-end justify-end gap-1 max-w-[85%] ml-auto">
+                        <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl rounded-tr-xs p-2 shadow-xs flex-1 min-w-0">
+                          <div className="flex items-center justify-end gap-1 text-[9px] text-purple-200 font-bold mb-0.5">
+                            <span className="bg-purple-800/60 px-1 py-0.2 rounded text-[8px] uppercase">Kamu</span>
+                            <span>{mAvatar}</span>
+                          </div>
+                          <p className="text-[11px] font-medium break-words leading-snug text-white">{m.text}</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+
+                // 3. Teman
                 return (
-                  <div
-                    key={m.id}
-                    className={`p-1.5 rounded-lg text-[11px] ${
-                      isMe
-                        ? 'bg-purple-950/50 text-purple-200 border border-purple-800/50'
-                        : 'bg-slate-800/70 text-slate-200'
-                    }`}
-                  >
-                    <span className="font-bold text-slate-400 mr-1.5">{m.studentName}:</span>
-                    <span>{m.text}</span>
+                  <div key={m.id} className="flex flex-col items-start w-full my-0.5">
+                    <div className="flex items-start justify-start gap-1.5 max-w-[85%] mr-auto">
+                      <div className="w-6 h-6 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-xs flex-shrink-0 mt-0.5 select-none">
+                        {mAvatar}
+                      </div>
+                      <div className="bg-slate-900/90 border border-slate-700/80 rounded-xl rounded-tl-xs p-2 text-slate-200 flex-1 min-w-0">
+                        <div className="flex items-center gap-1 mb-0.5">
+                          <span className="font-bold text-[10px] text-indigo-400 truncate">{m.studentName}</span>
+                          <span className="text-[8px] font-bold px-1 rounded bg-slate-800 text-slate-400">Teman</span>
+                        </div>
+                        <p className="text-[11px] font-normal break-words leading-snug text-slate-200">{m.text}</p>
+                      </div>
+                    </div>
                   </div>
                 );
               })
