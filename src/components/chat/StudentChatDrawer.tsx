@@ -245,7 +245,7 @@ export const StudentChatDrawer: React.FC<StudentChatDrawerProps> = ({
   const sendingRef = useRef(false);
   const lastSentRef = useRef<{ text: string; time: number }>({ text: '', time: 0 });
   const chatScrollRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const messageRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   useBodyScrollLock(isOpen);
@@ -558,30 +558,36 @@ export const StudentChatDrawer: React.FC<StudentChatDrawerProps> = ({
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              handleSendMessage(inputText);
             }}
-            className="flex items-center gap-2"
+            className="flex items-end gap-2"
           >
-            <input
+            <textarea
               ref={inputRef}
-              type="text"
-              maxLength={100}
+              rows={1}
+              maxLength={200}
               value={inputText}
               disabled={isChatMuted || sessionStatus === 'finished' || isSessionEndedModalOpen || isSending}
               onChange={(e) => setInputText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  // Tombol Enter murni menyisipkan baris baru (newline), bukan mengirim pesan
+                  e.stopPropagation();
+                }
+              }}
               placeholder={
                 isChatMuted
                   ? 'Obrolan dibungkam oleh Guru...'
                   : sessionStatus === 'finished'
                   ? 'Sesi telah berakhir...'
-                  : 'Ketik pesan positif...'
+                  : 'Ketik pesan positif (Enter untuk baris baru)...'
               }
-              className="flex-1 px-4 py-3 rounded-2xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-purple-500 text-slate-900 dark:text-white min-h-[48px] shadow-xs disabled:opacity-50"
+              className="flex-1 px-4 py-2.5 sm:py-3 rounded-2xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-purple-500 text-slate-900 dark:text-white min-h-[44px] sm:min-h-[48px] max-h-28 resize-none leading-relaxed shadow-xs disabled:opacity-50 transition-all"
             />
             <button
-              type="submit"
+              type="button"
+              onClick={() => handleSendMessage(inputText)}
               disabled={!inputText.trim() || isChatMuted || sessionStatus === 'finished' || isSessionEndedModalOpen || isSending}
-              className="p-3 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-bold disabled:opacity-40 min-h-[48px] min-w-[48px] flex items-center justify-center transition-colors btn-press shrink-0 shadow-sm"
+              className="p-3 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-bold disabled:opacity-40 min-h-[44px] min-w-[44px] sm:min-h-[48px] sm:min-w-[48px] flex items-center justify-center transition-colors btn-press shrink-0 shadow-sm mb-0.5"
               aria-label="Kirim Pesan"
               title="Kirim Pesan"
             >

@@ -158,7 +158,7 @@ export const TeacherChatDrawer: React.FC<TeacherChatDrawerProps> = ({
   const sendingRef = useRef(false);
   const lastSentRef = useRef<{ text: string; time: number }>({ text: '', time: 0 });
   const chatScrollRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const messageRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   useBodyScrollLock(isOpen);
@@ -507,31 +507,37 @@ export const TeacherChatDrawer: React.FC<TeacherChatDrawerProps> = ({
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            handleSendMessage(inputText);
           }}
-          className="p-3 sm:p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex items-center gap-2"
+          className="p-3 sm:p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex items-end gap-2"
         >
           <div className="relative flex-1">
-            <input
+            <textarea
               ref={inputRef}
-              type="text"
+              rows={1}
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
-              placeholder="Ketik pesan guru ke kelas..."
-              maxLength={150}
-              className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 rounded-xl pl-3.5 pr-10 py-2.5 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  // Tombol Enter murni menyisipkan baris baru (newline), bukan mengirim pesan
+                  e.stopPropagation();
+                }
+              }}
+              placeholder="Ketik pesan guru (Enter untuk baris baru)..."
+              maxLength={250}
+              className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 rounded-xl pl-3.5 pr-10 py-2.5 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all min-h-[44px] max-h-32 resize-none leading-relaxed"
             />
-            {inputText.length > 100 && (
-              <span className="absolute right-3 top-2.5 text-[10px] text-slate-400">
-                {150 - inputText.length}
+            {inputText.length > 180 && (
+              <span className="absolute right-3 top-2.5 text-[10px] text-slate-400 bg-white/80 dark:bg-slate-800/80 px-1 rounded">
+                {250 - inputText.length}
               </span>
             )}
           </div>
 
           <button
-            type="submit"
+            type="button"
+            onClick={() => handleSendMessage(inputText)}
             disabled={!inputText.trim() || isSending}
-            className="p-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white rounded-xl font-bold min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors btn-press shadow-xs flex-shrink-0"
+            className="p-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white rounded-xl font-bold min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors btn-press shadow-xs flex-shrink-0 mb-0.5"
             title="Kirim Pesan"
             aria-label="Kirim Pesan"
           >

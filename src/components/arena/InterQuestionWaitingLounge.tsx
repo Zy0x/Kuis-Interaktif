@@ -392,7 +392,7 @@ export const InterQuestionWaitingLounge: React.FC<InterQuestionWaitingLoungeProp
                             <span className="font-black text-[11px] text-amber-300 truncate">{m.studentName}</span>
                             <span className="px-1 py-0.2 rounded text-[8px] font-black bg-amber-500 text-white">Guru 👑</span>
                           </div>
-                          <p className="text-[11px] font-semibold break-words leading-snug">{m.text}</p>
+                          <p className="text-[11px] font-semibold break-words whitespace-pre-wrap leading-snug">{m.text}</p>
                         </div>
                       </div>
                     </div>
@@ -409,7 +409,7 @@ export const InterQuestionWaitingLounge: React.FC<InterQuestionWaitingLoungeProp
                             <span className="bg-purple-800/60 px-1 py-0.2 rounded text-[8px] uppercase">Kamu</span>
                             <span>{mAvatar}</span>
                           </div>
-                          <p className="text-[11px] font-medium break-words leading-snug text-white">{m.text}</p>
+                          <p className="text-[11px] font-medium break-words whitespace-pre-wrap leading-snug text-white">{m.text}</p>
                         </div>
                       </div>
                     </div>
@@ -428,7 +428,7 @@ export const InterQuestionWaitingLounge: React.FC<InterQuestionWaitingLoungeProp
                           <span className="font-bold text-[10px] text-indigo-400 truncate">{m.studentName}</span>
                           <span className="text-[8px] font-bold px-1 rounded bg-slate-800 text-slate-400">Teman</span>
                         </div>
-                        <p className="text-[11px] font-normal break-words leading-snug text-slate-200">{m.text}</p>
+                        <p className="text-[11px] font-normal break-words whitespace-pre-wrap leading-snug text-slate-200">{m.text}</p>
                       </div>
                     </div>
                   </div>
@@ -443,23 +443,30 @@ export const InterQuestionWaitingLounge: React.FC<InterQuestionWaitingLoungeProp
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
-                  handleSendChatMessage(chatText);
                 }}
-                className="flex items-center gap-1"
+                className="flex items-end gap-1.5"
               >
-                <input
-                  type="text"
-                  maxLength={80}
+                <textarea
+                  rows={1}
+                  maxLength={120}
                   value={chatText}
                   onChange={(e) => setChatText(e.target.value)}
-                  placeholder="Ketik komentar santai..."
-                  className="flex-1 px-3 py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-xs text-white focus:outline-none focus:ring-1 focus:ring-purple-500 min-h-[44px]"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      // Tombol Enter murni menyisipkan baris baru (newline), bukan mengirim pesan
+                      e.stopPropagation();
+                    }
+                  }}
+                  placeholder="Ketik komentar santai (Enter untuk baris baru)..."
+                  className="flex-1 px-3 py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-xs text-white focus:outline-none focus:ring-1 focus:ring-purple-500 min-h-[44px] max-h-24 resize-none leading-relaxed"
                 />
                 <button
-                  type="submit"
+                  type="button"
                   disabled={!chatText.trim()}
-                  className="p-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold disabled:opacity-40 min-h-[44px] min-w-[44px] flex items-center justify-center btn-press flex-shrink-0"
-                  aria-label="Kirim"
+                  onClick={() => handleSendChatMessage(chatText)}
+                  className="p-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold disabled:opacity-40 min-h-[44px] min-w-[44px] flex items-center justify-center btn-press flex-shrink-0 mb-0.5"
+                  aria-label="Kirim Pesan"
+                  title="Kirim Pesan"
                 >
                   <Send className="w-4 h-4" />
                 </button>

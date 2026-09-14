@@ -1,6 +1,22 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.9] - 2026-09-14
+### Perilaku Tombol Enter Murni Baris Baru & Pengiriman Pesan Eksklusif Tombol Kirim di Obrolan Kelas (Rule 1, Rule 2, Rule 4, Rule 5, Rule 7 & Rule 15)
+
+#### 1. Perubahan Perilaku Tombol Enter pada Kolom Obrolan Kelas
+- **Tombol Enter Murni Menyisipkan Baris Baru**: Menyesuaikan seluruh input obrolan kelas (Guru di `TeacherChatDrawer.tsx`, Murid di `StudentChatDrawer.tsx`, dan Lounge Jeda Soal di `InterQuestionWaitingLounge.tsx`) agar menekan tombol `Enter` (maupun `Shift+Enter`) murni menyisipkan baris baru (*line break / newline* `\n`) dan sama sekali tidak mengirim pesan.
+- **Pengiriman Pesan Eksklusif via Tombol Kirim**: Mengharuskan pengguna menekan/mengetuk tombol kirim pesan (*Send button*) secara eksplisit dengan jari/mouse untuk menyiarkan pesan ke kelas. Perubahan ini berlaku konsisten di seluruh perangkat (Desktop, Smartphone, Tablet).
+- **Pencegahan Submit Otomatis Form**: Menonaktifkan perilaku default `onSubmit` pada form input chat (`e.preventDefault()`) sehingga tidak ada mekanisme pengiriman pesan yang terpicu secara tidak sengaja melalui penekanan tombol Enter pada keyboard fisik maupun virtual.
+
+#### 2. Peningkatan Textarea Multiline & Tampilan Pesan
+- **Textarea Responsif & Ergonomis**: Mengubah elemen input teks satu baris menjadi textarea multi-baris yang fleksibel (`min-h-[44px]` hingga `min-h-[48px]`, `resize-none`) dengan teks pembantu ramah pengguna: *"Enter untuk baris baru"*.
+- **Dukungan `whitespace-pre-wrap` Lengkap**: Memastikan seluruh gelembung pesan chat (termasuk pada gelembung obrolan di Lounge Jeda Soal) mempertahankan jeda baris baru secara rapi dan estetis.
+
+#### 3. Pembaruan Versi & PWA Service Worker (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.9` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.9` (`public/sw.js`).
+
 ## [2.4.8] - 2026-09-14
 ### Perbaikan Sinkronisasi Ruang Tunggu Guru-Murid Antar-Perangkat & Animasi Tombol Segarkan Status (Rule 1, Rule 2, Rule 4, Rule 5, Rule 6 & Rule 15)
 
