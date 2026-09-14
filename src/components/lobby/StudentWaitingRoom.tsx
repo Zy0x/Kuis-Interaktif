@@ -219,7 +219,7 @@ export const StudentWaitingRoom: React.FC<StudentWaitingRoomProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           
           {/* Kolom Kiri: Teman Sekelas yang Sudah Join */}
-          <div className="bg-white dark:bg-slate-900 rounded-3xl p-4 sm:p-5 border border-slate-200/90 dark:border-slate-800 shadow-sm flex flex-col max-h-[300px]">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-4 sm:p-5 border border-slate-200/90 dark:border-slate-800 shadow-sm flex flex-col h-[460px] sm:h-[500px] md:h-[540px]">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
               <span className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                 <Users className="w-4 h-4 text-blue-500" />
@@ -263,7 +263,7 @@ export const StudentWaitingRoom: React.FC<StudentWaitingRoomProps> = ({
           </div>
 
           {/* Kolom Kanan: Obrolan Kelas Positif */}
-          <div className="bg-white dark:bg-slate-900 rounded-3xl p-4 sm:p-5 border border-slate-200/90 dark:border-slate-800 shadow-sm flex flex-col max-h-[300px]">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-4 sm:p-5 border border-slate-200/90 dark:border-slate-800 shadow-sm flex flex-col h-[460px] sm:h-[500px] md:h-[540px]">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
               <span className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
                 <MessageCircle className="w-4 h-4 text-purple-500" />

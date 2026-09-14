@@ -1,6 +1,22 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.3.93] - 2026-09-14
+### Optimalisasi Tata Letak & Ergonomi Ruang Tunggu Siswa: Perluasan Dimensi Tinggi Kartu Obrolan Kelas & Daftar Teman Masuk (Rule 1, Rule 2, Rule 4 & Rule 8)
+
+#### 1. Perluasan Dimensi Vertikal Responsif Kartu Ruang Tunggu (StudentWaitingRoom.tsx) (Rule 1, Rule 2 & Rule 4)
+- **Ekspansi Tinggi Kontainer Kartu**:
+  - Memperbarui batasan tinggi statis `max-h-[300px]` menjadi dimensi tinggi responsif `h-[460px] sm:h-[500px] md:h-[540px]` pada kedua kartu utama: **"Teman yang Sudah Masuk"** dan **"Obrolan Kelas"**.
+  - Memberikan peningkatan area pandang daftar pesan riwayat obrolan dari ~145px menjadi ~285px hingga ~365px, memungkinkan pembacaan pesan panjang dan percakapan banyak balon chat secara leluasa tanpa terpotong.
+  - Memperluas daftar kehadiran teman sekelas sehingga dapat menampilkan lebih dari 8-10 siswa sekaligus secara rapi sebelum masuk ke mode scroll halus.
+- **Harmonisasi Simetri Layout Dua Kolom**:
+  - Memastikan tinggi kartu di kedua sisi selalu seimbang dan presisi pada tampilan desktop maupun tablet (`grid-cols-2`), serta tetap nyaman diakses dalam mode tumpuk vertikal satu kolom pada ponsel (`mobile-first`).
+  - Menjaga kepatuhan target sentuh 44×44 px pada tombol aksi cepat preset pesan dan formulir input obrolan.
+
+#### 2. Sinkronisasi Versi & Service Worker Cache (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.3.93` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.3.93` (`public/sw.js`).
+
 ## [2.3.92] - 2026-09-14
 ### Perbaikan Integritas Obrolan Kelas: Eliminasi Pengiriman Ganda Pesan Preset Guru (Double Chat Dispatch) & Sistem Deduplikasi Otomatis (Rule 2, Rule 9, Rule 11 & Rule 14)
 
