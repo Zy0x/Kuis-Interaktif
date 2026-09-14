@@ -10,6 +10,9 @@ import {
   Volume2, 
   CheckCircle2
 } from 'lucide-react';
+import { QuizizzReactionOverlay } from '../common/QuizizzReactionOverlay';
+import { QuizizzReactionButtonRow } from '../common/QuizizzReactionButtonRow';
+import { FloatingReactionButton } from '../common/FloatingReactionButton';
 
 export interface InterQuestionWaitingLoungeProps {
   session: QuizSession;
@@ -198,13 +201,6 @@ const EmojiGuessGame: React.FC<{ playClick: () => void; playCorrect?: () => void
 // -------------------------------------------------------------
 // Component Utama: InterQuestionWaitingLounge
 // -------------------------------------------------------------
-const PRESET_MESSAGES = [
-  'Mantap! 🎉',
-  'Semangat lanjut! 💪',
-  'Soalnya seru! ⭐',
-  'Bismillah 100! 🎯',
-];
-
 export const InterQuestionWaitingLounge: React.FC<InterQuestionWaitingLoungeProps> = ({
   session: initialSession,
   questionIndex,
@@ -330,6 +326,22 @@ export const InterQuestionWaitingLounge: React.FC<InterQuestionWaitingLoungeProp
           </div>
         </div>
 
+        {/* Floating Live Reactions Overlay di Lounge Jeda Soal */}
+        <QuizizzReactionOverlay sessionId={session.id} reactions={session.reactions} />
+
+        {/* Bilah Reaksi Semangat Murid di Lounge Jeda Soal */}
+        <div className="bg-slate-950/60 rounded-2xl p-2.5 border border-slate-800/80 flex flex-col items-center justify-center">
+          <QuizizzReactionButtonRow
+            sessionId={session.id}
+            senderName={studentName}
+            avatarId={avatarId}
+            isTeacher={false}
+            playClick={playClick}
+            compact={true}
+            title="Kirim Reaksi Semangat:"
+          />
+        </div>
+
         {/* Synchronized Mini-Game for this round */}
         {isEvenRound ? (
           <StarCatcherGame playClick={playClick} playCorrect={playCorrect} />
@@ -425,22 +437,9 @@ export const InterQuestionWaitingLounge: React.FC<InterQuestionWaitingLoungeProp
             )}
           </div>
 
-          {/* Quick Preset Buttons & Input */}
+          {/* Obrolan Santai Input */}
           {!isChatMuted && (
-            <div className="space-y-1.5 pt-1">
-              <div className="flex items-center gap-1 overflow-x-auto no-scrollbar pb-0.5">
-                {PRESET_MESSAGES.map((msg) => (
-                  <button
-                    key={msg}
-                    type="button"
-                    onClick={() => handleSendChatMessage(msg)}
-                    className="px-3 py-1.5 rounded-xl bg-purple-900/30 text-purple-300 text-xs font-bold border border-purple-800/40 whitespace-nowrap hover:bg-purple-900/60 min-h-[44px] inline-flex items-center shrink-0 btn-press"
-                  >
-                    {msg}
-                  </button>
-                ))}
-              </div>
-
+            <div className="pt-1">
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
@@ -470,6 +469,16 @@ export const InterQuestionWaitingLounge: React.FC<InterQuestionWaitingLoungeProp
         </div>
 
       </div>
+
+      {/* Floating Reaction Button untuk Murid di Jeda Soal */}
+      <FloatingReactionButton
+        sessionId={session.id}
+        senderName={studentName}
+        avatarId={avatarId}
+        isTeacher={false}
+        playClick={playClick}
+        positionClassName="bottom-20 right-3 sm:bottom-24 sm:right-6"
+      />
     </div>
   );
 };

@@ -5,6 +5,7 @@ import { copyTextToClipboard } from '../../lib/aiQuestionParser';
 import { AVATAR_MAP } from '../../data/seedQuizzes';
 import { QuizizzReactionOverlay } from '../common/QuizizzReactionOverlay';
 import { QuizizzReactionButtonRow } from '../common/QuizizzReactionButtonRow';
+import { FloatingReactionButton } from '../common/FloatingReactionButton';
 import { ZoomChatToast } from '../common/ZoomChatToast';
 import { TeacherChatDrawer } from '../chat/TeacherChatDrawer';
 import { 
@@ -760,20 +761,6 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
               </div>
             )}
 
-            {/* Bilah Reaksi Semangat Guru (Hanya aktif di Ruang Tunggu Pra-Kuis) */}
-            {session.status === 'waiting' && (
-              <div className="bg-slate-900/80 border border-slate-800 rounded-2xl px-4 py-2.5 flex flex-col sm:flex-row items-center justify-between gap-2 shadow-md">
-                <QuizizzReactionButtonRow
-                  sessionId={session.id}
-                  senderName={session.teacherName || 'Bapak/Ibu Guru'}
-                  isTeacher={true}
-                  playClick={playClick}
-                  compact={true}
-                  title="Kirim Reaksi Guru di Ruang Tunggu:"
-                />
-              </div>
-            )}
-
             {/* Teacher Led: Active Question Advance Control Bar */}
             {isTeacherLed && session.status === 'active' && (
               <div className="bg-slate-900/95 border border-slate-800 rounded-2xl p-3.5 sm:p-4 flex flex-wrap items-center justify-between gap-3 shadow-lg">
@@ -817,6 +804,20 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                     </button>
                   )}
                 </div>
+              </div>
+            )}
+
+            {/* Bilah Reaksi Semangat Guru (Aktif di Ruang Tunggu Pra-Kuis maupun Saat Kuis Berlangsung) */}
+            {session.status !== 'finished' && (
+              <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-3 sm:px-4 sm:py-3 flex flex-col items-center justify-center gap-2 shadow-lg">
+                <QuizizzReactionButtonRow
+                  sessionId={session.id}
+                  senderName={session.teacherName || 'Bapak/Ibu Guru'}
+                  isTeacher={true}
+                  playClick={playClick}
+                  compact={true}
+                  title={session.status === 'waiting' ? 'Kirim Reaksi Guru di Ruang Tunggu:' : 'Kirim Reaksi Semangat Guru ke Siswa:'}
+                />
               </div>
             )}
 
@@ -1154,9 +1155,20 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
         </div>
       )}
 
-      {/* Quizizz-Grade Floating Live Reactions Overlay (Hanya di Ruang Tunggu Pra-Kuis) */}
-      {session.status === 'waiting' && (
+      {/* Quizizz-Grade Floating Live Reactions Overlay (Aktif Sepanjang Sesi) */}
+      {session.status !== 'finished' && (
         <QuizizzReactionOverlay sessionId={session.id} reactions={session.reactions} />
+      )}
+
+      {/* Floating Quick Reaction Button for Host (Mobile & Desktop) */}
+      {session.status !== 'finished' && (
+        <FloatingReactionButton
+          sessionId={session.id}
+          senderName={session.teacherName || 'Bapak/Ibu Guru'}
+          isTeacher={true}
+          playClick={playClick}
+          positionClassName="bottom-20 right-4 sm:bottom-24 sm:right-6"
+        />
       )}
 
       {/* Popup Notifikasi Obrolan Masuk Ala Zoom / Google Meet */}

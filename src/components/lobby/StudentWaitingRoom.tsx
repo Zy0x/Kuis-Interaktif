@@ -5,6 +5,7 @@ import { AVATAR_MAP } from '../../data/seedQuizzes';
 import { ThemeToggle } from '../common/ThemeToggle';
 import { QuizizzReactionOverlay } from '../common/QuizizzReactionOverlay';
 import { QuizizzReactionButtonRow } from '../common/QuizizzReactionButtonRow';
+import { FloatingReactionButton } from '../common/FloatingReactionButton';
 import { ZoomChatToast } from '../common/ZoomChatToast';
 import { StudentChatDrawer } from '../chat/StudentChatDrawer';
 import { 
@@ -417,6 +418,19 @@ export const StudentWaitingRoom: React.FC<StudentWaitingRoomProps> = ({
         sessionId={session.id}
         onOpenChat={handleOpenChatDrawer}
         currentUserName={studentName}
+      />
+
+      {/* Floating Live Reactions Overlay di Ruang Tunggu Murid */}
+      <QuizizzReactionOverlay sessionId={session.id} reactions={session.reactions} />
+
+      {/* Floating Quick Reaction Button untuk Murid (Mobile & Desktop) */}
+      <FloatingReactionButton
+        sessionId={session.id}
+        senderName={studentName}
+        avatarId={avatarId}
+        isTeacher={false}
+        playClick={playClick}
+        positionClassName="bottom-20 right-3 sm:bottom-24 sm:right-6"
       />
 
       {/* Modal Sesi Berakhir (Rule 1 & Rule 8: Elegan & Touch-First, Pengganti window.alert) */}

@@ -1,6 +1,27 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.7] - 2026-09-14
+### Perbaikan & Penyelarasan Tombol Reaksi Guru & Murid di Mobile & Sepanjang Sesi Kuis (Rule 1, Rule 2, Rule 4, Rule 5, Rule 7 & Rule 15)
+
+#### 1. Bilah Reaksi & Overlay Guru Sepanjang Sesi Kuis (`WaygroundHostView.tsx`)
+- **Aktivasi Tombol Reaksi Guru Saat Kuis Aktif**: Memperbaiki pembatasan yang sebelumnya hanya menampilkan reaksi saat `session.status === 'waiting'`. Kini guru dapat terus mengirim reaksi semangat ke murid saat status sesi `active` (berlangsung) maupun `paused`.
+- **Penempatan Bilah Reaksi Inline**: Menempatkan bilah reaksi guru secara rapi tepat di bawah bilah navigasi soal (*Question Advance Bar*) sehingga guru dapat memberi apresiasi secara langsung saat memandu kuis.
+- **Overlay Animasi Reaksi Menyeluruh**: Mengaktifkan `QuizizzReactionOverlay` sepanjang sesi kuis berlangsung (`session.status !== 'finished'`) agar reaksi murid dan guru selalu terlihat melayang di layar proyektor / desktop guru.
+
+#### 2. Komponen Floating Reaction Button Baru (`FloatingReactionButton.tsx`)
+- **Tombol Melayang Touch-First Mobile**: Menambahkan tombol aksi melayang (*Floating Action Button*) touch-first (48×48px hingga 56×56px) di sudut kanan bawah layar yang dapat diperluas menjadi dok emoji reaksi lengkap.
+- **Interaksi Ergonomis & Haptic Feedback**: Mendukung getaran haptik lembut (`navigator.vibrate(25)`), animasi timbul (*pop-up dock*), penutupan otomatis setelah 6 detik tanpa interaksi, serta deteksi sentuhan di luar area dok (*click-outside*).
+- **Penyiaran Realtime & Throttling Hemat Bandwidth**: Menggunakan `broadcastLiveReaction` untuk penyiaran instan tanpa latensi ke semua peserta dan debounce 500ms untuk penyimpanan database yang efisien.
+
+#### 3. Reaksi Murid di Arena Kuis, Jeda Soal, & Ruang Tunggu (`QuizArena.tsx`, `InterQuestionWaitingLounge.tsx`, `StudentWaitingRoom.tsx`)
+- **Akses Reaksi di Layar Siswa**: Menyematkan `FloatingReactionButton` dan `QuizizzReactionOverlay` di seluruh alur kuis siswa (Ruang Tunggu, saat menjawab soal di Arena Kuis multiplayer, serta di Lounge Jeda Soal).
+- **Pembersihan Preset Lama di Lounge Jeda Soal**: Menghapus tombol chip preset usang dan menyajikan kolom obrolan santai yang bersih, intuitif, dan responsif.
+
+#### 4. Pembaruan Versi & PWA Service Worker (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.7` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.7` (`public/sw.js`).
+
 ## [2.4.6] - 2026-09-14
 ### Pembersihan & Penyederhanaan Obrolan: Penghapusan Pengumuman Cepat Guru & Chip Pesan Cepat Murid (Rule 1, Rule 2, Rule 4, Rule 6 & Rule 15)
 

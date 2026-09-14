@@ -48,6 +48,8 @@ import {
   ShieldAlert
 } from 'lucide-react';
 import { QuizIllustration } from '../shared/QuizIllustration';
+import { QuizizzReactionOverlay } from '../common/QuizizzReactionOverlay';
+import { FloatingReactionButton } from '../common/FloatingReactionButton';
 
 export interface QuizArenaProps {
   quiz: Quiz;
@@ -2148,6 +2150,26 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
           }}
           playClick={playClick}
           playCorrect={playCorrect}
+        />
+      )}
+
+      {/* Quizizz-Grade Floating Live Reactions Overlay di Arena */}
+      {(activeSessionId || liveSession?.id) && !isPreview && (
+        <QuizizzReactionOverlay
+          sessionId={activeSessionId || liveSession?.id}
+          reactions={liveSession?.reactions}
+        />
+      )}
+
+      {/* Floating Reaction Button untuk Murid / Siswa di Live Multiplayer Arena */}
+      {(activeSessionId || liveSession?.id) && !isPreview && (
+        <FloatingReactionButton
+          sessionId={(activeSessionId || liveSession?.id)!}
+          senderName={DataManager.getPlayerProfile().nickname || 'Siswa Pintar'}
+          avatarId={DataManager.getPlayerProfile().avatarId || 'lion'}
+          isTeacher={isTeacher}
+          playClick={playClick}
+          positionClassName="bottom-20 right-3 sm:bottom-24 sm:right-6"
         />
       )}
 
