@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import type { SessionChatMessage } from '../../types/quiz';
-import { DataManager } from '../../lib/supabaseClient';
+import { DataManager, getLiveRealtimeChannel } from '../../lib/supabaseClient';
 import { AVATAR_MAP } from '../../data/seedQuizzes';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 import { useBackHandler } from '../../lib/navigationHistory';
@@ -154,11 +154,42 @@ export const TeacherChatDrawer: React.FC<TeacherChatDrawerProps> = ({
       console.warn('BroadcastChannel error in TeacherChatDrawer:', e);
     }
 
+    // Supabase Realtime Broadcast — cross-device sync
+    let rtChannel: ReturnType<typeof getLiveRealtimeChannel> | null = null;
+    try {
+      const ch = getLiveRealtimeChannel(sessionId);
+      rtChannel = ch;
+      ch
+        .on('broadcast', { event: 'chat' }, (payload: { payload?: { message?: SessionChatMessage; sessionId?: string } }) => {
+          const msg = payload?.payload?.message;
+          const sid = payload?.payload?.sessionId;
+          if (sid !== sessionId || !msg) return;
+          setMessages((prev) => {
+            if (prev.some((m) => m.id === msg.id)) return prev;
+            const last = prev[prev.length - 1];
+            if (
+              last &&
+              last.studentName === msg.studentName &&
+              last.text === msg.text &&
+              Math.abs(msg.createdAt - last.createdAt) < 1000
+            ) {
+              return prev;
+            }
+            return [...prev, msg];
+          });
+          scrollToBottom();
+        })
+        .subscribe();
+    } catch (e) {
+      console.warn('Realtime broadcast error in TeacherChatDrawer:', e);
+    }
+
     const interval = setInterval(refreshMessages, 2500);
 
     return () => {
       window.removeEventListener('kuis_chat_message', handleLocalMsg);
       if (bc) bc.close();
+      if (rtChannel) rtChannel.unsubscribe();
       clearInterval(interval);
     };
   }, [sessionId]);

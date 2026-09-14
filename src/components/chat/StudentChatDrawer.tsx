@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import type { SessionChatMessage } from '../../types/quiz';
-import { DataManager } from '../../lib/supabaseClient';
+import { DataManager, supabase, getLiveRealtimeChannel } from '../../lib/supabaseClient';
 import { AVATAR_MAP } from '../../data/seedQuizzes';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 import { useBackHandler } from '../../lib/navigationHistory';
@@ -143,6 +143,27 @@ export const StudentChatDrawer: React.FC<StudentChatDrawerProps> = ({
         }
       };
     } catch {}
+
+    // Realtime broadcast listener lintas perangkat
+    if (supabase && sessionId) {
+      try {
+        const subChannel = getLiveRealtimeChannel(sessionId);
+        if (subChannel) {
+          subChannel.on('broadcast', { event: 'chat' }, (eventPayload: any) => {
+            const payload = eventPayload?.payload;
+            if (payload?.sessionId === sessionId && payload?.message) {
+              setMessages((prev) => {
+                if (prev.some((m) => m.id === payload.message.id)) return prev;
+                return [...prev, payload.message];
+              });
+              scrollToBottom();
+            }
+          });
+        }
+      } catch (err) {
+        console.warn('StudentChatDrawer realtime chat error:', err);
+      }
+    }
 
     // Polling interval 2s fallback
     const interval = setInterval(refreshMessages, 2000);
@@ -300,34 +321,30 @@ export const StudentChatDrawer: React.FC<StudentChatDrawerProps> = ({
                 return (
                   <div key={m.id} className="flex flex-col items-start w-full my-1.5 animate-fade-in">
                     <div className="flex items-start gap-2.5 max-w-[92%] mr-auto">
-                      <div className="relative shrink-0 mt-0.5 select-none">
-                        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400 to-amber-500 text-white flex items-center justify-center text-sm shadow-xs border border-amber-300">
-                          {mAvatar}
-                        </div>
-                        <div className="absolute -top-1.5 -right-1 bg-amber-600 text-white rounded-full p-0.5 shadow-xs">
-                          <Sparkles className="w-2.5 h-2.5" />
-                        </div>
+                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400 to-amber-500 text-white flex items-center justify-center text-sm shadow-xs border border-amber-300 shrink-0 select-none mt-0.5">
+                        {mAvatar}
                       </div>
 
-                      <div className="bg-gradient-to-br from-amber-50 to-amber-100/90 dark:from-amber-950/60 dark:to-amber-900/40 border border-amber-200/90 dark:border-amber-700/60 text-slate-800 dark:text-slate-100 rounded-2xl rounded-tl-xs p-3 shadow-xs">
-                        <div className="flex items-center gap-1.5 mb-1 text-[10px] font-bold">
-                          <span className="font-black text-xs text-amber-950 dark:text-amber-200 truncate">
-                            {m.studentName}
-                          </span>
-                          <span className="px-1.5 py-0.2 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-500 text-white shadow-2xs flex items-center gap-0.5 shrink-0">
-                            <Sparkles className="w-2.5 h-2.5" />
-                            <span>Guru</span>
-                          </span>
-                          <span className="text-amber-700/70 dark:text-amber-400/70 text-[9px] ml-auto">
-                            {timeStr}
-                          </span>
+                      <div className="bg-amber-50/90 dark:bg-amber-950/50 border border-amber-200/90 dark:border-amber-800/60 rounded-2xl rounded-tl-xs p-3 shadow-2xs flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-1.5 mb-1">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span className="font-black text-xs text-amber-950 dark:text-amber-200 truncate">
+                              {m.studentName}
+                            </span>
+                            <span className="px-1.5 py-0.2 rounded-md text-[9px] font-black uppercase tracking-wider bg-amber-500 text-white shadow-2xs flex items-center gap-0.5 shrink-0">
+                              <Sparkles className="w-2.5 h-2.5" />
+                              <span>Guru</span>
+                            </span>
+                          </div>
+                          {timeStr && (
+                            <span className="text-amber-700/70 dark:text-amber-400/70 text-[9.5px] font-semibold shrink-0">
+                              {timeStr}
+                            </span>
+                          )}
                         </div>
-                        <p className="leading-relaxed font-semibold text-amber-950 dark:text-amber-100 break-words whitespace-pre-wrap">
+                        <p className="leading-relaxed font-medium text-xs text-amber-950 dark:text-amber-100 break-words whitespace-pre-wrap">
                           {m.text}
                         </p>
-                        <div className="mt-1 flex items-center justify-end text-[9px] font-bold text-amber-700/80 dark:text-amber-400/80">
-                          <span>✨ Pesan Guru</span>
-                        </div>
                       </div>
                     </div>
                   </div>

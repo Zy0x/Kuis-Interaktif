@@ -1,7 +1,31 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.4] - 2026-09-14
+### Sinkronisasi Reaksi & Obrolan Lintas Perangkat via Supabase Realtime Broadcast + Penyederhanaan Desain Bubble Chat Guru (Rule 1, Rule 2, Rule 4, Rule 5 & Rule 15)
+
+#### 1. Perbaikan Reaksi Emoji Siswa Tidak Tampil di Perangkat Lain (supabaseClient.ts, QuizizzReactionOverlay.tsx, WaygroundHostView.tsx, StudentWaitingRoom.tsx)
+- **Masalah Sebelumnya**: Reaksi emoji yang dikirim siswa dari perangkat mobile hanya terlihat di perangkat yang sama (tab/browser), tidak terpancar ke layar guru maupun siswa lain secara lintas perangkat.
+- **Solusi Realtime Broadcast**: Menambahkan jalur ketiga pengiriman data menggunakan **Supabase Realtime WebSocket Broadcast** (channel `quiz_rt_live_<sessionId>`) pada fungsi `broadcastLiveReaction()` sehingga reaksi terpropagasi instan ke semua perangkat yang terhubung.
+- **Helper Channel Terpusat**: Menambahkan fungsi `getLiveRealtimeChannel(sessionId)` di `supabaseClient.ts` sebagai singleton channel per sesi untuk efisiensi koneksi WebSocket.
+- **Overlay Tiga Sumber**: Komponen `QuizizzReactionOverlay` kini mendengarkan reaksi dari 3 sumber sekaligus: (1) Realtime broadcast WebSocket, (2) `BroadcastChannel` antar tab, (3) prop `reactions` dari DB sebagai fallback.
+
+#### 2. Sinkronisasi Obrolan Lintas Perangkat (StudentChatDrawer.tsx, TeacherChatDrawer.tsx, ZoomChatToast.tsx)
+- **Broadcast Chat via Realtime**: Fungsi `broadcastChatMessage()` kini juga mengirimkan pesan melalui Supabase Realtime broadcast (event `chat`) sehingga pesan chat terpropagasi instan ke semua drawer yang terbuka di berbagai perangkat.
+- **Listener Ditambahkan di Semua Drawer**: `StudentChatDrawer`, `TeacherChatDrawer`, dan `ZoomChatToast` kini berlangganan channel Realtime broadcast sesi aktif, melengkapi mekanisme sebelumnya (`BroadcastChannel` + `CustomEvent` + polling 2.5 detik).
+- **Deduplication Aman**: Setiap listener menerapkan pengecekan ID dan deduplication waktu (< 1 detik) untuk mencegah pesan muncul ganda dari berbagai sumber.
+
+#### 3. Penyederhanaan Visual Bubble Chat Guru (StudentChatDrawer.tsx)
+- **Penghapusan Penanda Ganda**: Menghapus dua elemen redundan yang sebelumnya menandai pesan guru: (1) badge Sparkles absolut di atas avatar, (2) label footer "✨ Pesan Guru".
+- **Satu Penanda Bersih**: Kini hanya ada satu penanda tunggal yang elegan: pill badge **"Guru"** di baris header bubble — konsisten, tidak berisik secara visual, dan mudah dibaca.
+- **Tata Letak Waktu Lebih Rapi**: Indikator waktu pesan guru dipindahkan ke bagian bawah bubble dengan warna abu-abu lembut.
+
+#### 4. Pembaruan Versi & PWA Service Worker (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.4` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.4` (`public/sw.js`).
+
 ## [2.4.3] - 2026-09-14
+
 ### Restrukturisasi Hierarki Modal: Pengkhususan Modal Profil Siswa & Navigasi Terpadu Masuk/Daftar (Rule 1, Rule 2, Rule 4, Rule 8, Rule 9 & Rule 15)
 
 #### 1. Pengkhususan Modal Profil Siswa Tanpa Redundansi (QuizHome.tsx)

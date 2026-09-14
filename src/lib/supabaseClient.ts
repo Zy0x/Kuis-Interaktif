@@ -120,6 +120,21 @@ export function broadcastSessionUpdate(session: QuizSession) {
   }
 }
 
+// Cache channel Realtime per sesi untuk komunikasi instan lintas perangkat (Mobile <-> Desktop)
+const liveChannelCache = new Map<string, any>();
+export function getLiveRealtimeChannel(sessionId: string) {
+  if (!supabase || !sessionId) return null;
+  if (liveChannelCache.has(sessionId)) return liveChannelCache.get(sessionId);
+  try {
+    const ch = supabase.channel(`quiz_rt_live_${sessionId}`);
+    ch.subscribe();
+    liveChannelCache.set(sessionId, ch);
+    return ch;
+  } catch {
+    return null;
+  }
+}
+
 export function broadcastLiveReaction(sessionId: string, reaction: SessionLiveReaction) {
   try {
     if (sessionBroadcastChannel) {
@@ -142,6 +157,22 @@ export function broadcastLiveReaction(sessionId: string, reaction: SessionLiveRe
         })
       );
     } catch {}
+  }
+
+  // 3. Supabase Realtime WebSocket Broadcast (Lintas perangkat/mobile ke desktop, sub-50ms)
+  if (supabase && sessionId) {
+    try {
+      const ch = getLiveRealtimeChannel(sessionId);
+      if (ch) {
+        ch.send({
+          type: 'broadcast',
+          event: 'reaction',
+          payload: { sessionId, reaction },
+        });
+      }
+    } catch (err) {
+      console.warn('Supabase realtime broadcast reaction notice:', err);
+    }
   }
 }
 
@@ -167,6 +198,22 @@ export function broadcastChatMessage(sessionId: string, message: SessionChatMess
         })
       );
     } catch {}
+  }
+
+  // 3. Supabase Realtime WebSocket Broadcast (Lintas perangkat/mobile ke desktop)
+  if (supabase && sessionId) {
+    try {
+      const ch = getLiveRealtimeChannel(sessionId);
+      if (ch) {
+        ch.send({
+          type: 'broadcast',
+          event: 'chat',
+          payload: { sessionId, message },
+        });
+      }
+    } catch (err) {
+      console.warn('Supabase realtime broadcast chat notice:', err);
+    }
   }
 }
 

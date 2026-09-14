@@ -1119,7 +1119,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
 
       {/* Quizizz-Grade Floating Live Reactions Overlay (Hanya di Ruang Tunggu Pra-Kuis) */}
       {session.status === 'waiting' && (
-        <QuizizzReactionOverlay sessionId={session.id} />
+        <QuizizzReactionOverlay sessionId={session.id} reactions={session.reactions} />
       )}
 
       {/* Popup Notifikasi Obrolan Masuk Ala Zoom / Google Meet */}

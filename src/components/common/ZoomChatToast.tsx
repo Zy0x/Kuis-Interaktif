@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import type { SessionChatMessage } from '../../types/quiz';
 import { AVATAR_MAP } from '../../data/seedQuizzes';
+import { supabase, getLiveRealtimeChannel } from '../../lib/supabaseClient';
 import { MessageSquare, X } from 'lucide-react';
 
 interface ZoomChatToastProps {
@@ -96,6 +97,23 @@ export const ZoomChatToast: React.FC<ZoomChatToastProps> = ({
       }
     } catch (e) {
       console.warn('BroadcastChannel error in ZoomChatToast:', e);
+    }
+
+    // 3. Dengarkan Supabase Realtime WebSocket broadcast lintas perangkat
+    if (supabase && sessionId) {
+      try {
+        const subChannel = getLiveRealtimeChannel(sessionId);
+        if (subChannel) {
+          subChannel.on('broadcast', { event: 'chat' }, (eventPayload: any) => {
+            const payload = eventPayload?.payload;
+            if (payload?.sessionId === sessionId && payload?.message) {
+              handleIncomingMessage(payload.message);
+            }
+          });
+        }
+      } catch (err) {
+        console.warn('ZoomChatToast realtime broadcast error:', err);
+      }
     }
 
     return () => {
