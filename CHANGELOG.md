@@ -1,7 +1,28 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
-## [2.3.95] - 2026-09-14
+## [2.3.96] - 2026-09-14
+### Persistensi Menyeluruh Ruang Tunggu Host & Peserta: Proteksi Sesi Aktif dari Muat Ulang Halaman (F5/Reload Resistance) di Seluruh Alur Aplikasi (Rule 1, Rule 2, Rule 6, Rule 11 & Rule 15)
+
+#### 1. Ruang Tunggu Guru / Layar Pantau Host (TeacherDashboard.tsx & WaygroundHostView.tsx)
+- **Anti-Reset Host View**: Memastikan Guru yang sedang berada di Ruang Tunggu Sesi atau Layar Pantau Live tidak terlempar kembali ke tabel koleksi kuis saat halaman di-refresh (F5/reload) secara tidak sengaja.
+- **Sinkronisasi Multi-Lapisan**: Status host sesi aktif kini disinkronkan secara mulus ke parameter URL (`hostSession`) serta penyimpanan sesi tab.
+- **Resolusi Data Kuis Cepat & Aman**: Mengintegrasikan resolver data kuis instan (`resolveQuizForSession`) sehingga seluruh butir soal, judul, dan pengaturan kuis langsung siap ditampilkan tanpa jeda atau risiko data kosong.
+- **Navigasi Bersih**: Saat Guru menekan tombol "Kembali" atau mengakhiri sesi, parameter URL dan status sesi dibersihkan secara rapi tanpa meninggalkan residu.
+
+#### 2. Ruang Tunggu Siswa / Peserta (StudentLobby.tsx & StudentWaitingRoom.tsx)
+- **Anti-Reset Ruang Tunggu Peserta**: Mencegah siswa terlempar keluar dari Ruang Tunggu Kelas ke formulir input nama saat terjadi reload halaman atau koneksi terputus sesaat.
+- **Pemulihan Otomatis Profil Peserta**: Nama lengkap siswa, nomor urut/absen, dan karakter avatar dipulihkan secara instan dari penyimpanan sesi tab.
+- **Transisi Dinamis**: Jika Guru memulai kuis saat siswa sedang dalam proses reload, antarmuka langsung menyinkronkan status dan mentransisikan siswa ke Arena Kuis secara mulus tanpa terhenti.
+- **Pembersihan Bersih**: Penyimpanan sesi ruang tunggu siswa otomatis dibersihkan saat kuis dimulai atau saat siswa memilih untuk kembali ke katalog.
+
+#### 3. Ketahanan Alur Kerja Lainnya (App.tsx, QuizCreator.tsx & TeacherDashboard.tsx)
+- **Editor Kuis (QuizCreator)**: Memastikan kuis yang sedang diedit oleh Guru (`editingQuiz`) dipulihkan secara konsisten saat me-refresh halaman pembuatan kuis (`?screen=creator&quiz=...`).
+- **Tab & Rekap Sesi Guru**: Tab aktif (*Koleksi Kuis* vs *Sesi Kelas Live*) dan layar rekapitulasi nilai sesi (*QuizSessionRecapView*) kini mempertahankan statusnya saat halaman dimuat ulang.
+
+#### 4. Sinkronisasi Versi & Service Worker Cache (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.3.96` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.3.96` (`public/sw.js`).
 ### Standardisasi & Harmonisasi Tata Letak Ruang Tunggu Host: Hero Card Terpadu PIN Kelas, Integrasi Kompak Header, dan Metrik Kontekstual (Rule 1, Rule 2, Rule 4 & Rule 8)
 
 #### 1. Hero Card Terpadu Status & PIN Ruang Tunggu Guru (WaygroundHostView.tsx) (Rule 1, Rule 2 & Rule 4)

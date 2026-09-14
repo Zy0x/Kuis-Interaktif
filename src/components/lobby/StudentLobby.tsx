@@ -46,6 +46,14 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
   isDark = false,
   onToggleTheme = () => {},
 }) => {
+  // Real-time live session & settings state
+  const [liveSession, setLiveSession] = useState<QuizSession | null>(() => {
+    if (activeSession) return activeSession;
+    if (quiz.pinCode) return DataManager.getActiveSessionByPin(quiz.pinCode);
+    return DataManager.getActiveSessionByQuizId(quiz.id);
+  });
+  const [liveSettings, setLiveSettings] = useState<QuizSessionSettings | undefined>(sessionSettings);
+
   const profile = DataManager.getPlayerProfile();
   const isCustom = Boolean(
     profile.nickname &&
@@ -53,11 +61,46 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
     profile.nickname.trim().toLowerCase() !== 'bintang sd' &&
     profile.nickname.trim().toLowerCase() !== 'bintang pintar'
   );
-  const [nickname, setNickname] = useState(isCustom ? profile.nickname : '');
+
+  // Cek apakah siswa sebelumnya sedang berada di ruang tunggu (tahan refresh F5)
+  const restoredWaitingState = useMemo(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const keys = [
+        liveSession?.id ? `kuis_student_waiting_${liveSession.id}` : null,
+        activeSession?.id ? `kuis_student_waiting_${activeSession.id}` : null,
+        quiz.pinCode ? `kuis_student_waiting_pin_${quiz.pinCode}` : null,
+        `kuis_student_waiting_quiz_${quiz.id}`,
+      ].filter(Boolean) as string[];
+
+      for (const k of keys) {
+        const raw = sessionStorage.getItem(k);
+        if (raw) {
+          const data = JSON.parse(raw);
+          if (data && data.isInWaitingRoom && Date.now() - (data.timestamp || 0) < 6 * 60 * 60 * 1000) {
+            return data;
+          }
+        }
+      }
+    } catch {}
+    return null;
+  }, [liveSession?.id, activeSession?.id, quiz.pinCode, quiz.id]);
+
+  const [nickname, setNickname] = useState(() => {
+    if (restoredWaitingState?.studentName) return restoredWaitingState.studentName;
+    return isCustom ? profile.nickname : '';
+  });
   const [rollNumber, setRollNumber] = useState('');
-  const [selectedAvatar, setSelectedAvatar] = useState(profile.avatarId || 'lion');
-  const [isInWaitingRoom, setIsInWaitingRoom] = useState(false);
-  const [savedFinalName, setSavedFinalName] = useState('');
+  const [selectedAvatar, setSelectedAvatar] = useState(() => {
+    if (restoredWaitingState?.avatarId) return restoredWaitingState.avatarId;
+    return profile.avatarId || 'lion';
+  });
+  const [savedFinalName, setSavedFinalName] = useState(() => {
+    return restoredWaitingState?.studentName || '';
+  });
+  const [isInWaitingRoom, setIsInWaitingRoom] = useState<boolean>(() => {
+    return Boolean(restoredWaitingState?.isInWaitingRoom);
+  });
 
   const formatIndonesianDeadline = (isoString?: string) => {
     if (!isoString) return '';
@@ -77,14 +120,6 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
       return isoString;
     }
   };
-
-  // Real-time live session & settings state
-  const [liveSession, setLiveSession] = useState<QuizSession | null>(() => {
-    if (activeSession) return activeSession;
-    if (quiz.pinCode) return DataManager.getActiveSessionByPin(quiz.pinCode);
-    return DataManager.getActiveSessionByQuizId(quiz.id);
-  });
-  const [liveSettings, setLiveSettings] = useState<QuizSessionSettings | undefined>(sessionSettings);
 
   useEffect(() => {
     if (activeSession) {
@@ -231,6 +266,48 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
   // Cek apakah mode dipandu guru dan sesi masih berstatus waiting
   const isTeacherLedWaiting = effectiveSettings.executionMode === 'teacher_led' && (!liveSession || liveSession.status === 'waiting');
 
+  const clearWaitingSessionStorage = () => {
+    try {
+      sessionStorage.removeItem(`kuis_student_waiting_quiz_${quiz.id}`);
+      if (quiz.pinCode) sessionStorage.removeItem(`kuis_student_waiting_pin_${quiz.pinCode}`);
+      if (liveSession?.id) sessionStorage.removeItem(`kuis_student_waiting_${liveSession.id}`);
+      if (activeSession?.id) sessionStorage.removeItem(`kuis_student_waiting_${activeSession.id}`);
+    } catch {}
+  };
+
+  const handleStartQuizFromWaiting = () => {
+    clearWaitingSessionStorage();
+    setIsInWaitingRoom(false);
+    onStartQuiz();
+  };
+
+  const handleBackToLobbyFromWaiting = () => {
+    clearWaitingSessionStorage();
+    setIsInWaitingRoom(false);
+  };
+
+  // Jika guru sudah memulai kuis ketika siswa sedang me-refresh, transisi langsung ke arena
+  useEffect(() => {
+    if (isInWaitingRoom && liveSession && liveSession.status === 'active') {
+      handleStartQuizFromWaiting();
+    }
+  }, [isInWaitingRoom, liveSession?.status]);
+
+  // Jika dipulihkan dari refresh dan peserta belum terdaftar di sesi, daftarkan ulang otomatis
+  useEffect(() => {
+    if (isInWaitingRoom && liveSession && savedFinalName) {
+      const alreadyJoined = (liveSession.participants || []).some(
+        (p) => p.name.trim().toLowerCase() === savedFinalName.trim().toLowerCase()
+      );
+      if (!alreadyJoined) {
+        DataManager.addOrUpdateSessionParticipant(liveSession.id, {
+          name: savedFinalName,
+          avatarId: selectedAvatar,
+        }).catch(() => {});
+      }
+    }
+  }, [isInWaitingRoom, liveSession?.id, savedFinalName, selectedAvatar]);
+
   const handleStart = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isAttemptLimitReached) return;
@@ -255,8 +332,20 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
     }
 
     if (isTeacherLedWaiting) {
+      const payload = {
+        isInWaitingRoom: true,
+        studentName: finalName,
+        avatarId: selectedAvatar,
+        timestamp: Date.now(),
+      };
+      try {
+        sessionStorage.setItem(`kuis_student_waiting_quiz_${quiz.id}`, JSON.stringify(payload));
+        if (quiz.pinCode) sessionStorage.setItem(`kuis_student_waiting_pin_${quiz.pinCode}`, JSON.stringify(payload));
+        if (liveSession?.id) sessionStorage.setItem(`kuis_student_waiting_${liveSession.id}`, JSON.stringify(payload));
+      } catch {}
       setIsInWaitingRoom(true);
     } else {
+      clearWaitingSessionStorage();
       onStartQuiz();
     }
   };
@@ -271,8 +360,8 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
         session={liveSession}
         studentName={savedFinalName || nickname || 'Siswa Pintar'}
         avatarId={selectedAvatar}
-        onStartQuiz={onStartQuiz}
-        onBackToHome={() => setIsInWaitingRoom(false)}
+        onStartQuiz={handleStartQuizFromWaiting}
+        onBackToHome={handleBackToLobbyFromWaiting}
         playClick={playClick}
         isDark={isDark}
         onToggleTheme={onToggleTheme}

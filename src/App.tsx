@@ -140,6 +140,9 @@ export const App: React.FC = () => {
 
           const settings = resolveSettings(session, q);
           setActiveQuiz(q);
+          if (currentScreen === 'creator' || initialNav.screen === 'creator') {
+            setEditingQuiz(q);
+          }
           if (session) setActiveSession(session);
           setActiveSessionSettings(settings);
           setActiveGameMode(settings.mode);
@@ -666,6 +669,10 @@ export const App: React.FC = () => {
         <React.Suspense fallback={<ScreenLoadingFallback message="Membuka dashboard guru..." isDark={isDark} />}>
           <TeacherDashboard
             teacher={teacher}
+            initialHostSessionId={initialNav.hostSessionId}
+            initialRecapSessionId={initialNav.recapSessionId}
+            initialDetailQuizId={initialNav.detailQuizId}
+            initialTab={initialNav.teacherTab}
             onLogout={handleTeacherLogout}
             onGoHome={handleGoHome}
             onOpenCreator={(quizToEdit?: Quiz, mode?: 'ai' | 'manual') => {

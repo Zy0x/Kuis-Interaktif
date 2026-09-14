@@ -1,11 +1,17 @@
 import type { Quiz, QuizAttemptAnswer, ScreenState } from '../types/quiz';
 
+export type TeacherTabState = 'collection' | 'live_sessions' | 'quizzes' | 'submissions' | 'generator';
+
 export interface SavedNavigationState {
   screen: ScreenState;
   quizId?: string;
   pin?: string;
-  teacherTab?: 'quizzes' | 'submissions' | 'generator';
+  teacherTab?: TeacherTabState;
   creatorMode?: 'ai' | 'manual';
+  hostSessionId?: string;
+  recapSessionId?: string;
+  detailQuizId?: string;
+  studentWaiting?: boolean;
   lastAnswers?: QuizAttemptAnswer[];
   lastTimeSpent?: number;
   timestamp: number;
@@ -21,8 +27,12 @@ export function saveNavigationState(state: {
   screen: ScreenState;
   quiz?: Quiz | null;
   quizId?: string;
-  teacherTab?: 'quizzes' | 'submissions' | 'generator';
+  teacherTab?: TeacherTabState;
   creatorMode?: 'ai' | 'manual';
+  hostSessionId?: string | null;
+  recapSessionId?: string | null;
+  detailQuizId?: string | null;
+  studentWaiting?: boolean;
   lastAnswers?: QuizAttemptAnswer[];
   lastTimeSpent?: number;
   replace?: boolean;
@@ -36,15 +46,15 @@ export function saveNavigationState(state: {
   let resolvedTab = state.teacherTab;
   if (!resolvedTab && typeof window !== 'undefined') {
     const params = new URLSearchParams(window.location.search);
-    const urlTab = params.get('tab') as ('quizzes' | 'submissions' | 'generator') | null;
-    if (urlTab && ['quizzes', 'submissions', 'generator'].includes(urlTab)) {
+    const urlTab = params.get('tab') as TeacherTabState | null;
+    if (urlTab && ['collection', 'live_sessions', 'quizzes', 'submissions', 'generator'].includes(urlTab)) {
       resolvedTab = urlTab;
     } else {
       try {
         const raw = sessionStorage.getItem(NAV_SESSION_KEY);
         if (raw) {
           const s = JSON.parse(raw);
-          if (s.teacherTab && ['quizzes', 'submissions', 'generator'].includes(s.teacherTab)) {
+          if (s.teacherTab && ['collection', 'live_sessions', 'quizzes', 'submissions', 'generator'].includes(s.teacherTab)) {
             resolvedTab = s.teacherTab;
           }
         }
@@ -72,12 +82,70 @@ export function saveNavigationState(state: {
     }
   }
 
+  // Pertahankan hostSessionId jika tidak secara eksplisit diubah
+  let resolvedHostSessionId = state.hostSessionId;
+  if (resolvedHostSessionId === undefined && state.screen === 'teacher-dashboard' && typeof window !== 'undefined') {
+    const params = new URLSearchParams(window.location.search);
+    const urlHost = params.get('hostSession');
+    if (urlHost) {
+      resolvedHostSessionId = urlHost;
+    } else {
+      try {
+        const raw = sessionStorage.getItem(NAV_SESSION_KEY);
+        if (raw) {
+          const s = JSON.parse(raw);
+          if (s.hostSessionId) resolvedHostSessionId = s.hostSessionId;
+        }
+      } catch {}
+    }
+  }
+
+  // Pertahankan recapSessionId jika tidak secara eksplisit diubah
+  let resolvedRecapSessionId = state.recapSessionId;
+  if (resolvedRecapSessionId === undefined && state.screen === 'teacher-dashboard' && typeof window !== 'undefined') {
+    const params = new URLSearchParams(window.location.search);
+    const urlRecap = params.get('recapSession');
+    if (urlRecap) {
+      resolvedRecapSessionId = urlRecap;
+    } else {
+      try {
+        const raw = sessionStorage.getItem(NAV_SESSION_KEY);
+        if (raw) {
+          const s = JSON.parse(raw);
+          if (s.recapSessionId) resolvedRecapSessionId = s.recapSessionId;
+        }
+      } catch {}
+    }
+  }
+
+  // Pertahankan detailQuizId jika tidak secara eksplisit diubah
+  let resolvedDetailQuizId = state.detailQuizId;
+  if (resolvedDetailQuizId === undefined && state.screen === 'teacher-dashboard' && typeof window !== 'undefined') {
+    const params = new URLSearchParams(window.location.search);
+    const urlDetail = params.get('detailQuiz');
+    if (urlDetail) {
+      resolvedDetailQuizId = urlDetail;
+    } else {
+      try {
+        const raw = sessionStorage.getItem(NAV_SESSION_KEY);
+        if (raw) {
+          const s = JSON.parse(raw);
+          if (s.detailQuizId) resolvedDetailQuizId = s.detailQuizId;
+        }
+      } catch {}
+    }
+  }
+
   const payload: SavedNavigationState = {
     screen: state.screen,
     quizId,
     pin,
     teacherTab: resolvedTab || undefined,
     creatorMode: resolvedCreatorMode || undefined,
+    hostSessionId: resolvedHostSessionId || undefined,
+    recapSessionId: resolvedRecapSessionId || undefined,
+    detailQuizId: resolvedDetailQuizId || undefined,
+    studentWaiting: state.studentWaiting,
     lastAnswers: state.lastAnswers,
     lastTimeSpent: state.lastTimeSpent,
     timestamp: Date.now(),
@@ -98,6 +166,9 @@ export function saveNavigationState(state: {
       url.searchParams.delete('quiz');
       url.searchParams.delete('tab');
       url.searchParams.delete('mode');
+      url.searchParams.delete('hostSession');
+      url.searchParams.delete('recapSession');
+      url.searchParams.delete('detailQuiz');
       if (!pin) url.searchParams.delete('pin');
     } else {
       url.searchParams.set('screen', state.screen);
@@ -106,10 +177,35 @@ export function saveNavigationState(state: {
 
       if (pin) url.searchParams.set('pin', pin);
       
-      if (state.screen === 'teacher-dashboard' && resolvedTab && resolvedTab !== 'quizzes') {
-        url.searchParams.set('tab', resolvedTab);
+      if (state.screen === 'teacher-dashboard') {
+        if (resolvedTab && resolvedTab !== 'collection' && resolvedTab !== 'quizzes') {
+          url.searchParams.set('tab', resolvedTab);
+        } else {
+          url.searchParams.delete('tab');
+        }
+
+        if (resolvedHostSessionId) {
+          url.searchParams.set('hostSession', resolvedHostSessionId);
+        } else {
+          url.searchParams.delete('hostSession');
+        }
+
+        if (resolvedRecapSessionId) {
+          url.searchParams.set('recapSession', resolvedRecapSessionId);
+        } else {
+          url.searchParams.delete('recapSession');
+        }
+
+        if (resolvedDetailQuizId) {
+          url.searchParams.set('detailQuiz', resolvedDetailQuizId);
+        } else {
+          url.searchParams.delete('detailQuiz');
+        }
       } else {
         url.searchParams.delete('tab');
+        url.searchParams.delete('hostSession');
+        url.searchParams.delete('recapSession');
+        url.searchParams.delete('detailQuiz');
       }
 
       if (state.screen === 'creator' && resolvedCreatorMode) {
@@ -137,8 +233,12 @@ export function restoreNavigationState(): {
   screen: ScreenState;
   quizId?: string;
   pin?: string;
-  teacherTab?: 'quizzes' | 'submissions' | 'generator';
+  teacherTab?: TeacherTabState;
   creatorMode?: 'ai' | 'manual';
+  hostSessionId?: string;
+  recapSessionId?: string;
+  detailQuizId?: string;
+  studentWaiting?: boolean;
   lastAnswers?: QuizAttemptAnswer[];
   lastTimeSpent?: number;
   isRestored: boolean;
@@ -152,8 +252,11 @@ export function restoreNavigationState(): {
     const screenParam = params.get('screen') as ScreenState | null;
     const quizParam = params.get('quiz');
     const pinParam = params.get('pin');
-    const tabParam = params.get('tab') as 'quizzes' | 'submissions' | 'generator' | null;
+    const tabParam = params.get('tab') as TeacherTabState | null;
     const modeParam = params.get('mode') as 'ai' | 'manual' | null;
+    const hostParam = params.get('hostSession');
+    const recapParam = params.get('recapSession');
+    const detailParam = params.get('detailQuiz');
 
     let sessionData: SavedNavigationState | null = null;
     try {
@@ -172,8 +275,12 @@ export function restoreNavigationState(): {
         screen: targetScreen,
         quizId: quizParam || sessionData?.quizId,
         pin: pinParam || sessionData?.pin,
-        teacherTab: tabParam || sessionData?.teacherTab || 'quizzes',
+        teacherTab: tabParam || sessionData?.teacherTab || 'collection',
         creatorMode: (modeParam === 'ai' || modeParam === 'manual') ? modeParam : sessionData?.creatorMode,
+        hostSessionId: hostParam || sessionData?.hostSessionId,
+        recapSessionId: recapParam || sessionData?.recapSessionId,
+        detailQuizId: detailParam || sessionData?.detailQuizId,
+        studentWaiting: sessionData?.studentWaiting,
         lastAnswers: sessionData?.lastAnswers || [],
         lastTimeSpent: sessionData?.lastTimeSpent || 0,
         isRestored: true,
@@ -214,6 +321,10 @@ export function clearNavigationState() {
     url.searchParams.delete('quiz');
     url.searchParams.delete('pin');
     url.searchParams.delete('tab');
+    url.searchParams.delete('mode');
+    url.searchParams.delete('hostSession');
+    url.searchParams.delete('recapSession');
+    url.searchParams.delete('detailQuiz');
     window.history.replaceState({ screen: 'home' }, '', url.pathname + (url.hash || ''));
   } catch {
     // ignore

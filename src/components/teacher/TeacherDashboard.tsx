@@ -14,6 +14,7 @@ import { PlayQuizModal, type PlayQuizSessionOptions } from './PlayQuizModal';
 import { WaygroundHostView } from './WaygroundHostView';
 import { QuizSessionRecapView } from './QuizSessionRecapView';
 import { AdminDatabaseBackupModal } from './AdminDatabaseBackupModal';
+import { saveNavigationState, type TeacherTabState } from '../../lib/navigationState';
 import { 
   GraduationCap, 
   Plus, 
@@ -60,6 +61,10 @@ const getSubjectBadge = (subject: string) => {
 
 interface TeacherDashboardProps {
   teacher: TeacherProfile;
+  initialHostSessionId?: string;
+  initialRecapSessionId?: string;
+  initialDetailQuizId?: string;
+  initialTab?: TeacherTabState;
   onLogout: () => void;
   onGoHome: () => void;
   onOpenCreator: (quizToEdit?: Quiz, mode?: 'ai' | 'manual') => void;
@@ -73,6 +78,10 @@ interface TeacherDashboardProps {
 
 export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   teacher,
+  initialHostSessionId,
+  initialRecapSessionId,
+  initialDetailQuizId,
+  initialTab,
   onLogout,
   onGoHome,
   onOpenCreator,
@@ -83,19 +92,67 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   isDark = false,
   onToggleTheme = () => {},
 }) => {
-  const [quizzes, setQuizzes] = useState<Quiz[]>([]);
-  const [selectedQuizForDetail, setSelectedQuizForDetail] = useState<Quiz | null>(null);
+  // 1. Data lokal instan agar saat reload halaman tidak terjadi flicker atau quiz kosong
+  const [quizzes, setQuizzes] = useState<Quiz[]>(() => {
+    return DataManager.getAllQuizzes({ teacherEmail: teacher.email, teacherId: teacher.id });
+  });
+
+  const [selectedQuizForDetail, setSelectedQuizForDetail] = useState<Quiz | null>(() => {
+    if (typeof window === 'undefined') return null;
+    const targetId = initialDetailQuizId || new URLSearchParams(window.location.search).get('detailQuiz') || sessionStorage.getItem('kuis_teacher_active_detail_quiz_id');
+    if (targetId) {
+      const all = DataManager.getAllQuizzes({ teacherEmail: teacher.email, teacherId: teacher.id });
+      return all.find((q) => q.id === targetId) || null;
+    }
+    return null;
+  });
+
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [quizToPlay, setQuizToPlay] = useState<Quiz | null>(null);
 
-  // Main Tab Navigation State: 'collection' | 'live_sessions'
-  const [activeMainTab, setActiveMainTab] = useState<'collection' | 'live_sessions'>('collection');
+  // Main Tab Navigation State: 'collection' | 'live_sessions' (persisten di URL & sessionStorage)
+  const [activeMainTab, setActiveMainTab] = useState<'collection' | 'live_sessions'>(() => {
+    if (initialTab === 'live_sessions') return 'live_sessions';
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab');
+      if (tabParam === 'live_sessions') return 'live_sessions';
+      const saved = sessionStorage.getItem('kuis_teacher_active_main_tab');
+      if (saved === 'live_sessions') return 'live_sessions';
+    }
+    return 'collection';
+  });
 
-  // Active Sessions States
-  const [sessions, setSessions] = useState<QuizSession[]>([]);
+  // Active Sessions States (persisten di URL & sessionStorage saat Guru di Ruang Tunggu Host atau Rekap)
+  const [sessions, setSessions] = useState<QuizSession[]>(() => {
+    return DataManager.getActiveSessions({ teacherEmail: teacher.email });
+  });
   const [sessionFilter, setSessionFilter] = useState<'all' | 'active' | 'finished'>('all');
-  const [selectedSessionForHost, setSelectedSessionForHost] = useState<QuizSession | null>(null);
-  const [selectedSessionForRecap, setSelectedSessionForRecap] = useState<QuizSession | null>(null);
+
+  const [selectedSessionForHost, setSelectedSessionForHost] = useState<QuizSession | null>(() => {
+    if (typeof window === 'undefined') return null;
+    const targetHostId = initialHostSessionId || new URLSearchParams(window.location.search).get('hostSession') || sessionStorage.getItem('kuis_teacher_active_host_session_id');
+    if (targetHostId) {
+      const s = DataManager.getActiveSessionById(targetHostId);
+      if (s && s.status !== 'finished') {
+        return s;
+      }
+    }
+    return null;
+  });
+
+  const [selectedSessionForRecap, setSelectedSessionForRecap] = useState<QuizSession | null>(() => {
+    if (typeof window === 'undefined') return null;
+    const targetRecapId = initialRecapSessionId || new URLSearchParams(window.location.search).get('recapSession') || sessionStorage.getItem('kuis_teacher_active_recap_session_id');
+    if (targetRecapId) {
+      const s = DataManager.getActiveSessionById(targetRecapId);
+      if (s) {
+        return s;
+      }
+    }
+    return null;
+  });
+
   const [sessionToDelete, setSessionToDelete] = useState<QuizSession | null>(null);
   const [isDeletingSession, setIsDeletingSession] = useState(false);
 
@@ -115,6 +172,59 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   const [deletedCount, setDeletedCount] = useState<number>(() => DataManager.getDeletedQuizIds().length);
   const isMasterTeacher = teacher.email.trim().toLowerCase() === MASTER_TEACHER_EMAIL.toLowerCase();
   const [isAdminBackupModalOpen, setIsAdminBackupModalOpen] = useState(false);
+
+  // Sinkronisasi status host session ke URL dan sessionStorage agar tahan refresh halaman
+  useEffect(() => {
+    if (selectedSessionForHost) {
+      try {
+        sessionStorage.setItem('kuis_teacher_active_host_session_id', selectedSessionForHost.id);
+      } catch {}
+      saveNavigationState({ screen: 'teacher-dashboard', hostSessionId: selectedSessionForHost.id });
+    } else {
+      try {
+        sessionStorage.removeItem('kuis_teacher_active_host_session_id');
+      } catch {}
+      saveNavigationState({ screen: 'teacher-dashboard', hostSessionId: null });
+    }
+  }, [selectedSessionForHost?.id]);
+
+  // Sinkronisasi status recap session ke URL dan sessionStorage agar tahan refresh halaman
+  useEffect(() => {
+    if (selectedSessionForRecap) {
+      try {
+        sessionStorage.setItem('kuis_teacher_active_recap_session_id', selectedSessionForRecap.id);
+      } catch {}
+      saveNavigationState({ screen: 'teacher-dashboard', recapSessionId: selectedSessionForRecap.id });
+    } else {
+      try {
+        sessionStorage.removeItem('kuis_teacher_active_recap_session_id');
+      } catch {}
+      saveNavigationState({ screen: 'teacher-dashboard', recapSessionId: null });
+    }
+  }, [selectedSessionForRecap?.id]);
+
+  // Sinkronisasi detail kuis ke URL dan sessionStorage
+  useEffect(() => {
+    if (selectedQuizForDetail) {
+      try {
+        sessionStorage.setItem('kuis_teacher_active_detail_quiz_id', selectedQuizForDetail.id);
+      } catch {}
+      saveNavigationState({ screen: 'teacher-dashboard', detailQuizId: selectedQuizForDetail.id });
+    } else {
+      try {
+        sessionStorage.removeItem('kuis_teacher_active_detail_quiz_id');
+      } catch {}
+      saveNavigationState({ screen: 'teacher-dashboard', detailQuizId: null });
+    }
+  }, [selectedQuizForDetail?.id]);
+
+  // Sinkronisasi tab aktif ke sessionStorage & URL
+  useEffect(() => {
+    try {
+      sessionStorage.setItem('kuis_teacher_active_main_tab', activeMainTab);
+    } catch {}
+    saveNavigationState({ screen: 'teacher-dashboard', teacherTab: activeMainTab });
+  }, [activeMainTab]);
 
   // Navigation back handler
   useBackHandler('teacher-dashboard-main', 30, () => {
@@ -176,6 +286,37 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
         const cloudSessions = await DataManager.syncActiveSessionsFromSupabase(teacher.email);
         if (cloudSessions && cloudSessions.length > 0) {
           setSessions(cloudSessions);
+        }
+      }
+
+      // 3. Pulihkan status host / rekap jika belum berhasil termuat dari memori lokal instan
+      const targetHostId = initialHostSessionId || (typeof window !== 'undefined' ? (new URLSearchParams(window.location.search).get('hostSession') || sessionStorage.getItem('kuis_teacher_active_host_session_id')) : null);
+      if (targetHostId && !selectedSessionForHost) {
+        const local = DataManager.getActiveSessionById(targetHostId);
+        if (local && local.status !== 'finished') {
+          setSelectedSessionForHost(local);
+        } else {
+          try {
+            const cloudSession = await DataManager.fetchActiveSessionById(targetHostId);
+            if (cloudSession && cloudSession.status !== 'finished') {
+              setSelectedSessionForHost(cloudSession);
+            }
+          } catch {}
+        }
+      }
+
+      const targetRecapId = initialRecapSessionId || (typeof window !== 'undefined' ? (new URLSearchParams(window.location.search).get('recapSession') || sessionStorage.getItem('kuis_teacher_active_recap_session_id')) : null);
+      if (targetRecapId && !selectedSessionForRecap) {
+        const local = DataManager.getActiveSessionById(targetRecapId);
+        if (local) {
+          setSelectedSessionForRecap(local);
+        } else {
+          try {
+            const cloudRecap = await DataManager.fetchActiveSessionById(targetRecapId);
+            if (cloudRecap) {
+              setSelectedSessionForRecap(cloudRecap);
+            }
+          } catch {}
         }
       }
     } catch (e) {
@@ -388,21 +529,41 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
     );
   }
 
-  // If host view is open:
-  if (selectedSessionForHost) {
-    const matchingQuiz: Quiz = quizzes.find((q) => q.id === selectedSessionForHost.quizId) || {
-      id: selectedSessionForHost.quizId,
-      title: selectedSessionForHost.quizTitle,
+  // Helper untuk mendapatkan kuis lengkap beserta butir soal secara tangguh saat refresh
+  const resolveQuizForSession = (quizId: string, fallbackTitle?: string, fallbackSubject?: Subject, fallbackGrade?: number, fallbackCover?: string): Quiz => {
+    const foundInState = quizzes.find((q) => q.id === quizId);
+    if (foundInState && foundInState.questions && foundInState.questions.length > 0) {
+      return foundInState;
+    }
+    const all = DataManager.getAllQuizzes();
+    const foundInAll = all.find((q) => q.id === quizId);
+    if (foundInAll && foundInAll.questions && foundInAll.questions.length > 0) {
+      return foundInAll;
+    }
+    return foundInState || foundInAll || {
+      id: quizId,
+      title: fallbackTitle || 'Kuis Interaktif',
       description: '',
-      subject: selectedSessionForHost.subject,
-      grade: selectedSessionForHost.grade,
+      subject: fallbackSubject || 'Pengetahuan Umum',
+      grade: fallbackGrade || 1,
       durationPerQuestionSec: 30,
-      coverEmoji: selectedSessionForHost.quizCover || '⭐',
+      coverEmoji: fallbackCover || '⭐',
       themeColor: 'from-blue-500 to-indigo-600',
       badgeTitle: 'Bintang Kuis',
       visibility: 'public',
       questions: [],
     };
+  };
+
+  // If host view is open:
+  if (selectedSessionForHost) {
+    const matchingQuiz: Quiz = resolveQuizForSession(
+      selectedSessionForHost.quizId,
+      selectedSessionForHost.quizTitle,
+      selectedSessionForHost.subject,
+      selectedSessionForHost.grade,
+      selectedSessionForHost.quizCover
+    );
 
     return (
       <WaygroundHostView
@@ -428,19 +589,13 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
 
   // If recap view is open:
   if (selectedSessionForRecap) {
-    const matchingQuiz: Quiz = quizzes.find((q) => q.id === selectedSessionForRecap.quizId) || {
-      id: selectedSessionForRecap.quizId,
-      title: selectedSessionForRecap.quizTitle,
-      description: '',
-      subject: selectedSessionForRecap.subject,
-      grade: selectedSessionForRecap.grade,
-      durationPerQuestionSec: 30,
-      coverEmoji: selectedSessionForRecap.quizCover || '⭐',
-      themeColor: 'from-blue-500 to-indigo-600',
-      badgeTitle: 'Bintang Kuis',
-      visibility: 'public',
-      questions: [],
-    };
+    const matchingQuiz: Quiz = resolveQuizForSession(
+      selectedSessionForRecap.quizId,
+      selectedSessionForRecap.quizTitle,
+      selectedSessionForRecap.subject,
+      selectedSessionForRecap.grade,
+      selectedSessionForRecap.quizCover
+    );
 
     return (
       <QuizSessionRecapView
