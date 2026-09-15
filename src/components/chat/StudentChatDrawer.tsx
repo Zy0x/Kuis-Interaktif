@@ -13,7 +13,9 @@ import {
   VolumeX, 
   Sparkles, 
   CheckCheck,
-  CornerUpLeft
+  CornerUpLeft,
+  Bell,
+  BellOff
 } from 'lucide-react';
 
 interface StudentChatDrawerProps {
@@ -26,6 +28,8 @@ interface StudentChatDrawerProps {
   sessionStatus?: string;
   isSessionEndedModalOpen?: boolean;
   playClick: () => void;
+  isNotificationMuted?: boolean;
+  onToggleNotificationMute?: (muted: boolean) => void;
 }
 
 const formatChatTime = (timestamp?: number): string => {
@@ -223,6 +227,8 @@ export const StudentChatDrawer: React.FC<StudentChatDrawerProps> = ({
   sessionStatus = 'waiting',
   isSessionEndedModalOpen = false,
   playClick,
+  isNotificationMuted = false,
+  onToggleNotificationMute,
 }) => {
   const [messages, setMessages] = useState<SessionChatMessage[]>(() => {
     const session = DataManager.getActiveSessionById(sessionId);
@@ -470,6 +476,30 @@ export const StudentChatDrawer: React.FC<StudentChatDrawerProps> = ({
           </div>
 
           <div className="flex items-center gap-1">
+            {/* Tombol Sakelar Notifikasi Sembulan Siswa */}
+            {onToggleNotificationMute && (
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  onToggleNotificationMute(!isNotificationMuted);
+                }}
+                className={`p-2 rounded-xl transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center ${
+                  isNotificationMuted
+                    ? 'text-amber-500 hover:text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40'
+                    : 'text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
+                }`}
+                aria-label={isNotificationMuted ? 'Aktifkan Notifikasi Sembulan' : 'Senyapkan Notifikasi Sembulan'}
+                title={isNotificationMuted ? 'Notifikasi Sembulan Disenyapkan (Klik untuk Aktifkan)' : 'Notifikasi Sembulan Aktif (Klik untuk Senyapkan)'}
+              >
+                {isNotificationMuted ? (
+                  <BellOff className="w-5 h-5 text-amber-500 dark:text-amber-400" />
+                ) : (
+                  <Bell className="w-5 h-5" />
+                )}
+              </button>
+            )}
+
             {/* Close Button */}
             <button
               type="button"

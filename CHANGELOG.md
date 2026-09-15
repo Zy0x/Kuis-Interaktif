@@ -1,6 +1,24 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.23] - 2026-09-15
+### Sembulan (Speech Bubble) Notifikasi Chat Siswa di Sebelah Tombol Chat & Kontrol Senyap (Rule 1, Rule 2, Rule 4, Rule 5 & Rule 15)
+
+#### 1. Balon Percakapan Notifikasi Siswa (`StudentChatBubbleToast.tsx` & `StudentWaitingRoom.tsx`)
+- **Penempatan Ergonomis Sebelah Kiri Tombol Chat**: Menghadirkan sembulan notifikasi berdesain balon percakapan (*speech bubble callout*) yang muncul tepat di sebelah kiri tombol bulat obrolan melayang (*Floating Action Button*) murid dengan panah penunjuk halus mengarah ke tombol chat.
+- **Desain Mobile-First & Ringkas**: Menyesuaikan dimensi sembulan secara responsif (`max-w-[calc(100vw-5.75rem)]`) dengan teks 1–2 baris yang rapi sehingga tidak memakan ruang dan terhindar dari pemotongan tampilan di layar ponsel kecil.
+- **Interaksi Seketika & Otomatis**: Mengetuk sembulan langsung membuka laci obrolan murid (`StudentChatDrawer`), menghapus indikator pesan belum dibaca, dan sembulan otomatis menghilang setelah 5 detik jika diabaikan.
+- **Audio Pop-Chime Lembut**: Menghasilkan efek suara notifikasi santun berbasis Web Audio API tanpa beban berkas eksternal.
+
+#### 2. Kontrol Senyapkan Notifikasi Sembulan & Sakelar Pemulihan (`StudentChatDrawer.tsx`)
+- **Tombol Senyapkan di Sembulan**: Menambahkan tombol lonceng senyap (`BellOff`) langsung di sembulan dengan target sentuh minimal 44px untuk membungkam popup notifikasi pada sesi berjalan.
+- **Tombol Sakelar Pemulihan di Header Laci**: Menyediakan tombol sakelar notifikasi di bagian atas laci obrolan siswa agar murid dapat dengan mudah mengaktifkan kembali notifikasi jika diperlukan.
+- **Sinkronisasi Sesi Lokal (`sessionStorage`)**: Preferensi senyap tersimpan per ID sesi aktif murid secara persisten.
+
+#### 3. Pembaruan Versi & Cache PWA (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.23` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.23` (`public/sw.js`).
+
 ## [2.4.22] - 2026-09-15
 ### Reset Badge Indikator Chat Belum Dibaca pada Layar Kendali Guru (Rule 1, Rule 2, Rule 4 & Rule 15)
 

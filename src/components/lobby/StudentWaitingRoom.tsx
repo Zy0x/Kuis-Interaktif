@@ -5,7 +5,7 @@ import { AVATAR_MAP } from '../../data/seedQuizzes';
 import { ThemeToggle } from '../common/ThemeToggle';
 import { QuizizzReactionOverlay } from '../common/QuizizzReactionOverlay';
 import { QuizizzReactionButtonRow } from '../common/QuizizzReactionButtonRow';
-import { ZoomChatToast } from '../common/ZoomChatToast';
+import { StudentChatBubbleToast } from '../common/StudentChatBubbleToast';
 
 import { StudentChatDrawer } from '../chat/StudentChatDrawer';
 import { 
@@ -49,6 +49,23 @@ export const StudentWaitingRoom: React.FC<StudentWaitingRoomProps> = ({
   const [isSessionEndedModalOpen, setIsSessionEndedModalOpen] = useState(() => initialSession?.status === 'finished');
   
   const lastSeenChatCountRef = useRef(initialSession?.chatMessages?.length || 0);
+
+  // Status senyap notifikasi sembulan khusus murid untuk sesi ini (Rule 1, Rule 2 & User Request)
+  const [isNotificationMuted, setIsNotificationMuted] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      return sessionStorage.getItem(`kuis_student_chat_muted_${session.id}`) === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const handleToggleNotificationMute = (muted: boolean) => {
+    setIsNotificationMuted(muted);
+    try {
+      sessionStorage.setItem(`kuis_student_chat_muted_${session.id}`, String(muted));
+    } catch {}
+  };
 
   // Pantau jika status sesi berubah menjadi finished
   useEffect(() => {
@@ -413,6 +430,8 @@ export const StudentWaitingRoom: React.FC<StudentWaitingRoomProps> = ({
         sessionStatus={session.status}
         isSessionEndedModalOpen={isSessionEndedModalOpen}
         playClick={playClick}
+        isNotificationMuted={isNotificationMuted}
+        onToggleNotificationMute={handleToggleNotificationMute}
       />
 
       {/* Footer */}
@@ -420,13 +439,15 @@ export const StudentWaitingRoom: React.FC<StudentWaitingRoomProps> = ({
         Kuis Interaktif • Ruang Tunggu Terpadu
       </footer>
 
-      {/* Popup Chat Masuk */}
-      <ZoomChatToast
+      {/* Sembulan Notifikasi Chat Masuk Siswa di Sebelah Kiri Tombol Chat (Speech Bubble Callout) */}
+      <StudentChatBubbleToast
         sessionId={session.id}
         chatMessages={session.chatMessages}
         onOpenChat={handleOpenChatDrawer}
         currentUserName={studentName}
-        position="top-right"
+        isChatDrawerOpen={isChatDrawerOpen}
+        isMutedByStudent={isNotificationMuted}
+        onToggleMuteByStudent={handleToggleNotificationMute}
       />
 
       {/* Floating Live Reactions Overlay di Ruang Tunggu Murid */}
