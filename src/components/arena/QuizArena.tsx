@@ -67,7 +67,7 @@ export interface QuizArenaProps {
   activeSessionId?: string;
   isTeacher?: boolean;
   onFinishQuiz: (answers: QuizAttemptAnswer[], totalTimeSpent: number) => void;
-  onExit: () => void;
+  onExit: (lastQuestionIndex?: number) => void;
   isMuted?: boolean;
   onToggleMute?: () => void;
   playClick?: () => void;
@@ -622,14 +622,16 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     setUrgent,
   } = useQuizBgm();
 
-  // 1. Auto-start BGM on entry, auto-stop on unmount, and reset scroll to top
+  // 1. Auto-start BGM on entry, auto-stop on unmount, and reset scroll to top (kecualikan saat pratinjau studio)
   useEffect(() => {
-    window.scrollTo(0, 0);
+    if (!isPreview) {
+      window.scrollTo(0, 0);
+    }
     startBgm();
     return () => {
       stopBgm();
     };
-  }, [startBgm, stopBgm]);
+  }, [startBgm, stopBgm, isPreview]);
 
   // 2. Pause BGM when quiz is paused or exit dialog is open
   useEffect(() => {
@@ -677,7 +679,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   useBackHandler('arena-prompt-exit-confirm', 80, () => {
     if (!showExitConfirm && !isPollOpen && !isMobileToolsOpen && !isChatDrawerOpen && !isGameOver) {
       if (isPreview) {
-        onExit();
+        onExit(currentIndex);
         return true;
       }
       setIsPaused(true);
@@ -1389,7 +1391,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
             type="button"
             onClick={() => {
               if (playClick) playClick();
-              onExit();
+              onExit(0);
             }}
             className="w-full py-3 px-4 rounded-xl font-bold text-xs sm:text-sm text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 shadow-md shadow-blue-500/20 active:scale-98 transition-all min-h-[46px] flex items-center justify-center gap-2 btn-press"
           >
@@ -1500,7 +1502,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                   onClick={() => {
                     if (playClick) playClick();
                     if (isPreview) {
-                      onExit();
+                      onExit(currentIndex);
                     } else {
                       setShowExitConfirm(true);
                     }
@@ -2507,7 +2509,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                   if (playClick) playClick();
                   setIsMobileToolsOpen(false);
                   if (isPreview) {
-                    onExit();
+                    onExit(currentIndex);
                   } else {
                     setShowExitConfirm(true);
                   }
@@ -2581,7 +2583,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                   try {
                     sessionStorage.removeItem(STORAGE_KEY);
                   } catch {}
-                  onExit();
+                  onExit(currentIndex);
                 }}
                 className="flex-1 py-2.5 rounded-xl font-bold text-xs text-white bg-rose-600 hover:bg-rose-700 min-h-[44px] transition-colors"
               >

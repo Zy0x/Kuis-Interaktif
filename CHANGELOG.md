@@ -1,6 +1,29 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.48] - 2026-09-15
+### Preservasi Posisi Scroll, Auto-Scroll Cerdas & Efek Penyorotan Visual Bank Soal (Rule 1, Rule 2, Rule 4, Rule 5 & Rule 15)
+
+#### 1. Preservasi Posisi Scroll & Auto-Scroll Berlabuh Cerdas (`QuizCreator.tsx`)
+- **Navigasi Mulus Paska-Edit Soal**: Saat selesai mengedit butir soal (misalnya Soal #4) dan menekan "Simpan Perubahan" atau "Batal / Kembali", aplikasi tidak lagi melompat ke bagian paling atas halaman. Sistem secara otomatis meluncur (*smooth auto-scroll*) berlabuh presisi tepat pada kartu butir soal terkait.
+- **Dukungan Pratinjau / Lihat Soal**: Saat menutup pratinjau kuis (`QuizArena`) yang dibuka melalui tombol "Lihat", viewport langsung kembali berlabuh pada butir soal yang dipratinjau, menghilangkan disorientasi posisi kerja.
+- **Penyempurnaan Aksi Duplikasi Soal (Salin)**: Butir soal hasil salinan kini langsung disisipkan tepat di bawah butir soal aslinya (bukan dilempar ke urutan paling bawah daftar kuis), dan layar otomatis meluncur ke butir soal baru tersebut.
+- **Penyempurnaan Pindah Urutan (Atas / Bawah)**: Menjaga kartu soal yang baru dipindahkan posisinya tetap stabil dalam area pandang (*nearest block alignment*) tanpa loncatan visual.
+- **Penanganan Hapus Soal & Tambah Baru**: Saat butir soal dihapus, viewport tetap tertambat pada soal terdekat pengganti posisinya. Saat butir soal baru dibuat atau diimpor via AI, layar otomatis meluncur ke butir soal baru tersebut.
+- **Navigasi Antar-Langkah (Step)**: Beralih kembali ke Bank Soal dari Step 3 (Pratinjau) atau Step 1 (Info Kuis) secara otomatis meluncur kembali ke posisi butir soal terakhir yang sedang dikerjakan.
+
+#### 2. Penyorotan Visual Lembut (*Active Halo Glow Effect*)
+- **Feedback Interaksi Instan**: Menambahkan indikator visual bersinar lembut (`ring-4 ring-blue-500/25 border-blue-500`) selama 1.8 detik pada kartu soal yang baru saja diedit, dilihat, disalin, atau dipindahkan, memberikan kepastian visual seketika kepada pengguna.
+- **Scroll Margin Aman Header Sticky**: Menambahkan utility `scroll-mt-20 sm:scroll-mt-24` pada seluruh kartu soal, menjamin nomor dan judul butir soal tidak pernah tertutup oleh header navigasi lengket di layar mobile maupun desktop.
+
+#### 3. Isolasi Scroll pada Pratinjau Arena Siswa (`QuizArena.tsx`)
+- **Pencegahan Reset Scroll Latar Belakang**: Mengecualikan pemanggilan `window.scrollTo(0, 0)` pada saat mode pratinjau studio (`isPreview === true`) aktif di `QuizArena`, sehingga posisi gulir dokumen latar belakang tidak terhapus.
+- **Penerusan Indeks Soal Terakhir**: Memperbarui callback `onExit(currentIndex)` untuk mengembalikan indeks butir soal terakhir yang sedang diuji coba oleh pembuat kuis.
+
+#### 4. Pembaruan Versi & Cache PWA (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.48` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.48` (`public/sw.js`).
+
 ## [2.4.47] - 2026-09-15
 ### Optimalisasi Menyeluruh Mesin Audio: Penyatuan Singleton AudioContext & Pre-Warming Tanpa Latensi (Rule 1, Rule 2, Rule 5, Rule 6 & Rule 15)
 

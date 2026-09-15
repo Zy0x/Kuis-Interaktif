@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import type { Quiz, QuizQuestion, Subject, QuestionType, GameMode, EducationLevel } from '../../types/quiz';
 import { useBackHandler } from '../../lib/navigationHistory';
 import { ThemeToggle } from '../common/ThemeToggle';
@@ -318,6 +318,9 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     } else {
       showToast(`${newQuestions.length} butir soal berhasil ditambahkan ke bank soal!`);
     }
+    if (newQuestions.length > 0) {
+      scrollToQuestion(newQuestions[0].id, { behavior: 'smooth', highlight: true, block: 'center' });
+    }
   };
 
   useEffect(() => {
@@ -380,6 +383,70 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   const [showQuestionJumpModal, setShowQuestionJumpModal] = useState(false);
   const [previewArenaConfig, setPreviewArenaConfig] = useState<{ initialIndex: number } | null>(null);
   const [pendingNavigation, setPendingNavigation] = useState<{ type: 'prev_question' } | { type: 'next_question' } | { type: 'cancel_edit' } | { type: 'jump_to_question'; targetIndex: number } | null>(null);
+
+  // Preservasi Posisi Scroll & Highlight Efek Visual Bank Soal
+  const [highlightedQuestionId, setHighlightedQuestionId] = useState<string | null>(null);
+  const lastInteractedQuestionIdRef = useRef<string | null>(null);
+  const highlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Bersihkan timer highlight saat unmount
+  useEffect(() => {
+    return () => {
+      if (highlightTimerRef.current) {
+        clearTimeout(highlightTimerRef.current);
+      }
+    };
+  }, []);
+
+  // Helper cerdas auto-scroll berlabuh presisi ke kartu butir soal tanpa loncat ke puncak halaman
+  const scrollToQuestion = useCallback((
+    questionId: string,
+    options: {
+      behavior?: ScrollBehavior;
+      highlight?: boolean;
+      block?: ScrollLogicalPosition;
+      retries?: number;
+    } = {}
+  ) => {
+    if (!questionId) return;
+    lastInteractedQuestionIdRef.current = questionId;
+
+    const {
+      behavior = 'smooth',
+      highlight = true,
+      block = 'center',
+      retries = 8,
+    } = options;
+
+    let attempts = 0;
+
+    const tryScroll = () => {
+      attempts++;
+      const el =
+        document.getElementById(`question-card-${questionId}`) ||
+        document.getElementById(`preview-question-card-${questionId}`);
+
+      if (el) {
+        el.scrollIntoView({ behavior, block });
+        if (highlight) {
+          setHighlightedQuestionId(questionId);
+          if (highlightTimerRef.current) {
+            clearTimeout(highlightTimerRef.current);
+          }
+          highlightTimerRef.current = setTimeout(() => {
+            setHighlightedQuestionId((prev) => (prev === questionId ? null : prev));
+          }, 1800);
+        }
+        return;
+      }
+
+      if (attempts < retries) {
+        setTimeout(tryScroll, 35 * attempts);
+      }
+    };
+
+    setTimeout(tryScroll, 25);
+  }, []);
 
   // Kuis virtual yang disinkronkan langsung 2-arah untuk Pratinjau Siswa Nyata (QuizArena)
   const previewQuiz: Quiz = useMemo(() => {
@@ -983,13 +1050,16 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
 
   const handleOpenNewQuestion = () => {
     playClick();
+    lastInteractedQuestionIdRef.current = null;
     setEditingQuestionId(null);
     resetFormFields('multiple_choice');
     setIsAddingQuestion(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleStartEditQuestion = (q: QuizQuestion) => {
     playClick();
+    lastInteractedQuestionIdRef.current = q.id;
     setEditingQuestionId(q.id);
     setQText(q.text);
     setQType(q.type);
@@ -1035,13 +1105,18 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     }
 
     setIsAddingQuestion(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleCancelEditImmediate = () => {
     playClick();
+    const targetId = editingQuestionId || lastInteractedQuestionIdRef.current;
     setEditingQuestionId(null);
     setIsAddingQuestion(false);
     resetFormFields();
+    if (targetId) {
+      scrollToQuestion(targetId, { behavior: 'smooth', highlight: true });
+    }
   };
 
   const handleCancelEdit = () => {
@@ -1056,18 +1131,26 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
 
   const handleDuplicateQuestion = (q: QuizQuestion) => {
     playClick();
+    const currentIdx = questions.findIndex((item) => item.id === q.id);
     const dup: QuizQuestion = {
       ...q,
       id: 'q_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
       text: q.text + ' (Salinan)',
     };
-    const updated = [...questions, dup];
+    const updated = [...questions];
+    if (currentIdx !== -1) {
+      // Sisipkan salinan tepat setelah butir soal asli
+      updated.splice(currentIdx + 1, 0, dup);
+    } else {
+      updated.push(dup);
+    }
     setQuestions(updated);
     if (editingQuiz) {
       autoSaveQuiz(updated, 'Soal berhasil diduplikasi & kuis otomatis tersimpan.');
     } else {
       showToast('Soal berhasil diduplikasi.');
     }
+    scrollToQuestion(dup.id, { behavior: 'smooth', highlight: true, block: 'center' });
   };
 
   const handleDeleteQuestion = (id: string) => {
@@ -1079,6 +1162,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     if (!questionIdToDelete) return;
     playClick();
     const targetId = questionIdToDelete;
+    const targetIndex = questions.findIndex((q) => q.id === targetId);
     const updated = questions.filter((q) => q.id !== targetId);
     setQuestions(updated);
     if (editingQuestionId === targetId) {
@@ -1089,6 +1173,14 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
       autoSaveQuiz(updated, 'Soal telah dihapus & kuis otomatis tersimpan.');
     } else {
       showToast('Soal telah berhasil dihapus dari bank soal.');
+    }
+    // Pertahankan viewport tertambat pada butir soal terdekat
+    if (updated.length > 0) {
+      const neighborIndex = Math.min(targetIndex, updated.length - 1);
+      const neighbor = updated[neighborIndex];
+      if (neighbor) {
+        scrollToQuestion(neighbor.id, { behavior: 'smooth', highlight: false, block: 'nearest' });
+      }
     }
   };
 
@@ -1103,6 +1195,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     if (editingQuiz) {
       autoSaveQuiz(reordered, 'Urutan soal diperbarui & kuis otomatis tersimpan.', { silent: true });
     }
+    scrollToQuestion(moved.id, { behavior: 'smooth', highlight: true, block: 'nearest' });
   };
 
   const executeNavigation = (
@@ -1249,6 +1342,9 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     }
 
     let updatedQuestions: QuizQuestion[];
+    const savedTargetId = editingQuestionId || questionObj.id;
+    lastInteractedQuestionIdRef.current = savedTargetId;
+
     if (editingQuestionId) {
       updatedQuestions = questions.map((q) => (q.id === editingQuestionId ? questionObj : q));
       setQuestions(updatedQuestions);
@@ -1301,6 +1397,9 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
     const questionObj = validateAndBuildCurrentQuestion();
     if (!questionObj) return;
 
+    const savedTargetId = editingQuestionId || questionObj.id;
+    lastInteractedQuestionIdRef.current = savedTargetId;
+
     let updatedQuestions: QuizQuestion[];
     if (editingQuestionId) {
       updatedQuestions = questions.map((q) => (q.id === editingQuestionId ? questionObj : q));
@@ -1324,6 +1423,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
       resetFormFields(qType);
       setEditingQuestionId(null);
       setIsAddingQuestion(true);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
       handleCancelEditImmediate();
     }
@@ -1791,6 +1891,9 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                   onClick={() => {
                     playClick();
                     setCurrentStep(1);
+                    if (lastInteractedQuestionIdRef.current) {
+                      scrollToQuestion(lastInteractedQuestionIdRef.current, { behavior: 'smooth', highlight: true });
+                    }
                   }}
                   className={`py-2 px-1 rounded-xl font-bold text-xs sm:text-sm transition-all min-h-[44px] truncate ${
                     currentStep === 1
@@ -1854,6 +1957,9 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                   onClick={() => {
                     playClick();
                     setCurrentStep(2);
+                    if (lastInteractedQuestionIdRef.current) {
+                      scrollToQuestion(lastInteractedQuestionIdRef.current, { behavior: 'smooth', highlight: true });
+                    }
                   }}
                   className={`py-2 px-1 rounded-xl font-bold text-xs sm:text-sm transition-all min-h-[44px] truncate ${
                     currentStep === 2
@@ -2325,10 +2431,21 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
             initialMode="standard"
             isPreview={true}
             initialQuestionIndex={previewArenaConfig.initialIndex}
-            onExit={() => setPreviewArenaConfig(null)}
+            onExit={(lastIdx) => {
+              const targetIdx = typeof lastIdx === 'number' ? lastIdx : previewArenaConfig.initialIndex;
+              const targetQ = questions[targetIdx] || questions[previewArenaConfig.initialIndex];
+              setPreviewArenaConfig(null);
+              if (targetQ) {
+                scrollToQuestion(targetQ.id, { behavior: 'smooth', highlight: true, block: 'center' });
+              }
+            }}
             onFinishQuiz={() => {
+              const targetQ = questions[previewArenaConfig.initialIndex];
               setPreviewArenaConfig(null);
               showToast('Pratinjau kuis selesai!');
+              if (targetQ) {
+                scrollToQuestion(targetQ.id, { behavior: 'smooth', highlight: true, block: 'center' });
+              }
             }}
             onEditQuestion={(q) => {
               setPreviewArenaConfig(null);
@@ -2709,14 +2826,17 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
               ) : (
                 questions.map((q, idx) => {
                   const isEditingThis = editingQuestionId === q.id;
+                  const isHighlighted = highlightedQuestionId === q.id;
                   const isExplanationOpen = Boolean(expandedExplanations[q.id]);
                   return (
                     <div
                       key={q.id}
                       id={`question-card-${q.id}`}
-                      className={`p-4 sm:p-5 rounded-2xl sm:rounded-3xl border transition-all ${
+                      className={`scroll-mt-20 sm:scroll-mt-24 p-4 sm:p-5 rounded-2xl sm:rounded-3xl border transition-all duration-300 ${
                         isEditingThis
                           ? 'border-blue-500 bg-blue-50/40 dark:bg-blue-950/30 ring-2 ring-blue-500/30 shadow-md'
+                          : isHighlighted
+                          ? 'border-blue-500 dark:border-blue-400 bg-blue-50/40 dark:bg-blue-950/30 ring-4 ring-blue-500/25 shadow-lg scale-[1.008]'
                           : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 hover:border-slate-300 dark:hover:border-slate-700 shadow-xs'
                       }`}
                     >
@@ -2968,6 +3088,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                             type="button"
                             onClick={() => {
                               playClick();
+                              lastInteractedQuestionIdRef.current = q.id;
                               setPreviewArenaConfig({ initialIndex: idx });
                             }}
                             className="w-full sm:w-auto h-11 px-3.5 sm:px-4 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-950/40 text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all border border-slate-200/60 dark:border-slate-700/60 active:scale-95 shrink-0 min-w-[44px]"
@@ -3957,14 +4078,20 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                       ? `${q.matchingPairs?.length || q.options.length} Pasang Cocok`
                       : (q.options[q.correctIndex] || '-');
 
+                  const isHighlighted = highlightedQuestionId === q.id;
                   return (
                     <div
                       key={q.id}
+                      id={`preview-question-card-${q.id}`}
                       onClick={() => {
                         handleStartEditQuestion(q);
                         setCurrentStep(isAi ? 1 : 2); // Kembali ke Bank Soal
                       }}
-                      className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-850 hover:bg-blue-50/70 dark:hover:bg-blue-950/40 border border-slate-200 dark:border-slate-750 hover:border-blue-400 dark:hover:border-blue-700 transition-all cursor-pointer group space-y-2"
+                      className={`scroll-mt-20 sm:scroll-mt-24 p-3.5 rounded-2xl border transition-all duration-300 cursor-pointer group space-y-2 ${
+                        isHighlighted
+                          ? 'border-blue-500 dark:border-blue-400 bg-blue-50/40 dark:bg-blue-950/30 ring-4 ring-blue-500/25 shadow-md'
+                          : 'bg-slate-50 dark:bg-slate-850 hover:bg-blue-50/70 dark:hover:bg-blue-950/40 border-slate-200 dark:border-slate-750 hover:border-blue-400 dark:hover:border-blue-700'
+                      }`}
                       title="Klik untuk mengedit butir soal ini di Bank Soal"
                     >
                       {/* Baris 1: Nomor, Tipe, Poin, & Action Indicator */}
@@ -3994,6 +4121,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                             onClick={(e) => {
                               e.stopPropagation();
                               playClick();
+                              lastInteractedQuestionIdRef.current = q.id;
                               setPreviewArenaConfig({ initialIndex: idx });
                             }}
                             className="px-2.5 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-600 dark:text-blue-400 flex items-center gap-1.5 text-xs font-bold border border-blue-200/60 dark:border-blue-800/50 min-h-[44px] transition-colors"
@@ -4111,6 +4239,9 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                 onClick={() => {
                   playClick();
                   setCurrentStep(2); // Kembali ke step 2 (Pengaturan Kuis di AI mode, Bank Soal di Manual mode)
+                  if (!isAi && lastInteractedQuestionIdRef.current) {
+                    scrollToQuestion(lastInteractedQuestionIdRef.current, { behavior: 'smooth', highlight: true });
+                  }
                 }}
                 className="w-full py-2.5 px-4 rounded-xl font-bold text-xs text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 min-h-[44px] transition-colors"
               >
