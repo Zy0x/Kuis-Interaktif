@@ -1,6 +1,17 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.28] - 2026-09-15
+### Penonaktifan Tombol Reaksi Siswa Saat Mengerjakan Soal Kuis (Rule 1, Rule 2 & Rule 15)
+
+#### 1. Optimalisasi Fokus Siswa di Arena Kuis (`QuizArena.tsx`)
+- **Penyembunyian Tombol Reaksi Melayang (*Floating Reaction Button*) untuk Siswa**: Tombol reaksi emoji melayang kini disembunyikan sepenuhnya dari layar siswa saat kuis sedang berlangsung. Hal ini menjamin siswa dapat berkonsentrasi penuh membaca soal, mencermati opsi jawaban, dan berhitung tanpa distraksi tombol melayang di sudut layar.
+- **Dukungan Eksklusif Presenter & Smartboard**: Tombol reaksi melayang tetap tersedia secara eksklusif bagi Guru saat mode presentasi atau Smartboard IFP untuk memeriahkan suasana kelas.
+
+#### 2. Pembaruan Versi & Cache PWA (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.28` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.28` (`public/sw.js`).
+
 ## [2.4.27] - 2026-09-15
 ### Hitung Mundur Stabil Berbasis Timestamp & Pengalihan Otomatis Siswa dari Chat ke Kuis (Rule 1, Rule 2, Rule 5, Rule 6 & Rule 15)
 

@@ -2407,13 +2407,13 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
         />
       )}
 
-      {/* Floating Reaction Button untuk Murid / Siswa di Live Multiplayer Arena */}
-      {(activeSessionId || liveSession?.id) && !isPreview && (
+      {/* Floating Reaction Button di Arena (Hanya untuk Guru/Presenter Smartboard, disembunyikan untuk siswa saat kuis berlangsung agar tidak mengganggu konsentrasi) */}
+      {(activeSessionId || liveSession?.id) && !isPreview && isTeacher && (
         <FloatingReactionButton
           sessionId={(activeSessionId || liveSession?.id)!}
-          senderName={DataManager.getPlayerProfile().nickname || 'Siswa Pintar'}
-          avatarId={DataManager.getPlayerProfile().avatarId || 'lion'}
-          isTeacher={isTeacher}
+          senderName={quiz.creatorName || 'Bapak/Ibu Guru'}
+          avatarId="teacher"
+          isTeacher={true}
           playClick={playClick}
           positionClassName="bottom-20 right-3 sm:bottom-24 sm:right-6"
         />
