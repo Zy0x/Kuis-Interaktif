@@ -1,6 +1,29 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.49] - 2026-09-15
+### Diferensiasi Visual Mode Mandiri/PR, Hitung Mundur Tenggat Akurat & Pengalih Multi-Sesi Dasbor Guru (Rule 1, Rule 2, Rule 4, Rule 5, Rule 7, Rule 9, Rule 11 & Rule 15)
+
+#### 1. Diferensiasi Jelas Mode Mandiri / PR vs Mode Dipandu Guru (`TeacherDashboard.tsx`)
+- **Banner Atas Cerdas & Kontekstual**: Banner aktif di Dasbor Guru kini secara dinamis mengenali mode pelaksanaan kuis (`executionMode`). Sesi Mode Mandiri / PR tidak lagi menampilkan status "Kuis interaktif sedang dipandu oleh Anda" atau "Buka Layar Pantau Live". Sebagai gantinya, ditampilkan lencana eksklusif `TUGAS MANDIRI / PR` bergradien nila/biru elegan dengan ikon `ClipboardList`, deskripsi kontekstual pengerjaan tugas murid mandiri, batas waktu pengumpulan, serta tombol aksi *"Pantau Progres Siswa"*.
+- **Kartu Sesi Tab Kuis Aktif**: Kartu kuis di tab *Kuis Aktif & Sesi Live* membedakan sesi tugas mandiri dengan lencana `TUGAS MANDIRI / PR` (warna nila/indigo), cincin aksen halus, dan tombol utama *"Pantau Progres Siswa"* serta tombol cepat *"Perpanjang"*.
+
+#### 2. Ticker Real-Time & Tampilan Tenggat Waktu Akurat (`deadlineUtils.ts`)
+- **Format Tanggal Baku Bahasa Indonesia**: Menghadirkan utilitas pemformatan tanggal ramah Indonesia (*contoh: "Senin, 15 September 2026, pukul 23:59 WIB"*).
+- **Countdown Presisi & Dinamis**: Mendukung hitung mundur live setiap detik dengan penanda status warna adaptif: Hijau/Nila untuk rentang waktu aman (>24 jam), Kuning/Oranye saat mendekati batas (<24 jam), dan Merah berdenyut saat kuis telah melewati batas waktu pengumpulan (`TENGGAT BERAKHIR`).
+- **Hook `useDeadlineTicker`**: Hook interval cerdas 1 detik untuk menyegarkan tampilan countdown real-time di seluruh komponen tanpa beban kinerja rendering berlebih.
+
+#### 3. Modal Perpanjangan Tenggat Waktu PR (`ExtendDeadlineModal.tsx` & `supabaseClient.ts`)
+- **Modal Perpanjang Batas Waktu**: Modal terdedikasi bagi Guru untuk memperpanjang batas waktu pengumpulan PR dengan opsi cepat (+1 Hari, +3 Hari, +1 Minggu) maupun penyesuaian tanggal & jam presisi via *datetime-local picker*.
+- **Sinkronisasi Otomatis**: Perubahan batas waktu langsung diperbarui pada *local storage*, dipancarkan secara instan antar-tab/jendela, serta disinkronkan ke tabel database Supabase secara aman.
+
+#### 4. Pengalih Multi-Sesi Aktif (*Multi-Session Switcher*) (`TeacherDashboard.tsx`)
+- **Navigasi Rapi & Hemat Ruang**: Saat terdapat lebih dari 1 sesi kuis aktif (kombinasi live interaktif dan beberapa tugas mandiri), banner atas tidak lagi menumpuk berantakan. Sistem menyediakan navigasi ringkas `< Sesi X dari N >` dengan pengurutan cerdas (sesi live di depan, diikuti sesi mandiri terbaru), serta tautan pintas menuju tab kuis aktif lengkap.
+
+#### 5. Pembaruan Versi & Cache PWA (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.49` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.49` (`public/sw.js`).
+
 ## [2.4.48] - 2026-09-15
 ### Preservasi Posisi Scroll, Auto-Scroll Cerdas & Efek Penyorotan Visual Bank Soal (Rule 1, Rule 2, Rule 4, Rule 5 & Rule 15)
 

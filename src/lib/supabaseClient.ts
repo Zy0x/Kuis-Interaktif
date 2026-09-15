@@ -3430,6 +3430,40 @@ export const DataManager = {
     return existing[idx];
   },
 
+  async updateSessionDeadline(sessionId: string, newDeadlineIso: string): Promise<QuizSession | null> {
+    const existing = this.getActiveSessions();
+    const idx = existing.findIndex((s) => s.id === sessionId);
+    if (idx === -1) return null;
+
+    existing[idx].settings = {
+      ...existing[idx].settings,
+      deadlineAt: newDeadlineIso,
+    };
+
+    try {
+      localStorage.setItem(STORAGE_KEY_QUIZ_SESSIONS, JSON.stringify(existing));
+    } catch (e) {
+      console.warn('Failed to save session deadline:', e);
+    }
+
+    broadcastSessionUpdate(existing[idx]);
+
+    if (supabase) {
+      try {
+        await supabase
+          .from('quiz_sessions')
+          .update({
+            settings: existing[idx].settings,
+          })
+          .eq('id', sessionId);
+      } catch (err) {
+        console.warn('Supabase updateSessionDeadline notice:', err);
+      }
+    }
+
+    return existing[idx];
+  },
+
   async updateSessionHeartbeat(sessionId: string): Promise<void> {
     if (!sessionId) return;
     const now = new Date().toISOString();

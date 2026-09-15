@@ -14,6 +14,8 @@ import { PlayQuizModal, type PlayQuizSessionOptions } from './PlayQuizModal';
 import { WaygroundHostView } from './WaygroundHostView';
 import { QuizSessionRecapView } from './QuizSessionRecapView';
 import { AdminDatabaseBackupModal } from './AdminDatabaseBackupModal';
+import { ExtendDeadlineModal } from './ExtendDeadlineModal';
+import { getAccurateDeadlineCountdown, useDeadlineTicker } from '../../lib/deadlineUtils';
 import { saveNavigationState, type TeacherTabState } from '../../lib/navigationState';
 import { 
   GraduationCap, 
@@ -41,7 +43,12 @@ import {
   CheckCircle2,
   Pause,
   FileSpreadsheet,
-  Tv
+  Tv,
+  ClipboardList,
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  AlertTriangle
 } from 'lucide-react';
 
 const getSubjectBadge = (subject: string) => {
@@ -172,6 +179,11 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   const [deletedCount, setDeletedCount] = useState<number>(() => DataManager.getDeletedQuizIds().length);
   const isMasterTeacher = teacher.email.trim().toLowerCase() === MASTER_TEACHER_EMAIL.toLowerCase();
   const [isAdminBackupModalOpen, setIsAdminBackupModalOpen] = useState(false);
+
+  // Mode Mandiri / PR States & Deadline Ticker
+  const nowMs = useDeadlineTicker(1000);
+  const [sessionToExtendDeadline, setSessionToExtendDeadline] = useState<QuizSession | null>(null);
+  const [activeSessionBannerIdx, setActiveSessionBannerIdx] = useState(0);
 
   // Sinkronisasi status host session ke URL dan sessionStorage agar tahan refresh halaman
   useEffect(() => {
@@ -427,6 +439,14 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
     }
   };
 
+  const handleExtendSessionDeadline = async (sessionId: string, newDeadlineIso: string) => {
+    const updated = await DataManager.updateSessionDeadline(sessionId, newDeadlineIso);
+    if (updated) {
+      setSessions((prev) => prev.map((item) => (item.id === sessionId ? updated : item)));
+    }
+    await loadData();
+  };
+
   const liveSessionsCount = useMemo(
     () => sessions.filter((s) => s.status === 'active' || s.status === 'paused' || s.status === 'waiting').length,
     [sessions]
@@ -435,10 +455,23 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
     () => sessions.filter((s) => s.status === 'finished').length,
     [sessions]
   );
-  const activeHostSessions = useMemo(
-    () => sessions.filter((s) => s.status === 'active' || s.status === 'paused' || s.status === 'waiting'),
-    [sessions]
-  );
+  const activeHostSessions = useMemo(() => {
+    const list = sessions.filter((s) => s.status === 'active' || s.status === 'paused' || s.status === 'waiting');
+    // Prioritaskan teacher_led (live yang dipandu guru) di urutan awal, baru kemudian self_paced (PR)
+    return list.sort((a, b) => {
+      const isLiveA = a.settings?.executionMode === 'teacher_led' ? 1 : 0;
+      const isLiveB = b.settings?.executionMode === 'teacher_led' ? 1 : 0;
+      if (isLiveA !== isLiveB) return isLiveB - isLiveA;
+      return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+    });
+  }, [sessions]);
+
+  // Pastikan indeks banner tidak melebihi jumlah sesi aktif
+  useEffect(() => {
+    if (activeSessionBannerIdx >= activeHostSessions.length && activeHostSessions.length > 0) {
+      setActiveSessionBannerIdx(0);
+    }
+  }, [activeHostSessions.length, activeSessionBannerIdx]);
   const filteredSessions = useMemo(() => {
     if (sessionFilter === 'active') {
       return sessions.filter((s) => s.status === 'active' || s.status === 'paused' || s.status === 'waiting');
@@ -776,76 +809,205 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
       {/* Main Container */}
       <main className="w-full max-w-[2000px] mx-auto px-3 xs:px-4 sm:px-8 lg:px-12 pt-5 sm:pt-6 space-y-6 flex-1">
         
-        {/* BANNER SESI AKTIF: Akses Cepat Kembali ke Ruang Tunggu / Layar Pantau Host */}
-        {activeHostSessions.length > 0 && (
-          <div className="bg-gradient-to-r from-blue-700 via-indigo-700 to-purple-800 rounded-3xl p-4 sm:p-5 text-white shadow-xl border border-blue-400/40 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 animate-fade-in relative overflow-hidden">
-            {/* Glow accent */}
-            <div className="absolute -right-10 -bottom-10 w-48 h-48 bg-white/10 rounded-full blur-2xl pointer-events-none" />
+        {/* BANNER SESI AKTIF: Akses Cepat Kembali ke Ruang Tunggu / Layar Pantau Host / Tugas Mandiri */}
+        {activeHostSessions.length > 0 && (() => {
+          const currentBannerSession = activeHostSessions[activeSessionBannerIdx] || activeHostSessions[0];
+          const isSelfPaced = currentBannerSession.settings?.executionMode === 'self_paced';
+          const deadlineCountdown = isSelfPaced ? getAccurateDeadlineCountdown(currentBannerSession.settings?.deadlineAt, nowMs) : null;
 
-            <div className="flex items-start sm:items-center gap-3.5 min-w-0 z-10">
-              <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 flex items-center justify-center text-2xl flex-shrink-0 shadow-inner">
-                {activeHostSessions[0].status === 'waiting' ? (
-                  <Clock className="w-6 h-6 text-amber-300 animate-pulse" />
-                ) : (
-                  <Radio className="w-6 h-6 text-rose-300 animate-pulse" />
-                )}
-              </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-2 flex-wrap mb-1">
-                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                    activeHostSessions[0].status === 'waiting'
-                      ? 'bg-amber-400/30 border border-amber-300/50 text-amber-200'
-                      : 'bg-rose-500/35 border border-rose-400/50 text-rose-200'
-                  }`}>
-                    <span className="w-2 h-2 rounded-full bg-white animate-ping" />
-                    {activeHostSessions[0].status === 'waiting' ? 'RUANG TUNGGU SEDANG BERLANGSUNG' : 'SESI LIVE BERJALAN'}
-                  </span>
-                  <span className="text-xs font-mono font-black bg-black/25 px-2 py-0.5 rounded-lg border border-white/15 text-white">
-                    PIN: {activeHostSessions[0].pinCode}
-                  </span>
-                  <span className="text-xs text-blue-100 font-medium">
-                    {activeHostSessions[0].participants.length} Siswa Tergabung
-                  </span>
+          return (
+            <div className={`rounded-3xl p-4 sm:p-5 text-white shadow-xl flex flex-col gap-4 animate-fade-in relative overflow-hidden ${
+              isSelfPaced
+                ? 'bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-950 border border-indigo-500/40'
+                : 'bg-gradient-to-r from-blue-700 via-indigo-700 to-purple-800 border border-blue-400/40'
+            }`}>
+              {/* Glow accent */}
+              <div className="absolute -right-10 -bottom-10 w-48 h-48 bg-white/10 rounded-full blur-2xl pointer-events-none" />
+
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 z-10">
+                <div className="flex items-start sm:items-center gap-3.5 min-w-0">
+                  <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 flex items-center justify-center text-2xl flex-shrink-0 shadow-inner">
+                    {isSelfPaced ? (
+                      <ClipboardList className="w-6 h-6 text-indigo-300" />
+                    ) : currentBannerSession.status === 'waiting' ? (
+                      <Clock className="w-6 h-6 text-amber-300 animate-pulse" />
+                    ) : (
+                      <Radio className="w-6 h-6 text-rose-300 animate-pulse" />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                      {isSelfPaced ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-indigo-400/30 border border-indigo-300/50 text-indigo-100">
+                          <ClipboardList className="w-3 h-3 text-indigo-200" />
+                          TUGAS MANDIRI / PR
+                        </span>
+                      ) : (
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                          currentBannerSession.status === 'waiting'
+                            ? 'bg-amber-400/30 border border-amber-300/50 text-amber-200'
+                            : 'bg-rose-500/35 border border-rose-400/50 text-rose-200'
+                        }`}>
+                          <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+                          {currentBannerSession.status === 'waiting' ? 'RUANG TUNGGU SEDANG BERLANGSUNG' : 'SESI LIVE BERJALAN'}
+                        </span>
+                      )}
+
+                      <span className="text-xs font-mono font-black bg-black/25 px-2 py-0.5 rounded-lg border border-white/15 text-white">
+                        PIN: {currentBannerSession.pinCode}
+                      </span>
+                      <span className="text-xs text-blue-100 font-medium">
+                        {currentBannerSession.participants.length} Siswa Tergabung
+                      </span>
+                    </div>
+
+                    <h3 className="font-black text-sm sm:text-base leading-tight truncate">
+                      {currentBannerSession.quizTitle}
+                    </h3>
+
+                    <p className="text-xs text-blue-100/90 line-clamp-1 mt-0.5">
+                      {isSelfPaced
+                        ? 'Siswa dapat mengerjakan tugas secara mandiri hingga batas waktu pengumpulan.'
+                        : currentBannerSession.status === 'waiting'
+                        ? 'Siswa sedang menunggu di ruang tunggu. Tekan tombol di samping untuk kembali memimpin sesi.'
+                        : 'Kuis interaktif sedang dipandu oleh Anda. Tekan tombol di samping untuk membuka layar kendali.'}
+                    </p>
+
+                    {/* Deadline info bar for PR */}
+                    {isSelfPaced && deadlineCountdown && (
+                      <div className="flex items-center gap-2 flex-wrap mt-1 text-xs">
+                        <div className="flex items-center gap-1 text-indigo-200 font-medium">
+                          <Calendar className="w-3.5 h-3.5 text-indigo-300 flex-shrink-0" />
+                          <span>Batas Waktu: {deadlineCountdown.formattedDate}</span>
+                        </div>
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                          deadlineCountdown.isExpired
+                            ? 'bg-rose-500/40 text-rose-200 border border-rose-400/60 animate-pulse'
+                            : deadlineCountdown.isUrgent
+                            ? 'bg-amber-500/40 text-amber-200 border border-amber-400/60'
+                            : 'bg-indigo-500/30 text-indigo-200 border border-indigo-400/40'
+                        }`}>
+                          {deadlineCountdown.isExpired ? (
+                            <>
+                              <AlertTriangle className="w-3 h-3 text-rose-300" />
+                              TENGGAT BERAKHIR ({deadlineCountdown.countdownText})
+                            </>
+                          ) : (
+                            <>
+                              <Clock className="w-3 h-3" />
+                              Sisa Waktu: {deadlineCountdown.countdownText}
+                            </>
+                          )}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <h3 className="font-black text-sm sm:text-base leading-tight truncate">
-                  {activeHostSessions[0].quizTitle}
-                </h3>
-                <p className="text-xs text-blue-100/90 line-clamp-1 mt-0.5">
-                  {activeHostSessions[0].status === 'waiting'
-                    ? 'Siswa sedang menunggu di ruang tunggu. Tekan tombol di samping untuk kembali memimpin sesi.'
-                    : 'Kuis interaktif sedang dipandu oleh Anda. Tekan tombol di samping untuk membuka layar kendali.'}
-                </p>
+
+                <div className="flex items-center gap-2 w-full md:w-auto flex-shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setSelectedSessionForHost(currentBannerSession);
+                    }}
+                    className="flex-1 md:flex-initial px-5 py-3 rounded-2xl bg-white text-indigo-950 hover:bg-blue-50 text-xs sm:text-sm font-black shadow-md transition-all flex items-center justify-center gap-2 btn-press min-h-[48px]"
+                  >
+                    {isSelfPaced ? (
+                      <>
+                        <Users className="w-4 h-4 text-indigo-600" />
+                        <span>Pantau Progres Siswa</span>
+                      </>
+                    ) : (
+                      <>
+                        <Tv className="w-4 h-4 text-indigo-600" />
+                        <span>
+                          {currentBannerSession.status === 'waiting'
+                            ? 'Kembali ke Ruang Tunggu'
+                            : 'Buka Layar Pantau Live'}
+                        </span>
+                      </>
+                    )}
+                  </button>
+
+                  {isSelfPaced && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        setSessionToExtendDeadline(currentBannerSession);
+                      }}
+                      className="px-3.5 py-3 rounded-2xl bg-indigo-500/30 hover:bg-indigo-500/50 border border-indigo-300/40 text-white text-xs font-bold transition-all min-h-[48px] flex items-center gap-1.5"
+                      title="Perpanjang batas waktu PR"
+                    >
+                      <Calendar className="w-4 h-4 text-indigo-300" />
+                      <span className="hidden sm:inline">Perpanjang</span>
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => handleEndSessionDirectly(currentBannerSession.id)}
+                    className="px-3.5 py-3 rounded-2xl bg-white/15 hover:bg-rose-600/70 border border-white/25 text-white text-xs font-bold transition-all min-h-[48px]"
+                    title="Akhiri sesi ini"
+                  >
+                    Akhiri
+                  </button>
+                </div>
               </div>
-            </div>
 
-            <div className="flex items-center gap-2 w-full md:w-auto flex-shrink-0 z-10">
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  setSelectedSessionForHost(activeHostSessions[0]);
-                }}
-                className="flex-1 md:flex-initial px-5 py-3 rounded-2xl bg-white text-indigo-950 hover:bg-blue-50 text-xs sm:text-sm font-black shadow-md transition-all flex items-center justify-center gap-2 btn-press min-h-[48px]"
-              >
-                <Tv className="w-4 h-4 text-indigo-600" />
-                <span>
-                  {activeHostSessions[0].status === 'waiting'
-                    ? 'Kembali ke Ruang Tunggu'
-                    : 'Buka Layar Pantau Live'}
-                </span>
-              </button>
+              {/* Multi-Session Switcher if more than 1 active session */}
+              {activeHostSessions.length > 1 && (
+                <div className="w-full pt-2.5 mt-1 border-t border-white/15 flex flex-wrap items-center justify-between gap-2 text-xs text-white/90 z-10">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-[11px] text-white/80">Sesi Aktif:</span>
+                    <div className="flex items-center gap-1 bg-black/25 rounded-xl p-1 border border-white/15">
+                      <button
+                        type="button"
+                        disabled={activeSessionBannerIdx === 0}
+                        onClick={() => {
+                          playClick();
+                          setActiveSessionBannerIdx((prev) => Math.max(0, prev - 1));
+                        }}
+                        className="p-1 rounded-lg hover:bg-white/20 disabled:opacity-30 transition-all min-w-[28px] min-h-[28px] flex items-center justify-center"
+                        aria-label="Sesi Sebelumnya"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </button>
+                      <span className="px-2 font-mono text-xs font-bold">
+                        {activeSessionBannerIdx + 1} / {activeHostSessions.length}
+                      </span>
+                      <button
+                        type="button"
+                        disabled={activeSessionBannerIdx === activeHostSessions.length - 1}
+                        onClick={() => {
+                          playClick();
+                          setActiveSessionBannerIdx((prev) => Math.min(activeHostSessions.length - 1, prev + 1));
+                        }}
+                        className="p-1 rounded-lg hover:bg-white/20 disabled:opacity-30 transition-all min-w-[28px] min-h-[28px] flex items-center justify-center"
+                        aria-label="Sesi Berikutnya"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
 
-              <button
-                type="button"
-                onClick={() => handleEndSessionDirectly(activeHostSessions[0].id)}
-                className="px-3.5 py-3 rounded-2xl bg-white/15 hover:bg-rose-600/70 border border-white/25 text-white text-xs font-bold transition-all min-h-[48px]"
-                title="Akhiri sesi ini"
-              >
-                Akhiri
-              </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setActiveMainTab('live_sessions');
+                    }}
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-white/90 hover:text-white underline underline-offset-2 py-1 px-2 rounded-lg hover:bg-white/10 transition-colors"
+                  >
+                    Lihat Semua ({activeHostSessions.length} Sesi) di Tab Sesi
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* TAB 1: KOLEKSI KUIS */}
         {activeMainTab === 'collection' && (
@@ -1307,6 +1469,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {filteredSessions.map((s) => {
                 const isLive = s.status === 'active' || s.status === 'paused' || s.status === 'waiting';
+                const isSelfPaced = s.settings?.executionMode === 'self_paced';
                 const partCount = s.participants.length;
                 const finishedCount = s.participants.filter((p) => p.finished).length;
 
@@ -1314,7 +1477,9 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                   <div
                     key={s.id}
                     className={`bg-white dark:bg-slate-900 rounded-3xl p-5 border transition-all flex flex-col justify-between gap-4 shadow-xs hover:shadow-md ${
-                      s.status === 'active'
+                      isSelfPaced && s.status === 'active'
+                        ? 'border-indigo-400/80 dark:border-indigo-500/50 ring-1 ring-indigo-400/30'
+                        : s.status === 'active'
                         ? 'border-rose-400/80 dark:border-rose-500/50 ring-1 ring-rose-400/30'
                         : s.status === 'waiting'
                         ? 'border-amber-400/80 dark:border-amber-500/50 ring-1 ring-amber-400/30'
@@ -1325,7 +1490,9 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                     <div className="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
                       <span
                         className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black tracking-wider uppercase border ${
-                          s.status === 'active'
+                          isSelfPaced
+                            ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800'
+                            : s.status === 'active'
                             ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-300 border-rose-200 dark:border-rose-800'
                             : s.status === 'waiting'
                             ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-300 border-amber-200 dark:border-amber-800'
@@ -1334,7 +1501,12 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                             : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
                         }`}
                       >
-                        {s.status === 'active' ? (
+                        {isSelfPaced ? (
+                          <>
+                            <ClipboardList className="w-3 h-3 text-indigo-500" />
+                            <span>TUGAS MANDIRI / PR</span>
+                          </>
+                        ) : s.status === 'active' ? (
                           <>
                             <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
                             <span>LIVE INTERAKTIF</span>
@@ -1395,6 +1567,51 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                         {s.quizTitle}
                       </h3>
 
+                      {/* Mode Mandiri / PR Deadline Info Box */}
+                      {isSelfPaced && (() => {
+                        const deadlineCountdown = getAccurateDeadlineCountdown(s.settings?.deadlineAt, nowMs);
+                        return (
+                          <div className={`p-2.5 rounded-xl border text-xs flex flex-col gap-1 ${
+                            deadlineCountdown.isExpired
+                              ? 'bg-rose-50/80 dark:bg-rose-950/30 border-rose-200 dark:border-rose-900/50 text-rose-800 dark:text-rose-300'
+                              : deadlineCountdown.isUrgent
+                              ? 'bg-amber-50/80 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900/50 text-amber-800 dark:text-amber-300'
+                              : 'bg-indigo-50/70 dark:bg-indigo-950/30 border-indigo-200 dark:border-indigo-900/50 text-indigo-900 dark:text-indigo-300'
+                          }`}>
+                            <div className="flex items-center justify-between gap-1 flex-wrap">
+                              <span className="font-semibold flex items-center gap-1.5 text-[11px]">
+                                <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
+                                Batas Waktu:
+                              </span>
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                                deadlineCountdown.isExpired
+                                  ? 'bg-rose-200 dark:bg-rose-900/60 text-rose-800 dark:text-rose-200 animate-pulse'
+                                  : deadlineCountdown.isUrgent
+                                  ? 'bg-amber-200 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200'
+                                  : 'bg-indigo-200 dark:bg-indigo-900/60 text-indigo-800 dark:text-indigo-200'
+                              }`}>
+                                {deadlineCountdown.isExpired ? 'TENGGAT BERAKHIR' : 'AKTIF'}
+                              </span>
+                            </div>
+                            <p className="font-medium text-[11px] text-slate-700 dark:text-slate-300">
+                              {deadlineCountdown.formattedDate}
+                            </p>
+                            <p className="text-[11px] font-bold flex items-center gap-1">
+                              <Clock className="w-3 h-3 flex-shrink-0" />
+                              {deadlineCountdown.isExpired ? (
+                                <span className="text-rose-600 dark:text-rose-400">
+                                  Berakhir: {deadlineCountdown.countdownText}
+                                </span>
+                              ) : (
+                                <span>
+                                  Sisa waktu: {deadlineCountdown.countdownText}
+                                </span>
+                              )}
+                            </p>
+                          </div>
+                        );
+                      })()}
+
                       {/* Metric Bar */}
                       <div className="bg-slate-50 dark:bg-slate-800/60 rounded-2xl p-3 border border-slate-100 dark:border-slate-800/80 space-y-1.5">
                         <div className="flex justify-between items-center text-xs font-bold">
@@ -1426,38 +1643,64 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                               setSelectedSessionForHost(s);
                             }}
                             className={`w-full py-2.5 px-4 rounded-xl text-white text-xs font-black flex items-center justify-center gap-2 shadow-xs transition-all btn-press min-h-[44px] ${
-                              s.status === 'waiting'
+                              isSelfPaced
+                                ? 'bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700'
+                                : s.status === 'waiting'
                                 ? 'bg-gradient-to-r from-amber-500 via-orange-600 to-amber-600 hover:from-amber-600 hover:to-orange-700'
                                 : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700'
                             }`}
                           >
-                            <Tv className="w-4 h-4" />
-                            <span>
-                              {s.status === 'waiting'
-                                ? 'Masuk ke Ruang Tunggu Kelas'
-                                : 'Buka Layar Pantau Guru'}
-                            </span>
+                            {isSelfPaced ? (
+                              <>
+                                <Users className="w-4 h-4" />
+                                <span>Pantau Progres Siswa</span>
+                              </>
+                            ) : (
+                              <>
+                                <Tv className="w-4 h-4" />
+                                <span>
+                                  {s.status === 'waiting'
+                                    ? 'Masuk ke Ruang Tunggu Kelas'
+                                    : 'Buka Layar Pantau Guru'}
+                                </span>
+                              </>
+                            )}
                           </button>
 
-                          <div className="grid grid-cols-2 gap-2">
+                          <div className={`grid ${isSelfPaced ? 'grid-cols-3' : 'grid-cols-2'} gap-2`}>
                             <button
                               type="button"
                               onClick={() => {
                                 playClick();
                                 setSelectedSessionForRecap(s);
                               }}
-                              className="py-2.5 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold flex items-center justify-center gap-1.5 min-h-[44px] transition-colors"
+                              className="py-2.5 px-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold flex items-center justify-center gap-1 min-h-[44px] transition-colors"
                             >
-                              <BarChart3 className="w-3.5 h-3.5 text-blue-500" />
-                              <span>Rekap Sesi</span>
+                              <BarChart3 className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
+                              <span className="truncate">Rekap Sesi</span>
                             </button>
+
+                            {isSelfPaced && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  playClick();
+                                  setSessionToExtendDeadline(s);
+                                }}
+                                className="py-2.5 px-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-900/40 text-xs font-bold flex items-center justify-center gap-1 min-h-[44px] transition-colors"
+                                title="Perpanjang batas waktu pengerjaan PR"
+                              >
+                                <Calendar className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
+                                <span className="truncate">Perpanjang</span>
+                              </button>
+                            )}
 
                             <button
                               type="button"
                               onClick={() => handleEndSessionDirectly(s.id)}
-                              className="py-2.5 px-3 rounded-xl bg-rose-50 dark:bg-rose-950/30 hover:bg-rose-100 dark:hover:bg-rose-900/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/40 text-xs font-bold flex items-center justify-center gap-1.5 min-h-[44px] transition-colors"
+                              className="py-2.5 px-2 rounded-xl bg-rose-50 dark:bg-rose-950/30 hover:bg-rose-100 dark:hover:bg-rose-900/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/40 text-xs font-bold flex items-center justify-center gap-1 min-h-[44px] transition-colors"
                             >
-                              <span>Akhiri Sesi</span>
+                              <span className="truncate">Akhiri Sesi</span>
                             </button>
                           </div>
                         </>
@@ -1571,6 +1814,15 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
         onClose={() => setIsAdminBackupModalOpen(false)}
         teacherEmail={teacher.email}
         teacherName={teacher.fullName}
+        playClick={playClick}
+      />
+
+      {/* Modal Perpanjang Batas Waktu Mode Mandiri / PR */}
+      <ExtendDeadlineModal
+        isOpen={Boolean(sessionToExtendDeadline)}
+        session={sessionToExtendDeadline}
+        onClose={() => setSessionToExtendDeadline(null)}
+        onExtend={handleExtendSessionDeadline}
         playClick={playClick}
       />
     </div>
