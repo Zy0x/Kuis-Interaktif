@@ -35,8 +35,9 @@ export const QuizizzReactionButtonRow: React.FC<QuizizzReactionButtonRowProps> =
   scrollable = false,
 }) => {
   const [activePressedEmoji, setActivePressedEmoji] = useState<string | null>(null);
+  const lastClickTimeRef = React.useRef<number>(0);
   const lastBackendSendRef = React.useRef<number>(0);
-  const queuedReactionRef = React.useRef<string | null>(null);
+  const queuedReactionRef = React.useRef<SessionLiveReaction | null>(null);
   const debounceTimerRef = React.useRef<any>(null);
 
   React.useEffect(() => {
@@ -45,43 +46,46 @@ export const QuizizzReactionButtonRow: React.FC<QuizizzReactionButtonRowProps> =
     };
   }, []);
 
-  const persistReaction = async (emoji: string) => {
+  const persistReaction = async (reaction: SessionLiveReaction) => {
     try {
-      await DataManager.sendSessionReaction(sessionId, {
-        studentName: senderName,
-        avatarId,
-        isTeacher,
-        emoji,
-      });
+      await DataManager.sendSessionReaction(sessionId, reaction, { skipBroadcast: true });
     } catch (err) {
       console.warn('Failed to send reaction:', err);
     }
   };
 
   const handleSendReaction = (emoji: string) => {
+    const now = Date.now();
+    // Anti-spam click cooldown (350ms minimum interval antar klik)
+    if (now - lastClickTimeRef.current < 350) {
+      return;
+    }
+    lastClickTimeRef.current = now;
+
     if (playClick) playClick();
     setActivePressedEmoji(emoji);
     setTimeout(() => setActivePressedEmoji(null), 250);
 
-    const tempReaction: SessionLiveReaction = {
-      id: 'local_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+    const reactionId = 'react_' + now + '_' + Math.random().toString(36).substring(2, 7);
+    const liveReaction: SessionLiveReaction = {
+      id: reactionId,
       studentName: senderName,
+      senderName: senderName,
       avatarId,
       isTeacher,
       emoji,
-      createdAt: Date.now(),
+      createdAt: now,
     };
 
-    // 0ms instant local & cross-tab broadcast
-    broadcastLiveReaction(sessionId, tempReaction);
+    // 0ms instant local & cross-tab / cross-device broadcast
+    broadcastLiveReaction(sessionId, liveReaction);
 
     // Throttled network persistence ke backend Supabase (maks 1 per 500ms)
-    const now = Date.now();
     if (now - lastBackendSendRef.current > 500) {
       lastBackendSendRef.current = now;
-      persistReaction(emoji);
+      persistReaction(liveReaction);
     } else {
-      queuedReactionRef.current = emoji;
+      queuedReactionRef.current = liveReaction;
       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
       debounceTimerRef.current = setTimeout(() => {
         if (queuedReactionRef.current) {

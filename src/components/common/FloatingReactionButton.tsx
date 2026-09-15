@@ -1,4 +1,4 @@
-﻿import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { DataManager, broadcastLiveReaction } from '../../lib/supabaseClient';
 import type { SessionLiveReaction } from '../../types/quiz';
 import { QUIZIZZ_REACTIONS } from './QuizizzReactionButtonRow';
@@ -23,11 +23,12 @@ export const FloatingReactionButton: React.FC<FloatingReactionButtonProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [activePressedEmoji, setActivePressedEmoji] = useState<string | null>(null);
-  const autoCloseTimerRef = useRef<any>(null);
-  const lastBackendSendRef = useRef<number>(0);
-  const queuedReactionRef = useRef<string | null>(null);
-  const debounceTimerRef = useRef<any>(null);
   const dockRef = useRef<HTMLDivElement>(null);
+  const autoCloseTimerRef = useRef<any>(null);
+  const lastClickTimeRef = useRef<number>(0);
+  const lastBackendSendRef = useRef<number>(0);
+  const queuedReactionRef = useRef<SessionLiveReaction | null>(null);
+  const debounceTimerRef = useRef<any>(null);
 
   // Auto close dock after 6 seconds of inactivity
   const resetAutoCloseTimer = () => {
@@ -63,20 +64,22 @@ export const FloatingReactionButton: React.FC<FloatingReactionButtonProps> = ({
     };
   }, [isOpen]);
 
-  const persistReaction = async (emoji: string) => {
+  const persistReaction = async (reaction: SessionLiveReaction) => {
     try {
-      await DataManager.sendSessionReaction(sessionId, {
-        studentName: senderName,
-        avatarId,
-        isTeacher,
-        emoji,
-      });
+      await DataManager.sendSessionReaction(sessionId, reaction, { skipBroadcast: true });
     } catch (err) {
       console.warn('Failed to persist floating reaction:', err);
     }
   };
 
   const handleSendReaction = (emoji: string) => {
+    const now = Date.now();
+    // Anti-spam click cooldown (350ms minimum interval antar klik)
+    if (now - lastClickTimeRef.current < 350) {
+      return;
+    }
+    lastClickTimeRef.current = now;
+
     if (playClick) playClick();
     if (navigator.vibrate) {
       try {
@@ -88,25 +91,26 @@ export const FloatingReactionButton: React.FC<FloatingReactionButtonProps> = ({
     setTimeout(() => setActivePressedEmoji(null), 250);
     resetAutoCloseTimer();
 
-    const tempReaction: SessionLiveReaction = {
-      id: 'local_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+    const reactionId = 'react_' + now + '_' + Math.random().toString(36).substring(2, 7);
+    const liveReaction: SessionLiveReaction = {
+      id: reactionId,
       studentName: senderName,
+      senderName: senderName,
       avatarId,
       isTeacher,
       emoji,
-      createdAt: Date.now(),
+      createdAt: now,
     };
 
     // Broadcast instant
-    broadcastLiveReaction(sessionId, tempReaction);
+    broadcastLiveReaction(sessionId, liveReaction);
 
     // Throttled persistence
-    const now = Date.now();
     if (now - lastBackendSendRef.current > 500) {
       lastBackendSendRef.current = now;
-      persistReaction(emoji);
+      persistReaction(liveReaction);
     } else {
-      queuedReactionRef.current = emoji;
+      queuedReactionRef.current = liveReaction;
       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
       debounceTimerRef.current = setTimeout(() => {
         if (queuedReactionRef.current) {
@@ -131,7 +135,7 @@ export const FloatingReactionButton: React.FC<FloatingReactionButtonProps> = ({
             <button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="p-1 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors min-w-[32px] min-h-[32px] flex items-center justify-center"
+              className="p-1 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
               aria-label="Tutup"
             >
               <X className="w-4 h-4" />
@@ -146,7 +150,7 @@ export const FloatingReactionButton: React.FC<FloatingReactionButtonProps> = ({
                   key={r.emoji}
                   type="button"
                   onClick={() => handleSendReaction(r.emoji)}
-                  className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl transition-all transform active:scale-80 hover:scale-110 btn-press bg-slate-800/80 hover:bg-amber-950/60 border border-slate-700/70 ${
+                  className={`w-12 h-12 min-w-[48px] min-h-[48px] rounded-2xl flex items-center justify-center text-xl transition-all transform active:scale-80 hover:scale-110 btn-press bg-slate-800/80 hover:bg-amber-950/60 border border-slate-700/70 shrink-0 ${
                     isPressed ? 'ring-2 ring-amber-400 scale-125 bg-amber-900/60' : ''
                   }`}
                   title={r.label}

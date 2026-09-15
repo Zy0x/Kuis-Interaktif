@@ -509,10 +509,6 @@ export const StudentWaitingRoom: React.FC<StudentWaitingRoomProps> = ({
         onToggleMuteByStudent={handleToggleNotificationMute}
       />
 
-      {/* Floating Live Reactions Overlay di Ruang Tunggu Murid */}
-      <QuizizzReactionOverlay sessionId={session.id} reactions={session.reactions} />
-
-
       {/* Modal Sesi Berakhir (Rule 1 & Rule 8: Elegan & Touch-First, Pengganti window.alert) */}
       {isSessionEndedModalOpen && (
         <div

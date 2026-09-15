@@ -2620,20 +2620,21 @@ export const DataManager = {
 
   async sendSessionReaction(
     sessionId: string,
-    reaction: Omit<SessionLiveReaction, 'id' | 'createdAt'>
+    reaction: Omit<SessionLiveReaction, 'id' | 'createdAt'> & { id?: string; createdAt?: number },
+    options?: { skipBroadcast?: boolean }
   ): Promise<SessionLiveReaction | null> {
     const existing = this.getActiveSessions();
     const idx = existing.findIndex((s) => s.id === sessionId);
     if (idx === -1) return null;
 
     const newReaction: SessionLiveReaction = {
-      id: 'react_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      id: reaction.id || ('react_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6)),
       studentName: reaction.studentName,
       senderName: reaction.senderName || reaction.studentName,
       avatarId: reaction.avatarId,
       isTeacher: reaction.isTeacher,
       emoji: reaction.emoji,
-      createdAt: Date.now(),
+      createdAt: reaction.createdAt || Date.now(),
     };
 
     const currentReactions = existing[idx].reactions || [];
@@ -2646,7 +2647,9 @@ export const DataManager = {
       console.warn('Failed to save reaction:', e);
     }
 
-    broadcastLiveReaction(sessionId, newReaction);
+    if (!options?.skipBroadcast) {
+      broadcastLiveReaction(sessionId, newReaction);
+    }
     broadcastSessionUpdate(existing[idx]);
 
     if (supabase) {

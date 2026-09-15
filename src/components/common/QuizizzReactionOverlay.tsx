@@ -29,7 +29,8 @@ export const QuizizzReactionOverlay: React.FC<QuizizzReactionOverlayProps> = ({
 }) => {
   const [isAntiReact] = useAntiReaction();
   const [particles, setParticles] = useState<FloatingParticle[]>([]);
-  const lastSpawnTimesRef = useRef<Map<string, number>>(new Map());
+  const seenReactionIdsRef = useRef<Set<string>>(new Set());
+  const lastSenderSpawnRef = useRef<Map<string, number>>(new Map());
 
   const spawnParticle = useCallback((reaction: SessionLiveReaction) => {
     if (disabled || isAntiReact) return;
@@ -52,8 +53,8 @@ export const QuizizzReactionOverlay: React.FC<QuizizzReactionOverlayProps> = ({
     };
 
     setParticles((prev) => {
-      // Limit to max 14 active particles to guarantee buttery-smooth 60-120fps with zero lag
-      const next = prev.length >= 14 ? prev.slice(-13) : prev;
+      // Limit to max 8 active particles to guarantee buttery-smooth 60-120fps and prevent visual clutter
+      const next = prev.length >= 8 ? prev.slice(-7) : prev;
       return [...next, particle];
     });
 
@@ -62,21 +63,39 @@ export const QuizizzReactionOverlay: React.FC<QuizizzReactionOverlayProps> = ({
     setTimeout(() => {
       setParticles((prev) => prev.filter((p) => p.id !== particle.id));
     }, cleanupMs);
-  }, []);
+  }, [disabled, isAntiReact]);
 
   const handleReaction = useCallback((reaction: SessionLiveReaction, targetSessionId?: string) => {
+    if (disabled || isAntiReact) return;
     if (sessionId && targetSessionId && targetSessionId !== sessionId) {
       return;
     }
-    // Deduplicate rapid bursts with same reaction ID or within 400ms
-    const key = reaction.id || `${reaction.emoji}_${reaction.senderName || reaction.studentName}_${Math.floor((reaction.createdAt || Date.now()) / 1000)}`;
+
+    // 1. Strict single-reaction deduplication (1 klik = tepat 1 kali ditampilkan)
+    if (reaction.id) {
+      if (seenReactionIdsRef.current.has(reaction.id)) {
+        return;
+      }
+      seenReactionIdsRef.current.add(reaction.id);
+      // Batasi ukuran cache ID untuk memori efisien
+      if (seenReactionIdsRef.current.size > 200) {
+        const arr = Array.from(seenReactionIdsRef.current);
+        seenReactionIdsRef.current = new Set(arr.slice(-100));
+      }
+    }
+
+    // 2. Anti-spam throttling per pengirim + emoji (maksimal 1 reaksi per 350ms dari pengirim yang sama)
+    const sender = (reaction.senderName || reaction.studentName || 'anon').trim().toLowerCase();
+    const senderKey = `${sender}_${reaction.emoji}`;
     const now = Date.now();
-    const last = lastSpawnTimesRef.current.get(key);
-    if (last && now - last < 400) return;
-    lastSpawnTimesRef.current.set(key, now);
+    const lastSenderTime = lastSenderSpawnRef.current.get(senderKey) || 0;
+    if (now - lastSenderTime < 350) {
+      return;
+    }
+    lastSenderSpawnRef.current.set(senderKey, now);
 
     spawnParticle(reaction);
-  }, [sessionId, spawnParticle]);
+  }, [sessionId, disabled, isAntiReact, spawnParticle]);
 
   // 1. Supabase Realtime WebSocket Broadcast (Lintas perangkat/mobile ke PC, sub-50ms)
   useEffect(() => {
@@ -100,21 +119,21 @@ export const QuizizzReactionOverlay: React.FC<QuizizzReactionOverlayProps> = ({
 
   // 2. Fallback: Sinkronkan reaksi dari data sesi Supabase Database (jika polling atau postgres_changes)
   useEffect(() => {
-    if (!reactions || reactions.length === 0) return;
+    if (!reactions || reactions.length === 0 || disabled || isAntiReact) return;
     const now = Date.now();
-    // Periksa 6 reaksi paling baru
-    const recent = reactions.slice(-6);
+    // Periksa 5 reaksi paling baru
+    const recent = reactions.slice(-5);
     recent.forEach((r) => {
+      // Jika reaction.id sudah pernah ditampilkan, lewati mutlak
+      if (r.id && seenReactionIdsRef.current.has(r.id)) {
+        return;
+      }
       const created = r.createdAt || now;
-      if (now - created < 3500) {
-        const key = r.id || `${r.emoji}_${r.senderName || r.studentName}_${Math.floor(created / 1000)}`;
-        if (!lastSpawnTimesRef.current.has(key)) {
-          lastSpawnTimesRef.current.set(key, now);
-          spawnParticle(r);
-        }
+      if (now - created < 3000) {
+        handleReaction(r, sessionId);
       }
     });
-  }, [reactions, spawnParticle]);
+  }, [reactions, disabled, isAntiReact, sessionId, handleReaction]);
 
   // 3. Listen to local BroadcastChannel (same browser) & CustomEvent (same window)
   useEffect(() => {

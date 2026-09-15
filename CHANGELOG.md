@@ -1,6 +1,28 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.44] - 2026-09-15
+### Perbaikan Presisi Reaksi Emoji & Proteksi Anti-Spam Penumpukan (Rule 1, Rule 2, Rule 5, Rule 14 & Rule 15)
+
+#### 1. Eliminasi Duplikasi Reaksi (1 Klik = Tepat 1 Reaksi Ditampilkan)
+- **Resolusi Duplikasi Komponen Ruang Tunggu (`StudentWaitingRoom.tsx`)**: Menemukan dan menghapus duplikasi instans `<QuizizzReactionOverlay>` yang sebelumnya terpasang ganda di bagian atas dan bawah layar ruang tunggu, mengeliminasi penyebab kembar dua partikel saat tombol ditekan.
+- **Kanonikalitas ID & Sinkronisasi Satu Pintu (`supabaseClient.ts`)**:
+  - Menyempurnakan fungsi `sendSessionReaction` agar mempertahankan identitas unik (`id`) dan stempel waktu (`createdAt`) dari reaksi yang diinisiasi oleh pengirim.
+  - Menambahkan opsi `skipBroadcast: true` pada persistensi data ke penyimpanan lokal/database agar tidak memicu siaran ganda ke saluran siar yang sudah menerima reaksi optimistik instan.
+
+#### 2. Proteksi Anti-Spam & Pencegahan Penumpukan Partikel (`QuizizzReactionOverlay.tsx`)
+- **Dedup ID Mutlak (`seenReactionIdsRef`)**: Memastikan setiap reaksi dengan pengenal unik hanya dirender tepat satu kali di seluruh saluran (WebSocket, BroadcastChannel, CustomEvent, dan state fallback).
+- **Throttling Pengirim Ramah Perangkat (`lastSenderSpawnRef`)**: Membatasi laju pemunculan reaksi dari pengirim yang sama dengan jendela waktu aman 350ms per emoji untuk mencegah banjir animasi saat pengguna mengetuk berulang kali.
+- **Kerapian Layar Maksimal 8 Partikel**: Menyesuaikan batas maksimum partikel aktif dari sebelumnya 14 menjadi 8 partikel beranimasi mengapung. Layar tetap bersih, estetis, dan lancar pada kecepatan 60-120 fps tanpa menutupi konten soal atau tombol navigasi.
+
+#### 3. Throttle Tombol Reaksi & Ketukan Layar Sentuh (`QuizizzReactionButtonRow.tsx` & `FloatingReactionButton.tsx`)
+- **Cooldown Tombol 350ms**: Menambahkan perlindungan `lastClickTimeRef` pada tombol baris reaksi maupun floating dock agar ketukan cepat/spam berturut-turut ditapis dengan mulus.
+- **Target Sentuh Mobile-First ($\ge 48\times 48$ px)**: Memastikan seluruh tombol emoji mempertahankan ukuran sentuh minimal $48\times 48$ px (`min-w-[48px] min-h-[48px]`) dengan responsivitas haptik dan visual yang tegas.
+
+#### 4. Pembaruan Versi & Cache PWA (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.44` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.44` (`public/sw.js`).
+
 ## [2.4.43] - 2026-09-15
 ### Penyempurnaan Menyeluruh Mode Santai: Eliminasi Total Batas Waktu & Konflik Timer Per Soal (Rule 1, Rule 2, Rule 11 & Rule 15)
 
