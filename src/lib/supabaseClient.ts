@@ -1951,7 +1951,9 @@ export const DataManager = {
       if (typeof window !== 'undefined') {
         localStorage.setItem('kuis_oauth_intended_role', role);
       }
-      const redirectUrl = `${window.location.origin}${window.location.pathname}?oauth_callback=1&role=${role}`;
+      const rawPath = window.location.pathname || '/';
+      const normalizedPath = rawPath.endsWith('/') ? rawPath : `${rawPath}/`;
+      const redirectUrl = `${window.location.origin}${normalizedPath}?oauth_callback=1&role=${role}`;
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {

@@ -1,6 +1,20 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.46] - 2026-09-15
+### Resolusi Menyeluruh Fallback Redirect Port 3000 & Konfigurasi Supabase Site URL (Rule 1, Rule 9, Rule 10 & Rule 15)
+
+#### 1. Sinkronisasi Konfigurasi `site_url` & Whitelist Cloud Supabase
+- **Pembaruan `site_url` Cloud**: Mengubah konfigurasi `site_url` bawaan project Supabase yang sebelumnya tertinggal di `http://localhost:3000` (port default proyek baru) menjadi `http://192.168.1.9:5173`. Karena GoTrue secara otomatis mengizinkan seluruh host yang sama dengan `site_url`, pengalihan dari HP ke IP host kini 100% sah dan diizinkan.
+- **Penyelarasan 25 Variasi `uri_allow_list`**: Memperluas daftar izin pengalihan di Supabase Cloud mencakup seluruh variasi pola IP mentah, trailing slash, wildcard slash tunggal (`/*`), dan wildcard sub-path ganda (`/**`) untuk port 5173 pada IP lokal `192.168.1.9`, subnet `192.168.1.*`, subnet `192.168.*.*`, `localhost`, dan `127.0.0.1`.
+
+#### 2. Normalisasi Format `redirectUrl` Frontend (`supabaseClient.ts`)
+- **Penyelarasan Trailing Slash**: Menormalkan jalur dasar `redirectUrl` pada pemanggilan `signInWithGoogle` agar selalu memiliki trailing slash sebelum parameter kueri (`http://192.168.1.9:5173/?oauth_callback=1...`), mencegah kegagalan pencocokan glob pada parser Go GoTrue.
+
+#### 3. Pembaruan Versi & Cache PWA (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.46` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.46` (`public/sw.js`).
+
 ## [2.4.45] - 2026-09-15
 ### Peningkatan Sinkronisasi Google OAuth & Panduan Autentikasi Jaringan Lokal (Rule 1, Rule 9, Rule 10 & Rule 15)
 
