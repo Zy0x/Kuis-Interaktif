@@ -1,6 +1,33 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.35] - 2026-09-15
+### Tampilan Konfirmasi Penyelesaian Kuis & Layar Rekap Hasil ala Wayground/Kahoot (Rule 1, Rule 2, Rule 5, Rule 7 & Rule 15)
+
+#### 1. Layar Selebrasi Selesai Kuis Siswa di Mode Dipandu Guru (`InterQuestionWaitingLounge.tsx`)
+- **Penghapusan Pembatasan Soal Terakhir**: Menghapus pemblokiran kondisi `!isLastQuestion` dan `currentIndex < activeQuestions.length - 1` pada pemanggilan Ruang Tunggu. Kini begitu siswa menjawab butir soal terakhir (misal 5/5), sistem seketika membuka Lounge Penyelesaian Kuis.
+- **Efek Selebrasi & Confetti**: Memicu selebrasi konfeti warna-warni (*canvas-confetti*) dan audio tepuk tangan seketika saat murid menyelesaikan seluruh butir soal.
+- **Kartu Ringkasan Hasil Sementara (*Interim Result Card*)**: Menampilkan kartu ringkasan hasil bergaya Wayground/Kahoot yang memuat:
+  - Skor Sementara (pts)
+  - Jumlah Jawaban Benar & Salah (`Benar • Salah`)
+  - Bintang Prestasi (`⭐`)
+- **Indikator Live Status Guru**: Menampilkan status berdenyut *"Menunggu Guru Mengakhiri Sesi & Membuka Papan Juara (Podium)..."*.
+- **Tombol Akses Podium Seketika**: Jika guru telah menekan tombol akhiri kuis (`session.status === 'finished'`), ruang tunggu menampilkan tombol berpendar animasi *bounce*: *"Guru Telah Mengakhiri Sesi! Buka Rekapan & Podium Juara 🏆"*.
+- **Mini-Game Dino Run & Chat Tetap Aktif**: Siswa tetap leluasa bermain Dino Run (dengan leaderboard 3 besar teman sekelas) dan mengirim reaksi obrolan sembari menunggu guru mengumumkan hasil akhir kelas.
+
+#### 2. Fungsi Penyelesaian Kuis Terpusat & Transisi Real-Time (`QuizArena.tsx`)
+- **Penyelesaian Bebas Stale-Closure (`finishCurrentQuiz`)**: Menggunakan `latestAnswersRef` dan `latestTimeSpentRef` untuk mengunci seluruh riwayat jawaban tanpa risiko balapan data (*race condition*), mencatat status peserta `finished: true` ke database Supabase, dan langsung menavigasi ke layar `QuizResult.tsx`.
+- **Transisi Otomatis saat Guru Menyelesaikan Sesi**: Listener WebSocket & BroadcastChannel kini langsung memanggil `finishCurrentQuiz()` saat mendeteksi `session.status === 'finished'`, memastikan seluruh siswa serentak berpindah ke layar hasil rekap nilai dan podium.
+- **Tombol Footer Pintar Siswa**: Jika siswa berada di soal terakhir yang sudah terjawab, tombol footer berubah menjadi *"Kuis Selesai • Buka Layar Hasil & Peringkat"* agar siswa dapat membuka kembali layar selebrasi jika sebelumnya ditutup.
+
+#### 3. Modal Konfirmasi Selesai Ramah Anak pada Mode Mandiri (`QuizArena.tsx`)
+- **Dialog Konfirmasi Pengumpulan**: Pada mode mandiri (*self-paced*), menekan tombol "Selesai & Rekap Nilai" kini memunculkan modal konfirmasi yang bersih dan ramah anak berisi ringkasan skor dan jumlah soal yang telah dikerjakan.
+- **Dua Pilihan Aksi Intuitif**: Murid dapat memilih *"Periksa Kembali Jawaban"* jika ingin meninjau ulang, atau *"Ya, Selesaikan & Rekap Nilai"* untuk mengunci jawaban dan melihat pembahasan lengkap.
+
+#### 4. Pembaruan Versi & Cache PWA (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.35` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.35` (`public/sw.js`).
+
 ## [2.4.34] - 2026-09-15
 ### Perbaikan Tuntas: Pencegahan Pengerjaan Ulang Soal Pasca-Reload & Deduplikasi Skor Siswa (Rule 1, Rule 9, Rule 11 & Rule 15)
 

@@ -48,7 +48,8 @@ import {
   Edit3,
   ShieldAlert,
   MessageCircle,
-  LogOut
+  LogOut,
+  Trophy
 } from 'lucide-react';
 import { QuizIllustration } from '../shared/QuizIllustration';
 import { QuizizzReactionOverlay } from '../common/QuizizzReactionOverlay';
@@ -333,7 +334,14 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     return 0;
   });
   const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const [showFinishConfirmModal, setShowFinishConfirmModal] = useState(false);
   const [isMobileToolsOpen, setIsMobileToolsOpen] = useState(false);
+
+  // Ref penampung jawaban dan waktu terkini untuk mencegah race condition / stale closure saat kuis diakhiri
+  const latestAnswersRef = useRef<QuizAttemptAnswer[]>(answersList);
+  latestAnswersRef.current = answersList;
+  const latestTimeSpentRef = useRef<number>(totalTimeSpent);
+  latestTimeSpentRef.current = totalTimeSpent;
 
   // Status Mode Dipandu Guru Khusus Siswa (Header Bersih & Navigasi Terkunci)
   const isStudentTeacherLed = Boolean(activeSettings.executionMode === 'teacher_led' && !isTeacher && !isPreview);
@@ -403,8 +411,8 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
         setShortAnswerInput(existingAns.textAnswer);
       }
 
-      // Khusus Mode Dipandu Guru: Siswa yang sudah menjawab langsung masuk Lounge (Dino Run)
-      if (activeSettings.executionMode === 'teacher_led' && !isTeacher && currentIndex < activeQuestions.length - 1) {
+      // Khusus Mode Dipandu Guru: Siswa yang sudah menjawab langsung masuk Lounge (Dino Run / Selebrasi Selesai)
+      if (activeSettings.executionMode === 'teacher_led' && !isTeacher) {
         setShowWaitingLounge(true);
         setShowCountdown(false);
       }
@@ -921,7 +929,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
       return updated;
     });
 
-    if (activeSettings.executionMode === 'teacher_led' && !isTeacher && !isLastQuestion) {
+    if (activeSettings.executionMode === 'teacher_led' && !isTeacher) {
       setTimeout(() => {
         setShowWaitingLounge(true);
       }, 700);
@@ -971,6 +979,42 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     } catch {}
   };
 
+  const finishCurrentQuiz = useCallback(() => {
+    stopBgm();
+    try {
+      sessionStorage.removeItem(STORAGE_KEY);
+    } catch {}
+    const finalAnswers = latestAnswersRef.current;
+    const finalTime = latestTimeSpentRef.current;
+    if (activeSessionId) {
+      try {
+        const profile = DataManager.getPlayerProfile();
+        const correctCount = finalAnswers.filter((a) => a.isCorrect).length;
+        const incorrectCount = finalAnswers.length - correctCount;
+        const score = Math.round((correctCount / activeQuestions.length) * 100);
+        const stars = score >= 85 ? 3 : score >= 60 ? 2 : score > 0 ? 1 : 0;
+        const storedToken = activeSessionId ? DataManager.getSessionParticipant(activeSessionId) : null;
+        DataManager.addOrUpdateSessionParticipant(activeSessionId, {
+          id: storedToken?.id,
+          name: storedToken?.name || profile.nickname || 'Siswa',
+          avatarId: profile.avatarId || 'lion',
+          currentQuestionIndex: activeQuestions.length,
+          totalQuestions: activeQuestions.length,
+          score,
+          stars,
+          correctCount,
+          incorrectCount,
+          finished: true,
+          timeSpentSec: finalTime,
+          tabSwitchCount,
+        });
+      } catch (err) {
+        console.warn('Session participant finish sync error:', err);
+      }
+    }
+    onFinishQuiz(finalAnswers, finalTime);
+  }, [activeSessionId, activeQuestions.length, onFinishQuiz, stopBgm, STORAGE_KEY, tabSwitchCount]);
+
   const executeAdvanceToNext = () => {
     playClick();
 
@@ -985,37 +1029,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     }
 
     if (isLastQuestion) {
-      stopBgm();
-      try {
-        sessionStorage.removeItem(STORAGE_KEY);
-      } catch {}
-      if (activeSessionId) {
-        try {
-          const profile = DataManager.getPlayerProfile();
-          const correctCount = answersList.filter((a) => a.isCorrect).length;
-          const incorrectCount = answersList.length - correctCount;
-          const score = Math.round((correctCount / activeQuestions.length) * 100);
-          const stars = score >= 85 ? 3 : score >= 60 ? 2 : score > 0 ? 1 : 0;
-          const storedToken = activeSessionId ? DataManager.getSessionParticipant(activeSessionId) : null;
-          DataManager.addOrUpdateSessionParticipant(activeSessionId, {
-            id: storedToken?.id,
-            name: storedToken?.name || profile.nickname || 'Siswa',
-            avatarId: profile.avatarId || 'lion',
-            currentQuestionIndex: activeQuestions.length,
-            totalQuestions: activeQuestions.length,
-            score,
-            stars,
-            correctCount,
-            incorrectCount,
-            finished: true,
-            timeSpentSec: totalTimeSpent,
-            tabSwitchCount,
-          });
-        } catch (err) {
-          console.warn('Session participant finish sync error:', err);
-        }
-      }
-      onFinishQuiz(answersList, totalTimeSpent);
+      finishCurrentQuiz();
     } else {
       setDucked(false);
       const nextIdx = currentIndex + 1;
@@ -1042,6 +1056,11 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   const handleNext = () => {
     if (isTeacher && activeSettings.executionMode === 'teacher_led') {
       promptTeacherNav(isLastQuestion ? activeQuestions.length : currentIndex + 1, 'next');
+      return;
+    }
+    // Mode Mandiri / Non-Teacher-Led: Tampilkan dialog konfirmasi ramah anak sebelum mengumpulkan hasil
+    if (isLastQuestion && activeSettings.executionMode !== 'teacher_led') {
+      setShowFinishConfirmModal(true);
       return;
     }
     executeAdvanceToNext();
@@ -1106,7 +1125,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     if (existingAns) {
       setSelectedOption(existingAns.selectedIndex ?? null);
       setIsAnswerConfirmed(true);
-      if (activeSettings.executionMode === 'teacher_led' && !isTeacher && targetIdx < activeQuestions.length - 1) {
+      if (activeSettings.executionMode === 'teacher_led' && !isTeacher) {
         setShowWaitingLounge(true);
         setShowCountdown(false);
       }
@@ -1166,7 +1185,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
           }
           if (sess.status === 'finished') {
             setShowWaitingLounge(false);
-            executeAdvanceToNext();
+            finishCurrentQuiz();
           }
         }
       }
@@ -2167,10 +2186,24 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
           </div>
 
           {activeSettings.executionMode === 'teacher_led' && !isTeacher ? (
-            <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-xs font-bold shadow-xs">
-              <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping flex-shrink-0" />
-              <span>Dipandu Guru di Depan Kelas</span>
-            </div>
+            isLastQuestion && isAnswerConfirmed ? (
+              <button
+                type="button"
+                onClick={() => {
+                  if (playClick) playClick();
+                  setShowWaitingLounge(true);
+                }}
+                className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-500 text-white text-xs sm:text-sm font-black shadow-md flex items-center gap-2 btn-press min-h-[46px]"
+              >
+                <Trophy className="w-4 h-4 text-amber-300 flex-shrink-0" />
+                <span>Kuis Selesai • Buka Layar Hasil & Peringkat</span>
+              </button>
+            ) : (
+              <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-xs font-bold shadow-xs">
+                <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping flex-shrink-0" />
+                <span>Dipandu Guru di Depan Kelas</span>
+              </div>
+            )
           ) : (
             <button
               type="button"
@@ -2178,7 +2211,9 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
               onClick={handleNext}
               className={`flex-1 sm:flex-initial sm:min-w-[200px] xl:min-w-[240px] px-6 py-2.5 sm:py-3 rounded-2xl font-bold text-xs sm:text-sm xl:text-base flex items-center justify-center gap-2 transition-all min-h-[46px] sm:min-h-[50px] btn-press ${
                 isAnswerConfirmed || canTeacherReveal || (isTeacher && activeSettings.executionMode === 'teacher_led')
-                  ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md'
+                  ? isLastQuestion
+                    ? 'bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-500 text-white shadow-md'
+                    : 'bg-blue-600 hover:bg-blue-700 text-white shadow-md'
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed border border-slate-200 dark:border-slate-700'
               }`}
             >
@@ -2455,6 +2490,83 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
         </div>
       )}
 
+      {/* Modal Konfirmasi Selesaikan Kuis (Mode Mandiri / Self-Paced) */}
+      {showFinishConfirmModal && (
+        <div 
+          className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 sm:p-6 modal-wrapper overscroll-contain"
+          onWheel={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm animate-backdrop-fade touch-none"
+            onClick={() => setShowFinishConfirmModal(false)}
+            onWheel={(e) => e.preventDefault()}
+            onTouchMove={(e) => e.preventDefault()}
+            aria-hidden="true"
+          />
+
+          <div 
+            className="relative z-10 bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-200 dark:border-slate-800 text-center space-y-4 animate-modal-card-in overscroll-contain"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-14 h-14 mx-auto rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-500 dark:text-amber-400 flex items-center justify-center text-2xl shadow-inner">
+              🏆
+            </div>
+
+            <div className="space-y-1">
+              <h4 className="text-lg font-black text-slate-900 dark:text-white">
+                Selesaikan Kuis & Lihat Hasil?
+              </h4>
+              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                Kerja hebat! Seluruh <span className="font-bold text-slate-900 dark:text-white">{activeQuestions.length} butir soal</span> telah terjawab. Kamu akan melihat rekap nilai, kunci jawaban, dan papan peringkat.
+              </p>
+            </div>
+
+            <div className="bg-slate-50 dark:bg-slate-850 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 grid grid-cols-2 gap-2 text-center">
+              <div>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold block uppercase">Skor Sementara</span>
+                <span className="text-base font-black text-emerald-600 dark:text-emerald-400">
+                  {Math.round((answersList.filter((a) => a.isCorrect).length / activeQuestions.length) * 100)} pts
+                </span>
+              </div>
+              <div>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold block uppercase">Benar / Total</span>
+                <span className="text-base font-black text-blue-600 dark:text-blue-400">
+                  {answersList.filter((a) => a.isCorrect).length} / {activeQuestions.length}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  if (playClick) playClick();
+                  setShowFinishConfirmModal(false);
+                  finishCurrentQuiz();
+                }}
+                className="w-full py-3 rounded-xl font-black text-xs sm:text-sm text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 active:bg-emerald-800 shadow-md min-h-[44px] transition-all btn-press flex items-center justify-center gap-2"
+              >
+                <span>Ya, Selesaikan & Rekap Nilai</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (playClick) playClick();
+                  setShowFinishConfirmModal(false);
+                }}
+                className="w-full py-2.5 rounded-xl font-semibold text-xs text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 min-h-[44px] transition-colors"
+              >
+                Periksa Kembali Jawaban
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Game Over Modal (Survival 3 Hearts Mode) */}
       {isGameOver && (
         <div 
@@ -2539,8 +2651,8 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
         </div>
       )}
 
-      {/* Lounge Jeda Antar-Soal (Siswa di Mode Dipandu Guru) */}
-      {(showWaitingLounge || isAnswerConfirmed) && activeSettings.executionMode === 'teacher_led' && !isTeacher && !isLastQuestion && (
+      {/* Lounge Jeda Antar-Soal & Selebrasi Selesai (Siswa di Mode Dipandu Guru) */}
+      {(showWaitingLounge || isAnswerConfirmed) && activeSettings.executionMode === 'teacher_led' && !isTeacher && (
         <InterQuestionWaitingLounge
           session={
             liveSession || {
@@ -2567,16 +2679,19 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
           avatarId={DataManager.getPlayerProfile().avatarId || 'lion'}
           earnedStars={answersList.filter((a) => a.isCorrect).length}
           earnedScore={Math.round((answersList.filter((a) => a.isCorrect).length / activeQuestions.length) * 100)}
+          correctCount={answersList.filter((a) => a.isCorrect).length}
+          incorrectCount={answersList.filter((a) => !a.isCorrect).length}
           onAdvanceToQuestion={(nextIdx) => {
             setShowWaitingLounge(false);
             handleJumpToQuestion(nextIdx);
           }}
           onQuizFinished={() => {
             setShowWaitingLounge(false);
-            handleNext();
+            finishCurrentQuiz();
           }}
           playClick={playClick}
           playCorrect={playCorrect}
+          playCelebration={playApplause || playCorrect}
         />
       )}
 

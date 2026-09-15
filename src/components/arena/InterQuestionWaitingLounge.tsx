@@ -3,6 +3,7 @@ import type { QuizSession, QuizSessionParticipant } from '../../types/quiz';
 import { DataManager } from '../../lib/supabaseClient';
 import { AVATAR_MAP } from '../../data/seedQuizzes';
 import { isDesktopDevice } from '../../lib/deviceUtils';
+import confetti from 'canvas-confetti';
 import { 
   Send, 
   MessageCircle, 
@@ -11,7 +12,9 @@ import {
   Volume2, 
   CheckCircle2,
   RotateCcw,
-  Trophy
+  Trophy,
+  Star,
+  Sparkles
 } from 'lucide-react';
 import { QuizizzReactionOverlay } from '../common/QuizizzReactionOverlay';
 import { QuizizzReactionButtonRow } from '../common/QuizizzReactionButtonRow';
@@ -25,10 +28,13 @@ export interface InterQuestionWaitingLoungeProps {
   avatarId: string;
   earnedStars?: number;
   earnedScore?: number;
+  correctCount?: number;
+  incorrectCount?: number;
   onAdvanceToQuestion: (nextIndex: number) => void;
   onQuizFinished: () => void;
   playClick: () => void;
   playCorrect?: () => void;
+  playCelebration?: () => void;
 }
 
 // -------------------------------------------------------------
@@ -882,15 +888,38 @@ export const InterQuestionWaitingLounge: React.FC<InterQuestionWaitingLoungeProp
   avatarId,
   earnedStars = 0,
   earnedScore = 0,
+  correctCount,
+  incorrectCount,
   onAdvanceToQuestion,
   onQuizFinished,
   playClick,
   playCorrect,
+  playCelebration,
 }) => {
   const [session, setSession] = useState<QuizSession>(initialSession);
   const [chatText, setChatText] = useState('');
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const chatInputRef = useRef<HTMLTextAreaElement>(null);
+
+  const isFinalQuestion = questionIndex >= totalQuestions - 1;
+
+  // Selebrasi audio & confetti seketika saat murid menyelesaikan seluruh soal
+  useEffect(() => {
+    if (isFinalQuestion) {
+      if (playCelebration) {
+        try {
+          playCelebration();
+        } catch {}
+      }
+      try {
+        confetti({
+          particleCount: 60,
+          spread: 80,
+          origin: { y: 0.6 },
+        });
+      } catch {}
+    }
+  }, [isFinalQuestion, playCelebration]);
 
   // Penyesuaian tinggi textarea otomatis hingga 3 baris saat teks panjang (User Request & Rule 1)
   useEffect(() => {
@@ -999,23 +1028,77 @@ export const InterQuestionWaitingLounge: React.FC<InterQuestionWaitingLoungeProp
       
       <div className="w-full max-w-xl bg-slate-900 border border-slate-800 rounded-3xl p-4 sm:p-6 shadow-2xl space-y-4 my-auto">
         
-        {/* Top Header: Answer Saved Status */}
-        <div className="text-center space-y-1">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold">
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>Jawaban Soal #{questionIndex + 1} dari {totalQuestions} Tersimpan!</span>
-            {earnedStars > 0 && <span className="ml-1 text-amber-300 font-black">+{earnedStars}⭐</span>}
-            {earnedScore > 0 && <span className="ml-0.5 text-emerald-300 font-black">+{earnedScore}pts</span>}
+        {/* Top Header: Answer Saved Status / Selebrasi Kuis Selesai ala Kahoot/Wayground */}
+        {isFinalQuestion ? (
+          <div className="text-center space-y-2.5 animate-fade-in">
+            <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-black shadow-inner">
+              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+              <span>Semua Soal Berhasil Dijawab! ({totalQuestions}/{totalQuestions})</span>
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+            </div>
+
+            <h2 className="text-xl sm:text-2xl font-black text-white leading-tight">
+              Luar Biasa, {studentName}! 🎉
+            </h2>
+
+            {/* Kartu Ringkasan Hasil Sementara (Interim Result Card) */}
+            <div className="grid grid-cols-3 gap-2 bg-slate-950/70 border border-slate-800 rounded-2xl p-2.5 sm:p-3 text-center shadow-inner">
+              <div className="bg-slate-900/80 rounded-xl p-2 border border-slate-800/80">
+                <span className="text-[10px] text-slate-400 font-bold block uppercase">Skor Sementara</span>
+                <span className="text-base sm:text-lg font-black text-emerald-400">{earnedScore} pts</span>
+              </div>
+              <div className="bg-slate-900/80 rounded-xl p-2 border border-slate-800/80">
+                <span className="text-[10px] text-slate-400 font-bold block uppercase">Benar • Salah</span>
+                <span className="text-base sm:text-lg font-black text-blue-400">
+                  {correctCount ?? earnedStars} • <span className="text-rose-400">{incorrectCount ?? 0}</span>
+                </span>
+              </div>
+              <div className="bg-slate-900/80 rounded-xl p-2 border border-slate-800/80">
+                <span className="text-[10px] text-slate-400 font-bold block uppercase">Bintang</span>
+                <span className="text-base sm:text-lg font-black text-amber-400 flex items-center justify-center gap-1">
+                  {earnedStars} <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                </span>
+              </div>
+            </div>
+
+            {/* Indikator Menunggu Guru atau Tombol Akses Podium */}
+            {session.status === 'finished' ? (
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  onQuizFinished();
+                }}
+                className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-600 hover:to-yellow-500 text-slate-950 font-black text-xs sm:text-sm shadow-xl flex items-center justify-center gap-2 animate-bounce btn-press min-h-[46px]"
+              >
+                <Trophy className="w-4 h-4 text-slate-950 flex-shrink-0" />
+                <span>Guru Telah Mengakhiri Sesi! Buka Rekapan & Podium Juara 🏆</span>
+              </button>
+            ) : (
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-extrabold animate-pulse">
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping flex-shrink-0" />
+                <span>Menunggu Guru Mengakhiri Sesi & Membuka Papan Juara (Podium)...</span>
+              </div>
+            )}
           </div>
-          <h2 className="text-lg sm:text-xl font-black text-white">
-            Santai Sejenak, {studentName}! 🌟
-          </h2>
-          
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold animate-pulse">
-            <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
-            <span>Menunggu Guru Membuka Soal Berikutnya...</span>
+        ) : (
+          <div className="text-center space-y-1">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>Jawaban Soal #{questionIndex + 1} dari {totalQuestions} Tersimpan!</span>
+              {earnedStars > 0 && <span className="ml-1 text-amber-300 font-black">+{earnedStars}⭐</span>}
+              {earnedScore > 0 && <span className="ml-0.5 text-emerald-300 font-black">+{earnedScore}pts</span>}
+            </div>
+            <h2 className="text-lg sm:text-xl font-black text-white">
+              Santai Sejenak, {studentName}! 🌟
+            </h2>
+            
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold animate-pulse">
+              <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+              <span>Menunggu Guru Membuka Soal Berikutnya...</span>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Floating Live Reactions Overlay di Lounge Jeda Soal */}
         <QuizizzReactionOverlay sessionId={session.id} reactions={session.reactions} />
