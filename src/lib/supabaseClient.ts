@@ -2826,9 +2826,15 @@ export const DataManager = {
 
     if (supabase && (typeof navigator === 'undefined' || navigator.onLine)) {
       try {
-        const { error } = await supabase.from('quiz_session_participants').upsert(answerPayload, {
+        let { error } = await supabase.from('quiz_session_participants').upsert(answerPayload, {
           onConflict: 'session_id, student_name',
         });
+        if (error && (error.code === '42P10' || error.message?.includes('ON CONFLICT')) && answerPayload.id) {
+          const fallbackRes = await supabase.from('quiz_session_participants').upsert(answerPayload, {
+            onConflict: 'id',
+          });
+          error = fallbackRes.error;
+        }
         if (error) throw error;
       } catch (err) {
         console.warn('Supabase recordSessionAnswer notice, simpan ke antrean offline:', err);
@@ -3616,12 +3622,19 @@ export const DataManager = {
 
     if (supabase && (typeof navigator === 'undefined' || navigator.onLine)) {
       try {
-        const { error } = await supabase.from('quiz_session_participants').upsert(
+        let { error } = await supabase.from('quiz_session_participants').upsert(
           partPayload,
           {
             onConflict: 'session_id, student_name',
           }
         );
+        if (error && (error.code === '42P10' || error.message?.includes('ON CONFLICT')) && partPayload.id) {
+          const fallbackRes = await supabase.from('quiz_session_participants').upsert(
+            partPayload,
+            { onConflict: 'id' }
+          );
+          error = fallbackRes.error;
+        }
         if (error) throw error;
       } catch (err) {
         console.warn('Supabase addOrUpdateSessionParticipant notice, simpan ke antrean offline:', err);

@@ -147,6 +147,13 @@ class OfflineQueueService {
   }
 
   /**
+   * Menghapus seluruh antrean lokal (berguna untuk membersihkan antrean basi)
+   */
+  public clearQueue(): void {
+    this.saveQueue([]);
+  }
+
+  /**
    * Eksekusi sinkronisasi antrean ke Supabase
    */
   public async flushQueue(supabase: SupabaseClient | null): Promise<{ success: number; failed: number }> {
@@ -173,10 +180,19 @@ class OfflineQueueService {
     for (const item of queue) {
       try {
         if (item.type === 'session_participant_upsert') {
-          const { error } = await supabase.from('quiz_session_participants').upsert(
+          let { error } = await supabase.from('quiz_session_participants').upsert(
             item.payload,
             item.onConflict ? { onConflict: item.onConflict } : undefined
           );
+
+          // Fallback cerdas jika constraint unik (session_id, student_name) belum dibuat di database (Error 42P10)
+          if (error && (error.code === '42P10' || error.message?.includes('ON CONFLICT')) && item.payload?.id) {
+            const fallbackRes = await supabase.from('quiz_session_participants').upsert(
+              item.payload,
+              { onConflict: 'id' }
+            );
+            error = fallbackRes.error;
+          }
 
           if (error) {
             throw error;
@@ -196,8 +212,20 @@ class OfflineQueueService {
         item.retryCount = (item.retryCount || 0) + 1;
         item.lastAttemptAt = Date.now();
 
-        // Pertahankan di antrean jika percobaan gagal belum melebihi 10 kali
-        if (item.retryCount < 10) {
+        // 1. Jika sesi sudah tidak ada di database (Foreign key violation 23503), buang data basi agar tidak macet
+        if (err?.code === '23503' || err?.message?.includes('foreign key constraint')) {
+          console.info(`[OfflineQueue] Menghapus data sesi basi yang sudah tidak ada (${item.id})`);
+          continue;
+        }
+
+        // 2. Jika data sudah berusia lebih dari 24 jam, buang dari antrean
+        if (Date.now() - (item.createdAt || 0) > 24 * 3600 * 1000) {
+          console.info(`[OfflineQueue] Menghapus data antrean kadaluwarsa > 24 jam (${item.id})`);
+          continue;
+        }
+
+        // Pertahankan di antrean jika percobaan gagal belum melebihi 5 kali
+        if (item.retryCount < 5) {
           remainingQueue.push(item);
         }
       }

@@ -1,6 +1,23 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.26] - 2026-09-15
+### Perbaikan Sinkronisasi Data Peserta & Penyempurnaan Indikator Offline (Rule 1, Rule 2, Rule 6 & Rule 15)
+
+#### 1. Sinkronisasi Otomatis & Penyesuaian Label Indikator Offline (`OfflineSyncIndicator.tsx`)
+- **Penamaan Indikator Dinamis**: Memperbaiki label banner notifikasi agar secara cerdas membedakan antara antrean pendaftaran sesi ("data sesi menunggu sync") dan jawaban kuis yang sesungguhnya ("jawaban menunggu sync"), sehingga tidak membingungkan guru atau siswa saat baru bergabung ke kuis.
+- **Penyinkronan Otomatis Saat Halaman Dimuat**: Menambahkan mekanisme sinkronisasi instan saat halaman aplikasi dibuka jika perangkat terhubung ke internet dan memiliki data antrean yang tertunda.
+- **Tombol Pembersih Antrean Basi**: Menyediakan tombol tutup (`X`) fleksibel untuk membersihkan antrean data lokal yang kedaluwarsa atau tidak diperlukan lagi.
+
+#### 2. Ketahanan Upsert Peserta & Pembersihan Data Kedaluwarsa (`offlineQueue.ts` & `supabaseClient.ts`)
+- **Mekanisme Fallback Kompatibilitas Constraint**: Menambahkan fallback otomatis menggunakan primary key `id` ketika database belum memiliki constraint komposit `(session_id, student_name)`, mencegah kegagalan penyimpanan data peserta kuis ke antrean offline yang tertunda.
+- **Pembersihan Otomatis Data Sesi Basi**: Otomatis mendeteksi dan menghapus item antrean jika sesi induk telah dihapus dari server (*foreign key violation*), mencegah antrean lokal tersangkut selamanya.
+- **Batas Kedaluwarsa Antrean**: Menambahkan pembersihan otomatis terhadap data antrean lokal yang berusia lebih dari 24 jam.
+
+#### 3. Pembaruan Versi & Cache PWA (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.26` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.26` (`public/sw.js`).
+
 ## [2.4.25] - 2026-09-15
 ### Penyesuaian Tinggi Textarea Chat Menjadi 3 Baris Saat Teks Panjang (Rule 1, Rule 2 & Rule 15)
 
