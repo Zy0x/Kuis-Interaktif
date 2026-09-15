@@ -387,6 +387,19 @@ export const StudentChatDrawer: React.FC<StudentChatDrawerProps> = ({
     }
   }, [isOpen]);
 
+  // Penyesuaian tinggi textarea otomatis hingga 3 baris saat teks panjang (User Request & Rule 1)
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    const sh = el.scrollHeight;
+    if (sh > 48) {
+      el.style.height = `${Math.min(Math.max(sh, 88), 92)}px`;
+    } else {
+      el.style.height = '';
+    }
+  }, [inputText]);
+
   const handleSendMessage = async (textToSend: string) => {
     if (sessionStatus === 'finished' || isSessionEndedModalOpen || isChatMuted) return;
     const clean = textToSend.trim();
@@ -623,7 +636,7 @@ export const StudentChatDrawer: React.FC<StudentChatDrawerProps> = ({
                   ? 'Ketik pesan positif (Enter kirim, Shift+Enter baris baru)...'
                   : 'Ketik pesan positif...'
               }
-              className="flex-1 px-4 py-2.5 sm:py-3 rounded-2xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-purple-500 text-slate-900 dark:text-white min-h-[44px] sm:min-h-[48px] max-h-28 resize-none leading-relaxed shadow-xs disabled:opacity-50 transition-all"
+              className="flex-1 px-4 py-2.5 sm:py-3 rounded-2xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-purple-500 text-slate-900 dark:text-white min-h-[44px] sm:min-h-[48px] max-h-28 resize-none leading-relaxed shadow-xs disabled:opacity-50 transition-all overflow-y-auto"
             />
             <button
               type="button"

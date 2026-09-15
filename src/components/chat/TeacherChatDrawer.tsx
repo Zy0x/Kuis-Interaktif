@@ -319,6 +319,19 @@ export const TeacherChatDrawer: React.FC<TeacherChatDrawerProps> = ({
     }
   }, [isOpen]);
 
+  // Penyesuaian tinggi textarea otomatis hingga 3 baris saat teks panjang (User Request & Rule 1)
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    const sh = el.scrollHeight;
+    if (sh > 48) {
+      el.style.height = `${Math.min(Math.max(sh, 88), 92)}px`;
+    } else {
+      el.style.height = '';
+    }
+  }, [inputText]);
+
   const handleSendMessage = async (textToSend: string) => {
     const clean = textToSend.trim();
     if (!clean || sendingRef.current) return;
@@ -538,7 +551,7 @@ export const TeacherChatDrawer: React.FC<TeacherChatDrawerProps> = ({
                   : 'Ketik pesan guru...'
               }
               maxLength={250}
-              className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 rounded-xl pl-3.5 pr-10 py-2.5 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all min-h-[44px] max-h-32 resize-none leading-relaxed"
+              className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 rounded-xl pl-3.5 pr-10 py-2.5 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all min-h-[44px] max-h-32 resize-none leading-relaxed overflow-y-auto"
             />
             {inputText.length > 180 && (
               <span className="absolute right-3 top-2.5 text-[10px] text-slate-400 bg-white/80 dark:bg-slate-800/80 px-1 rounded">

@@ -218,6 +218,20 @@ export const InterQuestionWaitingLounge: React.FC<InterQuestionWaitingLoungeProp
   const [session, setSession] = useState<QuizSession>(initialSession);
   const [chatText, setChatText] = useState('');
   const chatScrollRef = useRef<HTMLDivElement>(null);
+  const chatInputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Penyesuaian tinggi textarea otomatis hingga 3 baris saat teks panjang (User Request & Rule 1)
+  useEffect(() => {
+    const el = chatInputRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    const sh = el.scrollHeight;
+    if (sh > 48) {
+      el.style.height = `${Math.min(Math.max(sh, 88), 92)}px`;
+    } else {
+      el.style.height = '';
+    }
+  }, [chatText]);
 
   // Sync session and detect teacher advancing question
   useEffect(() => {
@@ -449,6 +463,7 @@ export const InterQuestionWaitingLounge: React.FC<InterQuestionWaitingLoungeProp
                 className="flex items-end gap-1.5"
               >
                 <textarea
+                  ref={chatInputRef}
                   rows={1}
                   maxLength={120}
                   value={chatText}
@@ -473,7 +488,7 @@ export const InterQuestionWaitingLounge: React.FC<InterQuestionWaitingLoungeProp
                       ? 'Ketik komentar santai (Enter kirim, Shift+Enter baris baru)...'
                       : 'Ketik komentar santai...'
                   }
-                  className="flex-1 px-3 py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-xs text-white focus:outline-none focus:ring-1 focus:ring-purple-500 min-h-[44px] max-h-24 resize-none leading-relaxed"
+                  className="flex-1 px-3 py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-xs text-white focus:outline-none focus:ring-1 focus:ring-purple-500 min-h-[44px] max-h-24 resize-none leading-relaxed overflow-y-auto"
                 />
                 <button
                   type="button"

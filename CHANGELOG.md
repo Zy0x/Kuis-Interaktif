@@ -1,6 +1,19 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.25] - 2026-09-15
+### Penyesuaian Tinggi Textarea Chat Menjadi 3 Baris Saat Teks Panjang (Rule 1, Rule 2 & Rule 15)
+
+#### 1. Tampilan Input Chat Lega & Responsif
+- **Ekspansi Otomatis 3 Baris**: Mengoptimalkan bidang input textarea pada obrolan guru (`TeacherChatDrawer.tsx`), obrolan siswa (`StudentChatDrawer.tsx`), dan ruang santai kuis (`InterQuestionWaitingLounge.tsx`) agar saat pengguna mengetik teks panjang atau multi-baris, tinggi textarea otomatis bertambah hingga 3 baris (~88px–92px).
+- **Keterbacaan Jelas & Tidak Terpotong**: Memastikan seluruh isi teks yang panjang dapat dilihat dengan utuh tanpa terpotong atau terdesak di bagian bawah textarea.
+- **Kembali Ramping Saat Singkat**: Saat pesan dikirim atau teks dihapus kembali menjadi 1 baris, tinggi textarea otomatis kembali ramping (`min-h-[44px]`).
+- **Pengguliran Halus (*Smooth Scroll*)**: Jika teks melebihi 3 baris, area teks menyediakan pengguliran vertikal (`overflow-y-auto`) yang mulus dan nyaman.
+
+#### 2. Pembaruan Versi & Cache PWA (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.25` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.25` (`public/sw.js`).
+
 ## [2.4.24] - 2026-09-15
 ### Pengiriman Cepat Pesan Chat via Tombol Enter pada Desktop/Laptop (Rule 1, Rule 2 & Rule 15)
 
