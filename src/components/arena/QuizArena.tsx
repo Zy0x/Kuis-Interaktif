@@ -436,6 +436,89 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     } catch {}
   }, [currentIndex, answersList, timeLeft, totalTimeSpent, streak, STORAGE_KEY, isPreview]);
 
+  // ─── PEMULIHAN OTOMATIS PROGRES SAAT RELOAD ──────────────────────────────
+  // Jika siswa reload/tutup tab dan sessionStorage hilang, ambil jawaban
+  // yang sudah tersimpan di server (Supabase via liveSession.participants).
+  const hasRehydratedRef = useRef(false);
+  useEffect(() => {
+    if (hasRehydratedRef.current || isPreview || isTeacher || !activeSessionId || !liveSession) return;
+    if (answersList.length > 0) {
+      // Sudah punya data lokal (sessionStorage masih utuh), tidak perlu recovery server
+      hasRehydratedRef.current = true;
+      return;
+    }
+
+    hasRehydratedRef.current = true;
+
+    // Temukan entri peserta milik siswa ini berdasarkan token perangkat
+    const storedToken = DataManager.getSessionParticipant(activeSessionId);
+    const myParticipant = liveSession.participants?.find(
+      (p) =>
+        p.id === storedToken?.id ||
+        (storedToken?.name && p.name?.trim().toLowerCase() === storedToken.name.trim().toLowerCase())
+    );
+
+    if (!myParticipant?.answers || Object.keys(myParticipant.answers).length === 0) return;
+
+    // Konversi format jawaban server (Record<string, QuizSessionParticipantAnswer>)
+    // kembali ke format arena (QuizAttemptAnswer[])
+    const recovered: QuizAttemptAnswer[] = Object.values(myParticipant.answers)
+      .sort((a, b) => (a.questionIndex ?? 0) - (b.questionIndex ?? 0))
+      .map((ans) => ({
+        questionId: ans.questionId,
+        selectedIndex: ans.selectedOption ?? -1,
+        textAnswer: ans.textAnswer,
+        isCorrect: ans.isCorrect,
+        timeSpentSec: ans.timeSpentSec ?? 1,
+        earnedPoints: ans.pointsEarned,
+      }));
+
+    if (recovered.length > 0) {
+      setAnswersList(recovered);
+      if (typeof myParticipant.streak === 'number' && myParticipant.streak > 0) {
+        setStreak(myParticipant.streak);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [liveSession, activeSessionId, isPreview, isTeacher]);
+
+  // ─── SINKRONISASI AWAL currentIndex KE POSISI SOAL GURU ─────────────────
+  // Saat komponen pertama kali mount setelah reload, langsung lompat ke soal
+  // yang saat ini sedang dipandu guru (tanpa menunggu interval polling 2 detik).
+  const hasInitialIndexSyncRef = useRef(false);
+  useEffect(() => {
+    if (hasInitialIndexSyncRef.current || isPreview || isTeacher) return;
+    if (activeSettings.executionMode !== 'teacher_led') return;
+    if (!liveSession) return;
+
+    const teacherIdx = liveSession.currentQuestionIndex;
+    if (typeof teacherIdx !== 'number' || teacherIdx < 0 || teacherIdx >= activeQuestions.length) {
+      hasInitialIndexSyncRef.current = true;
+      return;
+    }
+
+    hasInitialIndexSyncRef.current = true;
+
+    if (teacherIdx !== currentIndex) {
+      const targetQuestion = activeQuestions[teacherIdx];
+      const targetDuration = getQuestionDuration(targetQuestion);
+      setCurrentIndex(teacherIdx);
+      setSelectedOption(null);
+      setIsAnswerConfirmed(false);
+      setTimeLeft(targetDuration);
+      setIsPaused(false);
+      setShortAnswerInput('');
+      setShowFirstLetterHint(false);
+      setRevealedTiles(new Set());
+      setSelectedLeft(null);
+      setMatchedPairs(new Set());
+      setWrongPairAttempt(null);
+      setShowWaitingLounge(false);
+      setShowCountdown(true);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [liveSession?.currentQuestionIndex, activeSettings.executionMode, isPreview, isTeacher]);
+
   // Procedural BGM (In-Game Backsound)
   const {
     isBgmMuted,

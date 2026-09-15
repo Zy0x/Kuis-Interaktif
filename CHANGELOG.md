@@ -1,6 +1,22 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.32] - 2026-09-15
+### Pemulihan Progres Otomatis Saat Reload & Sinkronisasi Cepat Soal Guru (Rule 1, Rule 9, Rule 11 & Rule 15)
+
+#### 1. Pemulihan Jawaban dari Server (`QuizArena.tsx`)
+- **Auto-rehydrasi Progres**: Menambahkan mekanisme pemulihan otomatis yang bekerja saat `sessionStorage` siswa hilang karena menutup tab, crash browser, atau koneksi terputus. Saat kembali ke halaman, jawaban yang sudah dikirim sebelumnya langsung dipulihkan dari data peserta di server Supabase, sehingga siswa tidak perlu mengulang dari soal nomor 1.
+- **Pemulihan Streak**: Nilai *streak* turut dipulihkan dari data server bersama dengan jawaban, sehingga skor total tetap konsisten dan akurat.
+- **Guard Cerdas**: Pemulihan hanya berjalan sekali per mount dan hanya bila `answersList` masih kosong — tidak mengganggu alur normal yang `sessionStorage`-nya masih utuh.
+
+#### 2. Sinkronisasi Posisi Soal Guru Saat Mount (`QuizArena.tsx`)
+- **Sinkronisasi Instan**: Menambahkan efek sinkronisasi awal yang langsung melompat ke soal yang sedang dipandu guru saat komponen pertama kali dimuat setelah reload, tanpa menunggu interval polling 2 detik.
+- **Hitung Mundur Otomatis**: Setelah lompat ke soal yang benar, tampilan hitung mundur 3-2-1 langsung muncul untuk memberikan waktu siap sebelum soal aktif.
+
+#### 3. Pembaruan Versi & Cache PWA (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.32` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.32` (`public/sw.js`).
+
 ## [2.4.31] - 2026-09-15
 ### Transformasi Mini-Game: Penggantian Tangkap Bintang Menjadi Dino Run (Rule 1, Rule 2, Rule 5 & Rule 15)
 
