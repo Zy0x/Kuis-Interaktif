@@ -39,7 +39,8 @@ import {
   ChevronDown,
   SlidersHorizontal,
   FileText,
-  Info
+  Info,
+  Clock
 } from 'lucide-react';
 
 export interface PlayQuizSessionOptions {
@@ -100,6 +101,262 @@ const formatIndonesianDeadline = (isoString?: string) => {
   } catch {
     return isoString;
   }
+};
+
+interface DurationSelectorSectionProps {
+  quiz: Quiz;
+  durationSelectionType: 'default' | 'preset' | 'custom';
+  setDurationSelectionType: (type: 'default' | 'preset' | 'custom') => void;
+  selectedDuration: number;
+  setSelectedDuration: (dur: number) => void;
+  customDurationValue: number;
+  setCustomDurationValue: (val: number) => void;
+  customDurationUnit: 'seconds' | 'minutes';
+  setCustomDurationUnit: (unit: 'seconds' | 'minutes') => void;
+  overrideCustomDurations: boolean;
+  setOverrideCustomDurations: (val: boolean) => void;
+  questionDurationStats: {
+    hasCustomQuestions: boolean;
+    customCount: number;
+    standardCount: number;
+    standardDurationSec: number;
+    customDurations: number[];
+    minDuration: number;
+    maxDuration: number;
+  };
+  totalQuestions: number;
+  playClick: () => void;
+  label?: string;
+  className?: string;
+}
+
+const DurationSelectorSection: React.FC<DurationSelectorSectionProps> = ({
+  quiz,
+  durationSelectionType,
+  setDurationSelectionType,
+  selectedDuration,
+  setSelectedDuration,
+  customDurationValue,
+  setCustomDurationValue,
+  customDurationUnit,
+  setCustomDurationUnit,
+  overrideCustomDurations,
+  setOverrideCustomDurations,
+  questionDurationStats,
+  totalQuestions,
+  playClick,
+  label = 'Durasi Timer per Soal',
+  className = 'space-y-2 pt-1 border-t border-slate-100 dark:border-slate-800',
+}) => {
+  return (
+    <div className={className}>
+      <div className="flex items-center justify-between">
+        <label className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
+          <Clock className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400 shrink-0" />
+          <span>{label}</span>
+        </label>
+        <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400">
+          {durationSelectionType === 'default'
+            ? questionDurationStats.hasCustomQuestions
+              ? 'Bawaan (Sesuai Tiap Soal)'
+              : `Bawaan Kuis (${questionDurationStats.standardDurationSec}s)`
+            : durationSelectionType === 'custom'
+            ? `${customDurationValue} ${customDurationUnit === 'minutes' ? 'menit' : 'detik'} / soal`
+            : `${selectedDuration} detik / soal`}
+        </span>
+      </div>
+
+      <div className="space-y-2 pt-0.5">
+        {/* Baris Pilihan Waktu: Bawaan Soal, Presets, dan Kustom */}
+        <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl flex-wrap">
+          {/* Tombol Bawaan Soal (Standar Waktu Bawaan Setiap Soal) */}
+          <button
+            type="button"
+            onClick={() => {
+              playClick();
+              setDurationSelectionType('default');
+              setSelectedDuration(quiz.durationPerQuestionSec || 30);
+            }}
+            className={`py-2 px-3 rounded-xl text-xs font-bold transition-all min-h-[44px] flex items-center justify-center gap-1 flex-1 sm:flex-initial btn-press ${
+              durationSelectionType === 'default'
+                ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs font-black'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+            }`}
+            title={
+              questionDurationStats.hasCustomQuestions
+                ? `Mengikuti durasi bawaan masing-masing butir soal (${questionDurationStats.customCount} soal khusus)`
+                : `Mengikuti durasi bawaan kuis (${questionDurationStats.standardDurationSec}s)`
+            }
+          >
+            <span>Bawaan</span>
+            <span className="text-[10px] opacity-75">
+              {questionDurationStats.hasCustomQuestions
+                ? '(Sesuai Soal)'
+                : `(${questionDurationStats.standardDurationSec}s)`}
+            </span>
+          </button>
+
+          {/* Preset Buttons */}
+          {DURATION_PRESETS.map((dur) => (
+            <button
+              key={dur}
+              type="button"
+              onClick={() => {
+                playClick();
+                setDurationSelectionType('preset');
+                setSelectedDuration(dur);
+                setCustomDurationValue(dur);
+                setCustomDurationUnit('seconds');
+              }}
+              className={`py-2 px-2.5 rounded-xl text-xs font-bold transition-all min-h-[44px] flex items-center justify-center flex-1 sm:flex-initial btn-press ${
+                durationSelectionType === 'preset' && selectedDuration === dur
+                  ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs font-black'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+              }`}
+            >
+              {dur}s
+            </button>
+          ))}
+
+          {/* Tombol Kustom */}
+          <button
+            type="button"
+            onClick={() => {
+              playClick();
+              setDurationSelectionType('custom');
+              setSelectedDuration(customDurationUnit === 'minutes' ? customDurationValue * 60 : customDurationValue);
+            }}
+            className={`py-2 px-3 rounded-xl text-xs font-bold transition-all min-h-[44px] flex items-center justify-center flex-1 sm:flex-initial btn-press ${
+              durationSelectionType === 'custom'
+                ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs font-black'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+            }`}
+          >
+            Kustom
+          </button>
+        </div>
+
+        {/* Info kecil saat mode Bawaan aktif */}
+        {durationSelectionType === 'default' && (
+          <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200/60 dark:border-blue-900/50 text-blue-800 dark:text-blue-200 animate-fade-in text-xs">
+            <Info className="w-4 h-4 shrink-0 text-blue-500 dark:text-blue-400 mt-0.5" />
+            <div className="space-y-0.5 leading-relaxed">
+              <div className="font-bold">
+                {questionDurationStats.hasCustomQuestions
+                  ? 'Waktu pengerjaan mengikuti durasi masing-masing butir soal:'
+                  : `Waktu pengerjaan tiap butir soal mengikuti pengaturan bawaan kuis (${questionDurationStats.standardDurationSec} detik).`}
+              </div>
+              {questionDurationStats.hasCustomQuestions && (
+                <div className="text-slate-600 dark:text-slate-300 text-[11px] pt-0.5 space-y-0.5">
+                  <p>
+                    • <strong className="text-blue-700 dark:text-blue-300 font-semibold">{questionDurationStats.customCount} butir soal</strong> memiliki durasi khusus ({questionDurationStats.customDurations.map(d => `${d} detik`).join(', ')}).
+                  </p>
+                  <p>
+                    • <strong className="text-slate-700 dark:text-slate-200 font-semibold">{questionDurationStats.standardCount} butir soal</strong> lainnya berdurasi bawaan {questionDurationStats.standardDurationSec} detik.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Opsi Override saat ada soal khusus tapi guru memilih preset/kustom */}
+        {durationSelectionType !== 'default' && questionDurationStats.hasCustomQuestions && (
+          <div className="p-2.5 rounded-xl bg-amber-50/70 dark:bg-amber-950/40 border border-amber-200/70 dark:border-amber-900/50 text-xs space-y-1.5 animate-fade-in">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <span className="font-bold text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+                <span>Ada {questionDurationStats.customCount} butir soal berdurasi khusus</span>
+              </span>
+              <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={overrideCustomDurations}
+                  onChange={(e) => setOverrideCustomDurations(e.target.checked)}
+                  className="w-3.5 h-3.5 text-amber-600 rounded border-amber-300 focus:ring-0 cursor-pointer"
+                />
+                <span className="text-[11px] font-bold text-amber-950 dark:text-amber-100">
+                  Samaratakan Semua
+                </span>
+              </label>
+            </div>
+            <p className="text-[11px] text-amber-800 dark:text-amber-300/90 leading-relaxed">
+              {overrideCustomDurations
+                ? `Durasi khusus diabaikan. Seluruh ${totalQuestions} butir soal disamaratakan menjadi ${selectedDuration} detik.`
+                : `Durasi khusus pada ${questionDurationStats.customCount} soal tetap aktif. Soal lainnya menerapkan ${selectedDuration} detik.`}
+            </p>
+          </div>
+        )}
+
+        {/* Input Kustom: Angka Bebas + Satuan Detik/Menit (Tanpa Batas Rentang) */}
+        {durationSelectionType === 'custom' && (
+          <div className="flex flex-wrap items-center justify-between gap-2.5 p-2.5 rounded-2xl bg-blue-50/60 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900/60 animate-fade-in">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-blue-900 dark:text-blue-200 whitespace-nowrap">
+                Atur Durasi:
+              </span>
+              {/* Kolom Angka (Bebas tanpa batasan rentang) */}
+              <div className="flex items-center bg-white dark:bg-slate-900 px-2.5 py-1 rounded-xl border border-blue-200 dark:border-blue-800 shadow-2xs">
+                <input
+                  type="number"
+                  min={1}
+                  value={customDurationValue || ''}
+                  onChange={(e) => {
+                    const parsed = parseInt(e.target.value);
+                    const cleanVal = isNaN(parsed) || parsed < 1 ? 1 : parsed;
+                    setCustomDurationValue(cleanVal);
+                    setSelectedDuration(customDurationUnit === 'minutes' ? cleanVal * 60 : cleanVal);
+                  }}
+                  className="w-14 bg-transparent text-center font-black text-sm text-blue-600 dark:text-blue-400 focus:outline-none"
+                  placeholder="30"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {/* Pilihan Satuan (Detik vs Menit) */}
+              <div className="bg-slate-200/80 dark:bg-slate-800 p-0.5 rounded-xl flex items-center shadow-2xs">
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    setCustomDurationUnit('seconds');
+                    setSelectedDuration(customDurationValue);
+                  }}
+                  className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all min-h-[44px] btn-press ${
+                    customDurationUnit === 'seconds'
+                      ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs font-black'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                  }`}
+                >
+                  Detik
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    setCustomDurationUnit('minutes');
+                    setSelectedDuration(customDurationValue * 60);
+                  }}
+                  className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all min-h-[44px] btn-press ${
+                    customDurationUnit === 'minutes'
+                      ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs font-black'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                  }`}
+                >
+                  Menit
+                </button>
+              </div>
+
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                / soal
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 };
 
 export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
@@ -303,6 +560,7 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
         DataManager.updateActiveSessionSettings(existing.id, {
           mode: selectedMode,
           durationPerQuestionSec: selectedDuration,
+          overrideCustomQuestionDurations: durationSelectionType !== 'default' && overrideCustomDurations,
           shuffleQuestions,
           shuffleOptions,
           presentationTarget,
@@ -327,6 +585,8 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
     currentStep,
     selectedMode,
     selectedDuration,
+    durationSelectionType,
+    overrideCustomDurations,
     shuffleQuestions,
     shuffleOptions,
     presentationTarget,
@@ -806,212 +1066,23 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
 
                 {/* Waktu per Butir Soal (Hanya muncul jika sub-mode timed_next dipilih) */}
                 {teacherPacingSubMode === 'timed_next' && (
-                  <div className="space-y-2 pt-1 border-t border-slate-100 dark:border-slate-800">
-                    <div className="flex items-center justify-between">
-                      <label className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
-                        Durasi Timer per Soal
-                      </label>
-                      <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400">
-                        {durationSelectionType === 'default'
-                          ? questionDurationStats.hasCustomQuestions
-                            ? 'Bawaan (Sesuai Tiap Soal)'
-                            : `Bawaan Kuis (${questionDurationStats.standardDurationSec}s)`
-                          : durationSelectionType === 'custom'
-                          ? `${customDurationValue} ${customDurationUnit === 'minutes' ? 'menit' : 'detik'} / soal`
-                          : `${selectedDuration} detik / soal`}
-                      </span>
-                    </div>
-
-                    <div className="space-y-2 pt-0.5">
-                      {/* Baris Pilihan Waktu: Bawaan Soal, Presets, dan Kustom */}
-                      <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl flex-wrap">
-                        {/* Tombol Bawaan Soal */}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            playClick();
-                            setDurationSelectionType('default');
-                            setSelectedDuration(quiz.durationPerQuestionSec || 30);
-                          }}
-                          className={`py-2 px-3 rounded-xl text-xs font-bold transition-all min-h-[44px] flex items-center justify-center gap-1 flex-1 sm:flex-initial btn-press ${
-                            durationSelectionType === 'default'
-                              ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs font-black'
-                              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                          }`}
-                          title={
-                            questionDurationStats.hasCustomQuestions
-                              ? `Mengikuti durasi bawaan masing-masing butir soal (${questionDurationStats.customCount} soal khusus)`
-                              : `Mengikuti durasi bawaan kuis (${questionDurationStats.standardDurationSec}s)`
-                          }
-                        >
-                          <span>Bawaan</span>
-                          <span className="text-[10px] opacity-75">
-                            {questionDurationStats.hasCustomQuestions
-                              ? '(Sesuai Soal)'
-                              : `(${questionDurationStats.standardDurationSec}s)`}
-                          </span>
-                        </button>
-
-                        {/* Preset Buttons */}
-                        {DURATION_PRESETS.map((dur) => (
-                          <button
-                            key={dur}
-                            type="button"
-                            onClick={() => {
-                              playClick();
-                              setDurationSelectionType('preset');
-                              setSelectedDuration(dur);
-                              setCustomDurationValue(dur);
-                              setCustomDurationUnit('seconds');
-                            }}
-                            className={`py-2 px-2.5 rounded-xl text-xs font-bold transition-all min-h-[44px] flex items-center justify-center flex-1 sm:flex-initial btn-press ${
-                              durationSelectionType === 'preset' && selectedDuration === dur
-                                ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs font-black'
-                                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                            }`}
-                          >
-                            {dur}s
-                          </button>
-                        ))}
-
-                        {/* Tombol Kustom */}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            playClick();
-                            setDurationSelectionType('custom');
-                            setSelectedDuration(customDurationUnit === 'minutes' ? customDurationValue * 60 : customDurationValue);
-                          }}
-                          className={`py-2 px-3 rounded-xl text-xs font-bold transition-all min-h-[44px] flex items-center justify-center flex-1 sm:flex-initial btn-press ${
-                            durationSelectionType === 'custom'
-                              ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs font-black'
-                              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                          }`}
-                        >
-                          Kustom
-                        </button>
-                      </div>
-
-                      {/* Info kecil saat mode Bawaan aktif */}
-                      {durationSelectionType === 'default' && (
-                        <div className="flex items-start gap-2.5 p-2.5 rounded-xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200/60 dark:border-blue-900/50 text-blue-800 dark:text-blue-200 animate-fade-in text-xs">
-                          <Info className="w-4 h-4 shrink-0 text-blue-500 dark:text-blue-400 mt-0.5" />
-                          <div className="space-y-0.5 leading-relaxed">
-                            <div className="font-bold">
-                              {questionDurationStats.hasCustomQuestions
-                                ? 'Waktu pengerjaan mengikuti durasi masing-masing butir soal:'
-                                : `Waktu pengerjaan tiap butir soal mengikuti pengaturan kuis (${questionDurationStats.standardDurationSec} detik).`}
-                            </div>
-                            {questionDurationStats.hasCustomQuestions && (
-                              <div className="text-slate-600 dark:text-slate-300 text-[11px] pt-0.5 space-y-0.5">
-                                <p>
-                                  • <strong className="text-blue-700 dark:text-blue-300 font-semibold">{questionDurationStats.customCount} butir soal</strong> memiliki durasi khusus ({questionDurationStats.customDurations.map(d => `${d} detik`).join(', ')}).
-                                </p>
-                                <p>
-                                  • <strong className="text-slate-700 dark:text-slate-200 font-semibold">{questionDurationStats.standardCount} butir soal</strong> lainnya berdurasi bawaan {questionDurationStats.standardDurationSec} detik.
-                                </p>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Opsi Override saat ada soal khusus tapi guru memilih preset/kustom */}
-                      {durationSelectionType !== 'default' && questionDurationStats.hasCustomQuestions && (
-                        <div className="p-2.5 rounded-xl bg-amber-50/70 dark:bg-amber-950/40 border border-amber-200/70 dark:border-amber-900/50 text-xs space-y-1.5 animate-fade-in">
-                          <div className="flex items-center justify-between gap-2 flex-wrap">
-                            <span className="font-bold text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
-                              <Sparkles className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
-                              <span>Ada {questionDurationStats.customCount} butir soal berdurasi khusus</span>
-                            </span>
-                            <label className="flex items-center gap-1.5 cursor-pointer select-none">
-                              <input
-                                type="checkbox"
-                                checked={overrideCustomDurations}
-                                onChange={(e) => setOverrideCustomDurations(e.target.checked)}
-                                className="w-3.5 h-3.5 text-amber-600 rounded border-amber-300 focus:ring-0 cursor-pointer"
-                              />
-                              <span className="text-[11px] font-bold text-amber-950 dark:text-amber-100">
-                                Samaratakan Semua
-                              </span>
-                            </label>
-                          </div>
-                          <p className="text-[11px] text-amber-800 dark:text-amber-300/90 leading-relaxed">
-                            {overrideCustomDurations
-                              ? `Durasi khusus diabaikan. Seluruh ${totalQuestions} butir soal disamaratakan menjadi ${selectedDuration} detik.`
-                              : `Durasi khusus pada ${questionDurationStats.customCount} soal tetap aktif. Soal lainnya menerapkan ${selectedDuration} detik.`}
-                          </p>
-                        </div>
-                      )}
-
-                      {/* Input Kustom: Angka Bebas + Satuan Detik/Menit (Tanpa Batas Rentang) */}
-                      {durationSelectionType === 'custom' && (
-                        <div className="flex flex-wrap items-center justify-between gap-2.5 p-2.5 rounded-2xl bg-blue-50/60 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900/60 animate-fade-in">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-blue-900 dark:text-blue-200 whitespace-nowrap">
-                              Atur Durasi:
-                            </span>
-                            {/* Kolom Angka (Bebas tanpa batasan rentang) */}
-                            <div className="flex items-center bg-white dark:bg-slate-900 px-2.5 py-1 rounded-xl border border-blue-200 dark:border-blue-800 shadow-2xs">
-                              <input
-                                type="number"
-                                min={1}
-                                value={customDurationValue || ''}
-                                onChange={(e) => {
-                                  const parsed = parseInt(e.target.value);
-                                  const cleanVal = isNaN(parsed) || parsed < 1 ? 1 : parsed;
-                                  setCustomDurationValue(cleanVal);
-                                  setSelectedDuration(customDurationUnit === 'minutes' ? cleanVal * 60 : cleanVal);
-                                }}
-                                className="w-14 bg-transparent text-center font-black text-sm text-blue-600 dark:text-blue-400 focus:outline-none"
-                                placeholder="30"
-                              />
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            {/* Pilihan Satuan (Detik vs Menit) */}
-                            <div className="bg-slate-200/80 dark:bg-slate-800 p-0.5 rounded-xl flex items-center shadow-2xs">
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  playClick();
-                                  setCustomDurationUnit('seconds');
-                                  setSelectedDuration(customDurationValue);
-                                }}
-                                className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all min-h-[44px] btn-press ${
-                                  customDurationUnit === 'seconds'
-                                    ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs font-black'
-                                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                                }`}
-                              >
-                                Detik
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  playClick();
-                                  setCustomDurationUnit('minutes');
-                                  setSelectedDuration(customDurationValue * 60);
-                                }}
-                                className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all min-h-[44px] btn-press ${
-                                  customDurationUnit === 'minutes'
-                                    ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs font-black'
-                                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                                }`}
-                              >
-                                Menit
-                              </button>
-                            </div>
-
-                            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                              / soal
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                  <DurationSelectorSection
+                    quiz={quiz}
+                    durationSelectionType={durationSelectionType}
+                    setDurationSelectionType={setDurationSelectionType}
+                    selectedDuration={selectedDuration}
+                    setSelectedDuration={setSelectedDuration}
+                    customDurationValue={customDurationValue}
+                    setCustomDurationValue={setCustomDurationValue}
+                    customDurationUnit={customDurationUnit}
+                    setCustomDurationUnit={setCustomDurationUnit}
+                    overrideCustomDurations={overrideCustomDurations}
+                    setOverrideCustomDurations={setOverrideCustomDurations}
+                    questionDurationStats={questionDurationStats}
+                    totalQuestions={totalQuestions}
+                    playClick={playClick}
+                    label="Durasi Timer per Soal"
+                  />
                 )}
 
                 {/* Accordion: Pengaturan Tambahan Kuis */}
@@ -1317,7 +1388,17 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
                       }`}
                     >
                       <Sparkles className="w-3.5 h-3.5" />
-                      <span>Standar ({selectedDuration}s)</span>
+                      <span>
+                        Standar (
+                        {durationSelectionType === 'default'
+                          ? questionDurationStats.hasCustomQuestions
+                            ? 'Bawaan Soal'
+                            : `${questionDurationStats.standardDurationSec}s`
+                          : durationSelectionType === 'custom'
+                          ? `${customDurationValue}${customDurationUnit === 'minutes' ? 'm' : 's'}`
+                          : `${selectedDuration}s`}
+                        )
+                      </span>
                     </button>
 
                     <button
@@ -1352,6 +1433,28 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
                     </button>
                   </div>
                 </div>
+
+                {/* Durasi Waktu Soal (Tampil jika mode permainan berbatas waktu: Standar atau 3 Nyawa) */}
+                {selectedMode !== 'untimed' && (
+                  <DurationSelectorSection
+                    quiz={quiz}
+                    durationSelectionType={durationSelectionType}
+                    setDurationSelectionType={setDurationSelectionType}
+                    selectedDuration={selectedDuration}
+                    setSelectedDuration={setSelectedDuration}
+                    customDurationValue={customDurationValue}
+                    setCustomDurationValue={setCustomDurationValue}
+                    customDurationUnit={customDurationUnit}
+                    setCustomDurationUnit={setCustomDurationUnit}
+                    overrideCustomDurations={overrideCustomDurations}
+                    setOverrideCustomDurations={setOverrideCustomDurations}
+                    questionDurationStats={questionDurationStats}
+                    totalQuestions={totalQuestions}
+                    playClick={playClick}
+                    label="Durasi Waktu Pengerjaan Soal"
+                    className="space-y-2 p-3 rounded-2xl bg-slate-50 dark:bg-slate-850/60 border border-slate-200/80 dark:border-slate-800/80 animate-fade-in"
+                  />
+                )}
 
                 {/* Keamanan & Integritas (Ultra-Clean Single List Group) */}
                 <div className="space-y-1.5">

@@ -1,6 +1,26 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.40] - 2026-09-15
+### Kontrol Durasi Soal Fleksibel & Override di Mode Mandiri & PR (Rule 1, Rule 2, Rule 3 & Rule 15)
+
+#### 1. Integrasi Selektor Waktu Lengkap di Mode Mandiri & PR (`PlayQuizModal.tsx`)
+- **Pilihan Standar Waktu Bawaan Soal (`default`)**: Menyediakan tombol *"Bawaan"* yang memungkinkan pengerjaan mengikuti durasi orisinal masing-masing butir soal secara akurat (baik durasi bawaan kuis maupun durasi khusus yang telah diatur guru di Quiz Creator).
+- **Preset Durasi Seragam & Kustom**: Menyediakan tombol preset cepat (10s, 15s, 20s, 30s, 45s, 60s) serta opsi kustom bebas (input angka dengan satuan Detik / Menit).
+- **Opsi Override / Samaratakan Semua**: Jika kuis memiliki butir-butir soal dengan durasi kustom yang berbeda, guru dapat mengaktifkan opsi *"Samaratakan Semua"* untuk menimpa durasi seluruh soal menjadi seragam, atau membiarkannya tidak tercentang agar durasi khusus butir soal tetap dipertahankan.
+- **Label Tombol Mode Cerdas**: Label tombol *"Standar"* di Mode Permainan kini secara adaptif menampilkan status durasi aktif, misalnya `Standar (Bawaan Soal)`, `Standar (30s)`, atau `Standar (2m)`.
+
+#### 2. Ekstraksi Komponen Modular & Desain Sentuh Responsif (Rule 1 & Rule 14)
+- **Komponen Modular `DurationSelectorSection`**: Menyatukan logika dan UI penentu durasi soal ke dalam satu komponen modular yang digunakan bersama pada Mode Guru (*timed_next*) maupun Mode Mandiri & PR.
+- **Target Sentuh $\ge 44\times 44$ px**: Seluruh tombol preset waktu, tombol satuan, dan checkbox override dirancang dengan touch targets yang ramah sentuhan, stabil di perangkat mobile potret/lanskap maupun desktop.
+
+#### 3. Sinkronisasi Otomatis Pengaturan Sesi Aktif
+- Menambahkan sinkronisasi real-time parameter `overrideCustomQuestionDurations` dan `durationPerQuestionSec` ke dalam active session settings saat guru mengubah opsi konfigurasi.
+
+#### 4. Pembaruan Versi & Cache PWA (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.40` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.40` (`public/sw.js`).
+
 ## [2.4.39] - 2026-09-15
 ### Penonaktifan & Penyembunyian Deretan Tombol Emoji saat Mode Layar Bersih Aktif (Rule 1, Rule 2, Rule 6 & Rule 15)
 
