@@ -14,8 +14,10 @@ import {
   RotateCcw,
   Trophy,
   Star,
-  Sparkles
+  Sparkles,
+  EyeOff
 } from 'lucide-react';
+import { useAntiReaction } from '../../lib/reactionPreferences';
 import { QuizizzReactionOverlay } from '../common/QuizizzReactionOverlay';
 import { QuizizzReactionButtonRow } from '../common/QuizizzReactionButtonRow';
 
@@ -900,6 +902,7 @@ export const InterQuestionWaitingLounge: React.FC<InterQuestionWaitingLoungeProp
   const [chatText, setChatText] = useState('');
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const chatInputRef = useRef<HTMLTextAreaElement>(null);
+  const [isAntiReact, toggleAntiReaction] = useAntiReaction();
 
   const isFinalQuestion = questionIndex >= totalQuestions - 1;
 
@@ -1104,7 +1107,36 @@ export const InterQuestionWaitingLounge: React.FC<InterQuestionWaitingLoungeProp
         <QuizizzReactionOverlay sessionId={session.id} reactions={session.reactions} />
 
         {/* Bilah Reaksi Semangat Murid di Lounge Jeda Soal */}
-        <div className="bg-slate-950/60 rounded-2xl p-2.5 border border-slate-800/80 flex flex-col items-center justify-center">
+        <div className="bg-slate-950/60 rounded-2xl p-2.5 border border-slate-800/80 flex flex-col items-center justify-center gap-2">
+          <div className="flex items-center justify-between w-full px-1">
+            <span className="text-[11px] font-bold text-slate-400">Reaksi Semangat:</span>
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                toggleAntiReaction();
+              }}
+              className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all flex items-center gap-1.5 border min-h-[36px] btn-press ${
+                isAntiReact
+                  ? 'bg-rose-950/70 border-rose-500/60 text-rose-300 shadow-xs'
+                  : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+              }`}
+              title={isAntiReact ? 'Anti-Reaksi Aktif: Layar bersih dari emoji' : 'Aktifkan Anti-Reaksi untuk menyembunyikan emoji'}
+            >
+              {isAntiReact ? (
+                <>
+                  <EyeOff className="w-3.5 h-3.5 text-rose-400" />
+                  <span>Anti-Reaksi: Aktif (Bersih)</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Anti-Reaksi: Nonaktif</span>
+                </>
+              )}
+            </button>
+          </div>
+
           <QuizizzReactionButtonRow
             sessionId={session.id}
             senderName={studentName}
@@ -1112,7 +1144,7 @@ export const InterQuestionWaitingLounge: React.FC<InterQuestionWaitingLoungeProp
             isTeacher={false}
             playClick={playClick}
             compact={true}
-            title="Kirim Reaksi Semangat:"
+            title=""
           />
         </div>
 

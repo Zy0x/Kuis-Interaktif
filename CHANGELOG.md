@@ -1,6 +1,29 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.36] - 2026-09-15
+### Fitur Anti-Reaksi Layar untuk Siswa (Fokus Belajar Bebas Distraksi) (Rule 1, Rule 2, Rule 7 & Rule 15)
+
+#### 1. Modul Manajemen Preferensi Anti-Reaksi (`src/lib/reactionPreferences.ts`)
+- **Penyimpanan Lokal & Sinkronisasi Global**: Mengimplementasikan `useAntiReaction` hook dengan `localStorage` (`kuis_anti_reaction_enabled`) dan `CustomEvent` (`kuis_anti_reaction_changed`). Preferensi siswa disimpan secara persisten di perangkat mereka dan tersinkronisasi seketika antar-layar dan antar-tab.
+- **Pembersihan Layar Instan**: Saat diaktifkan, seluruh animasi emoji dan partikel melayang yang dikirimkan oleh siswa lain maupun guru langsung dinonaktifkan secara total (`QuizizzReactionOverlay.tsx` mengembalikan `null`), sehingga layar kuis bersih, tenang, dan tidak membebani perangkat berspesifikasi rendah.
+
+#### 2. Tombol Cepat Anti-Reaksi di Header Siswa (`QuizArena.tsx`)
+- **Akses Langsung 1-Sentuhan**: Menambahkan tombol Anti-Reaksi di pojok kanan atas bilah navigasi siswa (berdampingan dengan tombol chat senyap dan menu alat).
+- **Indikator Visual Ramah Anak**: Menampilkan ikon bintang pendar (`Sparkles`) saat mode normal, dan berubah menjadi perisai mata tertutup bertinta mawar (`EyeOff`) saat mode Anti-Reaksi aktif.
+- **Sembulan Konfirmasi Ringkas (*Toast Notification*)**: Memberikan feedback konfirmasi visual selama 2,2 detik di bagian atas layar (*"Anti-Reaksi Aktif: Layar Bersih dari Emoji 🛡️"* atau *"Reaksi Layar Teman Ditampilkan ✨"*).
+
+#### 3. Opsi Pengaturan Lengkap di Laci Menu Kuis (`QuizArena.tsx`)
+- **Pengaturan Mode Fokus di Menu Alat**: Menambahkan kartu opsi pengaturan *"Anti-Reaksi Layar (Mode Fokus)"* di dalam laci menu alat (titik tiga) lengkap dengan penjelasan intuitif dan badge status *"Bersih (Aktif)"* / *"Tampil"*.
+
+#### 4. Tombol Anti-Reaksi di Ruang Tunggu Jeda Soal & Ruang Tunggu Murid
+- **Bilah Reaksi Jeda Soal (`InterQuestionWaitingLounge.tsx`)**: Menambahkan tombol cepat Anti-Reaksi di atas deretan tombol reaksi, sehingga siswa dapat mematikan reaksi langsung dari lounge jeda.
+- **Ruang Tunggu Pra-Kuis (`StudentWaitingRoom.tsx`)**: Menyediakan tombol Anti-Reaksi di header ruang tunggu pra-kuis agar siswa dapat memulai ujian dalam keadaan tenang sejak sebelum kuis dimulai.
+
+#### 5. Pembaruan Versi & Cache PWA (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.36` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.36` (`public/sw.js`).
+
 ## [2.4.35] - 2026-09-15
 ### Tampilan Konfirmasi Penyelesaian Kuis & Layar Rekap Hasil ala Wayground/Kahoot (Rule 1, Rule 2, Rule 5, Rule 7 & Rule 15)
 

@@ -49,8 +49,11 @@ import {
   ShieldAlert,
   MessageCircle,
   LogOut,
-  Trophy
+  Trophy,
+  EyeOff,
+  Sparkles
 } from 'lucide-react';
+import { useAntiReaction } from '../../lib/reactionPreferences';
 import { QuizIllustration } from '../shared/QuizIllustration';
 import { QuizizzReactionOverlay } from '../common/QuizizzReactionOverlay';
 import { FloatingReactionButton } from '../common/FloatingReactionButton';
@@ -336,6 +339,10 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [showFinishConfirmModal, setShowFinishConfirmModal] = useState(false);
   const [isMobileToolsOpen, setIsMobileToolsOpen] = useState(false);
+
+  // Status Anti-Reaksi Layar Siswa (Sembunyikan reaksi teman agar layar bersih & fokus)
+  const [isAntiReact, toggleAntiReaction] = useAntiReaction();
+  const [showAntiReactToast, setShowAntiReactToast] = useState(false);
 
   // Ref penampung jawaban dan waktu terkini untuk mencegah race condition / stale closure saat kuis diakhiri
   const latestAnswersRef = useRef<QuizAttemptAnswer[]>(answersList);
@@ -1381,8 +1388,34 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                 </span>
               </div>
 
-              {/* Pojok Kanan Atas: Tombol Chat (Mode Senyap) & Tombol Titik Tiga */}
+              {/* Pojok Kanan Atas: Tombol Anti-Reaksi, Tombol Chat (Mode Senyap) & Tombol Titik Tiga */}
               <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                {/* Tombol Anti-Reaksi (Layar Bersih & Fokus dari Animasi Emoji) */}
+                {(activeSessionId || liveSession?.id) && !isPreview && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (playClick) playClick();
+                      toggleAntiReaction();
+                      setShowAntiReactToast(true);
+                      setTimeout(() => setShowAntiReactToast(false), 2200);
+                    }}
+                    className={`relative p-2 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center transition-all shadow-xs btn-press ${
+                      isAntiReact
+                        ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border border-rose-300 dark:border-rose-800'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-750'
+                    }`}
+                    title={isAntiReact ? 'Anti-Reaksi Aktif (Layar Bersih). Ketuk untuk menampilkan reaksi teman.' : 'Aktifkan Anti-Reaksi (Sembunyikan animasi emoji teman)'}
+                    aria-label={isAntiReact ? 'Matikan Anti-Reaksi Layar' : 'Aktifkan Anti-Reaksi Layar'}
+                  >
+                    {isAntiReact ? (
+                      <EyeOff className="w-5 h-5 text-rose-500" />
+                    ) : (
+                      <Sparkles className="w-5 h-5 text-amber-500" />
+                    )}
+                  </button>
+                )}
+
                 {/* Tombol Chat Siswa (Mode Senyap) */}
                 {(activeSessionId || liveSession?.id) && !isPreview && (
                   <button
@@ -2398,6 +2431,33 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                 </button>
               )}
 
+              {/* Toggle Anti-Reaksi Layar (Sembunyikan Emoji & Reaksi Teman) */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (playClick) playClick();
+                  toggleAntiReaction();
+                  setShowAntiReactToast(true);
+                  setTimeout(() => setShowAntiReactToast(false), 2200);
+                }}
+                className="w-full p-3 rounded-2xl flex items-center justify-between bg-slate-50 dark:bg-slate-800/70 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-700 min-h-[50px] transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${isAntiReact ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-500' : 'bg-amber-50 dark:bg-amber-950/60 text-amber-500'}`}>
+                    {isAntiReact ? <EyeOff className="w-5 h-5" /> : <Sparkles className="w-5 h-5" />}
+                  </div>
+                  <div className="text-left">
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">Anti-Reaksi Layar (Mode Fokus)</span>
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                      {isAntiReact ? 'Animasi emoji teman disembunyikan (Layar Bersih)' : 'Animasi emoji & reaksi teman ditampilkan'}
+                    </span>
+                  </div>
+                </div>
+                <span className={`text-xs font-bold px-2.5 py-1 rounded-lg border ${isAntiReact ? 'bg-rose-50 dark:bg-rose-950 text-rose-600 border-rose-200 dark:border-rose-800' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700'}`}>
+                  {isAntiReact ? 'Bersih (Aktif)' : 'Tampil'}
+                </span>
+              </button>
+
               {/* Tombol Keluar dari Kuis */}
               <button
                 type="button"
@@ -2647,6 +2707,29 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
             >
               Saya Mengerti & Kembali
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notifikasi Status Anti-Reaksi Layar */}
+      {showAntiReactToast && (
+        <div className="fixed top-16 sm:top-20 left-1/2 -translate-x-1/2 z-50 pointer-events-none animate-bounce">
+          <div className={`px-4 py-2 rounded-full text-xs font-bold shadow-2xl flex items-center gap-2 border ${
+            isAntiReact
+              ? 'bg-rose-950 text-rose-100 border-rose-500/80 shadow-rose-950/50'
+              : 'bg-emerald-950 text-emerald-100 border-emerald-500/80 shadow-emerald-950/50'
+          }`}>
+            {isAntiReact ? (
+              <>
+                <EyeOff className="w-4 h-4 text-rose-400 shrink-0" />
+                <span>Anti-Reaksi Aktif: Layar Bersih dari Emoji 🛡️</span>
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-4 h-4 text-amber-300 shrink-0" />
+                <span>Reaksi Layar Teman Ditampilkan ✨</span>
+              </>
+            )}
           </div>
         </div>
       )}

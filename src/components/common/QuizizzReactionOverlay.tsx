@@ -2,10 +2,12 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import type { SessionLiveReaction } from '../../types/quiz';
 import { AVATAR_MAP } from '../../data/seedQuizzes';
 import { supabase, getLiveRealtimeChannel } from '../../lib/supabaseClient';
+import { useAntiReaction } from '../../lib/reactionPreferences';
 
 export interface QuizizzReactionOverlayProps {
   sessionId?: string;
   reactions?: SessionLiveReaction[];
+  disabled?: boolean;
 }
 
 interface FloatingParticle {
@@ -23,11 +25,14 @@ interface FloatingParticle {
 export const QuizizzReactionOverlay: React.FC<QuizizzReactionOverlayProps> = ({
   sessionId,
   reactions,
+  disabled = false,
 }) => {
+  const [isAntiReact] = useAntiReaction();
   const [particles, setParticles] = useState<FloatingParticle[]>([]);
   const lastSpawnTimesRef = useRef<Map<string, number>>(new Map());
 
   const spawnParticle = useCallback((reaction: SessionLiveReaction) => {
+    if (disabled || isAntiReact) return;
     // Confined to the narrow side-stream channel (10% to 65% of container width)
     const randomLeft = Math.floor(10 + Math.random() * 55);
     const duration = +(1.8 + Math.random() * 0.4).toFixed(2);
@@ -144,7 +149,7 @@ export const QuizizzReactionOverlay: React.FC<QuizizzReactionOverlayProps> = ({
     };
   }, [sessionId, handleReaction]);
 
-  if (particles.length === 0) return null;
+  if (disabled || isAntiReact || particles.length === 0) return null;
 
   return (
     <div
