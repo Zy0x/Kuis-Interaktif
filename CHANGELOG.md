@@ -1,6 +1,23 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.21] - 2026-09-15
+### Peningkatan Toast Notifikasi Chat Reaktif di Layar Lebar & Arena Smartboard (Rule 1, Rule 2, Rule 5 & Rule 15)
+
+#### 1. Pemantau Pesan Chat Reaktif Otomatis (`ZoomChatToast.tsx`)
+- **Pendeteksi Pesan Masuk Multikanal**: Menambahkan pemantau reaktif terhadap array pesan sesi `chatMessages` secara langsung. Kini, baik pesan yang diterima melalui WebSocket Realtime, event lokal, maupun hasil sinkronisasi database polling, toast notifikasi obrolan murid dijamin 100% langsung muncul di layar guru seketika tanpa terlewat.
+- **Pencegahan Notifikasi Ganda & Riwayat Lama**: Sistem memfilter pesan lama pada saat pertama kali layar dibuka sehingga tidak terjadi lonjakan notifikasi historis, serta mencegah notifikasi untuk pesan yang dikirim oleh diri sendiri.
+
+#### 2. Optimalisasi Posisi Layar Lebar & Papan Kendali Guru (`WaygroundHostView.tsx`)
+- **Posisi Ergonomis Kanan Atas (`top-right`)**: Menyesuaikan posisi notifikasi popup chat di layar lebar desktop/laptop menjadi tepat di bawah tombol *Chat Kelas* (`top-16 sm:top-20 right-4 sm:right-6`) dengan lapisan `z-[100]`, animasi luncur yang halus, serta efek audio pop-chime Web Audio API yang jelas.
+
+#### 3. Dukungan Toast Chat di Arena Kuis & Layar Lebar Smartboard (`QuizArena.tsx`)
+- **Integrasi Toast Chat di Arena**: Memasang `ZoomChatToast` pada `QuizArena` saat sesi kelas live berlangsung. Guru yang sedang menayangkan kuis di layar proyektor / Smartboard IFP tetap dapat menerima notifikasi pesan pertanyaan atau diskusi murid secara langsung.
+
+#### 4. Pembaruan Versi & Cache PWA (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.21` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.21` (`public/sw.js`).
+
 ## [2.4.20] - 2026-09-15
 ### Purifikasi Terminologi Antarmuka Bebas Merek Pihak Ketiga & Perlindungan Hak Cipta (Rule 2, Rule 3, Rule 4 & Rule 15)
 

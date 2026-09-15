@@ -1272,9 +1272,11 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
       )}
 
 
-      {/* Popup Notifikasi Obrolan Masuk Ala Zoom / Google Meet */}
+      {/* Popup Notifikasi Obrolan Masuk */}
       <ZoomChatToast
         sessionId={session.id}
+        chatMessages={session.chatMessages}
+        position="top-right"
         onOpenChat={() => {
           playClick();
           setIsChatDrawerOpen(true);

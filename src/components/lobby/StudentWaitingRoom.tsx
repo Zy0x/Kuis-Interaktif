@@ -420,11 +420,13 @@ export const StudentWaitingRoom: React.FC<StudentWaitingRoomProps> = ({
         Kuis Interaktif • Ruang Tunggu Terpadu
       </footer>
 
-      {/* Popup Chat Masuk Ala Zoom */}
+      {/* Popup Chat Masuk */}
       <ZoomChatToast
         sessionId={session.id}
+        chatMessages={session.chatMessages}
         onOpenChat={handleOpenChatDrawer}
         currentUserName={studentName}
+        position="top-right"
       />
 
       {/* Floating Live Reactions Overlay di Ruang Tunggu Murid */}

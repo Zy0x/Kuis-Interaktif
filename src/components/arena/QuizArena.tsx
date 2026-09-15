@@ -51,6 +51,7 @@ import {
 import { QuizIllustration } from '../shared/QuizIllustration';
 import { QuizizzReactionOverlay } from '../common/QuizizzReactionOverlay';
 import { FloatingReactionButton } from '../common/FloatingReactionButton';
+import { ZoomChatToast } from '../common/ZoomChatToast';
 
 export interface QuizArenaProps {
   quiz: Quiz;
@@ -2386,6 +2387,19 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
           isTeacher={isTeacher}
           playClick={playClick}
           positionClassName="bottom-20 right-3 sm:bottom-24 sm:right-6"
+        />
+      )}
+
+      {/* Toast Notifikasi Pesan Masuk di Arena / Layar Lebar Smartboard */}
+      {(activeSessionId || liveSession?.id) && !isPreview && (
+        <ZoomChatToast
+          sessionId={(activeSessionId || liveSession?.id)!}
+          chatMessages={liveSession?.chatMessages}
+          currentUserName={isTeacher ? (quiz.creatorName || 'Bapak/Ibu Guru') : (DataManager.getPlayerProfile().nickname || 'Siswa Pintar')}
+          onOpenChat={() => {
+            if (playClick) playClick();
+          }}
+          position="top-right"
         />
       )}
 

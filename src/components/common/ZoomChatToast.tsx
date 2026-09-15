@@ -6,8 +6,10 @@ import { MessageSquare, X } from 'lucide-react';
 
 interface ZoomChatToastProps {
   sessionId: string;
+  chatMessages?: SessionChatMessage[];
   onOpenChat: () => void;
   currentUserName?: string;
+  position?: 'top-right' | 'bottom-right';
 }
 
 // Suara notifikasi lembut via Web Audio API (tidak memerlukan berkas audio eksternal)
@@ -39,12 +41,16 @@ function playSubtleChatNotificationSound() {
 
 export const ZoomChatToast: React.FC<ZoomChatToastProps> = ({
   sessionId,
+  chatMessages,
   onOpenChat,
   currentUserName,
+  position = 'top-right',
 }) => {
   const [activeMessage, setActiveMessage] = useState<SessionChatMessage | null>(null);
   const [isVisible, setIsVisible] = useState(false);
   const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastProcessedMessageIdRef = useRef<string | null>(null);
+  const isInitialMountRef = useRef(true);
 
   const clearTimer = () => {
     if (dismissTimerRef.current) {
@@ -62,19 +68,51 @@ export const ZoomChatToast: React.FC<ZoomChatToastProps> = ({
   };
 
   const handleIncomingMessage = (msg: SessionChatMessage) => {
+    if (!msg || !msg.id) return;
+
     // Jangan tampilkan toast untuk pesan yang dikirim oleh diri sendiri
     if (currentUserName && msg.studentName.trim().toLowerCase() === currentUserName.trim().toLowerCase()) {
       return;
     }
 
+    // Cegah toast berulang untuk pesan yang sama
+    if (activeMessage && activeMessage.id === msg.id && isVisible) {
+      return;
+    }
+
+    lastProcessedMessageIdRef.current = msg.id;
     playSubtleChatNotificationSound();
     setActiveMessage(msg);
     setIsVisible(true);
     startDismissTimer();
   };
 
+  // 1. Pantau perubahan array chatMessages dari sinkronisasi database / polling sesi
   useEffect(() => {
-    // 1. Dengarkan event lokal window
+    if (!chatMessages || chatMessages.length === 0) {
+      isInitialMountRef.current = false;
+      return;
+    }
+
+    const latest = chatMessages[chatMessages.length - 1];
+    if (!latest) return;
+
+    // Saat inisialisasi awal layar, catat pesan terakhir agar tidak memunculkan toast untuk riwayat pesan lama
+    if (isInitialMountRef.current) {
+      isInitialMountRef.current = false;
+      lastProcessedMessageIdRef.current = latest.id;
+      return;
+    }
+
+    // Jika terdeteksi ada pesan baru yang belum pernah diproses
+    if (latest.id !== lastProcessedMessageIdRef.current) {
+      handleIncomingMessage(latest);
+    }
+  }, [chatMessages]);
+
+  // 2. Dengarkan event real-time lintas peramban & channel
+  useEffect(() => {
+    // A. Dengarkan event lokal window
     const handleCustomMsg = (e: Event) => {
       const detail = (e as CustomEvent).detail;
       if (detail?.sessionId === sessionId && detail?.message) {
@@ -84,7 +122,7 @@ export const ZoomChatToast: React.FC<ZoomChatToastProps> = ({
 
     window.addEventListener('kuis_chat_message', handleCustomMsg);
 
-    // 2. Dengarkan BroadcastChannel lintas tab/jendela
+    // B. Dengarkan BroadcastChannel lintas tab/jendela di mesin yang sama
     let bc: BroadcastChannel | null = null;
     try {
       if ('BroadcastChannel' in window) {
@@ -99,7 +137,7 @@ export const ZoomChatToast: React.FC<ZoomChatToastProps> = ({
       console.warn('BroadcastChannel error in ZoomChatToast:', e);
     }
 
-    // 3. Dengarkan Supabase Realtime WebSocket broadcast lintas perangkat
+    // C. Dengarkan Supabase Realtime WebSocket broadcast lintas perangkat
     if (supabase && sessionId) {
       try {
         const subChannel = getLiveRealtimeChannel(sessionId);
@@ -128,6 +166,14 @@ export const ZoomChatToast: React.FC<ZoomChatToastProps> = ({
   const avatarDisplay = (activeMessage.avatarId && AVATAR_MAP[activeMessage.avatarId]) || 
     (activeMessage.isTeacher ? '👨‍🏫' : '🦁');
 
+  const positionClasses = position === 'top-right'
+    ? 'top-16 sm:top-20 right-4 sm:right-6'
+    : 'bottom-24 right-4 sm:bottom-6 sm:right-6';
+
+  const animationClasses = position === 'top-right'
+    ? (isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 -translate-y-4 scale-95 pointer-events-none')
+    : (isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-95 pointer-events-none');
+
   return (
     <div
       role="alert"
@@ -139,17 +185,13 @@ export const ZoomChatToast: React.FC<ZoomChatToastProps> = ({
         setActiveMessage(null);
         onOpenChat();
       }}
-      className={`fixed bottom-24 right-4 sm:bottom-6 sm:right-6 z-50 transition-all duration-300 transform max-w-sm w-[calc(100vw-2rem)] sm:w-80 cursor-pointer ${
-        isVisible
-          ? 'opacity-100 translate-y-0 scale-100'
-          : 'opacity-0 translate-y-4 scale-95 pointer-events-none'
-      }`}
+      className={`fixed ${positionClasses} z-[100] transition-all duration-300 transform max-w-sm w-[calc(100vw-2rem)] sm:w-80 cursor-pointer ${animationClasses}`}
     >
-      <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-blue-200/80 dark:border-blue-900/60 rounded-2xl shadow-xl shadow-blue-500/10 p-3 sm:p-3.5 flex items-start gap-3 hover:border-blue-400 dark:hover:border-blue-700 transition-colors group">
+      <div className="bg-slate-900/95 text-white backdrop-blur-md border border-blue-500/40 rounded-2xl shadow-2xl shadow-blue-500/20 p-3 sm:p-3.5 flex items-start gap-3 hover:border-blue-400 transition-colors group animate-pulse-glow">
         
         {/* Avatar */}
         <div className="relative flex-shrink-0">
-          <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xl shadow-xs border border-slate-200 dark:border-slate-700">
+          <div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-xl shadow-xs border border-slate-700">
             {avatarDisplay}
           </div>
           {activeMessage.isTeacher && (
@@ -163,25 +205,25 @@ export const ZoomChatToast: React.FC<ZoomChatToastProps> = ({
         <div className="flex-1 min-w-0 pr-1">
           <div className="flex items-center justify-between gap-1.5 mb-0.5">
             <div className="flex items-center gap-1.5 min-w-0">
-              <span className="text-xs font-bold text-slate-900 dark:text-white truncate">
+              <span className="text-xs font-bold text-white truncate">
                 {activeMessage.studentName}
               </span>
               {activeMessage.isTeacher && (
-                <span className="px-1.5 py-0.2 rounded text-[10px] font-extrabold bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 border border-amber-300/80 dark:border-amber-800/80 flex-shrink-0">
+                <span className="px-1.5 py-0.2 rounded text-[10px] font-extrabold bg-amber-950/80 text-amber-300 border border-amber-800/80 flex-shrink-0">
                   Guru
                 </span>
               )}
             </div>
-            <span className="text-[10px] text-slate-400 dark:text-slate-500 flex-shrink-0">
+            <span className="text-[10px] text-slate-400 flex-shrink-0">
               Baru saja
             </span>
           </div>
 
-          <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed break-words">
+          <p className="text-xs text-slate-200 line-clamp-2 leading-relaxed break-words font-medium">
             {activeMessage.text}
           </p>
 
-          <div className="mt-1.5 flex items-center gap-1 text-[11px] font-bold text-blue-600 dark:text-blue-400 group-hover:underline">
+          <div className="mt-1.5 flex items-center gap-1 text-[11px] font-bold text-blue-400 group-hover:underline">
             <MessageSquare className="w-3 h-3" />
             <span>Klik untuk membuka obrolan</span>
           </div>
@@ -195,7 +237,7 @@ export const ZoomChatToast: React.FC<ZoomChatToastProps> = ({
             setIsVisible(false);
             setTimeout(() => setActiveMessage(null), 300);
           }}
-          className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex-shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center"
+          className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-colors flex-shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center"
           title="Tutup Notifikasi"
           aria-label="Tutup Notifikasi"
         >
