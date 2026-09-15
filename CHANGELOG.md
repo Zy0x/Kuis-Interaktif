@@ -1,6 +1,22 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.51] - 2026-09-16
+### Pemulihan Otomatis dan Pencegahan Auto-Expire Sesi Mandiri/PR (Rule 1, Rule 2, Rule 9, Rule 10, Rule 11 & Rule 15)
+
+#### 1. Pencegahan Kedaluwarsa Otomatis Sesi Tugas Mandiri / PR (`supabaseClient.ts`)
+- **Penyelarasan Siklus Hidup Sesi Asinkron**: Mekanisme auto-expiration (deteksi ketiadaan detak jantung/heartbeat 10 menit dan batas umur sesi 3 jam) kini dibatasi khusus untuk sesi kelas interaktif yang dipandu langsung oleh guru (`teacher_led`).
+- **Retensi Penuh Sesi Mandiri / PR**: Sesi `self_paced` kini tetap aktif sepenuhnya dan tidak akan kedaluwarsa sebelum tenggat batas waktu (`deadlineAt`) yang ditetapkan guru benar-benar terlampaui (atau aktif tanpa batas waktu jika tidak menggunakan tenggat).
+
+#### 2. Mekanisme Pemulihan Otomatis Multi-Lapisan (`supabaseClient.ts`, `QuizHome.tsx`, & `App.tsx`)
+- **Auto-Recovery Sesi yang Salah Ditandai Selesai**: Sistem kini secara cerdas mendeteksi jika sebuah sesi tugas mandiri berstatus `finished` akibat bug auto-expire sebelumnya padahal batas waktunya masih aktif dan belum pernah diakhiri secara manual oleh guru (`!isManuallyEnded`). Sesi tersebut otomatis dipulihkan kembali ke status `active` di memori lokal maupun di Supabase.
+- **Pengecekan Berlapis saat Siswa Memasukkan PIN**: Di `QuizHome.tsx` dan tautan langsung `App.tsx`, input PIN yang mengarah ke sesi mandiri yang belum lewat tenggat waktu akan otomatis dipulihkan dan membuka ruang pengerjaan kuis siswa secara mulus tanpa penolakan akses keliru.
+- **Dukungan Penyimpanan Status Pengakhiran Manual**: Menambahkan atribut `isManuallyEnded` pada konfigurasi sesi (`QuizSessionSettings`), memastikan bahwa pengakhiran sesi yang dilakukan secara sengaja oleh guru tetap dihormati dan tidak terpulihkan secara keliru.
+
+#### 3. Pembaruan Versi & Cache PWA (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.51` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.51` (`public/sw.js`).
+
 ## [2.4.50] - 2026-09-16
 ### Modal Zoom Gambar Interaktif, Isolasi Papan Peringkat Sesi Privat & Responsivitas Mobile Dasbor Guru (Rule 1, Rule 2, Rule 4, Rule 5, Rule 7, Rule 8, Rule 9, Rule 10, Rule 11 & Rule 15)
 

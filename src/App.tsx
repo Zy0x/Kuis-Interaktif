@@ -193,6 +193,29 @@ export const App: React.FC = () => {
         // Cek jika PIN merujuk ke sesi kelas live yang sudah selesai
         const finishedSession = await DataManager.fetchSessionByPin(pinToMatch);
         if (finishedSession && finishedSession.status === 'finished') {
+          const isSelfPaced = finishedSession.settings?.executionMode === 'self_paced';
+          const isWithinDeadline = finishedSession.settings?.deadlineAt
+            ? new Date(finishedSession.settings.deadlineAt).getTime() > Date.now()
+            : true;
+          const isNotManuallyEnded = !finishedSession.settings?.isManuallyEnded;
+
+          if (isSelfPaced && isWithinDeadline && isNotManuallyEnded) {
+            await DataManager.updateSessionStatus(finishedSession.id, 'active');
+            const q = await DataManager.getQuizById(finishedSession.quizId);
+            if (q) {
+              const recoveredSession = { ...finishedSession, status: 'active' as const, endedAt: undefined };
+              const settings = resolveSettings(recoveredSession, q);
+              setActiveSession(recoveredSession);
+              setActiveSessionSettings(settings);
+              setActiveGameMode(settings.mode);
+              setActiveQuiz(q);
+              if (currentScreen === 'home') {
+                setCurrentScreen('student-lobby');
+              }
+              return;
+            }
+          }
+
           console.warn('Akses ditolak: PIN merujuk ke sesi yang telah selesai.');
           setPrivateQuizAlertModal('Sesi kuis untuk PIN ini telah selesai/diakhiri oleh Guru. Silakan minta PIN sesi yang baru kepada gurumu.');
           setCurrentScreen('home');

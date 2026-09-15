@@ -310,6 +310,21 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
       // 1b. Cek apakah PIN ini milik sesi yang sudah SELESAI
       const finishedSession = await DataManager.fetchSessionByPin(cleanPin);
       if (finishedSession && finishedSession.status === 'finished') {
+        const isSelfPaced = finishedSession.settings?.executionMode === 'self_paced';
+        const isWithinDeadline = finishedSession.settings?.deadlineAt
+          ? new Date(finishedSession.settings.deadlineAt).getTime() > Date.now()
+          : true;
+        const isNotManuallyEnded = !finishedSession.settings?.isManuallyEnded;
+
+        if (isSelfPaced && isWithinDeadline && isNotManuallyEnded) {
+          await DataManager.updateSessionStatus(finishedSession.id, 'active');
+          const sessionQuiz = await DataManager.getQuizById(finishedSession.quizId);
+          if (sessionQuiz) {
+            onEnterPin(sessionQuiz, { ...finishedSession, status: 'active', endedAt: undefined });
+            return;
+          }
+        }
+
         setPinError('Sesi kuis untuk PIN ini telah selesai/diakhiri oleh Guru. Silakan minta PIN sesi kuis yang baru kepada gurumu.');
         return;
       }

@@ -2462,6 +2462,28 @@ export const DataManager = {
     try {
       const raw = localStorage.getItem(STORAGE_KEY_QUIZ_SESSIONS);
       let sessions: QuizSession[] = raw ? JSON.parse(raw) : [];
+
+      // Pemulihan Otomatis Lokal: Sesi Mandiri/PR yang belum lewat deadline dan belum diakhiri manual oleh guru
+      const nowMs = Date.now();
+      let didHeal = false;
+      sessions = sessions.map((s) => {
+        const isSelfPaced = s.settings?.executionMode === 'self_paced';
+        const isWithinDeadline = s.settings?.deadlineAt
+          ? new Date(s.settings.deadlineAt).getTime() > nowMs
+          : true;
+        const isNotManuallyEnded = !s.settings?.isManuallyEnded;
+        if (s.status === 'finished' && isSelfPaced && isWithinDeadline && isNotManuallyEnded) {
+          didHeal = true;
+          return { ...s, status: 'active' as QuizSessionStatus, endedAt: undefined };
+        }
+        return s;
+      });
+      if (didHeal) {
+        try {
+          localStorage.setItem(STORAGE_KEY_QUIZ_SESSIONS, JSON.stringify(sessions));
+        } catch {}
+      }
+
       if (filter?.teacherEmail) {
         sessions = sessions.filter(
           (s) => !s.teacherEmail || s.teacherEmail.trim().toLowerCase() === filter.teacherEmail!.trim().toLowerCase()
@@ -2485,22 +2507,44 @@ export const DataManager = {
     const cleanPin = pin.trim().toUpperCase();
     const all = this.getActiveSessions();
     const THREE_HOURS_MS = 3 * 60 * 60 * 1000;
-    return all.find((s) => 
-      s.pinCode === cleanPin && 
-      (s.status === 'active' || s.status === 'waiting' || s.status === 'paused') &&
-      (Date.now() - new Date(s.createdAt).getTime() <= THREE_HOURS_MS)
-    ) || null;
+    const nowMs = Date.now();
+    return all.find((s) => {
+      if (s.pinCode !== cleanPin) return false;
+      const isSelfPaced = s.settings?.executionMode === 'self_paced';
+      if (isSelfPaced) {
+        if (s.settings?.isManuallyEnded) return false;
+        if (s.settings?.deadlineAt) {
+          return new Date(s.settings.deadlineAt).getTime() > nowMs;
+        }
+        return s.status !== 'finished';
+      }
+      return (
+        (s.status === 'active' || s.status === 'waiting' || s.status === 'paused') &&
+        (nowMs - new Date(s.createdAt).getTime() <= THREE_HOURS_MS)
+      );
+    }) || null;
   },
 
   getActiveSessionByQuizId(quizId: string): QuizSession | null {
     const cleanId = quizId.trim();
     const all = this.getActiveSessions();
     const THREE_HOURS_MS = 3 * 60 * 60 * 1000;
-    return all.find((s) => 
-      s.quizId === cleanId && 
-      (s.status === 'active' || s.status === 'waiting' || s.status === 'paused') &&
-      (Date.now() - new Date(s.createdAt).getTime() <= THREE_HOURS_MS)
-    ) || null;
+    const nowMs = Date.now();
+    return all.find((s) => {
+      if (s.quizId !== cleanId) return false;
+      const isSelfPaced = s.settings?.executionMode === 'self_paced';
+      if (isSelfPaced) {
+        if (s.settings?.isManuallyEnded) return false;
+        if (s.settings?.deadlineAt) {
+          return new Date(s.settings.deadlineAt).getTime() > nowMs;
+        }
+        return s.status !== 'finished';
+      }
+      return (
+        (s.status === 'active' || s.status === 'waiting' || s.status === 'paused') &&
+        (nowMs - new Date(s.createdAt).getTime() <= THREE_HOURS_MS)
+      );
+    }) || null;
   },
 
   async createActiveSession(
@@ -3046,7 +3090,7 @@ export const DataManager = {
 
     if (supabase) {
       try {
-        const { data, error } = await supabase
+        let { data, error } = await supabase
           .from('quiz_sessions')
           .select(`
             *,
@@ -3058,25 +3102,72 @@ export const DataManager = {
           .limit(1)
           .maybeSingle();
 
+        // PEMULIHAN OTOMATIS: Jika tidak ditemukan di status aktif, periksa apakah sesi Mode Mandiri / PR yang belum lewat batas waktu
+        if (!data) {
+          const { data: latestForPin } = await supabase
+            .from('quiz_sessions')
+            .select(`
+              *,
+              quiz_session_participants (*)
+            `)
+            .eq('pin_code', cleanPin)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (latestForPin) {
+            const isSelfPaced = latestForPin.settings?.executionMode === 'self_paced';
+            const isWithinDeadline = latestForPin.settings?.deadlineAt
+              ? new Date(latestForPin.settings.deadlineAt).getTime() > Date.now()
+              : true;
+            const isNotManuallyEnded = !latestForPin.settings?.isManuallyEnded;
+
+            if (isSelfPaced && isWithinDeadline && isNotManuallyEnded) {
+              data = latestForPin;
+              data.status = 'active';
+              data.ended_at = null;
+              supabase
+                .from('quiz_sessions')
+                .update({ status: 'active', ended_at: null })
+                .eq('id', latestForPin.id)
+                .then(() => {}, () => {});
+            }
+          }
+        }
+
         if (data && !error) {
           // AUTO-EXPIRATION: Cek apakah sesi zombi (tidak ada heartbeat / sesi ditinggalkan guru)
+          const isSelfPaced = data.settings?.executionMode === 'self_paced';
           const nowMs = Date.now();
           const sessionTime = new Date(data.created_at).getTime();
           const heartbeatTime = data.last_heartbeat ? new Date(data.last_heartbeat).getTime() : sessionTime;
           const TEN_MINUTES_MS = 10 * 60 * 1000;
           const THREE_HOURS_MS = 3 * 60 * 60 * 1000;
 
-          const isStaleActive = data.status === 'active' && (nowMs - heartbeatTime > TEN_MINUTES_MS);
-          const isTooOld = nowMs - sessionTime > THREE_HOURS_MS;
+          if (isSelfPaced) {
+            // Mode Mandiri / PR: Sesi aktif hingga tenggat batas waktu
+            if (data.settings?.deadlineAt && new Date(data.settings.deadlineAt).getTime() <= nowMs) {
+              supabase
+                .from('quiz_sessions')
+                .update({ status: 'finished', ended_at: new Date().toISOString() })
+                .eq('id', data.id)
+                .then(() => {}, () => {});
+              return null;
+            }
+          } else {
+            // Sesi Live Interaktif (teacher_led): Cek heartbeat atau batas 3 jam
+            const isStaleActive = data.status === 'active' && (nowMs - heartbeatTime > TEN_MINUTES_MS);
+            const isTooOld = nowMs - sessionTime > THREE_HOURS_MS;
 
-          if (isStaleActive || isTooOld) {
-            // Tandai sesi selesai di background agar tidak menggantung
-            supabase
-              .from('quiz_sessions')
-              .update({ status: 'finished', ended_at: new Date().toISOString() })
-              .eq('id', data.id)
-              .then(() => {}, () => {});
-            return null;
+            if (isStaleActive || isTooOld) {
+              // Tandai sesi selesai di background agar tidak menggantung
+              supabase
+                .from('quiz_sessions')
+                .update({ status: 'finished', ended_at: new Date().toISOString() })
+                .eq('id', data.id)
+                .then(() => {}, () => {});
+              return null;
+            }
           }
 
           const parts: QuizSessionParticipant[] = (data.quiz_session_participants || []).map((p: any) => ({
@@ -3147,7 +3238,7 @@ export const DataManager = {
 
     if (supabase) {
       try {
-        const { data, error } = await supabase
+        let { data, error } = await supabase
           .from('quiz_sessions')
           .select(`
             *,
@@ -3159,18 +3250,58 @@ export const DataManager = {
           .limit(1)
           .maybeSingle();
 
+        // PEMULIHAN OTOMATIS: Jika tidak ditemukan di status aktif, periksa apakah sesi Mode Mandiri / PR yang belum lewat batas waktu
+        if (!data) {
+          const { data: latestForQuiz } = await supabase
+            .from('quiz_sessions')
+            .select(`
+              *,
+              quiz_session_participants (*)
+            `)
+            .eq('quiz_id', cleanId)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (latestForQuiz) {
+            const isSelfPaced = latestForQuiz.settings?.executionMode === 'self_paced';
+            const isWithinDeadline = latestForQuiz.settings?.deadlineAt
+              ? new Date(latestForQuiz.settings.deadlineAt).getTime() > Date.now()
+              : true;
+            const isNotManuallyEnded = !latestForQuiz.settings?.isManuallyEnded;
+
+            if (isSelfPaced && isWithinDeadline && isNotManuallyEnded) {
+              data = latestForQuiz;
+              data.status = 'active';
+              data.ended_at = null;
+              supabase
+                .from('quiz_sessions')
+                .update({ status: 'active', ended_at: null })
+                .eq('id', latestForQuiz.id)
+                .then(() => {}, () => {});
+            }
+          }
+        }
+
         if (data && !error) {
+          const isSelfPaced = data.settings?.executionMode === 'self_paced';
           const nowMs = Date.now();
           const sessionTime = new Date(data.created_at).getTime();
           const heartbeatTime = data.last_heartbeat ? new Date(data.last_heartbeat).getTime() : sessionTime;
           const TEN_MINUTES_MS = 10 * 60 * 1000;
           const THREE_HOURS_MS = 3 * 60 * 60 * 1000;
 
-          const isStaleActive = data.status === 'active' && (nowMs - heartbeatTime > TEN_MINUTES_MS);
-          const isTooOld = nowMs - sessionTime > THREE_HOURS_MS;
+          if (isSelfPaced) {
+            if (data.settings?.deadlineAt && new Date(data.settings.deadlineAt).getTime() <= nowMs) {
+              return null;
+            }
+          } else {
+            const isStaleActive = data.status === 'active' && (nowMs - heartbeatTime > TEN_MINUTES_MS);
+            const isTooOld = nowMs - sessionTime > THREE_HOURS_MS;
 
-          if (isStaleActive || isTooOld) {
-            return null;
+            if (isStaleActive || isTooOld) {
+              return null;
+            }
           }
 
           const parts: QuizSessionParticipant[] = (data.quiz_session_participants || []).map((p: any) => ({
@@ -3254,6 +3385,25 @@ export const DataManager = {
           .maybeSingle();
 
         if (data && !error) {
+          const isSelfPaced = data.settings?.executionMode === 'self_paced';
+          const isWithinDeadline = data.settings?.deadlineAt
+            ? new Date(data.settings.deadlineAt).getTime() > Date.now()
+            : true;
+          const isNotManuallyEnded = !data.settings?.isManuallyEnded;
+
+          let resolvedStatus: QuizSessionStatus = data.status;
+          let resolvedEndedAt = data.ended_at;
+
+          if (data.status === 'finished' && isSelfPaced && isWithinDeadline && isNotManuallyEnded) {
+            resolvedStatus = 'active';
+            resolvedEndedAt = null;
+            supabase
+              .from('quiz_sessions')
+              .update({ status: 'active', ended_at: null })
+              .eq('id', data.id)
+              .then(() => {}, () => {});
+          }
+
           const parts: QuizSessionParticipant[] = (data.quiz_session_participants || []).map((p: any) => ({
             id: p.id,
             name: p.student_name,
@@ -3273,7 +3423,7 @@ export const DataManager = {
             lastActiveAt: p.last_active_at,
           }));
 
-          return {
+          const session: QuizSession = {
             id: data.id,
             quizId: data.quiz_id,
             quizTitle: data.quiz_title,
@@ -3284,10 +3434,10 @@ export const DataManager = {
             teacherId: data.teacher_id,
             teacherEmail: data.teacher_email,
             teacherName: data.teacher_name,
-            status: data.status,
+            status: resolvedStatus,
             createdAt: data.created_at,
             startedAt: data.started_at,
-            endedAt: data.ended_at,
+            endedAt: resolvedEndedAt,
             settings: data.settings || {},
             participants: parts.length > 0 ? parts : (local?.participants || []),
             totalQuestions: data.total_questions || 0,
@@ -3298,6 +3448,16 @@ export const DataManager = {
             isChatMuted: Boolean(data.is_chat_muted ?? local?.isChatMuted),
             lastHeartbeat: data.last_heartbeat,
           };
+
+          if (resolvedStatus === 'active') {
+            const existing = this.getActiveSessions();
+            const filtered = existing.filter((s) => s.id !== session.id);
+            try {
+              localStorage.setItem(STORAGE_KEY_QUIZ_SESSIONS, JSON.stringify([session, ...filtered]));
+            } catch {}
+          }
+
+          return session;
         }
       } catch (err) {
         console.warn('fetchSessionByPin Supabase notice:', err);
@@ -3436,6 +3596,25 @@ export const DataManager = {
           lastActiveAt: p.last_active_at,
         }));
 
+        const isSelfPaced = d.settings?.executionMode === 'self_paced';
+        const isWithinDeadline = d.settings?.deadlineAt
+          ? new Date(d.settings.deadlineAt).getTime() > Date.now()
+          : false;
+        const isNotManuallyEnded = !d.settings?.isManuallyEnded;
+
+        let resolvedStatus: QuizSessionStatus = d.status;
+        if (isSelfPaced && isWithinDeadline && isNotManuallyEnded && d.status === 'finished') {
+          // Pulihkan status sesi yang salah ditandai selesai oleh bug auto-expire
+          resolvedStatus = 'active';
+          if (supabase) {
+            supabase
+              .from('quiz_sessions')
+              .update({ status: 'active', ended_at: null })
+              .eq('id', d.id)
+              .then(() => {}, () => {});
+          }
+        }
+
         return {
           id: d.id,
           quizId: d.quiz_id,
@@ -3447,10 +3626,10 @@ export const DataManager = {
           teacherId: d.teacher_id,
           teacherEmail: d.teacher_email,
           teacherName: d.teacher_name,
-          status: d.status,
+          status: resolvedStatus,
           createdAt: d.created_at,
           startedAt: d.started_at,
-          endedAt: d.ended_at,
+          endedAt: resolvedStatus === 'active' ? undefined : d.ended_at,
           settings: d.settings || {},
           participants: parts,
           totalQuestions: d.total_questions || 0,
@@ -3492,6 +3671,16 @@ export const DataManager = {
     existing[idx].status = status;
     if (status === 'finished') {
       existing[idx].endedAt = new Date().toISOString();
+      existing[idx].settings = {
+        ...existing[idx].settings,
+        isManuallyEnded: true,
+      };
+    } else if (status === 'active') {
+      existing[idx].endedAt = undefined;
+      existing[idx].settings = {
+        ...existing[idx].settings,
+        isManuallyEnded: false,
+      };
     }
 
     try {
@@ -3510,6 +3699,7 @@ export const DataManager = {
           .update({
             status,
             ended_at: existing[idx].endedAt,
+            settings: existing[idx].settings,
           })
           .eq('id', sessionId);
 
