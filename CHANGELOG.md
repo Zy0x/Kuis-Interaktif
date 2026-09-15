@@ -1,6 +1,18 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.16] - 2026-09-15
+### Perbaikan Tampilan Bilah Reaksi Semangat Guru & Siswa (Rule 1, Rule 2, Rule 4 & Rule 15)
+
+#### 1. Perbaikan Layout Bilah Reaksi Semangat (*Reaction Bar*)
+- **Komponen Reaksi (`QuizizzReactionButtonRow.tsx`)**: Memperbaiki tata letak tombol emoji reaksi dari sebelumnya yang meregang vertikal secara keliru (*stretched 100% width vertical pills*) menjadi bilah horizontal yang rapi, modern, dan presisi (*horizontal flex row of squircle emoji buttons*).
+- **Presisi Touch Target & Responsivitas Mobile-First**: Setiap tombol reaksi memiliki ukuran target sentuh proporsional 44×44 px hingga 48×48 px (`min-h-[44px] min-w-[44px] shrink-0`), tersusun sejajar secara horizontal di layar desktop/tablet, dan membungkus rapi (*flex-wrap*) di layar ponsel sempit tanpa distorsi atau overlap.
+- **Papan Kendali Guru (`WaygroundHostView.tsx`)**: Mengoptimalkan kartu kontainer bilah reaksi host dengan batasan lebar proporsional (`max-w-xl mx-auto w-full`) sehingga tampil simetris dan terpusat di tengah layar kendali kelas.
+
+#### 2. Pembaruan Versi & PWA Service Worker (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.16` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.16` (`public/sw.js`).
+
 ## [2.4.15] - 2026-09-15
 ### Auto-Save Kuis Real-Time Saat Edit & Tambah Butir Soal di Bank Soal (Rule 1, Rule 2, Rule 4, Rule 6, Rule 9, Rule 11 & Rule 15)
 

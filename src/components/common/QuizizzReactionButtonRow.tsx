@@ -92,13 +92,13 @@ export const QuizizzReactionButtonRow: React.FC<QuizizzReactionButtonRowProps> =
   };
 
   return (
-    <div className={`flex flex-col items-center ${compact ? 'gap-1' : 'gap-2'}`}>
+    <div className={`flex flex-col items-center ${compact ? 'gap-1.5' : 'gap-2.5'} w-full max-w-full`}>
       {title && (
-        <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider select-none">
+        <span className="text-[11px] sm:text-xs font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider select-none text-center">
           {title}
         </span>
       )}
-      <div className="grid grid-cols-4 sm:flex sm:flex-wrap sm:items-center sm:justify-center gap-2 sm:gap-2 w-full max-w-xs sm:max-w-none justify-items-center">
+      <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-2.5 max-w-full">
         {QUIZIZZ_REACTIONS.map((r) => {
           const isPressed = activePressedEmoji === r.emoji;
           return (
@@ -106,15 +106,19 @@ export const QuizizzReactionButtonRow: React.FC<QuizizzReactionButtonRowProps> =
               key={r.emoji}
               type="button"
               onClick={() => handleSendReaction(r.emoji)}
-              className={`rounded-2xl transition-all select-none flex items-center justify-center transform active:scale-90 hover:scale-110 btn-press w-full max-w-[52px] sm:max-w-none ${
+              className={`rounded-2xl transition-all select-none flex items-center justify-center transform active:scale-85 hover:scale-110 btn-press shrink-0 shadow-2xs hover:shadow-sm ${
                 compact
-                  ? 'p-2 text-lg sm:text-xl min-h-[44px] min-w-[44px] bg-slate-100/90 dark:bg-slate-800/90 hover:bg-amber-100/80 dark:hover:bg-amber-950/60 border border-slate-200/80 dark:border-slate-700/80'
-                  : 'px-3 py-2 sm:px-3.5 sm:py-2.5 text-xl sm:text-2xl min-h-[44px] min-w-[44px] bg-white dark:bg-slate-850 hover:bg-blue-50 dark:hover:bg-blue-950/50 border border-slate-200/90 dark:border-slate-800 shadow-xs'
-              } ${isPressed ? 'ring-2 ring-amber-400 scale-125 bg-amber-50 dark:bg-amber-900/40' : ''}`}
+                  ? 'w-11 h-11 sm:w-12 sm:h-12 text-xl sm:text-2xl min-h-[44px] min-w-[44px] bg-slate-100 dark:bg-slate-800/90 hover:bg-amber-100/70 dark:hover:bg-amber-950/60 active:bg-amber-200/80 dark:active:bg-slate-700 text-slate-800 dark:text-white border border-slate-200 dark:border-slate-700/80'
+                  : 'w-12 h-12 sm:w-13 sm:h-13 text-xl sm:text-2xl min-h-[48px] min-w-[48px] bg-white dark:bg-slate-800 hover:bg-amber-50 dark:hover:bg-slate-700 active:bg-amber-100 dark:active:bg-slate-650 text-slate-800 dark:text-white border border-slate-200 dark:border-slate-700 shadow-xs'
+              } ${
+                isPressed
+                  ? 'ring-2 ring-amber-400 scale-125 bg-amber-100 dark:bg-amber-900/60 shadow-md shadow-amber-500/20'
+                  : 'hover:border-amber-400/60 dark:hover:border-amber-500/50'
+              }`}
               title={r.label}
               aria-label={r.label}
             >
-              <span className={`transform transition-transform ${isPressed ? 'scale-125' : ''}`}>
+              <span className={`transform transition-transform select-none ${isPressed ? 'scale-125' : ''}`}>
                 {r.emoji}
               </span>
             </button>

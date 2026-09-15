@@ -853,7 +853,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
 
             {/* Bilah Reaksi Semangat Guru (Aktif di Ruang Tunggu Pra-Kuis maupun Saat Kuis Berlangsung) */}
             {session.status !== 'finished' && (
-              <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-3 sm:px-4 sm:py-3 flex flex-col items-center justify-center gap-2 shadow-lg">
+              <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-3 sm:px-5 sm:py-3.5 flex flex-col items-center justify-center gap-2 shadow-lg max-w-xl mx-auto w-full transition-all">
                 <QuizizzReactionButtonRow
                   sessionId={session.id}
                   senderName={session.teacherName || 'Bapak/Ibu Guru'}
