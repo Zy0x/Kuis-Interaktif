@@ -63,6 +63,56 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
   } | null>(null);
   const [hostCountdownSec, setHostCountdownSec] = useState<number | null>(null);
 
+  // Hitung status pesan obrolan kelas yang sudah dibaca guru (Rule 1, Rule 2 & User Request)
+  const [lastReadChatCount, setLastReadChatCount] = useState<number>(() => {
+    if (typeof window === 'undefined') return 0;
+    try {
+      const saved = sessionStorage.getItem(`kuis_host_chat_read_count_${session.id}`);
+      return saved !== null ? parseInt(saved, 10) || 0 : 0;
+    } catch {
+      return 0;
+    }
+  });
+
+  // Sinkronisasi otomatis pesan belum dibaca ketika laci obrolan dibuka atau pesan baru masuk
+  useEffect(() => {
+    const currentTotal = session.chatMessages?.length || 0;
+    if (isChatDrawerOpen) {
+      setLastReadChatCount(currentTotal);
+      try {
+        sessionStorage.setItem(`kuis_host_chat_read_count_${session.id}`, String(currentTotal));
+      } catch {}
+    } else if (lastReadChatCount > currentTotal) {
+      // Jika histori pesan berkurang / di-reset
+      setLastReadChatCount(currentTotal);
+      try {
+        sessionStorage.setItem(`kuis_host_chat_read_count_${session.id}`, String(currentTotal));
+      } catch {}
+    }
+  }, [isChatDrawerOpen, session.chatMessages?.length, session.id, lastReadChatCount]);
+
+  const totalChatMessages = session.chatMessages?.length || 0;
+  const unreadChatCount = isChatDrawerOpen ? 0 : Math.max(0, totalChatMessages - lastReadChatCount);
+
+  const handleOpenChatDrawer = () => {
+    playClick();
+    setIsChatDrawerOpen(true);
+    const currentTotal = session.chatMessages?.length || 0;
+    setLastReadChatCount(currentTotal);
+    try {
+      sessionStorage.setItem(`kuis_host_chat_read_count_${session.id}`, String(currentTotal));
+    } catch {}
+  };
+
+  const handleCloseChatDrawer = () => {
+    setIsChatDrawerOpen(false);
+    const currentTotal = session.chatMessages?.length || 0;
+    setLastReadChatCount(currentTotal);
+    try {
+      sessionStorage.setItem(`kuis_host_chat_read_count_${session.id}`, String(currentTotal));
+    } catch {}
+  };
+
   const isTeacherLed = session.settings?.executionMode === 'teacher_led';
 
   // Synchronize display question index with session
@@ -445,10 +495,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
               {session.status !== 'finished' && (
                 <button
                   type="button"
-                  onClick={() => {
-                    playClick();
-                    setIsChatDrawerOpen(true);
-                  }}
+                  onClick={handleOpenChatDrawer}
                   className={`relative p-2.5 sm:px-3 py-2 rounded-xl border text-xs font-bold min-h-[44px] flex items-center gap-1.5 transition-colors ${
                     session.isChatMuted || session.settings?.isChatMuted
                       ? 'border-rose-500/40 bg-rose-500/10 text-rose-300 hover:bg-rose-500/20'
@@ -459,9 +506,9 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                 >
                   <MessageSquare className="w-4 h-4 text-blue-400" />
                   <span className="hidden md:inline">Chat Kelas</span>
-                  {session.chatMessages && session.chatMessages.length > 0 && (
-                    <span className="px-1.5 py-0.2 rounded-full bg-blue-500 text-white text-[10px] font-black">
-                      {session.chatMessages.length}
+                  {unreadChatCount > 0 && (
+                    <span className="px-1.5 py-0.5 rounded-full bg-blue-500 text-white text-[10px] font-black animate-scale-in">
+                      {unreadChatCount > 99 ? '99+' : unreadChatCount}
                     </span>
                   )}
                 </button>
@@ -1277,17 +1324,14 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
         sessionId={session.id}
         chatMessages={session.chatMessages}
         position="top-right"
-        onOpenChat={() => {
-          playClick();
-          setIsChatDrawerOpen(true);
-        }}
+        onOpenChat={handleOpenChatDrawer}
         currentUserName={session.teacherName || 'Guru (Host)'}
       />
 
       {/* Laci Obrolan Interaktif Guru (Teacher Chat Drawer) */}
       <TeacherChatDrawer
         isOpen={isChatDrawerOpen}
-        onClose={() => setIsChatDrawerOpen(false)}
+        onClose={handleCloseChatDrawer}
         sessionId={session.id}
         teacherName={session.teacherName || 'Guru (Host)'}
         isChatMuted={Boolean(session.isChatMuted || session.settings?.isChatMuted)}

@@ -1,6 +1,18 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.22] - 2026-09-15
+### Reset Badge Indikator Chat Belum Dibaca pada Layar Kendali Guru (Rule 1, Rule 2, Rule 4 & Rule 15)
+
+#### 1. Sinkronisasi Status Baca Obrolan Kelas (`WaygroundHostView.tsx`)
+- **Pembersihan Hitungan Setelah Dibaca**: Memperbaiki tombol *Chat Kelas* pada papan kendali guru agar lencana hitungan angka (`badge`) otomatis hilang ketika laci obrolan dibuka atau pesan telah dibaca guru.
+- **Indikator Pesan Baru Dinamis**: Jika terdapat pesan obrolan baru dari siswa saat laci obrolan sedang tertutup, lencana angka akan muncul kembali dan hanya menampilkan jumlah pesan baru yang belum dibaca (`unread count`), bukan total akumulasi seluruh pesan.
+- **Persistensi Sesi Lokal (`sessionStorage`)**: Menyimpan riwayat status baca pesan per ID sesi sehingga status pesan yang telah dibaca tetap terjaga dan tidak kembali muncul saat layar disegarkan (*refresh*).
+
+#### 2. Pembaruan Versi & Cache PWA (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.22` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.22` (`public/sw.js`).
+
 ## [2.4.21] - 2026-09-15
 ### Peningkatan Toast Notifikasi Chat Reaktif di Layar Lebar & Arena Smartboard (Rule 1, Rule 2, Rule 5 & Rule 15)
 
