@@ -1,6 +1,25 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.45] - 2026-09-15
+### Peningkatan Sinkronisasi Google OAuth & Panduan Autentikasi Jaringan Lokal (Rule 1, Rule 9, Rule 10 & Rule 15)
+
+#### 1. Sinkronisasi Reaktif Sesi OAuth (`App.tsx` & `supabaseClient.ts`)
+- **Integrasi `onAuthStateChange` (`App.tsx`)**: Menambahkan listener reaktif `supabase.auth.onAuthStateChange` untuk mendeteksi event `SIGNED_IN` secara instan begitu pertukaran kode PKCE selesai dilakukan oleh Supabase Auth. Hal ini mengeliminasi masalah *race condition* atau latensi jaringan lambat pada smartphone/HP saat diarahkan kembali dari halaman login Google.
+- **Dukungan `explicitSession` (`supabaseClient.ts`)**: Fungsi `syncOAuthUserSession` kini dapat menerima objek sesi langsung dari pendengar event status autentikasi, mempercepat pemuatan profil guru maupun siswa tanpa harus menunggu panggilan ganda `getSession()`.
+
+#### 2. Dokumentasi & Solusi Pengujian IP LAN / Jaringan Lokal (`docs/panduan-integrasi-google-oauth.md`)
+- **Penjelasan Akar Masalah Whitelist Supabase**: Menambahkan panduan komprehensif Bab 4 mengenai penyebab gagalnya pengalihan pada IP lokal (misalnya `http://192.168.1.9:5173`) karena batasan keamanan *Redirect URLs* bawaan Supabase.
+- **Pola Pola Wildcard Redirect URLs**: Menyediakan daftar URL yang wajib ditambahkan ke *Redirect URLs* Supabase Dashboard:
+  - `http://192.168.1.9:5173/**`
+  - `http://192.168.1.*:5173/**`
+  - `http://192.168.*.*:5173/**`
+- **Klarifikasi Google Cloud Console**: Menjelaskan bahwa Google Cloud Console tidak perlu dan tidak boleh diisi alamat IP lokal (karena Google melarang IP mentah), melainkan seluruh pengalihan kembali ke perangkat dikelola langsung oleh Supabase Auth.
+
+#### 3. Pembaruan Versi & Cache PWA (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.45` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.45` (`public/sw.js`).
+
 ## [2.4.44] - 2026-09-15
 ### Perbaikan Presisi Reaksi Emoji & Proteksi Anti-Spam Penumpukan (Rule 1, Rule 2, Rule 5, Rule 14 & Rule 15)
 

@@ -1,4 +1,4 @@
-﻿# Panduan Integrasi Google OAuth dengan Supabase
+# Panduan Integrasi Google OAuth dengan Supabase
 
 Dokumen ini menjelaskan langkah demi langkah untuk mengonfigurasi autentikasi Google (*Google OAuth 2.0*) pada platform Kuis Interaktif berbasis Supabase Auth.
 
@@ -53,13 +53,17 @@ Dokumen ini menjelaskan langkah demi langkah untuk mengonfigurasi autentikasi Go
      * **Client Secret**: Tempelkan Client Secret dari Google Cloud Console.
    * Klik tombol **Save**.
 
-3. **Konfigurasi Redirect URLs**:
+3. **Konfigurasi Redirect URLs (Sangat Penting untuk Akses Lokal & HP)**:
    * Di menu navigasi samping, klik **Authentication** > **URL Configuration**.
    * **Site URL**: Masukkan alamat situs utama Anda (contoh: `http://localhost:5173` untuk lokal atau domain produksi Anda).
-   * **Redirect URLs**: Tambahkan pola URL berikut:
+   * **Redirect URLs**: Tambahkan pola URL berikut ke dalam daftar putih (*whitelist*):
      * `http://localhost:5173/**`
+     * `http://127.0.0.1:5173/**`
+     * `http://192.168.1.9:5173/**` *(sesuaikan dengan IP komputer Anda)*
+     * `http://192.168.1.*:5173/**` *(wildcard subnet 192.168.1.x)*
+     * `http://192.168.*.*:5173/**` *(wildcard seluruh jaringan lokal Wi-Fi)*
      * `http://localhost:3000/**`
-     * `https://*.vercel.app/**` (atau domain kustom Anda)
+     * `https://*.vercel.app/**` (atau domain kustom produksi Anda)
    * Klik tombol **Save**.
 
 ---
@@ -77,3 +81,33 @@ Dokumen ini menjelaskan langkah demi langkah untuk mengonfigurasi autentikasi Go
 
 3. **Pembersihan URL Parameter**:
    * Token dan parameter pengalihan (`oauth_callback`, `code`) dibersihkan secara transparan melalui `window.history.replaceState` untuk menjaga estetika dan kenyamanan pengguna.
+
+---
+
+## 4. Troubleshooting Pengujian di Jaringan Lokal & Smartphone (IP LAN `192.168.x.x:5173`)
+
+### Pertanyaan: Mengapa saat login Google dari HP (`http://192.168.1.9:5173`) gagal diarahkan kembali ke web?
+**Penyebab:**
+1. **Supabase Whitelist**: Ketika tombol Login Google ditekan pada perangkat HP di alamat `http://192.168.1.9:5173`, aplikasi meminta Supabase untuk mengarahkan kembali ke `http://192.168.1.9:5173/?oauth_callback=1...`.
+2. Jika alamat `http://192.168.1.9:5173/**` belum didaftarkan di **Supabase Dashboard > Authentication > URL Configuration > Redirect URLs**, Supabase demi alasan keamanan **menolak** pengalihan tersebut.
+3. Supabase kemudian mengalihkan browser ke **Site URL** bawaan (`http://localhost:5173/`).
+4. Pada smartphone/HP Anda, `localhost` mengacu pada perangkat smartphone itu sendiri (bukan komputer host Vite), sehingga peramban HP memunculkan pesan kesalahan: *"ERR_CONNECTION_REFUSED"* atau *"Situs ini tidak dapat dijangkau"*.
+
+### Apakah IP `192.168.1.9` perlu dimasukkan ke Google Cloud Console?
+**Jawabannya: TIDAK.**
+* Google Cloud Console secara sistem **menolak** alamat IP mentah (*Raw IP Addresses*) pada kolom *Authorized JavaScript Origins*.
+* Dalam arsitektur Supabase Auth, Google **hanya** berkomunikasi dengan domain Supabase:
+  `Authorized redirect URIs`: `https://<YOUR-PROJECT-ID>.supabase.co/auth/v1/callback`
+* Google mengembalikan data autentikasi ke Supabase Cloud, kemudian Supabase Cloud yang bertugas mengarahkan kembali ke HP/laptop Anda.
+* Oleh karena itu, **Anda hanya perlu menambahkan URL IP lokal di Dashboard Supabase**, bukan di Google Cloud Console!
+
+### Solusi Cepat (3 Langkah):
+1. Buka [Dashboard Supabase](https://supabase.com/dashboard) > Masuk ke project Anda.
+2. Buka menu **Authentication** > **URL Configuration**.
+3. Di bagian **Redirect URLs**, klik **Add URL** dan masukkan:
+   * `http://192.168.1.9:5173/**`
+   * `http://192.168.1.*:5173/**`
+   * `http://192.168.*.*:5173/**`
+4. Klik **Save**.
+5. Coba kembali login Google dari smartphone atau browser di jaringan yang sama — pengalihan kini akan kembali mulus ke `http://192.168.1.9:5173/`!
+

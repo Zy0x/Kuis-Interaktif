@@ -9,7 +9,7 @@ import { QuizHome } from './components/home/QuizHome';
 import { StudentLobby } from './components/lobby/StudentLobby';
 import type { AuthModalTab } from './components/auth/UnifiedAuthModal';
 import type { PlayQuizSessionOptions } from './components/teacher/PlayQuizModal';
-import { DataManager } from './lib/supabaseClient';
+import { DataManager, supabase } from './lib/supabaseClient';
 import { useSoundEffects } from './hooks/useSoundEffects';
 import { useBackHandler } from './lib/navigationHistory';
 import { useTheme } from './hooks/useTheme';
@@ -461,14 +461,15 @@ export const App: React.FC = () => {
   // Sinkronisasi Sesi Google OAuth saat kembali dari redirect login Google
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const isOAuthReturn =
-      window.location.search.includes('oauth_callback') ||
-      window.location.search.includes('code=') ||
-      window.location.hash.includes('access_token');
 
-    if (isOAuthReturn) {
-      DataManager.syncOAuthUserSession().then((result) => {
+    let isHandled = false;
+
+    const performOAuthSync = async (explicitSession?: any) => {
+      if (isHandled) return;
+      try {
+        const result = await DataManager.syncOAuthUserSession(explicitSession);
         if (result) {
+          isHandled = true;
           if (result.needsOnboarding) {
             setOauthOnboardingData({ role: result.role, profile: result.profile });
           } else {
@@ -478,13 +479,35 @@ export const App: React.FC = () => {
               handleStudentLoginSuccess(result.profile as PlayerProfile);
             }
           }
+          try {
+            const cleanUrl = window.location.pathname;
+            window.history.replaceState({}, document.title, cleanUrl);
+          } catch {}
         }
-        try {
-          const cleanUrl = window.location.pathname;
-          window.history.replaceState({}, document.title, cleanUrl);
-        } catch {}
-      });
+      } catch (err) {
+        console.warn('OAuth sync notice:', err);
+      }
+    };
+
+    const isOAuthReturn =
+      window.location.search.includes('oauth_callback') ||
+      window.location.search.includes('code=') ||
+      window.location.hash.includes('access_token');
+
+    if (isOAuthReturn) {
+      performOAuthSync();
     }
+
+    // Dengarkan event onAuthStateChange untuk pertukaran PKCE instan (terutama di jaringan HP/LAN)
+    const authSub = supabase?.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session?.user && !isHandled) {
+        performOAuthSync(session);
+      }
+    });
+
+    return () => {
+      authSub?.data?.subscription?.unsubscribe();
+    };
   }, []);
 
   const handleFullLogout = async () => {

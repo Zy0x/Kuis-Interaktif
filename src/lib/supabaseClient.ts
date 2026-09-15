@@ -1972,12 +1972,17 @@ export const DataManager = {
     }
   },
 
-  async syncOAuthUserSession(): Promise<{ role: 'teacher' | 'student'; profile: TeacherProfile | PlayerProfile; needsOnboarding?: boolean } | null> {
+  async syncOAuthUserSession(explicitSession?: any): Promise<{ role: 'teacher' | 'student'; profile: TeacherProfile | PlayerProfile; needsOnboarding?: boolean } | null> {
     if (!supabase) return null;
     try {
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError || !session || !session.user) return null;
+      let session = explicitSession;
+      if (!session) {
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError || !sessionData?.session || !sessionData.session.user) return null;
+        session = sessionData.session;
+      }
       const user = session.user;
+      if (!user) return null;
 
       // Cek apakah ada intended role dari URL atau localStorage
       let intendedRole: 'teacher' | 'student' | null = null;
