@@ -1312,9 +1312,6 @@ export const DataManager = {
       player.starsEarned += result.stars;
       localStorage.setItem(STORAGE_KEY_PLAYER, JSON.stringify(player));
       
-      // Save to Leaderboard
-      const leaderboardStr = localStorage.getItem(STORAGE_KEY_LEADERBOARD) || '[]';
-      const leaderboard: LeaderboardEntry[] = JSON.parse(leaderboardStr);
       const newEntry: LeaderboardEntry = {
         id: 'entry_' + Date.now(),
         quizId: result.quizId,
@@ -1324,14 +1321,39 @@ export const DataManager = {
         stars: result.stars,
         timeSpentSec: result.timeSpentSec,
         dateStr: new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }),
+        sessionId: result.sessionId,
+        pinCode: result.pinCode,
+        isPrivateSession: Boolean(result.sessionId),
       };
-      leaderboard.unshift(newEntry);
-      localStorage.setItem(STORAGE_KEY_LEADERBOARD, JSON.stringify(leaderboard));
+
+      if (result.sessionId) {
+        // Simpan ke isolated session leaderboard khusus PIN/Sesi ini
+        const sessionKey = `kuis_session_leaderboard_${result.sessionId}`;
+        const sessionLeaderboardStr = localStorage.getItem(sessionKey) || '[]';
+        const sessionLeaderboard: LeaderboardEntry[] = JSON.parse(sessionLeaderboardStr);
+        const existingIdx = sessionLeaderboard.findIndex(
+          (e) => e.nickname.trim().toLowerCase() === player.nickname.trim().toLowerCase()
+        );
+        if (existingIdx >= 0) {
+          if (newEntry.score >= sessionLeaderboard[existingIdx].score) {
+            sessionLeaderboard[existingIdx] = newEntry;
+          }
+        } else {
+          sessionLeaderboard.unshift(newEntry);
+        }
+        localStorage.setItem(sessionKey, JSON.stringify(sessionLeaderboard));
+      } else {
+        // Kuis Publik / Mandiri Bebas: Simpan ke General Leaderboard
+        const leaderboardStr = localStorage.getItem(STORAGE_KEY_LEADERBOARD) || '[]';
+        const leaderboard: LeaderboardEntry[] = JSON.parse(leaderboardStr);
+        leaderboard.unshift(newEntry);
+        localStorage.setItem(STORAGE_KEY_LEADERBOARD, JSON.stringify(leaderboard.slice(0, 50)));
+      }
     } catch (e) {
       console.warn('Local storage save error:', e);
     }
 
-    const attemptPayload = {
+    const attemptPayload: Record<string, any> = {
       quiz_id: result.quizId,
       score: result.score,
       stars: result.stars,
@@ -1341,6 +1363,22 @@ export const DataManager = {
       player_nickname: player.nickname,
       player_avatar: player.avatarId,
     };
+
+    if (result.sessionId) {
+      // Pastikan data peserta sesi di Supabase juga tersinkronisasi sebagai selesai
+      this.recordSessionAnswer(
+        result.sessionId,
+        player.nickname,
+        {
+          questionId: 'quiz_completed',
+          questionIndex: result.totalCount - 1,
+          textAnswer: 'Selesai',
+          isCorrect: true,
+          timeSpentSec: result.timeSpentSec,
+          pointsEarned: result.score,
+        }
+      ).catch(() => {});
+    }
 
     if (supabase && (typeof navigator === 'undefined' || navigator.onLine)) {
       try {
@@ -1355,9 +1393,112 @@ export const DataManager = {
     }
   },
 
+  // 8.1. Get Isolated Leaderboard for a Specific Teacher Session (PIN-Scoped Private Leaderboard)
+  async getSessionLeaderboard(sessionIdOrPin: string, pinCode?: string): Promise<LeaderboardEntry[]> {
+    const cleanKey = (sessionIdOrPin || '').trim();
+    if (!cleanKey && !pinCode) return [];
+    
+    // 1. Coba query dari Supabase quiz_session_participants jika online
+    if (supabase) {
+      try {
+        let targetSessionId = cleanKey;
 
-  // 8. Get Leaderboard for a Quiz
-  async getLeaderboard(quizId: string): Promise<LeaderboardEntry[]> {
+        // Jika cleanKey bukan UUID (misal berupa PIN), coba cari id sesinya
+        if (cleanKey.length === 4 || cleanKey.length === 6 || pinCode) {
+          const pinToLookup = pinCode || cleanKey;
+          const { data: sessionRow } = await supabase
+            .from('quiz_sessions')
+            .select('id')
+            .eq('pin_code', pinToLookup)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          if (sessionRow?.id) {
+            targetSessionId = sessionRow.id;
+          }
+        }
+
+        const { data, error } = await supabase
+          .from('quiz_session_participants')
+          .select('id, session_id, student_name, avatar_id, score, stars, time_spent_sec, finished, last_active_at, created_at')
+          .eq('session_id', targetSessionId)
+          .order('score', { ascending: false })
+          .order('time_spent_sec', { ascending: true });
+
+        if (!error && data && data.length > 0) {
+          return data.map((d) => ({
+            id: d.id,
+            quizId: '',
+            nickname: d.student_name || 'Siswa Kelas',
+            avatarId: d.avatar_id || 'owl',
+            score: d.score || 0,
+            stars: d.stars || 0,
+            timeSpentSec: d.time_spent_sec || 0,
+            dateStr: d.last_active_at
+              ? new Date(d.last_active_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })
+              : 'Hari ini',
+            sessionId: d.session_id,
+            pinCode: pinCode,
+            isPrivateSession: true,
+          }));
+        }
+      } catch (err) {
+        console.warn('Supabase getSessionLeaderboard notice:', err);
+      }
+    }
+
+    // 2. Fallback ke penyimpanan sesi lokal (terisolasi per session)
+    try {
+      // Cek isolated session leaderboard storage
+      const sessionLeaderboardKey = `kuis_session_leaderboard_${cleanKey}`;
+      const stored = localStorage.getItem(sessionLeaderboardKey);
+      if (stored) {
+        const parsed: LeaderboardEntry[] = JSON.parse(stored);
+        if (parsed.length > 0) {
+          return parsed.sort((a, b) => b.score - a.score || a.timeSpentSec - b.timeSpentSec);
+        }
+      }
+
+      // Cek dari active sessions participants
+      const existingSessions = this.getActiveSessions();
+      const session = existingSessions.find(
+        (s) => s.id === cleanKey || s.pinCode === cleanKey || (pinCode && s.pinCode === pinCode)
+      );
+
+      if (session && Array.isArray(session.participants) && session.participants.length > 0) {
+        return session.participants
+          .filter((p) => p.finished || p.score > 0 || (p.answers && Object.keys(p.answers).length > 0))
+          .map((p) => ({
+            id: p.id,
+            quizId: session.quizId,
+            nickname: p.name || 'Siswa Kelas',
+            avatarId: p.avatarId || 'owl',
+            score: p.score || 0,
+            stars: p.stars || 0,
+            timeSpentSec: p.timeSpentSec || 0,
+            dateStr: p.lastActiveAt
+              ? new Date(p.lastActiveAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })
+              : 'Hari ini',
+            sessionId: session.id,
+            pinCode: session.pinCode,
+            isPrivateSession: true,
+          }))
+          .sort((a, b) => b.score - a.score || a.timeSpentSec - b.timeSpentSec);
+      }
+    } catch {
+      // Fallback silent
+    }
+
+    // Jika belum ada teman lain yang selesai di sesi ini, kembalikan array kosong (tidak membocorkan dummy publik)
+    return [];
+  },
+
+  // 8. Get Leaderboard for a Quiz (Mendukung Pemisahan Sesi Privat vs Publik)
+  async getLeaderboard(quizId: string, sessionId?: string, pinCode?: string): Promise<LeaderboardEntry[]> {
+    if (sessionId || pinCode) {
+      return this.getSessionLeaderboard(sessionId || pinCode || '', pinCode);
+    }
+
     if (supabase) {
       try {
         const { data, error } = await supabase
@@ -1388,7 +1529,7 @@ export const DataManager = {
     try {
       const stored = localStorage.getItem(STORAGE_KEY_LEADERBOARD);
       let list: LeaderboardEntry[] = stored ? JSON.parse(stored) : [];
-      list = list.filter((e) => e.quizId === quizId);
+      list = list.filter((e) => e.quizId === quizId && !e.isPrivateSession);
 
       if (list.length === 0) {
         list = [

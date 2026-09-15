@@ -5,6 +5,7 @@ import { useBackHandler } from '../../lib/navigationHistory';
 import { copyTextToClipboard } from '../../lib/aiQuestionParser';
 import { ConfirmDeleteModal } from '../common/ConfirmDeleteModal';
 import { QuizCoverDisplay } from '../common/QuizCoverDisplay';
+import { QuizIllustration } from '../shared/QuizIllustration';
 import { PlayQuizModal, type PlayQuizSessionOptions } from './PlayQuizModal';
 import { 
   ArrowLeft, 
@@ -740,16 +741,16 @@ export const QuizDetail: React.FC<QuizDetailProps> = ({
 
                   {/* Image illustration preview */}
                   {q.imageUrl && (
-                    <div className="pt-1">
-                      <img
-                        src={q.imageUrl}
+                    <div className="pt-1 max-w-md">
+                      <QuizIllustration
+                        imageUrl={q.imageUrl}
+                        imageCaption={q.imageCaption}
+                        imagePrompt={q.imagePrompt}
                         alt={q.imageCaption || 'Ilustrasi Soal'}
-                        className="max-h-48 rounded-xl border border-slate-200 dark:border-slate-700 object-cover"
-                        loading="lazy"
+                        imgClassName="max-h-48 rounded-xl border border-slate-200 dark:border-slate-700 object-contain"
+                        enableZoom={true}
+                        playClick={playClick}
                       />
-                      {q.imageCaption && (
-                        <p className="text-[11px] text-slate-500 italic mt-1">{q.imageCaption}</p>
-                      )}
                     </div>
                   )}
 

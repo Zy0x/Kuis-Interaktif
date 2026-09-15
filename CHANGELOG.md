@@ -1,6 +1,31 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.50] - 2026-09-16
+### Modal Zoom Gambar Interaktif, Isolasi Papan Peringkat Sesi Privat & Responsivitas Mobile Dasbor Guru (Rule 1, Rule 2, Rule 4, Rule 5, Rule 7, Rule 8, Rule 9, Rule 10, Rule 11 & Rule 15)
+
+#### 1. Modal Zoom & Lightbox Gambar Interaktif Seluruh Kuis (`ImageZoomModal.tsx` & `QuizIllustration.tsx`)
+- **Lightbox Interaktif Layar Penuh**: Gambar dan diagram pada soal kuis kini dapat diketuk untuk diperbesar secara dinamis melalui modal lightbox beresolusi tinggi.
+- **Kontrol & Gestur Sentuh Lengkap**: Dilengkapi tombol Perbesar (+), Perkecil (-), Reset (100%), dan Tutup; kontrol keyboard (Escape, +, -, 0, R); interaksi seret/pan saat gambar dizoom; serta dukungan penuh *pinch-to-zoom* dan *double-tap* (1x ↔ 2x) pada layar sentuh smartphone dan tablet.
+- **Indikator Sentuh Visual**: Menampilkan lencana melayang halus *"Ketuk untuk perbesar"* berikon `ZoomIn` pada gambar ilustrasi soal (`QuizIllustration`) dengan animasi transisi mikro yang elegan.
+- **Integrasi Menyeluruh**: Diterapkan pada Arena Kuis Siswa (`QuizArena`), Pratinjau Guru (`QuizDetail`), Layar Host (`WaygroundHostView`), Soal Tebak Gambar Misteri (`image_guess`), dan Ulasan Jawaban (`QuizResult`).
+
+#### 2. Isolasi Papan Peringkat Sesi Kuis Privat Guru (`supabaseClient.ts`, `QuizResult.tsx` & `types/quiz.ts`)
+- **Pemisahan Data Papan Peringkat Privat**: Kuis yang diaktifkan atau ditugaskan guru (baik mode Live Interaktif maupun Mode Mandiri/PR berbasis PIN) kini menggunakan penyimpanan data peringkat terisolasi sesuai ID dan PIN sesi (`quiz_session_participants` & `kuis_session_leaderboard_${sessionId}`).
+- **Pencegahan Kebocoran Skor Antar-Kelas**: Nilai dan identitas siswa yang bermain di bawah sesi guru terisolasi dari peringkat kuis umum di beranda utama maupun kelas lain.
+- **Lencana Sesi Privat Guru**: Menampilkan lencana visual eksklusif *"Privat Sesi Guru"* berikon kunci/perisai dan penanda PIN kelas pada tab peringkat di layar hasil pengerjaan kuis.
+- **Pematuhan Pengaturan Visibilitas**: Menghormati opsi `showLeaderboardToStudents` dari guru—jika guru menonaktifkan papan peringkat untuk siswa, tab peringkat otomatis disembunyikan sepenuhnya dari antarmuka hasil murid.
+
+#### 3. Optimasi Responsivitas Mobile Dasbor Guru & Eliminasi Redundansi Tab Kuis Aktif (`TeacherDashboard.tsx`)
+- **Eliminasi Redundansi Tab Kuis Aktif**: Banner sesi aktif di bagian atas Dasbor Guru kini secara cerdas disembunyikan saat pengguna membuka tab *"Kuis Aktif & Sesi Live"*, menghilangkan duplikasi tampilan dengan kartu sesi di dalam daftar. Banner atas tetap tampil sebagai penyorot saat guru menjelajahi tab *"Koleksi Kuis"*.
+- **Header Mobile Bebas Terpotong**: Mengoptimalkan struktur bar atas pada resolusi mobile sempit (360px - 400px), sehingga teks judul "Dashboard Guru" tidak lagi terpotong menjadi "Dashboa...".
+- **Penyelarasan Aksi & Navigasi Tab**: Ikon duplikat database di header dialihkan secara rapi ke tab navigasi utama (`Database & Backup`), dan filter status sesi kini mendukung gulir horizontal halus (*touch-friendly no-scrollbar*).
+- **Tata Letak Kartu Sesi Stabil**: Tombol aksi sekunder (*Rekap*, *Perpanjang*, *Akhiri Sesi*) pada kartu sesi live/mandiri menggunakan skala tipografi adaptif dan batas minimum sentuh 44×44 px tanpa risiko distorsi atau teks bertumpuk.
+
+#### 4. Pembaruan Versi & Cache PWA (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.50` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.50` (`public/sw.js`).
+
 ## [2.4.49] - 2026-09-15
 ### Diferensiasi Visual Mode Mandiri/PR, Hitung Mundur Tenggat Akurat & Pengalih Multi-Sesi Dasbor Guru (Rule 1, Rule 2, Rule 4, Rule 5, Rule 7, Rule 9, Rule 11 & Rule 15)
 

@@ -169,6 +169,8 @@ export interface QuizAttemptResult {
   timeSpentSec: number;
   answers: QuizAttemptAnswer[];
   completedAt: string;
+  sessionId?: string;
+  pinCode?: string;
 }
 
 export interface LeaderboardEntry {
@@ -180,6 +182,9 @@ export interface LeaderboardEntry {
   stars: number;
   timeSpentSec: number;
   dateStr: string;
+  sessionId?: string;
+  pinCode?: string;
+  isPrivateSession?: boolean;
 }
 
 // ==========================================================

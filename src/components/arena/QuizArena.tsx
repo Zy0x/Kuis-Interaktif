@@ -51,10 +51,12 @@ import {
   LogOut,
   Trophy,
   EyeOff,
-  Sparkles
+  Sparkles,
+  ZoomIn
 } from 'lucide-react';
 import { useAntiReaction } from '../../lib/reactionPreferences';
 import { QuizIllustration } from '../shared/QuizIllustration';
+import { ImageZoomModal } from '../common/ImageZoomModal';
 import { QuizizzReactionOverlay } from '../common/QuizizzReactionOverlay';
 import { FloatingReactionButton } from '../common/FloatingReactionButton';
 import { ZoomChatToast } from '../common/ZoomChatToast';
@@ -490,9 +492,11 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   // 2. Mystery Image Reveal state (3x3 grid)
   const [revealedTiles, setRevealedTiles] = useState<Set<number>>(new Set());
   const [mysteryImgError, setMysteryImgError] = useState(false);
+  const [isMysteryZoomOpen, setIsMysteryZoomOpen] = useState(false);
 
   useEffect(() => {
     setMysteryImgError(false);
+    setIsMysteryZoomOpen(false);
   }, [currentIndex]);
 
   // 3. Matching Pairs state
@@ -1775,12 +1779,22 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
           {/* Illustration Container (Special Mystery Grid for image_guess) */}
           {question.type === 'image_guess' ? (
             <div className="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-850 max-h-56 sm:max-h-64 flex flex-col items-center justify-center p-2 flex-shrink-0 select-none">
-              <div className="relative max-h-48 sm:max-h-56 w-auto aspect-video max-w-full rounded-xl overflow-hidden flex items-center justify-center bg-slate-200 dark:bg-slate-800">
+              <div
+                className={`relative max-h-48 sm:max-h-56 w-auto aspect-video max-w-full rounded-xl overflow-hidden flex items-center justify-center bg-slate-200 dark:bg-slate-800 ${
+                  (revealedTiles.size === 9 || isAnswerConfirmed) && question.imageUrl && !mysteryImgError ? 'cursor-pointer group' : ''
+                }`}
+                onClick={() => {
+                  if ((revealedTiles.size === 9 || isAnswerConfirmed) && question.imageUrl && !mysteryImgError) {
+                    if (playClick) playClick();
+                    setIsMysteryZoomOpen(true);
+                  }
+                }}
+              >
                 {question.imageUrl && !mysteryImgError ? (
                   <img
                     src={question.imageUrl}
                     alt="Gambar Misteri"
-                    className="max-h-48 sm:max-h-56 w-auto object-contain mx-auto"
+                    className="max-h-48 sm:max-h-56 w-auto object-contain mx-auto transition-transform duration-200 group-hover:scale-[1.02]"
                     onError={() => setMysteryImgError(true)}
                   />
                 ) : (
@@ -1816,6 +1830,25 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                     );
                   })}
                 </div>
+
+                {/* Tombol Perbesar Gambar Misteri jika semua kotak telah terbuka atau kuis selesai */}
+                {(revealedTiles.size === 9 || isAnswerConfirmed) && question.imageUrl && !mysteryImgError && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (playClick) playClick();
+                      setIsMysteryZoomOpen(true);
+                    }}
+                    className="absolute bottom-2 right-2 z-20 flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-900/80 hover:bg-slate-900 text-white text-[10px] sm:text-xs font-semibold backdrop-blur-md border border-white/25 shadow-md transition-all active:scale-95 min-h-[32px] sm:min-h-[36px]"
+                    title="Ketuk untuk memperbesar gambar misteri"
+                    aria-label="Perbesar Tampilan Gambar Misteri"
+                  >
+                    <ZoomIn className="w-3.5 h-3.5 text-blue-300 flex-shrink-0" />
+                    <span className="hidden xs:inline">Ketuk untuk perbesar</span>
+                    <span className="xs:hidden">Perbesar</span>
+                  </button>
+                )}
               </div>
 
               {/* Mystery Grid Helper Buttons */}
@@ -1846,6 +1879,8 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                 alt="Ilustrasi Soal"
                 imgClassName="max-h-32 sm:max-h-48 xl:max-h-60 w-auto rounded-xl object-contain mx-auto"
                 enableWikipedia={true}
+                enableZoom={true}
+                playClick={playClick}
               />
             </div>
           ) : question.imageCaption ? (
@@ -2963,6 +2998,18 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
           playClick={playClick || (() => {})}
           isNotificationMuted={isChatNotificationMuted}
           onToggleNotificationMute={setIsChatNotificationMuted}
+        />
+      )}
+
+      {/* Modal Zoom Khusus Soal Tebak Gambar Misteri */}
+      {question.type === 'image_guess' && question.imageUrl && (
+        <ImageZoomModal
+          isOpen={isMysteryZoomOpen}
+          imageUrl={question.imageUrl}
+          imageCaption={question.imageCaption}
+          alt="Gambar Misteri Diperbesar"
+          onClose={() => setIsMysteryZoomOpen(false)}
+          playClick={playClick}
         />
       )}
 

@@ -396,6 +396,7 @@ export const App: React.FC = () => {
 
   const handleGoHome = () => {
     setActiveQuiz(null);
+    setActiveSession(null);
     clearNavigationState();
     setCurrentScreen('home');
   };
@@ -919,6 +920,13 @@ export const App: React.FC = () => {
             onToggleTheme={toggleTheme}
             playClick={playClick}
             playCelebration={playCelebration}
+            sessionId={activeSession?.id}
+            pinCode={activeSession?.pinCode || activeQuiz.pinCode}
+            showLeaderboardToStudents={
+              activeSessionSettings?.showLeaderboardToStudents !== undefined
+                ? activeSessionSettings.showLeaderboardToStudents
+                : (activeQuiz.defaultSettings?.showLeaderboardToStudents ?? true)
+            }
           />
         </React.Suspense>
       )}

@@ -4,6 +4,7 @@ import type { Quiz, QuizAttemptAnswer, LeaderboardEntry } from '../../types/quiz
 import { DataManager } from '../../lib/supabaseClient';
 import { copyTextToClipboard } from '../../lib/aiQuestionParser';
 import { ThemeToggle } from '../common/ThemeToggle';
+import { QuizIllustration } from '../shared/QuizIllustration';
 import { 
   Trophy, 
   RotateCcw, 
@@ -13,7 +14,9 @@ import {
   XCircle, 
   HelpCircle, 
   Award, 
-  Share2 
+  Share2,
+  Lock,
+  ShieldCheck
 } from 'lucide-react';
 
 interface QuizResultProps {
@@ -26,6 +29,9 @@ interface QuizResultProps {
   playCelebration: () => void;
   isDark?: boolean;
   onToggleTheme?: () => void;
+  sessionId?: string;
+  pinCode?: string;
+  showLeaderboardToStudents?: boolean;
 }
 
 export const QuizResult: React.FC<QuizResultProps> = ({
@@ -38,10 +44,14 @@ export const QuizResult: React.FC<QuizResultProps> = ({
   playCelebration,
   isDark = false,
   onToggleTheme = () => {},
+  sessionId,
+  pinCode,
+  showLeaderboardToStudents = true,
 }) => {
   const [activeTab, setActiveTab] = useState<'review' | 'leaderboard'>('review');
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [copiedShare, setCopiedShare] = useState(false);
+  const isPrivateSession = Boolean(sessionId || pinCode);
 
   const correctCount = answers.filter((a) => a.isCorrect).length;
   const totalCount = quiz.questions.length;
@@ -94,12 +104,14 @@ export const QuizResult: React.FC<QuizResultProps> = ({
       timeSpentSec: totalTimeSpent,
       answers,
       completedAt: new Date().toISOString(),
+      sessionId,
+      pinCode,
     };
 
     DataManager.recordQuizAttempt(resultObj).then(() => {
-      DataManager.getLeaderboard(quiz.id).then(setLeaderboard);
+      DataManager.getLeaderboard(quiz.id, sessionId, pinCode).then(setLeaderboard);
     });
-  }, [quiz, score, stars, correctCount, totalCount, totalTimeSpent, answers, playCelebration]);
+  }, [quiz, score, stars, correctCount, totalCount, totalTimeSpent, answers, playCelebration, sessionId, pinCode]);
 
   const handleShare = async () => {
     playClick();
@@ -165,38 +177,45 @@ export const QuizResult: React.FC<QuizResultProps> = ({
         </div>
 
         {/* Tab Selector */}
-        <div className="flex rounded-xl bg-white dark:bg-slate-900 p-1 border border-slate-200 dark:border-slate-800 shadow-sm">
-          <button
-            type="button"
-            onClick={() => {
-              playClick();
-              setActiveTab('review');
-            }}
-            className={`flex-1 py-2.5 rounded-lg font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all min-h-[44px] ${
-              activeTab === 'review'
-                ? 'bg-blue-600 text-white shadow-sm'
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
-            }`}
-          >
-            <HelpCircle className="w-4 h-4" />
-            <span>Pembahasan Soal</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              playClick();
-              setActiveTab('leaderboard');
-            }}
-            className={`flex-1 py-2.5 rounded-lg font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all min-h-[44px] ${
-              activeTab === 'leaderboard'
-                ? 'bg-blue-600 text-white shadow-sm'
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
-            }`}
-          >
-            <Trophy className="w-4 h-4" />
-            <span>Papan Peringkat</span>
-          </button>
-        </div>
+        {showLeaderboardToStudents && (
+          <div className="flex rounded-xl bg-white dark:bg-slate-900 p-1 border border-slate-200 dark:border-slate-800 shadow-sm">
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                setActiveTab('review');
+              }}
+              className={`flex-1 py-2.5 rounded-lg font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all min-h-[44px] ${
+                activeTab === 'review'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+              }`}
+            >
+              <HelpCircle className="w-4 h-4" />
+              <span>Pembahasan Soal</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                setActiveTab('leaderboard');
+              }}
+              className={`flex-1 py-2.5 rounded-lg font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all min-h-[44px] ${
+                activeTab === 'leaderboard'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+              }`}
+            >
+              <Trophy className="w-4 h-4" />
+              <span>Papan Peringkat</span>
+              {isPrivateSession && (
+                <span className="ml-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300">
+                  PIN
+                </span>
+              )}
+            </button>
+          </div>
+        )}
 
         {/* Tab 1: Detailed Question Review */}
         {activeTab === 'review' && (
@@ -261,6 +280,17 @@ export const QuizResult: React.FC<QuizResultProps> = ({
                     {q.text}
                   </p>
 
+                  {q.imageUrl && (
+                    <div className="max-w-md mx-auto my-2 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800">
+                      <QuizIllustration
+                        imageUrl={q.imageUrl}
+                        alt={`Ilustrasi Soal ${idx + 1}`}
+                        enableZoom={true}
+                        playClick={playClick}
+                      />
+                    </div>
+                  )}
+
                   <div className="text-xs space-y-1 bg-slate-50 dark:bg-slate-850 p-3 rounded-lg border border-slate-100 dark:border-slate-800">
                     <p className="text-slate-600 dark:text-slate-300">
                       Jawabanmu:{' '}
@@ -304,48 +334,75 @@ export const QuizResult: React.FC<QuizResultProps> = ({
         )}
 
         {/* Tab 2: Leaderboard */}
-        {activeTab === 'leaderboard' && (
+        {showLeaderboardToStudents && activeTab === 'leaderboard' && (
           <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3 animate-fade-in">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                <Award className="w-4 h-4 text-amber-500" /> 10 Nilai Tertinggi
-              </h3>
-              <span className="text-[11px] text-slate-400 dark:text-slate-500">Pembaruan Langsung</span>
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div>
+                <h3 className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
+                  <Award className="w-4 h-4 text-amber-500" />
+                  {isPrivateSession
+                    ? `Papan Peringkat Kelas (PIN: ${pinCode || 'Sesi Guru'})`
+                    : 'Papan Peringkat Umum (10 Nilai Tertinggi)'}
+                </h3>
+                {isPrivateSession && (
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1">
+                    <ShieldCheck className="w-3.5 h-3.5 text-indigo-500 inline-block" />
+                    <span>Hanya peserta yang bergabung dengan sesi/PIN ini</span>
+                  </p>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {isPrivateSession ? (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200/80 dark:border-indigo-800/80">
+                    <Lock className="w-3 h-3 text-indigo-500" />
+                    Privat Sesi Guru
+                  </span>
+                ) : (
+                  <span className="text-[11px] text-slate-400 dark:text-slate-500">Pembaruan Langsung</span>
+                )}
+              </div>
             </div>
 
-            <div className="divide-y divide-slate-100 dark:divide-slate-800">
-              {leaderboard.map((entry, idx) => {
-                let medalBadge = <span className="font-bold text-slate-400 text-xs w-6 text-center">{idx + 1}</span>;
-                if (idx === 0) medalBadge = <span className="text-lg">🥇</span>;
-                if (idx === 1) medalBadge = <span className="text-lg">🥈</span>;
-                if (idx === 2) medalBadge = <span className="text-lg">🥉</span>;
+            {leaderboard.length === 0 ? (
+              <div className="text-center py-8 text-slate-400 dark:text-slate-500">
+                <Trophy className="w-10 h-10 mx-auto text-slate-300 dark:text-slate-600 mb-2 opacity-60" />
+                <p className="text-xs font-medium">Belum ada skor yang tercatat di sesi ini.</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                {leaderboard.map((entry, idx) => {
+                  let medalBadge = <span className="font-bold text-slate-400 text-xs w-6 text-center">{idx + 1}</span>;
+                  if (idx === 0) medalBadge = <span className="text-lg">🥇</span>;
+                  if (idx === 1) medalBadge = <span className="text-lg">🥈</span>;
+                  if (idx === 2) medalBadge = <span className="text-lg">🥉</span>;
 
-                return (
-                  <div key={entry.id} className="py-2.5 flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="w-6 flex justify-center flex-shrink-0">{medalBadge}</div>
-                      <div className="min-w-0">
-                        <p className="font-bold text-slate-800 dark:text-slate-200 text-xs sm:text-sm truncate">
-                          {entry.nickname}
-                        </p>
-                        <p className="text-[10px] text-slate-400 dark:text-slate-500">
-                          {entry.dateStr} • {entry.timeSpentSec} detik
-                        </p>
+                  return (
+                    <div key={entry.id} className="py-2.5 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-6 flex justify-center flex-shrink-0">{medalBadge}</div>
+                        <div className="min-w-0">
+                          <p className="font-bold text-slate-800 dark:text-slate-200 text-xs sm:text-sm truncate">
+                            {entry.nickname}
+                          </p>
+                          <p className="text-[10px] text-slate-400 dark:text-slate-500">
+                            {entry.dateStr} • {entry.timeSpentSec} detik
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="text-right flex-shrink-0">
+                        <span className="text-xs sm:text-sm font-extrabold text-blue-600 dark:text-blue-400 block">
+                          {entry.score}
+                        </span>
+                        <span className="text-[10px] text-amber-500 font-medium">
+                          {'⭐'.repeat(entry.stars)}
+                        </span>
                       </div>
                     </div>
-
-                    <div className="text-right flex-shrink-0">
-                      <span className="text-xs sm:text-sm font-extrabold text-blue-600 dark:text-blue-400 block">
-                        {entry.score}
-                      </span>
-                      <span className="text-[10px] text-amber-500 font-medium">
-                        {'⭐'.repeat(entry.stars)}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 

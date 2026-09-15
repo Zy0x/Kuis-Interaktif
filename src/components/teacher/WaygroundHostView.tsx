@@ -7,6 +7,7 @@ import { QuizizzReactionOverlay } from '../common/QuizizzReactionOverlay';
 import { QuizizzReactionButtonRow } from '../common/QuizizzReactionButtonRow';
 import { ZoomChatToast } from '../common/ZoomChatToast';
 import { TeacherChatDrawer } from '../chat/TeacherChatDrawer';
+import { QuizIllustration } from '../shared/QuizIllustration';
 import { 
   ArrowLeft, 
   ArrowRight,
@@ -1207,10 +1208,14 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
 
                 {currentDisplayQuestion.imageUrl && (
                   <div className="max-w-sm mx-auto rounded-2xl overflow-hidden border border-slate-700">
-                    <img
-                      src={currentDisplayQuestion.imageUrl}
-                      alt="Gambar Soal"
-                      className="w-full max-h-60 object-contain bg-slate-950"
+                    <QuizIllustration
+                      imageUrl={currentDisplayQuestion.imageUrl}
+                      imageCaption={currentDisplayQuestion.imageCaption}
+                      imagePrompt={currentDisplayQuestion.imagePrompt}
+                      alt={currentDisplayQuestion.imageCaption || "Gambar Soal"}
+                      imgClassName="w-full max-h-60 object-contain bg-slate-950"
+                      enableZoom={true}
+                      playClick={playClick}
                     />
                   </div>
                 )}
