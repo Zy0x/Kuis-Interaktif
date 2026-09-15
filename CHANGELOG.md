@@ -1,6 +1,18 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.18] - 2026-09-15
+### Preservasi Akurat Nama Pendidik & Asal Sekolah Pasca Login & Sinkronisasi OAuth (Rule 1, Rule 2, Rule 9, Rule 11 & Rule 15)
+
+#### 1. Perbaikan Sinkronisasi Profil Pendidik & Siswa (`supabaseClient.ts`)
+- **Penghapusan Nilai Statis (*Hardcoded Fallback*)**: Menghapus logika lama yang menimpa nama dan asal sekolah pendidik ke nilai bawaan saat login Google OAuth. Nama lengkap dan asal sekolah yang sudah pernah diedit atau disimpan oleh pengguna kini dipertahankan secara mutlak.
+- **Pencarian Multi-Kunci Presisi Cloud (`profiles_teacher` & `profiles_player`)**: Menyempurnakan kueri pencarian profil dengan mencocokkan `auth_user_id`, `id`, atau `email` yang diurutkan berdasarkan riwayat pembaruan terkini (`updated_at DESC`). Dengan demikian, record profil lama dan baru tetap tersinkronisasi tanpa kehilangan data.
+- **Pemberian Hak Kendali Penuh Pengguna**: Sistem kini sepenuhnya memprioritaskan data nama dan asal sekolah yang telah disunting pengguna di Supabase Auth Metadata, database Supabase, maupun penyimpanan lokal.
+
+#### 2. Pembaruan Versi & Cache PWA (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.18` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.18` (`public/sw.js`).
+
 ## [2.4.17] - 2026-09-15
 ### Integrasi Metode Masuk & Daftar Akun dengan Google OAuth Terpadu (Rule 1, Rule 2, Rule 4, Rule 8, Rule 9, Rule 10 & Rule 15)
 

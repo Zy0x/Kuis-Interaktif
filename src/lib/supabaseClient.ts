@@ -1073,11 +1073,13 @@ export const DataManager = {
           return { success: false, error: error.message };
         }
         if (data.user) {
-          const { data: pData } = await supabase
+          const { data: pRows } = await supabase
             .from('profiles_player')
             .select('*')
-            .eq('auth_user_id', data.user.id)
-            .maybeSingle();
+            .or(`auth_user_id.eq.${data.user.id},id.eq.${data.user.id},email.ilike.${email.trim()}`)
+            .order('updated_at', { ascending: false })
+            .limit(1);
+          const pData = pRows && pRows.length > 0 ? pRows[0] : null;
 
           const current = this.getPlayerProfile();
           const studentProfile: PlayerProfile = {
@@ -1445,7 +1447,7 @@ export const DataManager = {
       // Auto-koreksi nama placeholder lama untuk akun Master Teacher (Bapak Aliridho)
       if (parsed.email?.toLowerCase() === MASTER_TEACHER_EMAIL.toLowerCase()) {
         if (!parsed.fullName || parsed.fullName.includes('Rahmawati')) {
-          parsed.fullName = 'Bapak Aliridho (Master)';
+          parsed.fullName = 'Bapak Aliridho';
           this.setTeacherProfile(parsed);
         }
       }
@@ -1539,7 +1541,8 @@ export const DataManager = {
           const { data: existingRows } = await supabase
             .from('profiles_teacher')
             .select('id, auth_user_id')
-            .eq('email', updated.email)
+            .or(`id.eq.${updated.id},auth_user_id.eq.${updated.id},email.ilike.${updated.email}`)
+            .order('updated_at', { ascending: false })
             .limit(1);
 
           if (existingRows && existingRows.length > 0) {
@@ -1693,50 +1696,52 @@ export const DataManager = {
         if (data.user) {
           let fullName = data.user.user_metadata?.full_name;
           let schoolName = data.user.user_metadata?.school_name;
+          let targetRecordId = data.user.id;
 
           try {
-            const { data: tRow } = await supabase
+            const { data: tRows } = await supabase
               .from('profiles_teacher')
               .select('*')
-              .or(`id.eq.${data.user.id},auth_user_id.eq.${data.user.id}`)
-              .maybeSingle();
+              .or(`id.eq.${data.user.id},auth_user_id.eq.${data.user.id},email.ilike.${cleanEmail}`)
+              .order('updated_at', { ascending: false })
+              .limit(1);
 
-            if (tRow) {
-              fullName = tRow.full_name || fullName;
-              schoolName = tRow.school_name || schoolName;
+            if (tRows && tRows.length > 0) {
+              const tRow = tRows[0];
+              targetRecordId = tRow.id || data.user.id;
+              if (tRow.full_name && !tRow.full_name.includes('Rahmawati')) {
+                fullName = tRow.full_name;
+              }
+              if (tRow.school_name) {
+                schoolName = tRow.school_name;
+              }
             }
           } catch {
             // ignore
           }
 
-          let finalFullName = fullName || cleanEmail.split('@')[0];
-          let finalSchoolName = schoolName || 'SD Negeri Favorit';
+          const localTeacher = this.getTeacherProfile();
+          if (localTeacher && localTeacher.email?.toLowerCase() === cleanEmail.toLowerCase()) {
+            if (!fullName && localTeacher.fullName && !localTeacher.fullName.includes('Rahmawati')) {
+              fullName = localTeacher.fullName;
+            }
+            if (!schoolName && localTeacher.schoolName) {
+              schoolName = localTeacher.schoolName;
+            }
+          }
 
-          // Auto-koreksi akun Master Teacher jika di Supabase masih tersimpan nama placeholder lama
+          let finalFullName = fullName || cleanEmail.split('@')[0];
+          let finalSchoolName = schoolName || 'SD Indonesia';
+
+          // Auto-koreksi HANYA jika masih placeholder Rahmawati
           if (cleanEmail.toLowerCase() === MASTER_TEACHER_EMAIL.toLowerCase()) {
             if (!fullName || fullName.includes('Rahmawati')) {
-              finalFullName = 'Bapak Aliridho (Master)';
-              finalSchoolName = schoolName && !schoolName.includes('Nusantara') ? schoolName : 'SD Kreatif Nusantara';
-              try {
-                supabase.auth.updateUser({
-                  data: { full_name: finalFullName, school_name: finalSchoolName }
-                });
-                supabase.from('profiles_teacher').upsert({
-                  id: data.user.id,
-                  auth_user_id: data.user.id,
-                  email: cleanEmail,
-                  full_name: finalFullName,
-                  school_name: finalSchoolName,
-                  updated_at: new Date().toISOString()
-                });
-              } catch (e) {
-                console.warn('Auto-sync master teacher profile error:', e);
-              }
+              finalFullName = 'Bapak Aliridho';
             }
           }
 
           const profile: TeacherProfile = {
-            id: data.user.id,
+            id: targetRecordId,
             email: data.user.email || cleanEmail,
             fullName: finalFullName,
             schoolName: finalSchoolName,
@@ -1762,11 +1767,19 @@ export const DataManager = {
     }
 
     // Offline / Local fallback teacher session
+    const localTeacher = this.getTeacherProfile();
+    const fallbackName = (localTeacher && localTeacher.email?.toLowerCase() === cleanEmail.toLowerCase() && localTeacher.fullName && !localTeacher.fullName.includes('Rahmawati'))
+      ? localTeacher.fullName
+      : (cleanEmail.toLowerCase() === MASTER_TEACHER_EMAIL.toLowerCase() ? 'Bapak Aliridho' : cleanEmail.split('@')[0]);
+    const fallbackSchool = (localTeacher && localTeacher.email?.toLowerCase() === cleanEmail.toLowerCase() && localTeacher.schoolName)
+      ? localTeacher.schoolName
+      : 'SD Indonesia';
+
     const mockTeacher: TeacherProfile = {
       id: cleanEmail.toLowerCase() === MASTER_TEACHER_EMAIL.toLowerCase() ? 'teacher_master_zy0x' : 'teacher_local_' + Date.now(),
       email: cleanEmail,
-      fullName: cleanEmail.toLowerCase() === MASTER_TEACHER_EMAIL.toLowerCase() ? 'Bapak Aliridho (Master)' : cleanEmail.split('@')[0],
-      schoolName: 'SD Kreatif Nusantara',
+      fullName: fallbackName,
+      schoolName: fallbackSchool,
     };
     this.setTeacherProfile(mockTeacher);
     const currentStudent = this.getPlayerProfile();
@@ -1953,12 +1966,12 @@ export const DataManager = {
       if (!intendedRole) {
         try {
           const [tRes, pRes] = await Promise.all([
-            supabase.from('profiles_teacher').select('*').or(`id.eq.${user.id},auth_user_id.eq.${user.id}`).maybeSingle(),
-            supabase.from('profiles_player').select('*').or(`id.eq.${user.id},auth_user_id.eq.${user.id}`).maybeSingle(),
+            supabase.from('profiles_teacher').select('id').or(`id.eq.${user.id},auth_user_id.eq.${user.id},email.ilike.${userEmail}`).limit(1),
+            supabase.from('profiles_player').select('id').or(`id.eq.${user.id},auth_user_id.eq.${user.id},email.ilike.${userEmail}`).limit(1),
           ]);
-          if (tRes.data && !pRes.data) {
+          if (tRes.data && tRes.data.length > 0 && (!pRes.data || pRes.data.length === 0)) {
             intendedRole = 'teacher';
-          } else if (pRes.data && !tRes.data) {
+          } else if (pRes.data && pRes.data.length > 0 && (!tRes.data || tRes.data.length === 0)) {
             intendedRole = 'student';
           } else {
             intendedRole = 'teacher';
@@ -1970,39 +1983,77 @@ export const DataManager = {
 
       if (intendedRole === 'teacher') {
         let finalFullName = userFullName;
-        let finalSchoolName = 'SD Negeri Favorit';
+        let finalSchoolName = '';
+        let targetRecordId = user.id;
 
+        // 1. Cek record di tabel profiles_teacher berdasarkan ID, Auth User ID, atau Email
         try {
-          const { data: tRow } = await supabase
+          const { data: tRows } = await supabase
             .from('profiles_teacher')
             .select('*')
-            .or(`id.eq.${user.id},auth_user_id.eq.${user.id}`)
-            .maybeSingle();
+            .or(`id.eq.${user.id},auth_user_id.eq.${user.id},email.ilike.${userEmail}`)
+            .order('updated_at', { ascending: false })
+            .limit(1);
 
-          if (tRow) {
-            finalFullName = tRow.full_name || finalFullName;
-            finalSchoolName = tRow.school_name || finalSchoolName;
-          } else {
-            await supabase.from('profiles_teacher').upsert({
-              id: user.id,
-              auth_user_id: user.id,
-              email: userEmail,
-              full_name: finalFullName,
-              school_name: finalSchoolName,
-              updated_at: new Date().toISOString(),
-            });
+          if (tRows && tRows.length > 0) {
+            const tRow = tRows[0];
+            targetRecordId = tRow.id || user.id;
+            if (tRow.full_name && !tRow.full_name.includes('Rahmawati')) {
+              finalFullName = tRow.full_name;
+            }
+            if (tRow.school_name) {
+              finalSchoolName = tRow.school_name;
+            }
           }
+        } catch (e) {
+          console.warn('Teacher OAuth profile query notice:', e);
+        }
+
+        // 2. Cek metadata akun di Supabase Auth jika belum terisi
+        if (!finalFullName || finalFullName === 'Pengguna') {
+          finalFullName = userMeta.full_name || userMeta.name || finalFullName;
+        }
+        if (!finalSchoolName && userMeta.school_name) {
+          finalSchoolName = userMeta.school_name;
+        }
+
+        // 3. Cek apakah ada profil tersimpan di LocalStorage peramban ini yang cocok dengan email
+        const localTeacher = this.getTeacherProfile();
+        if (localTeacher && localTeacher.email?.toLowerCase() === userEmail.toLowerCase()) {
+          if (!finalFullName || finalFullName === 'Pengguna') {
+            if (localTeacher.fullName && !localTeacher.fullName.includes('Rahmawati')) {
+              finalFullName = localTeacher.fullName;
+            }
+          }
+          if (!finalSchoolName && localTeacher.schoolName) {
+            finalSchoolName = localTeacher.schoolName;
+          }
+        }
+
+        // 4. Fallback aman jika masih kosong
+        if (!finalFullName || finalFullName === 'Pengguna') {
+          finalFullName = userEmail ? userEmail.split('@')[0] : 'Bapak/Ibu Guru';
+        }
+        if (!finalSchoolName) {
+          finalSchoolName = 'SD Indonesia';
+        }
+
+        // 5. Sinkronkan dan simpan ke profiles_teacher Supabase agar terhubung permanen dengan auth_user_id
+        try {
+          await supabase.from('profiles_teacher').upsert({
+            id: targetRecordId,
+            auth_user_id: user.id,
+            email: userEmail,
+            full_name: finalFullName,
+            school_name: finalSchoolName,
+            updated_at: new Date().toISOString(),
+          }, { onConflict: 'id' });
         } catch (e) {
           console.warn('Teacher OAuth profile sync notice:', e);
         }
 
-        if (userEmail === MASTER_TEACHER_EMAIL.toLowerCase()) {
-          finalFullName = 'Bapak Aliridho (Master)';
-          finalSchoolName = 'SD Kreatif Nusantara';
-        }
-
         const teacherProfile: TeacherProfile = {
-          id: user.id,
+          id: targetRecordId,
           email: userEmail,
           fullName: finalFullName,
           schoolName: finalSchoolName,
@@ -2033,35 +2084,39 @@ export const DataManager = {
         let starsEarned = 0;
         let totalScore = 0;
         let quizzesCompleted = 0;
+        let targetRecordId = user.id;
 
         try {
-          const { data: pRow } = await supabase
+          const { data: pRows } = await supabase
             .from('profiles_player')
             .select('*')
-            .or(`id.eq.${user.id},auth_user_id.eq.${user.id}`)
-            .maybeSingle();
+            .or(`id.eq.${user.id},auth_user_id.eq.${user.id},email.ilike.${userEmail}`)
+            .order('updated_at', { ascending: false })
+            .limit(1);
 
-          if (pRow) {
+          if (pRows && pRows.length > 0) {
+            const pRow = pRows[0];
+            targetRecordId = pRow.id || user.id;
             nickname = pRow.nickname || nickname;
             grade = pRow.grade_level || grade;
             avatarId = pRow.avatar_id || avatarId;
             starsEarned = pRow.stars_earned ?? 0;
             totalScore = pRow.total_score ?? 0;
             quizzesCompleted = pRow.quizzes_completed ?? 0;
-          } else {
-            await supabase.from('profiles_player').upsert({
-              id: user.id,
-              auth_user_id: user.id,
-              email: userEmail,
-              nickname,
-              avatar_id: avatarId,
-              grade_level: grade,
-              stars_earned: 0,
-              total_score: 0,
-              quizzes_completed: 0,
-              updated_at: new Date().toISOString(),
-            });
           }
+
+          await supabase.from('profiles_player').upsert({
+            id: targetRecordId,
+            auth_user_id: user.id,
+            email: userEmail,
+            nickname,
+            avatar_id: avatarId,
+            grade_level: grade,
+            stars_earned: starsEarned,
+            total_score: totalScore,
+            quizzes_completed: quizzesCompleted,
+            updated_at: new Date().toISOString(),
+          }, { onConflict: 'id' });
         } catch (e) {
           console.warn('Student OAuth profile sync notice:', e);
         }
@@ -2070,7 +2125,7 @@ export const DataManager = {
           ...this.getPlayerProfile(),
           isLoggedIn: true,
           email: userEmail,
-          studentId: user.id,
+          studentId: targetRecordId,
           nickname,
           grade,
           avatarId,
