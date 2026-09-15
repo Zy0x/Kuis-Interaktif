@@ -1129,22 +1129,26 @@ export const InterQuestionWaitingLounge: React.FC<InterQuestionWaitingLoungeProp
                 playClick();
                 toggleAntiReaction();
               }}
-              className={`px-3 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border min-h-[44px] btn-press ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border min-h-[44px] btn-press ${
                 isAntiReact
                   ? 'bg-rose-950/70 border-rose-500/60 text-rose-300 shadow-xs'
                   : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
               }`}
-              title={isAntiReact ? 'Anti-Reaksi Aktif: Layar bersih dari emoji' : 'Aktifkan Anti-Reaksi untuk menyembunyikan emoji'}
+              title={
+                isAntiReact
+                  ? 'Layar Bersih: Animasi emoji sedang disembunyikan. Ketuk untuk menampilkan kembali.'
+                  : 'Sembunyikan animasi emoji melayang agar layar tenang dan fokus'
+              }
             >
               {isAntiReact ? (
                 <>
-                  <EyeOff className="w-3.5 h-3.5 text-rose-400" />
-                  <span>Anti-Reaksi: Aktif (Bersih)</span>
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  <span>Tampilkan Emoji</span>
                 </>
               ) : (
                 <>
-                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Anti-Reaksi: Nonaktif</span>
+                  <EyeOff className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                  <span>Sembunyikan Emoji</span>
                 </>
               )}
             </button>

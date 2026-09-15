@@ -1405,8 +1405,8 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                         ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border border-rose-300 dark:border-rose-800'
                         : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-750'
                     }`}
-                    title={isAntiReact ? 'Anti-Reaksi Aktif (Layar Bersih). Ketuk untuk menampilkan reaksi teman.' : 'Aktifkan Anti-Reaksi (Sembunyikan animasi emoji teman)'}
-                    aria-label={isAntiReact ? 'Matikan Anti-Reaksi Layar' : 'Aktifkan Anti-Reaksi Layar'}
+                    title={isAntiReact ? 'Layar Bersih: Animasi emoji sedang disembunyikan. Ketuk untuk menampilkan.' : 'Sembunyikan Animasi Emoji (Layar Bersih)'}
+                    aria-label={isAntiReact ? 'Tampilkan Animasi Emoji' : 'Sembunyikan Animasi Emoji'}
                   >
                     {isAntiReact ? (
                       <EyeOff className="w-5 h-5 text-rose-500" />
@@ -2447,14 +2447,14 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                     {isAntiReact ? <EyeOff className="w-5 h-5" /> : <Sparkles className="w-5 h-5" />}
                   </div>
                   <div className="text-left">
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">Anti-Reaksi Layar (Mode Fokus)</span>
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">Animasi Emoji Layar</span>
                     <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                      {isAntiReact ? 'Animasi emoji teman disembunyikan (Layar Bersih)' : 'Animasi emoji & reaksi teman ditampilkan'}
+                      {isAntiReact ? 'Animasi emoji disembunyikan (Layar Bersih)' : 'Animasi emoji & reaksi teman ditampilkan'}
                     </span>
                   </div>
                 </div>
                 <span className={`text-xs font-bold px-2.5 py-1 rounded-lg border ${isAntiReact ? 'bg-rose-50 dark:bg-rose-950 text-rose-600 border-rose-200 dark:border-rose-800' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700'}`}>
-                  {isAntiReact ? 'Bersih (Aktif)' : 'Tampil'}
+                  {isAntiReact ? 'Disembunyikan' : 'Tampil'}
                 </span>
               </button>
 
@@ -2722,12 +2722,12 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
             {isAntiReact ? (
               <>
                 <EyeOff className="w-4 h-4 text-rose-400 shrink-0" />
-                <span>Anti-Reaksi Aktif: Layar Bersih dari Emoji 🛡️</span>
+                <span>Layar Bersih: Animasi Emoji Disembunyikan 🛡️</span>
               </>
             ) : (
               <>
                 <Sparkles className="w-4 h-4 text-amber-300 shrink-0" />
-                <span>Reaksi Layar Teman Ditampilkan ✨</span>
+                <span>Animasi Emoji Ditampilkan ✨</span>
               </>
             )}
           </div>

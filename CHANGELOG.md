@@ -1,6 +1,26 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.38] - 2026-09-15
+### Penyempurnaan Teks & Kejelasan Tombol Kontrol Emoji Layar (Rule 1, Rule 2, Rule 3 & Rule 15)
+
+#### 1. Penyederhanaan Teks Tombol Kontrol Emoji Bebas Jargon (`InterQuestionWaitingLounge.tsx`)
+- **Teks Aksi Intuitif & Bersih**: Mengganti istilah teknis ambigu *"Anti-Reaksi: Nonaktif"* dan *"Anti-Reaksi: Aktif (Bersih)"* menjadi teks aksi langsung yang komunikatif dan langsung dimengerti oleh siswa maupun guru:
+  - **Saat Emoji Muncul (Normal)**: Tombol menampilkan ikon mata tertutup (`EyeOff`) dengan teks **"Sembunyikan Emoji"**. Begitu diketuk, seluruh animasi emoji melayang seketika disembunyikan.
+  - **Saat Layar Bersih (Emoji Disembunyikan)**: Tombol bertransformasi dengan warna aksen lembut dan ikon bintang pendar (`Sparkles`) bertuliskan **"Tampilkan Emoji"**. Pengguna langsung tahu cara mengembalikan emoji hanya dengan 1 ketukan.
+- **Tooltip Jelas & Informatif**: Tooltip kini menjelaskan fungsi secara gamblang tanpa istilah membingungkan (*"Sembunyikan animasi emoji melayang agar layar tenang dan fokus"* atau *"Layar Bersih: Animasi emoji sedang disembunyikan. Ketuk untuk menampilkan kembali"*).
+
+#### 2. Standardisasi Copywriting di Ruang Tunggu Pra-Kuis & Arena Kuis (`StudentWaitingRoom.tsx` & `QuizArena.tsx`)
+- **Ruang Tunggu Pra-Kuis (`StudentWaitingRoom.tsx`)**: Menyelaraskan teks tombol header siswa menjadi **"Sembunyikan Emoji"** / **"Tampilkan Emoji"**.
+- **Notifikasi Pop-up (*Toast Feedback*) (`QuizArena.tsx`)**: Pesan konfirmasi diperjelas menjadi:
+  - *"Layar Bersih: Animasi Emoji Disembunyikan 🛡️"*
+  - *"Animasi Emoji Ditampilkan ✨"*
+- **Menu Pengaturan Siswa (`QuizArena.tsx`)**: Mengubah judul pengaturan di lembar alat kuis menjadi *"Animasi Emoji Layar"* dengan status ringkas *"Tampil"* atau *"Disembunyikan"*.
+
+#### 3. Pembaruan Versi & Cache PWA (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.38` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.38` (`public/sw.js`).
+
 ## [2.4.37] - 2026-09-15
 ### Audit Total Desain Responsif & Penataan Ruang Tunggu Jeda Soal (Rule 1, Rule 2, Rule 6, Rule 7 & Rule 15)
 
