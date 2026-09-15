@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import type { QuizSession } from '../../types/quiz';
 import { DataManager } from '../../lib/supabaseClient';
 import { AVATAR_MAP } from '../../data/seedQuizzes';
@@ -9,7 +9,9 @@ import {
   Gamepad2, 
   VolumeX, 
   Volume2, 
-  CheckCircle2
+  CheckCircle2,
+  RotateCcw,
+  Trophy
 } from 'lucide-react';
 import { QuizizzReactionOverlay } from '../common/QuizizzReactionOverlay';
 import { QuizizzReactionButtonRow } from '../common/QuizizzReactionButtonRow';
@@ -30,105 +32,564 @@ export interface InterQuestionWaitingLoungeProps {
 }
 
 // -------------------------------------------------------------
-// Mini-Game 1: Tangkap Bintang Ceria (Star Catcher)
+// Mini-Game 1: Dino Run (T-Rex Runner SD Seru)
 // -------------------------------------------------------------
-interface StarItem {
-  id: string;
-  x: number;
-  y: number;
-  size: number;
-  speed: number;
-  emoji: string;
+function playDinoAudio(type: 'jump' | 'hit' | 'score') {
+  try {
+    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    if (type === 'jump') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(260, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(560, ctx.currentTime + 0.1);
+      gain.gain.setValueAtTime(0.08, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.13);
+    } else if (type === 'hit') {
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(180, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(65, ctx.currentTime + 0.2);
+      gain.gain.setValueAtTime(0.12, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.22);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.23);
+    } else if (type === 'score') {
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(587, ctx.currentTime);
+      osc.frequency.setValueAtTime(880, ctx.currentTime + 0.08);
+      gain.gain.setValueAtTime(0.08, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.22);
+    }
+  } catch {}
 }
 
-const STAR_EMOJIS = ['⭐', '🌟', '✨', '💫', '🎈'];
+interface ObstacleItem {
+  id: number;
+  x: number;
+  width: number;
+  height: number;
+  type: 'cactus_small' | 'cactus_double' | 'cactus_tall';
+}
 
-const StarCatcherGame: React.FC<{ playClick: () => void; playCorrect?: () => void }> = ({ playClick, playCorrect }) => {
-  const [stars, setStars] = useState<StarItem[]>([]);
-  const [funScore, setFunScore] = useState(0);
+interface CloudItem {
+  x: number;
+  y: number;
+  speed: number;
+  scale: number;
+}
 
+const CANVAS_WIDTH = 600;
+const CANVAS_HEIGHT = 160;
+const GROUND_Y = 126;
+const DINO_X = 48;
+const DINO_WIDTH = 34;
+const DINO_HEIGHT = 38;
+const GRAVITY = 0.65;
+const JUMP_VEL = -9.2;
+
+const DinoRunGame: React.FC<{ playClick: () => void; playCorrect?: () => void }> = ({ playClick, playCorrect }) => {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [score, setScore] = useState(0);
+  const [highScore, setHighScore] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('kuis_dino_highscore');
+      return saved ? parseInt(saved, 10) || 0 : 0;
+    } catch {
+      return 0;
+    }
+  });
+  const [isGameOver, setIsGameOver] = useState(false);
+
+  // Mutable refs for high performance 60fps loop
+  const gameStateRef = useRef({
+    dinoY: GROUND_Y - DINO_HEIGHT,
+    velY: 0,
+    isJumping: false,
+    groundOffset: 0,
+    obstacles: [] as ObstacleItem[],
+    clouds: [
+      { x: 100, y: 32, speed: 0.35, scale: 0.9 },
+      { x: 320, y: 22, speed: 0.3, scale: 1.1 },
+      { x: 500, y: 40, speed: 0.4, scale: 0.8 },
+    ] as CloudItem[],
+    frame: 0,
+    score: 0,
+    speed: 4.5,
+    isGameOver: false,
+    nextSpawnDistance: 200,
+    obstacleIdSeq: 1,
+  });
+
+  const jump = useCallback(() => {
+    const state = gameStateRef.current;
+    if (state.isGameOver) return;
+    if (!state.isJumping) {
+      state.velY = JUMP_VEL;
+      state.isJumping = true;
+      playDinoAudio('jump');
+      if (playClick) playClick();
+    }
+  }, [playClick]);
+
+  const restartGame = useCallback(() => {
+    const state = gameStateRef.current;
+    state.dinoY = GROUND_Y - DINO_HEIGHT;
+    state.velY = 0;
+    state.isJumping = false;
+    state.obstacles = [];
+    state.score = 0;
+    state.speed = 4.5;
+    state.frame = 0;
+    state.groundOffset = 0;
+    state.isGameOver = false;
+    state.nextSpawnDistance = 200;
+    setIsGameOver(false);
+    setScore(0);
+    if (playClick) playClick();
+  }, [playClick]);
+
+  // Keyboard controls (Space, ArrowUp, KeyW)
   useEffect(() => {
-    // Spawn initial stars
-    const initial: StarItem[] = Array.from({ length: 4 }).map((_, idx) => ({
-      id: 'star_' + Date.now() + '_' + idx,
-      x: 10 + Math.random() * 80,
-      y: 15 + Math.random() * 65,
-      size: 32 + Math.floor(Math.random() * 16),
-      speed: 1 + Math.random() * 1.5,
-      emoji: STAR_EMOJIS[Math.floor(Math.random() * STAR_EMOJIS.length)],
-    }));
-    setStars(initial);
+    const onKeyDown = (e: KeyboardEvent) => {
+      // Jangan cegah spasi jika siswa sedang mengetik pesan di kolom obrolan
+      const activeEl = document.activeElement;
+      if (
+        activeEl instanceof HTMLInputElement ||
+        activeEl instanceof HTMLTextAreaElement ||
+        (activeEl as HTMLElement)?.isContentEditable
+      ) {
+        return;
+      }
 
-    // Float interval
-    const interval = setInterval(() => {
-      setStars((prev) =>
-        prev.map((s) => {
-          let newY = s.y - s.speed;
-          let newX = s.x + (Math.random() * 2 - 1);
-          if (newY < 5) {
-            newY = 85;
-            newX = 10 + Math.random() * 80;
+      if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+        e.preventDefault();
+        if (gameStateRef.current.isGameOver) {
+          restartGame();
+        } else {
+          jump();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [jump, restartGame]);
+
+  // Main 60 FPS Game Loop
+  useEffect(() => {
+    let animId: number;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const loop = () => {
+      const state = gameStateRef.current;
+
+      if (!state.isGameOver) {
+        state.frame++;
+
+        // 1. Score & Speed Progression
+        if (state.frame % 6 === 0) {
+          state.score++;
+          setScore(state.score);
+          if (state.score % 100 === 0) {
+            playDinoAudio('score');
+            if (playCorrect) playCorrect();
           }
-          return { ...s, y: newY, x: Math.max(5, Math.min(90, newX)) };
-        })
-      );
-    }, 120);
+        }
+        state.speed = Math.min(7.5, 4.5 + Math.floor(state.score / 50) * 0.25);
 
-    return () => clearInterval(interval);
-  }, []);
+        // 2. Dino Physics
+        state.dinoY += state.velY;
+        state.velY += GRAVITY;
+        const groundLimit = GROUND_Y - DINO_HEIGHT;
+        if (state.dinoY >= groundLimit) {
+          state.dinoY = groundLimit;
+          state.velY = 0;
+          state.isJumping = false;
+        }
 
-  const handleCatchStar = (id: string) => {
-    if (playCorrect) playCorrect();
-    else playClick();
-    setFunScore((prev) => prev + 10);
-    setStars((prev) =>
-      prev.map((s) =>
-        s.id === id
-          ? {
-              ...s,
-              y: 85,
-              x: 10 + Math.random() * 80,
-              emoji: STAR_EMOJIS[Math.floor(Math.random() * STAR_EMOJIS.length)],
+        // 3. Ground scrolling
+        state.groundOffset += state.speed;
+
+        // 4. Clouds movement
+        for (const cl of state.clouds) {
+          cl.x -= cl.speed;
+          if (cl.x < -60) {
+            cl.x = CANVAS_WIDTH + 20 + Math.random() * 40;
+            cl.y = 18 + Math.random() * 32;
+          }
+        }
+
+        // 5. Obstacles movement & spawn
+        state.nextSpawnDistance -= state.speed;
+        if (state.nextSpawnDistance <= 0) {
+          const rand = Math.random();
+          let type: 'cactus_small' | 'cactus_double' | 'cactus_tall' = 'cactus_small';
+          let width = 20;
+          let height = 28;
+
+          if (rand < 0.45) {
+            type = 'cactus_small';
+            width = 18;
+            height = 26;
+          } else if (rand < 0.78) {
+            type = 'cactus_tall';
+            width = 22;
+            height = 34;
+          } else {
+            type = 'cactus_double';
+            width = 34;
+            height = 26;
+          }
+
+          state.obstacles.push({
+            id: state.obstacleIdSeq++,
+            x: CANVAS_WIDTH + 10,
+            width,
+            height,
+            type,
+          });
+
+          // Random gap to next obstacle (fair and playable)
+          state.nextSpawnDistance = 210 + Math.random() * 150;
+        }
+
+        // Move obstacles
+        for (let i = state.obstacles.length - 1; i >= 0; i--) {
+          const obs = state.obstacles[i];
+          obs.x -= state.speed;
+
+          // Remove off-screen obstacles
+          if (obs.x + obs.width < -20) {
+            state.obstacles.splice(i, 1);
+            continue;
+          }
+
+          // 6. Collision Check (AABB with slight padding for fairness)
+          const dinoBox = {
+            x: DINO_X + 6,
+            y: state.dinoY + 4,
+            w: DINO_WIDTH - 11,
+            h: DINO_HEIGHT - 6,
+          };
+          const cactusBox = {
+            x: obs.x + 3,
+            y: GROUND_Y - obs.height + 2,
+            w: obs.width - 6,
+            h: obs.height - 3,
+          };
+
+          if (
+            dinoBox.x < cactusBox.x + cactusBox.w &&
+            dinoBox.x + dinoBox.w > cactusBox.x &&
+            dinoBox.y < cactusBox.y + cactusBox.h &&
+            dinoBox.y + dinoBox.h > cactusBox.y
+          ) {
+            // Collision!
+            state.isGameOver = true;
+            setIsGameOver(true);
+            playDinoAudio('hit');
+
+            setHighScore((prevHigh) => {
+              const finalScore = state.score;
+              if (finalScore > prevHigh) {
+                try {
+                  localStorage.setItem('kuis_dino_highscore', finalScore.toString());
+                } catch {}
+                return finalScore;
+              }
+              return prevHigh;
+            });
+            break;
+          }
+        }
+      }
+
+      // --- RENDERING ---
+      ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+      // Background Sky subtle tint
+      ctx.fillStyle = '#0a0f1d';
+      ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+      // Draw Clouds
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+      for (const cl of state.clouds) {
+        ctx.beginPath();
+        ctx.arc(cl.x, cl.y, 10 * cl.scale, 0, Math.PI * 2);
+        ctx.arc(cl.x + 12 * cl.scale, cl.y - 4 * cl.scale, 14 * cl.scale, 0, Math.PI * 2);
+        ctx.arc(cl.x + 24 * cl.scale, cl.y, 10 * cl.scale, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Draw Ground
+      ctx.strokeStyle = '#334155';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, GROUND_Y);
+      ctx.lineTo(CANVAS_WIDTH, GROUND_Y);
+      ctx.stroke();
+
+      // Scrolling Ground dashes
+      ctx.fillStyle = '#475569';
+      for (let x = -(state.groundOffset % 24); x < CANVAS_WIDTH; x += 24) {
+        ctx.fillRect(x + 4, GROUND_Y + 4, 6, 1.5);
+        ctx.fillRect(x + 15, GROUND_Y + 8, 3, 1.5);
+        ctx.fillRect(x + 20, GROUND_Y + 5, 4, 1.5);
+      }
+
+      // Draw Obstacles (Cacti)
+      for (const obs of state.obstacles) {
+        const cactusY = GROUND_Y - obs.height;
+        ctx.save();
+        ctx.fillStyle = '#10b981';
+        ctx.strokeStyle = '#047857';
+        ctx.lineWidth = 1.5;
+
+        if (obs.type === 'cactus_small') {
+          const cx = obs.x + obs.width / 2;
+          ctx.beginPath();
+          ctx.roundRect(cx - 4, cactusY, 8, obs.height, 3);
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.roundRect(cx - 9, cactusY + 7, 7, 4, 2);
+          ctx.roundRect(cx - 9, cactusY + 3, 4, 8, 2);
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.roundRect(cx + 2, cactusY + 11, 7, 4, 2);
+          ctx.roundRect(cx + 5, cactusY + 7, 4, 8, 2);
+          ctx.fill();
+          ctx.stroke();
+        } else if (obs.type === 'cactus_double') {
+          for (let offset = 0; offset < 2; offset++) {
+            const cx = obs.x + 8 + offset * 16;
+            const h = offset === 0 ? obs.height : obs.height - 4;
+            const cy = GROUND_Y - h;
+            ctx.beginPath();
+            ctx.roundRect(cx - 4, cy, 8, h, 3);
+            ctx.fill();
+            ctx.stroke();
+
+            if (offset === 0) {
+              ctx.beginPath();
+              ctx.roundRect(cx - 7, cy + 6, 6, 3, 1.5);
+              ctx.roundRect(cx - 7, cy + 2, 3, 7, 1.5);
+              ctx.fill();
+              ctx.stroke();
+            } else {
+              ctx.beginPath();
+              ctx.roundRect(cx + 2, cy + 7, 6, 3, 1.5);
+              ctx.roundRect(cx + 5, cy + 3, 3, 7, 1.5);
+              ctx.fill();
+              ctx.stroke();
             }
-          : s
-      )
-    );
-  };
+          }
+        } else {
+          // Tall Cactus
+          const cx = obs.x + obs.width / 2;
+          ctx.beginPath();
+          ctx.roundRect(cx - 5, cactusY, 10, obs.height, 4);
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.roundRect(cx - 11, cactusY + 9, 8, 5, 2);
+          ctx.roundRect(cx - 11, cactusY + 3, 5, 11, 2);
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.roundRect(cx + 3, cactusY + 15, 8, 5, 2);
+          ctx.roundRect(cx + 6, cactusY + 9, 5, 11, 2);
+          ctx.fill();
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      // Draw Dino
+      ctx.save();
+      ctx.translate(DINO_X, state.dinoY);
+
+      // Body & Head
+      ctx.fillStyle = state.isGameOver ? '#f43f5e' : '#10b981';
+      ctx.beginPath();
+      ctx.roundRect(8, 12, 20, 20, 4);
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.roundRect(16, 2, 18, 14, 3);
+      ctx.fill();
+
+      // Tail
+      ctx.beginPath();
+      ctx.moveTo(8, 22);
+      ctx.lineTo(0, 16);
+      ctx.lineTo(8, 28);
+      ctx.closePath();
+      ctx.fill();
+
+      // Arm
+      ctx.fillStyle = state.isGameOver ? '#e11d48' : '#059669';
+      ctx.fillRect(24, 20, 6, 3);
+      ctx.fillRect(28, 20, 2, 6);
+
+      // Back Spikes (cute yellow triangles)
+      ctx.fillStyle = '#fbbf24';
+      ctx.beginPath();
+      ctx.moveTo(8, 12);
+      ctx.lineTo(4, 8);
+      ctx.lineTo(12, 10);
+      ctx.moveTo(14, 6);
+      ctx.lineTo(12, 2);
+      ctx.lineTo(18, 5);
+      ctx.fill();
+
+      // Eye
+      if (state.isGameOver) {
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(22, 6);
+        ctx.lineTo(26, 10);
+        ctx.moveTo(26, 6);
+        ctx.lineTo(22, 10);
+        ctx.stroke();
+      } else {
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(24, 8, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#0f172a';
+        ctx.beginPath();
+        ctx.arc(25, 8, 1.8, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Legs
+      ctx.fillStyle = state.isGameOver ? '#e11d48' : '#047857';
+      if (state.isJumping) {
+        ctx.fillRect(10, 32, 4, 3);
+        ctx.fillRect(14, 32, 4, 3);
+      } else {
+        const isStep1 = Math.floor(state.frame / 6) % 2 === 0;
+        if (isStep1) {
+          ctx.fillRect(12, 32, 4, 6);
+          ctx.fillRect(12, 36, 6, 2);
+          ctx.fillRect(20, 32, 4, 4);
+        } else {
+          ctx.fillRect(12, 32, 4, 4);
+          ctx.fillRect(20, 32, 4, 6);
+          ctx.fillRect(20, 36, 6, 2);
+        }
+      }
+      ctx.restore();
+
+      animId = requestAnimationFrame(loop);
+    };
+
+    animId = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(animId);
+  }, [playCorrect]);
 
   return (
-    <div className="relative w-full h-48 sm:h-56 bg-gradient-to-b from-indigo-950 via-slate-900 to-slate-950 rounded-2xl border border-indigo-900/60 overflow-hidden select-none p-3">
+    <div 
+      onClick={() => {
+        if (gameStateRef.current.isGameOver) {
+          restartGame();
+        } else {
+          jump();
+        }
+      }}
+      className="relative w-full bg-gradient-to-b from-slate-900 via-indigo-950 to-slate-950 rounded-2xl border border-indigo-900/60 overflow-hidden select-none p-3 cursor-pointer"
+      role="button"
+      tabIndex={0}
+      aria-label="Mini-Game Dino Run - Ketuk untuk melompat"
+    >
       {/* Header bar mini-game */}
-      <div className="flex items-center justify-between text-xs font-bold text-indigo-300 z-10 relative">
+      <div className="flex items-center justify-between text-xs font-bold text-emerald-300 z-10 relative">
         <span className="flex items-center gap-1.5">
-          <Gamepad2 className="w-4 h-4 text-amber-400" />
-          <span>Mini-Game: Tangkap Bintang Mengambang!</span>
+          <Gamepad2 className="w-4 h-4 text-emerald-400" />
+          <span>Mini-Game: Dino Run 🦖</span>
         </span>
-        <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono">
-          ⭐ {funScore} Poin
-        </span>
+        <div className="flex items-center gap-2">
+          {highScore > 0 && (
+            <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-mono flex items-center gap-1">
+              <Trophy className="w-3 h-3 text-amber-400" />
+              <span>Rekor: {highScore}m</span>
+            </span>
+          )}
+          <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-mono">
+            🏃 {score}m
+          </span>
+        </div>
       </div>
 
       <p className="text-[11px] text-slate-400 z-10 relative mt-0.5">
-        Ketuk bintang atau balon yang mengambang untuk mengumpulkan poin santai.
+        Ketuk layar atau tekan <strong>Spasi</strong> untuk melompati rintangan kaktus!
       </p>
 
-      {/* Floating Stars */}
-      {stars.map((s) => (
-        <button
-          key={s.id}
-          type="button"
-          onClick={() => handleCatchStar(s.id)}
-          className="absolute transform -translate-x-1/2 -translate-y-1/2 transition-all active:scale-125 cursor-pointer text-3xl select-none hover:opacity-90 min-h-[48px] min-w-[48px] p-2 rounded-full flex items-center justify-center btn-press"
-          style={{
-            left: `${s.x}%`,
-            top: `${s.y}%`,
-            fontSize: `${s.size}px`,
-          }}
-          aria-label="Tangkap Bintang"
-        >
-          {s.emoji}
-        </button>
-      ))}
+      {/* Canvas Game Area */}
+      <div className="relative w-full mt-2 rounded-xl overflow-hidden bg-slate-950/80 border border-slate-800">
+        <canvas
+          ref={canvasRef}
+          width={CANVAS_WIDTH}
+          height={CANVAS_HEIGHT}
+          className="w-full h-36 sm:h-40 block"
+        />
+
+        {/* Game Over Overlay */}
+        {isGameOver && (
+          <div 
+            className="absolute inset-0 bg-slate-950/80 backdrop-blur-xs flex flex-col items-center justify-center p-2 z-20 animate-fade-in"
+            onClick={(e) => {
+              e.stopPropagation();
+              restartGame();
+            }}
+          >
+            <div className="text-center space-y-1">
+              <span className="text-2xl">🦖💥</span>
+              <h4 className="text-xs sm:text-sm font-black text-white">Ups, Dino Menabrak Kaktus!</h4>
+              <p className="text-xs text-emerald-300 font-bold font-mono">Jarak Tempuh: {score} meter</p>
+              {score >= highScore && score > 0 && (
+                <p className="text-[10px] sm:text-[11px] text-amber-300 font-extrabold animate-bounce">
+                  🎉 Rekor Terbaik Baru!
+                </p>
+              )}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  restartGame();
+                }}
+                className="mt-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md btn-press min-h-[44px] mx-auto"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Lari Lagi (Spasi)</span>
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
@@ -363,7 +824,7 @@ export const InterQuestionWaitingLounge: React.FC<InterQuestionWaitingLoungeProp
 
         {/* Synchronized Mini-Game for this round */}
         {isEvenRound ? (
-          <StarCatcherGame playClick={playClick} playCorrect={playCorrect} />
+          <DinoRunGame playClick={playClick} playCorrect={playCorrect} />
         ) : (
           <EmojiGuessGame playClick={playClick} playCorrect={playCorrect} />
         )}

@@ -1,6 +1,20 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.31] - 2026-09-15
+### Transformasi Mini-Game: Penggantian Tangkap Bintang Menjadi Dino Run (Rule 1, Rule 2, Rule 5 & Rule 15)
+
+#### 1. Mini-Game Dino Run Interaktif (`InterQuestionWaitingLounge.tsx`)
+- **Implementasi Dino Run (T-Rex Runner SD Seru)**: Menggantikan game Tangkap Bintang menjadi Dino Run klasik berbasis HTML5 Canvas 60 FPS yang ringan dan responsif.
+- **Mekanika & Fisika Lompat Realistis**: Dino melompat dengan kurva gravitasi halus, menghindari berbagai variasi rintangan kaktus (kaktus kecil, kaktus ganda, dan kaktus tinggi).
+- **Animasi & Grafis Vektor Khusus**: Menampilkan animasi kaki lari Dino yang bergantian, mata ekspresif (berubah silang saat menabrak), awan melayang, serta tanah bertekstur bergerak.
+- **Kontrol Multi-Perangkat**: Mendukung ketukan layar sentuh penuh (*touch-first*) untuk perangkat ponsel/tablet, serta tombol `Spasi`, `Panah Atas`, atau `W` untuk desktop/laptop. Proteksi otomatis aktif agar spasi tidak memicu lompatan saat siswa mengetik di kolom obrolan.
+- **Sistem Papan Skor & Rekor**: Menyimpan skor tertinggi secara lokal (`localStorage`), efek suara synthesizer Web Audio API (*jump*, *hit*, dan *milestone* setiap 100 meter), serta tombol "Lari Lagi" yang ramah sentuhan.
+
+#### 2. Pembaruan Versi & Cache PWA (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.31` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.31` (`public/sw.js`).
+
 ## [2.4.30] - 2026-09-15
 ### Penyederhanaan Ekstrem Header Siswa Mode Dipandu Guru (Rule 1, Rule 2, Rule 4 & Rule 15)
 
