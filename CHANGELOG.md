@@ -1,6 +1,20 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.24] - 2026-09-15
+### Pengiriman Cepat Pesan Chat via Tombol Enter pada Desktop/Laptop (Rule 1, Rule 2 & Rule 15)
+
+#### 1. Optimalisasi Interaksi Keyboard Chat Antar-Platform (`deviceUtils.ts`)
+- **Deteksi Presisi Desktop/Laptop**: Menghadirkan utilitas pendeteksi perangkat desktop dan laptop untuk membedakan keyboard fisik dengan keyboard virtual ponsel cerdas.
+- **Kirim Cepat via Enter (Desktop/Laptop)**: Pada perangkat desktop dan laptop, menekan tombol `Enter` murni akan langsung mengirim pesan obrolan tanpa perlu mengarahkan kursor dan mengklik tombol kirim.
+- **Dukungan Baris Baru (`Shift + Enter`)**: Pengguna desktop yang ingin membuat baris baru (*multi-line text*) dapat menekan kombinasi tombol `Shift + Enter`.
+- **Perlindungan Keyboard Virtual Ponsel (Mobile)**: Pada perangkat seluler (smartphone/tablet), perilaku tombol Enter tetap dipertahankan seperti semula (menambah baris baru) untuk mencegah terkirimnya pesan secara tidak sengaja saat mengetik di keyboard virtual.
+- **Teks Placeholder Cerdas & Adaptif**: Bidang input chat di laci guru (`TeacherChatDrawer.tsx`), laci murid (`StudentChatDrawer.tsx`), dan ruang santai jeda soal (`InterQuestionWaitingLounge.tsx`) kini menampilkan petunjuk dinamis sesuai perangkat pengguna.
+
+#### 2. Pembaruan Versi & Cache PWA (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.24` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.24` (`public/sw.js`).
+
 ## [2.4.23] - 2026-09-15
 ### Sembulan (Speech Bubble) Notifikasi Chat Siswa di Sebelah Tombol Chat & Kontrol Senyap (Rule 1, Rule 2, Rule 4, Rule 5 & Rule 15)
 

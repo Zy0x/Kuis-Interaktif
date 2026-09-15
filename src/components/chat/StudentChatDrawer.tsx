@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import type { SessionChatMessage, ChatReplyRef } from '../../types/quiz';
 import { DataManager, supabase, getLiveRealtimeChannel } from '../../lib/supabaseClient';
 import { AVATAR_MAP } from '../../data/seedQuizzes';
+import { isDesktopDevice } from '../../lib/deviceUtils';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 import { useBackHandler } from '../../lib/navigationHistory';
 import { useSwipeToReply } from '../../hooks/useSwipeToReply';
@@ -600,8 +601,17 @@ export const StudentChatDrawer: React.FC<StudentChatDrawerProps> = ({
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
-                  // Tombol Enter murni menyisipkan baris baru (newline), bukan mengirim pesan
-                  e.stopPropagation();
+                  if (e.nativeEvent.isComposing) return;
+                  if (isDesktopDevice()) {
+                    if (!e.shiftKey) {
+                      e.preventDefault();
+                      if (inputText.trim() && !isChatMuted && sessionStatus !== 'finished' && !isSessionEndedModalOpen && !isSending) {
+                        handleSendMessage(inputText);
+                      }
+                    }
+                  } else {
+                    e.stopPropagation();
+                  }
                 }
               }}
               placeholder={
@@ -609,7 +619,9 @@ export const StudentChatDrawer: React.FC<StudentChatDrawerProps> = ({
                   ? 'Obrolan dibungkam oleh Guru...'
                   : sessionStatus === 'finished'
                   ? 'Sesi telah berakhir...'
-                  : 'Ketik pesan positif (Enter untuk baris baru)...'
+                  : isDesktopDevice()
+                  ? 'Ketik pesan positif (Enter kirim, Shift+Enter baris baru)...'
+                  : 'Ketik pesan positif...'
               }
               className="flex-1 px-4 py-2.5 sm:py-3 rounded-2xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-purple-500 text-slate-900 dark:text-white min-h-[44px] sm:min-h-[48px] max-h-28 resize-none leading-relaxed shadow-xs disabled:opacity-50 transition-all"
             />

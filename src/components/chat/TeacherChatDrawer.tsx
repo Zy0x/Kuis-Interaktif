@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import type { SessionChatMessage, ChatReplyRef } from '../../types/quiz';
 import { DataManager, getLiveRealtimeChannel } from '../../lib/supabaseClient';
 import { AVATAR_MAP } from '../../data/seedQuizzes';
+import { isDesktopDevice } from '../../lib/deviceUtils';
 import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
 import { useBackHandler } from '../../lib/navigationHistory';
 import { useSwipeToReply } from '../../hooks/useSwipeToReply';
@@ -518,11 +519,24 @@ export const TeacherChatDrawer: React.FC<TeacherChatDrawerProps> = ({
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
-                  // Tombol Enter murni menyisipkan baris baru (newline), bukan mengirim pesan
-                  e.stopPropagation();
+                  if (e.nativeEvent.isComposing) return;
+                  if (isDesktopDevice()) {
+                    if (!e.shiftKey) {
+                      e.preventDefault();
+                      if (inputText.trim() && !isSending) {
+                        handleSendMessage(inputText);
+                      }
+                    }
+                  } else {
+                    e.stopPropagation();
+                  }
                 }
               }}
-              placeholder="Ketik pesan guru (Enter untuk baris baru)..."
+              placeholder={
+                isDesktopDevice()
+                  ? 'Ketik pesan guru (Enter kirim, Shift+Enter baris baru)...'
+                  : 'Ketik pesan guru...'
+              }
               maxLength={250}
               className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 rounded-xl pl-3.5 pr-10 py-2.5 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all min-h-[44px] max-h-32 resize-none leading-relaxed"
             />

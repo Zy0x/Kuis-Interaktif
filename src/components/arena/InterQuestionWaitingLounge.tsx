@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import type { QuizSession } from '../../types/quiz';
 import { DataManager } from '../../lib/supabaseClient';
 import { AVATAR_MAP } from '../../data/seedQuizzes';
+import { isDesktopDevice } from '../../lib/deviceUtils';
 import { 
   Send, 
   MessageCircle, 
@@ -454,11 +455,24 @@ export const InterQuestionWaitingLounge: React.FC<InterQuestionWaitingLoungeProp
                   onChange={(e) => setChatText(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
-                      // Tombol Enter murni menyisipkan baris baru (newline), bukan mengirim pesan
-                      e.stopPropagation();
+                      if (e.nativeEvent.isComposing) return;
+                      if (isDesktopDevice()) {
+                        if (!e.shiftKey) {
+                          e.preventDefault();
+                          if (chatText.trim()) {
+                            handleSendChatMessage(chatText);
+                          }
+                        }
+                      } else {
+                        e.stopPropagation();
+                      }
                     }
                   }}
-                  placeholder="Ketik komentar santai (Enter untuk baris baru)..."
+                  placeholder={
+                    isDesktopDevice()
+                      ? 'Ketik komentar santai (Enter kirim, Shift+Enter baris baru)...'
+                      : 'Ketik komentar santai...'
+                  }
                   className="flex-1 px-3 py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-xs text-white focus:outline-none focus:ring-1 focus:ring-purple-500 min-h-[44px] max-h-24 resize-none leading-relaxed"
                 />
                 <button
