@@ -313,18 +313,35 @@ export const StudentWaitingRoom: React.FC<StudentWaitingRoomProps> = ({
                 Layar perangkatmu akan otomatis menyajikan soal pertama secara serentak begitu Guru menekan tombol mulai.
               </p>
 
-              {/* Floating Reaction Bar Interaktif */}
-              <div className="w-full lg:w-auto flex justify-center lg:justify-end">
-                <QuizizzReactionButtonRow
-                  sessionId={session.id}
-                  senderName={studentName}
-                  avatarId={avatarId}
-                  isTeacher={false}
-                  playClick={playClick}
-                  compact={true}
-                  title="Kirim Reaksi Semangat:"
-                />
-              </div>
+              {/* Floating Reaction Bar Interaktif (Disembunyikan jika siswa mengaktifkan sembunyikan emoji) */}
+              {!isAntiReact ? (
+                <div className="w-full lg:w-auto flex justify-center lg:justify-end animate-fade-in">
+                  <QuizizzReactionButtonRow
+                    sessionId={session.id}
+                    senderName={studentName}
+                    avatarId={avatarId}
+                    isTeacher={false}
+                    playClick={playClick}
+                    compact={true}
+                    title="Kirim Reaksi Semangat:"
+                  />
+                </div>
+              ) : (
+                <div className="w-full lg:w-auto flex items-center justify-center lg:justify-end gap-2 px-3 py-1.5 rounded-xl bg-slate-100/70 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 text-xs font-semibold animate-fade-in">
+                  <EyeOff className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                  <span>Emoji reaksi disembunyikan (Layar Bersih).</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (playClick) playClick();
+                      toggleAntiReaction();
+                    }}
+                    className="text-indigo-600 dark:text-indigo-400 font-bold hover:underline"
+                  >
+                    Tampilkan
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>

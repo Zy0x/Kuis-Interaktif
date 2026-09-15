@@ -1120,9 +1120,18 @@ export const InterQuestionWaitingLounge: React.FC<InterQuestionWaitingLoungeProp
         <QuizizzReactionOverlay sessionId={session.id} reactions={session.reactions} />
 
         {/* Bilah Reaksi Semangat Murid di Lounge Jeda Soal (1 Baris Scrollable Touch-Friendly) */}
-        <div className="bg-slate-950/60 rounded-2xl p-2 sm:p-2.5 border border-slate-800/80 flex flex-col items-center justify-center gap-1.5">
+        <div className={`bg-slate-950/60 rounded-2xl border border-slate-800/80 flex flex-col items-center justify-center transition-all ${
+          isAntiReact ? 'p-2 sm:p-2.5' : 'p-2 sm:p-2.5 gap-1.5'
+        }`}>
           <div className="flex items-center justify-between w-full px-1">
-            <span className="text-[11px] font-bold text-slate-400">Reaksi Semangat:</span>
+            {isAntiReact ? (
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-400">
+                <EyeOff className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                <span className="truncate max-w-[200px] sm:max-w-none">Emoji Reaksi Disembunyikan</span>
+              </div>
+            ) : (
+              <span className="text-[11px] font-bold text-slate-400">Reaksi Semangat:</span>
+            )}
             <button
               type="button"
               onClick={() => {
@@ -1154,16 +1163,21 @@ export const InterQuestionWaitingLounge: React.FC<InterQuestionWaitingLoungeProp
             </button>
           </div>
 
-          <QuizizzReactionButtonRow
-            sessionId={session.id}
-            senderName={studentName}
-            avatarId={avatarId}
-            isTeacher={false}
-            playClick={playClick}
-            compact={true}
-            scrollable={true}
-            title=""
-          />
+          {/* Sembunyikan emoji-emoji nya ketika tombol Sembunyikan Emoji ditekan */}
+          {!isAntiReact && (
+            <div className="w-full animate-fade-in">
+              <QuizizzReactionButtonRow
+                sessionId={session.id}
+                senderName={studentName}
+                avatarId={avatarId}
+                isTeacher={false}
+                playClick={playClick}
+                compact={true}
+                scrollable={true}
+                title=""
+              />
+            </div>
+          )}
         </div>
 
         {/* Tab Selector Aktivitas Jeda Soal (Mobile-First Touch Target >= 44x44px) */}

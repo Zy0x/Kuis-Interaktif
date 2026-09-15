@@ -1,6 +1,21 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.39] - 2026-09-15
+### Penonaktifan & Penyembunyian Deretan Tombol Emoji saat Mode Layar Bersih Aktif (Rule 1, Rule 2, Rule 6 & Rule 15)
+
+#### 1. Penyembunyian Otomatis Tombol Emoji di Ruang Tunggu Jeda Soal (`InterQuestionWaitingLounge.tsx`)
+- **Penghapusan Tampilan Tombol Emoji saat Mode Bersih**: Ketika tombol *"Sembunyikan Emoji"* ditekan, sistem kini secara otomatis menyembunyikan seluruh 8 tombol reaksi emoji (❤️, 🔥, ⭐, 👏, 🎉, 🚀, 🤩, 💯) dari tampilan.
+- **Bilah Kompak Minimalis**: Kontainer reaksi bertransformasi menjadi satu bilah ringkas (*single-line bar*) yang menampilkan status proteksi visual *"🙈 Emoji Reaksi Disembunyikan"* beserta tombol *"✨ Tampilkan Emoji"*, menghemat lebih dari 60 px ruang vertikal tambahan dan menciptakan ruang jeda yang sepenuhnya tenang dan bebas distraksi.
+- **Transisi Halus (*Smooth Reappearance*)**: Saat tombol *"Tampilkan Emoji"* diketuk kembali, deretan tombol emoji muncul kembali secara mulus dengan animasi *fade-in*.
+
+#### 2. Penyembunyian Tombol Emoji di Ruang Tunggu Pra-Kuis (`StudentWaitingRoom.tsx`)
+- **Penyelarasan Ruang Tunggu Murid**: Pada lobi sebelum kuis dimulai, deretan tombol emoji juga otomatis disembunyikan ketika siswa mengaktifkan opsi sembunyikan emoji, digantikan dengan lencana ringkas *"Emoji reaksi disembunyikan (Layar Bersih)"* lengkap dengan tombol cepat *"Tampilkan"*.
+
+#### 3. Pembaruan Versi & Cache PWA (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.39` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.39` (`public/sw.js`).
+
 ## [2.4.38] - 2026-09-15
 ### Penyempurnaan Teks & Kejelasan Tombol Kontrol Emoji Layar (Rule 1, Rule 2, Rule 3 & Rule 15)
 
