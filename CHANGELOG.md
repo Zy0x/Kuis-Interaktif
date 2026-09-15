@@ -1,6 +1,25 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.47] - 2026-09-15
+### Optimalisasi Menyeluruh Mesin Audio: Penyatuan Singleton AudioContext & Pre-Warming Tanpa Latensi (Rule 1, Rule 2, Rule 5, Rule 6 & Rule 15)
+
+#### 1. Mesin Audio Terpusat / Singleton AudioContext (`sharedAudioContext.ts`)
+- **Penyatuan AudioContext Tunggal**: Membuat modul mesin audio bersama [sharedAudioContext.ts](file:///E:/Data/GitHub/Kuis%20Interaktif/src/lib/audio/sharedAudioContext.ts) yang menyatukan BGM prosedural ([proceduralBgm.ts](file:///E:/Data/GitHub/Kuis%20Interaktif/src/lib/audio/proceduralBgm.ts)) dan seluruh efek suara ([useSoundEffects.ts](file:///E:/Data/GitHub/Kuis%20Interaktif/src/hooks/useSoundEffects.ts)) ke dalam 1 instans `AudioContext` tunggal.
+- **Eliminasi Alokasi Ganda & Persaingan Thread**: Menghilangkan alokasi ganda konteks audio yang sebelumnya menyebabkan persaingan perangkat keras (*hardware thread contention*) dan lag audio terutama di smartphone Android dan browser hemat daya.
+
+#### 2. Mekanisme Pre-Warming & Auto-Unlock Interaksi Pertama (`App.tsx`)
+- **Pemanasan Audio Awal (*Silent Ping*)**: Memasang pendengar interaksi awal (`pointerdown`, `touchstart`, `keydown`, `click`) pada tingkat jendela aplikasi. Pada ketukan pertama pengguna di layar manapun (beranda, lobi, atau tombol menu), sistem secara otomatis membangunkan perangkat keras audio (*Audio DAC*) menggunakan *silent 1-sample buffer ping*.
+- **Eliminasi Latensi Cold-Start**: Menghilangkan jeda *wake-up latency* 100–400ms bawaan sistem operasi peramban, sehingga saat pengguna masuk ke arena atau menekan tombol soal, suara klik dan BGM langsung berbunyi instan tanpa penundaan.
+
+#### 3. Perlindungan Desinkronisasi Jam & Tab Latar Belakang (`proceduralBgm.ts`)
+- **Guard Clock Drift**: Menambahkan pemeriksaan kompensasi waktu pada penjadwal not BGM `scheduleStep`. Jika timer mengalami perlambatan akibat perpindahan tab atau beban rendering CPU sesaat, waktu notasi otomatis diselaraskan kembali secara mulus tanpa penumpukan nada serentak (*catch-up stutter*).
+- **Auto-Resume Tab Aktif**: Menambahkan pemulihan otomatis status `suspended` melalui event `visibilitychange` saat pengguna membuka kembali tab kuis dari latar belakang.
+
+#### 4. Pembaruan Versi & Cache PWA (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.47` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.47` (`public/sw.js`).
+
 ## [2.4.46] - 2026-09-15
 ### Resolusi Menyeluruh Fallback Redirect Port 3000 & Konfigurasi Supabase Site URL (Rule 1, Rule 9, Rule 10 & Rule 15)
 

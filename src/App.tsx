@@ -11,6 +11,7 @@ import type { AuthModalTab } from './components/auth/UnifiedAuthModal';
 import type { PlayQuizSessionOptions } from './components/teacher/PlayQuizModal';
 import { DataManager, supabase } from './lib/supabaseClient';
 import { useSoundEffects } from './hooks/useSoundEffects';
+import { setupAudioAutoUnlock } from './lib/audio/sharedAudioContext';
 import { useBackHandler } from './lib/navigationHistory';
 import { useTheme } from './hooks/useTheme';
 
@@ -91,6 +92,12 @@ export const App: React.FC = () => {
     playApplause,
     playCelebration,
   } = useSoundEffects();
+
+  // Inisialisasi auto-unlock & pre-warming hardware audio pada sentuhan/ketukan pertama pengguna (Rule 1 & Rule 6)
+  useEffect(() => {
+    const cleanup = setupAudioAutoUnlock();
+    return cleanup;
+  }, []);
 
   // Helper untuk menyelesaikan konfigurasi sesi atau fallback kuis
   const resolveSettings = (session?: QuizSession | null, q?: Quiz | null): QuizSessionSettings => {

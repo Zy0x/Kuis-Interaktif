@@ -1,4 +1,5 @@
-import { useRef, useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
+import { getSharedAudioContext } from '../lib/audio/sharedAudioContext';
 
 export function useSoundEffects() {
   const [isMuted, setIsMuted] = useState<boolean>(() => {
@@ -6,19 +7,8 @@ export function useSoundEffects() {
     return saved ? JSON.parse(saved) : false;
   });
 
-  const audioCtxRef = useRef<AudioContext | null>(null);
-
   const getAudioContext = useCallback(() => {
-    if (!audioCtxRef.current) {
-      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      if (AudioCtx) {
-        audioCtxRef.current = new AudioCtx();
-      }
-    }
-    if (audioCtxRef.current && audioCtxRef.current.state === 'suspended') {
-      audioCtxRef.current.resume();
-    }
-    return audioCtxRef.current;
+    return getSharedAudioContext();
   }, []);
 
   const toggleMute = useCallback(() => {

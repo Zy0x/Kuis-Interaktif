@@ -1,4 +1,6 @@
-﻿// Procedural Background Music (BGM) Engine for Quiz SD Seru
+import { getSharedAudioContext } from './sharedAudioContext';
+
+// Procedural Background Music (BGM) Engine for Quiz SD Seru
 // Synthesizes a cheerful, child-friendly educational game background groove using the Web Audio API.
 // 100% offline, zero network requests, zero bundle audio bloat.
 
@@ -84,17 +86,15 @@ export class ProceduralBgmPlayer {
   }
 
   private initContext(): AudioContext | null {
-    if (!this.audioCtx) {
-      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      if (AudioCtx) {
-        this.audioCtx = new AudioCtx();
-        this.masterGain = this.audioCtx.createGain();
-        this.masterGain.gain.setValueAtTime(this.getTargetVolume(), this.audioCtx.currentTime);
-        this.masterGain.connect(this.audioCtx.destination);
-      }
+    const ctx = getSharedAudioContext();
+    if (ctx && (!this.audioCtx || this.audioCtx !== ctx || !this.masterGain)) {
+      this.audioCtx = ctx;
+      this.masterGain = ctx.createGain();
+      this.masterGain.gain.setValueAtTime(this.getTargetVolume(), ctx.currentTime);
+      this.masterGain.connect(ctx.destination);
     }
     if (this.audioCtx && this.audioCtx.state === 'suspended') {
-      this.audioCtx.resume();
+      this.audioCtx.resume().catch(() => {});
     }
     return this.audioCtx;
   }
@@ -204,6 +204,11 @@ export class ProceduralBgmPlayer {
     const activeBpm = this.isUrgent ? this.urgentBpm : this.baseBpm;
     const secondsPer16th = 60 / (activeBpm * 4);
 
+    // Guard against timer lag / background tab suspension (clock drift)
+    if (this.nextNoteTime < ctx.currentTime - 0.2) {
+      this.nextNoteTime = ctx.currentTime + 0.05;
+    }
+
     while (this.nextNoteTime < ctx.currentTime + lookahead) {
       const step = this.currentStep % 64;
 
@@ -264,9 +269,9 @@ export class ProceduralBgmPlayer {
       this.start();
       return;
     }
-    const ctx = this.audioCtx;
+    const ctx = this.audioCtx || this.initContext();
     if (ctx && ctx.state === 'suspended') {
-      ctx.resume();
+      ctx.resume().catch(() => {});
     }
     this.isPaused = false;
     if (ctx) {
