@@ -134,7 +134,6 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
       ...(initialSession?.settings || {}),
     };
   });
-  const [showWaitingLounge, setShowWaitingLounge] = useState(false);
 
   useEffect(() => {
     if (sessionSettings) {
@@ -251,6 +250,30 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     return list;
   });
 
+  // 1. Muat riwayat jawaban tersimpan (dari sessionStorage atau server)
+  const [answersList, setAnswersList] = useState<QuizAttemptAnswer[]>(() => {
+    if (!isPreview) {
+      try {
+        const saved = sessionStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed.answersList)) {
+            // Deduplikasi awal jika ada rekaman usang
+            const unique: QuizAttemptAnswer[] = [];
+            parsed.answersList.forEach((a: QuizAttemptAnswer) => {
+              const idx = unique.findIndex((u) => u.questionId === a.questionId);
+              if (idx >= 0) unique[idx] = a;
+              else unique.push(a);
+            });
+            return unique;
+          }
+        }
+      } catch {}
+    }
+    return [];
+  });
+
+  // 2. Indeks nomor soal aktif
   const [currentIndex, setCurrentIndex] = useState<number>(() => {
     if (typeof initialQuestionIndex === 'number' && initialQuestionIndex >= 0 && initialQuestionIndex < quiz.questions.length) {
       return initialQuestionIndex;
@@ -269,19 +292,18 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     return 0;
   });
 
-  const [selectedOption, setSelectedOption] = useState<number | null>(null);
-  const [isAnswerConfirmed, setIsAnswerConfirmed] = useState(false);
-  const [answersList, setAnswersList] = useState<QuizAttemptAnswer[]>(() => {
-    if (!isPreview) {
-      try {
-        const saved = sessionStorage.getItem(STORAGE_KEY);
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed.answersList)) return parsed.answersList;
-        }
-      } catch {}
-    }
-    return [];
+  // Periksa apakah soal aktif saat ini SUDAH dijawab oleh siswa sebelumnya
+  const initialCurrentQ = activeQuestions[currentIndex] || activeQuestions[0];
+  const initialExistingAns = answersList.find((a) => initialCurrentQ && a.questionId === initialCurrentQ.id);
+
+  const [selectedOption, setSelectedOption] = useState<number | null>(() => {
+    return initialExistingAns?.selectedIndex ?? null;
+  });
+  const [isAnswerConfirmed, setIsAnswerConfirmed] = useState<boolean>(() => {
+    return Boolean(initialExistingAns);
+  });
+  const [showWaitingLounge, setShowWaitingLounge] = useState<boolean>(() => {
+    return Boolean(initialExistingAns && activeSettings.executionMode === 'teacher_led' && !isTeacher);
   });
   const [timeLeft, setTimeLeft] = useState<number>(() => {
     const targetIdx = typeof initialQuestionIndex === 'number' && initialQuestionIndex >= 0 && initialQuestionIndex < quiz.questions.length
@@ -335,7 +357,9 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 
   // Mode Dipandu Guru: Hitung Mundur 3 Detik (3, 2, 1, Mulai!) sebelum butir soal aktif
   const [showCountdown, setShowCountdown] = useState<boolean>(() => {
-    return activeSettings.executionMode === 'teacher_led' && !isPreview;
+    const q = activeQuestions[currentIndex];
+    const isAlreadyAnswered = answersList.some((a) => q && a.questionId === q.id);
+    return activeSettings.executionMode === 'teacher_led' && !isPreview && !isAlreadyAnswered;
   });
   const lastCountdownQuestionRef = useRef<number>(currentIndex);
 
@@ -343,15 +367,54 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     setShowCountdown(false);
   }, []);
 
-  // Trigger hitung mundur 3 detik setiap kali nomor soal berganti di mode dipandu guru
+  // Trigger hitung mundur 3 detik setiap kali nomor soal berganti di mode dipandu guru (hanya jika soal belum dijawab)
   useEffect(() => {
     if (activeSettings.executionMode === 'teacher_led' && !isPreview) {
       if (lastCountdownQuestionRef.current !== currentIndex) {
         lastCountdownQuestionRef.current = currentIndex;
-        setShowCountdown(true);
+        const q = activeQuestions[currentIndex];
+        const isAlreadyAnswered = answersList.some((a) => q && a.questionId === q.id);
+        if (!isAlreadyAnswered) {
+          setShowCountdown(true);
+        } else {
+          setShowCountdown(false);
+        }
       }
     }
-  }, [currentIndex, activeSettings.executionMode, isPreview]);
+  }, [currentIndex, activeSettings.executionMode, isPreview, activeQuestions, answersList]);
+
+  // ─── SINKRONISASI REAKTIF: STATUS JAWABAN & WAITING LOUNGE UNTUK SOAL AKTIF ───
+  // Memastikan jika soal pada currentIndex sudah pernah dijawab oleh siswa
+  // (baik dimuat dari sessionStorage atau server saat reload), siswa TIDAK AKAN
+  // diminta mengerjakan ulang, melainkan langsung masuk ke Waiting Lounge (Dino Run)
+  useEffect(() => {
+    const currentQ = activeQuestions[currentIndex];
+    if (!currentQ) return;
+
+    const existingAns = answersList.find((a) => a.questionId === currentQ.id);
+
+    if (existingAns) {
+      // Soal ini SUDAH dijawab!
+      setIsAnswerConfirmed(true);
+      if (typeof existingAns.selectedIndex === 'number' && existingAns.selectedIndex >= 0) {
+        setSelectedOption(existingAns.selectedIndex);
+      }
+      if (currentQ.type === 'short_answer' && existingAns.textAnswer) {
+        setShortAnswerInput(existingAns.textAnswer);
+      }
+
+      // Khusus Mode Dipandu Guru: Siswa yang sudah menjawab langsung masuk Lounge (Dino Run)
+      if (activeSettings.executionMode === 'teacher_led' && !isTeacher && currentIndex < activeQuestions.length - 1) {
+        setShowWaitingLounge(true);
+        setShowCountdown(false);
+      }
+    } else {
+      // Soal ini BELUM dijawab
+      setIsAnswerConfirmed(false);
+      setSelectedOption(null);
+      setShowWaitingLounge(false);
+    }
+  }, [currentIndex, answersList, activeQuestions, activeSettings.executionMode, isTeacher]);
 
   // Dialog konfirmasi navigasi soal khusus Guru di Mode Dipandu Guru
   const [confirmTeacherNavModal, setConfirmTeacherNavModal] = useState<{
@@ -500,21 +563,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     hasInitialIndexSyncRef.current = true;
 
     if (teacherIdx !== currentIndex) {
-      const targetQuestion = activeQuestions[teacherIdx];
-      const targetDuration = getQuestionDuration(targetQuestion);
-      setCurrentIndex(teacherIdx);
-      setSelectedOption(null);
-      setIsAnswerConfirmed(false);
-      setTimeLeft(targetDuration);
-      setIsPaused(false);
-      setShortAnswerInput('');
-      setShowFirstLetterHint(false);
-      setRevealedTiles(new Set());
-      setSelectedLeft(null);
-      setMatchedPairs(new Set());
-      setWrongPairAttempt(null);
-      setShowWaitingLounge(false);
-      setShowCountdown(true);
+      handleJumpToQuestion(teacherIdx);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [liveSession?.currentQuestionIndex, activeSettings.executionMode, isPreview, isTeacher]);
@@ -817,7 +866,16 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     };
 
     setAnswersList((prev) => {
-      const updated = [...prev, recordedAnswer];
+      // DEDUPLIKASI KUNCI: Cegah penggandaan riwayat jawaban jika soal dijawab ulang setelah reload
+      const existingIdx = prev.findIndex((a) => a.questionId === recordedAnswer.questionId);
+      let updated: QuizAttemptAnswer[];
+      if (existingIdx >= 0) {
+        updated = [...prev];
+        updated[existingIdx] = recordedAnswer;
+      } else {
+        updated = [...prev, recordedAnswer];
+      }
+
       if (activeSessionId) {
         try {
           const profile = DataManager.getPlayerProfile();
@@ -843,7 +901,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
             id: storedToken?.id,
             name: storedToken?.name || profile.nickname || 'Siswa',
             avatarId: profile.avatarId || 'lion',
-            currentQuestionIndex: currentIndex + 1,
+            currentQuestionIndex: Math.max(currentIndex + 1, updated.length),
             totalQuestions: activeQuestions.length,
             score,
             stars,
@@ -1032,20 +1090,33 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     setDucked(false);
     const targetQuestion = activeQuestions[targetIdx];
     const targetDuration = getQuestionDuration(targetQuestion);
+    const existingAns = answersList.find((a) => a.questionId === targetQuestion?.id);
+
     setCurrentIndex(targetIdx);
-    setSelectedOption(null);
-    setIsAnswerConfirmed(false);
     setTimeLeft(targetDuration);
     setIsPaused(false);
     setPollVotes({ 0: 0, 1: 0, 2: 0, 3: 0 });
-    setShortAnswerInput('');
+    setShortAnswerInput(existingAns?.textAnswer || '');
     setShowFirstLetterHint(false);
     setRevealedTiles(new Set());
     setSelectedLeft(null);
     setMatchedPairs(new Set());
     setWrongPairAttempt(null);
-    if (activeSettings.executionMode === 'teacher_led' && !isPreview) {
-      setShowCountdown(true);
+
+    if (existingAns) {
+      setSelectedOption(existingAns.selectedIndex ?? null);
+      setIsAnswerConfirmed(true);
+      if (activeSettings.executionMode === 'teacher_led' && !isTeacher && targetIdx < activeQuestions.length - 1) {
+        setShowWaitingLounge(true);
+        setShowCountdown(false);
+      }
+    } else {
+      setSelectedOption(null);
+      setIsAnswerConfirmed(false);
+      setShowWaitingLounge(false);
+      if (activeSettings.executionMode === 'teacher_led' && !isPreview) {
+        setShowCountdown(true);
+      }
     }
   };
 

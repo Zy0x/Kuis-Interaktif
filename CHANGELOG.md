@@ -1,6 +1,24 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.34] - 2026-09-15
+### Perbaikan Tuntas: Pencegahan Pengerjaan Ulang Soal Pasca-Reload & Deduplikasi Skor Siswa (Rule 1, Rule 9, Rule 11 & Rule 15)
+
+#### 1. Deteksi Status Jawaban Instan Pasca-Reload (`QuizArena.tsx`)
+- **Restorasi Status Soal Akurat**: Mengatasi bug di mana siswa yang me-refresh halaman diminta mengerjakan kembali soal yang sudah dijawab. Sistem kini langsung memeriksa `answersList` saat mount, saat nomor soal berganti, maupun saat navigasi (`handleJumpToQuestion`).
+- **Transisi Otomatis ke Waiting Lounge**: Jika soal pada nomor aktif sudah pernah dijawab oleh siswa pada mode dipandu guru, siswa langsung diarahkan kembali ke Ruang Tunggu Jeda (*Waiting Lounge / Dino Run*) tanpa menampilkan pilihan ganda atau hitung mundur 3-2-1. Siswa tidak akan pernah diminta mengerjakan ulang soal yang sama.
+
+#### 2. Deduplikasi Riwayat Jawaban & Pencegahan Nilai Menggelembung (`QuizArena.tsx`)
+- **Deduplikasi In-Place**: Mengubah logika penyimpanan jawaban di `handleAnswerSelect` dari penambahan membabi-buta (`[...prev, recordedAnswer]`) menjadi pembaruan tepat sasaran berdasarkan `questionId`. Jika soal pernah dijawab sebelumnya, jawaban diperbarui di posisinya tanpa menggandakan panjang daftar jawaban.
+- **Koreksi Perhitungan Benar & Salah**: Jumlah jawaban benar (`correctCount`), salah (`incorrectCount`), dan skor persentase kini dihitung dari data unik, sehingga mustahil jumlah benar melebihi jumlah soal yang sedang dikerjakan.
+
+#### 3. Sanitasi Data Papan Kendali Guru Host (`WaygroundHostView.tsx`)
+- **Perhitungan Metrik Berbasis Jawaban Unik**: Papan kendali host guru kini menghitung `displayCorrectCount` dan `displayScore` secara langsung dari riwayat jawaban unik (`p.answers`), sehingga kebal dari anomali data sesi usang dan langsung menampilkan progres yang valid (misal: 2/5 dengan 2 benar, bukan 4 benar).
+
+#### 4. Pembaruan Versi & Cache PWA (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.34` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.34` (`public/sw.js`).
+
 ## [2.4.33] - 2026-09-15
 ### Peningkatan Ruang Lompat Dino Run & Papan Skor 3 Besar Teman (Rule 1, Rule 2, Rule 5 & Rule 15)
 

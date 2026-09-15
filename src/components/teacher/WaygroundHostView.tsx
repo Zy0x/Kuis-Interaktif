@@ -293,17 +293,27 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
     }
   };
 
+  // Total questions count
+  const totalQuestions = quiz.questions?.length || session.totalQuestions || 1;
+
   // Sorted participants by score descending
   const sortedParticipants = useMemo(() => {
+    const getPScore = (p: any) => {
+      const pAnsList = p.answers ? Object.values(p.answers).filter((a: any) => a && typeof a.questionIndex === 'number') : [];
+      if (pAnsList.length > 0) {
+        const correct = pAnsList.filter((a: any) => a.isCorrect).length;
+        return Math.round((correct / totalQuestions) * 100);
+      }
+      return p.score;
+    };
     return [...session.participants].sort((a, b) => {
-      if (b.score !== a.score) return b.score - a.score;
+      const aScore = getPScore(a);
+      const bScore = getPScore(b);
+      if (bScore !== aScore) return bScore - aScore;
       if (b.correctCount !== a.correctCount) return b.correctCount - a.correctCount;
       return a.timeSpentSec - b.timeSpentSec;
     });
-  }, [session.participants]);
-
-  // Total questions count
-  const totalQuestions = quiz.questions?.length || session.totalQuestions || 1;
+  }, [session.participants, totalQuestions]);
 
   // Class accuracy metrics
   const classStats = useMemo(() => {
@@ -323,7 +333,11 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
     const questionAnsweredCounts: number[] = new Array(totalQuestions).fill(0);
 
     session.participants.forEach((p) => {
-      totalScore += p.score;
+      const pAnsList = p.answers ? Object.values(p.answers).filter((a) => a && typeof a.questionIndex === 'number') : [];
+      const accurateScore = pAnsList.length > 0
+        ? Math.round((pAnsList.filter((a) => a.isCorrect).length / totalQuestions) * 100)
+        : p.score;
+      totalScore += accurateScore;
       if (p.finished) finishedCount++;
 
       Object.values(p.answers || {}).forEach((ans) => {
@@ -960,6 +974,18 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
 
                     const avatarEmoji = AVATAR_MAP[p.avatarId] || '🦁';
 
+                    // Hitung nilai dan jumlah benar yang akurat dari riwayat jawaban unik per soal (kebal dari anomali duplikasi reload)
+                    const pAnsList = p.answers ? Object.values(p.answers).filter((a: any) => a && typeof a.questionIndex === 'number') : [];
+                    const displayCorrectCount = pAnsList.length > 0
+                      ? pAnsList.filter((a: any) => a.isCorrect).length
+                      : p.correctCount;
+                    const displayIncorrectCount = pAnsList.length > 0
+                      ? pAnsList.filter((a: any) => !a.isCorrect).length
+                      : p.incorrectCount;
+                    const displayScore = pAnsList.length > 0
+                      ? Math.round((displayCorrectCount / totalQuestions) * 100)
+                      : p.score;
+
                     return (
                       <div
                         key={p.id}
@@ -1004,9 +1030,9 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                               ) : null}
                             </div>
                             <div className="text-[11px] text-slate-400 flex items-center gap-2">
-                              <span>Benar: <strong className="text-emerald-400">{p.correctCount}</strong></span>
+                              <span>Benar: <strong className="text-emerald-400">{displayCorrectCount}</strong></span>
                               <span>•</span>
-                              <span>Salah: <strong className="text-rose-400">{p.incorrectCount}</strong></span>
+                              <span>Salah: <strong className="text-rose-400">{displayIncorrectCount}</strong></span>
                               <span>•</span>
                               <span>{Math.round(p.timeSpentSec)} dtk</span>
                             </div>
@@ -1030,7 +1056,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
 
                           <div>
                             <div className="text-base sm:text-xl font-black text-amber-300 leading-none">
-                              {p.score} <span className="text-xs font-normal text-slate-400">pts</span>
+                              {displayScore} <span className="text-xs font-normal text-slate-400">pts</span>
                             </div>
                             <div className="text-[10px] text-slate-400 font-semibold mt-1">
                               {'⭐'.repeat(p.stars || 1)}
