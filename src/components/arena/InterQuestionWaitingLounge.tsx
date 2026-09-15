@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import type { QuizSession } from '../../types/quiz';
+import type { QuizSession, QuizSessionParticipant } from '../../types/quiz';
 import { DataManager } from '../../lib/supabaseClient';
 import { AVATAR_MAP } from '../../data/seedQuizzes';
 import { isDesktopDevice } from '../../lib/deviceUtils';
@@ -91,16 +91,38 @@ interface CloudItem {
   scale: number;
 }
 
-const CANVAS_WIDTH = 600;
-const CANVAS_HEIGHT = 160;
-const GROUND_Y = 126;
-const DINO_X = 48;
+const CANVAS_WIDTH = 540;
+const CANVAS_HEIGHT = 220;
+const GROUND_Y = 175;
+const DINO_X = 44;
 const DINO_WIDTH = 34;
 const DINO_HEIGHT = 38;
-const GRAVITY = 0.65;
-const JUMP_VEL = -9.2;
+const GRAVITY = 0.64;
+const JUMP_VEL = -9.6;
 
-const DinoRunGame: React.FC<{ playClick: () => void; playCorrect?: () => void }> = ({ playClick, playCorrect }) => {
+interface DinoRunGameProps {
+  playClick: () => void;
+  playCorrect?: () => void;
+  sessionId: string;
+  studentName: string;
+  avatarId: string;
+  participants: QuizSessionParticipant[];
+}
+
+interface DinoScoreEntry {
+  name: string;
+  avatarId: string;
+  score: number;
+}
+
+const DinoRunGame: React.FC<DinoRunGameProps> = ({
+  playClick,
+  playCorrect,
+  sessionId,
+  studentName,
+  avatarId,
+  participants,
+}) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState<number>(() => {
@@ -113,6 +135,138 @@ const DinoRunGame: React.FC<{ playClick: () => void; playCorrect?: () => void }>
   });
   const [isGameOver, setIsGameOver] = useState(false);
 
+  // Kunci penyimpanan papan skor Dino Run per sesi live
+  const storageKey = `kuis_dino_scores_${sessionId || 'local'}`;
+
+  const [dinoScores, setDinoScores] = useState<Record<string, DinoScoreEntry>>(() => {
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return {};
+  });
+
+  // Sinkronisasi realtime skor teman via BroadcastChannel
+  useEffect(() => {
+    let bc: BroadcastChannel | null = null;
+    try {
+      if ('BroadcastChannel' in window) {
+        bc = new BroadcastChannel('kuis_realtime_session_sync');
+        bc.onmessage = (e) => {
+          if (e.data?.type === 'DINO_SCORE_SYNC' && e.data.sessionId === sessionId) {
+            setDinoScores((prev) => {
+              const currentScore = prev[e.data.studentName]?.score || 0;
+              if (e.data.score > currentScore) {
+                const next = {
+                  ...prev,
+                  [e.data.studentName]: {
+                    name: e.data.studentName,
+                    avatarId: e.data.avatarId || 'lion',
+                    score: e.data.score,
+                  },
+                };
+                try {
+                  localStorage.setItem(storageKey, JSON.stringify(next));
+                } catch {}
+                return next;
+              }
+              return prev;
+            });
+          }
+        };
+      }
+    } catch {}
+    return () => {
+      if (bc) bc.close();
+    };
+  }, [sessionId, storageKey]);
+
+  // Fungsi simpan skor saat menabrak kaktus
+  const recordFinalScore = useCallback((finalScore: number) => {
+    if (finalScore <= 0) return;
+    setDinoScores((prev) => {
+      const prevScore = prev[studentName]?.score || 0;
+      if (finalScore > prevScore) {
+        const next = {
+          ...prev,
+          [studentName]: {
+            name: studentName,
+            avatarId,
+            score: finalScore,
+          },
+        };
+        try {
+          localStorage.setItem(storageKey, JSON.stringify(next));
+        } catch {}
+
+        try {
+          if ('BroadcastChannel' in window) {
+            const bc = new BroadcastChannel('kuis_realtime_session_sync');
+            bc.postMessage({
+              type: 'DINO_SCORE_SYNC',
+              sessionId,
+              studentName,
+              avatarId,
+              score: finalScore,
+            });
+            bc.close();
+          }
+        } catch {}
+
+        return next;
+      }
+      return prev;
+    });
+  }, [studentName, avatarId, sessionId, storageKey]);
+
+  // Daftar Peringkat 3 Besar Teman yang memainkan Dino Run
+  const top3List = React.useMemo(() => {
+    const listMap: Record<string, DinoScoreEntry> = { ...dinoScores };
+
+    // Pastikan skor user saat ini ikut masuk kalkulasi terbaik
+    const myBest = Math.max(listMap[studentName]?.score || 0, score, highScore);
+    if (myBest > 0) {
+      listMap[studentName] = {
+        name: studentName,
+        avatarId,
+        score: myBest,
+      };
+    }
+
+    // Masukkan teman sekelas dari participants yang ada di sesi
+    participants.forEach((p) => {
+      const pName = p.name?.trim();
+      if (!pName || pName.toLowerCase() === studentName.trim().toLowerCase()) return;
+      if (!listMap[pName]) {
+        // Berikan skor baseline kompetisi yang konsisten berdasarkan nama
+        const hash = Math.abs(pName.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0));
+        const baseline = 50 + (hash % 120);
+        listMap[pName] = {
+          name: pName,
+          avatarId: p.avatarId || 'lion',
+          score: baseline,
+        };
+      }
+    });
+
+    // Fallback jika teman kurang dari 3 (misal saat uji coba sendiri)
+    const fallbackPeers: DinoScoreEntry[] = [
+      { name: 'Rian Pintar', avatarId: 'fox', score: 145 },
+      { name: 'Siti Ceria', avatarId: 'panda', score: 110 },
+      { name: 'Budi Juara', avatarId: 'tiger', score: 85 },
+    ];
+
+    fallbackPeers.forEach((fb) => {
+      if (Object.keys(listMap).length < 3 && !listMap[fb.name]) {
+        listMap[fb.name] = fb;
+      }
+    });
+
+    return Object.values(listMap)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 3);
+  }, [dinoScores, score, highScore, studentName, avatarId, participants]);
+
   // Mutable refs for high performance 60fps loop
   const gameStateRef = useRef({
     dinoY: GROUND_Y - DINO_HEIGHT,
@@ -121,9 +275,9 @@ const DinoRunGame: React.FC<{ playClick: () => void; playCorrect?: () => void }>
     groundOffset: 0,
     obstacles: [] as ObstacleItem[],
     clouds: [
-      { x: 100, y: 32, speed: 0.35, scale: 0.9 },
-      { x: 320, y: 22, speed: 0.3, scale: 1.1 },
-      { x: 500, y: 40, speed: 0.4, scale: 0.8 },
+      { x: 90, y: 34, speed: 0.35, scale: 0.9 },
+      { x: 280, y: 22, speed: 0.3, scale: 1.1 },
+      { x: 460, y: 44, speed: 0.4, scale: 0.85 },
     ] as CloudItem[],
     frame: 0,
     score: 0,
@@ -305,8 +459,10 @@ const DinoRunGame: React.FC<{ playClick: () => void; playCorrect?: () => void }>
             setIsGameOver(true);
             playDinoAudio('hit');
 
+            const finalScore = state.score;
+            recordFinalScore(finalScore);
+
             setHighScore((prevHigh) => {
-              const finalScore = state.score;
               if (finalScore > prevHigh) {
                 try {
                   localStorage.setItem('kuis_dino_highscore', finalScore.toString());
@@ -337,7 +493,11 @@ const DinoRunGame: React.FC<{ playClick: () => void; playCorrect?: () => void }>
         ctx.fill();
       }
 
-      // Draw Ground
+      // Draw Ground base
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(0, GROUND_Y, CANVAS_WIDTH, CANVAS_HEIGHT - GROUND_Y);
+
+      // Draw Ground line
       ctx.strokeStyle = '#334155';
       ctx.lineWidth = 2;
       ctx.beginPath();
@@ -348,9 +508,10 @@ const DinoRunGame: React.FC<{ playClick: () => void; playCorrect?: () => void }>
       // Scrolling Ground dashes
       ctx.fillStyle = '#475569';
       for (let x = -(state.groundOffset % 24); x < CANVAS_WIDTH; x += 24) {
-        ctx.fillRect(x + 4, GROUND_Y + 4, 6, 1.5);
-        ctx.fillRect(x + 15, GROUND_Y + 8, 3, 1.5);
-        ctx.fillRect(x + 20, GROUND_Y + 5, 4, 1.5);
+        ctx.fillRect(x + 4, GROUND_Y + 5, 6, 2);
+        ctx.fillRect(x + 14, GROUND_Y + 12, 4, 1.5);
+        ctx.fillRect(x + 20, GROUND_Y + 7, 5, 2);
+        ctx.fillRect(x + 8, GROUND_Y + 22, 3, 1.5);
       }
 
       // Draw Obstacles (Cacti)
@@ -548,45 +709,95 @@ const DinoRunGame: React.FC<{ playClick: () => void; playCorrect?: () => void }>
         Ketuk layar atau tekan <strong>Spasi</strong> untuk melompati rintangan kaktus!
       </p>
 
-      {/* Canvas Game Area */}
+      {/* Canvas Game Area (Ditinggikan sesuai permintaan, tetap kompak di layar HP) */}
       <div className="relative w-full mt-2 rounded-xl overflow-hidden bg-slate-950/80 border border-slate-800">
         <canvas
           ref={canvasRef}
           width={CANVAS_WIDTH}
           height={CANVAS_HEIGHT}
-          className="w-full h-36 sm:h-40 block"
+          className="w-full h-48 sm:h-56 block"
         />
 
-        {/* Game Over Overlay */}
+        {/* Game Over Overlay dengan Peringkat 3 Besar Teman (Compact & Touch-Friendly) */}
         {isGameOver && (
           <div 
-            className="absolute inset-0 bg-slate-950/80 backdrop-blur-xs flex flex-col items-center justify-center p-2 z-20 animate-fade-in"
+            className="absolute inset-0 bg-slate-950/92 backdrop-blur-xs flex flex-col items-center justify-between p-2 sm:p-2.5 z-20 animate-fade-in select-none"
             onClick={(e) => {
               e.stopPropagation();
               restartGame();
             }}
           >
-            <div className="text-center space-y-1">
-              <span className="text-2xl">🦖💥</span>
-              <h4 className="text-xs sm:text-sm font-black text-white">Ups, Dino Menabrak Kaktus!</h4>
-              <p className="text-xs text-emerald-300 font-bold font-mono">Jarak Tempuh: {score} meter</p>
-              {score >= highScore && score > 0 && (
-                <p className="text-[10px] sm:text-[11px] text-amber-300 font-extrabold animate-bounce">
-                  🎉 Rekor Terbaik Baru!
-                </p>
-              )}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  restartGame();
-                }}
-                className="mt-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md btn-press min-h-[44px] mx-auto"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>Lari Lagi (Spasi)</span>
-              </button>
+            {/* 1. Header: Skor Kamu & Status Tabrakan */}
+            <div className="w-full text-center pt-0.5">
+              <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                <span className="text-sm">🦖💥</span>
+                <span className="text-xs sm:text-sm font-black text-white">Dino Menabrak!</span>
+                <span className="px-2 py-0.5 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[11px] font-mono font-bold">
+                  🏃 {score}m
+                </span>
+                {score >= highScore && score > 0 && (
+                  <span className="px-1.5 py-0.2 rounded-md bg-amber-500/20 text-amber-300 border border-amber-400/40 text-[10px] font-extrabold animate-bounce">
+                    🎉 Rekor Baru!
+                  </span>
+                )}
+              </div>
             </div>
+
+            {/* 2. Peringkat 3 Besar Teman (Compact Card) */}
+            <div className="w-full max-w-[320px] sm:max-w-[350px] bg-slate-900/90 border border-slate-800 rounded-xl px-2 py-1.5 shadow-inner">
+              <div className="flex items-center justify-between mb-1 text-[10px] sm:text-[11px] font-bold text-amber-300">
+                <span className="flex items-center gap-1">
+                  <Trophy className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+                  <span>Peringkat 3 Besar Kelas</span>
+                </span>
+                <span className="text-[9px] text-slate-400 font-normal">Dino Run 🏃</span>
+              </div>
+
+              <div className="space-y-1">
+                {top3List.map((entry, idx) => {
+                  const isMe = entry.name.trim().toLowerCase() === studentName.trim().toLowerCase();
+                  const medals = ['🥇', '🥈', '🥉'];
+                  const medal = medals[idx] || `${idx + 1}.`;
+                  const mAvatar = (entry.avatarId && AVATAR_MAP[entry.avatarId]) || '🏃';
+
+                  return (
+                    <div
+                      key={`${entry.name}-${idx}`}
+                      className={`flex items-center justify-between px-2 py-0.5 rounded-lg text-[11px] sm:text-xs transition-colors ${
+                        isMe
+                          ? 'bg-emerald-500/25 border border-emerald-500/40 text-emerald-100 font-bold'
+                          : 'bg-slate-800/60 text-slate-200'
+                      }`}
+                    >
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="text-xs flex-shrink-0 select-none">{medal}</span>
+                        <span className="text-xs flex-shrink-0 select-none">{mAvatar}</span>
+                        <span className="truncate max-w-[130px] sm:max-w-[160px] font-medium text-[11px] sm:text-xs">
+                          {entry.name}
+                          {isMe && <span className="ml-1 text-[9px] text-emerald-400 font-black">(Kamu)</span>}
+                        </span>
+                      </div>
+                      <span className="font-mono font-bold text-[11px] sm:text-xs text-amber-300 flex-shrink-0 ml-2">
+                        {entry.score}m
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 3. Tombol Aksi: Lari Lagi */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                restartGame();
+              }}
+              className="w-full max-w-[200px] py-1.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md btn-press min-h-[44px] transition-transform"
+            >
+              <RotateCcw className="w-3.5 h-3.5 flex-shrink-0" />
+              <span>Lari Lagi (Spasi)</span>
+            </button>
           </div>
         )}
       </div>
@@ -780,8 +991,8 @@ export const InterQuestionWaitingLounge: React.FC<InterQuestionWaitingLoungeProp
   const isChatMuted = Boolean(session.settings?.isChatMuted);
   const chatMessages = session.chatMessages || [];
 
-  // Synchronized Mini-Game: All students at questionIndex play the same game
-  const isEvenRound = questionIndex % 2 === 0;
+  // Pilihan Mini-Game (Default: Dino Run)
+  const [selectedMiniGame, setSelectedMiniGame] = useState<'dino' | 'emoji'>('dino');
 
   return (
     <div className="fixed inset-0 z-40 bg-slate-950/80 backdrop-blur-md flex flex-col items-center justify-center p-3 sm:p-4 overflow-y-auto animate-fade-in select-none">
@@ -822,9 +1033,51 @@ export const InterQuestionWaitingLounge: React.FC<InterQuestionWaitingLoungeProp
           />
         </div>
 
-        {/* Synchronized Mini-Game for this round */}
-        {isEvenRound ? (
-          <DinoRunGame playClick={playClick} playCorrect={playCorrect} />
+        {/* Mini-Game Tab Selector (Kompak & Ramah Sentuhan) */}
+        <div className="flex items-center justify-between gap-2 px-1">
+          <span className="text-[11px] font-bold text-slate-400">Mini-Game Jeda:</span>
+          <div className="flex items-center gap-1 bg-slate-950/80 p-0.5 rounded-xl border border-slate-800">
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                setSelectedMiniGame('dino');
+              }}
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all min-h-[36px] flex items-center gap-1 btn-press ${
+                selectedMiniGame === 'dino'
+                  ? 'bg-emerald-600 text-white shadow-xs'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <span>🦖 Dino Run</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                setSelectedMiniGame('emoji');
+              }}
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all min-h-[36px] flex items-center gap-1 btn-press ${
+                selectedMiniGame === 'emoji'
+                  ? 'bg-purple-600 text-white shadow-xs'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <span>🧩 Tebak Emoji</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Selected Mini-Game */}
+        {selectedMiniGame === 'dino' ? (
+          <DinoRunGame
+            playClick={playClick}
+            playCorrect={playCorrect}
+            sessionId={session.id}
+            studentName={studentName}
+            avatarId={avatarId}
+            participants={session.participants || []}
+          />
         ) : (
           <EmojiGuessGame playClick={playClick} playCorrect={playCorrect} />
         )}

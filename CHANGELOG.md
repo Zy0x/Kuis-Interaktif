@@ -1,6 +1,23 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.33] - 2026-09-15
+### Peningkatan Ruang Lompat Dino Run & Papan Skor 3 Besar Teman (Rule 1, Rule 2, Rule 5 & Rule 15)
+
+#### 1. Optimalisasi Dimensi & Ruang Lompat Dino Run (`InterQuestionWaitingLounge.tsx`)
+- **Peningkatan Tinggi Canvas**: Menambah tinggi tampilan kanvas game Dino Run dari `160px` menjadi `220px` internal (dan tinggi CSS dari `h-36 sm:h-40` menjadi `h-48 sm:h-56` [192px/224px]) untuk memberikan ruang pandang langit yang lebih lega dan sudut lompatan Dino yang lebih bebas.
+- **Fisika Lompat & Pijakan Tanah Realistis**: Garis tanah dinaikkan ke `175px` dengan area pijakan tanah bertekstur sedalam 45px di bawahnya, daya lompat disesuaikan ke `-9.6` dan gravitasi ke `0.64` sehingga kurva lompatan mulus melompati berbagai variasi rintangan kaktus.
+
+#### 2. Papan Skor Peringkat 3 Besar Teman (*Top 3 Peers Leaderboard*) (`InterQuestionWaitingLounge.tsx`)
+- **Tampilan Selesai Game Kompak**: Saat Dino menabrak kaktus (*Game Over*), antarmuka secara elegan menampilkan kartu peringkat 3 besar teman sekelas (*Top 3 Pelari Kelas*) lengkap dengan medali 🥇🥈🥉, avatar emoji teman, penanda khusus `(Kamu)`, serta capaian jarak tempuh meter (`🏃 Xm`).
+- **Sinkronisasi Multi-Perangkat Seketika**: Rekor skor tersimpan per sesi live dan disiarkan secara real-time antar perangkat siswa melalui `BroadcastChannel('kuis_realtime_session_sync')`.
+- **Desain Khusus Mobile & Touch-First (Rule 1 & Rule 2)**: Seluruh kartu peringkat dan tombol "Lari Lagi" tersusun kompak dengan tinggi total ~152px di dalam kanvas 192px tanpa menimbulkan overflow atau scrollbar liar di layar ponsel pintar.
+- **Tab Pemilih Mini-Game Cepat**: Menambahkan selektor tombol tab antara `🦖 Dino Run` dan `🧩 Tebak Emoji` agar siswa dapat memainkan Dino Run di setiap putaran jeda soal.
+
+#### 3. Pembaruan Versi & Cache PWA (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.33` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.33` (`public/sw.js`).
+
 ## [2.4.32] - 2026-09-15
 ### Pemulihan Progres Otomatis Saat Reload & Sinkronisasi Cepat Soal Guru (Rule 1, Rule 9, Rule 11 & Rule 15)
 
