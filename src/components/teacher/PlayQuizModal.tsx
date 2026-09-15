@@ -40,7 +40,9 @@ import {
   SlidersHorizontal,
   FileText,
   Info,
-  Clock
+  Clock,
+  Key,
+  BookOpen
 } from 'lucide-react';
 
 export interface PlayQuizSessionOptions {
@@ -354,6 +356,126 @@ const DurationSelectorSection: React.FC<DurationSelectorSectionProps> = ({
             </div>
           </div>
         )}
+      </div>
+    </div>
+  );
+};
+
+interface FeedbackAndExplanationSectionProps {
+  showAnswersMode: AnswerVisibilityMode;
+  setShowAnswersMode: (mode: AnswerVisibilityMode) => void;
+  showExplanationMode: ExplanationVisibilityMode;
+  setShowExplanationMode: (mode: ExplanationVisibilityMode) => void;
+  playClick: () => void;
+  className?: string;
+}
+
+const FeedbackAndExplanationSection: React.FC<FeedbackAndExplanationSectionProps> = ({
+  showAnswersMode,
+  setShowAnswersMode,
+  showExplanationMode,
+  setShowExplanationMode,
+  playClick,
+  className = 'space-y-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-850/60 border border-slate-200/80 dark:border-slate-800/80 animate-fade-in',
+}) => {
+  return (
+    <div className={className}>
+      <label className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
+        <Key className="w-3.5 h-3.5 text-blue-500" />
+        <span>Kunci Jawaban & Pembahasan Materi</span>
+      </label>
+
+      {/* Kunci Jawaban Siswa */}
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between text-[11px]">
+          <span className="font-bold text-slate-700 dark:text-slate-300">
+            Kunci Jawaban Siswa
+          </span>
+          <span className="text-[10px] font-semibold text-blue-600 dark:text-blue-400">
+            {showAnswersMode === 'immediate'
+              ? 'Tampil Langsung'
+              : showAnswersMode === 'status_only'
+              ? 'Hanya Status (Benar/Salah)'
+              : 'Rahasia (Mode Ujian)'}
+          </span>
+        </div>
+        <div className="bg-slate-200/70 dark:bg-slate-800/80 p-1 rounded-xl flex items-center gap-1">
+          {[
+            { id: 'immediate', label: 'Tiap Soal' },
+            { id: 'status_only', label: 'Status Saja' },
+            { id: 'exam_strict', label: 'Rahasia (Ujian)' },
+          ].map((opt) => (
+            <button
+              key={opt.id}
+              type="button"
+              onClick={() => {
+                playClick();
+                setShowAnswersMode(opt.id as AnswerVisibilityMode);
+              }}
+              className={`flex-1 py-2 px-2.5 rounded-xl text-xs font-bold transition-all min-h-[44px] flex items-center justify-center btn-press ${
+                showAnswersMode === opt.id
+                  ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs font-black'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+        <p className="text-[10.5px] text-slate-500 dark:text-slate-400 leading-relaxed px-0.5">
+          {showAnswersMode === 'immediate'
+            ? 'Kunci jawaban langsung diperlihatkan kepada siswa setelah menjawab setiap butir soal.'
+            : showAnswersMode === 'status_only'
+            ? 'Siswa hanya diberitahu apakah jawabannya Benar atau Salah, kunci jawaban tetap dirahasiakan guru.'
+            : 'Mode Ujian Ketat: Benar/salah dan kunci jawaban disembunyikan sepenuhnya (hanya konfirmasi jawaban tersimpan).'}
+        </p>
+      </div>
+
+      {/* Pembahasan Materi */}
+      <div className="space-y-1.5 pt-2 border-t border-slate-200/70 dark:border-slate-800">
+        <div className="flex items-center justify-between text-[11px]">
+          <span className="font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+            <BookOpen className="w-3.5 h-3.5 text-indigo-500" />
+            <span>Pembahasan Materi Guru</span>
+          </span>
+          <span className="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400">
+            {showExplanationMode === 'immediate'
+              ? 'Tampil Langsung'
+              : showExplanationMode === 'end_only'
+              ? 'Buka di Akhir Kuis'
+              : 'Sembunyikan'}
+          </span>
+        </div>
+        <div className="bg-slate-200/70 dark:bg-slate-800/80 p-1 rounded-xl flex items-center gap-1">
+          {[
+            { id: 'immediate', label: 'Tiap Soal' },
+            { id: 'end_only', label: 'Akhir Kuis' },
+            { id: 'never', label: 'Sembunyikan' },
+          ].map((opt) => (
+            <button
+              key={opt.id}
+              type="button"
+              onClick={() => {
+                playClick();
+                setShowExplanationMode(opt.id as ExplanationVisibilityMode);
+              }}
+              className={`flex-1 py-2 px-2.5 rounded-xl text-xs font-bold transition-all min-h-[44px] flex items-center justify-center btn-press ${
+                showExplanationMode === opt.id
+                  ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-xs font-black'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+        <p className="text-[10.5px] text-slate-500 dark:text-slate-400 leading-relaxed px-0.5">
+          {showExplanationMode === 'immediate'
+            ? 'Penjelasan konsep materi langsung tampil di layar setelah siswa menjawab.'
+            : showExplanationMode === 'end_only'
+            ? 'Pembahasan materi dirahasiakan selama kuis dan baru dapat ditinjau saat kuis selesai.'
+            : 'Penjelasan materi ditiadakan dari tampilan siswa (cocok untuk ujian/evaluasi tertutup).'}
+        </p>
       </div>
     </div>
   );
@@ -1105,65 +1227,15 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
 
                   {isTeacherAdvancedOpen && (
                     <div className="pt-2 pb-1 space-y-3.5 animate-fade-in">
-                      {/* Kunci Jawaban Siswa */}
-                      <div className="space-y-1.5">
-                        <label className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
-                          Kunci Jawaban Siswa
-                        </label>
-                        <div className="bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl flex items-center gap-1">
-                          {[
-                            { id: 'immediate', label: 'Tiap Soal' },
-                            { id: 'post-game', label: 'Akhir Kuis' },
-                            { id: 'hidden', label: 'Rahasia' }
-                          ].map(opt => (
-                            <button
-                              key={opt.id}
-                              type="button"
-                              onClick={() => {
-                                playClick();
-                                setShowAnswersMode(opt.id as AnswerVisibilityMode);
-                              }}
-                              className={`flex-1 py-2 px-2.5 rounded-xl text-xs font-bold transition-all min-h-[44px] flex items-center justify-center btn-press ${
-                                showAnswersMode === opt.id
-                                  ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs font-black'
-                                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                              }`}
-                            >
-                              {opt.label}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Pembahasan Materi */}
-                      <div className="space-y-1.5">
-                        <label className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
-                          Pembahasan Materi
-                        </label>
-                        <div className="bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl flex items-center gap-1">
-                          {[
-                            { id: 'immediate', label: 'Tiap Soal' },
-                            { id: 'post-game', label: 'Akhir Kuis' },
-                            { id: 'hidden', label: 'Sembunyikan' }
-                          ].map(opt => (
-                            <button
-                              key={opt.id}
-                              type="button"
-                              onClick={() => {
-                                playClick();
-                                setShowExplanationMode(opt.id as ExplanationVisibilityMode);
-                              }}
-                              className={`flex-1 py-2 px-2.5 rounded-xl text-xs font-bold transition-all min-h-[44px] flex items-center justify-center btn-press ${
-                                showExplanationMode === opt.id
-                                  ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs font-black'
-                                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                              }`}
-                            >
-                              {opt.label}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
+                      {/* Kunci Jawaban & Pembahasan Materi */}
+                      <FeedbackAndExplanationSection
+                        showAnswersMode={showAnswersMode}
+                        setShowAnswersMode={setShowAnswersMode}
+                        showExplanationMode={showExplanationMode}
+                        setShowExplanationMode={setShowExplanationMode}
+                        playClick={playClick}
+                        className="space-y-3"
+                      />
 
                       {/* Daftar Sakelar Opsi: Acak Soal, Acak Opsi, Leaderboard */}
                       <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-850 divide-y divide-slate-100 dark:divide-slate-800/80 shadow-2xs overflow-hidden">
@@ -1455,6 +1527,15 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
                     className="space-y-2 p-3 rounded-2xl bg-slate-50 dark:bg-slate-850/60 border border-slate-200/80 dark:border-slate-800/80 animate-fade-in"
                   />
                 )}
+
+                {/* Kunci Jawaban & Pembahasan Materi */}
+                <FeedbackAndExplanationSection
+                  showAnswersMode={showAnswersMode}
+                  setShowAnswersMode={setShowAnswersMode}
+                  showExplanationMode={showExplanationMode}
+                  setShowExplanationMode={setShowExplanationMode}
+                  playClick={playClick}
+                />
 
                 {/* Keamanan & Integritas (Ultra-Clean Single List Group) */}
                 <div className="space-y-1.5">

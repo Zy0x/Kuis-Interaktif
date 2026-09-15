@@ -1,6 +1,28 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.42] - 2026-09-15
+### Penyediaan Pengaturan Kunci Jawaban & Pembahasan Materi di Mode Mandiri & PR (Rule 1, Rule 2, Rule 3 & Rule 15)
+
+#### 1. Penambahan Panel Kontrol Kunci Jawaban & Pembahasan Materi (`PlayQuizModal.tsx`)
+- **Pengaturan Kunci Jawaban Siswa (`showAnswersMode`)**:
+  - **Tiap Soal (`immediate`)**: Kunci jawaban langsung diperlihatkan kepada siswa setelah menjawab setiap butir soal.
+  - **Status Saja (`status_only`)**: Siswa hanya diberitahu status Benar atau Salah, sementara kunci jawaban tepat tetap dirahasiakan guru.
+  - **Rahasia / Ujian (`exam_strict`)**: Mode ujian ketat di mana status benar/salah maupun kunci jawaban dirahasiakan sepenuhnya (hanya konfirmasi netral bahwa jawaban telah tersimpan).
+- **Pengaturan Pembahasan Materi Guru (`showExplanationMode`)**:
+  - **Tiap Soal (`immediate`)**: Penjelasan konsep materi guru langsung tampil di layar setelah siswa menjawab.
+  - **Akhir Kuis (`end_only`)**: Pembahasan materi dirahasiakan selama kuis dan baru dapat ditinjau saat siswa menyelesaikan kuis pada halaman rekapan.
+  - **Sembunyikan (`never`)**: Pembahasan materi ditiadakan dari tampilan siswa (ideal untuk ujian evaluasi formal).
+
+#### 2. Standardisasi Antarmuka & Ekstraksi Komponen Reusable (Rule 1 & Rule 14)
+- **Komponen Modular `FeedbackAndExplanationSection`**: Diterapkan secara seragam dan konsisten baik pada Mode Guru maupun Mode Mandiri & PR.
+- **Penyelarasan Nilai Opsi**: Memperbaiki pemetaan opsi agar 100% selaras dengan tipe data arsitektur sistem (`AnswerVisibilityMode` dan `ExplanationVisibilityMode`) serta logika rendering di `QuizArena.tsx`.
+- **Target Sentuh & Tipografi Bersih (Rule 1 & 2)**: Setiap tombol pilihan memiliki target sentuh minimal $44\times 44$ px dilengkapi penjelasan deskriptif ringkas di bawahnya untuk kemudahan pemahaman guru.
+
+#### 3. Pembaruan Versi & Cache PWA (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.42` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.42` (`public/sw.js`).
+
 ## [2.4.41] - 2026-09-15
 ### Perbaikan Sinkronisasi Format Tanggal Pengerjaan & Pencegahan Rekap Ganda (Rule 1, Rule 2, Rule 9, Rule 11 & Rule 15)
 
