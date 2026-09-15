@@ -817,120 +817,136 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
           const deadlineCountdown = isSelfPaced ? getAccurateDeadlineCountdown(currentBannerSession.settings?.deadlineAt, nowMs) : null;
 
           return (
-            <div className={`rounded-3xl p-4 sm:p-5 text-white shadow-xl flex flex-col gap-4 animate-fade-in relative overflow-hidden ${
+            <div className={`rounded-3xl p-4 sm:p-6 text-white shadow-xl flex flex-col gap-3.5 sm:gap-4 animate-fade-in relative overflow-hidden ${
               isSelfPaced
-                ? 'bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-950 border border-indigo-500/40'
-                : 'bg-gradient-to-r from-blue-700 via-indigo-700 to-purple-800 border border-blue-400/40'
+                ? 'bg-gradient-to-br from-slate-900 via-indigo-950 to-blue-950 border border-indigo-500/40'
+                : 'bg-gradient-to-br from-blue-700 via-indigo-700 to-purple-800 border border-blue-400/40'
             }`}>
               {/* Glow accent */}
               <div className="absolute -right-10 -bottom-10 w-48 h-48 bg-white/10 rounded-full blur-2xl pointer-events-none" />
 
-              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 z-10">
-                <div className="flex items-start sm:items-center gap-3.5 min-w-0">
-                  <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 flex items-center justify-center text-2xl flex-shrink-0 shadow-inner">
-                    {isSelfPaced ? (
-                      <ClipboardList className="w-6 h-6 text-indigo-300" />
-                    ) : currentBannerSession.status === 'waiting' ? (
-                      <Clock className="w-6 h-6 text-amber-300 animate-pulse" />
-                    ) : (
-                      <Radio className="w-6 h-6 text-rose-300 animate-pulse" />
-                    )}
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap mb-1">
-                      {isSelfPaced ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-indigo-400/30 border border-indigo-300/50 text-indigo-100">
-                          <ClipboardList className="w-3 h-3 text-indigo-200" />
-                          TUGAS MANDIRI / PR
-                        </span>
-                      ) : (
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                          currentBannerSession.status === 'waiting'
-                            ? 'bg-amber-400/30 border border-amber-300/50 text-amber-200'
-                            : 'bg-rose-500/35 border border-rose-400/50 text-rose-200'
-                        }`}>
-                          <span className="w-2 h-2 rounded-full bg-white animate-ping" />
-                          {currentBannerSession.status === 'waiting' ? 'RUANG TUNGGU SEDANG BERLANGSUNG' : 'SESI LIVE BERJALAN'}
-                        </span>
-                      )}
+              {/* Top Meta Bar: Status Badge, PIN, and Participant Count */}
+              <div className="flex items-center justify-between gap-2 flex-wrap z-10">
+                <div className="flex items-center gap-1.5 xs:gap-2 flex-wrap min-w-0">
+                  {isSelfPaced ? (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-wider bg-indigo-400/30 border border-indigo-300/50 text-indigo-100 backdrop-blur-sm flex-shrink-0">
+                      <ClipboardList className="w-3.5 h-3.5 text-indigo-200 flex-shrink-0" />
+                      <span>Tugas Mandiri / PR</span>
+                    </span>
+                  ) : (
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-wider backdrop-blur-sm flex-shrink-0 ${
+                      currentBannerSession.status === 'waiting'
+                        ? 'bg-amber-400/30 border border-amber-300/50 text-amber-200'
+                        : 'bg-rose-500/35 border border-rose-400/50 text-rose-200'
+                    }`}>
+                      <span className="w-2 h-2 rounded-full bg-white animate-ping flex-shrink-0" />
+                      <span>{currentBannerSession.status === 'waiting' ? 'Ruang Tunggu' : 'Sesi Live Berjalan'}</span>
+                    </span>
+                  )}
 
-                      <span className="text-xs font-mono font-black bg-black/25 px-2 py-0.5 rounded-lg border border-white/15 text-white">
-                        PIN: {currentBannerSession.pinCode}
-                      </span>
-                      <span className="text-xs text-blue-100 font-medium">
-                        {currentBannerSession.participants.length} Siswa Tergabung
-                      </span>
-                    </div>
-
-                    <h3 className="font-black text-sm sm:text-base leading-tight truncate">
-                      {currentBannerSession.quizTitle}
-                    </h3>
-
-                    <p className="text-xs text-blue-100/90 line-clamp-1 mt-0.5">
-                      {isSelfPaced
-                        ? 'Siswa dapat mengerjakan tugas secara mandiri hingga batas waktu pengumpulan.'
-                        : currentBannerSession.status === 'waiting'
-                        ? 'Siswa sedang menunggu di ruang tunggu. Tekan tombol di samping untuk kembali memimpin sesi.'
-                        : 'Kuis interaktif sedang dipandu oleh Anda. Tekan tombol di samping untuk membuka layar kendali.'}
-                    </p>
-
-                    {/* Deadline info bar for PR */}
-                    {isSelfPaced && deadlineCountdown && (
-                      <div className="flex items-center gap-2 flex-wrap mt-1 text-xs">
-                        <div className="flex items-center gap-1 text-indigo-200 font-medium">
-                          <Calendar className="w-3.5 h-3.5 text-indigo-300 flex-shrink-0" />
-                          <span>Batas Waktu: {deadlineCountdown.formattedDate}</span>
-                        </div>
-                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                          deadlineCountdown.isExpired
-                            ? 'bg-rose-500/40 text-rose-200 border border-rose-400/60 animate-pulse'
-                            : deadlineCountdown.isUrgent
-                            ? 'bg-amber-500/40 text-amber-200 border border-amber-400/60'
-                            : 'bg-indigo-500/30 text-indigo-200 border border-indigo-400/40'
-                        }`}>
-                          {deadlineCountdown.isExpired ? (
-                            <>
-                              <AlertTriangle className="w-3 h-3 text-rose-300" />
-                              TENGGAT BERAKHIR ({deadlineCountdown.countdownText})
-                            </>
-                          ) : (
-                            <>
-                              <Clock className="w-3 h-3" />
-                              Sisa Waktu: {deadlineCountdown.countdownText}
-                            </>
-                          )}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 w-full md:w-auto flex-shrink-0">
+                  {/* PIN Code with quick copy */}
                   <button
                     type="button"
-                    onClick={() => {
-                      playClick();
-                      setSelectedSessionForHost(currentBannerSession);
-                    }}
-                    className="flex-1 md:flex-initial px-5 py-3 rounded-2xl bg-white text-indigo-950 hover:bg-blue-50 text-xs sm:text-sm font-black shadow-md transition-all flex items-center justify-center gap-2 btn-press min-h-[48px]"
+                    onClick={() => handleCopyPin(currentBannerSession.pinCode)}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono font-black bg-black/30 hover:bg-black/50 border border-white/20 text-white transition-colors flex-shrink-0"
+                    title="Klik untuk salin PIN"
                   >
-                    {isSelfPaced ? (
+                    <span className="text-[10px] text-white/70 font-sans">PIN:</span>
+                    <span className="tracking-wider">{currentBannerSession.pinCode}</span>
+                    {copiedPin === currentBannerSession.pinCode ? (
+                      <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                    ) : (
+                      <Copy className="w-3.5 h-3.5 text-white/60 flex-shrink-0" />
+                    )}
+                  </button>
+                </div>
+
+                {/* Participants counter */}
+                <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/10 border border-white/15 text-[11px] sm:text-xs text-blue-100 font-semibold backdrop-blur-sm flex-shrink-0">
+                  <Users className="w-3.5 h-3.5 text-blue-300 flex-shrink-0" />
+                  <span>{currentBannerSession.participants.length} Siswa Tergabung</span>
+                </div>
+              </div>
+
+              {/* Title & Description with full width and zero brutal truncation */}
+              <div className="space-y-1 z-10 min-w-0">
+                <h3 className="font-black text-base sm:text-lg md:text-xl leading-snug break-words text-white drop-shadow-xs">
+                  {currentBannerSession.quizTitle}
+                </h3>
+
+                <p className="text-xs sm:text-sm text-blue-100/90 leading-relaxed line-clamp-2">
+                  {isSelfPaced
+                    ? 'Siswa dapat mengerjakan tugas secara mandiri hingga batas waktu pengumpulan.'
+                    : currentBannerSession.status === 'waiting'
+                    ? 'Siswa sedang menunggu di ruang tunggu. Tekan tombol di bawah untuk kembali memimpin sesi.'
+                    : 'Kuis interaktif sedang dipandu oleh Anda. Buka layar kendali untuk memimpin kuis.'}
+                </p>
+              </div>
+
+              {/* Deadline & Countdown Pill Box for Self-Paced / PR */}
+              {isSelfPaced && deadlineCountdown && (
+                <div className={`p-2.5 sm:p-3 rounded-2xl border text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2 z-10 backdrop-blur-sm ${
+                  deadlineCountdown.isExpired
+                    ? 'bg-rose-500/25 border-rose-400/40 text-rose-100'
+                    : deadlineCountdown.isUrgent
+                    ? 'bg-amber-500/25 border-amber-400/40 text-amber-100'
+                    : 'bg-white/10 border-white/15 text-indigo-100'
+                }`}>
+                  <div className="flex items-center gap-1.5 font-medium flex-wrap">
+                    <Calendar className="w-3.5 h-3.5 text-indigo-300 flex-shrink-0" />
+                    <span>Batas Waktu: <strong className="text-white font-bold">{deadlineCountdown.formattedDate}</strong></span>
+                  </div>
+
+                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-wider self-start sm:self-auto flex-shrink-0 ${
+                    deadlineCountdown.isExpired
+                      ? 'bg-rose-500/40 text-rose-100 border border-rose-300/60 animate-pulse'
+                      : deadlineCountdown.isUrgent
+                      ? 'bg-amber-500/40 text-amber-100 border border-amber-300/60'
+                      : 'bg-indigo-500/35 text-indigo-100 border border-indigo-300/50'
+                  }`}>
+                    {deadlineCountdown.isExpired ? (
                       <>
-                        <Users className="w-4 h-4 text-indigo-600" />
-                        <span>Pantau Progres Siswa</span>
+                        <AlertTriangle className="w-3.5 h-3.5 text-rose-200" />
+                        TENGGAT BERAKHIR ({deadlineCountdown.countdownText})
                       </>
                     ) : (
                       <>
-                        <Tv className="w-4 h-4 text-indigo-600" />
-                        <span>
-                          {currentBannerSession.status === 'waiting'
-                            ? 'Kembali ke Ruang Tunggu'
-                            : 'Buka Layar Pantau Live'}
-                        </span>
+                        <Clock className="w-3.5 h-3.5 text-amber-300" />
+                        Sisa Waktu: {deadlineCountdown.countdownText}
                       </>
                     )}
-                  </button>
+                  </span>
+                </div>
+              )}
 
+              {/* Action Buttons: Responsive mobile-first stacked + 2-col secondary actions */}
+              <div className="pt-2 border-t border-white/15 flex flex-col md:flex-row items-stretch md:items-center gap-2 z-10">
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    setSelectedSessionForHost(currentBannerSession);
+                  }}
+                  className="w-full md:flex-1 py-3 px-4 rounded-2xl bg-white text-indigo-950 hover:bg-blue-50 text-xs sm:text-sm font-black shadow-md transition-all flex items-center justify-center gap-2 btn-press min-h-[48px]"
+                >
+                  {isSelfPaced ? (
+                    <>
+                      <Users className="w-4 h-4 text-indigo-600 flex-shrink-0" />
+                      <span>Pantau Progres Siswa</span>
+                    </>
+                  ) : (
+                    <>
+                      <Tv className="w-4 h-4 text-indigo-600 flex-shrink-0" />
+                      <span>
+                        {currentBannerSession.status === 'waiting'
+                          ? 'Kembali ke Ruang Tunggu'
+                          : 'Buka Layar Pantau Live'}
+                      </span>
+                    </>
+                  )}
+                </button>
+
+                <div className={`grid ${isSelfPaced ? 'grid-cols-2' : 'grid-cols-1'} md:flex md:items-center gap-2 w-full md:w-auto`}>
                   {isSelfPaced && (
                     <button
                       type="button"
@@ -938,21 +954,21 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                         playClick();
                         setSessionToExtendDeadline(currentBannerSession);
                       }}
-                      className="px-3.5 py-3 rounded-2xl bg-indigo-500/30 hover:bg-indigo-500/50 border border-indigo-300/40 text-white text-xs font-bold transition-all min-h-[48px] flex items-center gap-1.5"
+                      className="py-3 px-3.5 rounded-2xl bg-indigo-500/30 hover:bg-indigo-500/50 border border-indigo-300/40 text-white text-xs font-bold transition-all min-h-[48px] flex items-center justify-center gap-1.5 btn-press"
                       title="Perpanjang batas waktu PR"
                     >
-                      <Calendar className="w-4 h-4 text-indigo-300" />
-                      <span className="hidden sm:inline">Perpanjang</span>
+                      <Calendar className="w-4 h-4 text-indigo-300 flex-shrink-0" />
+                      <span>Perpanjang</span>
                     </button>
                   )}
 
                   <button
                     type="button"
                     onClick={() => handleEndSessionDirectly(currentBannerSession.id)}
-                    className="px-3.5 py-3 rounded-2xl bg-white/15 hover:bg-rose-600/70 border border-white/25 text-white text-xs font-bold transition-all min-h-[48px]"
+                    className="py-3 px-3.5 rounded-2xl bg-white/15 hover:bg-rose-600/80 border border-white/25 text-white text-xs font-bold transition-all min-h-[48px] flex items-center justify-center gap-1.5 btn-press"
                     title="Akhiri sesi ini"
                   >
-                    Akhiri
+                    <span>Akhiri Sesi</span>
                   </button>
                 </div>
               </div>
