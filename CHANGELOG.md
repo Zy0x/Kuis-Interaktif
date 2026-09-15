@@ -1,6 +1,29 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.29] - 2026-09-15
+### Tata Letak Header Bersih, Kunci Kendali Navigasi & Obrolan Senyap Siswa Mode Dipandu Guru (Rule 1, Rule 2, Rule 4, Rule 5 & Rule 15)
+
+#### 1. Header Bersih & Terfokus Khusus Siswa (`QuizArena.tsx`)
+- **Penyederhanaan Header**: Pada mode kuis dipandu guru (`teacher_led`), tampilan header bagi siswa disederhanakan secara maksimal dan bersih. Hanya menampilkan Poin soal, Judul kuis beserta nomor urut soal di sebelah kiri, serta Tombol Obrolan Tanya Guru (Mode Senyap) dan Tombol Menu Pengaturan (Titik 3) di sebelah kanan.
+- **Penyembunyian Tombol Keluar & Toggle Guru**: Menghilangkan tombol silang (X) yang mencolok dan tombol kontrol guru dari header siswa sehingga tampilan terasa sangat lapang, terstruktur, dan tidak membingungkan anak-anak.
+
+#### 2. Kunci Navigasi & Kontrol Kuis Khusus Siswa (`QuizArena.tsx`)
+- **Pencegahan Lompat Soal Mandiri**: Elemen pemilih lompat nomor soal (`<select>`) disembunyikan seutuhnya dari siswa dan dikhususkan hanya untuk Guru/Presenter Smartboard. Siswa tidak dapat melompat soal secara bebas.
+- **Pencegahan Jeda Waktu Mandiri**: Tombol jeda/lanjut waktu di header dan footer hanya dapat diakses oleh Guru. Siswa melihat status waktu yang sinkron dan terkendali langsung dari depan kelas.
+- **Penguncian Tombol Soal Sebelumnya**: Tombol "Sebelumnya" di footer dinonaktifkan dan disembunyikan untuk siswa, memastikan urutan soal sepenuhnya dipandu oleh Guru.
+- **Akses Keluar Aman Melalui Menu Titik 3**: Opsi "Keluar dari Kuis" tetap disediakan secara aman di dalam sheet menu pengaturan (Titik 3) lengkap dengan konfirmasi bertingkat agar siswa tetap bisa keluar jika terjadi keadaan mendesak.
+- **Pembatasan Polling Kelas**: Menu mode polling/voting kelas kini hanya tersedia bagi Guru dan disembunyikan dari siswa.
+
+#### 3. Obrolan Interaktif Tanya Guru Mode Senyap di Arena (`QuizArena.tsx`, `StudentChatDrawer.tsx` & `ZoomChatToast.tsx`)
+- **Laci Obrolan Siswa Terintegrasi di Arena**: Siswa dapat membuka laci obrolan langsung dari arena kuis untuk bertanya mengenai soal yang sedang dikerjakan secara langsung kepada Guru.
+- **Mode Senyap Default (*Silent Mode*)**: Notifikasi suara obrolan dinonaktifkan secara bawaan selama di arena kuis agar tidak menimbulkan kebisingan di ruang kelas saat pembelajaran berlangsung, sementara notifikasi visual tetap tampil halus.
+- **Pengelolaan Gestur Kembali Hierarkis**: Penggunaan tombol kembali (Escape / Back gesture perangkat Android) memprioritaskan penutupan laci obrolan terlebih dahulu sebelum menampilkan dialog keluar kuis.
+
+#### 4. Pembaruan Versi & Cache PWA (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.29` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.29` (`public/sw.js`).
+
 ## [2.4.28] - 2026-09-15
 ### Penonaktifan Tombol Reaksi Siswa Saat Mengerjakan Soal Kuis (Rule 1, Rule 2 & Rule 15)
 

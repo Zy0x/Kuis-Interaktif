@@ -10,6 +10,7 @@ interface ZoomChatToastProps {
   onOpenChat: () => void;
   currentUserName?: string;
   position?: 'top-right' | 'bottom-right';
+  isMuted?: boolean;
 }
 
 // Suara notifikasi lembut via Web Audio API (tidak memerlukan berkas audio eksternal)
@@ -45,6 +46,7 @@ export const ZoomChatToast: React.FC<ZoomChatToastProps> = ({
   onOpenChat,
   currentUserName,
   position = 'top-right',
+  isMuted = false,
 }) => {
   const [activeMessage, setActiveMessage] = useState<SessionChatMessage | null>(null);
   const [isVisible, setIsVisible] = useState(false);
@@ -81,7 +83,9 @@ export const ZoomChatToast: React.FC<ZoomChatToastProps> = ({
     }
 
     lastProcessedMessageIdRef.current = msg.id;
-    playSubtleChatNotificationSound();
+    if (!isMuted) {
+      playSubtleChatNotificationSound();
+    }
     setActiveMessage(msg);
     setIsVisible(true);
     startDismissTimer();

@@ -256,19 +256,21 @@ export const StudentChatDrawer: React.FC<StudentChatDrawerProps> = ({
   const messageRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   useBodyScrollLock(isOpen);
-  useBackHandler('student-chat-drawer', 70, () => {
+  useBackHandler('student-chat-drawer', 100, () => {
     onClose();
     return true;
   }, isOpen);
 
-  // Jika status sesi berubah menjadi 'active' (Guru memulai kuis), seketika tutup laci obrolan dan lepaskan keyboard
+  // Hanya tutup otomatis jika terjadi TRANSISI dari non-active ('waiting') ke 'active' saat Guru baru memulai kuis
+  const prevStatusRef = useRef(sessionStatus);
   useEffect(() => {
-    if (sessionStatus === 'active' && isOpen) {
+    if (prevStatusRef.current !== 'active' && sessionStatus === 'active' && isOpen) {
       if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
         document.activeElement.blur();
       }
       onClose();
     }
+    prevStatusRef.current = sessionStatus;
   }, [sessionStatus, isOpen, onClose]);
 
   // Auto scroll to bottom

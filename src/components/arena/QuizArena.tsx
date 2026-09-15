@@ -46,12 +46,15 @@ import {
   Puzzle,
   Star,
   Edit3,
-  ShieldAlert
+  ShieldAlert,
+  MessageCircle,
+  LogOut
 } from 'lucide-react';
 import { QuizIllustration } from '../shared/QuizIllustration';
 import { QuizizzReactionOverlay } from '../common/QuizizzReactionOverlay';
 import { FloatingReactionButton } from '../common/FloatingReactionButton';
 import { ZoomChatToast } from '../common/ZoomChatToast';
+import { StudentChatDrawer } from '../chat/StudentChatDrawer';
 
 export interface QuizArenaProps {
   quiz: Quiz;
@@ -310,6 +313,26 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [isMobileToolsOpen, setIsMobileToolsOpen] = useState(false);
 
+  // Status Mode Dipandu Guru Khusus Siswa (Header Bersih & Navigasi Terkunci)
+  const isStudentTeacherLed = Boolean(activeSettings.executionMode === 'teacher_led' && !isTeacher && !isPreview);
+
+  // Obrolan Siswa di Arena (Mode Senyap saat Kuis Dipandu Guru untuk Bertanya Soal)
+  const [isChatDrawerOpen, setIsChatDrawerOpen] = useState(false);
+  const [isChatNotificationMuted, setIsChatNotificationMuted] = useState(true);
+  const [unreadChatCount, setUnreadChatCount] = useState(0);
+  const lastSeenChatCountRef = useRef(liveSession?.chatMessages?.length || 0);
+
+  useEffect(() => {
+    const currentCount = liveSession?.chatMessages?.length || 0;
+    if (isChatDrawerOpen) {
+      lastSeenChatCountRef.current = currentCount;
+      setUnreadChatCount(0);
+    } else {
+      const diff = currentCount - lastSeenChatCountRef.current;
+      setUnreadChatCount(Math.max(0, diff));
+    }
+  }, [liveSession?.chatMessages?.length, isChatDrawerOpen]);
+
   // Mode Dipandu Guru: Hitung Mundur 3 Detik (3, 2, 1, Mulai!) sebelum butir soal aktif
   const [showCountdown, setShowCountdown] = useState<boolean>(() => {
     return activeSettings.executionMode === 'teacher_led' && !isPreview;
@@ -478,7 +501,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   }, showExitConfirm);
 
   useBackHandler('arena-prompt-exit-confirm', 80, () => {
-    if (!showExitConfirm && !isPollOpen && !isMobileToolsOpen && !isGameOver) {
+    if (!showExitConfirm && !isPollOpen && !isMobileToolsOpen && !isChatDrawerOpen && !isGameOver) {
       if (isPreview) {
         onExit();
         return true;
@@ -1171,74 +1194,93 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
         <div className="w-full max-w-2xl lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl 3xl:max-w-6xl 4k:max-w-7xl mx-auto flex items-center justify-between gap-1.5 sm:gap-3">
           
           {/* Left: Exit Button & Question Info */}
-          <div className="flex items-center gap-1 sm:gap-2 min-w-0 flex-shrink">
-            <button
-              type="button"
-              onClick={() => {
-                if (playClick) playClick();
-                if (isPreview) {
-                  onExit();
-                } else {
-                  setShowExitConfirm(true);
-                }
-              }}
-              className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors flex-shrink-0"
-              aria-label={isPreview ? "Tutup Pratinjau Kuis" : "Keluar Kuis"}
-              title={isPreview ? "Tutup Pratinjau Kuis" : "Keluar Kuis"}
-            >
-              <X className="w-5 h-5" />
-            </button>
+          {isStudentTeacherLed ? (
+            /* Mode Dipandu Guru Khusus Siswa: Bersih, Rapi & Terkendali Penuh oleh Guru */
+            <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0 flex-1">
+              <span className="text-[11px] sm:text-xs font-black text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 border border-amber-300/80 dark:border-amber-800/80 px-2.5 py-1 rounded-xl inline-flex items-center gap-1 shadow-xs shrink-0">
+                <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500 shrink-0" />
+                <span>{question.points || 10} Poin</span>
+              </span>
 
-            <div className="min-w-0 flex flex-col justify-center">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                {canTeacherReveal || activeSettings.executionMode === 'teacher_led' ? (
-                  <select
-                    value={currentIndex}
-                    onChange={(e) => {
-                      const val = Number(e.target.value);
-                      if (isTeacher && activeSettings.executionMode === 'teacher_led') {
-                        promptTeacherNav(val, val > currentIndex ? 'next' : 'prev');
-                      } else {
-                        handleJumpToQuestion(val);
-                      }
-                    }}
-                    className="text-[11px] sm:text-xs font-black text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/70 border border-blue-200/80 dark:border-blue-900/80 px-2.5 py-1.5 rounded-xl cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500 min-h-[44px] inline-flex items-center"
-                    title="Lompat ke Nomor Soal Tertentu (Khusus Guru)"
-                    aria-label="Pilih Nomor Soal"
-                  >
-                    {activeQuestions.map((_, qIdx) => (
-                      <option key={qIdx} value={qIdx} className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200">
-                        Soal {qIdx + 1}/{activeQuestions.length}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <span className="text-[11px] sm:text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/50 px-2 py-0.5 rounded-md inline-block whitespace-nowrap self-start">
-                    Soal {currentIndex + 1}/{activeQuestions.length}
-                  </span>
-                )}
-                {isPreview && (
-                  <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-indigo-600 text-white shadow-xs">
-                    Pratinjau
-                  </span>
-                )}
-                <span className="text-[10px] sm:text-[11px] font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/50 border border-amber-200/60 dark:border-amber-800/60 px-1.5 py-0.5 rounded-md inline-flex items-center gap-0.5">
-                  <Star className="w-3 h-3 text-amber-500 fill-amber-500" /> {question.points || 10} Poin
+              <div className="min-w-0 flex items-center gap-1.5">
+                <span className="text-[11px] sm:text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 border border-blue-200/80 dark:border-blue-900/80 px-2 py-0.5 rounded-lg whitespace-nowrap shrink-0">
+                  Soal {currentIndex + 1}/{activeQuestions.length}
                 </span>
-                {isTeacher && activeSettings.executionMode === 'teacher_led' && (
-                  <span className="text-[10px] sm:text-[11px] font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 border border-blue-200/80 dark:border-blue-900/80 px-2 py-0.5 rounded-md inline-flex items-center gap-1">
-                    <Users className="w-3 h-3 text-blue-500" />
-                    <span>
-                      {liveSession?.participants?.filter(p => p.answers && p.answers[question.id])?.length || 0} / {liveSession?.participants?.length || 0} Menjawab
-                    </span>
-                  </span>
-                )}
+                <h2 className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200 truncate max-w-[110px] xs:max-w-[160px] sm:max-w-[260px] md:max-w-[360px]">
+                  {quiz.title}
+                </h2>
               </div>
-              <h2 className="text-[11px] sm:text-xs font-semibold text-slate-600 dark:text-slate-400 truncate max-w-[85px] xs:max-w-[130px] sm:max-w-[200px] md:max-w-[280px] hidden xs:block">
-                {quiz.title}
-              </h2>
             </div>
-          </div>
+          ) : (
+            <div className="flex items-center gap-1 sm:gap-2 min-w-0 flex-shrink">
+              <button
+                type="button"
+                onClick={() => {
+                  if (playClick) playClick();
+                  if (isPreview) {
+                    onExit();
+                  } else {
+                    setShowExitConfirm(true);
+                  }
+                }}
+                className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors flex-shrink-0"
+                aria-label={isPreview ? "Tutup Pratinjau Kuis" : "Keluar Kuis"}
+                title={isPreview ? "Tutup Pratinjau Kuis" : "Keluar Kuis"}
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="min-w-0 flex flex-col justify-center">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {canTeacherReveal || (isTeacher && activeSettings.executionMode === 'teacher_led') ? (
+                    <select
+                      value={currentIndex}
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        if (isTeacher && activeSettings.executionMode === 'teacher_led') {
+                          promptTeacherNav(val, val > currentIndex ? 'next' : 'prev');
+                        } else {
+                          handleJumpToQuestion(val);
+                        }
+                      }}
+                      className="text-[11px] sm:text-xs font-black text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/70 border border-blue-200/80 dark:border-blue-900/80 px-2.5 py-1.5 rounded-xl cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500 min-h-[44px] inline-flex items-center"
+                      title="Lompat ke Nomor Soal Tertentu (Khusus Guru)"
+                      aria-label="Pilih Nomor Soal"
+                    >
+                      {activeQuestions.map((_, qIdx) => (
+                        <option key={qIdx} value={qIdx} className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200">
+                          Soal {qIdx + 1}/{activeQuestions.length}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <span className="text-[11px] sm:text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/50 px-2 py-0.5 rounded-md inline-block whitespace-nowrap self-start">
+                      Soal {currentIndex + 1}/{activeQuestions.length}
+                    </span>
+                  )}
+                  {isPreview && (
+                    <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-indigo-600 text-white shadow-xs">
+                      Pratinjau
+                    </span>
+                  )}
+                  <span className="text-[10px] sm:text-[11px] font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/50 border border-amber-200/60 dark:border-amber-800/60 px-1.5 py-0.5 rounded-md inline-flex items-center gap-0.5">
+                    <Star className="w-3 h-3 text-amber-500 fill-amber-500" /> {question.points || 10} Poin
+                  </span>
+                  {isTeacher && activeSettings.executionMode === 'teacher_led' && (
+                    <span className="text-[10px] sm:text-[11px] font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 border border-blue-200/80 dark:border-blue-900/80 px-2 py-0.5 rounded-md inline-flex items-center gap-1">
+                      <Users className="w-3 h-3 text-blue-500" />
+                      <span>
+                        {liveSession?.participants?.filter(p => p.answers && p.answers[question.id])?.length || 0} / {liveSession?.participants?.length || 0} Menjawab
+                      </span>
+                    </span>
+                  )}
+                </div>
+                <h2 className="text-[11px] sm:text-xs font-semibold text-slate-600 dark:text-slate-400 truncate max-w-[85px] xs:max-w-[130px] sm:max-w-[200px] md:max-w-[280px] hidden xs:block">
+                  {quiz.title}
+                </h2>
+              </div>
+            </div>
+          )}
 
           {/* Center: Timer, Game Mode & Streak Pill */}
           <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
@@ -1287,127 +1329,173 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
             )}
           </div>
 
-          {/* Right: Edit Button (in preview), Pause & Desktop Full Toolbar / Mobile Tools Trigger */}
-          <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
-            {isPreview && onEditQuestion && (
+          {/* Right Controls */}
+          {isStudentTeacherLed ? (
+            /* Mode Dipandu Guru Khusus Siswa: Bersih hanya Tombol Chat (Mode Senyap) & Tombol Titik 3 */
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+              {/* Tombol Chat Siswa (Mode Senyap) */}
+              {(activeSessionId || liveSession?.id) && !isPreview && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (playClick) playClick();
+                    setIsChatDrawerOpen(true);
+                    setUnreadChatCount(0);
+                  }}
+                  className="relative p-2 rounded-xl text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors shadow-xs"
+                  title="Tanya Guru / Obrolan Kuis (Mode Senyap)"
+                  aria-label="Tanya Guru / Obrolan Kuis (Mode Senyap)"
+                >
+                  <MessageCircle className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                  {unreadChatCount > 0 ? (
+                    <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center shadow-xs animate-bounce">
+                      {unreadChatCount > 9 ? '9+' : unreadChatCount}
+                    </span>
+                  ) : (
+                    <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-900" title="Obrolan Senyap Siap" />
+                  )}
+                </button>
+              )}
+
+              {/* Tombol Titik 3 (Menu Alat & Pengaturan Kuis) */}
               <button
                 type="button"
                 onClick={() => {
                   if (playClick) playClick();
-                  onEditQuestion(question);
+                  setIsMobileToolsOpen(true);
                 }}
-                className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-all btn-press min-h-[44px]"
-                title="Edit Butir Soal Ini di Studio"
+                className="p-2 text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors shadow-xs"
+                title="Menu Pengaturan & Alat Kuis"
+                aria-label="Menu Pengaturan & Alat Kuis"
               >
-                <Edit3 className="w-3.5 h-3.5 shrink-0" />
-                <span className="hidden sm:inline">Edit Soal</span>
-              </button>
-            )}
-
-            {/* Play/Pause Button (Always available for immediate teacher/student control) */}
-            <button
-              type="button"
-              onClick={() => {
-                playClick();
-                setIsPaused(!isPaused);
-              }}
-              className={`p-2 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors ${
-                isPaused 
-                  ? 'bg-amber-500 text-white shadow-sm' 
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-              }`}
-              title={isPaused ? 'Lanjutkan Waktu' : 'Jeda Waktu untuk Menjelaskan'}
-              aria-label={isPaused ? 'Lanjutkan Waktu' : 'Jeda Waktu'}
-            >
-              {isPaused ? <Play className="w-4 h-4 fill-white" /> : <Pause className="w-4 h-4" />}
-            </button>
-
-            {/* Mobile Tools Drawer Trigger (<sm) */}
-            <button
-              type="button"
-              onClick={() => {
-                playClick();
-                setIsMobileToolsOpen(true);
-              }}
-              className="p-2 sm:hidden text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors"
-              title="Menu Pengaturan & Alat Kuis"
-              aria-label="Menu Pengaturan & Alat Kuis"
-            >
-              <MoreVertical className="w-5 h-5" />
-            </button>
-
-            {/* Desktop / Tablet / Smartboard Full Toolbar (>=sm) */}
-            <div className="hidden sm:flex items-center gap-1 sm:gap-1.5">
-              {/* Theme Toggle Button */}
-              <ThemeToggle isDark={isDark} onToggle={onToggleTheme} />
-
-              {/* Voting Poll Toggle */}
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  setIsPollOpen(!isPollOpen);
-                }}
-                className={`p-2 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors ${
-                  isPollOpen 
-                    ? 'bg-purple-600 text-white shadow-sm' 
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-                }`}
-                title="Mode Polling / Voting Kelas"
-                aria-label="Mode Polling / Voting Kelas"
-              >
-                <Users className="w-4 h-4" />
-              </button>
-
-              {/* SFX Audio Toggle */}
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  onToggleMute();
-                }}
-                className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors"
-                aria-label={isMuted ? 'Nyalakan Efek Suara (SFX)' : 'Matikan Efek Suara (SFX)'}
-                title={isMuted ? 'Nyalakan Efek Suara (SFX)' : 'Matikan Efek Suara (SFX)'}
-              >
-                {isMuted ? <VolumeX className="w-5 h-5 text-rose-500" /> : <Volume2 className="w-5 h-5 text-slate-700 dark:text-slate-300" />}
-              </button>
-
-              {/* In-Game Procedural BGM Music Toggle */}
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  toggleBgmMute();
-                }}
-                className={`p-2 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center transition-all ${
-                  isBgmMuted
-                    ? 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-                    : 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 shadow-xs'
-                }`}
-                title={isBgmMuted ? 'Nyalakan Musik Latar (BGM)' : 'Matikan Musik Latar (BGM)'}
-                aria-label={isBgmMuted ? 'Nyalakan Musik Latar' : 'Matikan Musik Latar'}
-              >
-                <div className="relative flex items-center justify-center">
-                  <Music className="w-4 h-4" />
-                  {isBgmMuted && (
-                    <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white dark:ring-slate-900" />
-                  )}
-                </div>
-              </button>
-
-              {/* Fullscreen Smartboard IFP Toggle */}
-              <button
-                type="button"
-                onClick={toggleFullscreen}
-                className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors"
-                title={isFullscreen ? 'Keluar Layar Penuh' : 'Layar Penuh Smartboard (F11)'}
-                aria-label={isFullscreen ? 'Keluar Layar Penuh' : 'Layar Penuh Smartboard'}
-              >
-                {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                <MoreVertical className="w-5 h-5" />
               </button>
             </div>
-          </div>
+          ) : (
+            /* Mode Standar / Guru / Pratinjau */
+            <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
+              {isPreview && onEditQuestion && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (playClick) playClick();
+                    onEditQuestion(question);
+                  }}
+                  className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition-all btn-press min-h-[44px]"
+                  title="Edit Butir Soal Ini di Studio"
+                >
+                  <Edit3 className="w-3.5 h-3.5 shrink-0" />
+                  <span className="hidden sm:inline">Edit Soal</span>
+                </button>
+              )}
+
+              {/* Play/Pause Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setIsPaused(!isPaused);
+                }}
+                className={`p-2 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors ${
+                  isPaused 
+                    ? 'bg-amber-500 text-white shadow-sm' 
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+                title={isPaused ? 'Lanjutkan Waktu' : 'Jeda Waktu untuk Menjelaskan'}
+                aria-label={isPaused ? 'Lanjutkan Waktu' : 'Jeda Waktu'}
+              >
+                {isPaused ? <Play className="w-4 h-4 fill-white" /> : <Pause className="w-4 h-4" />}
+              </button>
+
+              {/* Mobile Tools Drawer Trigger (<sm) */}
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setIsMobileToolsOpen(true);
+                }}
+                className="p-2 sm:hidden text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors"
+                title="Menu Pengaturan & Alat Kuis"
+                aria-label="Menu Pengaturan & Alat Kuis"
+              >
+                <MoreVertical className="w-5 h-5" />
+              </button>
+
+              {/* Desktop / Tablet / Smartboard Full Toolbar (>=sm) */}
+              <div className="hidden sm:flex items-center gap-1 sm:gap-1.5">
+                {/* Theme Toggle Button */}
+                <ThemeToggle isDark={isDark} onToggle={onToggleTheme} />
+
+                {/* Voting Poll Toggle (Khusus Guru/Presenter) */}
+                {isTeacher && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setIsPollOpen(!isPollOpen);
+                    }}
+                    className={`p-2 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors ${
+                      isPollOpen 
+                        ? 'bg-purple-600 text-white shadow-sm' 
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                    }`}
+                    title="Mode Polling / Voting Kelas"
+                    aria-label="Mode Polling / Voting Kelas"
+                  >
+                    <Users className="w-4 h-4" />
+                  </button>
+                )}
+
+                {/* SFX Audio Toggle */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    onToggleMute();
+                  }}
+                  className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors"
+                  aria-label={isMuted ? 'Nyalakan Efek Suara (SFX)' : 'Matikan Efek Suara (SFX)'}
+                  title={isMuted ? 'Nyalakan Efek Suara (SFX)' : 'Matikan Efek Suara (SFX)'}
+                >
+                  {isMuted ? <VolumeX className="w-5 h-5 text-rose-500" /> : <Volume2 className="w-5 h-5 text-slate-700 dark:text-slate-300" />}
+                </button>
+
+                {/* In-Game Procedural BGM Music Toggle */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    toggleBgmMute();
+                  }}
+                  className={`p-2 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center transition-all ${
+                    isBgmMuted
+                      ? 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                      : 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 shadow-xs'
+                  }`}
+                  title={isBgmMuted ? 'Nyalakan Musik Latar (BGM)' : 'Matikan Musik Latar (BGM)'}
+                  aria-label={isBgmMuted ? 'Nyalakan Musik Latar' : 'Matikan Musik Latar'}
+                >
+                  <div className="relative flex items-center justify-center">
+                    <Music className="w-4 h-4" />
+                    {isBgmMuted && (
+                      <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white dark:ring-slate-900" />
+                    )}
+                  </div>
+                </button>
+
+                {/* Fullscreen Smartboard IFP Toggle */}
+                <button
+                  type="button"
+                  onClick={toggleFullscreen}
+                  className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors"
+                  title={isFullscreen ? 'Keluar Layar Penuh' : 'Layar Penuh Smartboard (F11)'}
+                  aria-label={isFullscreen ? 'Keluar Layar Penuh' : 'Layar Penuh Smartboard'}
+                >
+                  {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Progress Track */}
@@ -1859,7 +1947,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
           
           <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
             {/* Tombol Soal Sebelumnya (Prev) - Khusus Mode Dipandu Guru atau Guru Terverifikasi */}
-            {(canTeacherReveal || activeSettings.executionMode === 'teacher_led') && currentIndex > 0 && (
+            {(canTeacherReveal || (isTeacher && activeSettings.executionMode === 'teacher_led')) && currentIndex > 0 && (
               <button
                 type="button"
                 onClick={handlePrev}
@@ -1873,7 +1961,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
             )}
 
             {/* Tombol Hold Timer / Jeda Waktu Guru */}
-            {(canTeacherReveal || activeSettings.executionMode === 'teacher_led') && (
+            {(canTeacherReveal || (isTeacher && activeSettings.executionMode === 'teacher_led')) && (
               <button
                 type="button"
                 onClick={() => {
@@ -1905,7 +1993,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                 <span className="hidden sm:inline">Buka Kunci</span>
                 <span className="sm:hidden">Kunci</span>
               </button>
-            ) : !isAnswerConfirmed && !(canTeacherReveal || activeSettings.executionMode === 'teacher_led') ? (
+            ) : !isAnswerConfirmed && !(canTeacherReveal || (isTeacher && activeSettings.executionMode === 'teacher_led')) ? (
               <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-xs font-bold border border-slate-200/80 dark:border-slate-700">
                 {showAnswersMode === 'exam_strict' ? (
                   <>
@@ -1934,10 +2022,10 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
           ) : (
             <button
               type="button"
-              disabled={!isAnswerConfirmed && !(canTeacherReveal || activeSettings.executionMode === 'teacher_led')}
+              disabled={!isAnswerConfirmed && !(canTeacherReveal || (isTeacher && activeSettings.executionMode === 'teacher_led'))}
               onClick={handleNext}
               className={`flex-1 sm:flex-initial sm:min-w-[200px] xl:min-w-[240px] px-6 py-2.5 sm:py-3 rounded-2xl font-bold text-xs sm:text-sm xl:text-base flex items-center justify-center gap-2 transition-all min-h-[46px] sm:min-h-[50px] btn-press ${
-                isAnswerConfirmed || canTeacherReveal || activeSettings.executionMode === 'teacher_led'
+                isAnswerConfirmed || canTeacherReveal || (isTeacher && activeSettings.executionMode === 'teacher_led')
                   ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md'
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed border border-slate-200 dark:border-slate-700'
               }`}
@@ -2097,27 +2185,57 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                 </span>
               </button>
 
-              {/* Toggle Polling */}
+              {/* Toggle Polling (Khusus Guru / Presenter) */}
+              {isTeacher && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    setIsPollOpen(!isPollOpen);
+                    setIsMobileToolsOpen(false);
+                  }}
+                  className="w-full p-3 rounded-2xl flex items-center justify-between bg-slate-50 dark:bg-slate-800/70 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-700 min-h-[50px] transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${isPollOpen ? 'bg-purple-50 dark:bg-purple-950/60 text-purple-600' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}>
+                      <Users className="w-5 h-5" />
+                    </div>
+                    <div className="text-left">
+                      <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">Mode Polling / Voting Kelas</span>
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400">Catat jumlah angkat tangan siswa</span>
+                    </div>
+                  </div>
+                  <span className={`text-xs font-bold px-2.5 py-1 rounded-lg border ${isPollOpen ? 'bg-purple-50 dark:bg-purple-950 text-purple-600 border-purple-200 dark:border-purple-800' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700'}`}>
+                    {isPollOpen ? 'Aktif' : 'Nonaktif'}
+                  </span>
+                </button>
+              )}
+
+              {/* Tombol Keluar dari Kuis */}
               <button
                 type="button"
                 onClick={() => {
-                  playClick();
-                  setIsPollOpen(!isPollOpen);
+                  if (playClick) playClick();
                   setIsMobileToolsOpen(false);
+                  if (isPreview) {
+                    onExit();
+                  } else {
+                    setShowExitConfirm(true);
+                  }
                 }}
-                className="w-full p-3 rounded-2xl flex items-center justify-between bg-slate-50 dark:bg-slate-800/70 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-700 min-h-[50px] transition-colors"
+                className="w-full p-3 rounded-2xl flex items-center justify-between bg-rose-50/70 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/40 border border-rose-200/80 dark:border-rose-900/70 min-h-[50px] transition-colors"
               >
                 <div className="flex items-center gap-3">
-                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${isPollOpen ? 'bg-purple-50 dark:bg-purple-950/60 text-purple-600' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}>
-                    <Users className="w-5 h-5" />
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-rose-100 dark:bg-rose-900/60 text-rose-600 dark:text-rose-400">
+                    <LogOut className="w-5 h-5" />
                   </div>
                   <div className="text-left">
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">Mode Polling / Voting Kelas</span>
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400">Catat jumlah angkat tangan siswa</span>
+                    <span className="text-xs font-bold text-rose-700 dark:text-rose-300 block">Keluar dari Kuis</span>
+                    <span className="text-[11px] text-rose-600/80 dark:text-rose-400/80">Akhiri dan tinggalkan sesi kuis</span>
                   </div>
                 </div>
-                <span className={`text-xs font-bold px-2.5 py-1 rounded-lg border ${isPollOpen ? 'bg-purple-50 dark:bg-purple-950 text-purple-600 border-purple-200 dark:border-purple-800' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700'}`}>
-                  {isPollOpen ? 'Aktif' : 'Nonaktif'}
+                <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-400">
+                  Keluar
                 </span>
               </button>
             </div>
@@ -2427,8 +2545,30 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
           currentUserName={isTeacher ? (quiz.creatorName || 'Bapak/Ibu Guru') : (DataManager.getPlayerProfile().nickname || 'Siswa Pintar')}
           onOpenChat={() => {
             if (playClick) playClick();
+            if (!isTeacher) {
+              setIsChatDrawerOpen(true);
+              setUnreadChatCount(0);
+            }
           }}
+          isMuted={isStudentTeacherLed || isChatNotificationMuted}
           position="top-right"
+        />
+      )}
+
+      {/* Slide-Over Side Panel Obrolan Siswa di Arena (Mode Dipandu Guru / Bertanya Soal Secara Senyap) */}
+      {(activeSessionId || liveSession?.id) && !isPreview && !isTeacher && (
+        <StudentChatDrawer
+          isOpen={isChatDrawerOpen}
+          onClose={() => setIsChatDrawerOpen(false)}
+          sessionId={(activeSessionId || liveSession?.id)!}
+          studentName={DataManager.getPlayerProfile().nickname || 'Siswa'}
+          avatarId={DataManager.getPlayerProfile().avatarId || 'lion'}
+          isChatMuted={Boolean(liveSession?.isChatMuted)}
+          sessionStatus={liveSession?.status || 'active'}
+          isSessionEndedModalOpen={false}
+          playClick={playClick || (() => {})}
+          isNotificationMuted={isChatNotificationMuted}
+          onToggleNotificationMute={setIsChatNotificationMuted}
         />
       )}
 
