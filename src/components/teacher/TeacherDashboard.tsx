@@ -342,17 +342,23 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   const handleStartQuizFromModal = async (quiz: Quiz, options: PlayQuizSessionOptions) => {
     setQuizToPlay(null);
     setSelectedQuizForDetail(null);
+    const isUntimed = options.mode === 'untimed';
+    const finalDuration = isUntimed ? 0 : options.durationPerQuestionSec;
     if (options.saveAsDefault) {
       await handleSaveQuizSettings(quiz.id, {
         defaultGameMode: options.mode,
-        durationPerQuestionSec: options.durationPerQuestionSec,
+        durationPerQuestionSec: finalDuration,
         shuffleQuestions: options.shuffleQuestions,
         shuffleOptions: options.shuffleOptions,
       });
     }
 
     // Register active session only when teacher completes config and starts!
-    const newSession = await DataManager.createActiveSession(quiz, options, teacher);
+    const newSession = await DataManager.createActiveSession(
+      quiz,
+      { ...options, durationPerQuestionSec: finalDuration },
+      teacher
+    );
     await loadData();
 
     // Open Wayground Host View directly

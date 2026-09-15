@@ -108,7 +108,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   const STORAGE_KEY = `kuis_arena_progress_${quiz.id}`;
 
   const defaultSettingsFallback: QuizSessionSettings = {
-    mode: quiz.defaultGameMode || 'standard',
+    mode: initialMode || quiz.defaultGameMode || 'standard',
     durationPerQuestionSec: quiz.durationPerQuestionSec || 30,
     shuffleQuestions: quiz.shuffleQuestions ?? true,
     shuffleOptions: quiz.shuffleOptions ?? true,
@@ -158,12 +158,37 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   }, [liveSession?.settings]);
 
   const activeSettings = currentSettings;
+
+  // Resolusi Mode Permainan secara presisi, berbobot, dan anti-konflik:
+  // 1. Jika sessionSettings eksplisit (dari sesi/modal), itu prioritas utama
+  // 2. Jika sesi live dari database/localstorage memiliki settings.mode
+  // 3. Jika initialMode di-pass oleh pemanggil layar
+  // 4. Default settings kuis / quiz.defaultGameMode
+  // 5. Fallback 'standard'
+  const resolvedGameMode: GameMode = (() => {
+    if (sessionSettings?.mode) return sessionSettings.mode;
+    if (liveSession?.settings?.mode) return liveSession.settings.mode;
+    if (initialMode) return initialMode;
+    if (quiz.defaultSettings?.mode) return quiz.defaultSettings.mode;
+    if (quiz.defaultGameMode) return quiz.defaultGameMode;
+    return 'standard';
+  })();
+  const isUntimedMode =
+    resolvedGameMode === 'untimed' ||
+    activeSettings.mode === 'untimed' ||
+    initialMode === 'untimed' ||
+    sessionSettings?.mode === 'untimed' ||
+    liveSession?.settings?.mode === 'untimed' ||
+    activeSettings.durationPerQuestionSec === 0;
+  const gameMode: GameMode = isUntimedMode ? 'untimed' : resolvedGameMode;
+
   const showAnswersMode: AnswerVisibilityMode = activeSettings.showAnswersMode || 'immediate';
   const showExplanationMode: ExplanationVisibilityMode = activeSettings.showExplanationMode || 'immediate';
   const showLeaderboardToStudents = activeSettings.showLeaderboardToStudents ?? true;
   const isTabSwitchDetectionEnabled = Boolean(activeSettings.tabSwitchDetection);
-  const defaultDurationSec = activeSettings.durationPerQuestionSec || quiz.durationPerQuestionSec || 30;
+  const defaultDurationSec = isUntimedMode ? 0 : (activeSettings.durationPerQuestionSec || quiz.durationPerQuestionSec || 30);
   const getQuestionDuration = (q: QuizQuestion | undefined): number => {
+    if (isUntimedMode) return 0;
     if (!q) return defaultDurationSec;
     if (!activeSettings.overrideCustomQuestionDurations && typeof q.customDurationSec === 'number' && q.customDurationSec > 0) {
       return q.customDurationSec;
@@ -181,7 +206,6 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   const [tabSwitchCount, setTabSwitchCount] = useState<number>(0);
   const [showTabSwitchWarning, setShowTabSwitchWarning] = useState<boolean>(false);
 
-  const gameMode: GameMode = initialMode || activeSettings.mode || quiz.defaultGameMode || 'standard';
   const [hearts, setHearts] = useState<number>(3);
   const [isGameOver, setIsGameOver] = useState(false);
 
@@ -310,6 +334,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     return Boolean(initialExistingAns && activeSettings.executionMode === 'teacher_led' && !isTeacher);
   });
   const [timeLeft, setTimeLeft] = useState<number>(() => {
+    if (isUntimedMode) return 0;
     const targetIdx = typeof initialQuestionIndex === 'number' && initialQuestionIndex >= 0 && initialQuestionIndex < quiz.questions.length
       ? initialQuestionIndex
       : 0;
@@ -324,6 +349,8 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     }
     return getQuestionDuration(activeQuestions[targetIdx]);
   });
+  // Waktu awal saat butir soal aktif dibuka untuk pelacakan durasi per butir yang akurat (termasuk pada Mode Santai)
+  const questionStartTimeRef = useRef<number>(Date.now());
   const [totalTimeSpent, setTotalTimeSpent] = useState<number>(() => {
     if (!isPreview) {
       try {
@@ -615,12 +642,12 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 
   // 3. Accelerate tempo during last 5 seconds countdown (only in timed modes)
   useEffect(() => {
-    if (gameMode !== 'untimed' && timeLeft <= 5 && timeLeft > 0 && !isAnswerConfirmed && !isPaused && !isGameOver) {
+    if (!isUntimedMode && gameMode !== 'untimed' && timeLeft <= 5 && timeLeft > 0 && !isAnswerConfirmed && !isPaused && !isGameOver) {
       setUrgent(true);
     } else {
       setUrgent(false);
     }
-  }, [timeLeft, isAnswerConfirmed, isPaused, isGameOver, gameMode, setUrgent]);
+  }, [timeLeft, isAnswerConfirmed, isPaused, isGameOver, gameMode, isUntimedMode, setUrgent]);
 
   // Back Handlers
   useBackHandler('arena-mobile-tools', 100, () => {
@@ -732,7 +759,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     timerRef.current = window.setInterval(() => {
       setTotalTimeSpent((t) => t + 1);
 
-      if (gameMode === 'untimed' || (activeSettings.executionMode === 'teacher_led' && activeSettings.teacherPacingSubMode === 'manual')) {
+      if (isUntimedMode || gameMode === 'untimed' || (activeSettings.executionMode === 'teacher_led' && activeSettings.teacherPacingSubMode === 'manual')) {
         return; // Untimed mode or teacher-led manual pacing does not count down
       }
 
@@ -763,6 +790,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     isGameOver, 
     showCountdown, 
     gameMode, 
+    isUntimedMode,
     activeSettings.executionMode, 
     activeSettings.teacherPacingSubMode
   ]);
@@ -793,6 +821,8 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     customTotalPairs?: number
   ) => {
     if (isAnswerConfirmed || showCountdown) return;
+    // Pada Mode Santai (Bebas Waktu), peristiwa timeout (optionIndex = -1) ditolak mentah-mentah
+    if (isUntimedMode && optionIndex === -1) return;
     if (timerRef.current) clearInterval(timerRef.current);
 
     setSelectedOption(optionIndex);
@@ -868,7 +898,8 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     }
 
     const currentDuration = getQuestionDuration(question);
-    const timeSpent = gameMode === 'untimed' ? 5 : (currentDuration - timeLeft);
+    const actualQuestionElapsed = Math.max(1, Math.round((Date.now() - questionStartTimeRef.current) / 1000));
+    const timeSpent = isUntimedMode ? actualQuestionElapsed : Math.max(1, currentDuration - timeLeft);
     const recordedAnswer: QuizAttemptAnswer = {
       questionId: question.id,
       selectedIndex: optionIndex,
@@ -969,8 +1000,9 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     setHearts(3);
     setCurrentIndex(0);
     setAnswersList([]);
+    questionStartTimeRef.current = Date.now();
     const firstDuration = getQuestionDuration(activeQuestions[0]);
-    setTimeLeft(firstDuration);
+    setTimeLeft(isUntimedMode ? 0 : firstDuration);
     setTotalTimeSpent(0);
     setStreak(0);
     setSelectedOption(null);
@@ -1042,10 +1074,11 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
       const nextIdx = currentIndex + 1;
       const nextQuestion = activeQuestions[nextIdx];
       const nextDuration = getQuestionDuration(nextQuestion);
+      questionStartTimeRef.current = Date.now();
       setCurrentIndex(nextIdx);
       setSelectedOption(null);
       setIsAnswerConfirmed(false);
-      setTimeLeft(nextDuration);
+      setTimeLeft(isUntimedMode ? 0 : nextDuration);
       setIsPaused(false);
       setPollVotes({ 0: 0, 1: 0, 2: 0, 3: 0 });
       setShortAnswerInput('');
@@ -1084,10 +1117,11 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     }
     const prevQuestion = activeQuestions[prevIdx];
     const prevDuration = getQuestionDuration(prevQuestion);
+    questionStartTimeRef.current = Date.now();
     setCurrentIndex(prevIdx);
     setSelectedOption(null);
     setIsAnswerConfirmed(false);
-    setTimeLeft(prevDuration);
+    setTimeLeft(isUntimedMode ? 0 : prevDuration);
     setIsPaused(false);
     setPollVotes({ 0: 0, 1: 0, 2: 0, 3: 0 });
     setShortAnswerInput('');
@@ -1118,8 +1152,9 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     const targetDuration = getQuestionDuration(targetQuestion);
     const existingAns = answersList.find((a) => a.questionId === targetQuestion?.id);
 
+    questionStartTimeRef.current = Date.now();
     setCurrentIndex(targetIdx);
-    setTimeLeft(targetDuration);
+    setTimeLeft(isUntimedMode ? 0 : targetDuration);
     setIsPaused(false);
     setPollVotes({ 0: 0, 1: 0, 2: 0, 3: 0 });
     setShortAnswerInput(existingAns?.textAnswer || '');
@@ -1545,20 +1580,27 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                   </div>
                 )}
 
-                <span className={`inline-flex items-center gap-1 text-xs sm:text-sm font-bold px-2.5 py-1 rounded-xl transition-colors ${
-                  isPaused 
-                    ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 animate-pulse'
-                    : gameMode === 'untimed' || (activeSettings.executionMode === 'teacher_led' && activeSettings.teacherPacingSubMode === 'manual')
-                    ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
-                    : timeLeft <= 5 
-                    ? 'bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 font-extrabold animate-pulse' 
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200'
-                }`}>
-                  <Clock className="w-3.5 h-3.5 flex-shrink-0" />
+                <span
+                  className={`inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold px-2.5 py-1 rounded-xl transition-colors ${
+                    isPaused 
+                      ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 animate-pulse'
+                      : isUntimedMode || (activeSettings.executionMode === 'teacher_led' && activeSettings.teacherPacingSubMode === 'manual')
+                      ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                      : timeLeft <= 5 
+                      ? 'bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 font-extrabold animate-pulse' 
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200'
+                  }`}
+                  title={isUntimedMode ? 'Mode Santai: Bebas Waktu per Soal' : undefined}
+                >
+                  {isUntimedMode ? (
+                    <span className="text-sm">🧘</span>
+                  ) : (
+                    <Clock className="w-3.5 h-3.5 flex-shrink-0" />
+                  )}
                   <span>
                     {isPaused 
                       ? 'Jeda' 
-                      : gameMode === 'untimed'
+                      : isUntimedMode
                       ? `Santai (${Math.floor(totalTimeSpent / 60)}:${(totalTimeSpent % 60).toString().padStart(2, '0')})`
                       : activeSettings.executionMode === 'teacher_led' && activeSettings.teacherPacingSubMode === 'manual'
                       ? '🕹️ Dipandu Guru'

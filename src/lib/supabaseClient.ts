@@ -2396,7 +2396,7 @@ export const DataManager = {
         requireStudentInfo: options.requireStudentInfo,
         selectedQuestionIds: options.selectedQuestionIds,
         mode: options.mode,
-        durationPerQuestionSec: options.durationPerQuestionSec,
+        durationPerQuestionSec: options.mode === 'untimed' ? 0 : options.durationPerQuestionSec,
         shuffleQuestions: options.shuffleQuestions,
         shuffleOptions: options.shuffleOptions,
         presentationTarget: options.presentationTarget,
@@ -2853,10 +2853,14 @@ export const DataManager = {
 
     if (idx === -1) return null;
 
-    existing[idx].settings = {
+    const mergedSettings = {
       ...existing[idx].settings,
       ...settings,
     };
+    if (mergedSettings.mode === 'untimed') {
+      mergedSettings.durationPerQuestionSec = 0;
+    }
+    existing[idx].settings = mergedSettings;
 
     try {
       localStorage.setItem(STORAGE_KEY_QUIZ_SESSIONS, JSON.stringify(existing));

@@ -679,10 +679,11 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
     if (isOpen && quiz && currentStep === 'configure') {
       const existing = DataManager.getActiveSessionByQuizId(quiz.id) || DataManager.getActiveSessionByPin(quiz.pinCode || '');
       if (existing) {
+        const isUntimed = selectedMode === 'untimed';
         DataManager.updateActiveSessionSettings(existing.id, {
           mode: selectedMode,
-          durationPerQuestionSec: selectedDuration,
-          overrideCustomQuestionDurations: durationSelectionType !== 'default' && overrideCustomDurations,
+          durationPerQuestionSec: isUntimed ? 0 : selectedDuration,
+          overrideCustomQuestionDurations: !isUntimed && durationSelectionType !== 'default' && overrideCustomDurations,
           shuffleQuestions,
           shuffleOptions,
           presentationTarget,
@@ -746,9 +747,11 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
 
   // Helper sync sesi kelas live
   const ensureSessionAndSyncSettings = async (overrides?: Partial<PlayQuizSessionOptions>) => {
+    const finalMode = overrides?.mode ?? selectedMode;
+    const isUntimed = finalMode === 'untimed';
     const opts: PlayQuizSessionOptions = {
-      mode: overrides?.mode ?? selectedMode,
-      durationPerQuestionSec: overrides?.durationPerQuestionSec ?? selectedDuration,
+      mode: finalMode,
+      durationPerQuestionSec: isUntimed ? 0 : (overrides?.durationPerQuestionSec ?? selectedDuration),
       shuffleQuestions: overrides?.shuffleQuestions ?? shuffleQuestions,
       shuffleOptions: overrides?.shuffleOptions ?? shuffleOptions,
       presentationTarget: overrides?.presentationTarget ?? presentationTarget,
@@ -764,7 +767,7 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
       pacingType: overrides?.pacingType ?? pacingType,
       deadlineAt: overrides?.deadlineAt ?? (pacingType === 'homework' ? deadlineAt : undefined),
       requireStudentInfo: overrides?.requireStudentInfo ?? (pacingType === 'homework' ? requireStudentInfo : false),
-      overrideCustomQuestionDurations: overrides?.overrideCustomQuestionDurations ?? (durationSelectionType !== 'default' && overrideCustomDurations),
+      overrideCustomQuestionDurations: !isUntimed && (overrides?.overrideCustomQuestionDurations ?? (durationSelectionType !== 'default' && overrideCustomDurations)),
     };
 
     let existing = DataManager.getActiveSessionByQuizId(quiz.id);
@@ -824,9 +827,10 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
 
   const handleLaunch = () => {
     playClick();
+    const isUntimed = selectedMode === 'untimed';
     onStartQuiz(quiz, {
       mode: selectedMode,
-      durationPerQuestionSec: selectedDuration,
+      durationPerQuestionSec: isUntimed ? 0 : selectedDuration,
       shuffleQuestions,
       shuffleOptions,
       presentationTarget,
@@ -843,7 +847,7 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
       pacingType,
       deadlineAt: pacingType === 'homework' ? deadlineAt : undefined,
       requireStudentInfo: pacingType === 'homework' ? requireStudentInfo : false,
-      overrideCustomQuestionDurations: durationSelectionType !== 'default' && overrideCustomDurations,
+      overrideCustomQuestionDurations: !isUntimed && durationSelectionType !== 'default' && overrideCustomDurations,
     });
   };
 
@@ -1507,7 +1511,19 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
                 </div>
 
                 {/* Durasi Waktu Soal (Tampil jika mode permainan berbatas waktu: Standar atau 3 Nyawa) */}
-                {selectedMode !== 'untimed' && (
+                {selectedMode === 'untimed' ? (
+                  <div className="p-3.5 rounded-2xl bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/60 flex items-start gap-3 animate-fade-in">
+                    <span className="text-xl flex-shrink-0">🧘</span>
+                    <div className="text-xs space-y-0.5">
+                      <p className="font-extrabold text-emerald-900 dark:text-emerald-200">
+                        Mode Santai Aktif (Bebas Waktu)
+                      </p>
+                      <p className="text-emerald-700 dark:text-emerald-300 leading-relaxed">
+                        Seluruh batas durasi dan hitung mundur per soal dinonaktifkan sepenuhnya. Siswa dapat berpikir dan menjawab setiap butir soal dengan tenang tanpa tekanan waktu.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
                   <DurationSelectorSection
                     quiz={quiz}
                     durationSelectionType={durationSelectionType}

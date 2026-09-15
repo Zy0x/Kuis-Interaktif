@@ -426,6 +426,12 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                   </span>
 
                   {/* Session Settings Badges (Desktop) */}
+                  {session.settings?.mode === 'untimed' && (
+                    <span className="px-2 py-0.5 rounded-md bg-emerald-950/80 border border-emerald-500/50 text-emerald-300 text-[10px] font-bold hidden md:inline-flex items-center gap-1">
+                      <span>🧘</span>
+                      <span>Santai (Bebas Waktu)</span>
+                    </span>
+                  )}
                   {session.settings?.showAnswersMode === 'exam_strict' && (
                     <span className="px-2 py-0.5 rounded-md bg-indigo-950/80 border border-indigo-500/50 text-indigo-300 text-[10px] font-bold hidden md:inline-flex items-center gap-1">
                       <span>🔒</span>

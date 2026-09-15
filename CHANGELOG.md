@@ -1,6 +1,29 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.43] - 2026-09-15
+### Penyempurnaan Menyeluruh Mode Santai: Eliminasi Total Batas Waktu & Konflik Timer Per Soal (Rule 1, Rule 2, Rule 11 & Rule 15)
+
+#### 1. Resolusi Mode Bertingkat & Pencegahan Penimpaan Mode (`QuizArena.tsx`)
+- **Presedensi Mode Berbobot**: Memperbaiki prioritas resolusi mode permainan sehingga setelan sesi aktif (`sessionSettings.mode` / `liveSession.settings.mode`) diprioritaskan di atas prop bawaan statis `initialMode`. Mode Santai (`untimed`) kini dijamin aktif konsisten tanpa risiko tertimpa kembali ke mode standar.
+- **Isolasi Durasi & Timer Per Soal**:
+  - Pada Mode Santai (`isUntimedMode`), durasi per soal (`getQuestionDuration`) diatur menjadi `0`.
+  - State hitung mundur `timeLeft` diinisialisasi dan diatur ke `0` pada setiap perpindahan butir soal (next, prev, jump, retry), menghilangkan sepenuhnya kedipan angka timer seperti `30s`.
+  - Timer interval dalam `QuizArena.tsx` secara tegas mengabaikan dekremen `timeLeft` dan tick audio ketika berada dalam mode santai.
+  - Penolakan Mutlak Timeout: Menambahkan pengaman khusus pada `handleAnswerSelect` untuk menolak dan mengabaikan sinyal timeout (`optionIndex = -1`) pada Mode Santai.
+- **Pelacakan Durasi Nyata Siswa**: Mengganti estimasi waktu statis 5 detik dengan pencatat waktu berbasis timestamp (`questionStartTimeRef`) sehingga durasi pengerjaan siswa tercatat akurat dan realistis di rekapan nilai.
+- **Lencana Header Tenang & Ramah Siswa**: Bilah header pada Mode Santai menampilkan indikator teduh `🧘 Santai (mm:ss)` berbasis total waktu kuis tanpa warna merah menyala atau kedipan kepanikan.
+
+#### 2. Penyelarasan Sinkronisasi Sesi & Modal Pengaturan (`PlayQuizModal.tsx`, `StudentLobby.tsx`, `App.tsx` & `supabaseClient.ts`)
+- **Penolakan Durasi di Modal (`PlayQuizModal.tsx`)**: Ketika Guru memilih Mode Santai, `durationPerQuestionSec` secara tegas dikirimkan sebagai `0` dan opsi override durasi dinonaktifkan, disertai banner konfirmasi ramah anak yang menjelaskan penonaktifan batas waktu.
+- **Penetapan Durasi Sesi & Supabase Client (`supabaseClient.ts`)**: Fungsi `createActiveSession` dan `updateActiveSessionSettings` secara otomatis menetapkan `durationPerQuestionSec = 0` saat mode permainan adalah `untimed`.
+- **Informasi Kartu & Lencana Ruang Tunggu (`StudentLobby.tsx`)**: Kartu informasi waktu pada lobi siswa menampilkan status `🧘 Bebas Waktu` beserta lencana penjelasan bahwa siswa dapat mengerjakan dengan tenang tanpa desakan waktu.
+- **Penyelarasan Host View Guru (`WaygroundHostView.tsx`)**: Menyematkan lencana status `🧘 Santai (Bebas Waktu)` pada bilah ruang kendali host guru.
+
+#### 3. Pembaruan Versi & Cache PWA (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.43` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.43` (`public/sw.js`).
+
 ## [2.4.42] - 2026-09-15
 ### Penyediaan Pengaturan Kunci Jawaban & Pembahasan Materi di Mode Mandiri & PR (Rule 1, Rule 2, Rule 3 & Rule 15)
 

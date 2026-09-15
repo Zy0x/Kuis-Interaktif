@@ -276,8 +276,12 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
     };
   }, [liveSettings, liveSession?.settings, sessionSettings, quiz.defaultSettings, quiz.defaultGameMode, quiz.durationPerQuestionSec, quiz.shuffleQuestions, quiz.shuffleOptions]);
 
-  const effectiveMode = effectiveSettings.mode || quiz.defaultGameMode || 'standard';
-  const effectiveDuration = effectiveSettings.durationPerQuestionSec || quiz.durationPerQuestionSec || 30;
+  const effectiveMode =
+    effectiveSettings.mode === 'untimed' || quiz.defaultGameMode === 'untimed'
+      ? 'untimed'
+      : (effectiveSettings.mode || quiz.defaultGameMode || 'standard');
+  const isUntimed = effectiveMode === 'untimed' || effectiveSettings.durationPerQuestionSec === 0;
+  const effectiveDuration = isUntimed ? 0 : (effectiveSettings.durationPerQuestionSec || quiz.durationPerQuestionSec || 30);
 
   // Nama mode permainan ramah anak
   const modeLabel = useMemo(() => {
@@ -295,11 +299,11 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
         desc: 'Mode bertahan 3 kesempatan',
       };
     }
-    if (effectiveMode === 'untimed') {
+    if (isUntimed) {
       return {
         title: 'Mode Santai',
         icon: '🧘',
-        desc: 'Tanpa batas waktu per soal',
+        desc: 'Bebas waktu tanpa hitung mundur',
       };
     }
     return {
@@ -307,7 +311,7 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
       icon: '⏱️',
       desc: 'Timer per soal aktif',
     };
-  }, [effectiveMode, effectiveSettings.showAnswersMode]);
+  }, [effectiveMode, isUntimed, effectiveSettings.showAnswersMode]);
 
   // Cek apakah siswa sudah pernah mengerjakan sesi ini ketika batas pengerjaan = 1x
   const isAttemptLimitReached = useMemo(() => {
@@ -698,10 +702,10 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
               {/* Durasi / Soal */}
               <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-800 text-center">
                 <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium flex items-center justify-center gap-1">
-                  <Clock className="w-3.5 h-3.5 text-amber-500" /> Waktu
+                  {isUntimed ? <span className="text-sm">🧘</span> : <Clock className="w-3.5 h-3.5 text-amber-500" />} Waktu
                 </span>
                 <span className="text-base sm:text-lg font-extrabold text-slate-800 dark:text-slate-100 block mt-0.5">
-                  {effectiveMode === 'untimed' ? 'Santai' : `${effectiveDuration}d / soal`}
+                  {isUntimed ? 'Bebas Waktu' : `${effectiveDuration}d / soal`}
                 </span>
               </div>
 
@@ -718,6 +722,13 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
 
             {/* Aturan & Proteksi yang Ditetapkan Guru (Badge List) */}
             <div className="flex flex-wrap gap-1.5 pt-1">
+              {isUntimed && (
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900/60 text-emerald-700 dark:text-emerald-300 text-[11px] font-semibold">
+                  <span className="text-xs">🧘</span>
+                  <span>Mode Santai: Kerjakan tenang tanpa hitung mundur</span>
+                </div>
+              )}
+
               {effectiveSettings.showAnswersMode === 'exam_strict' && (
                 <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-900/60 text-indigo-700 dark:text-indigo-300 text-[11px] font-semibold">
                   <Lock className="w-3 h-3 text-indigo-500 flex-shrink-0" />

@@ -95,12 +95,14 @@ export const App: React.FC = () => {
   // Helper untuk menyelesaikan konfigurasi sesi atau fallback kuis
   const resolveSettings = (session?: QuizSession | null, q?: Quiz | null): QuizSessionSettings => {
     const base = session?.settings || q?.defaultSettings;
+    const resolvedMode = base?.mode || q?.defaultGameMode || 'standard';
+    const isUntimed = resolvedMode === 'untimed';
     return {
       executionMode: base?.executionMode || 'self_paced',
       teacherPacingSubMode: base?.teacherPacingSubMode || 'manual',
       isChatMuted: base?.isChatMuted ?? false,
-      mode: base?.mode || q?.defaultGameMode || 'standard',
-      durationPerQuestionSec: base?.durationPerQuestionSec || q?.durationPerQuestionSec || 30,
+      mode: resolvedMode,
+      durationPerQuestionSec: isUntimed ? 0 : (base?.durationPerQuestionSec || q?.durationPerQuestionSec || 30),
       shuffleQuestions: base?.shuffleQuestions ?? q?.shuffleQuestions ?? true,
       shuffleOptions: base?.shuffleOptions ?? q?.shuffleOptions ?? true,
       presentationTarget: base?.presentationTarget || 'student-lobby',
@@ -109,7 +111,7 @@ export const App: React.FC = () => {
       showLeaderboardToStudents: base?.showLeaderboardToStudents ?? true,
       maxAttempts: base?.maxAttempts ?? 0,
       tabSwitchDetection: base?.tabSwitchDetection ?? false,
-      overrideCustomQuestionDurations: base?.overrideCustomQuestionDurations,
+      overrideCustomQuestionDurations: isUntimed ? false : base?.overrideCustomQuestionDurations,
       participantMode: base?.participantMode,
       pacingType: base?.pacingType,
       deadlineAt: base?.deadlineAt,
@@ -336,8 +338,14 @@ export const App: React.FC = () => {
       setPrivateQuizAlertModal(`Kuis "${quiz.title}" belum memiliki butir soal yang dapat dikerjakan saat ini. Silakan pilih kuis lainnya.`);
       return;
     }
+    const resolvedMode = mode || quiz.defaultGameMode || 'standard';
+    const settings = resolveSettings(null, quiz);
+    settings.mode = resolvedMode;
+    settings.durationPerQuestionSec = resolvedMode === 'untimed' ? 0 : (quiz.durationPerQuestionSec || 30);
+
     setActiveQuiz(quiz);
-    setActiveGameMode(mode || quiz.defaultGameMode || 'standard');
+    setActiveGameMode(resolvedMode);
+    setActiveSessionSettings(settings);
     setCurrentScreen('arena');
     saveNavigationState({ screen: 'arena', quiz, replace: false });
   };
@@ -496,9 +504,11 @@ export const App: React.FC = () => {
   };
 
   const handleStartQuizWithSettings = (quiz: Quiz, options: PlayQuizSessionOptions) => {
+    const isUntimed = options.mode === 'untimed';
+    const finalDuration = isUntimed ? 0 : options.durationPerQuestionSec;
     const settings: QuizSessionSettings = {
       mode: options.mode,
-      durationPerQuestionSec: options.durationPerQuestionSec,
+      durationPerQuestionSec: finalDuration,
       shuffleQuestions: options.shuffleQuestions,
       shuffleOptions: options.shuffleOptions,
       presentationTarget: options.presentationTarget,
@@ -508,17 +518,20 @@ export const App: React.FC = () => {
       maxAttempts: options.maxAttempts,
       tabSwitchDetection: options.tabSwitchDetection,
       executionMode: options.executionMode,
+      teacherPacingSubMode: options.teacherPacingSubMode,
+      isChatMuted: options.isChatMuted,
       participantMode: options.participantMode,
       pacingType: options.pacingType,
       deadlineAt: options.deadlineAt,
       requireStudentInfo: options.requireStudentInfo,
       selectedQuestionIds: options.selectedQuestionIds,
+      overrideCustomQuestionDurations: isUntimed ? false : options.overrideCustomQuestionDurations,
     };
 
     const sessionQuiz: Quiz = {
       ...quiz,
       defaultGameMode: options.mode,
-      durationPerQuestionSec: options.durationPerQuestionSec,
+      durationPerQuestionSec: finalDuration,
       shuffleQuestions: options.shuffleQuestions,
       shuffleOptions: options.shuffleOptions,
       defaultSettings: settings,
