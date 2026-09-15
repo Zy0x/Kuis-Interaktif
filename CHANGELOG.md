@@ -1,6 +1,21 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.52] - 2026-09-16
+### Konfigurasi Vercel Deployment & Penonaktifan Auto-Build Git Commit (Rule 1, Rule 6, Rule 7, Rule 9, Rule 15 & Rule 16)
+
+#### 1. Konfigurasi Penonaktifan Auto-Build GitHub Commit (`vercel.json`)
+- **Penonaktifan Otomatisasi Build**: Menambahkan konfigurasi `"git": { "deploymentEnabled": false }` dan `"ignoreCommand": "exit 0"` pada `vercel.json` untuk memastikan Vercel tidak secara otomatis memicu proses build atau deployment setiap kali terdapat *commit* atau *push* baru ke repositori GitHub.
+- **Dukungan Build Manual Terkendali**: Pengembang/pengguna memiliki kendali penuh untuk menjalankan proses build dan deployment secara manual melalui antarmuka Vercel Dashboard atau CLI ketika seluruh perbaikan dan fitur telah teruji matang.
+
+#### 2. Konfigurasi Routing SPA & PWA Vite (`vercel.json`)
+- **Dukungan Client-Side Routing**: Mengonfigurasi aturan penulisan ulang URL (*rewrites*) ke `/index.html` guna menjamin navigasi langsung ke rute aplikasi, tautan kode PIN kelas, dan aset PWA berjalan lancar tanpa kesalahan *404 Not Found*.
+- **Standardisasi Output Build**: Menetapkan direktori keluaran ke `dist` dengan skrip build `npm run build` yang terintegrasi dengan Vite dan TypeScript.
+
+#### 3. Pembaruan Versi & Cache PWA (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.52` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.52` (`public/sw.js`).
+
 ## [2.4.51] - 2026-09-16
 ### Pemulihan Otomatis dan Pencegahan Auto-Expire Sesi Mandiri/PR (Rule 1, Rule 2, Rule 9, Rule 10, Rule 11 & Rule 15)
 
