@@ -21,6 +21,7 @@ const QuizCreator = React.lazy(() => import('./components/creator/QuizCreator').
 const TeacherDashboard = React.lazy(() => import('./components/teacher/TeacherDashboard').then((m) => ({ default: m.TeacherDashboard })));
 const WorksheetPrintView = React.lazy(() => import('./components/print/WorksheetPrintView').then((m) => ({ default: m.WorksheetPrintView })));
 const UnifiedAuthModal = React.lazy(() => import('./components/auth/UnifiedAuthModal').then((m) => ({ default: m.UnifiedAuthModal })));
+const OAuthOnboardingModal = React.lazy(() => import('./components/auth/OAuthOnboardingModal').then((m) => ({ default: m.OAuthOnboardingModal })));
 import { BackGestureIndicator } from './components/common/BackGestureIndicator';
 import {
   saveNavigationState,
@@ -77,6 +78,7 @@ export const App: React.FC = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authInitialTab, setAuthInitialTab] = useState<AuthModalTab>('student');
   const [privateQuizAlertModal, setPrivateQuizAlertModal] = useState<string | null>(null);
+  const [oauthOnboardingData, setOauthOnboardingData] = useState<{ role: 'teacher' | 'student'; profile: TeacherProfile | PlayerProfile } | null>(null);
 
   const {
     isMuted,
@@ -459,10 +461,14 @@ export const App: React.FC = () => {
     if (isOAuthReturn) {
       DataManager.syncOAuthUserSession().then((result) => {
         if (result) {
-          if (result.role === 'teacher') {
-            handleTeacherLoginSuccess(result.profile as TeacherProfile);
+          if (result.needsOnboarding) {
+            setOauthOnboardingData({ role: result.role, profile: result.profile });
           } else {
-            handleStudentLoginSuccess(result.profile as PlayerProfile);
+            if (result.role === 'teacher') {
+              handleTeacherLoginSuccess(result.profile as TeacherProfile);
+            } else {
+              handleStudentLoginSuccess(result.profile as PlayerProfile);
+            }
           }
         }
         try {
@@ -616,6 +622,30 @@ export const App: React.FC = () => {
             onClose={() => setIsAuthModalOpen(false)}
             onLoginTeacher={handleTeacherLoginSuccess}
             onLoginStudent={handleStudentLoginSuccess}
+            playClick={playClick}
+          />
+        </React.Suspense>
+      )}
+
+      {/* 3b. Dialog Onboarding Lengkapi Profil Google OAuth Pertama Kali */}
+      {oauthOnboardingData && (
+        <React.Suspense fallback={null}>
+          <OAuthOnboardingModal
+            isOpen={Boolean(oauthOnboardingData)}
+            role={oauthOnboardingData.role}
+            profile={oauthOnboardingData.profile}
+            onCompleteTeacher={(completedTeacher) => {
+              setOauthOnboardingData(null);
+              handleTeacherLoginSuccess(completedTeacher);
+            }}
+            onCompleteStudent={(completedStudent) => {
+              setOauthOnboardingData(null);
+              handleStudentLoginSuccess(completedStudent);
+            }}
+            onCancel={async () => {
+              setOauthOnboardingData(null);
+              await handleFullLogout();
+            }}
             playClick={playClick}
           />
         </React.Suspense>

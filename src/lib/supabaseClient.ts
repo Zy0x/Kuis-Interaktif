@@ -1061,6 +1061,57 @@ export const DataManager = {
     return updated;
   },
 
+  async updateStudentProfile(updates: Partial<PlayerProfile>): Promise<{ success: boolean; profile?: PlayerProfile; error?: string }> {
+    const current = this.getPlayerProfile();
+    const updated: PlayerProfile = {
+      ...current,
+      ...updates,
+    };
+    if (!updated.nickname || !updated.nickname.trim()) {
+      updated.nickname = 'Saya';
+    }
+    this.savePlayerProfile(updated);
+
+    if (supabase) {
+      try {
+        if (updated.nickname || updated.grade) {
+          supabase.auth.updateUser({
+            data: {
+              nickname: updated.nickname,
+              grade_level: updated.grade,
+            },
+          }).catch(() => {});
+        }
+
+        const targetId = updated.studentId || current.studentId;
+        if (targetId) {
+          await supabase.from('profiles_player').upsert({
+            id: targetId,
+            auth_user_id: targetId,
+            email: updated.email,
+            nickname: updated.nickname,
+            avatar_id: updated.avatarId || current.avatarId || 'lion',
+            grade_level: updated.grade || current.grade || 3,
+            stars_earned: updated.starsEarned ?? current.starsEarned ?? 0,
+            total_score: updated.totalScore ?? current.totalScore ?? 0,
+            quizzes_completed: updated.quizzesCompleted ?? current.quizzesCompleted ?? 0,
+            updated_at: new Date().toISOString(),
+          }, { onConflict: 'id' });
+        }
+      } catch (err: unknown) {
+        console.warn('updateStudentProfile cloud sync notice:', err);
+      }
+    }
+
+    if (typeof window !== 'undefined') {
+      try {
+        window.dispatchEvent(new CustomEvent('kuis_student_logged_in', { detail: { profile: updated } }));
+      } catch {}
+    }
+
+    return { success: true, profile: updated };
+  },
+
   // Student Cloud Auth
   async signInStudent(email: string, pass: string): Promise<{ success: boolean; error?: string; profile?: PlayerProfile }> {
     if (supabase) {
@@ -1931,7 +1982,7 @@ export const DataManager = {
     }
   },
 
-  async syncOAuthUserSession(): Promise<{ role: 'teacher' | 'student'; profile: TeacherProfile | PlayerProfile } | null> {
+  async syncOAuthUserSession(): Promise<{ role: 'teacher' | 'student'; profile: TeacherProfile | PlayerProfile; needsOnboarding?: boolean } | null> {
     if (!supabase) return null;
     try {
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -1985,6 +2036,7 @@ export const DataManager = {
         let finalFullName = userFullName;
         let finalSchoolName = '';
         let targetRecordId = user.id;
+        let isNewTeacher = true;
 
         // 1. Cek record di tabel profiles_teacher berdasarkan ID, Auth User ID, atau Email
         try {
@@ -1996,6 +2048,7 @@ export const DataManager = {
             .limit(1);
 
           if (tRows && tRows.length > 0) {
+            isNewTeacher = false;
             const tRow = tRows[0];
             targetRecordId = tRow.id || user.id;
             if (tRow.full_name && !tRow.full_name.includes('Rahmawati')) {
@@ -2075,7 +2128,9 @@ export const DataManager = {
           localStorage.removeItem('kuis_oauth_intended_role');
         }
 
-        return { role: 'teacher', profile: teacherProfile };
+        const teacherNeedsOnboarding = isNewTeacher || !finalSchoolName || finalSchoolName === 'SD Indonesia' || finalSchoolName === 'SD Negeri Favorit';
+
+        return { role: 'teacher', profile: teacherProfile, needsOnboarding: teacherNeedsOnboarding };
       } else {
         // intendedRole === 'student'
         let nickname = userFullName;
@@ -2085,6 +2140,7 @@ export const DataManager = {
         let totalScore = 0;
         let quizzesCompleted = 0;
         let targetRecordId = user.id;
+        let isNewStudent = true;
 
         try {
           const { data: pRows } = await supabase
@@ -2095,6 +2151,7 @@ export const DataManager = {
             .limit(1);
 
           if (pRows && pRows.length > 0) {
+            isNewStudent = false;
             const pRow = pRows[0];
             targetRecordId = pRow.id || user.id;
             nickname = pRow.nickname || nickname;
@@ -2144,7 +2201,8 @@ export const DataManager = {
           } catch {}
         }
 
-        return { role: 'student', profile: studentProfile };
+        const studentNeedsOnboarding = isNewStudent;
+        return { role: 'student', profile: studentProfile, needsOnboarding: studentNeedsOnboarding };
       }
     } catch (err) {
       console.warn('syncOAuthUserSession error:', err);

@@ -1,6 +1,23 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.19] - 2026-09-15
+### Dialog Onboarding Profil Pertama Kali Pengguna Google OAuth Guru & Siswa (Rule 1, Rule 2, Rule 4, Rule 8, Rule 9, Rule 10 & Rule 15)
+
+#### 1. Dialog Onboarding Mandatori Pasca-Login Google OAuth Pertama Kali (`OAuthOnboardingModal.tsx`)
+- **Deteksi Kebutuhan Onboarding Presisi**: Sistem mendeteksi ketika Guru atau Siswa baru pertama kali mendaftar / masuk dengan akun Google OAuth dan belum memiliki data profil esensial (seperti nama sekolah untuk guru, atau tingkat kelas dan nama panggilan untuk siswa).
+- **Formulir Pendidik / Guru**: Guru diarahkan mengisi Nama Lengkap beserta Gelar serta Nama Asal Sekolah / Instansi secara valid sebelum masuk ke Dasbor Guru. Data ini otomatis disinkronkan ke profil cloud Supabase dan identitas pembuat kuis.
+- **Formulir Siswa / Peserta Didik**: Siswa diarahkan mengonfirmasi Nama Panggilan (maksimal 50 karakter), memilih Tingkat Kelas (SD Kelas 1-6, SMP, SMA), dan memilih Karakter Avatar favorit (8 karakter hewan ceria) sebelum memasuki arena kuis atau lobi belajar.
+- **Keamanan & Konsistensi Data**: Mencegah akun baru memiliki data kosong atau placeholder default saat pertama kali login menggunakan Google. Tersedia tombol pembatalan dan keluar sesi yang aman (*safe cancellation*) jika pengguna batal melanjutkan.
+
+#### 2. Standar Desain Mobile-First & Touch-First (Rule 1 & Rule 2)
+- **Target Sentuh Ergonomis**: Seluruh tombol aksi, pemilih avatar, dan bidang input dirancang dengan ukuran target sentuh minimal 44×44 px (`min-h-[44px]` hingga `min-h-[48px]`).
+- **Antarmuka Responsif & Inklusif**: Tata letak stabil dan proporsional di seluruh rentang orientasi layar ponsel (portrait/landscape), tablet, hingga desktop dengan tema terang dan gelap (*dark mode*) yang nyaman di mata.
+
+#### 3. Pembaruan Versi & Cache PWA (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.19` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.19` (`public/sw.js`).
+
 ## [2.4.18] - 2026-09-15
 ### Preservasi Akurat Nama Pendidik & Asal Sekolah Pasca Login & Sinkronisasi OAuth (Rule 1, Rule 2, Rule 9, Rule 11 & Rule 15)
 
