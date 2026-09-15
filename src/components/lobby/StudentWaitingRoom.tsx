@@ -86,6 +86,17 @@ export const StudentWaitingRoom: React.FC<StudentWaitingRoomProps> = ({
         setSession(updated);
         // If teacher started quiz, transition to arena!
         if (updated.status === 'active') {
+          // Tutup laci chat dan lepaskan fokus keyboard agar siswa langsung fokus ke kuis
+          setIsChatDrawerOpen(false);
+          if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur();
+          }
+          // Getaran taktil sinyal mulai kuis pada perangkat seluler
+          if (typeof navigator !== 'undefined' && navigator.vibrate) {
+            try {
+              navigator.vibrate([30, 50, 30]);
+            } catch {}
+          }
           onStartQuiz();
         } else if (updated.status === 'finished') {
           setIsSessionEndedModalOpen(true);

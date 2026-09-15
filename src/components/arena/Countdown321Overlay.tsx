@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Sparkles } from 'lucide-react';
 
 interface Countdown321OverlayProps {
@@ -70,40 +70,74 @@ export const Countdown321Overlay: React.FC<Countdown321OverlayProps> = ({
 }) => {
   const [count, setCount] = useState<number>(3);
   const completedRef = useRef(false);
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
+  const isMutedRef = useRef(isMuted);
+  isMutedRef.current = isMuted;
+
+  const playedTonesRef = useRef<Set<number>>(new Set());
+
+  const handleFinish = useCallback(() => {
+    if (!completedRef.current) {
+      completedRef.current = true;
+      onCompleteRef.current();
+    }
+  }, []);
 
   useEffect(() => {
-    // Bunyikan nada pembuka untuk angka 3
-    playCountdownTone(3, isMuted);
+    const startTime = Date.now();
 
-    const timer2 = setTimeout(() => {
-      setCount(2);
-      playCountdownTone(2, isMuted);
-    }, 1000);
+    // Bunyikan nada pertama untuk angka 3
+    if (!playedTonesRef.current.has(3)) {
+      playedTonesRef.current.add(3);
+      playCountdownTone(3, isMutedRef.current);
+    }
 
-    const timer1 = setTimeout(() => {
-      setCount(1);
-      playCountdownTone(1, isMuted);
-    }, 2000);
-
-    const timerGo = setTimeout(() => {
-      setCount(0); // 0 merepresentasikan "MULAI!"
-      playCountdownTone(0, isMuted);
-    }, 3000);
-
-    const timerFinish = setTimeout(() => {
-      if (!completedRef.current) {
-        completedRef.current = true;
-        onComplete();
+    // Interval presisi 50ms berbasis selisih waktu nyata (wall-clock timestamp)
+    // Anti macet: tidak terpengaruh re-render parent ataupun pembatalan effect
+    const interval = setInterval(() => {
+      if (completedRef.current) {
+        clearInterval(interval);
+        return;
       }
-    }, 3600);
+
+      const elapsed = Date.now() - startTime;
+
+      if (elapsed >= 3600) {
+        clearInterval(interval);
+        handleFinish();
+      } else if (elapsed >= 3000) {
+        setCount(0); // 0 = "MULAI!"
+        if (!playedTonesRef.current.has(0)) {
+          playedTonesRef.current.add(0);
+          playCountdownTone(0, isMutedRef.current);
+        }
+      } else if (elapsed >= 2000) {
+        setCount(1);
+        if (!playedTonesRef.current.has(1)) {
+          playedTonesRef.current.add(1);
+          playCountdownTone(1, isMutedRef.current);
+        }
+      } else if (elapsed >= 1000) {
+        setCount(2);
+        if (!playedTonesRef.current.has(2)) {
+          playedTonesRef.current.add(2);
+          playCountdownTone(2, isMutedRef.current);
+        }
+      }
+    }, 50);
+
+    // Batas aman: jika setelah 4.5 detik belum selesai, paksa selesai agar tidak pernah memblokir kuis
+    const safetyTimeout = setTimeout(() => {
+      clearInterval(interval);
+      handleFinish();
+    }, 4500);
 
     return () => {
-      clearTimeout(timer2);
-      clearTimeout(timer1);
-      clearTimeout(timerGo);
-      clearTimeout(timerFinish);
+      clearInterval(interval);
+      clearTimeout(safetyTimeout);
     };
-  }, [isMuted, onComplete]);
+  }, [handleFinish]);
 
   return (
     <div
@@ -175,6 +209,16 @@ export const Countdown321Overlay: React.FC<Countdown321OverlayProps> = ({
               : 'Baca pertanyaan dengan teliti dan pilih jawaban terbaikmu!'}
           </p>
         </div>
+
+        {/* Tombol Lewati untuk Aksesibilitas & Responsivitas Cepat (Rule 1, Rule 2, Rule 8) */}
+        <button
+          type="button"
+          onClick={handleFinish}
+          className="text-xs font-semibold text-slate-400 hover:text-white underline underline-offset-4 opacity-75 hover:opacity-100 transition-opacity min-h-[44px] px-4 py-2"
+          aria-label="Lewati hitung mundur langsung ke soal"
+        >
+          Lewati Hitung Mundur →
+        </button>
 
       </div>
     </div>

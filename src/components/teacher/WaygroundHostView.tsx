@@ -187,6 +187,9 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
 
   const handleStartQuiz = async () => {
     playClick();
+    if (isTeacherLed) {
+      setHostCountdownSec(3);
+    }
     const updated = await DataManager.startActiveQuizSession(session.id);
     if (updated) {
       setSession(updated);

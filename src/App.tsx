@@ -722,31 +722,33 @@ export const App: React.FC = () => {
           quiz={activeQuiz}
           sessionSettings={activeSessionSettings || (activeQuiz.defaultSettings as QuizSessionSettings)}
           activeSession={activeSession}
-          onStartQuiz={async () => {
+          onStartQuiz={() => {
+            // 1. Alihkan layar ke arena secara instan tanpa hambatan request jaringan
+            setIsJoinedViaStudentLobby(true);
+            setCurrentScreen('arena');
+            saveNavigationState({ screen: 'arena', quiz: activeQuiz, replace: false });
+
+            // 2. Sinkronkan status peserta di latar belakang tanpa memblokir transisi UI
             if (activeSession) {
               const profile = DataManager.getPlayerProfile();
               const storedToken = DataManager.getSessionParticipant(activeSession.id);
               const participantId = storedToken?.id || DataManager.getOrCreateSessionParticipantId(activeSession.id);
               const participantName = storedToken?.name || profile.nickname || 'Siswa Pintar';
-              try {
-                const reg = await DataManager.addOrUpdateSessionParticipant(activeSession.id, {
-                  id: participantId,
-                  name: participantName,
-                  avatarId: profile.avatarId || 'lion',
-                });
+              DataManager.addOrUpdateSessionParticipant(activeSession.id, {
+                id: participantId,
+                name: participantName,
+                avatarId: profile.avatarId || 'lion',
+              }).then((reg) => {
                 if (reg?.name && reg.name !== profile.nickname) {
                   DataManager.savePlayerProfile({
                     nickname: reg.name,
                     avatarId: profile.avatarId || 'lion',
                   });
                 }
-              } catch (err) {
-                console.warn('Gagal mendaftarkan peserta ke sesi kuis:', err);
-              }
+              }).catch((err) => {
+                console.warn('Gagal mendaftarkan peserta ke sesi kuis (background notice):', err);
+              });
             }
-            setIsJoinedViaStudentLobby(true);
-            setCurrentScreen('arena');
-            saveNavigationState({ screen: 'arena', quiz: activeQuiz, replace: false });
           }}
           onBackToHome={() => {
             if (teacher) {

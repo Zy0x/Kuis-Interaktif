@@ -245,6 +245,9 @@ export const InterQuestionWaitingLounge: React.FC<InterQuestionWaitingLoungeProp
           updated.currentQuestionIndex !== questionIndex &&
           updated.currentQuestionIndex >= 0
         ) {
+          if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur();
+          }
           onAdvanceToQuestion(updated.currentQuestionIndex);
         }
 

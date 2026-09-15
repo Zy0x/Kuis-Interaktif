@@ -261,6 +261,16 @@ export const StudentChatDrawer: React.FC<StudentChatDrawerProps> = ({
     return true;
   }, isOpen);
 
+  // Jika status sesi berubah menjadi 'active' (Guru memulai kuis), seketika tutup laci obrolan dan lepaskan keyboard
+  useEffect(() => {
+    if (sessionStatus === 'active' && isOpen) {
+      if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
+      onClose();
+    }
+  }, [sessionStatus, isOpen, onClose]);
+
   // Auto scroll to bottom
   const scrollToBottom = () => {
     setTimeout(() => {

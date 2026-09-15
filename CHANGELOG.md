@@ -1,6 +1,26 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.27] - 2026-09-15
+### Hitung Mundur Stabil Berbasis Timestamp & Pengalihan Otomatis Siswa dari Chat ke Kuis (Rule 1, Rule 2, Rule 5, Rule 6 & Rule 15)
+
+#### 1. Hitung Mundur Presisi & Anti Macet (`Countdown321Overlay.tsx` & `QuizArena.tsx`)
+- **Hitung Mundur Berbasis Selisih Waktu (*Wall-Clock Timestamp*)**: Memperbarui mekanisme hitung mundur 3 detik (3, 2, 1, Mulai!) agar mengukur selisih waktu nyata per 50ms sehingga terbebas mutlak dari risiko macet (*stuck*) atau pembatalan timer berulang akibat *re-render* komponen induk.
+- **Sinkronisasi Audio Presisi**: Memastikan setiap nada synthesizer (bip dan *fanfare*) dibunyikan tepat 1 kali pada setiap transisi detik tanpa pengulangan atau jeda yang tidak diinginkan.
+- **Aksesibilitas & Perlindungan Batas Aman**: Menyediakan tombol lewati cepat (*Skip*) serta batas aman otomatis 4.5 detik untuk menjamin kuis segera dimulai bagi seluruh siswa tanpa terkendala hambatan antarmuka.
+- **Stabilisasi Timer Pertanyaan Utama**: Mengisolasi interval detik soal (`timeLeft`) dari efek render berulang dan memindahkan pemilihan jawaban saat waktu habis ke luar siklus updater state demi kestabilan maksimal di React 19.
+
+#### 2. Pengalihan Fokus Siswa Instan dari Obrolan ke Kuis (`StudentWaitingRoom.tsx`, `StudentChatDrawer.tsx`, `InterQuestionWaitingLounge.tsx` & `App.tsx`)
+- **Penutupan Otomatis Laci Obrolan Siswa**: Begitu Guru menekan "Mulai Kuis", laci chat murid (`StudentChatDrawer`) seketika menutup secara otomatis tanpa perlu tindakan manual dari siswa.
+- **Pelepasan Keyboard Virtual Ponsel**: Secara otomatis melepaskan fokus input (`document.activeElement.blur()`) agar keyboard virtual ponsel pintar segera tertutup, memberikan ruang pandang layar penuh pada hitung mundur dan pertanyaan kuis.
+- **Sinyal Getar Mulai Kuis (*Haptic Feedback*)**: Menghasilkan getaran ramah pada ponsel siswa saat kuis dimulai agar perhatian siswa langsung tertuju ke arena.
+- **Transisi Non-Blocking ke Arena**: Menghilangkan hambatan tunggu jaringan saat berpindah dari ruang lobi ke arena kuis, membuat tampilan kuis langsung terbuka seketika.
+- **Sinkronisasi Countdown Guru**: Mengaktifkan hitung mundur 3 detik di dasbor kontrol Guru (`WaygroundHostView.tsx`) sejak butir soal pertama untuk keselarasan visual bersama siswa.
+
+#### 3. Pembaruan Versi & Cache PWA (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.27` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.27` (`public/sw.js`).
+
 ## [2.4.26] - 2026-09-15
 ### Perbaikan Sinkronisasi Data Peserta & Penyempurnaan Indikator Offline (Rule 1, Rule 2, Rule 6 & Rule 15)
 

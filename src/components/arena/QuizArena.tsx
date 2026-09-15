@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import type { 
   Quiz, 
   QuizAttemptAnswer, 
@@ -316,6 +316,10 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   });
   const lastCountdownQuestionRef = useRef<number>(currentIndex);
 
+  const handleCountdownComplete = useCallback(() => {
+    setShowCountdown(false);
+  }, []);
+
   // Trigger hitung mundur 3 detik setiap kali nomor soal berganti di mode dipandu guru
   useEffect(() => {
     if (activeSettings.executionMode === 'teacher_led' && !isPreview) {
@@ -489,6 +493,16 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   const question = activeQuestions[currentIndex] || activeQuestions[0];
   const isLastQuestion = currentIndex === activeQuestions.length - 1;
   const timerRef = useRef<number | null>(null);
+  const playTickRef = useRef(playTick);
+  playTickRef.current = playTick;
+  const handleAnswerSelectRef = useRef<((
+    optionIndex: number,
+    textAns?: string,
+    explicitIsCorrect?: boolean,
+    customPoints?: number,
+    customMatchedCount?: number,
+    customTotalPairs?: number
+  ) => void) | null>(null);
 
   // Initialize right column shuffle for matching pairs (termasuk kartu pengecoh opsional)
   useEffect(() => {
@@ -538,7 +552,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     return () => document.removeEventListener('fullscreenchange', handleFsChange);
   }, []);
 
-  // Timer effect
+  // Timer effect (stabil & tahan re-render, terbebas dari timer drift atau stuck)
   useEffect(() => {
     if (isAnswerConfirmed || isPaused || isGameOver || showCountdown) {
       if (timerRef.current) clearInterval(timerRef.current);
@@ -554,11 +568,16 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 
       setTimeLeft((prev) => {
         if (prev <= 1) {
-          handleAnswerSelect(-1, undefined, false);
+          // Eksekusi pemilihan jawaban otomatis di luar cycle updater state untuk kestabilan React 19
+          setTimeout(() => {
+            if (handleAnswerSelectRef.current) {
+              handleAnswerSelectRef.current(-1, undefined, false);
+            }
+          }, 0);
           return 0;
         }
-        if (prev <= 6 && prev > 1 && playTick) {
-          playTick();
+        if (prev <= 6 && prev > 1 && playTickRef.current) {
+          playTickRef.current();
         }
         return prev - 1;
       });
@@ -567,7 +586,16 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [currentIndex, isAnswerConfirmed, isPaused, isGameOver, showCountdown, gameMode, defaultDurationSec, playTick, activeSettings.executionMode, activeSettings.teacherPacingSubMode]);
+  }, [
+    currentIndex, 
+    isAnswerConfirmed, 
+    isPaused, 
+    isGameOver, 
+    showCountdown, 
+    gameMode, 
+    activeSettings.executionMode, 
+    activeSettings.teacherPacingSubMode
+  ]);
 
   const normalizeAnswer = (text: string) => {
     return text
@@ -735,6 +763,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
       }, 700);
     }
   };
+  handleAnswerSelectRef.current = handleAnswerSelect;
 
   const handleTeacherReveal = () => {
     // Keamanan tingkat tinggi: tolak eksekusi jika bukan guru terverifikasi
@@ -2286,7 +2315,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
         <Countdown321Overlay
           questionNumber={currentIndex + 1}
           totalQuestions={activeQuestions.length}
-          onComplete={() => setShowCountdown(false)}
+          onComplete={handleCountdownComplete}
           isMuted={isMuted}
         />
       )}
