@@ -1,6 +1,18 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.30] - 2026-09-15
+### Penyederhanaan Ekstrem Header Siswa Mode Dipandu Guru (Rule 1, Rule 2, Rule 4 & Rule 15)
+
+#### 1. Header Minimalis & Rapi Siswa (`QuizArena.tsx`)
+- **Pojok Kiri Atas**: Hanya menampilkan nomor soal (`Soal X/Y`) dan poin soal (`⭐ X Poin`). Judul kuis dan tombol silang keluar dihilangkan sepenuhnya dari header siswa untuk ruang pandang maksimal.
+- **Pojok Kanan Atas**: Hanya menampilkan tombol Chat (Mode Senyap) dan tombol pengaturan Titik Tiga (`MoreVertical`).
+- **Penghapusan Label Tengah**: Menghapus label "🕹️ Dipandu Guru" dan timer tengah dari header siswa karena status dipandu guru telah tersedia secara jelas pada footer antarmuka.
+
+#### 2. Pembaruan Versi & Cache PWA (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.30` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.30` (`public/sw.js`).
+
 ## [2.4.29] - 2026-09-15
 ### Tata Letak Header Bersih, Kunci Kendali Navigasi & Obrolan Senyap Siswa Mode Dipandu Guru (Rule 1, Rule 2, Rule 4, Rule 5 & Rule 15)
 
