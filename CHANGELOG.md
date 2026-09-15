@@ -1,6 +1,28 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.37] - 2026-09-15
+### Audit Total Desain Responsif & Penataan Ruang Tunggu Jeda Soal (Rule 1, Rule 2, Rule 6, Rule 7 & Rule 15)
+
+#### 1. Perbaikan Menyeluruh Galat *Flexbox Clipping* & *Scroll Overflow* (`InterQuestionWaitingLounge.tsx`)
+- **Eliminasi Pemotongan Header di Layar Ponsel & Desktop Pendek**: Mengatasi galat pemusatan vertikal (`justify-center` pada kontainer *scrollable* flexbox) yang sebelumnya memposisikan bagian atas kartu (judul selebrasi, ucapan selamat, dan rekapitulasi nilai) ke luar bidang pandang (*negative scroll space*). Kontainer kini mengadopsi struktur `overflow-y-auto overscroll-y-contain items-center` dengan margin otomatis dinamis (`my-auto`) pada kartu inti, menjamin tampilan selalu mulai dari atas dan dapat di-*scroll* mulus dari ujung atas hingga bawah tanpa ada teks atau elemen yang terpotong di resolusi non-reguler (Infinix Note 50s 392×778 px, Redmi Note 7 431×846 px, layar lipat, maupun desktop *half-screen* 723×704 px).
+- **Ruang Aman Padding Bawah (*Safe Area Clearance*)**: Menambahkan bantalan vertikal (`px-2.5 py-4 sm:p-6`) yang melindungi tombol aksi dan kolom pesan dari ketertutupan oleh bilah navigasi atau gestur sistem operasi seluler.
+
+#### 2. Sistem Tab Aktivitas Jeda Soal Terpadu (`InterQuestionWaitingLounge.tsx`)
+- **Navigasi Aktivitas Segmented (*Dino Run*, *Tebak Emoji*, *Obrolan Kelas*)**: Mengganti penumpukan vertikal seluruh elemen (yang sebelumnya berukuran >900 px) dengan sistem tab interaktif yang ringkas dan ramah sentuhan (*Touch-First Target* $\ge 44\times 44\text{ px}$):
+  - **Tab 1: 🦖 Dino Run**: Permainan lari rintangan kaktus dengan kanvas proporsional, kontrol lompat layar/spasi, serta papan peringkat 3 besar teman sekelas saat menabrak.
+  - **Tab 2: 🧩 Tebak Emoji**: Permainan kuis tebak kata/emoji edukatif dengan tombol opsi berukuran sentuh nyaman.
+  - **Tab 3: 💬 Obrolan Kelas**: Area obrolan interaktif yang lapang (`h-44 sm:h-52`) lengkap dengan pembeda visual guru/teman, pintasan tombol Enter untuk pengiriman cepat di komputer, serta area ketik yang tidak terganggu saat *keyboard* virtual ponsel muncul.
+- **Indikator Notifikasi Pesan Baru (*Unread Badge Indicator*)**: Menampilkan lencana angka berpendar (*pulse badge*) pada tab Obrolan ketika teman sekelas atau guru mengirimkan pesan baru saat siswa sedang asyik bermain mini-game.
+
+#### 3. Bilah Reaksi Semangat 1-Baris *Touch-Scrollable* (`QuizizzReactionButtonRow.tsx`)
+- **Single-Row Horizontal Scroll Bebas Bungkus Baris**: Menambahkan dukungan properti `scrollable` pada bilah emoji reaksi. Seluruh 8 emoji reaksi semangat tetap berada dalam satu baris horizontal mulus (`touch-pan-x`) tanpa terpecah menjadi dua baris di layar sempit (<400 px), menghemat lebih dari 50 px ruang vertikal sekaligus menjaga ukuran tombol sentuh tetap $\ge 44\times 44\text{ px}$ (*Rule 1*).
+- **Akses Cepat Anti-Reaksi**: Tombol pengatur Anti-Reaksi ditingkatkan ke ukuran sentuh ergonomis $\ge 44\text{ px}$ dengan ikon status proteksi visual yang jelas.
+
+#### 4. Pembaruan Versi & Cache PWA (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.37` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.37` (`public/sw.js`).
+
 ## [2.4.36] - 2026-09-15
 ### Fitur Anti-Reaksi Layar untuk Siswa (Fokus Belajar Bebas Distraksi) (Rule 1, Rule 2, Rule 7 & Rule 15)
 

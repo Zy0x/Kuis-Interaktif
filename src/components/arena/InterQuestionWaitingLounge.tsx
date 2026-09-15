@@ -1023,42 +1023,55 @@ export const InterQuestionWaitingLounge: React.FC<InterQuestionWaitingLoungeProp
   const isChatMuted = Boolean(session.settings?.isChatMuted);
   const chatMessages = session.chatMessages || [];
 
-  // Pilihan Mini-Game (Default: Dino Run)
-  const [selectedMiniGame, setSelectedMiniGame] = useState<'dino' | 'emoji'>('dino');
+  // Pilihan Tab Aktivitas Jeda Soal (Dino Run, Tebak Emoji, Obrolan Kelas)
+  const [activeTab, setActiveTab] = useState<'dino' | 'emoji' | 'chat'>('dino');
+  const [lastSeenChatCount, setLastSeenChatCount] = useState<number>(() => session.chatMessages?.length || 0);
+
+  const chatCount = session.chatMessages?.length || 0;
+  useEffect(() => {
+    if (activeTab === 'chat') {
+      setLastSeenChatCount(chatCount);
+      if (chatScrollRef.current) {
+        chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+      }
+    }
+  }, [activeTab, chatCount]);
+
+  const unreadChatCount = Math.max(0, chatCount - lastSeenChatCount);
 
   return (
-    <div className="fixed inset-0 z-40 bg-slate-950/80 backdrop-blur-md flex flex-col items-center justify-center p-3 sm:p-4 overflow-y-auto animate-fade-in select-none">
+    <div className="fixed inset-0 z-40 bg-slate-950/85 backdrop-blur-md overflow-y-auto overscroll-y-contain px-2.5 py-4 sm:p-6 flex flex-col items-center animate-fade-in select-none">
       
-      <div className="w-full max-w-xl bg-slate-900 border border-slate-800 rounded-3xl p-4 sm:p-6 shadow-2xl space-y-4 my-auto">
+      <div className="w-full max-w-xl bg-slate-900/95 border border-slate-800/90 rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 shadow-2xl space-y-3 sm:space-y-3.5 my-auto min-h-0">
         
         {/* Top Header: Answer Saved Status / Selebrasi Kuis Selesai ala Kahoot/Wayground */}
         {isFinalQuestion ? (
-          <div className="text-center space-y-2.5 animate-fade-in">
-            <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-black shadow-inner">
+          <div className="text-center space-y-2 animate-fade-in">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[11px] sm:text-xs font-black shadow-inner">
               <Sparkles className="w-3.5 h-3.5 text-amber-300" />
               <span>Semua Soal Berhasil Dijawab! ({totalQuestions}/{totalQuestions})</span>
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
             </div>
 
-            <h2 className="text-xl sm:text-2xl font-black text-white leading-tight">
+            <h2 className="text-lg sm:text-2xl font-black text-white leading-tight">
               Luar Biasa, {studentName}! 🎉
             </h2>
 
             {/* Kartu Ringkasan Hasil Sementara (Interim Result Card) */}
-            <div className="grid grid-cols-3 gap-2 bg-slate-950/70 border border-slate-800 rounded-2xl p-2.5 sm:p-3 text-center shadow-inner">
-              <div className="bg-slate-900/80 rounded-xl p-2 border border-slate-800/80">
-                <span className="text-[10px] text-slate-400 font-bold block uppercase">Skor Sementara</span>
-                <span className="text-base sm:text-lg font-black text-emerald-400">{earnedScore} pts</span>
+            <div className="grid grid-cols-3 gap-2 bg-slate-950/70 border border-slate-800 rounded-2xl p-2 sm:p-2.5 text-center shadow-inner">
+              <div className="bg-slate-900/80 rounded-xl p-1.5 sm:p-2 border border-slate-800/80">
+                <span className="text-[9px] sm:text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Skor Sementara</span>
+                <span className="text-sm sm:text-lg font-black text-emerald-400">{earnedScore} pts</span>
               </div>
-              <div className="bg-slate-900/80 rounded-xl p-2 border border-slate-800/80">
-                <span className="text-[10px] text-slate-400 font-bold block uppercase">Benar • Salah</span>
-                <span className="text-base sm:text-lg font-black text-blue-400">
+              <div className="bg-slate-900/80 rounded-xl p-1.5 sm:p-2 border border-slate-800/80">
+                <span className="text-[9px] sm:text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Benar • Salah</span>
+                <span className="text-sm sm:text-lg font-black text-blue-400">
                   {correctCount ?? earnedStars} • <span className="text-rose-400">{incorrectCount ?? 0}</span>
                 </span>
               </div>
-              <div className="bg-slate-900/80 rounded-xl p-2 border border-slate-800/80">
-                <span className="text-[10px] text-slate-400 font-bold block uppercase">Bintang</span>
-                <span className="text-base sm:text-lg font-black text-amber-400 flex items-center justify-center gap-1">
+              <div className="bg-slate-900/80 rounded-xl p-1.5 sm:p-2 border border-slate-800/80">
+                <span className="text-[9px] sm:text-[10px] text-slate-400 font-bold block uppercase tracking-wider">Bintang</span>
+                <span className="text-sm sm:text-lg font-black text-amber-400 flex items-center justify-center gap-1">
                   {earnedStars} <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                 </span>
               </div>
@@ -1085,14 +1098,14 @@ export const InterQuestionWaitingLounge: React.FC<InterQuestionWaitingLoungeProp
             )}
           </div>
         ) : (
-          <div className="text-center space-y-1">
+          <div className="text-center space-y-1.5 animate-fade-in">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold">
               <CheckCircle2 className="w-3.5 h-3.5" />
               <span>Jawaban Soal #{questionIndex + 1} dari {totalQuestions} Tersimpan!</span>
               {earnedStars > 0 && <span className="ml-1 text-amber-300 font-black">+{earnedStars}⭐</span>}
               {earnedScore > 0 && <span className="ml-0.5 text-emerald-300 font-black">+{earnedScore}pts</span>}
             </div>
-            <h2 className="text-lg sm:text-xl font-black text-white">
+            <h2 className="text-base sm:text-xl font-black text-white">
               Santai Sejenak, {studentName}! 🌟
             </h2>
             
@@ -1106,8 +1119,8 @@ export const InterQuestionWaitingLounge: React.FC<InterQuestionWaitingLoungeProp
         {/* Floating Live Reactions Overlay di Lounge Jeda Soal */}
         <QuizizzReactionOverlay sessionId={session.id} reactions={session.reactions} />
 
-        {/* Bilah Reaksi Semangat Murid di Lounge Jeda Soal */}
-        <div className="bg-slate-950/60 rounded-2xl p-2.5 border border-slate-800/80 flex flex-col items-center justify-center gap-2">
+        {/* Bilah Reaksi Semangat Murid di Lounge Jeda Soal (1 Baris Scrollable Touch-Friendly) */}
+        <div className="bg-slate-950/60 rounded-2xl p-2 sm:p-2.5 border border-slate-800/80 flex flex-col items-center justify-center gap-1.5">
           <div className="flex items-center justify-between w-full px-1">
             <span className="text-[11px] font-bold text-slate-400">Reaksi Semangat:</span>
             <button
@@ -1116,7 +1129,7 @@ export const InterQuestionWaitingLounge: React.FC<InterQuestionWaitingLoungeProp
                 playClick();
                 toggleAntiReaction();
               }}
-              className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all flex items-center gap-1.5 border min-h-[36px] btn-press ${
+              className={`px-3 py-1 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border min-h-[44px] btn-press ${
                 isAntiReact
                   ? 'bg-rose-950/70 border-rose-500/60 text-rose-300 shadow-xs'
                   : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
@@ -1144,47 +1157,70 @@ export const InterQuestionWaitingLounge: React.FC<InterQuestionWaitingLoungeProp
             isTeacher={false}
             playClick={playClick}
             compact={true}
+            scrollable={true}
             title=""
           />
         </div>
 
-        {/* Mini-Game Tab Selector (Kompak & Ramah Sentuhan) */}
-        <div className="flex items-center justify-between gap-2 px-1">
-          <span className="text-[11px] font-bold text-slate-400">Mini-Game Jeda:</span>
-          <div className="flex items-center gap-1 bg-slate-950/80 p-0.5 rounded-xl border border-slate-800">
-            <button
-              type="button"
-              onClick={() => {
-                playClick();
-                setSelectedMiniGame('dino');
-              }}
-              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all min-h-[36px] flex items-center gap-1 btn-press ${
-                selectedMiniGame === 'dino'
-                  ? 'bg-emerald-600 text-white shadow-xs'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <span>🦖 Dino Run</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                playClick();
-                setSelectedMiniGame('emoji');
-              }}
-              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all min-h-[36px] flex items-center gap-1 btn-press ${
-                selectedMiniGame === 'emoji'
-                  ? 'bg-purple-600 text-white shadow-xs'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <span>🧩 Tebak Emoji</span>
-            </button>
-          </div>
+        {/* Tab Selector Aktivitas Jeda Soal (Mobile-First Touch Target >= 44x44px) */}
+        <div className="flex items-center justify-between gap-1 sm:gap-1.5 p-1 bg-slate-950/80 rounded-2xl border border-slate-800">
+          <button
+            type="button"
+            onClick={() => {
+              playClick();
+              setActiveTab('dino');
+            }}
+            className={`flex-1 py-2 px-2 rounded-xl text-xs font-bold transition-all min-h-[44px] flex items-center justify-center gap-1.5 btn-press ${
+              activeTab === 'dino'
+                ? 'bg-emerald-600 text-white shadow-md'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/50'
+            }`}
+          >
+            <span className="text-sm">🦖</span>
+            <span>Dino Run</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              playClick();
+              setActiveTab('emoji');
+            }}
+            className={`flex-1 py-2 px-2 rounded-xl text-xs font-bold transition-all min-h-[44px] flex items-center justify-center gap-1.5 btn-press ${
+              activeTab === 'emoji'
+                ? 'bg-purple-600 text-white shadow-md'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/50'
+            }`}
+          >
+            <span className="text-sm">🧩</span>
+            <span>Tebak Emoji</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              playClick();
+              setActiveTab('chat');
+              setLastSeenChatCount(chatMessages.length);
+            }}
+            className={`flex-1 py-2 px-2 rounded-xl text-xs font-bold transition-all min-h-[44px] flex items-center justify-center gap-1.5 btn-press relative ${
+              activeTab === 'chat'
+                ? 'bg-indigo-600 text-white shadow-md'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/50'
+            }`}
+          >
+            <MessageCircle className="w-3.5 h-3.5 text-indigo-300" />
+            <span>Obrolan</span>
+            {unreadChatCount > 0 && activeTab !== 'chat' && (
+              <span className="px-1.5 py-0.2 rounded-full bg-rose-500 text-white text-[10px] font-black animate-pulse">
+                {unreadChatCount > 9 ? '9+' : unreadChatCount}
+              </span>
+            )}
+          </button>
         </div>
 
-        {/* Selected Mini-Game */}
-        {selectedMiniGame === 'dino' ? (
+        {/* Konten Aktivitas Sesuai Tab Aktif */}
+        {activeTab === 'dino' && (
           <DinoRunGame
             playClick={playClick}
             playCorrect={playCorrect}
@@ -1193,149 +1229,156 @@ export const InterQuestionWaitingLounge: React.FC<InterQuestionWaitingLoungeProp
             avatarId={avatarId}
             participants={session.participants || []}
           />
-        ) : (
+        )}
+
+        {activeTab === 'emoji' && (
           <EmojiGuessGame playClick={playClick} playCorrect={playCorrect} />
         )}
 
-        {/* Live Chat Panel (Classroom Social) */}
-        <div className="bg-slate-950/60 rounded-2xl p-3 border border-slate-800/80 space-y-2">
-          <div className="flex items-center justify-between text-[11px] font-bold text-slate-400">
-            <span className="flex items-center gap-1">
-              <MessageCircle className="w-3.5 h-3.5 text-purple-400" />
-              <span>Obrolan Kelas Jeda Soal</span>
-            </span>
-            {isChatMuted ? (
-              <span className="text-amber-400 flex items-center gap-1">
-                <VolumeX className="w-3 h-3" />
-                <span>Dibungkam</span>
+        {activeTab === 'chat' && (
+          <div className="bg-slate-950/60 rounded-2xl p-3 border border-slate-800/80 space-y-2.5 animate-fade-in">
+            <div className="flex items-center justify-between text-xs font-bold text-slate-400 px-0.5">
+              <span className="flex items-center gap-1.5">
+                <MessageCircle className="w-4 h-4 text-indigo-400" />
+                <span className="text-white">Obrolan Kelas Jeda Soal</span>
               </span>
-            ) : (
-              <span className="text-emerald-400 flex items-center gap-1">
-                <Volume2 className="w-3 h-3" />
-                <span>Aktif</span>
-              </span>
-            )}
-          </div>
+              {isChatMuted ? (
+                <span className="text-amber-400 flex items-center gap-1 text-[11px] bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+                  <VolumeX className="w-3.5 h-3.5" />
+                  <span>Dibungkam</span>
+                </span>
+              ) : (
+                <span className="text-emerald-400 flex items-center gap-1 text-[11px] bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                  <Volume2 className="w-3.5 h-3.5" />
+                  <span>Aktif</span>
+                </span>
+              )}
+            </div>
 
-          {/* Messages */}
-          <div ref={chatScrollRef} className="max-h-36 overflow-y-auto space-y-2 text-xs pr-1">
-            {chatMessages.length === 0 ? (
-              <p className="text-[10px] text-slate-500 text-center py-2">Kirim reaksi semangat untuk teman-teman!</p>
-            ) : (
-              chatMessages.slice(-12).map((m) => {
-                const isTeacher = Boolean(m.isTeacher);
-                const isMe = !isTeacher && m.studentName.trim().toLowerCase() === studentName.trim().toLowerCase();
-                const mAvatar = (m.avatarId && AVATAR_MAP[m.avatarId]) || (isTeacher ? '👨‍🏫' : '💬');
+            {/* Messages */}
+            <div ref={chatScrollRef} className="h-44 sm:h-52 overflow-y-auto space-y-2 text-xs pr-1 overscroll-contain">
+              {chatMessages.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full text-slate-500 text-center py-6">
+                  <MessageCircle className="w-8 h-8 text-slate-600 mb-1 opacity-50" />
+                  <p className="text-xs">Belum ada obrolan.</p>
+                  <p className="text-[11px] text-slate-600 mt-0.5">Kirim pesan penyemangat untuk teman-teman sekelas!</p>
+                </div>
+              ) : (
+                chatMessages.slice(-25).map((m) => {
+                  const isTeacher = Boolean(m.isTeacher);
+                  const isMe = !isTeacher && m.studentName.trim().toLowerCase() === studentName.trim().toLowerCase();
+                  const mAvatar = (m.avatarId && AVATAR_MAP[m.avatarId]) || (isTeacher ? '👨‍🏫' : '💬');
 
-                // 1. Guru
-                if (isTeacher) {
+                  // 1. Guru
+                  if (isTeacher) {
+                    return (
+                      <div key={m.id} className="flex flex-col items-start w-full my-0.5">
+                        <div className="flex items-start gap-1.5 max-w-[90%] mr-auto">
+                          <div className="w-6 h-6 rounded-lg bg-amber-500 text-white flex items-center justify-center text-xs shadow-xs flex-shrink-0 mt-0.5 select-none font-bold">
+                            {mAvatar}
+                          </div>
+                          <div className="bg-amber-950/70 border border-amber-500/50 border-l-2 border-l-amber-400 rounded-xl rounded-tl-xs p-2 text-amber-100 flex-1 min-w-0">
+                            <div className="flex items-center gap-1 mb-0.5">
+                              <span className="font-black text-[11px] text-amber-300 truncate">{m.studentName}</span>
+                              <span className="px-1 py-0.2 rounded text-[8px] font-black bg-amber-500 text-white">Guru 👑</span>
+                            </div>
+                            <p className="text-[11px] font-semibold break-words whitespace-pre-wrap leading-snug">{m.text}</p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  // 2. Diri Sendiri (Kamu)
+                  if (isMe) {
+                    return (
+                      <div key={m.id} className="flex flex-col items-end w-full my-0.5">
+                        <div className="flex items-end justify-end gap-1 max-w-[85%] ml-auto">
+                          <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl rounded-tr-xs p-2 shadow-xs flex-1 min-w-0">
+                            <div className="flex items-center justify-end gap-1 text-[9px] text-purple-200 font-bold mb-0.5">
+                              <span className="bg-purple-800/60 px-1 py-0.2 rounded text-[8px] uppercase">Kamu</span>
+                              <span>{mAvatar}</span>
+                            </div>
+                            <p className="text-[11px] font-medium break-words whitespace-pre-wrap leading-snug text-white">{m.text}</p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  // 3. Teman
                   return (
                     <div key={m.id} className="flex flex-col items-start w-full my-0.5">
-                      <div className="flex items-start gap-1.5 max-w-[90%] mr-auto">
-                        <div className="w-6 h-6 rounded-lg bg-amber-500 text-white flex items-center justify-center text-xs shadow-xs flex-shrink-0 mt-0.5 select-none">
+                      <div className="flex items-start justify-start gap-1.5 max-w-[85%] mr-auto">
+                        <div className="w-6 h-6 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-xs flex-shrink-0 mt-0.5 select-none">
                           {mAvatar}
                         </div>
-                        <div className="bg-amber-950/70 border border-amber-500/50 border-l-2 border-l-amber-400 rounded-xl rounded-tl-xs p-2 text-amber-100 flex-1 min-w-0">
+                        <div className="bg-slate-900/90 border border-slate-700/80 rounded-xl rounded-tl-xs p-2 text-slate-200 flex-1 min-w-0">
                           <div className="flex items-center gap-1 mb-0.5">
-                            <span className="font-black text-[11px] text-amber-300 truncate">{m.studentName}</span>
-                            <span className="px-1 py-0.2 rounded text-[8px] font-black bg-amber-500 text-white">Guru 👑</span>
+                            <span className="font-bold text-[10px] text-indigo-400 truncate">{m.studentName}</span>
+                            <span className="text-[8px] font-bold px-1 rounded bg-slate-800 text-slate-400">Teman</span>
                           </div>
-                          <p className="text-[11px] font-semibold break-words whitespace-pre-wrap leading-snug">{m.text}</p>
+                          <p className="text-[11px] font-normal break-words whitespace-pre-wrap leading-snug text-slate-200">{m.text}</p>
                         </div>
                       </div>
                     </div>
                   );
-                }
+                })
+              )}
+            </div>
 
-                // 2. Diri Sendiri (Kamu)
-                if (isMe) {
-                  return (
-                    <div key={m.id} className="flex flex-col items-end w-full my-0.5">
-                      <div className="flex items-end justify-end gap-1 max-w-[85%] ml-auto">
-                        <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl rounded-tr-xs p-2 shadow-xs flex-1 min-w-0">
-                          <div className="flex items-center justify-end gap-1 text-[9px] text-purple-200 font-bold mb-0.5">
-                            <span className="bg-purple-800/60 px-1 py-0.2 rounded text-[8px] uppercase">Kamu</span>
-                            <span>{mAvatar}</span>
-                          </div>
-                          <p className="text-[11px] font-medium break-words whitespace-pre-wrap leading-snug text-white">{m.text}</p>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                }
-
-                // 3. Teman
-                return (
-                  <div key={m.id} className="flex flex-col items-start w-full my-0.5">
-                    <div className="flex items-start justify-start gap-1.5 max-w-[85%] mr-auto">
-                      <div className="w-6 h-6 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-xs flex-shrink-0 mt-0.5 select-none">
-                        {mAvatar}
-                      </div>
-                      <div className="bg-slate-900/90 border border-slate-700/80 rounded-xl rounded-tl-xs p-2 text-slate-200 flex-1 min-w-0">
-                        <div className="flex items-center gap-1 mb-0.5">
-                          <span className="font-bold text-[10px] text-indigo-400 truncate">{m.studentName}</span>
-                          <span className="text-[8px] font-bold px-1 rounded bg-slate-800 text-slate-400">Teman</span>
-                        </div>
-                        <p className="text-[11px] font-normal break-words whitespace-pre-wrap leading-snug text-slate-200">{m.text}</p>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
+            {/* Obrolan Santai Input */}
+            {!isChatMuted && (
+              <div className="pt-1">
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (chatText.trim()) handleSendChatMessage(chatText);
+                  }}
+                  className="flex items-end gap-1.5"
+                >
+                  <textarea
+                    ref={chatInputRef}
+                    rows={1}
+                    maxLength={120}
+                    value={chatText}
+                    onChange={(e) => setChatText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        if (e.nativeEvent.isComposing) return;
+                        if (isDesktopDevice()) {
+                          if (!e.shiftKey) {
+                            e.preventDefault();
+                            if (chatText.trim()) {
+                              handleSendChatMessage(chatText);
+                            }
+                          }
+                        } else {
+                          e.stopPropagation();
+                        }
+                      }
+                    }}
+                    placeholder={
+                      isDesktopDevice()
+                        ? 'Ketik komentar santai (Enter kirim, Shift+Enter baris baru)...'
+                        : 'Ketik komentar santai...'
+                    }
+                    className="flex-1 px-3 py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-xs text-white focus:outline-none focus:ring-1 focus:ring-purple-500 min-h-[44px] max-h-24 resize-none leading-relaxed overflow-y-auto"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!chatText.trim()}
+                    className="p-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold disabled:opacity-40 min-h-[44px] min-w-[44px] flex items-center justify-center btn-press flex-shrink-0 mb-0.5 shadow-sm"
+                    aria-label="Kirim Pesan"
+                    title="Kirim Pesan"
+                  >
+                    <Send className="w-4 h-4" />
+                  </button>
+                </form>
+              </div>
             )}
           </div>
-
-          {/* Obrolan Santai Input */}
-          {!isChatMuted && (
-            <div className="pt-1">
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                }}
-                className="flex items-end gap-1.5"
-              >
-                <textarea
-                  ref={chatInputRef}
-                  rows={1}
-                  maxLength={120}
-                  value={chatText}
-                  onChange={(e) => setChatText(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      if (e.nativeEvent.isComposing) return;
-                      if (isDesktopDevice()) {
-                        if (!e.shiftKey) {
-                          e.preventDefault();
-                          if (chatText.trim()) {
-                            handleSendChatMessage(chatText);
-                          }
-                        }
-                      } else {
-                        e.stopPropagation();
-                      }
-                    }
-                  }}
-                  placeholder={
-                    isDesktopDevice()
-                      ? 'Ketik komentar santai (Enter kirim, Shift+Enter baris baru)...'
-                      : 'Ketik komentar santai...'
-                  }
-                  className="flex-1 px-3 py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-xs text-white focus:outline-none focus:ring-1 focus:ring-purple-500 min-h-[44px] max-h-24 resize-none leading-relaxed overflow-y-auto"
-                />
-                <button
-                  type="button"
-                  disabled={!chatText.trim()}
-                  onClick={() => handleSendChatMessage(chatText)}
-                  className="p-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold disabled:opacity-40 min-h-[44px] min-w-[44px] flex items-center justify-center btn-press flex-shrink-0 mb-0.5"
-                  aria-label="Kirim Pesan"
-                  title="Kirim Pesan"
-                >
-                  <Send className="w-4 h-4" />
-                </button>
-              </form>
-            </div>
-          )}
-        </div>
+        )}
 
       </div>
 

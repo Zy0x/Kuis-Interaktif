@@ -10,6 +10,7 @@ export interface QuizizzReactionButtonRowProps {
   playClick?: () => void;
   compact?: boolean;
   title?: string;
+  scrollable?: boolean;
 }
 
 export const QUIZIZZ_REACTIONS = [
@@ -31,6 +32,7 @@ export const QuizizzReactionButtonRow: React.FC<QuizizzReactionButtonRowProps> =
   playClick,
   compact = false,
   title = 'Kirim Reaksi Semangat:',
+  scrollable = false,
 }) => {
   const [activePressedEmoji, setActivePressedEmoji] = useState<string | null>(null);
   const lastBackendSendRef = React.useRef<number>(0);
@@ -98,7 +100,13 @@ export const QuizizzReactionButtonRow: React.FC<QuizizzReactionButtonRowProps> =
           {title}
         </span>
       )}
-      <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-2.5 max-w-full">
+      <div
+        className={`flex items-center gap-2 sm:gap-2.5 max-w-full ${
+          scrollable
+            ? 'overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] justify-start sm:justify-center py-1 px-1 w-full touch-pan-x'
+            : 'flex-wrap justify-center'
+        }`}
+      >
         {QUIZIZZ_REACTIONS.map((r) => {
           const isPressed = activePressedEmoji === r.emoji;
           return (
