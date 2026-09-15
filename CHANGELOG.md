@@ -1,6 +1,22 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.17] - 2026-09-15
+### Integrasi Metode Masuk & Daftar Akun dengan Google OAuth Terpadu (Rule 1, Rule 2, Rule 4, Rule 8, Rule 9, Rule 10 & Rule 15)
+
+#### 1. Autentikasi Google OAuth Terpadu Guru & Siswa
+- **Dukungan Google OAuth di Modal Masuk/Daftar (`UnifiedAuthModal.tsx`)**: Menambahkan tombol resmi masuk dan pendaftaran instan menggunakan akun Google pada Tab Guru maupun Tab Siswa. Dilengkapi ikon vektor Google resmi, indikator proses (*spinner*), dan pemisah visual *"atau dengan email & sandi"* yang elegan dan ramah pengguna.
+- **Standar Antarmuka Mobile-First & Touch-Target (Rule 1 & Rule 2)**: Tombol dirancang dengan tinggi target sentuh minimal 44×44 px (`min-h-[44px]`), kontras tajam di mode terang maupun gelap, dan transisi tombol yang responsif di berbagai resolusi layar.
+
+#### 2. Sinkronisasi Profil Otomatis & Pembersihan URL (Rule 9 & Rule 10)
+- **Sinkronisasi Sesi Cloud (`supabaseClient.ts`)**: Menerapkan fungsi `signInWithGoogle` dan `syncOAuthUserSession` untuk menangkap pengalihan balik (*OAuth callback*). Profil pengguna (nama lengkap, email, dan avatar Google) otomatis disinkronkan ke database Supabase sesuai peran yang dipilih (Guru pada `profiles_teacher` atau Siswa pada `profiles_player`).
+- **Pembersihan URL Transparan (`App.tsx`)**: Menghapus parameter kueri dan token dari bilah alamat peramban secara otomatis pasca-otentikasi guna menjaga kerapian URL dan privasi sesi.
+- **Dokumentasi Panduan Konfigurasi (`docs/panduan-integrasi-google-oauth.md`)**: Menyediakan panduan langkah demi langkah pengaturan kredensial Google Cloud Console dan konfigurasi penyedia otentikasi di Supabase.
+
+#### 3. Pembaruan Versi & Cache PWA (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.17` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.17` (`public/sw.js`).
+
 ## [2.4.16] - 2026-09-15
 ### Perbaikan Tampilan Bilah Reaksi Semangat Guru & Siswa (Rule 1, Rule 2, Rule 4 & Rule 15)
 

@@ -1232,6 +1232,14 @@ export const DataManager = {
   },
 
   async signOutAll(): Promise<PlayerProfile> {
+    if (supabase) {
+      try {
+        await supabase.auth.signOut();
+      } catch {
+        // ignore
+      }
+    }
+    this.setTeacherProfile(null);
     return this.signOutStudent();
   },
 
@@ -1877,6 +1885,215 @@ export const DataManager = {
       try {
         window.dispatchEvent(new CustomEvent('kuis_auth_signed_out'));
       } catch {}
+    }
+  },
+
+  // 10B. Google OAuth Authentication (Guru & Siswa)
+  async signInWithGoogle(role: 'teacher' | 'student'): Promise<{ error?: string }> {
+    if (!supabase) {
+      return { error: 'Layanan Supabase belum terhubung. Periksa konfigurasi VITE_SUPABASE_URL & VITE_SUPABASE_ANON_KEY di file .env.' };
+    }
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('kuis_oauth_intended_role', role);
+      }
+      const redirectUrl = `${window.location.origin}${window.location.pathname}?oauth_callback=1&role=${role}`;
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectUrl,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'select_account',
+          },
+        },
+      });
+      if (error) {
+        return { error: error.message };
+      }
+      return {};
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Gagal menginisialisasi login Google';
+      return { error: msg };
+    }
+  },
+
+  async syncOAuthUserSession(): Promise<{ role: 'teacher' | 'student'; profile: TeacherProfile | PlayerProfile } | null> {
+    if (!supabase) return null;
+    try {
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session || !session.user) return null;
+      const user = session.user;
+
+      // Cek apakah ada intended role dari URL atau localStorage
+      let intendedRole: 'teacher' | 'student' | null = null;
+      if (typeof window !== 'undefined') {
+        const urlParams = new URLSearchParams(window.location.search);
+        const paramRole = urlParams.get('role');
+        if (paramRole === 'teacher' || paramRole === 'student') {
+          intendedRole = paramRole;
+        } else {
+          const stored = localStorage.getItem('kuis_oauth_intended_role');
+          if (stored === 'teacher' || stored === 'student') {
+            intendedRole = stored;
+          }
+        }
+      }
+
+      const userEmail = (user.email || '').trim().toLowerCase();
+      const userMeta = user.user_metadata || {};
+      const userFullName = userMeta.full_name || userMeta.name || (userEmail ? userEmail.split('@')[0] : 'Pengguna');
+
+      // 1. Jika email adalah Master Teacher, paksa peran Teacher
+      if (userEmail && userEmail === MASTER_TEACHER_EMAIL.toLowerCase()) {
+        intendedRole = 'teacher';
+      }
+
+      // 2. Jika intendedRole belum ditentukan, periksa apakah akun sudah ada di tabel profiles_teacher atau profiles_player
+      if (!intendedRole) {
+        try {
+          const [tRes, pRes] = await Promise.all([
+            supabase.from('profiles_teacher').select('*').or(`id.eq.${user.id},auth_user_id.eq.${user.id}`).maybeSingle(),
+            supabase.from('profiles_player').select('*').or(`id.eq.${user.id},auth_user_id.eq.${user.id}`).maybeSingle(),
+          ]);
+          if (tRes.data && !pRes.data) {
+            intendedRole = 'teacher';
+          } else if (pRes.data && !tRes.data) {
+            intendedRole = 'student';
+          } else {
+            intendedRole = 'teacher';
+          }
+        } catch {
+          intendedRole = 'teacher';
+        }
+      }
+
+      if (intendedRole === 'teacher') {
+        let finalFullName = userFullName;
+        let finalSchoolName = 'SD Negeri Favorit';
+
+        try {
+          const { data: tRow } = await supabase
+            .from('profiles_teacher')
+            .select('*')
+            .or(`id.eq.${user.id},auth_user_id.eq.${user.id}`)
+            .maybeSingle();
+
+          if (tRow) {
+            finalFullName = tRow.full_name || finalFullName;
+            finalSchoolName = tRow.school_name || finalSchoolName;
+          } else {
+            await supabase.from('profiles_teacher').upsert({
+              id: user.id,
+              auth_user_id: user.id,
+              email: userEmail,
+              full_name: finalFullName,
+              school_name: finalSchoolName,
+              updated_at: new Date().toISOString(),
+            });
+          }
+        } catch (e) {
+          console.warn('Teacher OAuth profile sync notice:', e);
+        }
+
+        if (userEmail === MASTER_TEACHER_EMAIL.toLowerCase()) {
+          finalFullName = 'Bapak Aliridho (Master)';
+          finalSchoolName = 'SD Kreatif Nusantara';
+        }
+
+        const teacherProfile: TeacherProfile = {
+          id: user.id,
+          email: userEmail,
+          fullName: finalFullName,
+          schoolName: finalSchoolName,
+        };
+
+        this.setTeacherProfile(teacherProfile);
+
+        // Reset sesi siswa agar tidak terjadi bentrok peran
+        const currentStudent = this.getPlayerProfile();
+        if (currentStudent.isLoggedIn) {
+          this.savePlayerProfile({ ...currentStudent, isLoggedIn: false });
+        }
+
+        if (userEmail === MASTER_TEACHER_EMAIL.toLowerCase()) {
+          this.claimMasterTeacherQuizzes(teacherProfile.id, teacherProfile.fullName);
+        }
+
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('kuis_oauth_intended_role');
+        }
+
+        return { role: 'teacher', profile: teacherProfile };
+      } else {
+        // intendedRole === 'student'
+        let nickname = userFullName;
+        let grade = 3;
+        let avatarId = 'lion';
+        let starsEarned = 0;
+        let totalScore = 0;
+        let quizzesCompleted = 0;
+
+        try {
+          const { data: pRow } = await supabase
+            .from('profiles_player')
+            .select('*')
+            .or(`id.eq.${user.id},auth_user_id.eq.${user.id}`)
+            .maybeSingle();
+
+          if (pRow) {
+            nickname = pRow.nickname || nickname;
+            grade = pRow.grade_level || grade;
+            avatarId = pRow.avatar_id || avatarId;
+            starsEarned = pRow.stars_earned ?? 0;
+            totalScore = pRow.total_score ?? 0;
+            quizzesCompleted = pRow.quizzes_completed ?? 0;
+          } else {
+            await supabase.from('profiles_player').upsert({
+              id: user.id,
+              auth_user_id: user.id,
+              email: userEmail,
+              nickname,
+              avatar_id: avatarId,
+              grade_level: grade,
+              stars_earned: 0,
+              total_score: 0,
+              quizzes_completed: 0,
+              updated_at: new Date().toISOString(),
+            });
+          }
+        } catch (e) {
+          console.warn('Student OAuth profile sync notice:', e);
+        }
+
+        const studentProfile: PlayerProfile = {
+          ...this.getPlayerProfile(),
+          isLoggedIn: true,
+          email: userEmail,
+          studentId: user.id,
+          nickname,
+          grade,
+          avatarId,
+          starsEarned,
+          totalScore,
+          quizzesCompleted,
+        };
+
+        this.savePlayerProfile(studentProfile);
+        this.setTeacherProfile(null);
+
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('kuis_oauth_intended_role');
+          try {
+            window.dispatchEvent(new CustomEvent('kuis_student_logged_in', { detail: { profile: studentProfile } }));
+          } catch {}
+        }
+
+        return { role: 'student', profile: studentProfile };
+      }
+    } catch (err) {
+      console.warn('syncOAuthUserSession error:', err);
+      return null;
     }
   },
 

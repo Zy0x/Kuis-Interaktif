@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import type { Quiz, QuizAttemptAnswer, TeacherProfile, ScreenState, GameMode, QuizSessionSettings, QuizSession } from './types/quiz';
+import type { Quiz, QuizAttemptAnswer, TeacherProfile, PlayerProfile, ScreenState, GameMode, QuizSessionSettings, QuizSession } from './types/quiz';
 import { SplashScreen } from './components/pwa/SplashScreen';
 import { InstallPrompt } from './components/pwa/InstallPrompt';
 import { ReorientationOverlay } from './components/pwa/ReorientationOverlay';
@@ -447,6 +447,31 @@ export const App: React.FC = () => {
       window.dispatchEvent(new CustomEvent('kuis_student_logged_in', { detail: { profile: studentProfile } }));
     }
   };
+
+  // Sinkronisasi Sesi Google OAuth saat kembali dari redirect login Google
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const isOAuthReturn =
+      window.location.search.includes('oauth_callback') ||
+      window.location.search.includes('code=') ||
+      window.location.hash.includes('access_token');
+
+    if (isOAuthReturn) {
+      DataManager.syncOAuthUserSession().then((result) => {
+        if (result) {
+          if (result.role === 'teacher') {
+            handleTeacherLoginSuccess(result.profile as TeacherProfile);
+          } else {
+            handleStudentLoginSuccess(result.profile as PlayerProfile);
+          }
+        }
+        try {
+          const cleanUrl = window.location.pathname;
+          window.history.replaceState({}, document.title, cleanUrl);
+        } catch {}
+      });
+    }
+  }, []);
 
   const handleFullLogout = async () => {
     await DataManager.signOutAll();

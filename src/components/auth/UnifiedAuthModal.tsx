@@ -20,6 +20,27 @@ import {
 
 export type AuthModalTab = 'teacher' | 'student';
 
+const GoogleIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' }) => (
+  <svg className={`${className} flex-shrink-0`} viewBox="0 0 24 24" aria-hidden="true">
+    <path
+      fill="#4285F4"
+      d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"
+    />
+    <path
+      fill="#34A853"
+      d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.26v3.15C3.25 21.36 7.31 24 12 24z"
+    />
+    <path
+      fill="#FBBC05"
+      d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.26C.46 8.16 0 9.94 0 12s.46 3.84 1.26 5.42l4.02-3.15z"
+    />
+    <path
+      fill="#EA4335"
+      d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.25 2.64 1.26 6.58l4.02 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
+    />
+  </svg>
+);
+
 interface UnifiedAuthModalProps {
   isOpen: boolean;
   initialTab?: AuthModalTab;
@@ -62,7 +83,27 @@ export const UnifiedAuthModal: React.FC<UnifiedAuthModalProps> = ({
   // Common UI State
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Handle Google OAuth Sign In
+  const handleGoogleSignIn = async (role: AuthModalTab) => {
+    playClick();
+    setErrorMessage(null);
+    setIsGoogleLoading(true);
+    try {
+      const res = await DataManager.signInWithGoogle(role);
+      if (res.error) {
+        setErrorMessage(res.error);
+        setIsGoogleLoading(false);
+      }
+      // Jika berhasil, peramban akan diarahkan langsung ke Google OAuth oleh Supabase
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Gagal menghubungi server Google OAuth';
+      setErrorMessage(msg);
+      setIsGoogleLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -265,6 +306,31 @@ export const UnifiedAuthModal: React.FC<UnifiedAuthModalProps> = ({
               </button>
             </div>
 
+            {/* Google OAuth Button Guru */}
+            <button
+              type="button"
+              onClick={() => handleGoogleSignIn('teacher')}
+              disabled={isLoading || isGoogleLoading}
+              className="w-full py-2.5 px-4 rounded-xl font-bold text-xs sm:text-sm text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750 shadow-xs flex items-center justify-center gap-2.5 min-h-[44px] btn-press transition-all disabled:opacity-50"
+            >
+              {isGoogleLoading ? (
+                <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <GoogleIcon />
+              )}
+              <span>
+                {isTeacherRegister ? 'Daftar Guru dengan Akun Google' : 'Masuk Guru dengan Akun Google'}
+              </span>
+            </button>
+
+            {/* Divider */}
+            <div className="relative flex items-center justify-center my-2">
+              <div className="border-t border-slate-200 dark:border-slate-800 w-full" />
+              <span className="bg-white dark:bg-slate-900 px-3 text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider absolute">
+                atau dengan email
+              </span>
+            </div>
+
             <form onSubmit={handleTeacherSubmit} className="space-y-3">
               {isTeacherRegister && (
                 <>
@@ -388,6 +454,31 @@ export const UnifiedAuthModal: React.FC<UnifiedAuthModalProps> = ({
               >
                 {isStudentRegister ? 'Sudah punya akun? Masuk' : 'Belum punya akun? Daftar'}
               </button>
+            </div>
+
+            {/* Google OAuth Button Siswa */}
+            <button
+              type="button"
+              onClick={() => handleGoogleSignIn('student')}
+              disabled={isLoading || isGoogleLoading}
+              className="w-full py-2.5 px-4 rounded-xl font-bold text-xs sm:text-sm text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750 shadow-xs flex items-center justify-center gap-2.5 min-h-[44px] btn-press transition-all disabled:opacity-50"
+            >
+              {isGoogleLoading ? (
+                <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <GoogleIcon />
+              )}
+              <span>
+                {isStudentRegister ? 'Daftar Siswa dengan Akun Google' : 'Masuk Siswa dengan Akun Google'}
+              </span>
+            </button>
+
+            {/* Divider */}
+            <div className="relative flex items-center justify-center my-2">
+              <div className="border-t border-slate-200 dark:border-slate-800 w-full" />
+              <span className="bg-white dark:bg-slate-900 px-3 text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider absolute">
+                atau dengan email
+              </span>
             </div>
 
             <form onSubmit={handleStudentSubmit} className="space-y-3">
