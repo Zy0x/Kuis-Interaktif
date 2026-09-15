@@ -1,6 +1,25 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.41] - 2026-09-15
+### Perbaikan Sinkronisasi Format Tanggal Pengerjaan & Pencegahan Rekap Ganda (Rule 1, Rule 2, Rule 9, Rule 11 & Rule 15)
+
+#### 1. Perbaikan Kritis Parser Tanggal Pengerjaan Siswa (`QuizDetail.tsx` & `supabaseClient.ts`)
+- **Penyimpanan ISO Timestamp Standar**: Menghapus pemotongan string tanggal lokal pada lapisan data (`supabaseClient.ts`), memastikan `submittedAt` selalu menyimpan string waktu standar ISO-8601 yang mempertahankan informasi tanggal, bulan, tahun, dan waktu secara presisi.
+- **Fungsi Parser Cerdas `formatSubmissionDate`**:
+  - Mengatasi galat interpretasi JavaScript engine di mana string lokal tanpa tahun (seperti `"15 Sep, 13.00"`) salah diartikan oleh parser menjadi tahun 2013 dan waktu 00.00 (`"15 Sep 2013, 00.00"`).
+  - Secara cerdas merekonstruksi tanggal, bulan, tahun berjalan (2026), dan jam/menit asli untuk data riwayat pengerjaan lama maupun baru.
+  - Memastikan tampilan tanggal di tabel rekapitulasi nilai guru selalu sinkron, rapi, dan konsisten (misal: `15 Sep 2026, 13.00`).
+- **Sinkronisasi Ekspor CSV / Excel**: Mengintegrasikan `formatSubmissionDate` ke dalam fungsi unduh rekap nilai sehingga file CSV menyertakan tanggal dan waktu lengkap yang akurat.
+
+#### 2. Pencegahan Duplikasi Pengiriman Hasil Kuis (`QuizResult.tsx` & `QuizDetail.tsx`)
+- **Guard Rekam Pengiriman Tunggal (`QuizResult.tsx`)**: Menambahkan pengaman `hasRecordedRef` pada `useEffect` pencatatan skor agar `recordQuizAttempt` hanya dijalankan tepat satu kali per penyelesaian kuis, mencegah terkirimnya baris duplikat saat terjadi render ulang komponen.
+- **Deduplikasi Rekapitulasi Guru (`QuizDetail.tsx`)**: Menambahkan mekanisme deduplikasi cerdas pada saat memuat data riwayat siswa untuk membersihkan entri identik akibat pengiriman ganda di jaringan.
+
+#### 3. Pembaruan Versi & Cache PWA (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.41` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.41` (`public/sw.js`).
+
 ## [2.4.40] - 2026-09-15
 ### Kontrol Durasi Soal Fleksibel & Override di Mode Mandiri & PR (Rule 1, Rule 2, Rule 3 & Rule 15)
 

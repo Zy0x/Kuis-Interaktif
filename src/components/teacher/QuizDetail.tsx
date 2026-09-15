@@ -57,6 +57,82 @@ const getSubjectBadge = (subject: string) => {
   }
 };
 
+export const formatSubmissionDate = (raw?: string | null): string => {
+  if (!raw) return '-';
+  const str = String(raw).trim();
+  if (!str || str === '-') return '-';
+
+  // 1. Format legacy yang terpotong tanpa tahun (misal: "15 Sep, 13.00" atau "15 Sep 13.00")
+  const legacyTimeMatch = str.match(/^(\d{1,2})\s+([A-Za-z]+)[,\s]+(\d{1,2})[.:](\d{2})$/);
+  if (legacyTimeMatch) {
+    const [, day, monthStr, hour, min] = legacyTimeMatch;
+    const currentYear = new Date().getFullYear();
+    const months: Record<string, number> = {
+      jan: 0, feb: 1, mar: 2, apr: 3, mei: 4, may: 4, jun: 5, jul: 6, agu: 7, aug: 7, sep: 8, okt: 9, oct: 9, nop: 10, nov: 10, des: 11, dec: 11
+    };
+    const mKey = monthStr.toLowerCase().slice(0, 3);
+    const monthIdx = months[mKey] !== undefined ? months[mKey] : new Date().getMonth();
+    const d = new Date(currentYear, monthIdx, parseInt(day, 10), parseInt(hour, 10), parseInt(min, 10));
+    if (!isNaN(d.getTime())) {
+      return (
+        d.toLocaleDateString('id-ID', {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric',
+        }) + ', ' + d.toLocaleTimeString('id-ID', {
+          hour: '2-digit',
+          minute: '2-digit',
+        })
+      );
+    }
+  }
+
+  // 2. Format legacy yang terlanjur ter-parse menjadi "15 Sep 2013, 00.00" atau "15 Sep 2013 00:00"
+  const corrupted2013Match = str.match(/^(\d{1,2})\s+([A-Za-z]+)\s+2013[,\s]+00[.:]00$/);
+  if (corrupted2013Match) {
+    const [, day, monthStr] = corrupted2013Match;
+    const currentYear = new Date().getFullYear();
+    const months: Record<string, number> = {
+      jan: 0, feb: 1, mar: 2, apr: 3, mei: 4, may: 4, jun: 5, jul: 6, agu: 7, aug: 7, sep: 8, okt: 9, oct: 9, nop: 10, nov: 10, des: 11, dec: 11
+    };
+    const mKey = monthStr.toLowerCase().slice(0, 3);
+    const monthIdx = months[mKey] !== undefined ? months[mKey] : new Date().getMonth();
+    const d = new Date(currentYear, monthIdx, parseInt(day, 10), 13, 0);
+    return (
+      d.toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      }) + ', ' + d.toLocaleTimeString('id-ID', {
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    );
+  }
+
+  // 3. Standar ISO string (misal "2026-09-15T05:03:22.000Z") atau format tanggal valid lainnya
+  const d = new Date(str);
+  if (!isNaN(d.getTime())) {
+    if (d.getFullYear() === 2013 && d.getHours() === 0 && d.getMinutes() === 0 && new Date().getFullYear() > 2013) {
+      d.setFullYear(new Date().getFullYear());
+      d.setHours(13, 0, 0, 0);
+    }
+
+    return (
+      d.toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      }) + ', ' + d.toLocaleTimeString('id-ID', {
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    );
+  }
+
+  return str;
+};
+
 export const QuizDetail: React.FC<QuizDetailProps> = ({
   quiz,
   teacher,
@@ -106,7 +182,20 @@ export const QuizDetail: React.FC<QuizDetailProps> = ({
       const filtered = allSubs.filter(
         (s) => s.quizId === quiz.id || s.quizTitle === quiz.title
       );
-      setSubmissions(filtered);
+
+      // Deduplikasi baris pengiriman identik (akibat duplikasi network/re-render kuis)
+      const seen = new Set<string>();
+      const deduplicated: StudentSubmission[] = [];
+      for (const sub of filtered) {
+        const formattedDate = formatSubmissionDate(sub.submittedAt);
+        const dedupeKey = `${sub.studentName}_${sub.score}_${sub.correctCount}_${sub.timeSpentSec}_${formattedDate}`;
+        if (!seen.has(dedupeKey)) {
+          seen.add(dedupeKey);
+          deduplicated.push(sub);
+        }
+      }
+
+      setSubmissions(deduplicated);
     } catch (err) {
       console.error('Gagal memuat rekap nilai kuis:', err);
     } finally {
@@ -186,7 +275,7 @@ export const QuizDetail: React.FC<QuizDetailProps> = ({
       s.correctCount,
       s.totalCount,
       s.timeSpentSec,
-      `"${s.submittedAt}"`,
+      `"${formatSubmissionDate(s.submittedAt)}"`,
     ]);
 
     const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
@@ -578,8 +667,8 @@ export const QuizDetail: React.FC<QuizDetailProps> = ({
                           <td className="py-3 px-4 text-center text-slate-500 dark:text-slate-400 font-mono text-xs">
                             {s.timeSpentSec ? `${s.timeSpentSec}s` : '-'}
                           </td>
-                          <td className="py-3 px-4 text-right text-slate-500 dark:text-slate-400 text-xs">
-                            {s.submittedAt ? new Date(s.submittedAt).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) : '-'}
+                          <td className="py-3 px-4 text-right text-slate-500 dark:text-slate-400 text-xs font-medium">
+                            {formatSubmissionDate(s.submittedAt)}
                           </td>
                         </tr>
                       ))}

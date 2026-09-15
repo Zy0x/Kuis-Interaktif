@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import type { Quiz, QuizAttemptAnswer, LeaderboardEntry } from '../../types/quiz';
 import { DataManager } from '../../lib/supabaseClient';
@@ -64,7 +64,12 @@ export const QuizResult: React.FC<QuizResultProps> = ({
     praise = 'Luar Biasa! Hasil Belajarmu Memuaskan!';
   }
 
+  const hasRecordedRef = useRef(false);
+
   useEffect(() => {
+    if (hasRecordedRef.current) return;
+    hasRecordedRef.current = true;
+
     playCelebration();
 
     try {

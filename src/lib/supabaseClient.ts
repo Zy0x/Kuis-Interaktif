@@ -1447,12 +1447,7 @@ export const DataManager = {
               correctCount: d.correct_answers,
               totalCount: d.total_questions,
               timeSpentSec: d.time_spent_sec,
-              submittedAt: new Date(d.created_at).toLocaleString('id-ID', {
-                day: 'numeric',
-                month: 'short',
-                hour: '2-digit',
-                minute: '2-digit',
-              }),
+              submittedAt: d.created_at || new Date().toISOString(),
             };
           });
         }
@@ -1477,12 +1472,7 @@ export const DataManager = {
         correctCount: h.correctCount,
         totalCount: h.totalCount,
         timeSpentSec: h.timeSpentSec,
-        submittedAt: new Date(h.completedAt).toLocaleString('id-ID', {
-          day: 'numeric',
-          month: 'short',
-          hour: '2-digit',
-          minute: '2-digit',
-        }),
+        submittedAt: h.completedAt || new Date().toISOString(),
       }));
     } catch {
       return [];
