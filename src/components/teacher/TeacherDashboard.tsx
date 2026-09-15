@@ -1214,7 +1214,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                 <span>Kuis Aktif & Sesi Bermain Siswa ({sessions.length})</span>
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Pantau interaksi siswa secara langsung ala Quizizz Wayground, kendalikan sesi live, atau buka rekapan hasil kuis.
+                Pantau interaksi siswa secara langsung, kendalikan sesi live kelas, atau buka rekapan hasil kuis.
               </p>
             </div>
 
@@ -1282,7 +1282,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
                   {sessionFilter === 'all'
-                    ? 'Mulai sesi kuis untuk memantau nilai dan jawaban murid secara langsung ala Quizizz Wayground.'
+                    ? 'Mulai sesi kuis untuk memantau nilai dan jawaban murid secara interaktif dan real-time.'
                     : 'Pilih salah satu kuis dari Koleksi Kuis dan tekan "Mainkan Sekarang" untuk memulai sesi baru.'}
                 </p>
               </div>
@@ -1331,7 +1331,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                         {s.status === 'active' ? (
                           <>
                             <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
-                            <span>LIVE WAYGROUND</span>
+                            <span>LIVE INTERAKTIF</span>
                           </>
                         ) : s.status === 'waiting' ? (
                           <>
@@ -1428,8 +1428,8 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                             <Tv className="w-4 h-4" />
                             <span>
                               {s.status === 'waiting'
-                                ? 'Masuk ke Ruang Tunggu (Wayground)'
-                                : 'Buka Layar Pantau (Wayground)'}
+                                ? 'Masuk ke Ruang Tunggu Kelas'
+                                : 'Buka Layar Pantau Guru'}
                             </span>
                           </button>
 

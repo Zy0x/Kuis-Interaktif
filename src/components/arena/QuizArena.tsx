@@ -2369,7 +2369,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
         </div>
       )}
 
-      {/* Quizizz-Grade Floating Live Reactions Overlay di Arena */}
+      {/* Floating Live Reactions Overlay di Arena */}
       {(activeSessionId || liveSession?.id) && !isPreview && (
         <QuizizzReactionOverlay
           sessionId={activeSessionId || liveSession?.id}

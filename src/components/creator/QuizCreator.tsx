@@ -2282,7 +2282,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
 
       </main>
 
-      {/* Modal Publikasi Kuis — Quizizz/Kahoot style */}
+      {/* Modal Publikasi Kuis Interaktif */}
       <PublishQuizModal
         isOpen={showPublishModal}
         onClose={() => setShowPublishModal(false)}

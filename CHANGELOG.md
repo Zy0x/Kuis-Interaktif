@@ -1,6 +1,23 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.20] - 2026-09-15
+### Purifikasi Terminologi Antarmuka Bebas Merek Pihak Ketiga & Perlindungan Hak Cipta (Rule 2, Rule 3, Rule 4 & Rule 15)
+
+#### 1. Pembersihan Terminologi Hak Cipta & Merek Pihak Ketiga
+- **Papan Kendali Guru (`TeacherDashboard.tsx`)**: Menghilangkan seluruh penyebutan merek pihak ketiga (*Quizizz* dan *Wayground*) pada teks antarmuka pengguna.
+- **Redaksi Ramah & Mandiri (Rule 2 & Rule 3)**:
+  - Teks subjudul sesi aktif disesuaikan menjadi: *"Pantau interaksi siswa secara langsung, kendalikan sesi live kelas, atau buka rekapan hasil kuis."*
+  - Teks kondisi kosong disesuaikan menjadi: *"Mulai sesi kuis untuk memantau nilai dan jawaban murid secara interaktif dan real-time."*
+  - Lencana status sesi aktif diperbarui menjadi `LIVE INTERAKTIF`.
+  - Tombol aksi diperbarui menjadi *"Masuk ke Ruang Tunggu Kelas"* dan *"Buka Layar Pantau Guru"*.
+- **Layar Kendali Host Guru (`WaygroundHostView.tsx`)**: Memperbarui lencana status sesi atas menjadi `SESI LIVE AKTIF`.
+- **Pembersihan Komentar Kode (`supabaseClient.ts`, `StudentWaitingRoom.tsx`, `QuizArena.tsx`, `QuizCreator.tsx`, `index.css`)**: Menghapus seluruh referensi pihak ketiga dari komentar kode guna menjaga orisinalitas dan integritas kekayaan intelektual aplikasi.
+
+#### 2. Pembaruan Versi & Cache PWA (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.20` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.20` (`public/sw.js`).
+
 ## [2.4.19] - 2026-09-15
 ### Dialog Onboarding Profil Pertama Kali Pengguna Google OAuth Guru & Siswa (Rule 1, Rule 2, Rule 4, Rule 8, Rule 9, Rule 10 & Rule 15)
 

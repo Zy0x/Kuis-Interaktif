@@ -3443,7 +3443,7 @@ export const DataManager = {
     }
   },
 
-  // Manajemen Token Perangkat & Nama Peserta Sesi (Mencegah Tabrakan Nama & Duplikasi Perangkat ala Quizizz & Kahoot)
+  // Manajemen Token Perangkat & Nama Peserta Sesi (Mencegah Tabrakan Nama & Duplikasi Perangkat)
   getSessionParticipant(sessionId: string): { id: string; name: string } | null {
     try {
       const raw = sessionStorage.getItem(`kuis_part_sess_${sessionId}`);
@@ -3521,7 +3521,7 @@ export const DataManager = {
         session.participants[pIdx] = finalParticipant;
         this.saveSessionParticipant(sessionId, { id: finalParticipant.id, name: finalParticipant.name });
       } else {
-        // 2. Peserta baru mendaftar pada perangkat ini -> Deteksi tabrakan nama (Smart Disambiguation ala Quizizz / Kahoot)
+        // 2. Peserta baru mendaftar pada perangkat ini -> Deteksi tabrakan nama (Smart Disambiguation)
         const baseName = participant.name.trim();
         let resolvedName = baseName;
 

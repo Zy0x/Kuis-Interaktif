@@ -334,7 +334,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                     {session.status === 'active' ? (
                       <>
                         <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
-                        <span>LIVE WAYGROUND</span>
+                        <span>SESI LIVE AKTIF</span>
                       </>
                     ) : session.status === 'paused' ? (
                       <>
@@ -1266,7 +1266,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
         </div>
       )}
 
-      {/* Quizizz-Grade Floating Live Reactions Overlay (Aktif Sepanjang Sesi) */}
+      {/* Floating Live Reactions Overlay (Aktif Sepanjang Sesi) */}
       {session.status !== 'finished' && (
         <QuizizzReactionOverlay sessionId={session.id} reactions={session.reactions} />
       )}

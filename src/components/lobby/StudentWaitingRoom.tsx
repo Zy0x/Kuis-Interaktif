@@ -155,7 +155,7 @@ export const StudentWaitingRoom: React.FC<StudentWaitingRoomProps> = ({
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col justify-between select-none relative overflow-x-hidden">
-      {/* Quizizz-Grade Floating Reactions Overlay */}
+      {/* Floating Reactions Overlay */}
       <QuizizzReactionOverlay sessionId={session.id} reactions={session.reactions} />
 
       {/* Top Header - Fluid Max-W 2000px */}
@@ -254,7 +254,7 @@ export const StudentWaitingRoom: React.FC<StudentWaitingRoomProps> = ({
                 Layar perangkatmu akan otomatis menyajikan soal pertama secara serentak begitu Guru menekan tombol mulai.
               </p>
 
-              {/* Floating Reaction Bar Ala Quizizz */}
+              {/* Floating Reaction Bar Interaktif */}
               <div className="w-full lg:w-auto flex justify-center lg:justify-end">
                 <QuizizzReactionButtonRow
                   sessionId={session.id}
