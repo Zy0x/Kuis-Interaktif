@@ -935,6 +935,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     const currentDuration = getQuestionDuration(question);
     const actualQuestionElapsed = Math.max(1, Math.round((Date.now() - questionStartTimeRef.current) / 1000));
     const timeSpent = isUntimedMode ? actualQuestionElapsed : Math.max(1, currentDuration - timeLeft);
+    const nowIso = new Date().toISOString();
     const recordedAnswer: QuizAttemptAnswer = {
       questionId: question.id,
       selectedIndex: optionIndex,
@@ -944,6 +945,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
       earnedPoints,
       matchedCount: finalMatchedCount,
       totalPairs: finalTotalPairs,
+      answeredAt: nowIso,
     };
 
     setAnswersList((prev) => {
@@ -977,6 +979,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
               isCorrect: ans.isCorrect,
               timeSpentSec: ans.timeSpentSec,
               pointsEarned: ans.earnedPoints,
+              answeredAt: ans.answeredAt || nowIso,
             };
           });
 
@@ -1079,6 +1082,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
         const score = Math.min(100, Math.round((correctCount / activeQuestions.length) * 100));
         const stars = score >= 85 ? 3 : score >= 60 ? 2 : score > 0 ? 1 : 0;
 
+        const completionIso = new Date().toISOString();
         const answersMap: Record<string, any> = {};
         finalAnswers.forEach((ans, idx) => {
           const realQIdx = activeQuestions.findIndex((q) => q.id === ans.questionId);
@@ -1091,6 +1095,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
             isCorrect: ans.isCorrect,
             timeSpentSec: ans.timeSpentSec,
             pointsEarned: ans.earnedPoints,
+            answeredAt: ans.answeredAt || completionIso,
           };
         });
 
@@ -1109,6 +1114,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
           timeSpentSec: finalTime,
           answers: answersMap,
           tabSwitchCount,
+          completedAt: completionIso,
         });
       } catch (err) {
         console.warn('Session participant finish sync error:', err);

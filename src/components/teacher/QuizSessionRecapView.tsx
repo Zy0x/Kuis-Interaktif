@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import type { Quiz, QuizSession, QuizSessionParticipant } from '../../types/quiz';
 import { AVATAR_MAP } from '../../data/seedQuizzes';
+import { StudentAnswerAnalysisModal } from './StudentAnswerAnalysisModal';
+import { formatIndonesianTime } from '../../lib/dateUtils';
 import { 
   ArrowLeft, 
   Download, 
@@ -9,15 +11,13 @@ import {
   BarChart3, 
   Clock, 
   CheckCircle2, 
-  XCircle, 
   HelpCircle, 
   Search, 
   AlertTriangle,
   Award,
   TrendingUp,
   Users,
-  Eye,
-  X
+  Eye
 } from 'lucide-react';
 
 interface QuizSessionRecapViewProps {
@@ -625,7 +625,7 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
                     <th className="py-2.5 px-3">Skor</th>
                     <th className="py-2.5 px-3">Akurasi</th>
                     <th className="py-2.5 px-3">Benar / Salah</th>
-                    <th className="py-2.5 px-3">Waktu</th>
+                    <th className="py-2.5 px-3">Durasi & Waktu</th>
                     <th className="py-2.5 px-3">Status</th>
                     <th className="py-2.5 px-3 print:hidden">Detail</th>
                   </tr>
@@ -665,7 +665,13 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
                           <span className="text-emerald-600 dark:text-emerald-400 font-bold">{p.correctCount}</span> / <span className="text-rose-600 dark:text-rose-400">{p.incorrectCount}</span>
                         </td>
                         <td className="py-3 px-3 text-slate-500 dark:text-slate-400">
-                          {p.timeSpentSec} dtk
+                          <div className="font-semibold text-slate-700 dark:text-slate-300">{p.timeSpentSec} dtk</div>
+                          {(p.completedAt || p.lastActiveAt) && (
+                            <div className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5" title="Waktu pengisian / selesai">
+                              <Clock className="w-3 h-3 text-slate-400 flex-shrink-0" />
+                              <span>{formatIndonesianTime(p.completedAt || p.lastActiveAt)}</span>
+                            </div>
+                          )}
                         </td>
                         <td className="py-3 px-3">
                           <span
@@ -808,103 +814,13 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
 
       </main>
 
-      {/* Student Individual Detail Modal */}
-      {selectedStudentForModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 max-w-xl w-full max-h-[90vh] flex flex-col shadow-2xl animate-scale-up overflow-hidden">
-            
-            <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-800/50">
-              <div className="flex items-center gap-3">
-                <div className="text-3xl">
-                  {AVATAR_MAP[selectedStudentForModal.avatarId] || '🦁'}
-                </div>
-                <div>
-                  <h3 className="text-base font-black text-slate-900 dark:text-white">
-                    Lembar Jawaban: {selectedStudentForModal.name}
-                  </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Skor: <strong className="text-amber-600 dark:text-amber-400">{selectedStudentForModal.score}</strong> • Benar: {selectedStudentForModal.correctCount}/{totalQuestions}
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setSelectedStudentForModal(null)}
-                className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-white min-h-[44px] min-w-[44px] flex items-center justify-center"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4">
-              {selectedStudentForModal.tabSwitchCount && selectedStudentForModal.tabSwitchCount > 0 ? (
-                <div className="p-3 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 flex items-center gap-2.5 text-xs text-rose-700 dark:text-rose-300">
-                  <AlertTriangle className="w-4 h-4 text-rose-500 flex-shrink-0" />
-                  <span>
-                    <strong>Peringatan Integritas:</strong> Siswa ini terdeteksi meninggalkan layar/berpindah tab sebanyak <strong>{selectedStudentForModal.tabSwitchCount} kali</strong> selama pengerjaan kuis.
-                  </span>
-                </div>
-              ) : null}
-
-              {quiz.questions.map((q, idx) => {
-                const ans = Object.values(selectedStudentForModal.answers || {}).find((a) => a.questionIndex === idx);
-                const isCorrect = ans?.isCorrect || false;
-                const chosenOpt = ans?.selectedOption !== undefined ? q.options[ans.selectedOption] : ans?.textAnswer || 'Tidak dijawab';
-
-                return (
-                  <div
-                    key={q.id || idx}
-                    className={`p-3.5 rounded-2xl border space-y-2 text-xs ${
-                      isCorrect
-                        ? 'bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800/60'
-                        : 'bg-rose-50/50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-800/60'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between font-bold">
-                      <span className="text-slate-500 dark:text-slate-400">Soal #{idx + 1}</span>
-                      <span className={isCorrect ? 'text-emerald-600 dark:text-emerald-400 flex items-center gap-1' : 'text-rose-600 dark:text-rose-400 flex items-center gap-1'}>
-                        {isCorrect ? <CheckCircle2 className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
-                        {isCorrect ? 'Jawaban Benar' : 'Jawaban Keliru'}
-                      </span>
-                    </div>
-
-                    <p className="font-semibold text-slate-900 dark:text-white">
-                      {q.text}
-                    </p>
-
-                    <div className="space-y-1 text-[11px] pt-1 border-t border-slate-200/60 dark:border-slate-800">
-                      <div>
-                        Jawaban Siswa: <strong className={isCorrect ? 'text-emerald-700 dark:text-emerald-300' : 'text-rose-700 dark:text-rose-300'}>{chosenOpt}</strong>
-                      </div>
-                      {!isCorrect && (
-                        <div>
-                          Kunci Benar: <strong className="text-emerald-600 dark:text-emerald-400">{q.options[q.correctIndex]}</strong>
-                        </div>
-                      )}
-                      {ans?.timeSpentSec !== undefined && (
-                        <div className="text-slate-400">
-                          Waktu berpikir: {ans.timeSpentSec} detik
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setSelectedStudentForModal(null)}
-                className="px-5 py-2.5 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-xs font-bold min-h-[44px]"
-              >
-                Tutup Lembar Jawaban
-              </button>
-            </div>
-
-          </div>
-        </div>
-      )}
+      {/* Modal Analisis Jawaban Siswa per Butir Soal */}
+      <StudentAnswerAnalysisModal
+        isOpen={Boolean(selectedStudentForModal)}
+        onClose={() => setSelectedStudentForModal(null)}
+        participant={selectedStudentForModal}
+        quiz={quiz}
+      />
 
       {/* Toast Notifikasi Keterangan Aksi */}
       {toastMessage && (

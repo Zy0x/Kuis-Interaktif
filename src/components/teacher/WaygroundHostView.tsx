@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import type { Quiz, QuizSession } from '../../types/quiz';
+import type { Quiz, QuizSession, QuizSessionParticipant } from '../../types/quiz';
 import { DataManager } from '../../lib/supabaseClient';
 import { copyTextToClipboard } from '../../lib/aiQuestionParser';
 import { AVATAR_MAP } from '../../data/seedQuizzes';
@@ -8,6 +8,8 @@ import { QuizizzReactionButtonRow } from '../common/QuizizzReactionButtonRow';
 import { ZoomChatToast } from '../common/ZoomChatToast';
 import { TeacherChatDrawer } from '../chat/TeacherChatDrawer';
 import { QuizIllustration } from '../shared/QuizIllustration';
+import { StudentAnswerAnalysisModal } from './StudentAnswerAnalysisModal';
+import { formatIndonesianTime } from '../../lib/dateUtils';
 import { 
   ArrowLeft, 
   ArrowRight,
@@ -30,7 +32,8 @@ import {
   Volume2,
   MessageSquare,
   Sparkles,
-  Clock
+  Clock,
+  ClipboardList
 } from 'lucide-react';
 
 interface WaygroundHostViewProps {
@@ -58,6 +61,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
   const [confirmEndModal, setConfirmEndModal] = useState(false);
   const [currentDisplayQuestionIdx, setCurrentDisplayQuestionIdx] = useState(0);
   const [isChatDrawerOpen, setIsChatDrawerOpen] = useState(false);
+  const [selectedStudentForAnalysis, setSelectedStudentForAnalysis] = useState<QuizSessionParticipant | null>(null);
   const [confirmAdvanceModal, setConfirmAdvanceModal] = useState<{
     targetIndex: number;
     direction: 'next' | 'prev';
@@ -1005,7 +1009,11 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                     return (
                       <div
                         key={p.id}
-                        className={`p-3 sm:p-4 rounded-2xl border transition-all flex items-center justify-between gap-3 ${
+                        onClick={() => setSelectedStudentForAnalysis(p)}
+                        role="button"
+                        tabIndex={0}
+                        title="Klik untuk melihat lembar analisis jawaban siswa ini"
+                        className={`p-3 sm:p-4 rounded-2xl border transition-all flex items-center justify-between gap-3 cursor-pointer hover:border-indigo-500/60 hover:bg-slate-850 hover:shadow-lg active:scale-[0.995] group ${
                           isTop3 ? 'shadow-md ' + rankColor : 'bg-slate-900/90 border-slate-800'
                         }`}
                       >
@@ -1021,7 +1029,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
 
                           <div className="min-w-0">
                             <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="font-bold text-sm sm:text-base text-white truncate max-w-[140px] sm:max-w-xs">
+                              <span className="font-bold text-sm sm:text-base text-white truncate max-w-[140px] sm:max-w-xs group-hover:text-indigo-200 transition-colors">
                                 {p.name}
                               </span>
                               {p.streak >= 2 && (
@@ -1045,19 +1053,28 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                                 </span>
                               ) : null}
                             </div>
-                            <div className="text-[11px] text-slate-400 flex items-center gap-2">
+                            <div className="text-[11px] text-slate-400 flex items-center gap-2 flex-wrap mt-0.5">
                               <span>Benar: <strong className="text-emerald-400">{displayCorrectCount}</strong></span>
                               <span>•</span>
                               <span>Salah: <strong className="text-rose-400">{displayIncorrectCount}</strong></span>
                               <span>•</span>
                               <span>{Math.round(p.timeSpentSec)} dtk</span>
+                              {(p.completedAt || p.lastActiveAt) && (
+                                <>
+                                  <span className="text-slate-600">•</span>
+                                  <span className={p.finished ? "text-emerald-400 font-medium inline-flex items-center gap-1" : "text-slate-400 inline-flex items-center gap-1"}>
+                                    <Clock className="w-3 h-3 text-slate-400" />
+                                    <span>{p.finished ? `Selesai: ${formatIndonesianTime(p.completedAt || p.lastActiveAt)}` : `Aktif: ${formatIndonesianTime(p.lastActiveAt)}`}</span>
+                                  </span>
+                                </>
+                              )}
                             </div>
                           </div>
                         </div>
 
                         {/* Right: Progress bar & Score */}
-                        <div className="text-right flex items-center gap-4 flex-shrink-0">
-                          <div className="hidden sm:block w-32 lg:w-48 text-left">
+                        <div className="text-right flex items-center gap-3 sm:gap-4 flex-shrink-0">
+                          <div className="hidden sm:block w-28 lg:w-44 text-left">
                             <div className="flex justify-between text-[10px] font-bold text-slate-400 mb-1">
                               <span>Progres</span>
                               <span>{p.currentQuestionIndex} / {totalQuestions}</span>
@@ -1070,13 +1087,17 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                             </div>
                           </div>
 
-                          <div>
+                          <div className="flex flex-col items-end gap-1">
                             <div className="text-base sm:text-xl font-black text-amber-300 leading-none">
                               {displayScore} <span className="text-xs font-normal text-slate-400">pts</span>
                             </div>
-                            <div className="text-[10px] text-slate-400 font-semibold mt-1">
+                            <div className="text-[10px] text-slate-400 font-semibold">
                               {'⭐'.repeat(p.stars || 1)}
                             </div>
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-300 bg-indigo-500/15 group-hover:bg-indigo-600 group-hover:text-white px-2 py-0.5 rounded-md border border-indigo-500/30 transition-all">
+                              <ClipboardList className="w-3 h-3" />
+                              <span className="hidden sm:inline">Analisis</span>
+                            </span>
                           </div>
                         </div>
 
@@ -1387,6 +1408,14 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
         onToggleChatMute={handleToggleChatMute}
         participantsCount={session.participants?.length || 0}
         playClick={playClick}
+      />
+
+      {/* Modal Analisis Jawaban Siswa per Butir Soal */}
+      <StudentAnswerAnalysisModal
+        isOpen={Boolean(selectedStudentForAnalysis)}
+        onClose={() => setSelectedStudentForAnalysis(null)}
+        participant={selectedStudentForAnalysis}
+        quiz={quiz}
       />
 
     </div>

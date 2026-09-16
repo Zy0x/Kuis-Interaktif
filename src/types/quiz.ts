@@ -155,6 +155,7 @@ export interface QuizAttemptAnswer {
   earnedPoints?: number; // Poin aktual yang diraih (mendukung penilaian proporsional / partial credit scoring)
   matchedCount?: number; // Jumlah pasangan yang berhasil dijodohkan (untuk tipe matching_pairs)
   totalPairs?: number;   // Total pasangan yang harus dijodohkan
+  answeredAt?: string;   // Waktu ISO saat jawaban dipilih / diinput
 }
 
 export interface QuizAttemptResult {
@@ -257,6 +258,7 @@ export interface QuizSessionParticipantAnswer {
   isCorrect: boolean;
   timeSpentSec: number;
   pointsEarned: number;
+  answeredAt?: string; // Timestamp ISO saat soal dijawab siswa
 }
 
 export interface QuizSessionParticipant {
@@ -276,6 +278,7 @@ export interface QuizSessionParticipant {
   tabSwitchCount?: number;
   joinedAt: string;
   lastActiveAt: string;
+  completedAt?: string; // Timestamp ISO saat siswa menyelesaikan kuis
 }
 
 export type AnswerVisibilityMode = 'immediate' | 'status_only' | 'exam_strict';

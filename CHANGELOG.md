@@ -1,6 +1,28 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.57] - 2026-09-16
+### Fitur Analisis Jawaban Siswa per Butir Soal & Pelacakan Jam Input Pengerjaan (Rule 1, Rule 2, Rule 4, Rule 5, Rule 7, Rule 8 & Rule 15)
+
+#### 1. Lembar Analisis Jawaban Siswa (`StudentAnswerAnalysisModal.tsx`)
+- **Akses Langsung Host & Rekap**: Guru kini dapat mengklik baris/kartu siswa di Ruang Kendali Host (`WaygroundHostView.tsx`) maupun Halaman Rekapitulasi Sesi (`QuizSessionRecapView.tsx`) untuk membuka modal lembar analisis jawaban komprehensif.
+- **Filter Cepat Interaktif**: Tersedia filter tab cepat:
+  - **Semua Soal**: Tinjauan utuh seluruh butir soal.
+  - **❌ Jawaban Salah (Remedial)**: Memfokuskan guru pada materi/soal yang membutuhkan bimbingan remedial khusus bagi siswa.
+  - **✅ Jawaban Benar**: Memverifikasi pemahaman materi yang telah dikuasai siswa dengan tepat.
+  - **⚪ Belum Dijawab**: Mengidentifikasi butir soal yang dilewati siswa.
+- **Komparasi Jawaban & Pembahasan Materi**: Menampilkan perbandingan kontras antara opsi pilihan siswa dengan kunci jawaban benar, disertai akordeon (*accordion*) penjelasan materi / konsep soal yang dapat dibuka secara interaktif.
+
+#### 2. Pelacakan Waktu Pengisian Riil (Jam Input Siswa) (`dateUtils.ts` & `QuizArena.tsx`)
+- **Pencatatan Jam Input per Soal**: Menambahkan stempel waktu ISO presisi (`answeredAt`) setiap kali siswa menekan opsi jawaban di arena kuis, serta stempel waktu selesai kuis (`completedAt`).
+- **Format Waktu Baku Indonesia**: Menampilkan waktu dalam format standar Indonesia (`HH:mm:ss WIB / WITA / WIT` atau `HH:mm`) yang otomatis menyesuaikan zona waktu lokal perangkat, membedakan antara waktu pengerjaan (jam input riil) dan durasi berpikir (detik).
+- **Indikator Waktu pada Kartu & Tabel**: Menampilkan stempel waktu selesai (`🕒 Selesai: 14:32 WIB`) atau waktu aktif terakhir siswa langsung pada kartu peringkat host dan tabel rekapitulasi.
+
+#### 3. Pembaruan Versi & PWA Cache
+- Memperbarui versi aplikasi ke `2.4.57` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.57` (`public/sw.js`).
+- Memperbarui dokumentasi fitur pada `README.md`.
+
 ## [2.4.56] - 2026-09-16
 ### Perbaikan Integritas Penilaian Skor & Penghapusan Anomali Jumlah Jawaban Melebihi Total Soal (Rule 1, Rule 2, Rule 6, Rule 9, Rule 11 & Rule 15)
 

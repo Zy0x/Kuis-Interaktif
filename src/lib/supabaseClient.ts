@@ -3206,6 +3206,7 @@ export const DataManager = {
             tabSwitchCount: p.tab_switch_count ?? 0,
             joinedAt: p.joined_at,
             lastActiveAt: p.last_active_at,
+            completedAt: p.completed_at || (p.finished ? p.last_active_at : undefined),
           }));
 
           const session: QuizSession = {
@@ -3340,6 +3341,7 @@ export const DataManager = {
             tabSwitchCount: p.tab_switch_count ?? 0,
             joinedAt: p.joined_at,
             lastActiveAt: p.last_active_at,
+            completedAt: p.completed_at || (p.finished ? p.last_active_at : undefined),
           }));
 
           const session: QuizSession = {
@@ -3440,6 +3442,7 @@ export const DataManager = {
             tabSwitchCount: p.tab_switch_count ?? 0,
             joinedAt: p.joined_at,
             lastActiveAt: p.last_active_at,
+            completedAt: p.completed_at || (p.finished ? p.last_active_at : undefined),
           }));
 
           const session: QuizSession = {
@@ -3520,6 +3523,7 @@ export const DataManager = {
             tabSwitchCount: p.tab_switch_count ?? 0,
             joinedAt: p.joined_at,
             lastActiveAt: p.last_active_at,
+            completedAt: p.completed_at || (p.finished ? p.last_active_at : undefined),
           }));
 
           const session: QuizSession = {
@@ -3613,6 +3617,7 @@ export const DataManager = {
           tabSwitchCount: p.tab_switch_count ?? 0,
           joinedAt: p.joined_at,
           lastActiveAt: p.last_active_at,
+          completedAt: p.completed_at || (p.finished ? p.last_active_at : undefined),
         }));
 
         const isSelfPaced = d.settings?.executionMode === 'self_paced';
@@ -4094,6 +4099,7 @@ export const DataManager = {
                 tabSwitchCount: p.tab_switch_count ?? 0,
                 joinedAt: p.joined_at,
                 lastActiveAt: p.last_active_at,
+            completedAt: p.completed_at || (p.finished ? p.last_active_at : undefined),
               });
             }
             const fresh = await this.fetchActiveSessionById(sessionId);
