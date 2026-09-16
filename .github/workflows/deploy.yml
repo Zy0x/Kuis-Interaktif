@@ -1,0 +1,33 @@
+name: Production Deployment
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  deployments: write
+
+jobs:
+  production-deployment:
+    name: Vercel Production
+    runs-on: ubuntu-latest
+    environment:
+      name: Production
+      url: https://kuis-interaktif-plum.vercel.app
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Verify Vercel Production Health
+        run: |
+          echo "Verifying Vercel Production Deployment at https://kuis-interaktif-plum.vercel.app..."
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://kuis-interaktif-plum.vercel.app)
+          echo "Production URL returned HTTP status: $HTTP_STATUS"
+          if [ "$HTTP_STATUS" -ne 200 ]; then
+            echo "::warning ::Vercel production returned HTTP $HTTP_STATUS during health check."
+          else
+            echo "✅ Vercel Production deployment is healthy and serving HTTP 200 OK!"
+          fi

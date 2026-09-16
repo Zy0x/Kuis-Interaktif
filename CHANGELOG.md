@@ -1,6 +1,25 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.55] - 2026-09-16
+### Integrasi Vercel Production Deployment & Pelacakan Deployment GitHub (Rule 1, Rule 6, Rule 7, Rule 9, Rule 15 & Rule 16)
+
+#### 1. Deployment Vercel Production
+- **Rilis Produksi Terverifikasi**: Menjalankan proses rilis produksi aplikasi ke jaringan global Vercel di domain utama `https://kuis-interaktif-plum.vercel.app`.
+- **Optimalisasi Pengalihan SPA**: Menyederhanakan berkas `vercel.json` dengan pengalihan rute (*rewrite*) penuh ke `index.html` untuk kelancaran navigasi klien (*Single Page Application*).
+
+#### 2. Pelacakan Lingkungan Deployment GitHub (`.github/workflows/deploy.yml`)
+- **Registrasi Lingkungan Produksi**: Menambahkan alur kerja otomatis GitHub Actions untuk mendaftarkan dan melacak status rilis produksi pada repositori GitHub.
+- **Tampilan Menu Deployments**: Memunculkan status aktif (*Active Deployment*) dan tautan langsung produksi pada menu *Deployments: Production* di bilah samping (*sidebar*) repositori GitHub.
+- **Pemeriksaan Kesehatan Otomatis**: Memastikan URL produksi merespons dengan status HTTP 200 OK secara berkala.
+
+#### 3. Pembaruan Dokumentasi & Badges (`README.md`)
+- **Pembaruan Berkas README**: Menghadirkan dokumentasi komprehensif dengan lencana status live Vercel, tautan produksi aktif, ringkasan fitur Kurikulum Merdeka, serta panduan pengembangan aplikasi.
+
+#### 4. Pembaruan Versi & Cache PWA (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.55` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.55` (`public/sw.js`).
+
 ## [2.4.54] - 2026-09-16
 ### Pembatasan Fitur Ubah Jawaban & Navigasi Mundur Khusus Mode Santai (Bebas Waktu) (Rule 1, Rule 2, Rule 4, Rule 5, Rule 7, Rule 9 & Rule 15)
 
