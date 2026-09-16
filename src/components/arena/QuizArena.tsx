@@ -253,7 +253,10 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     const shouldShuffleQuestions = !isPreview && (activeSettings.shuffleQuestions ?? quiz.shuffleQuestions);
     const shouldShuffleOptions = !isPreview && (activeSettings.shuffleOptions ?? quiz.shuffleOptions);
 
-    let list = quiz.questions;
+    let list = (quiz.questions || []).map((q, idx) => ({
+      ...q,
+      id: q.id || `q_${quiz.id || 'quiz'}_${idx}`,
+    }));
     if (shouldShuffleQuestions) {
       const arr = [...list];
       for (let i = arr.length - 1; i > 0; i--) {
@@ -957,15 +960,18 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
       if (activeSessionId) {
         try {
           const profile = DataManager.getPlayerProfile();
-          const correctCount = updated.filter((a) => a.isCorrect).length;
-          const incorrectCount = updated.length - correctCount;
-          const score = Math.round((correctCount / activeQuestions.length) * 100);
+          const validAnswers = updated.filter((a) => a && a.questionId && a.questionId !== 'quiz_completed');
+          const correctCount = Math.min(activeQuestions.length, validAnswers.filter((a) => a.isCorrect).length);
+          const incorrectCount = Math.min(activeQuestions.length - correctCount, validAnswers.length - correctCount);
+          const score = Math.min(100, Math.round((correctCount / activeQuestions.length) * 100));
           const stars = score >= 85 ? 3 : score >= 60 ? 2 : score > 0 ? 1 : 0;
           const answersMap: Record<string, any> = {};
-          updated.forEach((ans, idx) => {
-            answersMap[ans.questionId || `q_${idx}`] = {
-              questionId: ans.questionId || `q_${idx}`,
-              questionIndex: idx,
+          validAnswers.forEach((ans, idx) => {
+            const realQIdx = activeQuestions.findIndex((q) => q.id === ans.questionId);
+            const resolvedQIdx = realQIdx >= 0 ? realQIdx : idx;
+            answersMap[ans.questionId] = {
+              questionId: ans.questionId,
+              questionIndex: resolvedQIdx,
               selectedOption: ans.selectedIndex ?? -1,
               textAnswer: ans.textAnswer,
               isCorrect: ans.isCorrect,
@@ -979,7 +985,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
             id: storedToken?.id,
             name: storedToken?.name || profile.nickname || 'Siswa',
             avatarId: profile.avatarId || 'lion',
-            currentQuestionIndex: Math.max(currentIndex + 1, updated.length),
+            currentQuestionIndex: Math.min(activeQuestions.length, Math.max(currentIndex + 1, validAnswers.length)),
             totalQuestions: activeQuestions.length,
             score,
             stars,
@@ -1055,15 +1061,39 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     try {
       sessionStorage.removeItem(STORAGE_KEY);
     } catch {}
-    const finalAnswers = latestAnswersRef.current;
+    const rawFinalAnswers = latestAnswersRef.current.filter((a) => a && a.questionId && a.questionId !== 'quiz_completed');
     const finalTime = latestTimeSpentRef.current;
+
+    // Deduplikasi jawaban unik per butir soal
+    const uniqueAnswersMap = new Map<string, QuizAttemptAnswer>();
+    rawFinalAnswers.forEach((a) => {
+      uniqueAnswersMap.set(a.questionId, a);
+    });
+    const finalAnswers = Array.from(uniqueAnswersMap.values());
+
     if (activeSessionId) {
       try {
         const profile = DataManager.getPlayerProfile();
-        const correctCount = finalAnswers.filter((a) => a.isCorrect).length;
-        const incorrectCount = finalAnswers.length - correctCount;
-        const score = Math.round((correctCount / activeQuestions.length) * 100);
+        const correctCount = Math.min(activeQuestions.length, finalAnswers.filter((a) => a.isCorrect).length);
+        const incorrectCount = Math.min(activeQuestions.length - correctCount, finalAnswers.length - correctCount);
+        const score = Math.min(100, Math.round((correctCount / activeQuestions.length) * 100));
         const stars = score >= 85 ? 3 : score >= 60 ? 2 : score > 0 ? 1 : 0;
+
+        const answersMap: Record<string, any> = {};
+        finalAnswers.forEach((ans, idx) => {
+          const realQIdx = activeQuestions.findIndex((q) => q.id === ans.questionId);
+          const resolvedQIdx = realQIdx >= 0 ? realQIdx : idx;
+          answersMap[ans.questionId] = {
+            questionId: ans.questionId,
+            questionIndex: resolvedQIdx,
+            selectedOption: ans.selectedIndex ?? -1,
+            textAnswer: ans.textAnswer,
+            isCorrect: ans.isCorrect,
+            timeSpentSec: ans.timeSpentSec,
+            pointsEarned: ans.earnedPoints,
+          };
+        });
+
         const storedToken = activeSessionId ? DataManager.getSessionParticipant(activeSessionId) : null;
         DataManager.addOrUpdateSessionParticipant(activeSessionId, {
           id: storedToken?.id,
@@ -1077,6 +1107,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
           incorrectCount,
           finished: true,
           timeSpentSec: finalTime,
+          answers: answersMap,
           tabSwitchCount,
         });
       } catch (err) {
@@ -1084,7 +1115,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
       }
     }
     onFinishQuiz(finalAnswers, finalTime);
-  }, [activeSessionId, activeQuestions.length, onFinishQuiz, stopBgm, STORAGE_KEY, tabSwitchCount]);
+  }, [activeSessionId, activeQuestions, onFinishQuiz, stopBgm, STORAGE_KEY, tabSwitchCount]);
 
   const executeAdvanceToNext = () => {
     playClick();

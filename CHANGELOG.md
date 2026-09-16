@@ -1,6 +1,22 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.56] - 2026-09-16
+### Perbaikan Integritas Penilaian Skor & Penghapusan Anomali Jumlah Jawaban Melebihi Total Soal (Rule 1, Rule 2, Rule 6, Rule 9, Rule 11 & Rule 15)
+
+#### 1. Penghapusan Injeksi Anomali Penanda Selesai Kuis
+- **Eliminasi Entri Semu**: Menghilangkan pencatatan penanda penyelesaian semu (`quiz_completed`) yang sebelumnya keliru tercatat ke dalam daftar jawaban siswa dengan status benar, sehingga mengakibatkan jumlah jawaban benar terhitung melebihi total butir soal aktual (misal: 11 benar pada kuis 10 butir soal).
+- **Penyelarasan Status Selesai**: Penanda penyelesaian kuis kini secara murni memperbarui status `finished: true` pada data partisipan tanpa menambah entri butir soal baru atau memodifikasi akumulasi jawaban siswa.
+
+#### 2. Normalisasi & Validasi Skoring Berlapis (`QuizArena.tsx`, `WaygroundHostView.tsx`, `QuizSessionRecapView.tsx`)
+- **Deduplikasi Indeks Soal**: Memastikan seluruh jawaban siswa dikelompokkan dan divalidasi secara ketat berdasarkan nomor butir soal unik (`questionIndex`). Setiap nomor butir soal hanya dapat memiliki tepat 1 rekaman jawaban akhir.
+- **Pembatasan Batas Atas Matematika**: Menerapkan fungsi pembatas (`Math.min`) pada perhitungan skor dan jumlah benar di layar host, rekap guru, dan arena siswa, sehingga jumlah benar tidak dapat melebihi total soal (`totalQuestions`) dan skor tidak dapat melebihi 100 poin.
+- **Pembersihan Data Sesi Aktif**: Menjalankan sanitasi data pada rekaman peserta sesi live aktif untuk mengembalikan akurasi jumlah jawaban dan nilai siswa ke kondisi riil (100% konsisten).
+
+#### 3. Pembaruan Versi & Cache PWA (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.56` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.56` (`public/sw.js`).
+
 ## [2.4.55] - 2026-09-16
 ### Integrasi Vercel Production Deployment & Pelacakan Deployment GitHub (Rule 1, Rule 6, Rule 7, Rule 9, Rule 15 & Rule 16)
 

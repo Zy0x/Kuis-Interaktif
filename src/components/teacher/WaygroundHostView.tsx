@@ -300,18 +300,20 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
   // Sorted participants by score descending
   const sortedParticipants = useMemo(() => {
     const getPScore = (p: any) => {
-      const pAnsList = p.answers ? Object.values(p.answers).filter((a: any) => a && typeof a.questionIndex === 'number') : [];
-      if (pAnsList.length > 0) {
-        const correct = pAnsList.filter((a: any) => a.isCorrect).length;
-        return Math.round((correct / totalQuestions) * 100);
+      const rawAns = p.answers ? Object.values(p.answers).filter((a: any) => a && a.questionId !== 'quiz_completed' && typeof a.questionIndex === 'number' && a.questionIndex >= 0 && a.questionIndex < totalQuestions) : [];
+      if (rawAns.length > 0) {
+        const uniqueQMap = new Map<number, any>();
+        rawAns.forEach((a: any) => uniqueQMap.set(a.questionIndex, a));
+        const correct = Array.from(uniqueQMap.values()).filter((a: any) => a.isCorrect).length;
+        return Math.min(100, Math.round((correct / totalQuestions) * 100));
       }
-      return p.score;
+      return Math.min(100, p.score);
     };
     return [...session.participants].sort((a, b) => {
       const aScore = getPScore(a);
       const bScore = getPScore(b);
       if (bScore !== aScore) return bScore - aScore;
-      if (b.correctCount !== a.correctCount) return b.correctCount - a.correctCount;
+      if (b.correctCount !== a.correctCount) return Math.min(totalQuestions, b.correctCount) - Math.min(totalQuestions, a.correctCount);
       return a.timeSpentSec - b.timeSpentSec;
     });
   }, [session.participants, totalQuestions]);
@@ -334,14 +336,17 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
     const questionAnsweredCounts: number[] = new Array(totalQuestions).fill(0);
 
     session.participants.forEach((p) => {
-      const pAnsList = p.answers ? Object.values(p.answers).filter((a) => a && typeof a.questionIndex === 'number') : [];
+      const rawAns = p.answers ? Object.values(p.answers).filter((a: any) => a && a.questionId !== 'quiz_completed' && typeof a.questionIndex === 'number' && a.questionIndex >= 0 && a.questionIndex < totalQuestions) : [];
+      const uniqueQMap = new Map<number, any>();
+      rawAns.forEach((a: any) => uniqueQMap.set(a.questionIndex, a));
+      const pAnsList = Array.from(uniqueQMap.values());
       const accurateScore = pAnsList.length > 0
-        ? Math.round((pAnsList.filter((a) => a.isCorrect).length / totalQuestions) * 100)
-        : p.score;
+        ? Math.min(100, Math.round((pAnsList.filter((a) => a.isCorrect).length / totalQuestions) * 100))
+        : Math.min(100, p.score);
       totalScore += accurateScore;
       if (p.finished) finishedCount++;
 
-      Object.values(p.answers || {}).forEach((ans) => {
+      pAnsList.forEach((ans) => {
         if (ans.questionIndex >= 0 && ans.questionIndex < totalQuestions) {
           questionAnsweredCounts[ans.questionIndex]++;
           if (ans.isCorrect) {
@@ -981,17 +986,21 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
 
                     const avatarEmoji = AVATAR_MAP[p.avatarId] || '🦁';
 
-                    // Hitung nilai dan jumlah benar yang akurat dari riwayat jawaban unik per soal (kebal dari anomali duplikasi reload)
-                    const pAnsList = p.answers ? Object.values(p.answers).filter((a: any) => a && typeof a.questionIndex === 'number') : [];
+                    // Hitung nilai dan jumlah benar yang akurat dari riwayat jawaban unik per soal (kebal dari anomali duplikasi reload & quiz_completed)
+                    const rawAns = p.answers ? Object.values(p.answers).filter((a: any) => a && a.questionId !== 'quiz_completed' && typeof a.questionIndex === 'number' && a.questionIndex >= 0 && a.questionIndex < totalQuestions) : [];
+                    const uniqueQMap = new Map<number, any>();
+                    rawAns.forEach((a: any) => uniqueQMap.set(a.questionIndex, a));
+                    const pAnsList = Array.from(uniqueQMap.values());
+
                     const displayCorrectCount = pAnsList.length > 0
-                      ? pAnsList.filter((a: any) => a.isCorrect).length
-                      : p.correctCount;
+                      ? Math.min(totalQuestions, pAnsList.filter((a: any) => a.isCorrect).length)
+                      : Math.min(totalQuestions, p.correctCount);
                     const displayIncorrectCount = pAnsList.length > 0
                       ? pAnsList.filter((a: any) => !a.isCorrect).length
-                      : p.incorrectCount;
-                    const displayScore = pAnsList.length > 0
+                      : Math.min(totalQuestions - displayCorrectCount, p.incorrectCount);
+                    const displayScore = Math.min(100, pAnsList.length > 0
                       ? Math.round((displayCorrectCount / totalQuestions) * 100)
-                      : p.score;
+                      : p.score);
 
                     return (
                       <div

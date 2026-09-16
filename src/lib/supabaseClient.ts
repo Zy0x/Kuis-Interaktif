@@ -1365,19 +1365,24 @@ export const DataManager = {
     };
 
     if (result.sessionId) {
-      // Pastikan data peserta sesi di Supabase juga tersinkronisasi sebagai selesai
-      this.recordSessionAnswer(
-        result.sessionId,
-        player.nickname,
-        {
-          questionId: 'quiz_completed',
-          questionIndex: result.totalCount - 1,
-          textAnswer: 'Selesai',
-          isCorrect: true,
-          timeSpentSec: result.timeSpentSec,
-          pointsEarned: result.score,
-        }
-      ).catch(() => {});
+      // Pastikan data peserta sesi di Supabase tersinkronisasi sebagai selesai tanpa membuat butir soal palsu
+      const storedToken = this.getSessionParticipant(result.sessionId);
+      const safeCorrect = Math.min(result.totalCount, result.correctCount);
+      const safeIncorrect = Math.max(0, result.totalCount - safeCorrect);
+      const safeScore = Math.min(100, Math.max(0, result.score));
+      this.addOrUpdateSessionParticipant(result.sessionId, {
+        id: storedToken?.id,
+        name: player.nickname,
+        avatarId: player.avatarId,
+        currentQuestionIndex: result.totalCount,
+        totalQuestions: result.totalCount,
+        score: safeScore,
+        stars: result.stars,
+        correctCount: safeCorrect,
+        incorrectCount: safeIncorrect,
+        finished: true,
+        timeSpentSec: result.timeSpentSec,
+      }).catch(() => {});
     }
 
     if (supabase && (typeof navigator === 'undefined' || navigator.onLine)) {
@@ -2958,19 +2963,33 @@ export const DataManager = {
 
     const participant = session.participants[pIdx];
     const existingAnswers = participant.answers || {};
-    existingAnswers[answer.questionId] = answer;
+    // Jangan simpan dummy completion sebagai butir soal
+    if (answer.questionId && answer.questionId !== 'quiz_completed') {
+      existingAnswers[answer.questionId] = answer;
+    }
 
-    // Calculate score
-    const totalAnswered = Object.keys(existingAnswers).length;
-    const correctCount = Object.values(existingAnswers).filter((a) => a.isCorrect).length;
+    // Hitung hanya jawaban nyata yang valid per butir soal (tanpa dummy quiz_completed)
     const totalQ = session.totalQuestions || 1;
-    const score = Math.round((correctCount / totalQ) * 100);
+    const validAnswersMap = new Map<number | string, QuizSessionParticipantAnswer>();
+    Object.values(existingAnswers).forEach((a) => {
+      if (a && a.questionId !== 'quiz_completed') {
+        const key = typeof a.questionIndex === 'number' && a.questionIndex >= 0 && a.questionIndex < totalQ 
+          ? a.questionIndex 
+          : a.questionId;
+        validAnswersMap.set(key, a);
+      }
+    });
+
+    const validAnswers = Array.from(validAnswersMap.values());
+    const totalAnswered = Math.min(totalQ, validAnswers.length);
+    const correctCount = Math.min(totalQ, validAnswers.filter((a) => a.isCorrect).length);
+    const score = Math.min(100, Math.round((correctCount / totalQ) * 100));
     const stars = score >= 85 ? 3 : score >= 60 ? 2 : score > 0 ? 1 : 0;
-    const totalTimeSpent = Object.values(existingAnswers).reduce((acc, a) => acc + (a.timeSpentSec || 0), 0);
+    const totalTimeSpent = validAnswers.reduce((acc, a) => acc + (a.timeSpentSec || 0), 0);
 
     participant.answers = existingAnswers;
     participant.correctCount = correctCount;
-    participant.incorrectCount = totalAnswered - correctCount;
+    participant.incorrectCount = Math.max(0, totalAnswered - correctCount);
     participant.score = score;
     participant.stars = stars;
     participant.timeSpentSec = totalTimeSpent;

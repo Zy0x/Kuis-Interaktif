@@ -50,12 +50,32 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
 
   // Ranked participants
   const rankedParticipants = useMemo(() => {
-    return [...participants].sort((a, b) => {
+    return [...participants].map((p) => {
+      const rawAns = p.answers ? Object.values(p.answers).filter((a: any) => a && a.questionId !== 'quiz_completed' && typeof a.questionIndex === 'number' && a.questionIndex >= 0 && a.questionIndex < totalQuestions) : [];
+      const uniqueQMap = new Map<number, any>();
+      rawAns.forEach((a: any) => uniqueQMap.set(a.questionIndex, a));
+      const pAnsList = Array.from(uniqueQMap.values());
+      const safeCorrect = pAnsList.length > 0 
+        ? Math.min(totalQuestions, pAnsList.filter((a: any) => a.isCorrect).length)
+        : Math.min(totalQuestions, p.correctCount);
+      const safeIncorrect = pAnsList.length > 0
+        ? pAnsList.filter((a: any) => !a.isCorrect).length
+        : Math.min(totalQuestions - safeCorrect, p.incorrectCount);
+      const safeScore = Math.min(100, pAnsList.length > 0
+        ? Math.round((safeCorrect / totalQuestions) * 100)
+        : p.score);
+      return {
+        ...p,
+        score: safeScore,
+        correctCount: safeCorrect,
+        incorrectCount: safeIncorrect,
+      };
+    }).sort((a, b) => {
       if (b.score !== a.score) return b.score - a.score;
       if (b.correctCount !== a.correctCount) return b.correctCount - a.correctCount;
       return a.timeSpentSec - b.timeSpentSec;
     });
-  }, [participants]);
+  }, [participants, totalQuestions]);
 
   // Filtered by search
   const filteredParticipants = useMemo(() => {
