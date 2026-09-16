@@ -190,6 +190,10 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   const showExplanationMode: ExplanationVisibilityMode = activeSettings.showExplanationMode || 'immediate';
   const showLeaderboardToStudents = activeSettings.showLeaderboardToStudents ?? true;
   const isTabSwitchDetectionEnabled = Boolean(activeSettings.tabSwitchDetection);
+
+  // Fitur ubah jawaban & navigasi mundur soal HANYA aktif pada Mode Santai (Bebas Waktu)
+  // yang dipadukan dengan Kunci Rahasia (exam_strict) untuk mencegah konflik timer per soal.
+  const canReselectAndNavigate = showAnswersMode === 'exam_strict' && isUntimedMode;
   const defaultDurationSec = isUntimedMode ? 0 : (activeSettings.durationPerQuestionSec || quiz.durationPerQuestionSec || 30);
   const getQuestionDuration = (q: QuizQuestion | undefined): number => {
     if (isUntimedMode) return 0;
@@ -847,7 +851,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     customMatchedCount?: number,
     customTotalPairs?: number
   ) => {
-    const canReselectAnswer = showAnswersMode === 'exam_strict';
+    const canReselectAnswer = canReselectAndNavigate;
     if ((isAnswerConfirmed && !canReselectAnswer) || showCountdown) return;
     // Pada Mode Santai (Bebas Waktu), peristiwa timeout (optionIndex = -1) ditolak mentah-mentah
     if (isUntimedMode && optionIndex === -1) return;
@@ -1565,7 +1569,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                           </option>
                         ))}
                       </select>
-                    ) : showAnswersMode === 'exam_strict' ? (
+                    ) : canReselectAndNavigate ? (
                       <button
                         type="button"
                         onClick={() => setIsQuestionGridOpen(true)}
@@ -1939,11 +1943,11 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
               <div className="flex items-center gap-2">
                 <input
                   type="text"
-                  disabled={isAnswerConfirmed && showAnswersMode !== 'exam_strict'}
+                  disabled={isAnswerConfirmed && !canReselectAndNavigate}
                   value={shortAnswerInput}
                   onChange={(e) => setShortAnswerInput(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' && shortAnswerInput.trim() && (!isAnswerConfirmed || showAnswersMode === 'exam_strict')) {
+                    if (e.key === 'Enter' && shortAnswerInput.trim() && (!isAnswerConfirmed || canReselectAndNavigate)) {
                       handleAnswerSelect(0, shortAnswerInput);
                     }
                   }}
@@ -1959,7 +1963,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                   }`}
                 />
 
-                {(!isAnswerConfirmed || showAnswersMode === 'exam_strict') ? (
+                {(!isAnswerConfirmed || canReselectAndNavigate) ? (
                   <button
                     type="button"
                     disabled={!shortAnswerInput.trim()}
@@ -1967,7 +1971,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                     className="px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white font-bold text-xs sm:text-sm rounded-xl flex items-center gap-1.5 min-h-[50px] shadow-sm btn-press transition-colors flex-shrink-0"
                   >
                     <Send className="w-4 h-4" />
-                    <span>{isAnswerConfirmed && showAnswersMode === 'exam_strict' ? 'Perbarui' : 'Kirim'}</span>
+                    <span>{isAnswerConfirmed && canReselectAndNavigate ? 'Perbarui' : 'Kirim'}</span>
                   </button>
                 ) : null}
               </div>
@@ -2152,7 +2156,9 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                   if (isSelected) {
                     btnStyle = 'bg-blue-50 dark:bg-blue-950/40 border-2 border-blue-500 dark:border-blue-400 text-blue-900 dark:text-blue-100 font-bold shadow-xs ring-2 ring-blue-400/30';
                   } else {
-                    btnStyle = 'bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 hover:border-blue-300 dark:hover:border-blue-500/60 hover:bg-slate-50 dark:hover:bg-slate-750 cursor-pointer';
+                    btnStyle = canReselectAndNavigate
+                      ? 'bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 hover:border-blue-300 dark:hover:border-blue-500/60 hover:bg-slate-50 dark:hover:bg-slate-750 cursor-pointer'
+                      : 'bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-600 opacity-60';
                   }
                 }
               }
@@ -2163,7 +2169,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                 <button
                   key={idx}
                   type="button"
-                  disabled={isAnswerConfirmed && showAnswersMode !== 'exam_strict'}
+                  disabled={isAnswerConfirmed && !canReselectAndNavigate}
                   onClick={() => handleAnswerSelect(idx)}
                   className={`w-full p-3 sm:p-4 xl:p-5 3xl:p-6 rounded-2xl text-left flex items-center justify-between transition-all min-h-[48px] sm:min-h-[56px] xl:min-h-[64px] 2xl:min-h-[72px] 3xl:min-h-[80px] btn-press ${btnStyle}`}
                 >
@@ -2266,8 +2272,8 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
         <div className="w-full max-w-2xl lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl 3xl:max-w-6xl 4k:max-w-7xl mx-auto flex items-center justify-between gap-3">
           
           <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-            {/* Tombol Soal Sebelumnya (Prev) - Khusus Mode Dipandu Guru, Guru Terverifikasi, ATAU Mode Ujian Rahasia (exam_strict) */}
-            {(canTeacherReveal || (isTeacher && activeSettings.executionMode === 'teacher_led') || showAnswersMode === 'exam_strict') && currentIndex > 0 && (
+            {/* Tombol Soal Sebelumnya (Prev) - Khusus Mode Dipandu Guru, Guru Terverifikasi, ATAU Mode Ujian Rahasia Santai (canReselectAndNavigate) */}
+            {(canTeacherReveal || (isTeacher && activeSettings.executionMode === 'teacher_led') || canReselectAndNavigate) && currentIndex > 0 && (
               <button
                 type="button"
                 onClick={handlePrev}
@@ -2280,8 +2286,8 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
               </button>
             )}
 
-            {/* Tombol Peta Nomor Soal (Khusus Mode Ujian Rahasia) */}
-            {showAnswersMode === 'exam_strict' && (
+            {/* Tombol Peta Nomor Soal (Khusus Mode Ujian Santai / Bebas Waktu) */}
+            {canReselectAndNavigate && (
               <button
                 type="button"
                 onClick={() => {
@@ -2346,8 +2352,10 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
               </div>
             ) : isAnswerConfirmed ? (
               <span className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium hidden sm:block">
-                {showAnswersMode === 'exam_strict'
+                {canReselectAndNavigate
                   ? 'Jawaban tersimpan (dapat diubah kapan saja)'
+                  : showAnswersMode === 'exam_strict'
+                  ? 'Jawaban tersimpan'
                   : 'Tekan lanjut untuk soal berikutnya'}
               </span>
             ) : null}
@@ -2375,10 +2383,10 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
           ) : (
             <button
               type="button"
-              disabled={!isAnswerConfirmed && !(canTeacherReveal || (isTeacher && activeSettings.executionMode === 'teacher_led') || showAnswersMode === 'exam_strict')}
+              disabled={!isAnswerConfirmed && !(canTeacherReveal || (isTeacher && activeSettings.executionMode === 'teacher_led') || canReselectAndNavigate)}
               onClick={handleNext}
               className={`flex-1 sm:flex-initial sm:min-w-[200px] xl:min-w-[240px] px-6 py-2.5 sm:py-3 rounded-2xl font-bold text-xs sm:text-sm xl:text-base flex items-center justify-center gap-2 transition-all min-h-[46px] sm:min-h-[50px] btn-press ${
-                isAnswerConfirmed || canTeacherReveal || (isTeacher && activeSettings.executionMode === 'teacher_led') || showAnswersMode === 'exam_strict'
+                isAnswerConfirmed || canTeacherReveal || (isTeacher && activeSettings.executionMode === 'teacher_led') || canReselectAndNavigate
                   ? isLastQuestion
                     ? 'bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-500 text-white shadow-md'
                     : 'bg-blue-600 hover:bg-blue-700 text-white shadow-md'

@@ -287,9 +287,9 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
   const modeLabel = useMemo(() => {
     if (effectiveSettings.showAnswersMode === 'exam_strict') {
       return {
-        title: 'Mode Ujian Resmi',
+        title: isUntimed ? 'Mode Ujian Santai' : 'Mode Ujian Resmi',
         icon: '🎯',
-        desc: 'Jawaban tersimpan aman tanpa bocoran kunci',
+        desc: isUntimed ? 'Bebas waktu, jawaban dapat ditinjau ulang' : 'Kuis terproteksi, jawaban terkunci satu arah',
       };
     }
     if (effectiveMode === 'survival_3hearts') {
@@ -732,7 +732,11 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
               {effectiveSettings.showAnswersMode === 'exam_strict' && (
                 <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-900/60 text-indigo-700 dark:text-indigo-300 text-[11px] font-semibold">
                   <Lock className="w-3 h-3 text-indigo-500 flex-shrink-0" />
-                  <span>Kunci jawaban dirahasiakan selama ujian</span>
+                  <span>
+                    {isUntimed
+                      ? 'Kunci dirahasiakan (jawaban dapat ditinjau & diubah)'
+                      : 'Kunci dirahasiakan (jawaban terkunci setelah dipilih)'}
+                  </span>
                 </div>
               )}
 

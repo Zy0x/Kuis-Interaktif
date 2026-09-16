@@ -427,7 +427,7 @@ const FeedbackAndExplanationSection: React.FC<FeedbackAndExplanationSectionProps
             ? 'Kunci jawaban langsung diperlihatkan kepada siswa setelah menjawab setiap butir soal.'
             : showAnswersMode === 'status_only'
             ? 'Siswa hanya diberitahu apakah jawabannya Benar atau Salah, kunci jawaban tetap dirahasiakan guru.'
-            : 'Mode Ujian Ketat: Benar/salah dan kunci jawaban disembunyikan sepenuhnya (hanya konfirmasi jawaban tersimpan).'}
+            : 'Mode Ujian: Kunci jawaban & status benar/salah dirahasiakan. (Tips: Padukan dengan Mode Santai jika ingin siswa dapat meninjau ulang & mengubah jawaban).'}
         </p>
       </div>
 

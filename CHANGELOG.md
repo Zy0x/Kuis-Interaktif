@@ -1,6 +1,21 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.54] - 2026-09-16
+### Pembatasan Fitur Ubah Jawaban & Navigasi Mundur Khusus Mode Santai (Bebas Waktu) (Rule 1, Rule 2, Rule 4, Rule 5, Rule 7, Rule 9 & Rule 15)
+
+#### 1. Pembatasan Terpadu Pemilihan Ulang Jawaban (`QuizArena.tsx`)
+- **Pencegahan Konflik Timer per Soal**: Mengintegrasikan konstanta pengaman `canReselectAndNavigate = showAnswersMode === 'exam_strict' && isUntimedMode`. Fitur pemilihan ulang jawaban, tombol *"Sebelumnya"*, dan Peta Nomor Soal kini secara eksklusif hanya aktif jika kuis dimainkan pada Mode Santai (Bebas Waktu) yang dipadukan dengan Kunci Rahasia (`exam_strict`).
+- **Integritas Mode Berwaktu**: Pada mode kuis yang menggunakan batas waktu per butir soal (Standar, Cepat, dsb.), jawaban siswa langsung terkunci setelah dipilih (`disabled`), lencana *"Tersimpan"* muncul secara netral, dan siswa diarahkan lurus satu arah per butir soal agar hitung mundur timer tidak konflik atau tereksploitasi.
+
+#### 2. Penyempurnaan Teks Pengaturan Guru & Lobi Siswa (`PlayQuizModal.tsx` & `StudentLobby.tsx`)
+- **Panduan Modal Guru (`PlayQuizModal.tsx`)**: Menambahkan petunjuk tips pada opsi *"Rahasia (Ujian)"* bahwa peninjauan ulang dan pengubahan jawaban dapat diaktifkan jika guru memadukannya dengan Mode Santai (Bebas Waktu).
+- **Penyesuaian Lobi Siswa (`StudentLobby.tsx`)**: Menyesuaikan label dan badge aturan kuis agar secara cerdas membedakan antara *"Ujian Bebas Waktu"* (jawaban dapat ditinjau ulang) dan *"Ujian Berwaktu"* (jawaban terkunci setelah dipilih).
+
+#### 3. Pembaruan Versi & Cache PWA (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.54` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.54` (`public/sw.js`).
+
 ## [2.4.53] - 2026-09-16
 ### Fitur Pemilihan Ulang Jawaban & Navigasi Mundur Soal pada Mode Ujian Rahasia (Rule 1, Rule 2, Rule 4, Rule 5, Rule 7, Rule 9 & Rule 15)
 
