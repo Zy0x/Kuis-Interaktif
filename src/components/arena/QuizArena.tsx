@@ -52,7 +52,9 @@ import {
   Trophy,
   EyeOff,
   Sparkles,
-  ZoomIn
+  ZoomIn,
+  LayoutGrid,
+  AlertTriangle
 } from 'lucide-react';
 import { useAntiReaction } from '../../lib/reactionPreferences';
 import { QuizIllustration } from '../shared/QuizIllustration';
@@ -509,8 +511,11 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   const [wrongPairAttempt, setWrongPairAttempt] = useState<{ left: number; right: number } | null>(null);
   const [shuffledRightItems, setShuffledRightItems] = useState<{ originalIndex: number; text: string; isDistractor?: boolean }[]>([]);
 
+  // Modal / Drawer Peta Nomor Soal (Mode Ujian Rahasia / Navigasi Cepat)
+  const [isQuestionGridOpen, setIsQuestionGridOpen] = useState(false);
+
   // Kunci scroll body saat dialog konfirmasi keluar, peringatan ganti tab, atau menu alat mobile aktif
-  useBodyScrollLock(showExitConfirm || isMobileToolsOpen || isGameOver || showTabSwitchWarning);
+  useBodyScrollLock(showExitConfirm || isMobileToolsOpen || isGameOver || showTabSwitchWarning || showFinishConfirmModal || isQuestionGridOpen);
   
   // Smartboard / Teacher IFP Features
   const [isPaused, setIsPaused] = useState(false);
@@ -680,8 +685,24 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     return false;
   }, showExitConfirm);
 
+  useBackHandler('arena-dismiss-question-grid', 100, () => {
+    if (isQuestionGridOpen) {
+      setIsQuestionGridOpen(false);
+      return true;
+    }
+    return false;
+  }, isQuestionGridOpen);
+
+  useBackHandler('arena-dismiss-finish-confirm', 100, () => {
+    if (showFinishConfirmModal) {
+      setShowFinishConfirmModal(false);
+      return true;
+    }
+    return false;
+  }, showFinishConfirmModal);
+
   useBackHandler('arena-prompt-exit-confirm', 80, () => {
-    if (!showExitConfirm && !isPollOpen && !isMobileToolsOpen && !isChatDrawerOpen && !isGameOver) {
+    if (!showExitConfirm && !isPollOpen && !isMobileToolsOpen && !isChatDrawerOpen && !isGameOver && !showFinishConfirmModal && !isQuestionGridOpen) {
       if (isPreview) {
         onExit(currentIndex);
         return true;
@@ -826,7 +847,8 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     customMatchedCount?: number,
     customTotalPairs?: number
   ) => {
-    if (isAnswerConfirmed || showCountdown) return;
+    const canReselectAnswer = showAnswersMode === 'exam_strict';
+    if ((isAnswerConfirmed && !canReselectAnswer) || showCountdown) return;
     // Pada Mode Santai (Bebas Waktu), peristiwa timeout (optionIndex = -1) ditolak mentah-mentah
     if (isUntimedMode && optionIndex === -1) return;
     if (timerRef.current) clearInterval(timerRef.current);
@@ -1080,14 +1102,15 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
       const nextIdx = currentIndex + 1;
       const nextQuestion = activeQuestions[nextIdx];
       const nextDuration = getQuestionDuration(nextQuestion);
+      const existingAns = answersList.find((a) => a.questionId === nextQuestion?.id);
       questionStartTimeRef.current = Date.now();
       setCurrentIndex(nextIdx);
-      setSelectedOption(null);
-      setIsAnswerConfirmed(false);
+      setSelectedOption(existingAns ? (existingAns.selectedIndex ?? null) : null);
+      setIsAnswerConfirmed(Boolean(existingAns));
       setTimeLeft(isUntimedMode ? 0 : nextDuration);
       setIsPaused(false);
       setPollVotes({ 0: 0, 1: 0, 2: 0, 3: 0 });
-      setShortAnswerInput('');
+      setShortAnswerInput(existingAns?.textAnswer || '');
       setShowFirstLetterHint(false);
       setRevealedTiles(new Set());
       setSelectedLeft(null);
@@ -1123,14 +1146,15 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     }
     const prevQuestion = activeQuestions[prevIdx];
     const prevDuration = getQuestionDuration(prevQuestion);
+    const existingAns = answersList.find((a) => a.questionId === prevQuestion?.id);
     questionStartTimeRef.current = Date.now();
     setCurrentIndex(prevIdx);
-    setSelectedOption(null);
-    setIsAnswerConfirmed(false);
+    setSelectedOption(existingAns ? (existingAns.selectedIndex ?? null) : null);
+    setIsAnswerConfirmed(Boolean(existingAns));
     setTimeLeft(isUntimedMode ? 0 : prevDuration);
     setIsPaused(false);
     setPollVotes({ 0: 0, 1: 0, 2: 0, 3: 0 });
-    setShortAnswerInput('');
+    setShortAnswerInput(existingAns?.textAnswer || '');
     setShowFirstLetterHint(false);
     setRevealedTiles(new Set());
     setSelectedLeft(null);
@@ -1541,6 +1565,17 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                           </option>
                         ))}
                       </select>
+                    ) : showAnswersMode === 'exam_strict' ? (
+                      <button
+                        type="button"
+                        onClick={() => setIsQuestionGridOpen(true)}
+                        className="text-[11px] sm:text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/70 border border-blue-200/80 dark:border-blue-900/80 hover:bg-blue-100 dark:hover:bg-blue-900/50 px-2.5 py-1 rounded-xl inline-flex items-center gap-1.5 transition-all shadow-xs cursor-pointer min-h-[36px] active:scale-95"
+                        title="Buka Peta Nomor Soal"
+                        aria-label="Buka Peta Nomor Soal"
+                      >
+                        <LayoutGrid className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                        <span>Soal {currentIndex + 1}/{activeQuestions.length}</span>
+                      </button>
                     ) : (
                       <span className="text-[11px] sm:text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/50 px-2 py-0.5 rounded-md inline-block whitespace-nowrap self-start">
                         Soal {currentIndex + 1}/{activeQuestions.length}
@@ -1904,25 +1939,27 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
               <div className="flex items-center gap-2">
                 <input
                   type="text"
-                  disabled={isAnswerConfirmed}
+                  disabled={isAnswerConfirmed && showAnswersMode !== 'exam_strict'}
                   value={shortAnswerInput}
                   onChange={(e) => setShortAnswerInput(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' && shortAnswerInput.trim() && !isAnswerConfirmed) {
+                    if (e.key === 'Enter' && shortAnswerInput.trim() && (!isAnswerConfirmed || showAnswersMode === 'exam_strict')) {
                       handleAnswerSelect(0, shortAnswerInput);
                     }
                   }}
                   placeholder="Ketik jawaban di sini..."
                   className={`flex-1 px-4 py-3 rounded-xl border bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-bold text-sm sm:text-base focus:outline-none min-h-[50px] transition-all ${
                     isAnswerConfirmed
-                      ? selectedOption === 0 && answersList[currentIndex]?.isCorrect
+                      ? showAnswersMode === 'exam_strict'
+                        ? 'border-blue-500 bg-blue-50/40 dark:bg-blue-950/20 text-blue-900 dark:text-blue-100 ring-2 ring-blue-400/20'
+                        : selectedOption === 0 && answersList[currentIndex]?.isCorrect
                         ? 'border-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/20 text-emerald-900 dark:text-emerald-100'
                         : 'border-rose-400 bg-rose-50/40 dark:bg-rose-950/20 text-rose-900 dark:text-rose-100'
                       : 'border-slate-300 dark:border-slate-700 focus:border-blue-500 focus:ring-2 focus:ring-blue-200'
                   }`}
                 />
 
-                {!isAnswerConfirmed ? (
+                {(!isAnswerConfirmed || showAnswersMode === 'exam_strict') ? (
                   <button
                     type="button"
                     disabled={!shortAnswerInput.trim()}
@@ -1930,7 +1967,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                     className="px-4 py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white font-bold text-xs sm:text-sm rounded-xl flex items-center gap-1.5 min-h-[50px] shadow-sm btn-press transition-colors flex-shrink-0"
                   >
                     <Send className="w-4 h-4" />
-                    <span>Kirim</span>
+                    <span>{isAnswerConfirmed && showAnswersMode === 'exam_strict' ? 'Perbarui' : 'Kirim'}</span>
                   </button>
                 ) : null}
               </div>
@@ -2113,9 +2150,9 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                 } else {
                   // exam_strict: konfirmasi netral tersimpan, tidak membocorkan benar/salah maupun kunci
                   if (isSelected) {
-                    btnStyle = 'bg-blue-50 dark:bg-blue-950/40 border-2 border-blue-500 dark:border-blue-400 text-blue-900 dark:text-blue-100 font-bold shadow-xs';
+                    btnStyle = 'bg-blue-50 dark:bg-blue-950/40 border-2 border-blue-500 dark:border-blue-400 text-blue-900 dark:text-blue-100 font-bold shadow-xs ring-2 ring-blue-400/30';
                   } else {
-                    btnStyle = 'bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-600 opacity-60';
+                    btnStyle = 'bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 hover:border-blue-300 dark:hover:border-blue-500/60 hover:bg-slate-50 dark:hover:bg-slate-750 cursor-pointer';
                   }
                 }
               }
@@ -2126,7 +2163,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                 <button
                   key={idx}
                   type="button"
-                  disabled={isAnswerConfirmed}
+                  disabled={isAnswerConfirmed && showAnswersMode !== 'exam_strict'}
                   onClick={() => handleAnswerSelect(idx)}
                   className={`w-full p-3 sm:p-4 xl:p-5 3xl:p-6 rounded-2xl text-left flex items-center justify-between transition-all min-h-[48px] sm:min-h-[56px] xl:min-h-[64px] 2xl:min-h-[72px] 3xl:min-h-[80px] btn-press ${btnStyle}`}
                 >
@@ -2229,17 +2266,34 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
         <div className="w-full max-w-2xl lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl 3xl:max-w-6xl 4k:max-w-7xl mx-auto flex items-center justify-between gap-3">
           
           <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-            {/* Tombol Soal Sebelumnya (Prev) - Khusus Mode Dipandu Guru atau Guru Terverifikasi */}
-            {(canTeacherReveal || (isTeacher && activeSettings.executionMode === 'teacher_led')) && currentIndex > 0 && (
+            {/* Tombol Soal Sebelumnya (Prev) - Khusus Mode Dipandu Guru, Guru Terverifikasi, ATAU Mode Ujian Rahasia (exam_strict) */}
+            {(canTeacherReveal || (isTeacher && activeSettings.executionMode === 'teacher_led') || showAnswersMode === 'exam_strict') && currentIndex > 0 && (
               <button
                 type="button"
                 onClick={handlePrev}
-                className="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 min-h-[46px] sm:min-h-[50px] transition-colors btn-press"
+                className="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 min-h-[46px] sm:min-h-[50px] transition-colors btn-press active:scale-95"
                 title="Kembali ke Soal Sebelumnya"
                 aria-label="Soal Sebelumnya"
               >
                 <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
                 <span className="hidden sm:inline">Sebelumnya</span>
+              </button>
+            )}
+
+            {/* Tombol Peta Nomor Soal (Khusus Mode Ujian Rahasia) */}
+            {showAnswersMode === 'exam_strict' && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (playClick) playClick();
+                  setIsQuestionGridOpen(true);
+                }}
+                className="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800 min-h-[46px] sm:min-h-[50px] transition-colors btn-press active:scale-95"
+                title="Buka Peta Nomor Soal"
+                aria-label="Daftar Soal"
+              >
+                <LayoutGrid className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400" />
+                <span className="hidden sm:inline">Daftar Soal</span>
               </button>
             )}
 
@@ -2292,7 +2346,9 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
               </div>
             ) : isAnswerConfirmed ? (
               <span className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium hidden sm:block">
-                Tekan lanjut untuk soal berikutnya
+                {showAnswersMode === 'exam_strict'
+                  ? 'Jawaban tersimpan (dapat diubah kapan saja)'
+                  : 'Tekan lanjut untuk soal berikutnya'}
               </span>
             ) : null}
           </div>
@@ -2319,10 +2375,10 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
           ) : (
             <button
               type="button"
-              disabled={!isAnswerConfirmed && !(canTeacherReveal || (isTeacher && activeSettings.executionMode === 'teacher_led'))}
+              disabled={!isAnswerConfirmed && !(canTeacherReveal || (isTeacher && activeSettings.executionMode === 'teacher_led') || showAnswersMode === 'exam_strict')}
               onClick={handleNext}
               className={`flex-1 sm:flex-initial sm:min-w-[200px] xl:min-w-[240px] px-6 py-2.5 sm:py-3 rounded-2xl font-bold text-xs sm:text-sm xl:text-base flex items-center justify-center gap-2 transition-all min-h-[46px] sm:min-h-[50px] btn-press ${
-                isAnswerConfirmed || canTeacherReveal || (isTeacher && activeSettings.executionMode === 'teacher_led')
+                isAnswerConfirmed || canTeacherReveal || (isTeacher && activeSettings.executionMode === 'teacher_led') || showAnswersMode === 'exam_strict'
                   ? isLastQuestion
                     ? 'bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-500 text-white shadow-md'
                     : 'bg-blue-600 hover:bg-blue-700 text-white shadow-md'
@@ -2650,33 +2706,75 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
             className="relative z-10 bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-200 dark:border-slate-800 text-center space-y-4 animate-modal-card-in overscroll-contain"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="w-14 h-14 mx-auto rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-500 dark:text-amber-400 flex items-center justify-center text-2xl shadow-inner">
-              🏆
+            <div className={`w-14 h-14 mx-auto rounded-2xl flex items-center justify-center text-2xl shadow-inner ${
+              showAnswersMode === 'exam_strict' && answersList.length < activeQuestions.length
+                ? 'bg-amber-500/15 border border-amber-500/30 text-amber-500 dark:text-amber-400'
+                : 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-500 dark:text-emerald-400'
+            }`}>
+              {showAnswersMode === 'exam_strict' && answersList.length < activeQuestions.length ? '⚠️' : '🏆'}
             </div>
 
             <div className="space-y-1">
               <h4 className="text-lg font-black text-slate-900 dark:text-white">
-                Selesaikan Kuis & Lihat Hasil?
+                Selesaikan Kuis & Kumpulkan?
               </h4>
-              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                Kerja hebat! Seluruh <span className="font-bold text-slate-900 dark:text-white">{activeQuestions.length} butir soal</span> telah terjawab. Kamu akan melihat rekap nilai, kunci jawaban, dan papan peringkat.
-              </p>
+              {showAnswersMode === 'exam_strict' ? (
+                <div className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed space-y-1.5">
+                  {answersList.length < activeQuestions.length ? (
+                    <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 text-left flex items-start gap-2">
+                      <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-bold block">Ada soal belum dijawab!</span>
+                        <span>Kamu baru menjawab <strong>{answersList.length}</strong> dari <strong>{activeQuestions.length}</strong> butir soal ({activeQuestions.length - answersList.length} soal terlewat).</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-emerald-600 dark:text-emerald-400 font-bold">
+                      ✨ Kerja hebat! Seluruh {activeQuestions.length} butir soal telah kamu isi.
+                    </p>
+                  )}
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Setelah dikumpulkan, lembar jawaban akan dievaluasi dan nilai akhir akan dicatat.
+                  </p>
+                </div>
+              ) : (
+                <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                  Kerja hebat! Seluruh <span className="font-bold text-slate-900 dark:text-white">{activeQuestions.length} butir soal</span> telah terjawab. Kamu akan melihat rekap nilai, kunci jawaban, dan papan peringkat.
+                </p>
+              )}
             </div>
 
-            <div className="bg-slate-50 dark:bg-slate-850 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 grid grid-cols-2 gap-2 text-center">
-              <div>
-                <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold block uppercase">Skor Sementara</span>
-                <span className="text-base font-black text-emerald-600 dark:text-emerald-400">
-                  {Math.round((answersList.filter((a) => a.isCorrect).length / activeQuestions.length) * 100)} pts
-                </span>
+            {showAnswersMode === 'exam_strict' ? (
+              <div className="bg-slate-50 dark:bg-slate-850 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 grid grid-cols-2 gap-2 text-center">
+                <div>
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold block uppercase">Sudah Dijawab</span>
+                  <span className="text-base font-black text-emerald-600 dark:text-emerald-400">
+                    {answersList.length} / {activeQuestions.length}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold block uppercase">Belum Dijawab</span>
+                  <span className={`text-base font-black ${activeQuestions.length - answersList.length > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-slate-500 dark:text-slate-400'}`}>
+                    {Math.max(0, activeQuestions.length - answersList.length)} Soal
+                  </span>
+                </div>
               </div>
-              <div>
-                <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold block uppercase">Benar / Total</span>
-                <span className="text-base font-black text-blue-600 dark:text-blue-400">
-                  {answersList.filter((a) => a.isCorrect).length} / {activeQuestions.length}
-                </span>
+            ) : (
+              <div className="bg-slate-50 dark:bg-slate-850 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 grid grid-cols-2 gap-2 text-center">
+                <div>
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold block uppercase">Skor Sementara</span>
+                  <span className="text-base font-black text-emerald-600 dark:text-emerald-400">
+                    {Math.round((answersList.filter((a) => a.isCorrect).length / activeQuestions.length) * 100)} pts
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold block uppercase">Benar / Total</span>
+                  <span className="text-base font-black text-blue-600 dark:text-blue-400">
+                    {answersList.filter((a) => a.isCorrect).length} / {activeQuestions.length}
+                  </span>
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="flex flex-col gap-2 pt-1">
               <button
@@ -2686,7 +2784,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                   setShowFinishConfirmModal(false);
                   finishCurrentQuiz();
                 }}
-                className="w-full py-3 rounded-xl font-black text-xs sm:text-sm text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 active:bg-emerald-800 shadow-md min-h-[44px] transition-all btn-press flex items-center justify-center gap-2"
+                className="w-full py-3 rounded-xl font-black text-xs sm:text-sm text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 active:bg-emerald-800 shadow-md min-h-[46px] transition-all btn-press flex items-center justify-center gap-2"
               >
                 <span>Ya, Selesaikan & Rekap Nilai</span>
                 <ArrowRight className="w-4 h-4" />
@@ -2700,6 +2798,129 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                 className="w-full py-2.5 rounded-xl font-semibold text-xs text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 min-h-[44px] transition-colors"
               >
                 Periksa Kembali Jawaban
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal / Drawer Peta Nomor Soal (Mode Ujian Rahasia / Navigasi Cepat) */}
+      {isQuestionGridOpen && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 modal-wrapper overscroll-contain"
+          onWheel={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm animate-backdrop-fade touch-none"
+            onClick={() => setIsQuestionGridOpen(false)}
+            onWheel={(e) => e.preventDefault()}
+            onTouchMove={(e) => e.preventDefault()}
+            aria-hidden="true"
+          />
+
+          <div 
+            className="relative z-10 bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-6 max-w-md w-full shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4 animate-modal-card-in max-h-[85vh] flex flex-col overscroll-contain"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-900 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                  <LayoutGrid className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="text-sm sm:text-base font-black text-slate-900 dark:text-white leading-tight">
+                    Peta Nomor Soal
+                  </h4>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Pilih nomor untuk meninjau atau mengganti jawaban
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsQuestionGridOpen(false)}
+                className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 hover:text-slate-700 dark:text-slate-400 flex items-center justify-center transition-colors min-h-[44px] min-w-[44px]"
+                aria-label="Tutup Peta Soal"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Legend */}
+            <div className="flex items-center justify-center gap-3 py-1.5 px-3 bg-slate-50 dark:bg-slate-850 rounded-xl text-[11px] font-bold text-slate-600 dark:text-slate-300 flex-wrap">
+              <div className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded-full bg-emerald-500 border border-emerald-600" />
+                <span>Terjawab ({answersList.length})</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded-full bg-slate-200 dark:bg-slate-700 border border-slate-300 dark:border-slate-600" />
+                <span>Belum ({Math.max(0, activeQuestions.length - answersList.length)})</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded-full bg-blue-500 ring-2 ring-blue-300 dark:ring-blue-800" />
+                <span>Aktif (#{currentIndex + 1})</span>
+              </div>
+            </div>
+
+            {/* Grid Soal */}
+            <div className="overflow-y-auto flex-1 p-1 max-h-[46vh] overscroll-contain">
+              <div className="grid grid-cols-5 sm:grid-cols-6 gap-2 sm:gap-2.5">
+                {activeQuestions.map((q, idx) => {
+                  const isCurrent = idx === currentIndex;
+                  const isAnswered = answersList.some((a) => a.questionId === q.id);
+
+                  return (
+                    <button
+                      key={q.id || idx}
+                      type="button"
+                      onClick={() => {
+                        handleJumpToQuestion(idx);
+                        setIsQuestionGridOpen(false);
+                      }}
+                      className={`min-h-[46px] sm:min-h-[48px] rounded-2xl flex flex-col items-center justify-center font-bold text-xs sm:text-sm transition-all btn-press cursor-pointer relative ${
+                        isCurrent
+                          ? 'border-2 border-blue-500 bg-blue-500 text-white shadow-md ring-2 ring-blue-300 dark:ring-blue-800'
+                          : isAnswered
+                          ? 'bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-500/80 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100 dark:hover:bg-emerald-900/60'
+                          : 'bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-750'
+                      }`}
+                      title={`Soal ${idx + 1}: ${isAnswered ? 'Sudah Terjawab' : 'Belum Dijawab'}`}
+                      aria-label={`Buka Soal Nomor ${idx + 1}`}
+                    >
+                      <span className="leading-none">{idx + 1}</span>
+                      {isAnswered && !isCurrent && (
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Footer Action */}
+            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+              <button
+                type="button"
+                onClick={() => setIsQuestionGridOpen(false)}
+                className="px-4 py-2.5 rounded-xl font-bold text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors min-h-[44px]"
+              >
+                Tutup
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsQuestionGridOpen(false);
+                  setShowFinishConfirmModal(true);
+                }}
+                className="px-4 py-2.5 rounded-xl font-bold text-xs text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 transition-all shadow-sm min-h-[44px] flex items-center gap-1.5 btn-press"
+              >
+                <span>Selesai & Kumpulkan</span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>

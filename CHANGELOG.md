@@ -1,6 +1,29 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.53] - 2026-09-16
+### Fitur Pemilihan Ulang Jawaban & Navigasi Mundur Soal pada Mode Ujian Rahasia (Rule 1, Rule 2, Rule 4, Rule 5, Rule 7, Rule 9 & Rule 15)
+
+#### 1. Pemilihan Ulang Jawaban Siswa (`QuizArena.tsx`)
+- **Fleksibilitas Menjawab Soal**: Khusus pada mode pengaturan kunci jawaban dirahasiakan (*"Rahasia (Mode Ujian)"* / `exam_strict`), opsi pilihan ganda, benar/salah, tebak gambar, dan isian singkat tetap dapat diinteraksikan kembali oleh siswa. Siswa dapat mengubah atau memilih ulang opsi jawaban lain kapan saja tanpa terkunci permanen.
+- **Sinkronisasi Otomatis & Pembaruan Lencana**: Ketika siswa memilih opsi baru, data jawaban seketika diperbarui pada memori sesi dan data partisipan, lencana "Tersimpan" otomatis berpindah ke opsi terbaru dengan cincin sorotan biru ramah visual, dan penilaian akhir tetap terproteksi rahasia tanpa membocorkan status benar/salah.
+- **Dukungan Isian Singkat & Penjodohan**: Siswa dapat mengedit kembali teks jawaban singkat dan menekan tombol *"Perbarui"* secara interaktif.
+
+#### 2. Navigasi Soal Mundur & Peta Nomor Soal Interaktif (`QuizArena.tsx`)
+- **Tombol "Sebelumnya" Aktif untuk Siswa**: Bilah navigasi bawah kini menampilkan tombol *"Sebelumnya"* yang aktif bagi siswa pada mode `exam_strict`, memungkinkan peninjauan butir soal sebelumnya dengan pemulihan opsi jawaban yang telah dipilih serta penyegaran durasi waktu soal.
+- **Peta Nomor Soal (Drawer / Modal Kisi Soal)**: Menghadirkan tombol *"Daftar Soal"* di bilah navigasi bawah serta tombol interaktif *"Soal X/N"* di bagian atas yang membuka dialog peta nomor soal lengkap:
+  - Indikator status visual yang jelas: Hijau (*Terjawab*), Abu-abu netral (*Belum Dijawab*), dan Cincin biru (*Soal Sedang Aktif*).
+  - Sentuhan satu kali pada nomor soal mana saja langsung melompat ke butir soal tersebut.
+  - Memenuhi standar touch target minimal 44×44 px untuk presisi mobile-first.
+
+#### 3. Modal Ringkasan Pengumpulan Kuis Terproteksi (`QuizArena.tsx`)
+- **Rekap Jawaban Sebelum Kumpul**: Sebelum kuis diselesaikan, sistem menyajikan dialog konfirmasi yang merinci jumlah soal yang telah dijawab vs soal yang terlewat.
+- **Peringatan Soal Terlewat**: Jika terdapat butir soal yang belum dijawab, dialog menampilkan peringatan visual ramah anak agar siswa dapat memilih *"Periksa Kembali Jawaban"* atau tetap melanjutkan *"Ya, Selesaikan & Rekap Nilai"*.
+
+#### 4. Pembaruan Versi & Cache PWA (Rule 7 & Rule 15)
+- Memperbarui versi aplikasi ke `2.4.53` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.53` (`public/sw.js`).
+
 ## [2.4.52] - 2026-09-16
 ### Konfigurasi Vercel Deployment & Penonaktifan Auto-Build Git Commit (Rule 1, Rule 6, Rule 7, Rule 9, Rule 15 & Rule 16)
 
