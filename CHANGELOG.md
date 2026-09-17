@@ -1,6 +1,27 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.59] - 2026-09-17
+### Transparansi Statistik Soal Kosong/Dilewati & Sinkronisasi Indikator Progres Siswa (Rule 1, Rule 2, Rule 11, Rule 14 & Rule 15)
+
+#### 1. Transparansi Indikator Butir Soal Kosong / Dilewati
+- **Distribusi Statistik Lengkap (Benar • Salah • Kosong)**: Memperbaiki agregasi statistik di `WaygroundHostView.tsx` dan `QuizSessionRecapView.tsx` sehingga butir soal yang tidak sempat dijawab atau dilewati siswa saat kuis dikumpulkan tidak lagi tersembunyi.
+- **Lencana Status Pengerjaan Informatif**: Menampilkan lencana status `Selesai (X kosong)` dengan aksen warna kuning hangat (*amber*) jika siswa menyelesaikan kuis tanpa menjawab seluruh butir soal.
+- **Sinkronisasi Baris Status**: Baris statistik kini secara eksplisit menampilkan `Benar: X • Salah: Y • Kosong: Z` sehingga jumlahnya selalu persis sama dengan total butir soal ($X + Y + Z = Total Soal$).
+
+#### 2. Kalibrasi Akurat Bilah Progres Pengerjaan Siswa
+- **Rasio Terjawab Riil**: Pada bilah progres kuis siswa yang telah selesai, indikator progres kini menampilkan jumlah butir soal riil yang dijawab (`X / Total`) alih-alih selalu menampilkan `Total / Total`, memberikan gambaran visual yang jujur dan presisi bagi guru.
+- **Pewarnaan Gradien Kontekstual**: Bilah progres menggunakan gradien emerald-teal untuk penyelesaian 100% terjawab dan gradien blue-amber jika terdapat butir soal yang dilewati.
+
+#### 3. Peningkatan Lembar Analisis Jawaban & Ekspor CSV
+- **Lencana Soal Tidak Dijawab**: Pada `StudentAnswerAnalysisModal.tsx`, butir soal yang tidak dijawab saat kuis berstatus selesai kini secara tegas dilabeli `Tidak Dijawab / Dilewati` dengan aksen peringatan.
+- **Kolom Tidak Dijawab pada Ekspor CSV**: Tabel rekap nilai dan unduhan berkas CSV (`QuizSessionRecapView.tsx`) kini menyertakan kolom `Tidak Dijawab` dan mencatat sel jawaban soal yang kosong sebagai `KOSONG` (bukan `-`).
+
+#### 4. Pembaruan Versi & Cache PWA
+- Memperbarui versi aplikasi ke `2.4.59` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.59` (`public/sw.js`).
+- Memperbarui badge versi di `README.md`.
+
 ## [2.4.58] - 2026-09-17
 ### Perbaikan Integritas Lifecycle Render Modal Analisis Jawaban Siswa (Rule 1, Rule 2, Rule 6, Rule 9 & Rule 15)
 

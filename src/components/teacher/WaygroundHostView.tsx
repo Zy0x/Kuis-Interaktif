@@ -303,21 +303,27 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
 
   // Sorted participants by score descending
   const sortedParticipants = useMemo(() => {
-    const getPScore = (p: any) => {
+    const getPData = (p: any) => {
       const rawAns = p.answers ? Object.values(p.answers).filter((a: any) => a && a.questionId !== 'quiz_completed' && typeof a.questionIndex === 'number' && a.questionIndex >= 0 && a.questionIndex < totalQuestions) : [];
       if (rawAns.length > 0) {
         const uniqueQMap = new Map<number, any>();
         rawAns.forEach((a: any) => uniqueQMap.set(a.questionIndex, a));
         const correct = Array.from(uniqueQMap.values()).filter((a: any) => a.isCorrect).length;
-        return Math.min(100, Math.round((correct / totalQuestions) * 100));
+        return {
+          score: Math.min(100, Math.round((correct / totalQuestions) * 100)),
+          correct: Math.min(totalQuestions, correct),
+        };
       }
-      return Math.min(100, p.score);
+      return {
+        score: Math.min(100, p.score),
+        correct: Math.min(totalQuestions, p.correctCount || 0),
+      };
     };
     return [...session.participants].sort((a, b) => {
-      const aScore = getPScore(a);
-      const bScore = getPScore(b);
-      if (bScore !== aScore) return bScore - aScore;
-      if (b.correctCount !== a.correctCount) return Math.min(totalQuestions, b.correctCount) - Math.min(totalQuestions, a.correctCount);
+      const aData = getPData(a);
+      const bData = getPData(b);
+      if (bData.score !== aData.score) return bData.score - aData.score;
+      if (bData.correct !== aData.correct) return bData.correct - aData.correct;
       return a.timeSpentSec - b.timeSpentSec;
     });
   }, [session.participants, totalQuestions]);
@@ -1002,6 +1008,10 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                     const displayIncorrectCount = pAnsList.length > 0
                       ? pAnsList.filter((a: any) => !a.isCorrect).length
                       : Math.min(totalQuestions - displayCorrectCount, p.incorrectCount);
+                    const answeredCount = pAnsList.length > 0
+                      ? pAnsList.length
+                      : Math.min(totalQuestions, displayCorrectCount + displayIncorrectCount);
+                    const displayUnansweredCount = Math.max(0, totalQuestions - answeredCount);
                     const displayScore = Math.min(100, pAnsList.length > 0
                       ? Math.round((displayCorrectCount / totalQuestions) * 100)
                       : p.score);
@@ -1039,8 +1049,15 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                                 </span>
                               )}
                               {p.finished && (
-                                <span className="px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold">
-                                  Selesai
+                                <span 
+                                  className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold border ${
+                                    displayUnansweredCount > 0
+                                      ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                                      : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                                  }`}
+                                  title={displayUnansweredCount > 0 ? `Selesai (${displayUnansweredCount} soal dilewati/kosong)` : 'Selesai mengerjakan seluruh soal'}
+                                >
+                                  {displayUnansweredCount > 0 ? `Selesai (${displayUnansweredCount} kosong)` : 'Selesai'}
                                 </span>
                               )}
                               {p.tabSwitchCount && p.tabSwitchCount > 0 ? (
@@ -1057,6 +1074,14 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                               <span>Benar: <strong className="text-emerald-400">{displayCorrectCount}</strong></span>
                               <span>•</span>
                               <span>Salah: <strong className="text-rose-400">{displayIncorrectCount}</strong></span>
+                              {displayUnansweredCount > 0 && (
+                                <>
+                                  <span>•</span>
+                                  <span className="text-amber-300 font-medium" title={`${displayUnansweredCount} butir soal tidak dijawab / dilewati`}>
+                                    Kosong: <strong className="text-amber-400">{displayUnansweredCount}</strong>
+                                  </span>
+                                </>
+                              )}
                               <span>•</span>
                               <span>{Math.round(p.timeSpentSec)} dtk</span>
                               {(p.completedAt || p.lastActiveAt) && (
@@ -1077,12 +1102,22 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                           <div className="hidden sm:block w-28 lg:w-44 text-left">
                             <div className="flex justify-between text-[10px] font-bold text-slate-400 mb-1">
                               <span>Progres</span>
-                              <span>{p.currentQuestionIndex} / {totalQuestions}</span>
+                              <span>
+                                {p.finished 
+                                  ? (displayUnansweredCount > 0 ? `${answeredCount} / ${totalQuestions}` : `${totalQuestions} / ${totalQuestions}`)
+                                  : `${p.currentQuestionIndex} / ${totalQuestions}`}
+                              </span>
                             </div>
                             <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
                               <div
-                                className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-300"
-                                style={{ width: `${Math.min(100, (p.currentQuestionIndex / totalQuestions) * 100)}%` }}
+                                className={`h-full transition-all duration-300 ${
+                                  p.finished
+                                    ? (displayUnansweredCount > 0 ? 'bg-gradient-to-r from-blue-500 to-amber-500' : 'bg-gradient-to-r from-emerald-500 to-teal-500')
+                                    : 'bg-gradient-to-r from-blue-500 to-indigo-500'
+                                }`}
+                                style={{
+                                  width: `${Math.min(100, ((p.finished ? answeredCount : p.currentQuestionIndex) / totalQuestions) * 100)}%`,
+                                }}
                               />
                             </div>
                           </div>

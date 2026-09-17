@@ -244,9 +244,15 @@ export const StudentAnswerAnalysisModal: React.FC<StudentAnswerAnalysisModalProp
                 <span className="text-emerald-600 dark:text-emerald-400">✓ {correctCount} Benar</span>
                 <span>•</span>
                 <span className="text-rose-600 dark:text-rose-400">✕ {incorrectCount} Salah</span>
+                {unansweredCount > 0 && (
+                  <>
+                    <span>•</span>
+                    <span className="text-amber-600 dark:text-amber-400">⚪ {unansweredCount} Kosong</span>
+                  </>
+                )}
               </div>
               <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
-                {unansweredCount > 0 ? `${unansweredCount} belum dijawab` : 'Semua terjawab'}
+                {unansweredCount > 0 ? `${unansweredCount} butir soal tidak dijawab / dilewati` : 'Semua butir soal terjawab'}
               </div>
             </div>
 
@@ -407,9 +413,13 @@ export const StudentAnswerAnalysisModal: React.FC<StudentAnswerAnalysisModalProp
 
                       {/* Status Lencana */}
                       {!isAnswered ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-xs font-bold">
-                          <Clock className="w-3.5 h-3.5" />
-                          <span>Belum Dijawab</span>
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-xs font-bold ${
+                          participant.finished
+                            ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30'
+                            : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                        }`}>
+                          <Clock className={`w-3.5 h-3.5 ${participant.finished ? 'text-amber-600 dark:text-amber-400' : 'text-slate-500'}`} />
+                          <span>{participant.finished ? 'Tidak Dijawab / Dilewati' : 'Belum Dijawab'}</span>
                         </span>
                       ) : isCorrect ? (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-xs font-bold">

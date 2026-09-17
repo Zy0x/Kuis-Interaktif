@@ -61,6 +61,10 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
       const safeIncorrect = pAnsList.length > 0
         ? pAnsList.filter((a: any) => !a.isCorrect).length
         : Math.min(totalQuestions - safeCorrect, p.incorrectCount);
+      const answeredCount = pAnsList.length > 0
+        ? pAnsList.length
+        : Math.min(totalQuestions, safeCorrect + safeIncorrect);
+      const safeUnanswered = Math.max(0, totalQuestions - answeredCount);
       const safeScore = Math.min(100, pAnsList.length > 0
         ? Math.round((safeCorrect / totalQuestions) * 100)
         : p.score);
@@ -69,6 +73,7 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
         score: safeScore,
         correctCount: safeCorrect,
         incorrectCount: safeIncorrect,
+        unansweredCount: safeUnanswered,
       };
     }).sort((a, b) => {
       if (b.score !== a.score) return b.score - a.score;
@@ -194,15 +199,16 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
       'Bintang',
       'Jawaban Benar',
       'Jawaban Salah',
+      'Tidak Dijawab',
       'Waktu Pengerjaan (Detik)',
       'Status Ketuntasan (KKM 70)',
       ...quiz.questions.map((_, i) => `Soal ${i + 1}`)
     ];
 
-    const rows = rankedParticipants.map((p, idx) => {
+    const rows = rankedParticipants.map((p: any, idx) => {
       const qAnswers = quiz.questions.map((_, qIdx) => {
-        const ans = Object.values(p.answers || {}).find((a) => a.questionIndex === qIdx);
-        if (!ans) return '-';
+        const ans = Object.values(p.answers || {}).find((a: any) => a.questionIndex === qIdx) as any;
+        if (!ans) return 'KOSONG';
         return ans.isCorrect ? 'BENAR' : 'SALAH';
       });
 
@@ -213,6 +219,7 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
         p.stars,
         p.correctCount,
         p.incorrectCount,
+        p.unansweredCount ?? 0,
         p.timeSpentSec,
         p.score >= 70 ? 'TUNTAS' : 'BELUM TUNTAS',
         ...qAnswers
@@ -662,7 +669,12 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
                           {Math.round((p.correctCount / totalQuestions) * 100)}%
                         </td>
                         <td className="py-3 px-3 text-slate-600 dark:text-slate-400">
-                          <span className="text-emerald-600 dark:text-emerald-400 font-bold">{p.correctCount}</span> / <span className="text-rose-600 dark:text-rose-400">{p.incorrectCount}</span>
+                          <span className="text-emerald-600 dark:text-emerald-400 font-bold">{p.correctCount}</span> / <span className="text-rose-600 dark:text-rose-400 font-bold">{p.incorrectCount}</span>
+                          {((p as any).unansweredCount ?? 0) > 0 && (
+                            <span className="text-amber-500 dark:text-amber-400 font-semibold ml-1.5 text-[10px]" title={`${(p as any).unansweredCount} butir soal tidak dijawab / dilewati`}>
+                              ({(p as any).unansweredCount} kosong)
+                            </span>
+                          )}
                         </td>
                         <td className="py-3 px-3 text-slate-500 dark:text-slate-400">
                           <div className="font-semibold text-slate-700 dark:text-slate-300">{p.timeSpentSec} dtk</div>
