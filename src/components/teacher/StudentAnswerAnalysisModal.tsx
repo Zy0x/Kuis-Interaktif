@@ -256,14 +256,14 @@ export const StudentAnswerAnalysisModal: React.FC<StudentAnswerAnalysisModalProp
             <div className="p-2.5 sm:p-3 rounded-2xl bg-white/80 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 shadow-xs">
               <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Status Soal</div>
               <div className="text-sm sm:text-base font-bold text-slate-900 dark:text-white mt-0.5 flex items-center gap-1.5 flex-wrap">
-                <span className="text-emerald-600 dark:text-emerald-400">✓ {correctCount} Benar</span>
-                <span>•</span>
-                <span className="text-rose-600 dark:text-rose-400">✕ {incorrectCount} Salah</span>
+                <span className="text-emerald-600 dark:text-emerald-400 whitespace-nowrap">{correctCount} Benar</span>
+                <span className="text-slate-300 dark:text-slate-600">•</span>
+                <span className="text-rose-600 dark:text-rose-400 whitespace-nowrap">{incorrectCount} Salah</span>
                 {unansweredCount > 0 && (
-                  <>
-                    <span>•</span>
-                    <span className="text-amber-600 dark:text-amber-400">⚪ {unansweredCount} Kosong</span>
-                  </>
+                  <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                    <span className="text-slate-300 dark:text-slate-600">•</span>
+                    <span className="text-amber-600 dark:text-amber-400">{unansweredCount} Kosong</span>
+                  </span>
                 )}
               </div>
               <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
@@ -327,7 +327,7 @@ export const StudentAnswerAnalysisModal: React.FC<StudentAnswerAnalysisModalProp
                   : 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200/60 dark:border-rose-900/60 hover:bg-rose-100 dark:hover:bg-rose-900/60'
               }`}
             >
-              <span>✕ Jawaban Salah (Remedial)</span>
+              <span>Jawaban Salah (Remedial)</span>
               <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-black/15 font-black">{incorrectCount}</span>
             </button>
 
@@ -340,7 +340,7 @@ export const StudentAnswerAnalysisModal: React.FC<StudentAnswerAnalysisModalProp
                   : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60'
               }`}
             >
-              <span>✓ Jawaban Benar</span>
+              <span>Jawaban Benar</span>
               <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-black/15 font-black">{correctCount}</span>
             </button>
 
@@ -354,7 +354,7 @@ export const StudentAnswerAnalysisModal: React.FC<StudentAnswerAnalysisModalProp
                     : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-750'
                 }`}
               >
-                <span>⚪ Belum Dijawab</span>
+                <span>Belum Dijawab</span>
                 <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-black/15 font-black">{unansweredCount}</span>
               </button>
             )}
