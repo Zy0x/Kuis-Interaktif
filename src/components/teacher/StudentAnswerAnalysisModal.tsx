@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import type { Quiz, QuizQuestion, QuizSessionParticipant } from '../../types/quiz';
 import { AVATAR_MAP } from '../../data/seedQuizzes';
-import { formatIndonesianTime } from '../../lib/dateUtils';
+import { formatIndonesianTime, formatIndonesianDate } from '../../lib/dateUtils';
 
 interface StudentAnswerAnalysisModalProps {
   isOpen: boolean;
@@ -277,8 +277,8 @@ export const StudentAnswerAnalysisModal: React.FC<StudentAnswerAnalysisModalProp
                 <Calendar className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
                 <span className="truncate">{formatIndonesianTime(participant.joinedAt, { withSeconds: true })}</span>
               </div>
-              <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
-                Durasi: {Math.round(participant.timeSpentSec)} detik
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                {formatIndonesianDate(participant.joinedAt, { withDay: true })} • {Math.round(participant.timeSpentSec)} dtk
               </div>
             </div>
 
@@ -294,7 +294,7 @@ export const StudentAnswerAnalysisModal: React.FC<StudentAnswerAnalysisModalProp
               </div>
               <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
                 {participant.finished 
-                  ? formatIndonesianTime(participant.completedAt || participant.lastActiveAt, { withDate: true }).split(',')[0]
+                  ? formatIndonesianDate(participant.completedAt || participant.lastActiveAt, { withDay: true, withYear: true })
                   : 'Aktif terpantau'}
               </div>
             </div>
@@ -414,7 +414,10 @@ export const StudentAnswerAnalysisModal: React.FC<StudentAnswerAnalysisModalProp
                     <div className="flex items-center gap-2 flex-wrap">
                       {/* Jam Input Siswa & Durasi */}
                       {isAnswered && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-white/90 dark:bg-slate-800/90 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-[11px] font-medium shadow-2xs">
+                        <span 
+                          className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-white/90 dark:bg-slate-800/90 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-[11px] font-medium shadow-2xs"
+                          title={`Waktu Rekam Jawaban: ${formatIndonesianTime(ans?.answeredAt || participant.lastActiveAt, { withDate: true, withSeconds: true, withYear: true })}`}
+                        >
                           <Clock className="w-3 h-3 text-blue-500" />
                           <span>Input: <strong>{formatIndonesianTime(ans?.answeredAt || participant.lastActiveAt, { withSeconds: true })}</strong></span>
                           {ans?.timeSpentSec ? (

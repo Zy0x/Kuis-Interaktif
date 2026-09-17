@@ -1,6 +1,19 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.63] - 2026-09-17
+### Penambahan Nama Hari dan Tanggal pada Waktu Penyelesaian Siswa (Rule 1, Rule 2, Rule 3, Rule 4 & Rule 15)
+
+#### 1. Kejelasan Waktu Pengerjaan & Selesai Siswa (`WaygroundHostView.tsx`, `QuizSessionRecapView.tsx`, `StudentAnswerAnalysisModal.tsx`)
+- **Penambahan Nama Hari & Tanggal Lengkap**: Waktu penyelesaian siswa di Ruang Kendali Host (`WaygroundHostView.tsx`) dan Rekap Sesi Kuis (`QuizSessionRecapView.tsx`) kini secara eksplisit mencantumkan nama hari dan tanggal kalender Indonesia (contoh: `Selesai: Rabu, 16 Sep, 19:47 WITA`). Hal ini melenyapkan kerancuan identifikasi apabila siswa mengerjakan kuis pada hari yang berbeda di jam yang serupa.
+- **Penyelarasan Kartu Analisis Siswa (`StudentAnswerAnalysisModal.tsx`)**: Menampilkan hari dan tanggal pengerjaan pada kartu Waktu Mulai (`Rabu, 16 Sep • 170 dtk`) dan Waktu Selesai (`Rabu, 16 Sep 2026`), serta menyediakan tooltip penunjuk waktu presisi per butir soal.
+- **Peningkatan Modul Utilitas Waktu (`dateUtils.ts`)**: Memperkaya fungsi `formatIndonesianTime` dengan dukungan nama hari (*withDay*) dan mengekspor fungsi `formatIndonesianDate` untuk penanggalan terstruktur.
+
+#### 2. Pembaruan Versi & Cache PWA
+- Memperbarui versi aplikasi ke `2.4.63` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.63` (`public/sw.js`).
+- Memperbarui badge versi di `README.md`.
+
 ## [2.4.62] - 2026-09-17
 ### Pembersihan Ikon Simbol Redundan & Optimalisasi Tipografi Lembar Analisis (Rule 1, Rule 2, Rule 4 & Rule 15)
 

@@ -3,9 +3,17 @@
  * Dirancang ramah pengguna, akurat, dan serasi untuk antarmuka Guru & Siswa.
  */
 
+export interface FormatIndonesianTimeOptions {
+  withSeconds?: boolean;
+  withDate?: boolean;
+  withDay?: boolean;
+  shortDay?: boolean;
+  withYear?: boolean;
+}
+
 export function formatIndonesianTime(
   isoString?: string | null,
-  options?: { withSeconds?: boolean; withDate?: boolean }
+  options?: FormatIndonesianTimeOptions
 ): string {
   if (!isoString) return '-';
   try {
@@ -40,13 +48,51 @@ export function formatIndonesianTime(
     timeStr += ` ${tzLabel}`;
 
     if (options?.withDate) {
+      const daysFull = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+      const daysShort = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
       const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+
+      const dayName = options.shortDay ? daysShort[date.getDay()] : daysFull[date.getDay()];
       const day = date.getDate();
       const month = months[date.getMonth()];
-      return `${day} ${month}, ${timeStr}`;
+      const yearStr = options.withYear ? ` ${date.getFullYear()}` : '';
+
+      if (options.withDay !== false) {
+        return `${dayName}, ${day} ${month}${yearStr}, ${timeStr}`;
+      }
+
+      return `${day} ${month}${yearStr}, ${timeStr}`;
     }
 
     return timeStr;
+  } catch {
+    return '-';
+  }
+}
+
+export function formatIndonesianDate(
+  isoString?: string | null,
+  options?: { withDay?: boolean; shortDay?: boolean; withYear?: boolean }
+): string {
+  if (!isoString) return '-';
+  try {
+    const date = new Date(isoString);
+    if (isNaN(date.getTime())) return '-';
+
+    const daysFull = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+    const daysShort = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+
+    const dayName = options?.shortDay ? daysShort[date.getDay()] : daysFull[date.getDay()];
+    const day = date.getDate();
+    const month = months[date.getMonth()];
+    const yearStr = options?.withYear ? ` ${date.getFullYear()}` : '';
+
+    if (options?.withDay !== false) {
+      return `${dayName}, ${day} ${month}${yearStr}`;
+    }
+
+    return `${day} ${month}${yearStr}`;
   } catch {
     return '-';
   }

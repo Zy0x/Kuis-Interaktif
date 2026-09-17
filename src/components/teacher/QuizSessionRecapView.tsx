@@ -690,7 +690,7 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
                           {(p.completedAt || p.lastActiveAt) && (
                             <div className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5" title="Waktu pengisian / selesai">
                               <Clock className="w-3 h-3 text-slate-400 flex-shrink-0" />
-                              <span>{formatIndonesianTime(p.completedAt || p.lastActiveAt)}</span>
+                              <span>{formatIndonesianTime(p.completedAt || p.lastActiveAt, { withDate: true })}</span>
                             </div>
                           )}
                         </td>

@@ -1100,7 +1100,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                                   <span className="text-slate-600">•</span>
                                   <span className={p.finished ? "text-emerald-400 font-medium inline-flex items-center gap-1" : "text-slate-400 inline-flex items-center gap-1"}>
                                     <Clock className="w-3 h-3 text-slate-400" />
-                                    <span>{p.finished ? `Selesai: ${formatIndonesianTime(p.completedAt || p.lastActiveAt)}` : `Aktif: ${formatIndonesianTime(p.lastActiveAt)}`}</span>
+                                    <span>{p.finished ? `Selesai: ${formatIndonesianTime(p.completedAt || p.lastActiveAt, { withDate: true })}` : `Aktif: ${formatIndonesianTime(p.lastActiveAt, { withDate: true })}`}</span>
                                   </span>
                                 </>
                               )}
