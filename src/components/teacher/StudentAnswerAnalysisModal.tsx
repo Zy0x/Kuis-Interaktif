@@ -14,7 +14,7 @@ import {
   Check,
   Filter,
 } from 'lucide-react';
-import type { Quiz, QuizSessionParticipant } from '../../types/quiz';
+import type { Quiz, QuizQuestion, QuizSessionParticipant } from '../../types/quiz';
 import { AVATAR_MAP } from '../../data/seedQuizzes';
 import { formatIndonesianTime } from '../../lib/dateUtils';
 
@@ -55,15 +55,13 @@ export const StudentAnswerAnalysisModal: React.FC<StudentAnswerAnalysisModalProp
     }
   }, [isOpen, participant?.id]);
 
-  if (!isOpen || !participant) return null;
-
-  const totalQuestions = quiz.questions?.length || participant.totalQuestions || 1;
-  const avatarEmoji = AVATAR_MAP[participant.avatarId] || '🦁';
+  const totalQuestions = quiz?.questions?.length || participant?.totalQuestions || 1;
+  const avatarEmoji = participant ? (AVATAR_MAP[participant.avatarId] || '🦁') : '🦁';
 
   // Extract clean answers list mapped by questionIndex
   const studentAnswersMap = useMemo(() => {
     const map = new Map<number, any>();
-    if (participant.answers) {
+    if (participant?.answers) {
       Object.values(participant.answers).forEach((ans: any) => {
         if (ans && ans.questionId !== 'quiz_completed' && typeof ans.questionIndex === 'number' && ans.questionIndex >= 0 && ans.questionIndex < totalQuestions) {
           map.set(ans.questionIndex, ans);
@@ -71,26 +69,29 @@ export const StudentAnswerAnalysisModal: React.FC<StudentAnswerAnalysisModalProp
       });
     }
     return map;
-  }, [participant.answers, totalQuestions]);
+  }, [participant?.answers, totalQuestions]);
 
-  // Accurate stats
-  const correctCount = Math.min(totalQuestions, participant.correctCount);
-  const answeredCount = Math.min(totalQuestions, studentAnswersMap.size);
-  const incorrectCount = Math.max(0, answeredCount - correctCount);
-  const unansweredCount = Math.max(0, totalQuestions - answeredCount);
-  const accuracyPercent = answeredCount > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
-
-  // Toggle explanation expansion for specific question
-  const toggleExplanation = (idx: number) => {
-    setExpandedExplanations((prev) => ({
-      ...prev,
-      [idx]: !prev[idx],
+  // Reliable questions list: use quiz.questions if available, or fallback placeholders
+  const questionsToDisplay: QuizQuestion[] = useMemo(() => {
+    if (quiz?.questions && Array.isArray(quiz.questions) && quiz.questions.length > 0) {
+      return quiz.questions;
+    }
+    return Array.from({ length: totalQuestions }).map((_, idx) => ({
+      id: `q_${idx}`,
+      text: `Butir Soal #${idx + 1}`,
+      type: 'multiple_choice' as const,
+      imageUrl: undefined,
+      imageCaption: undefined,
+      options: ['Opsi A', 'Opsi B', 'Opsi C', 'Opsi D'],
+      correctIndex: 0,
+      explanation: '',
+      points: 10,
     }));
-  };
+  }, [quiz?.questions, totalQuestions]);
 
   // Filtered question items
   const filteredQuestionList = useMemo(() => {
-    return (quiz.questions || []).map((q, idx) => {
+    return questionsToDisplay.map((q, idx) => {
       const ans = studentAnswersMap.get(idx);
       const isAnswered = Boolean(ans);
       const isCorrect = ans ? Boolean(ans.isCorrect) : false;
@@ -107,20 +108,43 @@ export const StudentAnswerAnalysisModal: React.FC<StudentAnswerAnalysisModalProp
       if (filter === 'unanswered') return !item.isAnswered;
       return true;
     });
-  }, [quiz.questions, studentAnswersMap, filter]);
+  }, [questionsToDisplay, studentAnswersMap, filter]);
+
+  // Safe early exit AFTER all hooks have executed unconditionally
+  if (!isOpen || !participant) return null;
+
+  // Accurate stats
+  const correctCount = Math.min(totalQuestions, participant.correctCount || 0);
+  const answeredCount = Math.min(totalQuestions, studentAnswersMap.size);
+  const incorrectCount = Math.max(0, answeredCount - correctCount);
+  const unansweredCount = Math.max(0, totalQuestions - answeredCount);
+  const accuracyPercent = answeredCount > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
+
+  // Toggle explanation expansion for specific question
+  const toggleExplanation = (idx: number) => {
+    setExpandedExplanations((prev) => ({
+      ...prev,
+      [idx]: !prev[idx],
+    }));
+  };
 
   // Format student's selected answer text
-  const getStudentAnswerText = (q: any, ans: any) => {
+  const getStudentAnswerText = (q: any, ans: any): string => {
     if (!ans) return 'Belum Dijawab';
-    if (ans.textAnswer) return ans.textAnswer;
-    if (ans.selectedOption !== undefined && ans.selectedOption >= 0 && q.options && q.options[ans.selectedOption]) {
-      return q.options[ans.selectedOption];
+    if (typeof ans.textAnswer === 'string' && ans.textAnswer.trim() !== '') return ans.textAnswer;
+    if (typeof ans.textAnswer === 'number' || typeof ans.textAnswer === 'boolean') return String(ans.textAnswer);
+    if (ans.selectedOption !== undefined && ans.selectedOption >= 0 && Array.isArray(q?.options) && q.options[ans.selectedOption]) {
+      return String(q.options[ans.selectedOption]);
+    }
+    if (typeof ans.selectedOption === 'number' && ans.selectedOption >= 0) {
+      return `Pilihan Opsi #${ans.selectedOption + 1}`;
     }
     return 'Jawaban Terpilih';
   };
 
   // Format key correct answer text
-  const getCorrectAnswerText = (q: any) => {
+  const getCorrectAnswerText = (q: any): string => {
+    if (!q) return 'Kunci Jawaban';
     if (q.type === 'matching_pairs' && Array.isArray(q.matchingPairs)) {
       return q.matchingPairs.map((p: any) => `${p.left} ➔ ${p.right}`).join(', ');
     }
@@ -128,9 +152,12 @@ export const StudentAnswerAnalysisModal: React.FC<StudentAnswerAnalysisModalProp
       if (Array.isArray(q.acceptableAnswers) && q.acceptableAnswers.length > 0) {
         return q.acceptableAnswers.join(' / ');
       }
-      return q.options?.[q.correctIndex] || 'Kunci Jawaban';
+      return String(q.options?.[q.correctIndex] || 'Kunci Jawaban');
     }
-    return q.options?.[q.correctIndex] || 'Kunci Jawaban';
+    if (Array.isArray(q.options) && q.correctIndex !== undefined && q.options[q.correctIndex] !== undefined) {
+      return String(q.options[q.correctIndex]);
+    }
+    return 'Kunci Jawaban';
   };
 
   return (

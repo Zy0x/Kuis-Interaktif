@@ -1411,12 +1411,14 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
       />
 
       {/* Modal Analisis Jawaban Siswa per Butir Soal */}
-      <StudentAnswerAnalysisModal
-        isOpen={Boolean(selectedStudentForAnalysis)}
-        onClose={() => setSelectedStudentForAnalysis(null)}
-        participant={selectedStudentForAnalysis}
-        quiz={quiz}
-      />
+      {selectedStudentForAnalysis && (
+        <StudentAnswerAnalysisModal
+          isOpen={Boolean(selectedStudentForAnalysis)}
+          onClose={() => setSelectedStudentForAnalysis(null)}
+          participant={selectedStudentForAnalysis}
+          quiz={quiz}
+        />
+      )}
 
     </div>
   );

@@ -815,12 +815,14 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
       </main>
 
       {/* Modal Analisis Jawaban Siswa per Butir Soal */}
-      <StudentAnswerAnalysisModal
-        isOpen={Boolean(selectedStudentForModal)}
-        onClose={() => setSelectedStudentForModal(null)}
-        participant={selectedStudentForModal}
-        quiz={quiz}
-      />
+      {selectedStudentForModal && (
+        <StudentAnswerAnalysisModal
+          isOpen={Boolean(selectedStudentForModal)}
+          onClose={() => setSelectedStudentForModal(null)}
+          participant={selectedStudentForModal}
+          quiz={quiz}
+        />
+      )}
 
       {/* Toast Notifikasi Keterangan Aksi */}
       {toastMessage && (

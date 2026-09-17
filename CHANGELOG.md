@@ -1,6 +1,22 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.58] - 2026-09-17
+### Perbaikan Integritas Lifecycle Render Modal Analisis Jawaban Siswa (Rule 1, Rule 2, Rule 6, Rule 9 & Rule 15)
+
+#### 1. Perbaikan Kepatuhan Aturan Hook React (*Rules of Hooks*)
+- **Penyelarasan Eksekusi Hook Unconditional**: Memperbaiki urutan pemanggilan Hook (`useMemo`, `useState`, `useEffect`) pada `StudentAnswerAnalysisModal.tsx` agar dipanggil secara konsisten dan tanpa percabangan kondisi awal (`early return`), melenyapkan error React #310 (*Rendered more hooks than during the previous render*).
+- **Penjagaan Bersyarat di Komponen Induk**: Memastikan modal hanya di-*mount* saat data peserta aktif (`selectedStudentForAnalysis` / `selectedStudentForModal`) tersedia di `WaygroundHostView.tsx` dan `QuizSessionRecapView.tsx`.
+
+#### 2. Ketahanan Ekstraksi Data Soal & Konversi Teks Jawaban
+- **Penanganan Koleksi Soal Dinamis**: Menyediakan mekanisme fallback aman (`questionsToDisplay`) apabila data pertanyaan kuis belum termuat secara utuh saat modal pertama kali dibuka.
+- **Sanitasi String Jawaban Terpilih**: Memastikan nilai opsi siswa (`getStudentAnswerText`) dan kunci benar (`getCorrectAnswerText`) selalu mengembalikan nilai string primitif yang aman untuk dirender tanpa risiko galat objek bersarang.
+
+#### 3. Pembaruan Versi & Cache PWA
+- Memperbarui versi aplikasi ke `2.4.58` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.58` (`public/sw.js`).
+- Memperbarui badge versi di `README.md`.
+
 ## [2.4.57] - 2026-09-16
 ### Fitur Analisis Jawaban Siswa per Butir Soal & Pelacakan Jam Input Pengerjaan (Rule 1, Rule 2, Rule 4, Rule 5, Rule 7, Rule 8 & Rule 15)
 
