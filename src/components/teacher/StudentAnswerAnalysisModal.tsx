@@ -89,8 +89,8 @@ export const StudentAnswerAnalysisModal: React.FC<StudentAnswerAnalysisModalProp
     }));
   }, [quiz?.questions, totalQuestions]);
 
-  // Filtered question items (pencocokan presisi 100% menggunakan q.id)
-  const filteredQuestionList = useMemo(() => {
+  // Evaluated questions list (unfiltered)
+  const evaluatedQuestionList = useMemo(() => {
     return questionsToDisplay.map((q, idx) => {
       // 1. Prioritas utama: Cocokkan via questionId unik
       let ans = studentAnswersMap.get(q.id);
@@ -98,10 +98,10 @@ export const StudentAnswerAnalysisModal: React.FC<StudentAnswerAnalysisModalProp
       if (!ans && participant?.answers && (participant.answers as any)[q.id]) {
         ans = (participant.answers as any)[q.id];
       }
-      // 3. Fallback jika data historis/warisan belum memiliki UUID dan hanya memiliki questionIndex
+      // 3. Fallback HANYA JIKA ada rekaman tanpa questionId (data warisan murni berbasis indeks)
       if (!ans && participant?.answers) {
         ans = Object.values(participant.answers).find((a: any) => 
-          a && a.questionId !== 'quiz_completed' && (a.questionId === q.id || a.questionIndex === idx)
+          a && a.questionId !== 'quiz_completed' && (!a.questionId || a.questionId === `q_${idx}`) && a.questionIndex === idx
         );
       }
       const isAnswered = Boolean(ans);
@@ -113,23 +113,27 @@ export const StudentAnswerAnalysisModal: React.FC<StudentAnswerAnalysisModalProp
         isAnswered,
         isCorrect,
       };
-    }).filter((item) => {
+    });
+  }, [questionsToDisplay, studentAnswersMap, participant?.answers]);
+
+  // Filtered question items according to active tab
+  const filteredQuestionList = useMemo(() => {
+    return evaluatedQuestionList.filter((item) => {
       if (filter === 'wrong') return item.isAnswered && !item.isCorrect;
       if (filter === 'correct') return item.isAnswered && item.isCorrect;
       if (filter === 'unanswered') return !item.isAnswered;
       return true;
     });
-  }, [questionsToDisplay, studentAnswersMap, participant?.answers, filter]);
+  }, [evaluatedQuestionList, filter]);
+
+  // Accurate counts derived directly from evaluatedQuestionList (100% sinkron antara angka tab dan isi list)
+  const correctCount = useMemo(() => evaluatedQuestionList.filter(item => item.isAnswered && item.isCorrect).length, [evaluatedQuestionList]);
+  const incorrectCount = useMemo(() => evaluatedQuestionList.filter(item => item.isAnswered && !item.isCorrect).length, [evaluatedQuestionList]);
+  const unansweredCount = useMemo(() => evaluatedQuestionList.filter(item => !item.isAnswered).length, [evaluatedQuestionList]);
+  const accuracyPercent = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
 
   // Safe early exit AFTER all hooks have executed unconditionally
   if (!isOpen || !participant) return null;
-
-  // Accurate stats
-  const correctCount = Math.min(totalQuestions, participant.correctCount || 0);
-  const answeredCount = Math.min(totalQuestions, studentAnswersMap.size);
-  const incorrectCount = Math.max(0, answeredCount - correctCount);
-  const unansweredCount = Math.max(0, totalQuestions - answeredCount);
-  const accuracyPercent = answeredCount > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
 
   // Toggle explanation expansion for specific question
   const toggleExplanation = (idx: number) => {

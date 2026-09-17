@@ -1,6 +1,22 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.61] - 2026-09-17
+### Proteksi Pembajakan Indeks Acak & Sinkronisasi Mutlak Tab Butir Soal Belum Dijawab (Rule 1, Rule 2, Rule 4, Rule 11, Rule 14 & Rule 15)
+
+#### 1. Resolusi Anomali Tab "Belum Dijawab" pada Modal Analisis Jawaban Siswa (`StudentAnswerAnalysisModal.tsx`)
+- **Proteksi dari Pembajakan Indeks Acak (*Shuffle Collision*)**: Menghapus kondisi fallback longgar `a.questionIndex === idx` yang berpotensi membajak status butir soal yang belum dijawab. Pada sesi kuis dengan pengacakan soal aktif, nomor urut tampilan lokal siswa berbeda dengan indeks master. Fallback lama menyebabkan butir soal yang sebenarnya tidak dijawab oleh siswa keliru dikaitkan dengan jawaban butir soal lain yang kebetulan menempati nomor urut tampilan yang sama.
+- **Kepatuhan UUID Kanonik**: Pencocokan jawaban kini 100% mengutamakan `q.id` (UUID). Fallback berbasis indeks hanya berlaku khusus untuk data historis warisan yang benar-benar tidak memiliki `questionId`.
+- **Penayangan Presisi Soal Kosong/Dilewati**: Butir soal yang dilewati siswa (misalnya Soal #4 dan Soal #9) kini tampil secara lengkap dan tepat di bawah tab filter `⚪ Belum Dijawab`, melenyapkan anomali tampilan kosong *"Semua soal telah dijawab oleh siswa"* saat tab filter dipilih.
+
+#### 2. Penyelarasan Mutlak Badge Filter dengan Daftar Butir Soal
+- **Evaluasi Terpusat (`evaluatedQuestionList`)**: Mengintegrasikan perhitungan jumlah ringkasan (`correctCount`, `incorrectCount`, `unansweredCount`) langsung dari daftar evaluasi terpusat, menjamin sinkronisasi 100% antara angka pada badge tab filter dengan jumlah kartu soal yang dirender saat tab diklik.
+
+#### 3. Pembaruan Versi & Cache PWA
+- Memperbarui versi aplikasi ke `2.4.61` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.61` (`public/sw.js`).
+- Memperbarui badge versi di `README.md`.
+
 ## [2.4.60] - 2026-09-17
 ### Resolusi Presisi Relasi Kunci Jawaban vs Pilihan Siswa Berbasis UUID Soal Kanonik (Rule 1, Rule 2, Rule 9, Rule 11, Rule 14 & Rule 15)
 
