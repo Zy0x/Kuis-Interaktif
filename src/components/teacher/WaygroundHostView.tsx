@@ -304,10 +304,13 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
   // Sorted participants by score descending
   const sortedParticipants = useMemo(() => {
     const getPData = (p: any) => {
-      const rawAns = p.answers ? Object.values(p.answers).filter((a: any) => a && a.questionId !== 'quiz_completed' && typeof a.questionIndex === 'number' && a.questionIndex >= 0 && a.questionIndex < totalQuestions) : [];
+      const rawAns = p.answers ? Object.values(p.answers).filter((a: any) => a && a.questionId !== 'quiz_completed') : [];
       if (rawAns.length > 0) {
-        const uniqueQMap = new Map<number, any>();
-        rawAns.forEach((a: any) => uniqueQMap.set(a.questionIndex, a));
+        const uniqueQMap = new Map<string, any>();
+        rawAns.forEach((a: any) => {
+          const key = a.questionId || String(a.questionIndex);
+          uniqueQMap.set(key, a);
+        });
         const correct = Array.from(uniqueQMap.values()).filter((a: any) => a.isCorrect).length;
         return {
           score: Math.min(100, Math.round((correct / totalQuestions) * 100)),
@@ -346,9 +349,12 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
     const questionAnsweredCounts: number[] = new Array(totalQuestions).fill(0);
 
     session.participants.forEach((p) => {
-      const rawAns = p.answers ? Object.values(p.answers).filter((a: any) => a && a.questionId !== 'quiz_completed' && typeof a.questionIndex === 'number' && a.questionIndex >= 0 && a.questionIndex < totalQuestions) : [];
-      const uniqueQMap = new Map<number, any>();
-      rawAns.forEach((a: any) => uniqueQMap.set(a.questionIndex, a));
+      const rawAns = p.answers ? Object.values(p.answers).filter((a: any) => a && a.questionId !== 'quiz_completed') : [];
+      const uniqueQMap = new Map<string, any>();
+      rawAns.forEach((a: any) => {
+        const key = a.questionId || String(a.questionIndex);
+        uniqueQMap.set(key, a);
+      });
       const pAnsList = Array.from(uniqueQMap.values());
       const accurateScore = pAnsList.length > 0
         ? Math.min(100, Math.round((pAnsList.filter((a) => a.isCorrect).length / totalQuestions) * 100))
@@ -357,10 +363,12 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
       if (p.finished) finishedCount++;
 
       pAnsList.forEach((ans) => {
-        if (ans.questionIndex >= 0 && ans.questionIndex < totalQuestions) {
-          questionAnsweredCounts[ans.questionIndex]++;
+        const masterIdx = quiz.questions ? quiz.questions.findIndex((q) => q.id === ans.questionId) : -1;
+        const resolvedIdx = masterIdx >= 0 ? masterIdx : (typeof ans.questionIndex === 'number' ? ans.questionIndex : -1);
+        if (resolvedIdx >= 0 && resolvedIdx < totalQuestions) {
+          questionAnsweredCounts[resolvedIdx]++;
           if (ans.isCorrect) {
-            questionCorrectCounts[ans.questionIndex]++;
+            questionCorrectCounts[resolvedIdx]++;
           }
         }
       });
@@ -997,9 +1005,12 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                     const avatarEmoji = AVATAR_MAP[p.avatarId] || '🦁';
 
                     // Hitung nilai dan jumlah benar yang akurat dari riwayat jawaban unik per soal (kebal dari anomali duplikasi reload & quiz_completed)
-                    const rawAns = p.answers ? Object.values(p.answers).filter((a: any) => a && a.questionId !== 'quiz_completed' && typeof a.questionIndex === 'number' && a.questionIndex >= 0 && a.questionIndex < totalQuestions) : [];
-                    const uniqueQMap = new Map<number, any>();
-                    rawAns.forEach((a: any) => uniqueQMap.set(a.questionIndex, a));
+                    const rawAns = p.answers ? Object.values(p.answers).filter((a: any) => a && a.questionId !== 'quiz_completed') : [];
+                    const uniqueQMap = new Map<string, any>();
+                    rawAns.forEach((a: any) => {
+                      const key = a.questionId || String(a.questionIndex);
+                      uniqueQMap.set(key, a);
+                    });
                     const pAnsList = Array.from(uniqueQMap.values());
 
                     const displayCorrectCount = pAnsList.length > 0

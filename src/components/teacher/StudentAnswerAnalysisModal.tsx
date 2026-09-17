@@ -58,18 +58,18 @@ export const StudentAnswerAnalysisModal: React.FC<StudentAnswerAnalysisModalProp
   const totalQuestions = quiz?.questions?.length || participant?.totalQuestions || 1;
   const avatarEmoji = participant ? (AVATAR_MAP[participant.avatarId] || '🦁') : '🦁';
 
-  // Extract clean answers list mapped by questionIndex
+  // Extract clean answers list mapped by questionId (kebal terhadap pengacakan urutan soal)
   const studentAnswersMap = useMemo(() => {
-    const map = new Map<number, any>();
+    const map = new Map<string, any>();
     if (participant?.answers) {
       Object.values(participant.answers).forEach((ans: any) => {
-        if (ans && ans.questionId !== 'quiz_completed' && typeof ans.questionIndex === 'number' && ans.questionIndex >= 0 && ans.questionIndex < totalQuestions) {
-          map.set(ans.questionIndex, ans);
+        if (ans && ans.questionId && ans.questionId !== 'quiz_completed') {
+          map.set(ans.questionId, ans);
         }
       });
     }
     return map;
-  }, [participant?.answers, totalQuestions]);
+  }, [participant?.answers]);
 
   // Reliable questions list: use quiz.questions if available, or fallback placeholders
   const questionsToDisplay: QuizQuestion[] = useMemo(() => {
@@ -89,10 +89,21 @@ export const StudentAnswerAnalysisModal: React.FC<StudentAnswerAnalysisModalProp
     }));
   }, [quiz?.questions, totalQuestions]);
 
-  // Filtered question items
+  // Filtered question items (pencocokan presisi 100% menggunakan q.id)
   const filteredQuestionList = useMemo(() => {
     return questionsToDisplay.map((q, idx) => {
-      const ans = studentAnswersMap.get(idx);
+      // 1. Prioritas utama: Cocokkan via questionId unik
+      let ans = studentAnswersMap.get(q.id);
+      // 2. Fallback jika participant.answers berformat objek Record dengan key q.id
+      if (!ans && participant?.answers && (participant.answers as any)[q.id]) {
+        ans = (participant.answers as any)[q.id];
+      }
+      // 3. Fallback jika data historis/warisan belum memiliki UUID dan hanya memiliki questionIndex
+      if (!ans && participant?.answers) {
+        ans = Object.values(participant.answers).find((a: any) => 
+          a && a.questionId !== 'quiz_completed' && (a.questionId === q.id || a.questionIndex === idx)
+        );
+      }
       const isAnswered = Boolean(ans);
       const isCorrect = ans ? Boolean(ans.isCorrect) : false;
       return {
@@ -108,7 +119,7 @@ export const StudentAnswerAnalysisModal: React.FC<StudentAnswerAnalysisModalProp
       if (filter === 'unanswered') return !item.isAnswered;
       return true;
     });
-  }, [questionsToDisplay, studentAnswersMap, filter]);
+  }, [questionsToDisplay, studentAnswersMap, participant?.answers, filter]);
 
   // Safe early exit AFTER all hooks have executed unconditionally
   if (!isOpen || !participant) return null;

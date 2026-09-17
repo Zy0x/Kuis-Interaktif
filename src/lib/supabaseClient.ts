@@ -2973,9 +2973,7 @@ export const DataManager = {
     const validAnswersMap = new Map<number | string, QuizSessionParticipantAnswer>();
     Object.values(existingAnswers).forEach((a) => {
       if (a && a.questionId !== 'quiz_completed') {
-        const key = typeof a.questionIndex === 'number' && a.questionIndex >= 0 && a.questionIndex < totalQ 
-          ? a.questionIndex 
-          : a.questionId;
+        const key = a.questionId || (typeof a.questionIndex === 'number' ? String(a.questionIndex) : String(Math.random()));
         validAnswersMap.set(key, a);
       }
     });

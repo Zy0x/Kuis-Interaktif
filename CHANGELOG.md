@@ -1,6 +1,26 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.60] - 2026-09-17
+### Resolusi Presisi Relasi Kunci Jawaban vs Pilihan Siswa Berbasis UUID Soal Kanonik (Rule 1, Rule 2, Rule 9, Rule 11, Rule 14 & Rule 15)
+
+#### 1. Perbaikan Kritis Pencocokan Butir Soal pada Lembar Analisis (`StudentAnswerAnalysisModal.tsx`)
+- **Pencocokan Berbasis `questionId` Kanonik**: Memperbaiki pemetaan jawaban siswa yang sebelumnya mengandalkan indeks urutan relatif (`questionIndex`). Ketika fitur pengacakan soal (*shuffle questions*) diaktifkan, urutan soal di layar siswa berbeda dengan urutan kuis master. Pemetaan kini 100% menggunakan `q.id` (UUID kanonik), menjamin kesesuaian mutlak antara soal, pilihan jawaban siswa, kunci jawaban benar, dan lencana status evaluasi.
+- **Melenyapkan Anomali Benar/Salah Terbalik**: Menuntaskan kekeliruan visual di mana jawaban siswa yang identik dengan kunci jawaban ditandai keliru, atau jawaban yang berbeda dengan kunci jawaban ditandai benar, yang sebelumnya terjadi akibat pergeseran indeks soal acak.
+
+#### 2. Preservasi Teks Jawaban Pilihan Ganda (`QuizArena.tsx`)
+- **Perekaman Eksplisit Nilai Teks Opsi**: Saat siswa memilih opsi jawaban di arena, sistem kini langsung merekam teks asli dari opsi tersebut ke dalam properti `textAnswer` (bukan hanya `selectedIndex`). Hal ini menjamin nilai jawaban siswa tetap utuh dan konsisten sekalipun opsi diacak (*shuffle options*) atau dilihat kembali dari sesi rekapitulasi.
+- **Penyelarasan `questionIndex` Master**: Menyelaraskan penyimpanan `answersMap` dengan indeks kuis master sebagai referensi sekunder.
+
+#### 3. Akurasi Matriks Keberhasilan Soal & Ekspor CSV Guru
+- **Korelasi ID pada Matriks Akurasi Host & Rekap**: Memperbaiki perhitungan matriks keberhasilan per butir soal di `WaygroundHostView.tsx` dan `QuizSessionRecapView.tsx` agar mengagregasi data berdasarkan `q.id`, sehingga statistik per nomor soal selalu merujuk pada butir soal master yang tepat.
+- **Ekspor CSV Presisi**: Kolom rincian soal pada berkas CSV hasil unduhan kini dipetakan langsung dengan `q.id` master, melenyapkan risiko tertukarnya status jawaban siswa antar butir soal.
+
+#### 4. Pembaruan Versi & Cache PWA
+- Memperbarui versi aplikasi ke `2.4.60` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.60` (`public/sw.js`).
+- Memperbarui badge versi di `README.md`.
+
 ## [2.4.59] - 2026-09-17
 ### Transparansi Statistik Soal Kosong/Dilewati & Sinkronisasi Indikator Progres Siswa (Rule 1, Rule 2, Rule 11, Rule 14 & Rule 15)
 

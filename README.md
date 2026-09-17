@@ -3,7 +3,7 @@
 [![Vercel Deployment](https://img.shields.io/badge/Vercel-Deployment%20Active-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://kuis-interaktif-plum.vercel.app)
 [![Production](https://img.shields.io/badge/Production-Live-success?style=for-the-badge&logo=googlechrome&logoColor=white)](https://kuis-interaktif-plum.vercel.app)
 [![PWA Ready](https://img.shields.io/badge/PWA-Installable-5A0FC8?style=for-the-badge&logo=pwa&logoColor=white)](https://kuis-interaktif-plum.vercel.app)
-[![Version](https://img.shields.io/badge/Version-v2.4.59-blue?style=for-the-badge)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/Version-v2.4.60-blue?style=for-the-badge)](CHANGELOG.md)
 
 Platform aplikasi kuis interaktif modern berbasis web dan Progressive Web App (PWA) yang dirancang khusus untuk siswa Sekolah Dasar (SD) dalam ekosistem Kurikulum Merdeka. Terintegrasi penuh dengan Supabase Cloud untuk sinkronisasi realtime, manajemen soal, autentikasi guru & siswa, serta rekap penilaian komprehensif.
 

@@ -51,9 +51,12 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
   // Ranked participants
   const rankedParticipants = useMemo(() => {
     return [...participants].map((p) => {
-      const rawAns = p.answers ? Object.values(p.answers).filter((a: any) => a && a.questionId !== 'quiz_completed' && typeof a.questionIndex === 'number' && a.questionIndex >= 0 && a.questionIndex < totalQuestions) : [];
-      const uniqueQMap = new Map<number, any>();
-      rawAns.forEach((a: any) => uniqueQMap.set(a.questionIndex, a));
+      const rawAns = p.answers ? Object.values(p.answers).filter((a: any) => a && a.questionId !== 'quiz_completed') : [];
+      const uniqueQMap = new Map<string, any>();
+      rawAns.forEach((a: any) => {
+        const key = a.questionId || String(a.questionIndex);
+        uniqueQMap.set(key, a);
+      });
       const pAnsList = Array.from(uniqueQMap.values());
       const safeCorrect = pAnsList.length > 0 
         ? Math.min(totalQuestions, pAnsList.filter((a: any) => a.isCorrect).length)
@@ -123,14 +126,18 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
       totalTime += p.timeSpentSec;
       if (p.score >= 70) passCount++;
 
-      Object.values(p.answers || {}).forEach((ans) => {
-        if (ans.questionIndex >= 0 && ans.questionIndex < totalQuestions) {
-          questionAnsweredCounts[ans.questionIndex]++;
-          if (ans.isCorrect) {
-            questionCorrectCounts[ans.questionIndex]++;
-          }
-          if (ans.selectedOption !== undefined && ans.selectedOption >= 0 && ans.selectedOption < 4) {
-            questionOptionDist[ans.questionIndex][ans.selectedOption]++;
+      Object.values(p.answers || {}).forEach((ans: any) => {
+        if (ans && ans.questionId !== 'quiz_completed') {
+          const masterIdx = quiz.questions ? quiz.questions.findIndex((q) => q.id === ans.questionId) : -1;
+          const resolvedIdx = masterIdx >= 0 ? masterIdx : (typeof ans.questionIndex === 'number' ? ans.questionIndex : -1);
+          if (resolvedIdx >= 0 && resolvedIdx < totalQuestions) {
+            questionAnsweredCounts[resolvedIdx]++;
+            if (ans.isCorrect) {
+              questionCorrectCounts[resolvedIdx]++;
+            }
+            if (ans.selectedOption !== undefined && ans.selectedOption >= 0 && ans.selectedOption < 4) {
+              questionOptionDist[resolvedIdx][ans.selectedOption]++;
+            }
           }
         }
       });
@@ -206,8 +213,10 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
     ];
 
     const rows = rankedParticipants.map((p: any, idx) => {
-      const qAnswers = quiz.questions.map((_, qIdx) => {
-        const ans = Object.values(p.answers || {}).find((a: any) => a.questionIndex === qIdx) as any;
+      const qAnswers = quiz.questions.map((q, qIdx) => {
+        const ans = (p.answers && p.answers[q.id])
+          || Object.values(p.answers || {}).find((a: any) => a && a.questionId === q.id)
+          || Object.values(p.answers || {}).find((a: any) => a && a.questionIndex === qIdx) as any;
         if (!ans) return 'KOSONG';
         return ans.isCorrect ? 'BENAR' : 'SALAH';
       });

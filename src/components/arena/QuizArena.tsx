@@ -936,10 +936,12 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     const actualQuestionElapsed = Math.max(1, Math.round((Date.now() - questionStartTimeRef.current) / 1000));
     const timeSpent = isUntimedMode ? actualQuestionElapsed : Math.max(1, currentDuration - timeLeft);
     const nowIso = new Date().toISOString();
+    const resolvedText = textAns || (question.type === 'short_answer' ? shortAnswerInput.trim() : (question.options && typeof optionIndex === 'number' && optionIndex >= 0 ? question.options[optionIndex] : undefined));
+
     const recordedAnswer: QuizAttemptAnswer = {
       questionId: question.id,
       selectedIndex: optionIndex,
-      textAnswer: textAns || (question.type === 'short_answer' ? shortAnswerInput.trim() : undefined),
+      textAnswer: resolvedText,
       isCorrect,
       timeSpentSec: Math.max(1, timeSpent),
       earnedPoints,
@@ -969,13 +971,16 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
           const stars = score >= 85 ? 3 : score >= 60 ? 2 : score > 0 ? 1 : 0;
           const answersMap: Record<string, any> = {};
           validAnswers.forEach((ans, idx) => {
+            const masterQIdx = quiz.questions?.findIndex((q) => q.id === ans.questionId) ?? -1;
             const realQIdx = activeQuestions.findIndex((q) => q.id === ans.questionId);
-            const resolvedQIdx = realQIdx >= 0 ? realQIdx : idx;
+            const resolvedQIdx = masterQIdx >= 0 ? masterQIdx : (realQIdx >= 0 ? realQIdx : idx);
+            const targetQ = activeQuestions.find((q) => q.id === ans.questionId) || quiz.questions?.find((q) => q.id === ans.questionId);
+            const optText = ans.textAnswer || (targetQ?.options && typeof ans.selectedIndex === 'number' && ans.selectedIndex >= 0 ? targetQ.options[ans.selectedIndex] : undefined);
             answersMap[ans.questionId] = {
               questionId: ans.questionId,
               questionIndex: resolvedQIdx,
               selectedOption: ans.selectedIndex ?? -1,
-              textAnswer: ans.textAnswer,
+              textAnswer: optText,
               isCorrect: ans.isCorrect,
               timeSpentSec: ans.timeSpentSec,
               pointsEarned: ans.earnedPoints,
@@ -1085,13 +1090,16 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
         const completionIso = new Date().toISOString();
         const answersMap: Record<string, any> = {};
         finalAnswers.forEach((ans, idx) => {
+          const masterQIdx = quiz.questions?.findIndex((q) => q.id === ans.questionId) ?? -1;
           const realQIdx = activeQuestions.findIndex((q) => q.id === ans.questionId);
-          const resolvedQIdx = realQIdx >= 0 ? realQIdx : idx;
+          const resolvedQIdx = masterQIdx >= 0 ? masterQIdx : (realQIdx >= 0 ? realQIdx : idx);
+          const targetQ = activeQuestions.find((q) => q.id === ans.questionId) || quiz.questions?.find((q) => q.id === ans.questionId);
+          const optText = ans.textAnswer || (targetQ?.options && typeof ans.selectedIndex === 'number' && ans.selectedIndex >= 0 ? targetQ.options[ans.selectedIndex] : undefined);
           answersMap[ans.questionId] = {
             questionId: ans.questionId,
             questionIndex: resolvedQIdx,
             selectedOption: ans.selectedIndex ?? -1,
-            textAnswer: ans.textAnswer,
+            textAnswer: optText,
             isCorrect: ans.isCorrect,
             timeSpentSec: ans.timeSpentSec,
             pointsEarned: ans.earnedPoints,
