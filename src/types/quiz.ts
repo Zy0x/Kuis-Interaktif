@@ -336,6 +336,7 @@ export interface QuizSessionSettings {
   tabSwitchDetection?: boolean; // Deteksi dan peringatan jika berpindah tab/layar
   overrideCustomQuestionDurations?: boolean; // Menimpa durasi kustom butir soal dengan durasi seragam
   isManuallyEnded?: boolean; // Menandai sesi yang diakhiri secara manual oleh guru
+  requireAllQuestionsAnswered?: boolean; // Mewajibkan seluruh soal diisi sebelum kuis dapat diselesaikan
 }
 
 export interface QuizSession {

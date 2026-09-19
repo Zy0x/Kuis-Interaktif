@@ -1,6 +1,24 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.64] - 2026-09-19
+### Kewajiban Pengisian Seluruh Butir Soal pada Mode Penugasan & Kuis Sesi 359871 (Rule 1, Rule 2, Rule 3, Rule 4, Rule 9, Rule 15 & Rule 16)
+
+#### 1. Validasi & Penguncian Penyelesaian Kuis Siswa (`QuizArena.tsx`, `PlayQuizModal.tsx`, `quiz.ts`)
+- **Penegakan Kewajiban Menjawab Seluruh Soal (*Mandatory Completion*)**: Mengimplementasikan pengaturan `requireAllQuestionsAnswered` pada konfigurasi sesi kuis (`QuizSessionSettings`). Pada kuis penugasan/mandiri, kuis tipe *homework*, atau kuis dengan PIN `359871`, murid diwajibkan menjawab setiap butir soal sebelum sistem mengizinkan pengumpulan/penyelesaian kuis.
+- **Modal Konfirmasi Interaktif & Informatif**: Apabila murid mencoba menyelesaikan kuis saat masih terdapat soal yang kosong/terlewati, modal konfirmasi peringatan akan muncul secara otomatis dengan:
+  - Jumlah butir soal yang telah dijawab vs yang belum dijawab secara kontras dan jelas.
+  - Kartu penunjuk (*chips/badges*) interaktif untuk setiap nomor soal yang belum dijawab, memungkinkan murid berpindah langsung ke nomor yang bersangkutan dengan satu ketukan.
+  - Tombol aksi utama (*Call-to-Action*) yang mengarahkan murid seketika ke butir soal kosong pertama (contoh: `Kerjakan Soal #X Sekarang`).
+  - Tombol pengumpulan akhir dalam keadaan terkunci (*disabled*) dengan label `Selesaikan Kuis (Terkunci)` serta gembok indikator sampai semua soal terjawab.
+- **Proteksi Tombol Navigasi Bawah & Peta Nomor Soal**: Bilah navigasi bawah pada soal terakhir otomatis menampilkan indikator peringatan (`Periksa Soal (X Belum Diisi)`), dan laci Peta Nomor Soal memberikan pengalihan langsung ke nomor yang belum diisi.
+- **Penerapan Langsung pada Sesi 359871**: Memperbarui metadata pengaturan sesi aktif `sess_1789521340013_ykbf2` (PIN `359871`) pada database Supabase dengan parameter `"requireAllQuestionsAnswered": true`.
+
+#### 2. Pembaruan Versi & Cache PWA
+- Memperbarui versi aplikasi ke `2.4.64` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.64` (`public/sw.js`).
+- Memperbarui badge versi di `README.md`.
+
 ## [2.4.63] - 2026-09-17
 ### Penambahan Nama Hari dan Tanggal pada Waktu Penyelesaian Siswa (Rule 1, Rule 2, Rule 3, Rule 4 & Rule 15)
 

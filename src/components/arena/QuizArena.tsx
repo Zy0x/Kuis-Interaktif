@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import type { 
   Quiz, 
   QuizAttemptAnswer, 
@@ -54,7 +54,10 @@ import {
   Sparkles,
   ZoomIn,
   LayoutGrid,
-  AlertTriangle
+  AlertTriangle,
+  Lock,
+  AlertCircle,
+  CheckCircle2
 } from 'lucide-react';
 import { useAntiReaction } from '../../lib/reactionPreferences';
 import { QuizIllustration } from '../shared/QuizIllustration';
@@ -387,6 +390,21 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   latestAnswersRef.current = answersList;
   const latestTimeSpentRef = useRef<number>(totalTimeSpent);
   latestTimeSpentRef.current = totalTimeSpent;
+
+  // Seluruh butir soal wajib diisi sebelum kuis diselesaikan (Penugasan / PR / Ujian Santai / Pengaturan Wajib)
+  const isMandatoryAllAnswered =
+    activeSettings.requireAllQuestionsAnswered ??
+    (activeSettings.pacingType === 'homework' || showAnswersMode === 'exam_strict' || isUntimedMode);
+
+  // Daftar indeks butir soal (0-indexed) yang belum dijawab oleh siswa
+  const unansweredIndices = useMemo(() => {
+    const answeredIds = new Set(answersList.map((a) => a.questionId));
+    return activeQuestions
+      .map((q, idx) => (answeredIds.has(q.id) ? -1 : idx))
+      .filter((idx) => idx !== -1);
+  }, [activeQuestions, answersList]);
+
+  const hasUnansweredQuestions = unansweredIndices.length > 0;
 
   // Status Mode Dipandu Guru Khusus Siswa (Header Bersih & Navigasi Terkunci)
   const isStudentTeacherLed = Boolean(activeSettings.executionMode === 'teacher_led' && !isTeacher && !isPreview);
@@ -1065,11 +1083,20 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   };
 
   const finishCurrentQuiz = useCallback(() => {
+    // PROTEKSI PENUGASAN: Seluruh butir soal wajib dijawab sebelum kuis dapat diselesaikan
+    const rawFinalAnswers = latestAnswersRef.current.filter((a) => a && a.questionId && a.questionId !== 'quiz_completed');
+    const answeredIds = new Set(rawFinalAnswers.map((a) => a.questionId));
+    const missingQuestions = activeQuestions.filter((q) => !answeredIds.has(q.id));
+
+    if (missingQuestions.length > 0 && activeSettings.executionMode !== 'teacher_led' && isMandatoryAllAnswered) {
+      setShowFinishConfirmModal(true);
+      return;
+    }
+
     stopBgm();
     try {
       sessionStorage.removeItem(STORAGE_KEY);
     } catch {}
-    const rawFinalAnswers = latestAnswersRef.current.filter((a) => a && a.questionId && a.questionId !== 'quiz_completed');
     const finalTime = latestTimeSpentRef.current;
 
     // Deduplikasi jawaban unik per butir soal
@@ -1129,7 +1156,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
       }
     }
     onFinishQuiz(finalAnswers, finalTime);
-  }, [activeSessionId, activeQuestions, onFinishQuiz, stopBgm, STORAGE_KEY, tabSwitchCount]);
+  }, [activeSessionId, activeQuestions, onFinishQuiz, stopBgm, STORAGE_KEY, tabSwitchCount, isMandatoryAllAnswered, activeSettings.executionMode]);
 
   const executeAdvanceToNext = () => {
     playClick();
@@ -2433,12 +2460,20 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
               className={`flex-1 sm:flex-initial sm:min-w-[200px] xl:min-w-[240px] px-6 py-2.5 sm:py-3 rounded-2xl font-bold text-xs sm:text-sm xl:text-base flex items-center justify-center gap-2 transition-all min-h-[46px] sm:min-h-[50px] btn-press ${
                 isAnswerConfirmed || canTeacherReveal || (isTeacher && activeSettings.executionMode === 'teacher_led') || canReselectAndNavigate
                   ? isLastQuestion
-                    ? 'bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-500 text-white shadow-md'
+                    ? isMandatoryAllAnswered && hasUnansweredQuestions
+                      ? 'bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 hover:from-amber-500 hover:to-orange-500 text-white shadow-md'
+                      : 'bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-500 text-white shadow-md'
                     : 'bg-blue-600 hover:bg-blue-700 text-white shadow-md'
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed border border-slate-200 dark:border-slate-700'
               }`}
             >
-              <span>{isLastQuestion ? 'Selesai & Rekap Nilai' : 'Soal Berikutnya'}</span>
+              <span>
+                {isLastQuestion
+                  ? isMandatoryAllAnswered && hasUnansweredQuestions
+                    ? `Periksa Soal (${unansweredIndices.length} Belum Diisi)`
+                    : 'Selesai & Rekap Nilai'
+                  : 'Soal Berikutnya'}
+              </span>
               <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
           )}
@@ -2738,7 +2773,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
         </div>
       )}
 
-      {/* Modal Konfirmasi Selesaikan Kuis (Mode Mandiri / Self-Paced) */}
+      {/* Modal Konfirmasi Selesaikan Kuis (Mode Mandiri / Self-Paced / Penugasan) */}
       {showFinishConfirmModal && (
         <div 
           className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 sm:p-6 modal-wrapper overscroll-contain"
@@ -2756,103 +2791,177 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
           />
 
           <div 
-            className="relative z-10 bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-200 dark:border-slate-800 text-center space-y-4 animate-modal-card-in overscroll-contain"
+            className="relative z-10 bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-6 max-w-sm sm:max-w-md w-full shadow-2xl border border-slate-200 dark:border-slate-800 text-center space-y-4 animate-modal-card-in overscroll-contain"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className={`w-14 h-14 mx-auto rounded-2xl flex items-center justify-center text-2xl shadow-inner ${
-              showAnswersMode === 'exam_strict' && answersList.length < activeQuestions.length
-                ? 'bg-amber-500/15 border border-amber-500/30 text-amber-500 dark:text-amber-400'
-                : 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-500 dark:text-emerald-400'
-            }`}>
-              {showAnswersMode === 'exam_strict' && answersList.length < activeQuestions.length ? '⚠️' : '🏆'}
-            </div>
+            {hasUnansweredQuestions && isMandatoryAllAnswered ? (
+              <>
+                <div className="w-14 h-14 mx-auto rounded-2xl flex items-center justify-center text-2xl shadow-inner bg-amber-500/15 border border-amber-500/30 text-amber-500 dark:text-amber-400">
+                  <AlertTriangle className="w-7 h-7 text-amber-500" />
+                </div>
 
-            <div className="space-y-1">
-              <h4 className="text-lg font-black text-slate-900 dark:text-white">
-                Selesaikan Kuis & Kumpulkan?
-              </h4>
-              {showAnswersMode === 'exam_strict' ? (
-                <div className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed space-y-1.5">
-                  {answersList.length < activeQuestions.length ? (
-                    <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 text-left flex items-start gap-2">
-                      <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <span className="font-bold block">Ada soal belum dijawab!</span>
-                        <span>Kamu baru menjawab <strong>{answersList.length}</strong> dari <strong>{activeQuestions.length}</strong> butir soal ({activeQuestions.length - answersList.length} soal terlewat).</span>
+                <div className="space-y-1">
+                  <h4 className="text-lg font-black text-slate-900 dark:text-white">
+                    Belum Semua Soal Terisi!
+                  </h4>
+                  <div className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-left space-y-2">
+                    <div className="flex items-start gap-2">
+                      <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                      <div className="text-xs text-amber-900 dark:text-amber-200 leading-relaxed">
+                        <span>Kamu baru menjawab <strong>{answersList.length}</strong> dari <strong>{activeQuestions.length}</strong> butir soal (<strong>{unansweredIndices.length} soal belum terjawab</strong>).</span>
+                        <p className="mt-1 font-medium text-slate-600 dark:text-slate-300">
+                          Pada penugasan ini, seluruh butir soal wajib diisi terlebih dahulu sebelum kuis dapat diselesaikan dan dikumpulkan.
+                        </p>
                       </div>
                     </div>
-                  ) : (
-                    <p className="text-emerald-600 dark:text-emerald-400 font-bold">
-                      ✨ Kerja hebat! Seluruh {activeQuestions.length} butir soal telah kamu isi.
+
+                    {/* Daftar nomor soal yang belum dijawab */}
+                    <div className="pt-2 border-t border-amber-200/60 dark:border-amber-900/60">
+                      <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 block mb-1.5">
+                        Pilih nomor soal untuk langsung menjawab:
+                      </span>
+                      <div className="flex items-center gap-1.5 flex-wrap max-h-24 overflow-y-auto">
+                        {unansweredIndices.map((uIdx: number) => (
+                          <button
+                            key={uIdx}
+                            type="button"
+                            onClick={() => {
+                              if (playClick) playClick();
+                              setShowFinishConfirmModal(false);
+                              handleJumpToQuestion(uIdx);
+                            }}
+                            className="px-2.5 py-1 rounded-xl bg-white dark:bg-slate-900 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700 font-bold text-xs hover:bg-amber-100 dark:hover:bg-amber-900/50 transition-colors btn-press flex items-center gap-1 min-h-[36px] cursor-pointer"
+                            title={`Buka Soal Nomor ${uIdx + 1}`}
+                          >
+                            <span>Soal #{uIdx + 1}</span>
+                            <ArrowRight className="w-3 h-3 text-amber-600" />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-slate-50 dark:bg-slate-850 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 grid grid-cols-2 gap-2 text-center">
+                  <div>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold block uppercase">Sudah Dijawab</span>
+                    <span className="text-base font-black text-emerald-600 dark:text-emerald-400">
+                      {answersList.length} / {activeQuestions.length}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold block uppercase">Belum Dijawab</span>
+                    <span className="text-base font-black text-rose-600 dark:text-rose-400">
+                      {unansweredIndices.length} Soal
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-2 pt-1">
+                  {/* Tombol Utama: Langsung menuju soal pertama yang belum diisi */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (playClick) playClick();
+                      setShowFinishConfirmModal(false);
+                      handleJumpToQuestion(unansweredIndices[0]);
+                    }}
+                    className="w-full py-3 rounded-2xl font-black text-xs sm:text-sm text-white bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:to-indigo-500 active:bg-blue-800 shadow-md min-h-[48px] transition-all btn-press flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <Edit3 className="w-4 h-4 flex-shrink-0" />
+                    <span>Kerjakan Soal #{unansweredIndices[0] + 1} Sekarang</span>
+                    <ArrowRight className="w-4 h-4 flex-shrink-0" />
+                  </button>
+
+                  {/* Tombol Sekunder: Buka Peta Nomor Soal */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (playClick) playClick();
+                      setShowFinishConfirmModal(false);
+                      setIsQuestionGridOpen(true);
+                    }}
+                    className="w-full py-2.5 rounded-2xl font-bold text-xs text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 min-h-[44px] transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <LayoutGrid className="w-4 h-4 text-slate-500" />
+                    <span>Buka Peta Nomor Soal</span>
+                  </button>
+
+                  {/* Tombol Terkunci */}
+                  <div className="pt-0.5">
+                    <button
+                      type="button"
+                      disabled
+                      className="w-full py-2.5 rounded-2xl font-bold text-xs text-slate-400 dark:text-slate-600 bg-slate-100 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-800 cursor-not-allowed flex items-center justify-center gap-1.5 opacity-60 min-h-[44px]"
+                    >
+                      <Lock className="w-3.5 h-3.5 text-slate-400" />
+                      <span>Selesaikan Kuis (Terkunci)</span>
+                    </button>
+                    <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-1 font-medium">
+                      *Jawab seluruh {activeQuestions.length} butir soal untuk membuka tombol penyelesaian.
                     </p>
-                  )}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="w-14 h-14 mx-auto rounded-2xl flex items-center justify-center text-2xl shadow-inner bg-emerald-500/15 border border-emerald-500/30 text-emerald-500 dark:text-emerald-400">
+                  <CheckCircle2 className="w-7 h-7 text-emerald-500" />
+                </div>
+
+                <div className="space-y-1">
+                  <h4 className="text-lg font-black text-slate-900 dark:text-white">
+                    Selesaikan Kuis & Kumpulkan?
+                  </h4>
+                  <p className="text-xs text-emerald-600 dark:text-emerald-400 font-bold">
+                    ✨ Kerja hebat! Seluruh {activeQuestions.length} butir soal telah kamu isi.
+                  </p>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                    Setelah dikumpulkan, lembar jawaban akan dievaluasi dan nilai akhir akan dicatat.
+                    Setelah dikumpulkan, lembar jawaban akan dievaluasi dan nilai akhir akan dicatat oleh guru.
                   </p>
                 </div>
-              ) : (
-                <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                  Kerja hebat! Seluruh <span className="font-bold text-slate-900 dark:text-white">{activeQuestions.length} butir soal</span> telah terjawab. Kamu akan melihat rekap nilai, kunci jawaban, dan papan peringkat.
-                </p>
-              )}
-            </div>
 
-            {showAnswersMode === 'exam_strict' ? (
-              <div className="bg-slate-50 dark:bg-slate-850 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 grid grid-cols-2 gap-2 text-center">
-                <div>
-                  <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold block uppercase">Sudah Dijawab</span>
-                  <span className="text-base font-black text-emerald-600 dark:text-emerald-400">
-                    {answersList.length} / {activeQuestions.length}
-                  </span>
+                <div className="bg-slate-50 dark:bg-slate-850 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 grid grid-cols-2 gap-2 text-center">
+                  <div>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold block uppercase">Status Pengisian</span>
+                    <span className="text-base font-black text-emerald-600 dark:text-emerald-400">
+                      Lengkap ({activeQuestions.length}/{activeQuestions.length})
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold block uppercase">Belum Dijawab</span>
+                    <span className="text-base font-black text-slate-500 dark:text-slate-400">
+                      0 Soal
+                    </span>
+                  </div>
                 </div>
-                <div>
-                  <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold block uppercase">Belum Dijawab</span>
-                  <span className={`text-base font-black ${activeQuestions.length - answersList.length > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-slate-500 dark:text-slate-400'}`}>
-                    {Math.max(0, activeQuestions.length - answersList.length)} Soal
-                  </span>
+
+                <div className="flex flex-col gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (playClick) playClick();
+                      setShowFinishConfirmModal(false);
+                      finishCurrentQuiz();
+                    }}
+                    className="w-full py-3 rounded-2xl font-black text-xs sm:text-sm text-white bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-500 active:bg-emerald-800 shadow-md min-h-[48px] transition-all btn-press flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <span>Ya, Selesaikan & Rekap Nilai</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (playClick) playClick();
+                      setShowFinishConfirmModal(false);
+                    }}
+                    className="w-full py-2.5 rounded-2xl font-semibold text-xs text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 min-h-[44px] transition-colors cursor-pointer"
+                  >
+                    Periksa Kembali Jawaban
+                  </button>
                 </div>
-              </div>
-            ) : (
-              <div className="bg-slate-50 dark:bg-slate-850 p-3 rounded-2xl border border-slate-200/80 dark:border-slate-800 grid grid-cols-2 gap-2 text-center">
-                <div>
-                  <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold block uppercase">Skor Sementara</span>
-                  <span className="text-base font-black text-emerald-600 dark:text-emerald-400">
-                    {Math.round((answersList.filter((a) => a.isCorrect).length / activeQuestions.length) * 100)} pts
-                  </span>
-                </div>
-                <div>
-                  <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold block uppercase">Benar / Total</span>
-                  <span className="text-base font-black text-blue-600 dark:text-blue-400">
-                    {answersList.filter((a) => a.isCorrect).length} / {activeQuestions.length}
-                  </span>
-                </div>
-              </div>
+              </>
             )}
-
-            <div className="flex flex-col gap-2 pt-1">
-              <button
-                type="button"
-                onClick={() => {
-                  if (playClick) playClick();
-                  setShowFinishConfirmModal(false);
-                  finishCurrentQuiz();
-                }}
-                className="w-full py-3 rounded-xl font-black text-xs sm:text-sm text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 active:bg-emerald-800 shadow-md min-h-[46px] transition-all btn-press flex items-center justify-center gap-2"
-              >
-                <span>Ya, Selesaikan & Rekap Nilai</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (playClick) playClick();
-                  setShowFinishConfirmModal(false);
-                }}
-                className="w-full py-2.5 rounded-xl font-semibold text-xs text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 min-h-[44px] transition-colors"
-              >
-                Periksa Kembali Jawaban
-              </button>
-            </div>
           </div>
         </div>
       )}
@@ -2968,12 +3077,30 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                 type="button"
                 onClick={() => {
                   setIsQuestionGridOpen(false);
-                  setShowFinishConfirmModal(true);
+                  if (hasUnansweredQuestions && isMandatoryAllAnswered) {
+                    if (playClick) playClick();
+                    handleJumpToQuestion(unansweredIndices[0]);
+                  } else {
+                    setShowFinishConfirmModal(true);
+                  }
                 }}
-                className="px-4 py-2.5 rounded-xl font-bold text-xs text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 transition-all shadow-sm min-h-[44px] flex items-center gap-1.5 btn-press"
+                className={`px-4 py-2.5 rounded-xl font-bold text-xs text-white transition-all shadow-sm min-h-[44px] flex items-center gap-1.5 btn-press cursor-pointer ${
+                  hasUnansweredQuestions && isMandatoryAllAnswered
+                    ? 'bg-amber-600 hover:bg-amber-700'
+                    : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700'
+                }`}
               >
-                <span>Selesai & Kumpulkan</span>
-                <ArrowRight className="w-3.5 h-3.5" />
+                {hasUnansweredQuestions && isMandatoryAllAnswered ? (
+                  <>
+                    <AlertCircle className="w-3.5 h-3.5" />
+                    <span>Lengkapi Soal ({unansweredIndices.length} Kosong)</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Selesai & Kumpulkan</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </>
+                )}
               </button>
             </div>
           </div>

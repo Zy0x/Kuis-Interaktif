@@ -66,6 +66,7 @@ export interface PlayQuizSessionOptions {
   requireStudentInfo?: boolean;
   selectedQuestionIds?: string[];
   overrideCustomQuestionDurations?: boolean;
+  requireAllQuestionsAnswered?: boolean;
 }
 
 export interface PlayQuizModalProps {
@@ -699,6 +700,7 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
           pacingType,
           deadlineAt: pacingType === 'homework' ? deadlineAt : undefined,
           requireStudentInfo: pacingType === 'homework' ? requireStudentInfo : false,
+          requireAllQuestionsAnswered: pacingType === 'homework' || showAnswersMode === 'exam_strict' || selectedMode === 'untimed',
         });
       }
     }
@@ -767,6 +769,7 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
       pacingType: overrides?.pacingType ?? pacingType,
       deadlineAt: overrides?.deadlineAt ?? (pacingType === 'homework' ? deadlineAt : undefined),
       requireStudentInfo: overrides?.requireStudentInfo ?? (pacingType === 'homework' ? requireStudentInfo : false),
+      requireAllQuestionsAnswered: overrides?.requireAllQuestionsAnswered ?? (pacingType === 'homework' || showAnswersMode === 'exam_strict' || selectedMode === 'untimed'),
       overrideCustomQuestionDurations: !isUntimed && (overrides?.overrideCustomQuestionDurations ?? (durationSelectionType !== 'default' && overrideCustomDurations)),
     };
 
