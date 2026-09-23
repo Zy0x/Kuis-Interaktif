@@ -1,6 +1,18 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.67] - 2026-09-23
+### Konfigurasi Otomatisasi Build Vercel & Deployment Produksi (Rule 6, Rule 7, Rule 15 & Rule 16)
+
+#### 1. Pengaktifan Pipeline Deployment Vercel (`vercel.json`)
+- **Penetapan `ignoreCommand: exit 1`**: Mengonfigurasi `vercel.json` dengan instruksi `ignoreCommand: "exit 1"` agar bot Vercel memproses build secara penuh saat push commit baru ke branch `main`, menggantikan status *Ignored Build Step* sebelumnya.
+- **Pengaktifan Auto-Deploy Git**: Mengaktifkan `git: { deploymentEnabled: { main: true } }` untuk integrasi berkesinambungan (*Continuous Deployment*).
+
+#### 2. Pembaruan Versi & Cache PWA
+- Memperbarui versi aplikasi ke `2.4.67` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.67` (`public/sw.js`).
+- Memperbarui badge versi di `README.md`.
+
 ## [2.4.66] - 2026-09-23
 ### Penambahan Panel Kotak Tautan Siswa & Bagikan WhatsApp pada Kartu Sesi Kuis (Rule 1, Rule 2, Rule 3, Rule 4, Rule 15 & Rule 16)
 
