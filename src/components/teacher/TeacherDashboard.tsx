@@ -413,6 +413,24 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
     }
   };
 
+  const handleShareWhatsAppForSession = async (session: QuizSession) => {
+    playClick();
+    const studentUrl = `${window.location.origin}/?pin=${session.pinCode}`;
+    const deadlineCountdown = session.settings?.deadlineAt 
+      ? getAccurateDeadlineCountdown(session.settings.deadlineAt) 
+      : null;
+    const deadlineStr = deadlineCountdown?.formattedDate 
+      ? `⏰ Batas Pengumpulan: ${deadlineCountdown.formattedDate}\n` 
+      : '';
+    const message = `Halo anak-anak dan Ayah/Bunda! 📚\nBerikut tugas kuis interaktif kita:\n\n*${session.quizTitle}*\n📖 Mata Pelajaran: ${session.subject} (Kelas ${session.grade})\n${deadlineStr}🔑 PIN Ruang Kelas: *${session.pinCode}*\n🔗 Tautan Masuk Langsung: ${studentUrl}\n\nKerjakan dengan teliti dan raih bintang terbaik! 🌟`;
+
+    const success = await copyTextToClipboard(message);
+    if (success) {
+      setCopiedLink(`wa_${session.id}`);
+      setTimeout(() => setCopiedLink(null), 2500);
+    }
+  };
+
   const handleConfirmDeleteQuiz = async () => {
     if (!quizToDelete) return;
     setIsDeletingQuiz(true);
@@ -1698,6 +1716,64 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                           />
                         </div>
                       </div>
+
+                      {/* Box Tautan Masuk Siswa & Salin Cepat (Rule 1, Rule 2 & User Request) */}
+                      {isLive && (
+                        <div className="p-3 rounded-2xl bg-blue-50/90 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800/80 flex flex-col xs:flex-row items-stretch xs:items-center justify-between gap-2.5 shadow-2xs">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div className="w-8 h-8 rounded-xl bg-blue-600/10 dark:bg-blue-400/10 text-blue-600 dark:text-blue-400 flex items-center justify-center flex-shrink-0">
+                              <Share2 className="w-4 h-4" />
+                            </div>
+                            <div className="min-w-0">
+                              <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
+                                Tautan Siswa:
+                              </span>
+                              <span className="font-mono text-xs font-bold text-blue-700 dark:text-blue-300 truncate block">
+                                .../?pin={s.pinCode}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 flex-shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => handleCopySessionLink(s.pinCode, s.id)}
+                              className="flex-1 xs:flex-initial px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-all btn-press cursor-pointer min-h-[40px]"
+                              title="Salin Tautan Kuis untuk Siswa"
+                            >
+                              {copiedLink === s.id ? (
+                                <>
+                                  <Check className="w-3.5 h-3.5" />
+                                  <span>Tersalin!</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="w-3.5 h-3.5" />
+                                  <span>Salin Tautan</span>
+                                </>
+                              )}
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleShareWhatsAppForSession(s)}
+                              className="px-2.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white text-xs font-bold flex items-center justify-center gap-1 shadow-xs transition-all btn-press cursor-pointer min-h-[40px]"
+                              title="Salin Pesan Format WhatsApp untuk Wali Murid"
+                            >
+                              {copiedLink === `wa_${s.id}` ? (
+                                <>
+                                  <Check className="w-3.5 h-3.5" />
+                                  <span className="text-[11px]">Tersalin!</span>
+                                </>
+                              ) : (
+                                <>
+                                  <span className="text-[11px] font-black">WA</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* Action Buttons */}

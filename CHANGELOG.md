@@ -1,6 +1,19 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.66] - 2026-09-23
+### Penambahan Panel Kotak Tautan Siswa & Bagikan WhatsApp pada Kartu Sesi Kuis (Rule 1, Rule 2, Rule 3, Rule 4, Rule 15 & Rule 16)
+
+#### 1. Panel Tautan Masuk Siswa Langsung pada Kartu Kuis (`TeacherDashboard.tsx`)
+- **Panel Khusus Tautan Siswa**: Menyematkan kotak interaktif bertema biru (*Tautan Siswa: .../?pin=XXXXXX*) tepat di dalam setiap kartu kuis berjalan di tab *Kuis Aktif & Sesi Live*.
+- **Tombol Aksi Salin Tautan & Bagikan WhatsApp**: Dilengkapi tombol utama **"Salin Tautan"** untuk menyalin URL instan dan tombol sekunder **"WA"** untuk menyalin draf pesan siap kirim ke grup WhatsApp (berisi judul kuis, mata pelajaran, kelas, batas waktu pengerjaan, PIN, dan tautan langsung).
+- **Kejelasan Letak & Pengalaman Pengguna (UX)**: Menjawab kebingungan pengguna mengenai lokasi tombol salin tautan dengan menampilkannya secara eksplisit dan kontras di badan kartu, tanpa harus mengandalkan ikon kecil di sudut kanan atas.
+
+#### 2. Pembaruan Versi & Cache PWA
+- Memperbarui versi aplikasi ke `2.4.66` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.66` (`public/sw.js`).
+- Memperbarui badge versi di `README.md`.
+
 ## [2.4.65] - 2026-09-23
 ### Penambahan Tombol Pintas & Optimalisasi Tautan Kuis Ringkas Siswa (Rule 1, Rule 2, Rule 3, Rule 4, Rule 15 & Rule 16)
 
