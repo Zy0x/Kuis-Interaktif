@@ -395,10 +395,20 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
 
   const handleCopyLink = async (quiz: Quiz) => {
     playClick();
-    const url = `${window.location.origin}${window.location.pathname}?pin=${quiz.pinCode || '1001'}`;
+    const url = `${window.location.origin}/?pin=${quiz.pinCode || '1001'}`;
     const success = await copyTextToClipboard(url);
     if (success) {
       setCopiedLink(quiz.id);
+      setTimeout(() => setCopiedLink(null), 2000);
+    }
+  };
+
+  const handleCopySessionLink = async (pinCode: string, trackingKey: string) => {
+    playClick();
+    const url = `${window.location.origin}/?pin=${pinCode}`;
+    const success = await copyTextToClipboard(url);
+    if (success) {
+      setCopiedLink(trackingKey);
       setTimeout(() => setCopiedLink(null), 2000);
     }
   };
@@ -848,7 +858,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                   <button
                     type="button"
                     onClick={() => handleCopyPin(currentBannerSession.pinCode)}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono font-black bg-black/30 hover:bg-black/50 border border-white/20 text-white transition-colors flex-shrink-0"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono font-black bg-black/30 hover:bg-black/50 border border-white/20 text-white transition-colors flex-shrink-0 cursor-pointer min-h-[30px]"
                     title="Klik untuk salin PIN"
                   >
                     <span className="text-[10px] text-white/70 font-sans">PIN:</span>
@@ -857,6 +867,26 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                       <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
                     ) : (
                       <Copy className="w-3.5 h-3.5 text-white/60 flex-shrink-0" />
+                    )}
+                  </button>
+
+                  {/* Salin Tautan Langsung Siswa */}
+                  <button
+                    type="button"
+                    onClick={() => handleCopySessionLink(currentBannerSession.pinCode, `banner_${currentBannerSession.id}`)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-white/20 hover:bg-white/30 border border-white/30 text-white transition-colors flex-shrink-0 cursor-pointer min-h-[30px] btn-press shadow-2xs"
+                    title="Salin Tautan Kuis untuk Siswa"
+                  >
+                    {copiedLink === `banner_${currentBannerSession.id}` ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                        <span className="text-emerald-300 font-extrabold">Link Tersalin!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Share2 className="w-3.5 h-3.5 text-white/90 flex-shrink-0" />
+                        <span>Salin Link Siswa</span>
+                      </>
                     )}
                   </button>
                 </div>
@@ -1546,23 +1576,44 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                         )}
                       </span>
 
-                      {/* PIN Code with quick copy */}
-                      <button
-                        type="button"
-                        onClick={() => handleCopyPin(s.pinCode)}
-                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-xs font-bold transition-colors min-h-[44px]"
-                        title="Klik untuk salin PIN"
-                      >
-                        <span className="text-slate-400 text-[10px]">PIN:</span>
-                        <span className="font-mono text-slate-800 dark:text-slate-200 tracking-wider">
-                          {s.pinCode}
-                        </span>
-                        {copiedPin === s.pinCode ? (
-                          <Check className="w-3.5 h-3.5 text-emerald-500" />
-                        ) : (
-                          <Copy className="w-3.5 h-3.5 text-slate-400" />
-                        )}
-                      </button>
+                      {/* PIN Code & Salin Link quick actions */}
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <button
+                          type="button"
+                          onClick={() => handleCopyPin(s.pinCode)}
+                          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-xs font-bold transition-colors min-h-[40px] cursor-pointer"
+                          title="Klik untuk salin PIN"
+                        >
+                          <span className="text-slate-400 text-[10px]">PIN:</span>
+                          <span className="font-mono text-slate-800 dark:text-slate-200 tracking-wider">
+                            {s.pinCode}
+                          </span>
+                          {copiedPin === s.pinCode ? (
+                            <Check className="w-3.5 h-3.5 text-emerald-500" />
+                          ) : (
+                            <Copy className="w-3.5 h-3.5 text-slate-400" />
+                          )}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleCopySessionLink(s.pinCode, s.id)}
+                          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/50 border border-blue-200 dark:border-blue-800 text-xs font-bold text-blue-700 dark:text-blue-300 transition-colors min-h-[40px] cursor-pointer btn-press"
+                          title="Salin Tautan Kuis untuk Siswa"
+                        >
+                          {copiedLink === s.id ? (
+                            <>
+                              <Check className="w-3.5 h-3.5 text-emerald-500" />
+                              <span className="text-emerald-600 dark:text-emerald-400">Tersalin!</span>
+                            </>
+                          ) : (
+                            <>
+                              <Share2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                              <span className="hidden sm:inline">Salin Link</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
                     </div>
 
                     {/* Content */}

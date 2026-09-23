@@ -233,7 +233,7 @@ export const QuizDetail: React.FC<QuizDetailProps> = ({
 
   const handleCopyLink = async () => {
     playClick();
-    const url = `${window.location.origin}${window.location.pathname}?pin=${currentPin}`;
+    const url = `${window.location.origin}/?pin=${currentPin}`;
     const success = await copyTextToClipboard(url);
     if (success) {
       setCopiedLink(true);

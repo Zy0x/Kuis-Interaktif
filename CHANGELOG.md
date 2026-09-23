@@ -1,6 +1,21 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.65] - 2026-09-23
+### Penambahan Tombol Pintas & Optimalisasi Tautan Kuis Ringkas Siswa (Rule 1, Rule 2, Rule 3, Rule 4, Rule 15 & Rule 16)
+
+#### 1. Kemudahan Akses & Penyalinan Link Kuis (`TeacherDashboard.tsx`, `WaygroundHostView.tsx`, `PlayQuizModal.tsx`, `QuizDetail.tsx`)
+- **Pembersihan Format URL Siswa (*Short & Clean URL*)**: Memastikan seluruh generator tautan kuis hanya menghasilkan format bersih dan ringkas tanpa parameter berlebih atau duplikasi path: `[domain]/?pin=[PIN]`. Hal ini menghilangkan kekhawatiran tautan yang terlalu panjang atau membingungkan bagi siswa dan wali murid.
+- **Tombol Pintas "Salin Link Siswa" di Banner Dashboard Guru (`TeacherDashboard.tsx`)**: Menambahkan tombol pintas interaktif langsung di samping lencana PIN pada Banner Sesi Berjalan, memungkinkan guru menyalin tautan siswa dalam satu kali klik tanpa harus membuka modal pengaturan kembali.
+- **Tombol Pintas "Salin Link" di Tab Sesi Kuis Berjalan (`TeacherDashboard.tsx`)**: Menyediakan tombol khusus salin tautan langsung pada setiap kartu sesi kuis yang aktif di tab *Sesi Kuis Berjalan*.
+- **Tombol Tautan Siswa pada Bilah Kendali Host (`WaygroundHostView.tsx`)**: Menyematkan tombol salin tautan langsung di bilah atas (*top bar*) Ruang Kendali Guru di samping lencana PIN.
+- **Sinkronisasi Pengaturan Sesi 582251**: Memastikan kuis aktif PIN `582251` terkonfigurasi dengan penegakan pengisian soal lengkap (`requireAllQuestionsAnswered: true`).
+
+#### 2. Pembaruan Versi & Cache PWA
+- Memperbarui versi aplikasi ke `2.4.65` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.65` (`public/sw.js`).
+- Memperbarui badge versi di `README.md`.
+
 ## [2.4.64] - 2026-09-19
 ### Kewajiban Pengisian Seluruh Butir Soal pada Mode Penugasan & Kuis Sesi 359871 (Rule 1, Rule 2, Rule 3, Rule 4, Rule 9, Rule 15 & Rule 16)
 

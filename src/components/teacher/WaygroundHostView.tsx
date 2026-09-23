@@ -258,7 +258,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
 
   const handleCopyLink = async () => {
     playClick();
-    const url = `${window.location.origin}${window.location.pathname}?pin=${session.pinCode}`;
+    const url = `${window.location.origin}/?pin=${session.pinCode}`;
     const success = await copyTextToClipboard(url);
     if (success) {
       setCopiedLink(true);
@@ -528,11 +528,22 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
               <button
                 type="button"
                 onClick={handleCopyPin}
-                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700 transition-colors min-w-[28px] min-h-[28px] flex items-center justify-center btn-press"
+                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700 transition-colors min-w-[28px] min-h-[28px] flex items-center justify-center btn-press cursor-pointer"
                 title="Salin PIN Ruang"
                 aria-label="Salin PIN Ruang"
               >
                 {copiedPin ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-slate-400" />}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleCopyLink}
+                className="p-1 px-1.5 rounded-lg bg-blue-600/30 hover:bg-blue-600/50 text-blue-200 text-[11px] font-bold transition-colors min-h-[28px] flex items-center gap-1 btn-press border border-blue-500/40 cursor-pointer"
+                title="Salin Tautan Kuis untuk Siswa"
+                aria-label="Salin Tautan Siswa"
+              >
+                {copiedLink ? <Check className="w-3 h-3 text-emerald-400" /> : <Share2 className="w-3 h-3 text-blue-300" />}
+                <span className="hidden sm:inline">{copiedLink ? 'Tersalin' : 'Link'}</span>
               </button>
             </div>
 

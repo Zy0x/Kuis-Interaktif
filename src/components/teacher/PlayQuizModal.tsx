@@ -804,7 +804,7 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
     playClick();
     const session = await ensureSessionAndSyncSettings();
     const pinToCopy = session?.pinCode || activeSessionPin || quiz.pinCode || '';
-    const url = `${window.location.origin}${window.location.pathname}?pin=${pinToCopy}`;
+    const url = `${window.location.origin}/?pin=${pinToCopy}`;
     const success = await copyTextToClipboard(url);
     if (success) {
       setIsCopiedLink(true);
@@ -817,7 +817,7 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
     playClick();
     const session = await ensureSessionAndSyncSettings();
     const pinToCopy = session?.pinCode || activeSessionPin || quiz.pinCode || '';
-    const studentUrl = `${window.location.origin}${window.location.pathname}?pin=${pinToCopy}`;
+    const studentUrl = `${window.location.origin}/?pin=${pinToCopy}`;
     const deadlineStr = pacingType === 'homework' && deadlineAt ? `⏰ Batas Pengumpulan: ${formatIndonesianDeadline(deadlineAt)}\n` : '';
     const message = `Halo anak-anak dan Ayah/Bunda! 📚\nBerikut tugas kuis interaktif kita:\n\n*${quiz.title}*\n📖 Mata Pelajaran: ${quiz.subject} (Kelas ${quiz.grade})\n${deadlineStr}🔑 PIN Ruang Kelas: *${pinToCopy}*\n🔗 Tautan Masuk Langsung: ${studentUrl}\n\nKerjakan dengan teliti dan raih bintang terbaik! 🌟`;
 
