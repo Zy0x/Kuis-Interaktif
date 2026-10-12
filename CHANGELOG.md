@@ -1,6 +1,23 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.68] - 2026-10-12
+### Penambahan Paket Kuis Resmi Pendidikan Pancasila Kelas 5 SD (Rule 1, Rule 2, Rule 3, Rule 4, Rule 7, Rule 15 & Rule 16)
+
+#### 1. Integrasi Bank Soal Pendidikan Pancasila Kelas 5 SD
+- **Materi Komprehensif Berjenjang**: Menambahkan paket kuis *Latihan Pendidikan Pancasila: Norma, Hak, Kewajiban, dan Tanggung Jawab* (PIN: `5005`) yang dirancang khusus untuk jenjang Kelas 5 SD berbasis materi kurikulum resmi.
+- **20 Butir Soal Lengkap**:
+  - **Tingkat Rendah (Nomor 1–7)**: Pemahaman konsep dasar negara, bunyi sila pertama, definisi norma, contoh hak murid di sekolah, kesadaran kewajiban, tata tertib, dan wujud tanggung jawab.
+  - **Tingkat Sedang (Nomor 8–14)**: Studi kasus kepedulian lingkungan sekolah, musyawarah kelompok, penerapan sila ketiga (Persatuan Indonesia), pemanfaatan fasilitas perpustakaan, ketertiban kelas, kejujuran saat berbuat kelalaian, dan tujuan norma bermasyarakat.
+  - **Tingkat Tinggi / HOTS (Nomor 15–20)**: Penalaran kritis pengambilan keputusan kelompok, etika tanggung jawab kebersihan kelas, analisis tindakan toleransi sila pertama, keselarasan hak dan kewajiban fasilitas, kepemimpinan persuasif ketua kelas, dan filosofi saling menghargai.
+- **Kunci Jawaban & Pembahasan Mendalam**: Seluruh butir soal dilengkapi kunci jawaban terverifikasi dan uraian penjelasan edukatif yang mendidik serta ramah siswa.
+- **Dukungan Akses Berbagai Mode**: Kuis dapat diakses langsung oleh siswa melalui PIN `5005`, dimainkan secara mandiri, disajikan pada Smartboard IFP, maupun ditugaskan oleh pendidik melalui Ruang Kendali Guru.
+
+#### 2. Pembaruan Versi & Cache PWA
+- Memperbarui versi aplikasi ke `2.4.68` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.68` (`public/sw.js`).
+- Memperbarui badge versi di `README.md`.
+
 ## [2.4.67] - 2026-09-23
 ### Konfigurasi Otomatisasi Build Vercel & Deployment Produksi (Rule 6, Rule 7, Rule 15 & Rule 16)
 

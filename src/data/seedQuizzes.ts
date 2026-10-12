@@ -410,5 +410,324 @@ export const INITIAL_QUIZZES: Quiz[] = [
         explanation: 'Resultan vektor tegak lurus: R = √(6² + 8²) = √(36 + 64) = √100 = 10 N.'
       }
     ]
+  },
+  {
+    id: 'sd5-pancasila-norma-hak-kewajiban',
+    title: 'Latihan Pendidikan Pancasila: Norma, Hak, Kewajiban, dan Tanggung Jawab',
+    description: 'Kuis latihan Pendidikan Pancasila Kelas 5 SD berdasarkan materi Pancasila, Norma, Hak, Kewajiban, dan Tanggung Jawab dengan 20 butir soal berjenjang (Tingkat Rendah, Sedang, hingga Tingkat Tinggi/HOTS).',
+    subject: 'Pendidikan Pancasila',
+    grade: 5,
+    educationLevel: 'SD',
+    durationPerQuestionSec: 30,
+    coverEmoji: '🇮🇩',
+    themeColor: 'from-red-600 to-rose-700',
+    badgeTitle: 'Pelajar Pancasila',
+    pinCode: '5005',
+    creatorId: '6b995377-1c3c-4b1f-a91e-e439f923185b',
+    creatorName: 'Admin',
+    visibility: 'public',
+    isPublished: true,
+    questions: [
+      {
+        id: 'sd5-pancasila-norma-hak-kewajiban-q01',
+        text: 'Dasar negara Indonesia adalah ....',
+        type: 'multiple_choice',
+        imageCaption: '🦅 Lambang Negara & Ideologi Bangsa',
+        options: ['UUD 1945', 'Pancasila', 'Bhinneka Tunggal Ika', 'Proklamasi'],
+        correctIndex: 1,
+        explanation: 'Pancasila merupakan dasar negara dan ideologi bangsa Indonesia yang menjadi pedoman fundamental dalam kehidupan bermasyarakat, berbangsa, dan bernegara.',
+        points: 10,
+        customDurationSec: 30
+      },
+      {
+        id: 'sd5-pancasila-norma-hak-kewajiban-q02',
+        text: 'Bunyi sila pertama Pancasila adalah ....',
+        type: 'multiple_choice',
+        imageCaption: '⭐ Bintang Emas Sila Pertama',
+        options: [
+          'Persatuan Indonesia',
+          'Kemanusiaan yang Adil dan Beradab',
+          'Ketuhanan Yang Maha Esa',
+          'Keadilan Sosial bagi Seluruh Rakyat Indonesia'
+        ],
+        correctIndex: 2,
+        explanation: 'Sila pertama Pancasila berbunyi "Ketuhanan Yang Maha Esa" yang dilambangkan dengan bintang emas berlatar perisai hitam, menegaskan pengakuan atas nilai ketuhanan.',
+        points: 10,
+        customDurationSec: 30
+      },
+      {
+        id: 'sd5-pancasila-norma-hak-kewajiban-q03',
+        text: 'Aturan yang mengatur perilaku manusia dalam kehidupan sehari-hari disebut ....',
+        type: 'multiple_choice',
+        imageCaption: '📜 Kaidah dan Pedoman Perilaku',
+        options: ['hak', 'kewajiban', 'norma', 'tanggung jawab'],
+        correctIndex: 2,
+        explanation: 'Norma adalah kaidah atau aturan yang disepakati dan berlaku di tengah masyarakat guna mengatur tingkah laku manusia agar tercipta ketertiban dan ketenteraman.',
+        points: 10,
+        customDurationSec: 30
+      },
+      {
+        id: 'sd5-pancasila-norma-hak-kewajiban-q04',
+        text: 'Contoh hak seorang murid di sekolah adalah ....',
+        type: 'multiple_choice',
+        imageCaption: '🏫 Suasana Pembelajaran di Kelas',
+        options: [
+          'menjaga kebersihan kelas',
+          'mendapatkan pembelajaran',
+          'mengerjakan tugas',
+          'menaati tata tertib'
+        ],
+        correctIndex: 1,
+        explanation: 'Mendapatkan bimbingan dan pembelajaran yang berkualitas dari guru merupakan hak murid. Sedangkan membersihkan kelas, mengerjakan tugas, dan menaati tata tertib adalah kewajiban.',
+        points: 10,
+        customDurationSec: 30
+      },
+      {
+        id: 'sd5-pancasila-norma-hak-kewajiban-q05',
+        text: 'Sesuatu yang harus dilakukan dengan penuh kesadaran disebut ....',
+        type: 'multiple_choice',
+        imageCaption: '🤝 Pelaksanaan Tugas dengan Sadar',
+        options: ['hak', 'kewajiban', 'hadiah', 'keinginan'],
+        correctIndex: 1,
+        explanation: 'Kewajiban adalah segala sesuatu yang wajib dilaksanakan atau dikerjakan oleh seseorang dengan penuh kesadaran diri dan rasa tanggung jawab.',
+        points: 10,
+        customDurationSec: 30
+      },
+      {
+        id: 'sd5-pancasila-norma-hak-kewajiban-q06',
+        text: 'Contoh kewajiban murid di sekolah adalah ....',
+        type: 'multiple_choice',
+        imageCaption: '🎒 Kedisiplinan Murid Sekolah Dasar',
+        options: [
+          'mendapatkan nilai',
+          'menggunakan fasilitas sekolah',
+          'menaati tata tertib sekolah',
+          'mendapatkan perlindungan'
+        ],
+        correctIndex: 2,
+        explanation: 'Menaati tata tertib dan aturan sekolah adalah kewajiban mutlak setiap murid. Memperoleh nilai, fasilitas, dan perlindungan merupakan hak.',
+        points: 10,
+        customDurationSec: 30
+      },
+      {
+        id: 'sd5-pancasila-norma-hak-kewajiban-q07',
+        text: 'Sikap bertanggung jawab ditunjukkan dengan ....',
+        type: 'multiple_choice',
+        imageCaption: '✨ Komitmen Menyelesaikan Tugas',
+        options: [
+          'menyalahkan orang lain',
+          'menghindari tugas',
+          'melaksanakan tugas dengan sungguh-sungguh',
+          'meninggalkan tugas yang diberikan'
+        ],
+        correctIndex: 2,
+        explanation: 'Sikap tanggung jawab tercermin dari kesungguhan hati dalam menyelesaikan setiap tugas yang diamanahkan dan berani menanggung segala konsekuensinya.',
+        points: 10,
+        customDurationSec: 30
+      },
+      {
+        id: 'sd5-pancasila-norma-hak-kewajiban-q08',
+        text: 'Rani melihat temannya membuang sampah sembarangan. Sikap yang sebaiknya dilakukan Rani adalah ....',
+        type: 'multiple_choice',
+        imageCaption: '🌱 Menjaga Kebersihan Lingkungan Sekolah',
+        options: [
+          'membiarkannya',
+          'ikut membuang sampah sembarangan',
+          'menegur dengan sopan dan mengajak membuang sampah pada tempatnya',
+          'memarahi temannya di depan semua orang'
+        ],
+        correctIndex: 2,
+        explanation: 'Menegur dengan bahasa yang sopan dan santun serta mengajak teman membuang sampah pada tempatnya mencerminkan kepedulian lingkungan yang mendidik tanpa mempermalukan orang lain.',
+        points: 10,
+        customDurationSec: 30
+      },
+      {
+        id: 'sd5-pancasila-norma-hak-kewajiban-q09',
+        text: 'Ketika sedang berdiskusi, setiap anggota kelompok memiliki pendapat yang berbeda. Sikap yang sesuai dengan nilai Pancasila adalah ....',
+        type: 'multiple_choice',
+        imageCaption: '👥 Musyawarah Kelompok Belajar',
+        options: [
+          'memaksakan pendapat sendiri',
+          'menghargai pendapat anggota kelompok',
+          'meninggalkan diskusi',
+          'memilih pendapat teman yang paling dekat'
+        ],
+        correctIndex: 1,
+        explanation: 'Menghargai keragaman pendapat saat bermusyawarah adalah nilai luhur Pancasila (sila keempat), di mana keputusan diambil untuk kepentingan bersama secara mufakat.',
+        points: 10,
+        customDurationSec: 30
+      },
+      {
+        id: 'sd5-pancasila-norma-hak-kewajiban-q10',
+        text: 'Contoh penerapan sila ketiga Pancasila di sekolah adalah ....',
+        type: 'multiple_choice',
+        imageCaption: '🌳 Pohon Beringin Sila Persatuan Indonesia',
+        options: [
+          'berdoa sebelum belajar',
+          'membantu teman yang kesulitan',
+          'menjaga persatuan meskipun berbeda',
+          'melaksanakan musyawarah'
+        ],
+        correctIndex: 2,
+        explanation: 'Sila ketiga "Persatuan Indonesia" di sekolah diwujudkan dengan menjaga kerukunan, bermain dan belajar bersama tanpa membedakan suku, agama, dan latar belakang.',
+        points: 10,
+        customDurationSec: 30
+      },
+      {
+        id: 'sd5-pancasila-norma-hak-kewajiban-q11',
+        text: 'Edo mendapatkan hak menggunakan fasilitas perpustakaan. Agar hak tersebut digunakan dengan baik, Edo seharusnya ....',
+        type: 'multiple_choice',
+        imageCaption: '📚 Fasilitas Perpustakaan Sekolah',
+        options: [
+          'mencoret-coret buku',
+          'mengembalikan buku tepat waktu',
+          'membawa semua buku pulang',
+          'merusak buku yang dipinjam'
+        ],
+        correctIndex: 1,
+        explanation: 'Penggunaan hak membaca di perpustakaan harus disertai kewajiban memelihara keutuhan buku dan mengembalikannya tepat waktu agar teman lain dapat memanfaatkannya.',
+        points: 10,
+        customDurationSec: 30
+      },
+      {
+        id: 'sd5-pancasila-norma-hak-kewajiban-q12',
+        text: 'Setiap murid memiliki hak untuk belajar dengan nyaman. Agar hak tersebut terpenuhi, murid juga memiliki kewajiban untuk ....',
+        type: 'multiple_choice',
+        imageCaption: '📖 Suasana Belajar yang Nyaman dan Tenang',
+        options: [
+          'membuat keributan',
+          'mengganggu teman',
+          'menjaga ketertiban kelas',
+          'bermain saat pembelajaran'
+        ],
+        correctIndex: 2,
+        explanation: 'Kenyamanan belajar bersama di ruang kelas dapat tercapai apabila seluruh murid tertib, tenang, dan fokus mendengarkan penjelasan saat pembelajaran berlangsung.',
+        points: 10,
+        customDurationSec: 30
+      },
+      {
+        id: 'sd5-pancasila-norma-hak-kewajiban-q13',
+        text: 'Dika tidak sengaja memecahkan pot bunga di sekolah. Sikap yang menunjukkan tanggung jawab adalah ....',
+        type: 'multiple_choice',
+        imageCaption: '🪴 Kejujuran dan Keberanian Berbuat Tanggung Jawab',
+        options: [
+          'bersembunyi agar tidak diketahui',
+          'menyalahkan temannya',
+          'mengakui kesalahan dan bersedia memperbaikinya',
+          'pura-pura tidak mengetahui kejadian tersebut'
+        ],
+        correctIndex: 2,
+        explanation: 'Mengakui kelalaian secara jujur serta berinisiatif mengganti atau memperbaiki kerusakan merupakan perwujudan karakter murid yang bertanggung jawab dan kesatria.',
+        points: 10,
+        customDurationSec: 30
+      },
+      {
+        id: 'sd5-pancasila-norma-hak-kewajiban-q14',
+        text: 'Norma dibuat dan diterapkan dalam kehidupan masyarakat dengan tujuan ....',
+        type: 'multiple_choice',
+        imageCaption: '⚖️ Ketertiban dan Keteraturan Masyarakat',
+        options: [
+          'membuat orang takut',
+          'menciptakan kehidupan yang tertib dan teratur',
+          'membatasi semua kegiatan manusia',
+          'memberikan hukuman kepada semua orang'
+        ],
+        correctIndex: 1,
+        explanation: 'Tujuan utama diterapkannya norma adalah memelihara keharmonisan sosial, mencegah perselisihan, dan mewujudkan keteraturan dalam interaksi antarmanusia.',
+        points: 10,
+        customDurationSec: 30
+      },
+      {
+        id: 'sd5-pancasila-norma-hak-kewajiban-q15',
+        text: 'Dalam kerja kelompok, Andi selalu ingin menentukan semua keputusan sendiri. Akibatnya, anggota kelompok lain merasa tidak dihargai. Apa yang sebaiknya dilakukan kelompok tersebut?',
+        type: 'multiple_choice',
+        imageCaption: '🤝 Musyawarah Mengambil Keputusan Bersama',
+        options: [
+          'Membiarkan Andi mengambil semua keputusan.',
+          'Membubarkan kelompok.',
+          'Melakukan musyawarah dan memberikan kesempatan kepada semua anggota untuk menyampaikan pendapat.',
+          'Mengikuti pendapat anggota yang paling banyak bicara.'
+        ],
+        correctIndex: 2,
+        explanation: 'Kerja kelompok didasari semangat gotong royong dan musyawarah. Seluruh anggota berhak didengar pendapatnya agar tercapai keputusan bersama yang adil dan dihargai.',
+        points: 10,
+        customDurationSec: 35
+      },
+      {
+        id: 'sd5-pancasila-norma-hak-kewajiban-q16',
+        text: 'Di kelas terdapat aturan bahwa setiap murid harus menjaga kebersihan. Setelah kegiatan belajar, beberapa murid meninggalkan sampah di lantai. Mengapa menaati aturan tersebut merupakan bentuk tanggung jawab?',
+        type: 'multiple_choice',
+        imageCaption: '🧹 Kebersihan Kelas Tanggung Jawab Bersama',
+        options: [
+          'Karena takut mendapatkan hukuman.',
+          'Karena kebersihan hanya tugas petugas kebersihan.',
+          'Karena setiap murid memiliki peran dalam menjaga lingkungan bersama.',
+          'Karena guru akan selalu mengawasi kelas.'
+        ],
+        correctIndex: 2,
+        explanation: 'Kebersihan lingkungan kelas adalah kepentingan bersama. Menaati aturan kebersihan mencerminkan pemahaman bahwa kenyamanan belajar merupakan amanah setiap murid.',
+        points: 10,
+        customDurationSec: 35
+      },
+      {
+        id: 'sd5-pancasila-norma-hak-kewajiban-q17',
+        text: 'Perhatikan kegiatan berikut!\n1. Menghormati teman yang berbeda agama.\n2. Memaksakan agama kepada orang lain.\n3. Memberikan kesempatan teman beribadah.\n4. Mengganggu teman ketika beribadah.\n\nKegiatan yang sesuai dengan nilai sila pertama Pancasila ditunjukkan oleh nomor ....',
+        type: 'multiple_choice',
+        imageCaption: '🕊️ Toleransi Antarumat Beragama',
+        options: ['1 dan 2', '1 dan 3', '2 dan 4', '3 dan 4'],
+        correctIndex: 1,
+        explanation: 'Sila pertama menjamin kemerdekaan beragama dan toleransi. Kegiatan 1 (menghormati teman beda agama) dan 3 (memberi kesempatan beribadah) adalah sikap yang benar.',
+        points: 10,
+        customDurationSec: 35
+      },
+      {
+        id: 'sd5-pancasila-norma-hak-kewajiban-q18',
+        text: 'Setiap murid ingin mendapatkan hak untuk menggunakan fasilitas sekolah. Namun, fasilitas tersebut sering rusak karena digunakan sembarangan. Apa hubungan antara hak dan kewajiban dalam keadaan tersebut?',
+        type: 'multiple_choice',
+        imageCaption: '⚖️ Keseimbangan Hak dan Kewajiban',
+        options: [
+          'Hak dapat diperoleh tanpa melaksanakan kewajiban.',
+          'Kewajiban hanya berlaku bagi guru.',
+          'Hak perlu diimbangi dengan kewajiban untuk menjaga fasilitas.',
+          'Fasilitas sekolah tidak boleh digunakan oleh murid.'
+        ],
+        correctIndex: 2,
+        explanation: 'Hak dan kewajiban saling bertautan secara erat. Hak menikmati fasilitas sekolah hanya dapat berlanjut secara baik jika seluruh murid memenuhi kewajiban merawat fasilitas tersebut.',
+        points: 10,
+        customDurationSec: 35
+      },
+      {
+        id: 'sd5-pancasila-norma-hak-kewajiban-q19',
+        text: 'Bayangkan kamu menjadi ketua kelas. Ada beberapa murid yang tidak menjalankan piket sehingga kelas menjadi kotor. Tindakan yang paling tepat adalah ....',
+        type: 'multiple_choice',
+        imageCaption: '👥 Kepemimpinan dan Tanggung Jawab Regu Piket',
+        options: [
+          'memberikan hukuman tanpa mendengarkan alasan mereka',
+          'membiarkan keadaan tersebut',
+          'mengajak berdiskusi dan mengingatkan pentingnya menjalankan kewajiban piket',
+          'meminta murid lain mengerjakan semua tugas piket'
+        ],
+        correctIndex: 2,
+        explanation: 'Pemimpin yang bijak mengedepankan komunikasi persuasif dan dialog. Mengajak berdiskusi serta mengingatkan tanggung jawab piket menumbuhkan kedisiplinan tanpa otoriter.',
+        points: 10,
+        customDurationSec: 35
+      },
+      {
+        id: 'sd5-pancasila-norma-hak-kewajiban-q20',
+        text: 'Perhatikan pernyataan berikut!\n"Setiap orang memiliki hak untuk dihormati, tetapi ia juga harus menghormati orang lain."\n\nMengapa pernyataan tersebut penting dalam kehidupan sehari-hari?',
+        type: 'multiple_choice',
+        imageCaption: '🌟 Saling Menghargai dalam Masyarakat',
+        options: [
+          'Karena hak lebih penting daripada kewajiban.',
+          'Karena kehidupan akan menjadi lebih tertib jika setiap orang menghargai hak dan melaksanakan kewajibannya.',
+          'Karena kewajiban hanya perlu dilakukan ketika diperintah.',
+          'Karena setiap orang boleh melakukan apa saja yang diinginkannya.'
+        ],
+        correctIndex: 1,
+        explanation: 'Keseimbangan antara menuntut hak dan menghormati hak sesama melalui pemenuhan kewajiban merupakan fondasi utama terciptanya tatanan hidup rukun, tertib, dan harmonis.',
+        points: 10,
+        customDurationSec: 35
+      }
+    ]
   }
 ];
