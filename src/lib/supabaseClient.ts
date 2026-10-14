@@ -21,6 +21,7 @@ import { MASTER_TEACHER_EMAIL } from '../types/quiz';
 import { INITIAL_QUIZZES } from '../data/seedQuizzes';
 import { deleteQuizDriveFolder } from './driveUploadService';
 import { offlineQueue } from './offlineQueue';
+import { parseStudentName } from './studentUtils';
 
 const SUPABASE_URL = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_URL) || (globalThis as any).process?.env?.VITE_SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_ANON_KEY) || (globalThis as any).process?.env?.VITE_SUPABASE_ANON_KEY || '';
@@ -1036,6 +1037,15 @@ export const DataManager = {
           parsed.nickname = 'Saya';
           localStorage.setItem(STORAGE_KEY_PLAYER, JSON.stringify(parsed));
         }
+        // Auto-heal penumpukan nomor absen berulang jika ada data profil lawas
+        if (parsed.nickname && /^\d+[\.\s\-]/.test(parsed.nickname)) {
+          const cleaned = parseStudentName(parsed.nickname, parsed.rollNumber);
+          parsed.nickname = cleaned.cleanName || 'Saya';
+          if (cleaned.rollNumber && !parsed.rollNumber) {
+            parsed.rollNumber = cleaned.rollNumber;
+          }
+          localStorage.setItem(STORAGE_KEY_PLAYER, JSON.stringify(parsed));
+        }
         return parsed;
       }
     } catch {
@@ -1056,6 +1066,15 @@ export const DataManager = {
     const updated: PlayerProfile = { ...current, ...profile };
     if (!updated.nickname || !updated.nickname.trim()) {
       updated.nickname = 'Saya';
+    } else {
+      // Sanitasi agar nomor absen dan nama bersih terpisah sempurna & bebas duplikasi
+      const cleaned = parseStudentName(updated.nickname, updated.rollNumber);
+      if (cleaned.cleanName) {
+        updated.nickname = cleaned.cleanName;
+      }
+      if (cleaned.rollNumber && !updated.rollNumber) {
+        updated.rollNumber = cleaned.rollNumber;
+      }
     }
     localStorage.setItem(STORAGE_KEY_PLAYER, JSON.stringify(updated));
     return updated;

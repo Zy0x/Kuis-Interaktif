@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import type { Quiz, QuizSession, QuizSessionSettings } from '../../types/quiz';
 import { AVATAR_LIST } from '../../data/seedQuizzes';
 import { DataManager } from '../../lib/supabaseClient';
+import { parseStudentName } from '../../lib/studentUtils';
 import { ThemeToggle } from '../common/ThemeToggle';
 import { QuizCoverDisplay } from '../common/QuizCoverDisplay';
 import { StudentWaitingRoom } from './StudentWaitingRoom';
@@ -89,11 +90,13 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
     return null;
   }, [liveSession?.id, activeSession?.id, quiz.pinCode, quiz.id]);
 
-  const [nickname, setNickname] = useState(() => {
-    if (restoredWaitingState?.studentName) return restoredWaitingState.studentName;
-    return isCustom ? profile.nickname : '';
-  });
-  const [rollNumber, setRollNumber] = useState('');
+  const initialParsed = useMemo(() => {
+    const raw = restoredWaitingState?.studentName || (isCustom ? profile.nickname : '');
+    return parseStudentName(raw, profile.rollNumber);
+  }, [restoredWaitingState?.studentName, isCustom, profile.nickname, profile.rollNumber]);
+
+  const [nickname, setNickname] = useState(() => initialParsed.cleanName);
+  const [rollNumber, setRollNumber] = useState(() => initialParsed.rollNumber);
   const [selectedAvatar, setSelectedAvatar] = useState(() => {
     if (restoredWaitingState?.avatarId) return restoredWaitingState.avatarId;
     return profile.avatarId || 'lion';
@@ -483,8 +486,10 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
         }).then((res) => {
           if (res?.name && res.name !== savedFinalName) {
             setSavedFinalName(res.name);
+            const parsedRes = parseStudentName(res.name);
             DataManager.savePlayerProfile({
-              nickname: res.name,
+              nickname: parsedRes.cleanName || res.name,
+              rollNumber: parsedRes.rollNumber,
               avatarId: selectedAvatar,
             });
           }
@@ -497,8 +502,8 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
     e.preventDefault();
     if (isSessionEnded || isWaitingForTeacherToOpen || isAttemptLimitReached) return;
     playClick();
-    const cleanNick = nickname.trim() || (isCustom ? profile.nickname : 'Siswa Pintar');
-    const finalName = rollNumber.trim() ? `${rollNumber.trim()}. ${cleanNick}` : cleanNick;
+    const parsed = parseStudentName(nickname, rollNumber);
+    const finalName = parsed.formattedName || (isCustom ? profile.nickname : 'Siswa Pintar');
     
     let resolvedParticipantName = finalName;
 
@@ -521,7 +526,8 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
 
     setSavedFinalName(resolvedParticipantName);
     DataManager.savePlayerProfile({
-      nickname: resolvedParticipantName,
+      nickname: parsed.cleanName || (isCustom ? profile.nickname : 'Siswa Pintar'),
+      rollNumber: parsed.rollNumber,
       avatarId: selectedAvatar,
     });
 
@@ -900,6 +906,15 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
                   maxLength={50}
                   value={nickname}
                   onChange={(e) => setNickname(e.target.value)}
+                  onBlur={() => {
+                    const parsed = parseStudentName(nickname, rollNumber);
+                    if (parsed.cleanName && parsed.cleanName !== nickname) {
+                      setNickname(parsed.cleanName);
+                    }
+                    if (parsed.rollNumber && !rollNumber) {
+                      setRollNumber(parsed.rollNumber);
+                    }
+                  }}
                   placeholder="Ketik namamu di sini..."
                   required
                   className="w-full px-4 py-3 rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-900/40 focus:outline-none font-bold text-sm sm:text-base text-slate-900 dark:text-white min-h-[48px] transition-all shadow-xs"

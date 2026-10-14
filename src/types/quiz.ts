@@ -122,6 +122,7 @@ export interface PlayerProfile {
   email?: string;
   studentId?: string;
   grade?: number;
+  rollNumber?: string;
 }
 
 export interface TeacherProfile {

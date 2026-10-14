@@ -312,3 +312,15 @@ textarea::-webkit-resizer {
 .animate-reply-preview-in {
   animation: reply-preview-in 180ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* Print styling for Live Recap Table & Reports */
+@media print {
+  body, html {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
+

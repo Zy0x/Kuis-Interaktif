@@ -1,6 +1,38 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.70] - 2026-10-14
+### Sanitasi Cerdas Nomor Absen, Anti-Truncate Mobile, & Tabel Rekap Live Host (Rule 1, Rule 2, Rule 3, Rule 4, Rule 7, Rule 15 & Rule 16)
+
+#### 1. Eliminasi Penumpukan Nomor Absen Berulang pada Nama Siswa (`studentUtils.ts`, `StudentLobby.tsx`, `supabaseClient.ts`)
+- **Pembersihan Otomatis Pola Prefiks Berulang**: Mengatasi kendala di mana siswa yang mengulang kuis menghasilkan nama menumpuk (seperti `7. 7. 7. 7. Hafif Ahmad` atau `1. 1.Akhmad Fahrurozi/Rozi`) melalui utilitas sanitasi regex rekursif (`parseStudentName`).
+- **Pemisahan Entitas Bersih**: Memisahkan nomor absen (`rollNumber`) dan nama panggilan bersih siswa (`cleanName`) di penyimpanan lokal profil maupun saat pendaftaran sesi, sehingga hanya diformat rapi sekali sebagai `[No]. [Nama]` tanpa penumpukan berulang.
+- **Penyembuhan Otomatis Data Lawas (*Auto-Heal*)**: Saat aplikasi membaca profil lawas yang sudah terlanjur memiliki nomor berulang di penyimpanan perangkat atau sesi lama, sistem secara otomatis membersihkan nama dan menyimpannya kembali dalam bentuk bersih.
+- **Penyaringan Cerdas Input Siswa**: Bidang input nama siswa pada lobi kuis kini memiliki `onBlur` otomatis yang memindahkan angka absen ke kolom nomor absen dan membiarkan nama tetap bersih jika siswa mengetikkan format `7. Budi`.
+
+#### 2. Layout Anti-Truncate Nama Siswa di Tampilan Mobile (`WaygroundHostView.tsx`)
+- **Penghapusan Pembatasan Lebar Kaku**: Menghapus kelas `truncate max-w-[140px]` pada kartu peserta di Leaderboard dan menggantinya dengan `break-words min-w-0 flex-1`.
+- **Keterbacaan Penuh di Seluruh Resolusi**: Nama siswa yang panjang kini terlipat alami (*wrap*) tanpa terpotong tanda elipsis (`...`), memudahkan pendidik mengidentifikasi seluruh murid secara instan di layar smartphone maupun tablet.
+- **Lencana Percobaan Ulangan Interaktif**: Menambahkan lencana penanda percobaan kuis (`Percobaan #1`, `Percobaan #2 (Ulangan)`) serta lencana `Terbaik` pada entri dengan skor tertinggi di kartu Leaderboard.
+
+#### 3. Penambahan Tab Tabel Rekap Live Pengerjaan Siswa (`WaygroundHostView.tsx`)
+- **Sub-Tab Baru "Tabel Rekap Live"**: Menyematkan tab baru di Ruang Kendali Live Guru yang menyajikan rekap data pengerjaan seluruh siswa secara realtime saat kuis sedang berlangsung.
+- **Pendeteksi Duplikasi & Pengulangan Kuis**: Dilengkapi algoritma analisis grup siswa yang mendeteksi berapa kali siswa telah mengerjakan kuis, menandai urutan percobaan kronologis, serta mengidentifikasi percobaan dengan nilai tertinggi.
+- **Pilihan Filter Multidimensi**:
+  - Filter Percobaan: *Semua Percobaan*, *Hanya Nilai Tertinggi Siswa*, *Hanya Percobaan Terakhir*.
+  - Filter Status: *Semua Status*, *Hanya Selesai*, *Sedang Mengerjakan*.
+  - Pencarian Instan: Kotak pencarian responsif berdasarkan nama atau nomor absen siswa.
+- **Kartu Ringkasan Metrik Kelas**: Menampilkan ringkasan total entri masuk, jumlah siswa unik, jumlah pengerjaan ulang, rata-rata skor kelas, dan jumlah siswa yang telah menyelesaikan kuis.
+- **Ekspor Dokumen Cepat**:
+  - **Unduh Rekap (CSV)**: Mengekspor seluruh data tabel (peringkat, nomor absen, nama bersih, urutan percobaan, skor, benar/salah/kosong, durasi detik, status, dan waktu selesai) langsung ke file CSV/Excel dengan pengkodean UTF-8 BOM.
+  - **Cetak / PDF Bersih**: Memicu dialog cetak peramban dengan stylesheet khusus `@media print` (`.no-print`) yang secara otomatis menyembunyikan bilah navigasi dan tombol kontrol, menghasilkan lembar rekap nilai formal siap arsip.
+- **Akses Langsung Lembar Jawaban**: Tombol "Lembar" pada setiap baris tabel memungkinkan guru membuka modal analisis butir soal per siswa secara instan tanpa meninggalkan tabel rekap live.
+
+#### 4. Pembaruan Versi & Cache PWA
+- Memperbarui versi aplikasi ke `2.4.70` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.70` (`public/sw.js`).
+- Memperbarui badge versi di `README.md`.
+
 ## [2.4.69] - 2026-10-14
 ### Penambahan Paket Kuis Resmi IPAS: Simbiosis Kelas 5 SD (Rule 1, Rule 2, Rule 3, Rule 4, Rule 7, Rule 15 & Rule 16)
 

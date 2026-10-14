@@ -33,8 +33,14 @@ import {
   MessageSquare,
   Sparkles,
   Clock,
-  ClipboardList
+  ClipboardList,
+  Download,
+  Printer,
+  Search,
+  Filter,
+  Eye
 } from 'lucide-react';
+import { formatStudentDisplayName, analyzeSessionDuplicates } from '../../lib/studentUtils';
 
 interface WaygroundHostViewProps {
   session: QuizSession;
@@ -54,7 +60,18 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
   playClick,
 }) => {
   const [session, setSession] = useState<QuizSession>(initialSession);
-  const [activeTab, setActiveTab] = useState<'leaderboard' | 'matrix' | 'display'>('leaderboard');
+  const [activeTab, setActiveTab] = useState<'leaderboard' | 'table' | 'matrix' | 'display'>('leaderboard');
+  const [duplicateFilter, setDuplicateFilter] = useState<'all' | 'best' | 'latest'>('all');
+  const [tableSearch, setTableSearch] = useState<string>('');
+  const [tableStatusFilter, setTableStatusFilter] = useState<'all' | 'finished' | 'active'>('all');
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => {
+      setToastMessage((cur) => (cur === msg ? null : cur));
+    }, 3500);
+  };
   const [copiedPin, setCopiedPin] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [isSimulating, setIsSimulating] = useState(false);
@@ -395,12 +412,167 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
     };
   }, [session.participants, totalQuestions]);
 
+  // Data peserta teranotasi duplikasi & pengulangan pengerjaan kuis
+  const participantsWithMeta = useMemo(() => {
+    return analyzeSessionDuplicates(session.participants);
+  }, [session.participants]);
+
+  const participantMetaMap = useMemo(() => {
+    const map = new Map<string, (typeof participantsWithMeta)[0]>();
+    participantsWithMeta.forEach((p) => map.set(p.id, p));
+    return map;
+  }, [participantsWithMeta]);
+
+  // Statistik duplikasi pengerjaan kuis dalam sesi aktif
+  const duplicateStats = useMemo(() => {
+    const uniqueKeys = new Set<string>();
+    let repeatAttemptsCount = 0;
+    participantsWithMeta.forEach((p) => {
+      uniqueKeys.add(p.parsedRollNumber ? `r_${p.parsedRollNumber}_${p.parsedCleanName.toLowerCase()}` : `n_${p.parsedCleanName.toLowerCase()}`);
+      if (p.isDuplicateAttempt && p.attemptNumber > 1) {
+        repeatAttemptsCount++;
+      }
+    });
+    return {
+      totalEntries: participantsWithMeta.length,
+      uniqueStudents: uniqueKeys.size,
+      repeatAttemptsCount,
+    };
+  }, [participantsWithMeta]);
+
+  // Peserta untuk Tabel Rekap Live terfilter berdasarkan duplikasi, status, dan pencarian nama/absen
+  const filteredTableParticipants = useMemo(() => {
+    const getPData = (p: any) => {
+      const rawAns = p.answers ? Object.values(p.answers).filter((a: any) => a && a.questionId !== 'quiz_completed') : [];
+      if (rawAns.length > 0) {
+        const uniqueQMap = new Map<string, any>();
+        rawAns.forEach((a: any) => uniqueQMap.set(a.questionId || String(a.questionIndex), a));
+        const correct = Array.from(uniqueQMap.values()).filter((a: any) => a.isCorrect).length;
+        return {
+          score: Math.min(100, Math.round((correct / totalQuestions) * 100)),
+          correct: Math.min(totalQuestions, correct),
+        };
+      }
+      return {
+        score: Math.min(100, p.score),
+        correct: Math.min(totalQuestions, p.correctCount || 0),
+      };
+    };
+
+    let list = [...participantsWithMeta].sort((a, b) => {
+      const aData = getPData(a);
+      const bData = getPData(b);
+      if (bData.score !== aData.score) return bData.score - aData.score;
+      if (bData.correct !== aData.correct) return bData.correct - aData.correct;
+      return a.timeSpentSec - b.timeSpentSec;
+    });
+
+    // Filter duplikasi
+    if (duplicateFilter === 'best') {
+      list = list.filter((p) => p.isBestScoreAttempt);
+    } else if (duplicateFilter === 'latest') {
+      list = list.filter((p) => p.isLatestAttempt);
+    }
+
+    // Filter status
+    if (tableStatusFilter === 'finished') {
+      list = list.filter((p) => p.finished);
+    } else if (tableStatusFilter === 'active') {
+      list = list.filter((p) => !p.finished);
+    }
+
+    // Filter pencarian nama / nomor absen
+    if (tableSearch.trim()) {
+      const query = tableSearch.trim().toLowerCase();
+      list = list.filter((p) => {
+        const nameMatch = p.parsedCleanName.toLowerCase().includes(query) || p.name.toLowerCase().includes(query);
+        const rollMatch = p.parsedRollNumber.toLowerCase().includes(query);
+        return nameMatch || rollMatch;
+      });
+    }
+
+    return list;
+  }, [participantsWithMeta, totalQuestions, duplicateFilter, tableStatusFilter, tableSearch]);
+
+  const handleExportLiveCSV = () => {
+    if (!filteredTableParticipants || filteredTableParticipants.length === 0) {
+      showToast('Belum ada data siswa untuk diunduh.');
+      return;
+    }
+
+    const headers = [
+      'Peringkat',
+      'No. Absen',
+      'Nama Siswa',
+      'Percobaan Ke',
+      'Total Percobaan Siswa',
+      'Nilai Tertinggi Siswa',
+      'Skor Akhir',
+      'Benar',
+      'Salah',
+      'Kosong',
+      'Total Soal',
+      'Akurasi (%)',
+      'Durasi (Detik)',
+      'Status Pengerjaan',
+      'Waktu Selesai',
+    ];
+
+    const rows = filteredTableParticipants.map((p, idx) => {
+      const rawAns = p.answers ? Object.values(p.answers).filter((a: any) => a && a.questionId !== 'quiz_completed') : [];
+      const uniqueQMap = new Map<string, any>();
+      rawAns.forEach((a: any) => uniqueQMap.set(a.questionId || String(a.questionIndex), a));
+      const pAnsList = Array.from(uniqueQMap.values());
+      const displayCorrect = pAnsList.length > 0 ? Math.min(totalQuestions, pAnsList.filter((a: any) => a.isCorrect).length) : Math.min(totalQuestions, p.correctCount);
+      const displayIncorrect = pAnsList.length > 0 ? pAnsList.filter((a: any) => !a.isCorrect).length : Math.min(totalQuestions - displayCorrect, p.incorrectCount);
+      const answered = pAnsList.length > 0 ? pAnsList.length : (displayCorrect + displayIncorrect);
+      const unanswered = Math.max(0, totalQuestions - answered);
+      const displayScore = Math.min(100, pAnsList.length > 0 ? Math.round((displayCorrect / totalQuestions) * 100) : p.score);
+      const accuracy = totalQuestions > 0 ? Math.round((displayCorrect / totalQuestions) * 100) : 0;
+
+      return [
+        idx + 1,
+        `"${p.parsedRollNumber || '-'}"`,
+        `"${(p.parsedCleanName || p.name).replace(/"/g, '""')}"`,
+        p.attemptNumber,
+        p.totalAttempts,
+        p.isBestScoreAttempt ? 'Ya' : 'Tidak',
+        displayScore,
+        displayCorrect,
+        displayIncorrect,
+        unanswered,
+        totalQuestions,
+        `${accuracy}%`,
+        Math.round(p.timeSpentSec),
+        p.finished ? 'Selesai' : 'Sedang Mengerjakan',
+        p.completedAt ? `"${formatIndonesianTime(p.completedAt, { withDate: true })}"` : (p.lastActiveAt ? `"${formatIndonesianTime(p.lastActiveAt, { withDate: true })}"` : '-'),
+      ].join(',');
+    });
+
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const sanitizeTitle = (quiz.title || 'Kuis').replace(/[/\\?%*:|"<>]/g, '-').slice(0, 30);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `Rekap_Live_${sanitizeTitle}_PIN_${session.pinCode}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    showToast('✅ Rekap nilai live berhasil diunduh (format CSV).');
+  };
+
+  const handlePrintTable = () => {
+    window.print();
+  };
+
   const currentDisplayQuestion = quiz.questions[currentDisplayQuestionIdx];
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col select-none animate-fade-in font-sans">
       {/* Top Wayground Host Bar */}
-      <header className="w-full bg-slate-900/95 backdrop-blur-md border-b border-slate-800 px-3 sm:px-6 lg:px-8 py-2.5 sm:py-3 sticky top-0 z-30 shadow-xl">
+      <header className="w-full bg-slate-900/95 backdrop-blur-md border-b border-slate-800 px-3 sm:px-6 lg:px-8 py-2.5 sm:py-3 sticky top-0 z-30 shadow-xl no-print">
         <div className="w-full max-w-[2000px] mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-2.5 md:gap-4">
           
           {/* Baris 1 di Mobile / Bagian Kiri di Desktop */}
@@ -765,7 +937,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
       </section>
 
       {/* Main Sub-tabs Selector */}
-      <nav className="bg-slate-900/60 px-3 sm:px-6 lg:px-8 border-b border-slate-800">
+      <nav className="bg-slate-900/60 px-3 sm:px-6 lg:px-8 border-b border-slate-800 no-print">
         <div className="w-full max-w-[2000px] mx-auto flex items-center gap-2 overflow-x-auto py-2 no-scrollbar scrollbar-none">
           <button
             type="button"
@@ -781,6 +953,22 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
           >
             <Trophy className="w-4 h-4" />
             <span>Leaderboard Siswa ({session.participants.length})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              playClick();
+              setActiveTab('table');
+            }}
+            className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all min-h-[44px] whitespace-nowrap ${
+              activeTab === 'table'
+                ? 'bg-blue-600 text-white shadow-md'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+            }`}
+          >
+            <FileSpreadsheet className="w-4 h-4" />
+            <span>Tabel Rekap Live ({session.participants.length})</span>
           </button>
 
           <button
@@ -1050,7 +1238,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                         }`}
                       >
                         {/* Left: Rank, Avatar, Name */}
-                        <div className="flex items-center gap-3 min-w-0">
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
                           <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl font-black text-sm sm:text-base flex items-center justify-center flex-shrink-0 border ${rankColor}`}>
                             {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
                           </div>
@@ -1059,11 +1247,30 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                             {avatarEmoji}
                           </div>
 
-                          <div className="min-w-0">
+                          <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="font-bold text-sm sm:text-base text-white truncate max-w-[140px] sm:max-w-xs group-hover:text-indigo-200 transition-colors">
-                                {p.name}
+                              <span className="font-bold text-sm sm:text-base text-white break-words group-hover:text-indigo-200 transition-colors">
+                                {formatStudentDisplayName(p.name)}
                               </span>
+                              {(() => {
+                                const meta = participantMetaMap.get(p.id);
+                                if (!meta || !meta.isDuplicateAttempt) return null;
+                                return (
+                                  <span
+                                    className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold border ${
+                                      meta.attemptNumber > 1
+                                        ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                                        : 'bg-blue-500/20 text-blue-300 border-blue-500/40'
+                                    }`}
+                                    title={`Percobaan ke-${meta.attemptNumber} dari ${meta.totalAttempts} kali pengerjaan kuis`}
+                                  >
+                                    <span>Percobaan #{meta.attemptNumber}</span>
+                                    {meta.isBestScoreAttempt && meta.totalAttempts > 1 && (
+                                      <span className="text-[9px] bg-amber-400 text-slate-950 font-black px-1 rounded">Terbaik</span>
+                                    )}
+                                  </span>
+                                );
+                              })()}
                               {p.streak >= 2 && (
                                 <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[10px] font-black">
                                   <Flame className="w-3 h-3 text-rose-400 fill-rose-400" />
@@ -1167,7 +1374,396 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
           </div>
         )}
 
-        {/* TAB 2: MATRIKS AKURASI SOAL */}
+        {/* TAB: TABEL REKAP LIVE SEMENTARA */}
+        {activeTab === 'table' && (
+          <div className="space-y-4 animate-fade-in">
+            {/* Print Header (Only visible on print / PDF) */}
+            <div className="hidden print:block mb-4 border-b-2 border-slate-900 pb-3">
+              <h1 className="text-xl font-black text-slate-900">Rekap Nilai Siswa: {quiz.title}</h1>
+              <div className="text-xs text-slate-600 mt-1 flex items-center gap-4 flex-wrap">
+                <span><strong>Kelas:</strong> {quiz.grade}</span>
+                <span><strong>Mata Pelajaran:</strong> {quiz.subject}</span>
+                <span><strong>PIN Kuis:</strong> {session.pinCode}</span>
+                <span><strong>Total Soal:</strong> {totalQuestions} Butir</span>
+                <span><strong>Dicetak pada:</strong> {formatIndonesianTime(new Date().toISOString(), { withDate: true })}</span>
+              </div>
+            </div>
+
+            {/* Header & Metric Cards */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+              <div>
+                <h3 className="text-base sm:text-lg font-black text-white flex items-center gap-2">
+                  <FileSpreadsheet className="w-5 h-5 text-blue-400" />
+                  <span>Tabel Rekap Live Pengerjaan Siswa</span>
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Rekap progres pengerjaan siswa secara langsung dengan pendeteksi duplikasi pengerjaan & opsi ekspor.
+                </p>
+              </div>
+
+              {/* Action Buttons: Download CSV & Print */}
+              <div className="flex items-center gap-2 flex-wrap no-print">
+                <button
+                  type="button"
+                  onClick={handleExportLiveCSV}
+                  disabled={session.participants.length === 0}
+                  className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 disabled:opacity-40 disabled:pointer-events-none text-white text-xs font-bold flex items-center gap-2 transition-colors min-h-[44px] shadow-md shadow-emerald-950/40"
+                  title="Unduh rekapan hasil kuis sementara ke file CSV / Excel"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Unduh Rekap (CSV)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handlePrintTable}
+                  disabled={session.participants.length === 0}
+                  className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 active:bg-slate-650 disabled:opacity-40 disabled:pointer-events-none text-slate-200 text-xs font-bold flex items-center gap-2 transition-colors min-h-[44px] border border-slate-700"
+                  title="Cetak atau simpan rekapan sebagai dokumen PDF"
+                >
+                  <Printer className="w-4 h-4 text-blue-400" />
+                  <span>Cetak / PDF</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Metric Summary Cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+              <div className="p-3 sm:p-3.5 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
+                <div className="text-[11px] font-bold text-slate-400">Total Entri Masuk</div>
+                <div className="text-xl sm:text-2xl font-black text-white">{session.participants.length}</div>
+                <div className="text-[10px] text-slate-500">Seluruh sesi pengerjaan</div>
+              </div>
+
+              <div className="p-3 sm:p-3.5 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
+                <div className="text-[11px] font-bold text-blue-400">Siswa Unik</div>
+                <div className="text-xl sm:text-2xl font-black text-blue-300">{duplicateStats.uniqueStudents}</div>
+                <div className="text-[10px] text-slate-500">Terdaftar tanpa duplikasi</div>
+              </div>
+
+              <div className="p-3 sm:p-3.5 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
+                <div className="text-[11px] font-bold text-amber-400">Pengerjaan Ulang</div>
+                <div className="text-xl sm:text-2xl font-black text-amber-300">{duplicateStats.repeatAttemptsCount}</div>
+                <div className="text-[10px] text-slate-500">
+                  {duplicateStats.repeatAttemptsCount > 0 ? 'Siswa mengerjakan > 1x' : 'Belum ada ulangan'}
+                </div>
+              </div>
+
+              <div className="p-3 sm:p-3.5 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
+                <div className="text-[11px] font-bold text-emerald-400">Selesai / Progres</div>
+                <div className="text-xl sm:text-2xl font-black text-emerald-300">
+                  {classStats.finishedCount} <span className="text-xs font-normal text-slate-400">/ {session.participants.length}</span>
+                </div>
+                <div className="text-[10px] text-slate-500">Rata-rata: {classStats.avgScore} pts</div>
+              </div>
+            </div>
+
+            {/* Filter Toolbar */}
+            <div className="p-3 sm:p-4 rounded-2xl bg-slate-900/90 border border-slate-800 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 no-print">
+              {/* Left: Filter Attempt Pills */}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-xs font-bold text-slate-400 mr-1 flex items-center gap-1">
+                  <Filter className="w-3.5 h-3.5" />
+                  <span>Percobaan:</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => { playClick(); setDuplicateFilter('all'); }}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all min-h-[38px] ${
+                    duplicateFilter === 'all'
+                      ? 'bg-blue-600 text-white shadow-sm'
+                      : 'bg-slate-800 text-slate-300 hover:bg-slate-750'
+                  }`}
+                >
+                  Semua ({session.participants.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { playClick(); setDuplicateFilter('best'); }}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all min-h-[38px] ${
+                    duplicateFilter === 'best'
+                      ? 'bg-blue-600 text-white shadow-sm'
+                      : 'bg-slate-800 text-slate-300 hover:bg-slate-750'
+                  }`}
+                  title="Hanya tampilkan percobaan dengan nilai tertinggi untuk setiap siswa"
+                >
+                  Nilai Tertinggi ({duplicateStats.uniqueStudents})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { playClick(); setDuplicateFilter('latest'); }}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all min-h-[38px] ${
+                    duplicateFilter === 'latest'
+                      ? 'bg-blue-600 text-white shadow-sm'
+                      : 'bg-slate-800 text-slate-300 hover:bg-slate-750'
+                  }`}
+                  title="Hanya tampilkan percobaan terkini/terakhir untuk setiap siswa"
+                >
+                  Percobaan Terakhir ({duplicateStats.uniqueStudents})
+                </button>
+              </div>
+
+              {/* Right: Search & Status Filter */}
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* Status selector */}
+                <select
+                  value={tableStatusFilter}
+                  onChange={(e) => setTableStatusFilter(e.target.value as any)}
+                  aria-label="Filter status pengerjaan siswa"
+                  className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs font-bold text-slate-200 focus:outline-none focus:border-blue-500 min-h-[40px]"
+                >
+                  <option value="all">Semua Status</option>
+                  <option value="finished">Hanya Selesai ({classStats.finishedCount})</option>
+                  <option value="active">Sedang Mengerjakan ({Math.max(0, session.participants.length - classStats.finishedCount)})</option>
+                </select>
+
+                {/* Search Input */}
+                <div className="relative flex-1 sm:w-56">
+                  <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={tableSearch}
+                    onChange={(e) => setTableSearch(e.target.value)}
+                    placeholder="Cari nama / no. absen..."
+                    className="w-full pl-8 pr-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 min-h-[40px]"
+                  />
+                  {tableSearch && (
+                    <button
+                      type="button"
+                      onClick={() => setTableSearch('')}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs p-1"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Table Container */}
+            {filteredTableParticipants.length === 0 ? (
+              <div className="bg-slate-900/60 rounded-3xl border border-dashed border-slate-800 p-8 text-center space-y-2">
+                <div className="text-3xl">🔍</div>
+                <h4 className="text-sm font-bold text-white">Tidak Ada Data Siswa yang Cocok</h4>
+                <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                  {tableSearch ? `Tidak ditemukan siswa dengan kata kunci "${tableSearch}". Coba ubah pencarian atau reset filter.` : 'Belum ada data siswa pada filter ini.'}
+                </p>
+                {(tableSearch || duplicateFilter !== 'all' || tableStatusFilter !== 'all') && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTableSearch('');
+                      setDuplicateFilter('all');
+                      setTableStatusFilter('all');
+                    }}
+                    className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-blue-300 mt-2 min-h-[40px]"
+                  >
+                    Reset Semua Filter
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="bg-slate-900 rounded-3xl border border-slate-800 overflow-hidden shadow-xl">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs text-slate-300">
+                    <thead className="bg-slate-950/80 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800">
+                      <tr>
+                        <th className="py-3 px-3.5 font-bold text-center w-12">#</th>
+                        <th className="py-3 px-3.5 font-bold">No. Absen & Nama Siswa</th>
+                        <th className="py-3 px-3.5 font-bold text-center">Percobaan</th>
+                        <th className="py-3 px-3.5 font-bold text-center">Skor</th>
+                        <th className="py-3 px-3.5 font-bold text-center">Akurasi</th>
+                        <th className="py-3 px-3.5 font-bold text-center">Benar / Salah / Kosong</th>
+                        <th className="py-3 px-3.5 font-bold text-center">Durasi & Selesai</th>
+                        <th className="py-3 px-3.5 font-bold text-center">Status</th>
+                        <th className="py-3 px-3.5 font-bold text-center no-print">Aksi</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/80">
+                      {filteredTableParticipants.map((p, idx) => {
+                        const avatarEmoji = AVATAR_MAP[p.avatarId] || '🦁';
+
+                        const rawAns = p.answers ? Object.values(p.answers).filter((a: any) => a && a.questionId !== 'quiz_completed') : [];
+                        const uniqueQMap = new Map<string, any>();
+                        rawAns.forEach((a: any) => uniqueQMap.set(a.questionId || String(a.questionIndex), a));
+                        const pAnsList = Array.from(uniqueQMap.values());
+
+                        const displayCorrect = pAnsList.length > 0
+                          ? Math.min(totalQuestions, pAnsList.filter((a: any) => a.isCorrect).length)
+                          : Math.min(totalQuestions, p.correctCount);
+                        const displayIncorrect = pAnsList.length > 0
+                          ? pAnsList.filter((a: any) => !a.isCorrect).length
+                          : Math.min(totalQuestions - displayCorrect, p.incorrectCount);
+                        const answered = pAnsList.length > 0 ? pAnsList.length : (displayCorrect + displayIncorrect);
+                        const unanswered = Math.max(0, totalQuestions - answered);
+                        const displayScore = Math.min(100, pAnsList.length > 0
+                          ? Math.round((displayCorrect / totalQuestions) * 100)
+                          : p.score);
+                        const accuracyRate = totalQuestions > 0 ? Math.round((displayCorrect / totalQuestions) * 100) : 0;
+
+                        return (
+                          <tr
+                            key={p.id}
+                            className="hover:bg-slate-850/70 transition-colors"
+                          >
+                            {/* Peringkat */}
+                            <td className="py-3 px-3.5 text-center font-bold text-slate-400">
+                              {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : idx + 1}
+                            </td>
+
+                            {/* No. Absen & Nama Siswa */}
+                            <td className="py-3 px-3.5">
+                              <div className="flex items-center gap-2.5 min-w-[180px] max-w-sm">
+                                <span className="text-xl flex-shrink-0" role="img" aria-label="avatar">
+                                  {avatarEmoji}
+                                </span>
+                                <div className="min-w-0 flex-1">
+                                  <div className="font-bold text-white text-xs sm:text-sm break-words leading-snug">
+                                    {p.parsedRollNumber ? (
+                                      <span className="inline-flex items-center gap-1 mr-1.5 px-1.5 py-0.2 rounded bg-indigo-500/20 text-indigo-300 font-mono text-[11px] font-black">
+                                        No.{p.parsedRollNumber}
+                                      </span>
+                                    ) : null}
+                                    <span>{p.parsedCleanName || p.name}</span>
+                                  </div>
+                                  {p.tabSwitchCount && p.tabSwitchCount > 0 ? (
+                                    <span className="text-[10px] text-rose-300 font-bold inline-flex items-center gap-0.5 mt-0.5">
+                                      <span>⚠️ Pindah Tab: {p.tabSwitchCount}x</span>
+                                    </span>
+                                  ) : null}
+                                </div>
+                              </div>
+                            </td>
+
+                            {/* Percobaan / Duplikasi */}
+                            <td className="py-3 px-3.5 text-center whitespace-nowrap">
+                              <div className="inline-flex flex-col items-center gap-0.5">
+                                <span
+                                  className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${
+                                    p.attemptNumber > 1
+                                      ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                                      : 'bg-slate-800 text-slate-300 border-slate-700'
+                                  }`}
+                                >
+                                  Ke-{p.attemptNumber} {p.totalAttempts > 1 ? `(${p.totalAttempts}x)` : ''}
+                                </span>
+                                {p.isBestScoreAttempt && p.totalAttempts > 1 && (
+                                  <span className="text-[9px] bg-amber-400 text-slate-950 font-black px-1.5 py-0.2 rounded-full">
+                                    Terbaik
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+
+                            {/* Skor */}
+                            <td className="py-3 px-3.5 text-center whitespace-nowrap">
+                              <span className="text-sm font-black text-amber-300">{displayScore}</span>
+                              <span className="text-[10px] text-slate-400 ml-0.5">pts</span>
+                            </td>
+
+                            {/* Akurasi */}
+                            <td className="py-3 px-3.5 text-center whitespace-nowrap">
+                              <div className="inline-flex flex-col items-center gap-1">
+                                <span
+                                  className={`text-xs font-bold ${
+                                    accuracyRate >= 80
+                                      ? 'text-emerald-400'
+                                      : accuracyRate >= 60
+                                      ? 'text-amber-400'
+                                      : 'text-rose-400'
+                                  }`}
+                                >
+                                  {accuracyRate}%
+                                </span>
+                                <div className="w-14 bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                                  <div
+                                    className={`h-full ${
+                                      accuracyRate >= 80
+                                        ? 'bg-emerald-500'
+                                        : accuracyRate >= 60
+                                        ? 'bg-amber-500'
+                                        : 'bg-rose-500'
+                                    }`}
+                                    style={{ width: `${accuracyRate}%` }}
+                                  />
+                                </div>
+                              </div>
+                            </td>
+
+                            {/* Benar / Salah / Kosong */}
+                            <td className="py-3 px-3.5 text-center whitespace-nowrap">
+                              <div className="flex items-center justify-center gap-1.5 text-xs">
+                                <span className="text-emerald-400 font-bold" title="Jawaban Benar">
+                                  ✓ {displayCorrect}
+                                </span>
+                                <span className="text-slate-600">/</span>
+                                <span className="text-rose-400 font-bold" title="Jawaban Salah">
+                                  ✗ {displayIncorrect}
+                                </span>
+                                {unanswered > 0 && (
+                                  <>
+                                    <span className="text-slate-600">/</span>
+                                    <span className="text-amber-400 font-bold" title="Soal Belum Dijawab / Kosong">
+                                      ⊘ {unanswered}
+                                    </span>
+                                  </>
+                                )}
+                              </div>
+                            </td>
+
+                            {/* Durasi & Waktu Selesai */}
+                            <td className="py-3 px-3.5 text-center whitespace-nowrap">
+                              <div className="text-[11px] font-medium text-slate-300">
+                                {Math.round(p.timeSpentSec)} dtk
+                              </div>
+                              <div className="text-[10px] text-slate-500">
+                                {p.completedAt
+                                  ? formatIndonesianTime(p.completedAt)
+                                  : p.lastActiveAt
+                                  ? `Aktif ${formatIndonesianTime(p.lastActiveAt)}`
+                                  : '-'}
+                              </div>
+                            </td>
+
+                            {/* Status */}
+                            <td className="py-3 px-3.5 text-center whitespace-nowrap">
+                              {p.finished ? (
+                                <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold inline-flex items-center gap-1">
+                                  <Check className="w-3 h-3" />
+                                  <span>Selesai</span>
+                                </span>
+                              ) : (
+                                <span className="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/40 text-[10px] font-bold inline-flex items-center gap-1 animate-pulse">
+                                  <Clock className="w-3 h-3" />
+                                  <span>Mengerjakan</span>
+                                </span>
+                              )}
+                            </td>
+
+                            {/* Aksi: Buka Lembar Jawaban */}
+                            <td className="py-3 px-3.5 text-center whitespace-nowrap no-print">
+                              <button
+                                type="button"
+                                onClick={() => setSelectedStudentForAnalysis(p)}
+                                className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-slate-700 hover:border-indigo-500 text-xs font-bold inline-flex items-center gap-1.5 transition-all min-h-[36px]"
+                                title="Lihat lembar analisis jawaban butir soal siswa"
+                              >
+                                <Eye className="w-3.5 h-3.5" />
+                                <span>Lembar</span>
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB 3: MATRIKS AKURASI SOAL */}
         {activeTab === 'matrix' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -1442,39 +2038,57 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
 
       {/* Floating Live Reactions Overlay (Aktif Sepanjang Sesi) */}
       {session.status !== 'finished' && (
-        <QuizizzReactionOverlay sessionId={session.id} reactions={session.reactions} />
+        <div className="no-print">
+          <QuizizzReactionOverlay sessionId={session.id} reactions={session.reactions} />
+        </div>
       )}
 
-
       {/* Popup Notifikasi Obrolan Masuk */}
-      <ZoomChatToast
-        sessionId={session.id}
-        chatMessages={session.chatMessages}
-        position="top-right"
-        onOpenChat={handleOpenChatDrawer}
-        currentUserName={session.teacherName || 'Guru (Host)'}
-      />
+      <div className="no-print">
+        <ZoomChatToast
+          sessionId={session.id}
+          chatMessages={session.chatMessages}
+          position="top-right"
+          onOpenChat={handleOpenChatDrawer}
+          currentUserName={session.teacherName || 'Guru (Host)'}
+        />
+      </div>
 
       {/* Laci Obrolan Interaktif Guru (Teacher Chat Drawer) */}
-      <TeacherChatDrawer
-        isOpen={isChatDrawerOpen}
-        onClose={handleCloseChatDrawer}
-        sessionId={session.id}
-        teacherName={session.teacherName || 'Guru (Host)'}
-        isChatMuted={Boolean(session.isChatMuted || session.settings?.isChatMuted)}
-        onToggleChatMute={handleToggleChatMute}
-        participantsCount={session.participants?.length || 0}
-        playClick={playClick}
-      />
+      <div className="no-print">
+        <TeacherChatDrawer
+          isOpen={isChatDrawerOpen}
+          onClose={handleCloseChatDrawer}
+          sessionId={session.id}
+          teacherName={session.teacherName || 'Guru (Host)'}
+          isChatMuted={Boolean(session.isChatMuted || session.settings?.isChatMuted)}
+          onToggleChatMute={handleToggleChatMute}
+          participantsCount={session.participants?.length || 0}
+          playClick={playClick}
+        />
+      </div>
 
       {/* Modal Analisis Jawaban Siswa per Butir Soal */}
       {selectedStudentForAnalysis && (
-        <StudentAnswerAnalysisModal
-          isOpen={Boolean(selectedStudentForAnalysis)}
-          onClose={() => setSelectedStudentForAnalysis(null)}
-          participant={selectedStudentForAnalysis}
-          quiz={quiz}
-        />
+        <div className="no-print">
+          <StudentAnswerAnalysisModal
+            isOpen={Boolean(selectedStudentForAnalysis)}
+            onClose={() => setSelectedStudentForAnalysis(null)}
+            participant={selectedStudentForAnalysis}
+            quiz={quiz}
+          />
+        </div>
+      )}
+
+      {/* Floating Toast Notification */}
+      {toastMessage && (
+        <div 
+          role="status" 
+          aria-live="polite" 
+          className="fixed bottom-6 right-6 z-50 bg-slate-900 border border-slate-700 text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2.5 animate-scale-up text-xs sm:text-sm font-bold pointer-events-auto no-print"
+        >
+          <span>{toastMessage}</span>
+        </div>
       )}
 
     </div>
