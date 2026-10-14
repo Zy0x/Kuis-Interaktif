@@ -1,6 +1,25 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.69] - 2026-10-14
+### Penambahan Paket Kuis Resmi IPAS: Simbiosis Kelas 5 SD (Rule 1, Rule 2, Rule 3, Rule 4, Rule 7, Rule 15 & Rule 16)
+
+#### 1. Integrasi Bank Soal IPAS Topik Simbiosis
+- **Paket Kuis Interaktif Simbiosis**: Menambahkan paket kuis baru *Soal Pilihan Ganda IPAS - Simbiosis* (PIN: `5015`, ID: `sd5-ipas-simbiosis`) untuk siswa Kelas 5 SD dengan materi rantai interaksi antarmakhluk hidup (Mutualisme, Komensalisme, dan Parasitisme).
+- **15 Butir Soal Lengkap Berbasis Konsep**:
+  - Pengertian dasar simbiosis sebagai hubungan hidup bersama dua organisme berbeda.
+  - Karakteristik dan contoh nyata simbiosis mutualisme (lebah dan bunga, kerbau dan burung jalak).
+  - Karakteristik dan contoh nyata simbiosis parasitisme (benalu dan pohon mangga, kutu dan kucing).
+  - Karakteristik dan contoh nyata simbiosis komensalisme (anggrek dan pohon inang).
+  - Analisis perbandingan dan studi kasus pasangan simbiosis di alam.
+- **Kunci Jawaban & Pembahasan Mendalam**: Seluruh butir soal dilengkapi kunci jawaban terverifikasi dan uraian penjelasan edukatif yang mendidik serta ramah siswa.
+- **Dukungan Akses Berbagai Mode**: Kuis langsung tersinkronisasi ke dasbor pendidik di bawah akun Admin dan dapat diakses siswa menggunakan PIN `5015` pada semua perangkat.
+
+#### 2. Pembaruan Versi & Cache PWA
+- Memperbarui versi aplikasi ke `2.4.69` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.69` (`public/sw.js`).
+- Memperbarui badge versi di `README.md`.
+
 ## [2.4.68] - 2026-10-12
 ### Penambahan Paket Kuis Resmi Pendidikan Pancasila Kelas 5 SD (Rule 1, Rule 2, Rule 3, Rule 4, Rule 7, Rule 15 & Rule 16)
 

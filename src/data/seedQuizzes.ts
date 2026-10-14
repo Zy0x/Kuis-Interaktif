@@ -729,5 +729,209 @@ export const INITIAL_QUIZZES: Quiz[] = [
         customDurationSec: 35
       }
     ]
+  },
+  {
+    id: 'sd5-ipas-simbiosis',
+    title: 'Soal Pilihan Ganda IPAS - Simbiosis',
+    description: 'Kuis interaktif IPAS Kelas 5 SD topik Simbiosis. Dilengkapi 15 butir soal pilihan ganda tentang hubungan antarmakhluk hidup (Mutualisme, Komensalisme, Parasitisme) beserta kunci jawaban dan penjelasan lengkap.',
+    subject: 'IPAS',
+    grade: 5,
+    educationLevel: 'SD',
+    durationPerQuestionSec: 30,
+    coverEmoji: '🌿',
+    themeColor: 'from-emerald-500 to-teal-700',
+    badgeTitle: 'Pakar Simbiosis',
+    pinCode: '5015',
+    creatorId: '6b995377-1c3c-4b1f-a91e-e439f923185b',
+    creatorName: 'Admin',
+    visibility: 'public',
+    isPublished: true,
+    questions: [
+      {
+        id: 'sd5-ipas-simbiosis-q01',
+        text: 'Hubungan yang terjadi antara dua makhluk hidup yang hidup bersama disebut ....',
+        type: 'multiple_choice',
+        imageCaption: '🔍 Interaksi Dua Makhluk Hidup',
+        options: ['habitat', 'simbiosis', 'ekosistem', 'populasi'],
+        correctIndex: 1,
+        explanation: 'Simbiosis adalah hubungan atau interaksi timbal balik yang erat dan khas antara dua organisme atau makhluk hidup berbeda yang hidup berdampingan.',
+        points: 10,
+        customDurationSec: 30
+      },
+      {
+        id: 'sd5-ipas-simbiosis-q02',
+        text: 'Simbiosis yang menguntungkan kedua makhluk hidup disebut ....',
+        type: 'multiple_choice',
+        imageCaption: '🤝 Interaksi Saling Menguntungkan',
+        options: ['parasitisme', 'komensalisme', 'mutualisme', 'kompetisi'],
+        correctIndex: 2,
+        explanation: 'Simbiosis mutualisme adalah bentuk interaksi antara dua makhluk hidup yang saling memberikan keuntungan bagi kedua belah pihak tanpa ada yang dirugikan.',
+        points: 10,
+        customDurationSec: 30
+      },
+      {
+        id: 'sd5-ipas-simbiosis-q03',
+        text: 'Contoh simbiosis mutualisme adalah hubungan antara ....',
+        type: 'multiple_choice',
+        imageCaption: '🐝 Lebah dan Bunga Mekar',
+        options: ['benalu dan pohon mangga', 'kucing dan tikus', 'lebah dan bunga', 'ikan hiu dan ikan kecil'],
+        correctIndex: 2,
+        explanation: 'Hubungan lebah dan bunga adalah mutualisme karena lebah memperoleh nektar manis sebagai makanan, sedangkan bunga terbantu dalam proses penyerbukannya.',
+        points: 10,
+        customDurationSec: 30
+      },
+      {
+        id: 'sd5-ipas-simbiosis-q04',
+        text: 'Dalam hubungan lebah dan bunga, lebah mendapatkan ....',
+        type: 'multiple_choice',
+        imageCaption: '🍯 Lebah Mengisap Nektar Bunga',
+        options: ['tempat berlindung', 'nektar sebagai makanan', 'air', 'daun'],
+        correctIndex: 1,
+        explanation: 'Lebah hinggap pada bunga untuk mengisap nektar atau cairan manis sebagai sumber makanan utamanya dalam memproduksi madu.',
+        points: 10,
+        customDurationSec: 30
+      },
+      {
+        id: 'sd5-ipas-simbiosis-q05',
+        text: 'Hubungan antara benalu dan pohon yang ditumpanginya merupakan simbiosis ....',
+        type: 'multiple_choice',
+        imageCaption: '🌿 Benalu Menempel pada Batang Pohon',
+        options: ['mutualisme', 'komensalisme', 'parasitisme', 'netralisme'],
+        correctIndex: 2,
+        explanation: 'Benalu menyerap air dan mineral langsung dari pohon inang sehingga pohon inang kekurangan nutrisi dan dapat mati. Ini merupakan contoh simbiosis parasitisme.',
+        points: 10,
+        customDurationSec: 30
+      },
+      {
+        id: 'sd5-ipas-simbiosis-q06',
+        text: 'Pada simbiosis parasitisme, salah satu makhluk hidup ....',
+        type: 'multiple_choice',
+        imageCaption: '⚠️ Satu Pihak Diuntungkan, Pihak Lain Dirugikan',
+        options: [
+          'diuntungkan dan yang lain dirugikan',
+          'diuntungkan dan yang lain tidak terpengaruh',
+          'keduanya diuntungkan',
+          'keduanya dirugikan'
+        ],
+        correctIndex: 0,
+        explanation: 'Parasitisme adalah hubungan di mana parasit mendapatkan keuntungan (makanan/tempat), sedangkan organisme inang (host) mengalami kerugian bahkan kerusakan fisik.',
+        points: 10,
+        customDurationSec: 30
+      },
+      {
+        id: 'sd5-ipas-simbiosis-q07',
+        text: 'Contoh lain simbiosis parasitisme adalah hubungan antara ....',
+        type: 'multiple_choice',
+        imageCaption: '🐱 Kutu Menempel pada Tubuh Kucing',
+        options: ['kupu-kupu dan bunga', 'kutu dan kucing', 'kerbau dan burung jalak', 'ikan badut dan anemon laut'],
+        correctIndex: 1,
+        explanation: 'Kutu mengisap darah kucing dan menyebabkan gatal serta penyakit kulit (kucing dirugikan, kutu diuntungkan). Ini merupakan contoh parasitisme.',
+        points: 10,
+        customDurationSec: 30
+      },
+      {
+        id: 'sd5-ipas-simbiosis-q08',
+        text: 'Kutu yang hidup pada tubuh kucing mendapatkan keuntungan berupa ....',
+        type: 'multiple_choice',
+        imageCaption: '🔍 Kutu Mengambil Makanan dan Perlindungan',
+        options: ['makanan', 'cahaya matahari', 'tempat berteduh dan makanan', 'nektar bunga'],
+        correctIndex: 2,
+        explanation: 'Kutu memanfaatkan tubuh kucing sebagai tempat berteduh/berlindung yang hangat sekaligus mendapatkan makanan berupa darah kucing.',
+        points: 10,
+        customDurationSec: 30
+      },
+      {
+        id: 'sd5-ipas-simbiosis-q09',
+        text: 'Simbiosis komensalisme adalah hubungan yang menyebabkan ....',
+        type: 'multiple_choice',
+        imageCaption: '🌸 Satu Untung, Pihak Lain Netral',
+        options: [
+          'kedua makhluk hidup dirugikan',
+          'kedua makhluk hidup diuntungkan',
+          'satu makhluk hidup diuntungkan, sedangkan yang lain tidak dirugikan',
+          'satu makhluk hidup dirugikan, sedangkan yang lain tidak mendapatkan keuntungan'
+        ],
+        correctIndex: 2,
+        explanation: 'Komensalisme adalah hubungan di mana satu pihak mendapatkan keuntungan, sedangkan pihak lain tidak merasa dirugikan dan juga tidak diuntungkan (netral).',
+        points: 10,
+        customDurationSec: 30
+      },
+      {
+        id: 'sd5-ipas-simbiosis-q10',
+        text: 'Contoh simbiosis komensalisme adalah hubungan antara ....',
+        type: 'multiple_choice',
+        imageCaption: '🌺 Anggrek Tumbuh Menempel di Batang Pohon',
+        options: ['anggrek dan pohon', 'benalu dan pohon', 'kutu dan kucing', 'lebah dan bunga'],
+        correctIndex: 0,
+        explanation: 'Tanaman anggrek yang menempel pada batang pohon mendapatkan tempat hidup dan cahaya matahari tanpa menyerap nutrisi pohon inang (inang tidak dirugikan).',
+        points: 10,
+        customDurationSec: 30
+      },
+      {
+        id: 'sd5-ipas-simbiosis-q11',
+        text: 'Pada hubungan anggrek dan pohon yang ditumpanginya, anggrek mendapatkan ....',
+        type: 'multiple_choice',
+        imageCaption: '☀️ Anggrek Mendapatkan Paparan Cahaya Matahari',
+        options: [
+          'makanan dari pohon',
+          'tempat untuk hidup dan mendapatkan cahaya',
+          'darah dari pohon',
+          'nektar dari pohon'
+        ],
+        correctIndex: 1,
+        explanation: 'Anggrek adalah tumbuhan epifit yang hanya menumpang tempat hidup di tempat yang lebih tinggi agar memperoleh sinar matahari untuk fotosintesis mandiri.',
+        points: 10,
+        customDurationSec: 30
+      },
+      {
+        id: 'sd5-ipas-simbiosis-q12',
+        text: 'Hubungan kerbau dan burung jalak termasuk simbiosis ....',
+        type: 'multiple_choice',
+        imageCaption: '🐃 Burung Jalak Bertengger di Punggung Kerbau',
+        options: ['parasitisme', 'komensalisme', 'mutualisme', 'kompetisi'],
+        correctIndex: 2,
+        explanation: 'Hubungan kerbau dan burung jalak adalah mutualisme: burung jalak kenyang memakan kutu, dan kerbau terbebas dari rasa gatal akibat kutu di tubuhnya.',
+        points: 10,
+        customDurationSec: 30
+      },
+      {
+        id: 'sd5-ipas-simbiosis-q13',
+        text: 'Dalam hubungan kerbau dan burung jalak, burung jalak mendapatkan makanan berupa ....',
+        type: 'multiple_choice',
+        imageCaption: '🐦 Burung Jalak Memakan Kutu Kerbau',
+        options: ['rumput', 'kutu yang ada pada tubuh kerbau', 'daun pohon', 'nektar bunga'],
+        correctIndex: 1,
+        explanation: 'Burung jalak mematuk dan memakan kutu-kutu yang hinggap serta mengisap darah di permukaan kulit kerbau.',
+        points: 10,
+        customDurationSec: 30
+      },
+      {
+        id: 'sd5-ipas-simbiosis-q14',
+        text: 'Persamaan hubungan lebah dan bunga dengan kerbau dan burung jalak adalah ....',
+        type: 'multiple_choice',
+        imageCaption: '✨ Prinsip Saling Menguntungkan (Mutualisme)',
+        options: [
+          'salah satu pihak dirugikan',
+          'salah satu pihak tidak mendapatkan keuntungan',
+          'kedua makhluk hidup mendapatkan keuntungan',
+          'kedua makhluk hidup saling merugikan'
+        ],
+        correctIndex: 2,
+        explanation: 'Keduanya sama-sama tergolong simbiosis mutualisme, di mana kedua makhluk hidup yang terlibat saling memberi dan menerima keuntungan.',
+        points: 10,
+        customDurationSec: 30
+      },
+      {
+        id: 'sd5-ipas-simbiosis-q15',
+        text: 'Perhatikan pasangan berikut: (1) Benalu dan pohon mangga, (2) Lebah dan bunga, (3) Kutu dan kucing, (4) Anggrek dan pohon. Pasangan yang menunjukkan simbiosis komensalisme adalah ....',
+        type: 'multiple_choice',
+        imageCaption: '📊 Analisis Pola Interaksi Simbiosis',
+        options: ['1', '2', '3', '4'],
+        correctIndex: 3,
+        explanation: 'Pasangan (1) Benalu dan pohon mangga = Parasitisme. Pasangan (2) Lebah dan bunga = Mutualisme. Pasangan (3) Kutu dan kucing = Parasitisme. Pasangan (4) Anggrek dan pohon = Komensalisme. Jadi pasangan yang menunjukkan komensalisme adalah nomor 4.',
+        points: 10,
+        customDurationSec: 30
+      }
+    ]
   }
 ];
