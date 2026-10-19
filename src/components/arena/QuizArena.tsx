@@ -915,9 +915,15 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
       const acceptable = (question.acceptableAnswers || []).map(normalizeAnswer);
       const optMatch = question.options[question.correctIndex] ? normalizeAnswer(question.options[question.correctIndex]) : '';
       isCorrect = (Boolean(optMatch) && clean === optMatch) || acceptable.includes(clean);
-      earnedPoints = isCorrect ? (question.points || 10) : 0;
     } else {
-      isCorrect = optionIndex === question.correctIndex;
+      const selectedText = (optionIndex >= 0 && question.options?.[optionIndex]) ? normalizeAnswer(question.options[optionIndex]) : '';
+      const correctOptText = (question.correctIndex >= 0 && question.options?.[question.correctIndex]) ? normalizeAnswer(question.options[question.correctIndex]) : '';
+      const acceptable = (question.acceptableAnswers || []).map(normalizeAnswer);
+
+      // Tangguh berlapis: Benar jika indeks cocok, atau teks opsi cocok dengan teks kunci, atau teks opsi terdaftar di acceptableAnswers
+      isCorrect = optionIndex === question.correctIndex
+        || (Boolean(selectedText) && Boolean(correctOptText) && selectedText === correctOptText)
+        || (Boolean(selectedText) && acceptable.includes(selectedText));
       earnedPoints = isCorrect ? (question.points || 10) : 0;
     }
 
@@ -2199,7 +2205,10 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 xl:gap-4">
             {question.options.map((optText, idx) => {
               const isSelected = selectedOption === idx;
-              const isCorrectOpt = question.correctIndex === idx;
+              const cleanOpt = normalizeAnswer(optText);
+              const acceptableList = (question.acceptableAnswers || []).map(normalizeAnswer);
+              const isCorrectOpt = question.correctIndex === idx
+                || (acceptableList.length > 0 && acceptableList.includes(cleanOpt));
 
               let btnStyle = 'bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 hover:border-blue-300 dark:hover:border-blue-500/60 hover:bg-slate-50 dark:hover:bg-slate-750';
 

@@ -227,10 +227,24 @@ export const QuizResult: React.FC<QuizResultProps> = ({
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
             {quiz.questions.map((q, idx) => {
               const studentAnswer = answers.find((a) => a.questionId === q.id);
-              const isCorrect = studentAnswer?.isCorrect;
               const selectedIdx = studentAnswer?.selectedIndex ?? -1;
+              const rawStudentText = studentAnswer?.textAnswer 
+                || (selectedIdx >= 0 && q.options?.[selectedIdx] ? q.options[selectedIdx] : '');
+              const cleanStudentText = rawStudentText.trim().toLowerCase();
+              const acceptableList = (q.acceptableAnswers || []).map((a) => a.trim().toLowerCase());
+              const correctOptText = (q.correctIndex >= 0 && q.options?.[q.correctIndex]) ? q.options[q.correctIndex].trim().toLowerCase() : '';
+
+              // Auto-heal tangguh: jika teks jawaban siswa persis sama dengan kunci atau acceptableAnswers, anggap benar
+              const isTextMatched = Boolean(cleanStudentText) && (
+                cleanStudentText === correctOptText || 
+                (acceptableList.length > 0 && acceptableList.includes(cleanStudentText))
+              );
+
+              const isCorrect = Boolean(studentAnswer?.isCorrect || isTextMatched);
               const qPoints = q.points || 10;
-              const earned = studentAnswer?.earnedPoints ?? (isCorrect ? qPoints : 0);
+              const earned = isCorrect 
+                ? (studentAnswer?.earnedPoints && studentAnswer.earnedPoints > 0 ? studentAnswer.earnedPoints : qPoints) 
+                : (studentAnswer?.earnedPoints ?? 0);
               const isPartial = !isCorrect && earned > 0;
 
               return (
@@ -316,7 +330,9 @@ export const QuizResult: React.FC<QuizResultProps> = ({
                         <span className="font-bold text-emerald-700 dark:text-emerald-400">
                           {q.type === 'matching_pairs'
                             ? (q.matchingPairs?.map((p) => `${p.left} ↔ ${p.right}`).join(', ') || 'Pasangan Konsep Tepat')
-                            : q.acceptableAnswers?.[0] || q.options?.[q.correctIndex] || 'Jawaban Tepat'}
+                            : (q.correctIndex !== undefined && q.options?.[q.correctIndex] !== undefined)
+                            ? q.options[q.correctIndex]
+                            : q.acceptableAnswers?.[0] || 'Jawaban Tepat'}
                         </span>
                       </p>
                     )}

@@ -456,6 +456,10 @@ Topik: ${topic}
 Format: ${formatInstruction}
 Jumlah Soal: ${count} butir soal
 
+ATURAN MUTLAK KUALITAS BUTIR SOAL:
+1. LARANGAN KERAS MONOLOG INTERNAL: Kolom "explanation" HANYA boleh berisi pembahasan materi konsep edukatif final (1-3 kalimat). DILARANG KERAS menyertakan monolog berpikir, koreksi diri, atau kalimat seperti "Tunggu...", "Maaf, mari periksa lagi", "Opsi D adalah...", "Mari saya koreksi index".
+2. KETEPATAN correctIndex: Properti "correctIndex" adalah nomor indeks 0-based yang WAJIB menunjuk ke opsi yang benar pada array "options" (0 untuk A, 1 untuk B, 2 untuk C, 3 untuk D). Pastikan options[correctIndex] tepat dan benar 100%!
+
 KEMBALIKAN HANYA ARRAY JSON MURNI TANPA PEMBUKA/PENUTUP MARKDOWN ATAU PENJELASAN LAIN:
 [
   {
@@ -463,7 +467,7 @@ KEMBALIKAN HANYA ARRAY JSON MURNI TANPA PEMBUKA/PENUTUP MARKDOWN ATAU PENJELASAN
     "type": "multiple_choice",
     "options": ["A", "B", "C", "D"],
     "correctIndex": 0,
-    "explanation": "Penjelasan singkat...",
+    "explanation": "Penjelasan konsep mengapa kunci benar dan opsi lain keliru...",
     "points": 10,
     "customDurationSec": 30,
     "acceptableAnswers": ["Kunci"],
@@ -704,7 +708,38 @@ KEMBALIKAN HANYA ARRAY JSON MURNI TANPA PEMBUKA/PENUTUP MARKDOWN ATAU PENJELASAN
       }
     }
 
-    const questions = Array.isArray(parsed) ? parsed : (parsed?.questions || parsed?.data || []);
+    const rawQuestions = Array.isArray(parsed) ? parsed : (parsed?.questions || parsed?.data || []);
+
+    // Normalisasi, auto-heal index mismatch, dan pembersihan monolog
+    const questions = rawQuestions.map((q: any) => {
+      let correctIndex = typeof q.correctIndex === 'number' ? q.correctIndex : 0;
+      const opts = Array.isArray(q.options) ? q.options.map(String) : [];
+      
+      // Auto-heal jika acceptableAnswers cocok dengan salah satu opsi
+      if (Array.isArray(q.acceptableAnswers) && q.acceptableAnswers.length > 0 && opts.length > 0) {
+        const acc0 = String(q.acceptableAnswers[0]).trim().toLowerCase();
+        const matchIdx = opts.findIndex((o: string) => o.trim().toLowerCase() === acc0);
+        if (matchIdx !== -1 && matchIdx !== correctIndex) {
+          correctIndex = matchIdx;
+        }
+      }
+
+      let cleanExplanation = String(q.explanation || 'Pembahasan materi terkait konsep kurikulum.');
+      cleanExplanation = cleanExplanation
+        .replace(/tunggu,[\s\S]*$/i, '')
+        .replace(/maaf, mari periksa lagi[\s\S]*$/i, '')
+        .replace(/mari saya koreksi[\s\S]*$/i, '')
+        .replace(/opsi [A-Z] adalah [\s\S]*$/i, '')
+        .trim();
+      if (!cleanExplanation) cleanExplanation = 'Pembahasan materi terkait konsep kurikulum.';
+
+      return {
+        ...q,
+        options: opts,
+        correctIndex,
+        explanation: cleanExplanation
+      };
+    });
 
     return new Response(JSON.stringify({ 
       questions, 

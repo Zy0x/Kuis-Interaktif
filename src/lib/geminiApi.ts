@@ -1096,6 +1096,8 @@ STANDAR KUALITAS BUTIR SOAL (ANTI-AI SLOP & HIGH-PEDAGOGY):
 2. Pengecoh Masuk Akal (Plausible Distractors): Pilihan salah pada 'options' WAJIB berasal dari miskonsepsi umum peserta didik, BUKAN jawaban konyol yang terlalu mudah ditebak.
 3. Kesetaraan Panjang Opsi: Panjang teks pilihan jawaban (A, B, C, D) harus proporsional dan seimbang. DILARANG membuat kunci jawaban selalu menjadi pilihan paling panjang!
 4. Pembahasan Edukatif Berbobot (Explanation): Properti "explanation" WAJIB menjelaskan konsep mengapa jawaban benar dan mengapa opsi lain keliru dengan bahasa santun dan menumbuhkan rasa percaya diri anak (1-3 kalimat).
+5. LARANGAN KERAS MONOLOG INTERNAL: DILARANG KERAS menyertakan monolog berpikir, koreksi diri, atau kalimat seperti "Tunggu...", "Maaf, mari periksa lagi", "Opsi D adalah...", "Mari saya koreksi index". Explanation HANYA berisi penjelasan materi final!
+6. KETEPATAN INDEKS KUNCI: Nilai 'correctIndex' adalah angka 0-based yang WAJIB menunjuk ke opsi yang benar pada 'options' (0 untuk A, 1 untuk B, 2 untuk C, 3 untuk D). Pastikan options[correctIndex] tepat dan cocok 100%!
 
 ATURAN WAJIB OUTPUT:
 1. Kembalikan HANYA format JSON valid tanpa pembuka/penutup obrolan teks.
@@ -1250,6 +1252,27 @@ function normalizeQuestions(rawList: any[], providerPrefix: string, autoGenerate
       correctIndex = 0;
     }
 
+    // Auto-heal index mismatch: jika acceptableAnswers ada dan cocok dengan salah satu opsi, sinkronkan correctIndex
+    if (Array.isArray(item.acceptableAnswers) && item.acceptableAnswers.length > 0) {
+      const acc0 = String(item.acceptableAnswers[0]).trim().toLowerCase();
+      const matchedIdx = options.findIndex((o) => o.trim().toLowerCase() === acc0);
+      if (matchedIdx !== -1 && matchedIdx !== correctIndex) {
+        correctIndex = matchedIdx;
+      }
+    }
+
+    // Pembersihan monolog internal pada explanation jika ada AI yang berpikir keras
+    let cleanExplanation = String(item.explanation || 'Pembahasan materi terkait konsep kurikulum.');
+    cleanExplanation = cleanExplanation
+      .replace(/tunggu,[\s\S]*$/i, '')
+      .replace(/maaf, mari periksa lagi[\s\S]*$/i, '')
+      .replace(/mari saya koreksi[\s\S]*$/i, '')
+      .replace(/opsi [A-Z] adalah [\s\S]*$/i, '')
+      .trim();
+    if (!cleanExplanation) {
+      cleanExplanation = 'Pembahasan materi terkait konsep kurikulum.';
+    }
+
     if (qType === 'true_false') {
       options = ['Benar', 'Salah'];
       if (correctIndex !== 0 && correctIndex !== 1) correctIndex = 0;
@@ -1279,7 +1302,7 @@ function normalizeQuestions(rawList: any[], providerPrefix: string, autoGenerate
       imagePrompt: rawImagePrompt,
       options,
       correctIndex,
-      explanation: String(item.explanation || 'Pembahasan materi terkait konsep kurikulum.'),
+      explanation: cleanExplanation,
       points,
       customDurationSec,
       acceptableAnswers: Array.isArray(item.acceptableAnswers) ? item.acceptableAnswers.map(String) : undefined,

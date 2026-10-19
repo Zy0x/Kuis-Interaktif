@@ -1,6 +1,31 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.72] - 2026-10-19
+### Perbaikan Kunci Jawaban, Evaluasi Berlapis Pilihan Ganda, & Eliminasi Monolog Internal AI (Rule 1, Rule 2, Rule 3, Rule 4, Rule 5, Rule 7, Rule 15 & Rule 16)
+
+#### 1. Perbaikan Kunci Jawaban & Pembahasan Bersih Soal Operasi Hitung Campuran
+- **Koreksi Indeks Kunci Jawaban Soal 2**: Memperbaiki nomor indeks kunci jawaban pada soal *"Hitunglah hasil dari 25 - 10 : 2 + 5"* kuis Matematika *Masteri Nalar: Operasi Hitung Campuran* (PIN: `5160`) dari indeks `3` (opsi `15`) menjadi indeks `2` (opsi `25`).
+- **Eliminasi Monolog Internal AI pada Pembahasan**: Menghapus seluruh teks proses berpikir mentah / koreksi diri AI (seperti *"Tunggu, urutannya... Maaf, mari periksa lagi... Mari saya koreksi index"*) dan menggantinya dengan pembahasan konsep matematis KABATAKU yang bersih, terstruktur, dan ramah siswa SD.
+
+#### 2. Evaluasi Berlapis Tangguh & Eliminasi Anomali Penilaian (`QuizArena.tsx`)
+- **Verifikasi Bertingkat Pilihan Ganda**: Memperbarui algoritma penilaian jawaban siswa di arena kuis sehingga memeriksa tidak hanya kesamaan indeks nomor (`optionIndex === correctIndex`), melainkan juga kesesuaian teks opsi terhadap rujukan kunci dan daftar jawaban yang diterima (`acceptableAnswers`).
+- **Pemberian Skor Adil**: Memastikan siswa yang memilih opsi dengan nilai matematis yang benar tidak lagi digugurkan nilainya atau ditandai salah akibat kesalahan penomoran indeks opsi.
+- **Pewarnaan Opsi Interaktif Konsisten**: Memperbarui status penyorotan opsi saat jawaban dikonfirmasi agar menyorot pilihan hijau secara tepat berdasarkan isi teks jawaban maupun indeks kunci.
+
+#### 3. Sinkronisasi Tampilan Review Hasil Kuis (`QuizResult.tsx`)
+- **Penyembuhan Otomatis (*Auto-Heal*) Ulasan Jawaban**: Mengeliminasi kontradiksi visual di mana ulasan soal sebelumnya menampilkan *"Jawabanmu: 25"* dan *"Kunci Jawaban: 25"* namun berstatus merah *"Belum Tepat (+0 Poin)"*. Sistem kini memvalidasi keselarasan teks sehingga jawaban yang tepat langsung berstatus hijau *"Benar (+Poin)"*.
+- **Rujukan Kunci Jawaban Konsisten**: Memprioritaskan opsi teks pada `options[correctIndex]` sehingga selalu selaras dengan pilihan yang tersedia bagi siswa.
+
+#### 4. Penguatan Standar Pembuatan Soal & Sanitasi Monolog AI (`geminiApi.ts`, `generate-quiz-ai`)
+- **Filter Sanitasi Monolog AI**: Menyematkan pembersih otomatis pada modul pembuatan soal berbasis AI untuk menyaring dan memotong frase monolog internal model bahasa.
+- **Penyelarasan Indeks Otomatis (*Auto-Align Index*)**: Menyelaraskan nilai `correctIndex` secara otomatis dengan opsi array jika `acceptableAnswers` cocok dengan salah satu pilihan opsi jawaban.
+
+#### 5. Pembaruan Versi & Cache PWA
+- Memperbarui versi aplikasi ke `2.4.72` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.72` (`public/sw.js`).
+- Memperbarui lencana versi di `README.md`.
+
 ## [2.4.71] - 2026-10-19
 ### Fitur Aktifkan Kembali Sesi Kuis Selesai & Reaktivasi Kuis PIN 359871 (Rule 1, Rule 2, Rule 3, Rule 4, Rule 5, Rule 7, Rule 15 & Rule 16)
 
