@@ -15,6 +15,7 @@ import { WaygroundHostView } from './WaygroundHostView';
 import { QuizSessionRecapView } from './QuizSessionRecapView';
 import { AdminDatabaseBackupModal } from './AdminDatabaseBackupModal';
 import { ExtendDeadlineModal } from './ExtendDeadlineModal';
+import { ReactivateSessionModal } from './ReactivateSessionModal';
 import { getAccurateDeadlineCountdown, useDeadlineTicker } from '../../lib/deadlineUtils';
 import { saveNavigationState, type TeacherTabState } from '../../lib/navigationState';
 import { 
@@ -183,7 +184,16 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
   // Mode Mandiri / PR States & Deadline Ticker
   const nowMs = useDeadlineTicker(1000);
   const [sessionToExtendDeadline, setSessionToExtendDeadline] = useState<QuizSession | null>(null);
+  const [sessionToReactivate, setSessionToReactivate] = useState<QuizSession | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [activeSessionBannerIdx, setActiveSessionBannerIdx] = useState(0);
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => {
+      setToastMessage((cur) => (cur === msg ? null : cur));
+    }, 4000);
+  };
 
   // Sinkronisasi status host session ke URL dan sessionStorage agar tahan refresh halaman
   useEffect(() => {
@@ -475,6 +485,15 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
     await loadData();
   };
 
+  const handleReactivateSession = async (sessionId: string, newDeadlineIso: string | null) => {
+    const updated = await DataManager.reactivateQuizSession(sessionId, newDeadlineIso);
+    if (updated) {
+      setSessions((prev) => prev.map((item) => (item.id === sessionId ? updated : item)));
+      showToast(`🎉 Sesi kuis "${updated.quizTitle}" (PIN ${updated.pinCode}) berhasil diaktifkan kembali!`);
+    }
+    await loadData();
+  };
+
   const liveSessionsCount = useMemo(
     () => sessions.filter((s) => s.status === 'active' || s.status === 'paused' || s.status === 'waiting').length,
     [sessions]
@@ -674,6 +693,11 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
         quiz={matchingQuiz}
         onBack={() => {
           setSelectedSessionForRecap(null);
+          loadData();
+        }}
+        onSessionUpdated={(updated) => {
+          setSelectedSessionForRecap(updated);
+          setSessions((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
           loadData();
         }}
         playClick={playClick}
@@ -1849,30 +1873,46 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                           </div>
                         </>
                       ) : (
-                        <div className="flex items-center gap-2">
+                        <div className="space-y-2">
+                          {/* Tombol Utama: Aktifkan Kembali Sesi Kuis */}
                           <button
                             type="button"
                             onClick={() => {
                               playClick();
-                              setSelectedSessionForRecap(s);
+                              setSessionToReactivate(s);
                             }}
-                            className="flex-1 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black flex items-center justify-center gap-2 shadow-xs transition-all btn-press min-h-[44px]"
+                            className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-black flex items-center justify-center gap-2 shadow-md shadow-emerald-950/20 transition-all btn-press min-h-[44px]"
+                            title="Buka dan aktifkan kembali sesi kuis ini agar siswa dapat mengerjakan lagi"
                           >
-                            <FileSpreadsheet className="w-4 h-4" />
-                            <span>Lihat Rekap Lengkap & Analisis</span>
+                            <RotateCcw className="w-4 h-4" />
+                            <span>Aktifkan Kembali Kuis</span>
                           </button>
 
-                          <button
-                            type="button"
-                            onClick={() => {
-                              playClick();
-                              setSessionToDelete(s);
-                            }}
-                            className="p-2.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-slate-200 dark:border-slate-800 min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors flex-shrink-0"
-                            title="Hapus Sesi Kuis Ini"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                playClick();
+                                setSelectedSessionForRecap(s);
+                              }}
+                              className="flex-1 py-2.5 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors min-h-[44px]"
+                            >
+                              <FileSpreadsheet className="w-4 h-4 text-emerald-500" />
+                              <span>Rekap & Analisis</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                playClick();
+                                setSessionToDelete(s);
+                              }}
+                              className="p-2.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-slate-200 dark:border-slate-800 min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors flex-shrink-0"
+                              title="Hapus Sesi Kuis Ini"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -1969,6 +2009,24 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
         onExtend={handleExtendSessionDeadline}
         playClick={playClick}
       />
+
+      {/* Modal Aktifkan Kembali Sesi Kuis Selesai */}
+      <ReactivateSessionModal
+        isOpen={Boolean(sessionToReactivate)}
+        session={sessionToReactivate}
+        onClose={() => setSessionToReactivate(null)}
+        onReactivate={handleReactivateSession}
+        playClick={playClick}
+      />
+
+      {/* Floating Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 max-w-md animate-in fade-in slide-in-from-bottom-4 duration-300">
+          <div className="bg-slate-900/95 dark:bg-emerald-950/95 text-white text-xs sm:text-sm font-semibold px-4 py-3 rounded-2xl shadow-xl border border-emerald-500/30 flex items-center gap-3 backdrop-blur-md">
+            <span>{toastMessage}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -17,13 +17,17 @@ import {
   Award,
   TrendingUp,
   Users,
-  Eye
+  Eye,
+  RotateCcw
 } from 'lucide-react';
+import { ReactivateSessionModal } from './ReactivateSessionModal';
+import { DataManager } from '../../lib/supabaseClient';
 
 interface QuizSessionRecapViewProps {
   session: QuizSession;
   quiz: Quiz;
   onBack: () => void;
+  onSessionUpdated?: (updated: QuizSession) => void;
   playClick: () => void;
 }
 
@@ -31,12 +35,19 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
   session,
   quiz,
   onBack,
+  onSessionUpdated,
   playClick,
 }) => {
+  const [currentSession, setCurrentSession] = useState<QuizSession>(session);
+  const [isReactivateModalOpen, setIsReactivateModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'students' | 'questions'>('overview');
   const [searchStudent, setSearchStudent] = useState('');
   const [selectedStudentForModal, setSelectedStudentForModal] = useState<QuizSessionParticipant | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    setCurrentSession(session);
+  }, [session]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -45,8 +56,19 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
     }, 3500);
   };
 
-  const totalQuestions = quiz.questions?.length || session.totalQuestions || 1;
-  const participants = session.participants || [];
+  const handleReactivateSession = async (sessionId: string, newDeadlineIso: string | null) => {
+    const updated = await DataManager.reactivateQuizSession(sessionId, newDeadlineIso);
+    if (updated) {
+      setCurrentSession(updated);
+      if (onSessionUpdated) {
+        onSessionUpdated(updated);
+      }
+      showToast(`🎉 Sesi kuis PIN ${updated.pinCode} berhasil diaktifkan kembali! Siswa dapat mengerjakan kembali.`);
+    }
+  };
+
+  const totalQuestions = quiz.questions?.length || currentSession.totalQuestions || 1;
+  const participants = currentSession.participants || [];
 
   // Ranked participants
   const rankedParticipants = useMemo(() => {
@@ -240,7 +262,7 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `Rekap_Nilai_${quiz.title.replace(/[^a-zA-Z0-9]/g, '_')}_PIN_${session.pinCode}.csv`;
+    a.download = `Rekap_Nilai_${quiz.title.replace(/[^a-zA-Z0-9]/g, '_')}_PIN_${currentSession.pinCode}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -253,8 +275,8 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
     window.print();
   };
 
-  const formattedDate = session.startedAt 
-    ? new Date(session.startedAt).toLocaleDateString('id-ID', {
+  const formattedDate = currentSession.startedAt 
+    ? new Date(currentSession.startedAt).toLocaleDateString('id-ID', {
         day: 'numeric',
         month: 'long',
         year: 'numeric',
@@ -291,7 +313,7 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
                 </span>
                 <span className="text-xs text-slate-400 hidden sm:inline">|</span>
                 <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold truncate hidden sm:inline">
-                  PIN: <strong className="font-mono text-slate-800 dark:text-slate-200">{session.pinCode}</strong>
+                  PIN: <strong className="font-mono text-slate-800 dark:text-slate-200">{currentSession.pinCode}</strong>
                 </span>
               </div>
               <h1 className="text-sm sm:text-base md:text-lg font-black text-slate-900 dark:text-white truncate">
@@ -301,6 +323,26 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
           </div>
 
           <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+            {currentSession.status === 'finished' ? (
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setIsReactivateModalOpen(true);
+                }}
+                className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-black min-h-[44px] flex items-center gap-1.5 shadow-sm shadow-emerald-950/20 btn-press transition-all"
+                title="Buka dan aktifkan kembali sesi kuis ini agar siswa dapat mengerjakan lagi"
+              >
+                <RotateCcw className="w-4 h-4" />
+                <span className="hidden sm:inline">Aktifkan Kembali Kuis</span>
+              </button>
+            ) : (
+              <span className="px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-xs font-bold flex items-center gap-1.5 min-h-[44px]">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="hidden sm:inline">Sesi Sedang Aktif</span>
+              </span>
+            )}
+
             <button
               type="button"
               onClick={handleExportCSV}
@@ -346,12 +388,21 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
               <span className="text-slate-500 dark:text-slate-400">
                 {formattedDate}
               </span>
+              {currentSession.status === 'finished' ? (
+                <span className="px-2 py-0.5 rounded-md bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 font-bold border border-rose-200 dark:border-rose-900/60 text-[10px]">
+                  Sesi Selesai
+                </span>
+              ) : (
+                <span className="px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-200 dark:border-emerald-900/60 text-[10px]">
+                  Sesi Aktif
+                </span>
+              )}
             </div>
             <h2 className="text-lg sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
               Laporan Analisis Hasil Kuis Siswa
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-              Disajikan untuk {session.teacherName || 'Bapak/Ibu Guru'} • Ruang PIN: <strong className="font-mono text-slate-800 dark:text-slate-200">{session.pinCode}</strong>
+              Disajikan untuk {currentSession.teacherName || 'Bapak/Ibu Guru'} • Ruang PIN: <strong className="font-mono text-slate-800 dark:text-slate-200">{currentSession.pinCode}</strong>
             </p>
           </div>
 
@@ -844,6 +895,15 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
           quiz={quiz}
         />
       )}
+
+      {/* Modal Aktifkan Kembali Sesi Kuis */}
+      <ReactivateSessionModal
+        isOpen={isReactivateModalOpen}
+        session={currentSession}
+        onClose={() => setIsReactivateModalOpen(false)}
+        onReactivate={handleReactivateSession}
+        playClick={playClick}
+      />
 
       {/* Toast Notifikasi Keterangan Aksi */}
       {toastMessage && (

@@ -1,6 +1,31 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.71] - 2026-10-19
+### Fitur Aktifkan Kembali Sesi Kuis Selesai & Reaktivasi Kuis PIN 359871 (Rule 1, Rule 2, Rule 3, Rule 4, Rule 5, Rule 7, Rule 15 & Rule 16)
+
+#### 1. Fitur & Modal Aktifkan Kembali Sesi Kuis Selesai (`ReactivateSessionModal.tsx`, `TeacherDashboard.tsx`, `QuizSessionRecapView.tsx`)
+- **Tombol Aksi Cepat pada Kartu Sesi Selesai**: Menyematkan tombol utama **"Aktifkan Kembali Kuis"** bergradien hijau emerald dengan ikon putar balik (`RotateCcw`) pada setiap kartu sesi kuis yang telah selesai di Dasbor Guru (`TeacherDashboard.tsx`) dan bilah atas Halaman Rekapitulasi Sesi (`QuizSessionRecapView.tsx`).
+- **Modal Reaktivasi Ergonomis & Touch-First**:
+  - Menghadirkan modal interaktif `ReactivateSessionModal` dengan pilihan preset batas waktu instan: **2 Hari** *(Rekomendasi)*, **1 Hari**, **3 Hari**, dan **Bebas (Tanpa Batas Waktu)**.
+  - Opsi penentuan batas tanggal dan jam kustom (*custom datetime picker*) yang secara otomatis memvalidasi waktu di masa depan.
+  - Setiap target interaktif tombol memenuhi standar area sentuh minimum $\ge 44 \times 44\text{ px}$ dengan efek penekanan (*btn-press*) yang nyaman di perangkat mobile maupun desktop.
+- **Pemberitahuan Umpan Balik Realtime (*Floating Toast*)**: Menampilkan notifikasi melayang (*floating toast banner*) saat sesi kuis berhasil diaktifkan kembali, memberikan kepastian visual instan kepada guru.
+
+#### 2. Sinkronisasi Data Reaktivasi Sesi Kuis (`supabaseClient.ts`)
+- **Metode `reactivateQuizSession`**:
+  - Mengubah status sesi menjadi `active`, mengosongkan status selesai (`ended_at: null`, `isManuallyEnded: false`), dan menetapkan tenggat waktu baru (`deadlineAt`).
+  - Menyelaraskan data sesi secara ganda (penyimpanan lokal dan cloud) serta memancarkan event pembaruan sesi realtime (*broadcast channel*).
+  - Memungkinkan siswa yang membuka tautan atau memasukkan PIN sesi kuis tersebut untuk langsung dapat bergabung dan mengerjakan soal kembali tanpa hambatan.
+
+#### 3. Reaktivasi Sesi Kuis PIN 359871
+- **Pengaktifan Kembali Kuis**: Sesi kuis dengan PIN `359871` (*Siklus Air dan Pentingnya Menjaga Air Bersih*) telah berhasil diaktifkan kembali dengan batas pengerjaan baru selama 2 hari ke depan (hingga 21 Oktober 2026), siap diakses kembali oleh seluruh peserta didik.
+
+#### 4. Pembaruan Versi & Cache PWA
+- Memperbarui versi aplikasi ke `2.4.71` (`package.json`).
+- Memperbarui pengenal cache Service Worker menjadi `kuis-sd-seru-v2.4.71` (`public/sw.js`).
+- Memperbarui lencana versi di `README.md`.
+
 ## [2.4.70] - 2026-10-14
 ### Sanitasi Cerdas Nomor Absen, Anti-Truncate Mobile, & Tabel Rekap Live Host (Rule 1, Rule 2, Rule 3, Rule 4, Rule 7, Rule 15 & Rule 16)
 

@@ -3836,6 +3836,105 @@ export const DataManager = {
     return existing[idx];
   },
 
+  async reactivateQuizSession(sessionId: string, newDeadlineIso?: string | null): Promise<QuizSession | null> {
+    if (!sessionId) return null;
+    let existing = this.getActiveSessions();
+    let idx = existing.findIndex((s) => s.id === sessionId);
+
+    // Jika belum ada di local storage (misal dibuka di device baru atau baru ditarik dari Supabase)
+    if (idx === -1 && supabase) {
+      try {
+        const fetched = await this.fetchActiveSessionById(sessionId);
+        if (fetched) {
+          existing = this.getActiveSessions();
+          idx = existing.findIndex((s) => s.id === sessionId);
+        }
+      } catch {}
+    }
+
+    if (idx === -1) {
+      // Cek langsung ke database Supabase jika sesi tidak ada di memori lokal
+      if (supabase) {
+        try {
+          const { data: dbSess } = await supabase
+            .from('quiz_sessions')
+            .select('*')
+            .eq('id', sessionId)
+            .maybeSingle();
+
+          if (dbSess) {
+            const updatedSettings = {
+              ...(dbSess.settings || {}),
+              isManuallyEnded: false,
+              deadlineAt: newDeadlineIso !== undefined
+                ? newDeadlineIso
+                : (dbSess.settings?.deadlineAt && new Date(dbSess.settings.deadlineAt).getTime() > Date.now()
+                    ? dbSess.settings.deadlineAt
+                    : new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString()),
+            };
+
+            await supabase
+              .from('quiz_sessions')
+              .update({
+                status: 'active',
+                ended_at: null,
+                settings: updatedSettings,
+                last_heartbeat: new Date().toISOString(),
+              })
+              .eq('id', sessionId);
+
+            return await this.fetchActiveSessionById(sessionId);
+          }
+        } catch (err) {
+          console.warn('reactivateQuizSession cloud direct notice:', err);
+        }
+      }
+      return null;
+    }
+
+    const sessionToUpdate = existing[idx];
+    const resolvedDeadline = newDeadlineIso !== undefined
+      ? newDeadlineIso
+      : (sessionToUpdate.settings?.deadlineAt && new Date(sessionToUpdate.settings.deadlineAt).getTime() > Date.now()
+          ? sessionToUpdate.settings.deadlineAt
+          : new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString());
+
+    sessionToUpdate.status = 'active';
+    sessionToUpdate.endedAt = undefined;
+    sessionToUpdate.lastHeartbeat = new Date().toISOString();
+    sessionToUpdate.settings = {
+      ...sessionToUpdate.settings,
+      isManuallyEnded: false,
+      deadlineAt: resolvedDeadline || undefined,
+    };
+
+    try {
+      localStorage.setItem(STORAGE_KEY_QUIZ_SESSIONS, JSON.stringify(existing));
+    } catch (e) {
+      console.warn('Failed to save reactivated session locally:', e);
+    }
+
+    broadcastSessionUpdate(sessionToUpdate);
+
+    if (supabase) {
+      try {
+        await supabase
+          .from('quiz_sessions')
+          .update({
+            status: 'active',
+            ended_at: null,
+            settings: sessionToUpdate.settings,
+            last_heartbeat: sessionToUpdate.lastHeartbeat,
+          })
+          .eq('id', sessionId);
+      } catch (err) {
+        console.warn('Supabase reactivateQuizSession notice:', err);
+      }
+    }
+
+    return sessionToUpdate;
+  },
+
   async updateSessionHeartbeat(sessionId: string): Promise<void> {
     if (!sessionId) return;
     const now = new Date().toISOString();
