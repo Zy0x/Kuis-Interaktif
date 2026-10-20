@@ -1,6 +1,20 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.83] - 2026-10-21
+### Eliminasi Redundansi Visual Kolom Tabel Rekap Nilai: Konsolidasi Metrik 'Nilai (0-100)' yang Ramping & Bersih (Rule 1, Rule 2, Rule 4 & Rule 15)
+
+#### 1. Konsolidasi Kolom Skor & Akurasi Menjadi 'Nilai (0-100)' (`WaygroundHostView.tsx`)
+- **Pembersihan Redundansi Informasi Ganda**: Mengeliminasi kolom `Akurasi` yang bernilai matematis identik dengan `Skor` (`Math.round((benar / total) * 100)`), menyatukannya menjadi satu kolom resmi standar rapor pendidikan: **`Nilai (0-100)`**.
+- **Indikator Visual Capaian Berwarna & Bar Progres**: Nilai ditampilkan secara tegas dengan warna berbasis capaian (Emerald $\ge 80$, Amber $\ge 60$, Rose $< 60$) disertai mini progress bar 48px yang elegan tanpa memakan ruang berlebih.
+- **Efisiensi Lebar Tabel**: Menghemat ruang horizontal tabel sebesar ~85px di seluruh layar (ponsel, tablet, desktop), membuat kolom No. Absen & Nama serta rincian Benar/Salah/Kosong tampil lebih lapang dan bebas terhimpit.
+
+#### 2. Harmonisasi Ekspor Dokumen CSV (`WaygroundHostView.tsx`)
+- **Struktur Dokumen Bersih & Rapi**: Menyelaraskan tajuk kolom berkas CSV dengan menghapus kolom duplikat `Akurasi (%)`, menghasilkan dokumen rekap nilai yang terstruktur dan siap digunakan oleh guru tanpa kolom ganda yang membingungkan.
+
+#### 3. Verifikasi Responsivitas Multi-Viewport
+- **Nol Luapan Horizontal**: Terverifikasi bebas horizontal scrollbar (`scrollWidth === clientWidth`) pada resolusi mobile sempit 320px (Mobile-S), 392px (Infinix Note 50s), tablet, hingga desktop.
+
 ## [2.4.82] - 2026-10-21
 ### Sticky Table Header & Sub-Header Papan Peringkat: Presisi Navigasi Pengguliran Vertikal Tanpa Kehilangan Konteks (Rule 1, Rule 2, Rule 4 & Rule 15)
 

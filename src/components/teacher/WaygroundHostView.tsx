@@ -509,12 +509,11 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
       'Percobaan Ke',
       'Total Percobaan Siswa',
       'Nilai Tertinggi Siswa',
-      'Skor Akhir',
+      'Nilai (0-100)',
       'Benar',
       'Salah',
       'Kosong',
       'Total Soal',
-      'Akurasi (%)',
       'Durasi (Detik)',
       'Status Pengerjaan',
       'Waktu Selesai',
@@ -530,7 +529,6 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
       const answered = pAnsList.length > 0 ? pAnsList.length : (displayCorrect + displayIncorrect);
       const unanswered = Math.max(0, totalQuestions - answered);
       const displayScore = Math.min(100, pAnsList.length > 0 ? Math.round((displayCorrect / totalQuestions) * 100) : p.score);
-      const accuracy = totalQuestions > 0 ? Math.round((displayCorrect / totalQuestions) * 100) : 0;
 
       return [
         idx + 1,
@@ -544,7 +542,6 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
         displayIncorrect,
         unanswered,
         totalQuestions,
-        `${accuracy}%`,
         Math.round(p.timeSpentSec),
         p.finished ? 'Selesai' : 'Sedang Mengerjakan',
         p.completedAt ? `"${formatIndonesianTime(p.completedAt, { withDate: true })}"` : (p.lastActiveAt ? `"${formatIndonesianTime(p.lastActiveAt, { withDate: true })}"` : '-'),
@@ -1495,8 +1492,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                         <th className="sticky top-0 z-20 bg-slate-950/95 backdrop-blur-md py-3 px-3.5 font-bold text-center w-12 border-b border-slate-800 text-slate-400 uppercase text-[10px] tracking-wider whitespace-nowrap shadow-xs">#</th>
                         <th className="sticky top-0 z-20 bg-slate-950/95 backdrop-blur-md py-3 px-3.5 font-bold border-b border-slate-800 text-slate-400 uppercase text-[10px] tracking-wider whitespace-nowrap shadow-xs">No. Absen & Nama Siswa</th>
                         <th className="sticky top-0 z-20 bg-slate-950/95 backdrop-blur-md py-3 px-3.5 font-bold text-center border-b border-slate-800 text-slate-400 uppercase text-[10px] tracking-wider whitespace-nowrap shadow-xs">Percobaan</th>
-                        <th className="sticky top-0 z-20 bg-slate-950/95 backdrop-blur-md py-3 px-3.5 font-bold text-center border-b border-slate-800 text-slate-400 uppercase text-[10px] tracking-wider whitespace-nowrap shadow-xs">Skor</th>
-                        <th className="sticky top-0 z-20 bg-slate-950/95 backdrop-blur-md py-3 px-3.5 font-bold text-center border-b border-slate-800 text-slate-400 uppercase text-[10px] tracking-wider whitespace-nowrap shadow-xs">Akurasi</th>
+                        <th className="sticky top-0 z-20 bg-slate-950/95 backdrop-blur-md py-3 px-3.5 font-bold text-center border-b border-slate-800 text-slate-400 uppercase text-[10px] tracking-wider whitespace-nowrap shadow-xs">Nilai (0-100)</th>
                         <th className="sticky top-0 z-20 bg-slate-950/95 backdrop-blur-md py-3 px-3.5 font-bold text-center border-b border-slate-800 text-slate-400 uppercase text-[10px] tracking-wider whitespace-nowrap shadow-xs">Benar / Salah / Kosong</th>
                         <th className="sticky top-0 z-20 bg-slate-950/95 backdrop-blur-md py-3 px-3.5 font-bold text-center border-b border-slate-800 text-slate-400 uppercase text-[10px] tracking-wider whitespace-nowrap shadow-xs">Durasi & Selesai</th>
                         <th className="sticky top-0 z-20 bg-slate-950/95 backdrop-blur-md py-3 px-3.5 font-bold text-center border-b border-slate-800 text-slate-400 uppercase text-[10px] tracking-wider whitespace-nowrap shadow-xs">Status</th>
@@ -1523,7 +1519,6 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                         const displayScore = Math.min(100, pAnsList.length > 0
                           ? Math.round((displayCorrect / totalQuestions) * 100)
                           : p.score);
-                        const accuracyRate = totalQuestions > 0 ? Math.round((displayCorrect / totalQuestions) * 100) : 0;
 
                         return (
                           <tr
@@ -1579,36 +1574,30 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                               </div>
                             </td>
 
-                            {/* Skor */}
-                            <td className="py-3 px-3.5 text-center whitespace-nowrap">
-                              <span className="text-sm font-black text-amber-300 tabular-nums">{displayScore}</span>
-                              <span className="text-[10px] text-slate-400 ml-0.5">pts</span>
-                            </td>
-
-                            {/* Akurasi */}
+                            {/* Nilai / Skor (0-100) */}
                             <td className="py-3 px-3.5 text-center whitespace-nowrap">
                               <div className="inline-flex flex-col items-center gap-1">
                                 <span
-                                  className={`text-xs font-bold tabular-nums ${
-                                    accuracyRate >= 80
+                                  className={`text-sm font-black tabular-nums ${
+                                    displayScore >= 80
                                       ? 'text-emerald-400'
-                                      : accuracyRate >= 60
+                                      : displayScore >= 60
                                       ? 'text-amber-400'
                                       : 'text-rose-400'
                                   }`}
                                 >
-                                  {accuracyRate}%
+                                  {displayScore}
                                 </span>
-                                <div className="w-14 bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                                <div className="w-12 bg-slate-800 h-1.5 rounded-full overflow-hidden">
                                   <div
-                                    className={`h-full ${
-                                      accuracyRate >= 80
+                                    className={`h-full transition-all duration-300 ${
+                                      displayScore >= 80
                                         ? 'bg-emerald-500'
-                                        : accuracyRate >= 60
+                                        : displayScore >= 60
                                         ? 'bg-amber-500'
                                         : 'bg-rose-500'
                                     }`}
-                                    style={{ width: `${accuracyRate}%` }}
+                                    style={{ width: `${displayScore}%` }}
                                   />
                                 </div>
                               </div>
