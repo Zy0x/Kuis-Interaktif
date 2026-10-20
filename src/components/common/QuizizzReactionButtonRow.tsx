@@ -105,7 +105,7 @@ export const QuizizzReactionButtonRow: React.FC<QuizizzReactionButtonRowProps> =
         </span>
       )}
       <div
-        className={`flex items-center gap-2 sm:gap-2.5 max-w-full ${
+        className={`flex items-center gap-1.5 sm:gap-2.5 max-w-full ${
           scrollable
             ? 'overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] justify-start sm:justify-center py-1 px-1 w-full touch-pan-x'
             : 'flex-wrap justify-center'
@@ -120,7 +120,7 @@ export const QuizizzReactionButtonRow: React.FC<QuizizzReactionButtonRowProps> =
               onClick={() => handleSendReaction(r.emoji)}
               className={`rounded-2xl transition-all select-none flex items-center justify-center transform active:scale-85 hover:scale-110 btn-press shrink-0 shadow-2xs hover:shadow-sm ${
                 compact
-                  ? 'w-11 h-11 sm:w-12 sm:h-12 text-xl sm:text-2xl min-h-[44px] min-w-[44px] bg-slate-100 dark:bg-slate-800/90 hover:bg-amber-100/70 dark:hover:bg-amber-950/60 active:bg-amber-200/80 dark:active:bg-slate-700 text-slate-800 dark:text-white border border-slate-200 dark:border-slate-700/80'
+                  ? 'w-9 h-9 sm:w-11 sm:h-11 text-lg sm:text-2xl min-h-[38px] min-w-[38px] sm:min-h-[44px] sm:min-w-[44px] bg-slate-100 dark:bg-slate-800/90 hover:bg-amber-100/70 dark:hover:bg-amber-950/60 active:bg-amber-200/80 dark:active:bg-slate-700 text-slate-800 dark:text-white border border-slate-200 dark:border-slate-700/80'
                   : 'w-12 h-12 sm:w-13 sm:h-13 text-xl sm:text-2xl min-h-[48px] min-w-[48px] bg-white dark:bg-slate-800 hover:bg-amber-50 dark:hover:bg-slate-700 active:bg-amber-100 dark:active:bg-slate-650 text-slate-800 dark:text-white border border-slate-200 dark:border-slate-700 shadow-xs'
               } ${
                 isPressed

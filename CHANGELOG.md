@@ -1,6 +1,26 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.80] - 2026-10-21
+### Redesain Responsif Ruang Kendali Host: Pemadatan Header Seluler, Pita Metrik 4-Kolom, & Harmonisasi Multi-Viewport (Rule 1, Rule 2, Rule 4, Rule 5 & Rule 15)
+
+#### 1. Pemadatan & Penataan Ulang Header Seluler (`WaygroundHostView.tsx`)
+- **Konsolidasi Bilah Aksi & PIN 1-Baris**: Menggabungkan lencana PIN kelas monospaced dan seluruh tombol kendali host (`Chat`, `+3 Uji`, `Jeda`, `Akhiri`) ke dalam satu jajaran horizontal yang padat dan simetris di tampilan mobile, melenyapkan kekosongan ruang hitam dan tumpukan tombol bertingkat tiga yang sebelumnya memakan ruang layar.
+- **Penyelarasan Tombol Kembali & Info Sesi**: Merapikan posisi tombol kembali ke tengah baris judul dengan badge status sesi tunggal (`Live`, `Jeda`, `Lobi`, `Selesai`), menghapus pembungkus ganda lencana yang tampak distorsi.
+- **Batasan Judul Adaptif**: Menggunakan `line-clamp-1 sm:line-clamp-2` pada judul kuis utama dengan ukuran `text-sm sm:text-base lg:text-xl` agar judul tetap menonjol tanpa mendorong konten papan peringkat ke luar layar.
+
+#### 2. Pita Metrik KPI 4-Kolom Ultra-Ramping (`WaygroundHostView.tsx`)
+- **Pita Ringkasan Seluler Hemat Ruang**: Menggantikan 4 kartu metrik balok besar vertikal pada layar smartphone menjadi pita ringkasan 4-kolom setinggi ~46px (`Siswa`, `Akurasi`, `Rata-rata`, `Selesai`), menghemat lebih dari 120px ruang vertikal agar daftar siswa dan soal langsung terlihat tanpa perlu menggulir jauh.
+- **Preservasi Kartu Metrik Luas di Layar Besar**: Menjaga kartu metrik mewah 4-kolom yang luas dan informatif tetap aktif untuk layar tablet, desktop, dan IFP Smartboard (`sm+`).
+
+#### 3. Harmonisasi Navigasi Tab & Bilah Reaksi (`WaygroundHostView.tsx`, `QuizizzReactionButtonRow.tsx`)
+- **Penyesuaian Label Tab Seluler**: Menyingkat label tab pada layar ponsel (`Peringkat`, `Rekap`, `Matriks`, `Layar IFP`) dengan dukungan sentuh `touch-pan-x` bebas luapan horizontal.
+- **Pencegahan Pembungkusan Emoji Reaksi**: Menyesuaikan dimensi tombol emoji reaksi pada mode `compact` (`w-9 h-9 sm:w-11 sm:h-11`) dan mengaktifkan `scrollable={true}` sehingga seluruh 8 emoji (❤️ 🔥 ⭐ 👏 🎉 🚀 🤩 💯) tersusun rapi dalam 1 baris horizontal tanpa ada emoji yang terisolasi sendiri di baris kedua.
+- **Pembersihan Tanda Titik Gantung (*Trailing Bullet*)**: Menghilangkan tanda pemisah titik (`•`) gantung pada metadata siswa di kartu papan peringkat ketika informasi waktu selesai diformat ringkas.
+
+#### 4. Uji Verifikasi Matriks Viewport Penuh
+- **Lulus Uji Playwright Multi-Resolusi**: Diverifikasi bebas luapan horizontal (`scrollWidth === clientWidth`) pada seluruh 8 profil perangkat kustom: *Infinix Note 50s* (Portret & Lanskap 296px), *Redmi Note 7* (Portret & Lanskap), *Infinix Note 11s* (Portret & Lanskap), *Desktop Half* & *Quarter*, serta *Mobile-S* (320px) hingga *4K IFP*.
+
 ## [2.4.79] - 2026-10-21
 ### Redesain Total Ruang Kendali Host: Eliminasi AI Slop, Penonjolan Judul Kuis, & Antarmuka Kelas Eksekutif (Rule 1, Rule 2, Rule 4, Rule 5 & Rule 15)
 

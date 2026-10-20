@@ -575,66 +575,65 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col select-none animate-fade-in font-sans">
       
       {/* ─── TOP MASTER STUDIO HEADER ────────────────────────────────────────── */}
-      <header className="w-full bg-slate-900/95 backdrop-blur-md border-b border-slate-800/90 px-3 sm:px-6 lg:px-8 py-3 sticky top-0 z-30 shadow-2xl no-print">
-        <div className="w-full max-w-[1920px] mx-auto flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 lg:gap-6">
+      <header className="w-full bg-slate-900/95 backdrop-blur-md border-b border-slate-800/90 px-3 sm:px-6 lg:px-8 py-2.5 sm:py-3 sticky top-0 z-30 shadow-xl no-print">
+        <div className="w-full max-w-[1920px] mx-auto flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2.5 lg:gap-6">
           
-          {/* Sisi Kiri: Tombol Kembali + Identitas Kuis Utama (Besar & Jelas) */}
-          <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
+          {/* Sisi Kiri: Tombol Kembali + Identitas Kuis Utama (Besar, Jelas, & Responsif) */}
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
             <button
               type="button"
               onClick={() => {
                 playClick();
                 onBack();
               }}
-              className="mt-0.5 sm:mt-0 p-2.5 rounded-2xl text-slate-400 hover:text-white bg-slate-850 hover:bg-slate-800 border border-slate-750 transition-all min-h-[44px] min-w-[44px] flex items-center justify-center flex-shrink-0 btn-press cursor-pointer"
+              className="p-2 sm:p-2.5 rounded-xl text-slate-400 hover:text-white bg-slate-850 hover:bg-slate-800 border border-slate-750 transition-all min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] flex items-center justify-center flex-shrink-0 btn-press cursor-pointer"
               title="Kembali ke Dasbor Guru"
               aria-label="Kembali ke Dasbor Guru"
             >
-              <ArrowLeft className="w-5 h-5" />
+              <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
 
             <div className="min-w-0 flex-1">
               {/* Breadcrumb & Sesi Status Ringkas */}
-              <div className="flex items-center gap-2 flex-wrap text-[11px] font-bold text-slate-400 mb-1">
-                <span className="text-slate-500 uppercase tracking-wider">Ruang Kendali Host</span>
-                <span className="text-slate-700">•</span>
-                <span className="text-indigo-400">{quiz.subject || 'Pelajaran Umum'}</span>
+              <div className="flex items-center gap-1.5 flex-wrap text-[11px] font-bold text-slate-400 mb-0.5 leading-none">
+                <span className="text-slate-500 uppercase tracking-wider hidden xs:inline">Host</span>
+                <span className="text-slate-700 hidden xs:inline">•</span>
+                <span className="text-indigo-400 font-extrabold truncate max-w-[120px] sm:max-w-none">{quiz.subject || 'Pelajaran Umum'}</span>
                 {quiz.grade && (
                   <>
                     <span className="text-slate-700">•</span>
-                    <span className="text-slate-400">Kelas {quiz.grade}</span>
+                    <span className="text-slate-400 whitespace-nowrap">Kelas {quiz.grade}</span>
                   </>
                 )}
+                <span className="text-slate-700">•</span>
 
-                {/* Status Pill Sesi */}
-                <span className="ml-1 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black tracking-wide border uppercase">
-                  {session.status === 'active' ? (
-                    <span className="bg-emerald-500/15 text-emerald-300 border-emerald-500/30 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full">
-                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                      <span>Sesi Live Aktif</span>
-                    </span>
-                  ) : session.status === 'paused' ? (
-                    <span className="bg-amber-500/15 text-amber-300 border-amber-500/30 inline-flex items-center gap-1 px-2 py-0.5 rounded-full">
-                      <Pause className="w-2.5 h-2.5 text-amber-400" />
-                      <span>Dijeda</span>
-                    </span>
-                  ) : session.status === 'waiting' ? (
-                    <span className="bg-blue-500/15 text-blue-300 border-blue-500/30 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full">
-                      <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
-                      <span>Ruang Tunggu</span>
-                    </span>
-                  ) : (
-                    <span className="bg-slate-800 text-slate-300 border-slate-700 inline-flex items-center gap-1 px-2 py-0.5 rounded-full">
-                      <CheckCircle2 className="w-2.5 h-2.5 text-emerald-400" />
-                      <span>Selesai</span>
-                    </span>
-                  )}
-                </span>
+                {/* Status Pill Sesi Tunggal & Bersih (Anti AI Slop) */}
+                {session.status === 'active' ? (
+                  <span className="bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black tracking-wider uppercase flex-shrink-0">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                    <span>Sesi Live</span>
+                  </span>
+                ) : session.status === 'paused' ? (
+                  <span className="bg-amber-500/15 text-amber-300 border border-amber-500/30 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black tracking-wider uppercase flex-shrink-0">
+                    <Pause className="w-2.5 h-2.5 text-amber-400" />
+                    <span>Dijeda</span>
+                  </span>
+                ) : session.status === 'waiting' ? (
+                  <span className="bg-blue-500/15 text-blue-300 border border-blue-500/30 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black tracking-wider uppercase flex-shrink-0">
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+                    <span>Ruang Tunggu</span>
+                  </span>
+                ) : (
+                  <span className="bg-slate-800 text-slate-300 border border-slate-700 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black tracking-wider uppercase flex-shrink-0">
+                    <CheckCircle2 className="w-2.5 h-2.5 text-emerald-400" />
+                    <span>Selesai</span>
+                  </span>
+                )}
               </div>
 
-              {/* JUDUL KUIS BESAR, JELAS, DAN MENONJOL (Memecahkan Keluhan AI Slop) */}
+              {/* JUDUL KUIS BESAR, JELAS, DAN MENONJOL */}
               <h1 
-                className="text-base sm:text-lg lg:text-xl font-black text-white tracking-tight leading-snug break-words"
+                className="text-sm sm:text-base lg:text-xl font-black text-white tracking-tight leading-snug line-clamp-1 sm:line-clamp-2"
                 title={quiz.title}
               >
                 {quiz.title}
@@ -642,51 +641,51 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
             </div>
           </div>
 
-          {/* Sisi Kanan: PIN Ruang Monospace + Toolbar Kontrol Host */}
-          <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-3 flex-wrap lg:flex-nowrap border-t border-slate-800/80 pt-2.5 lg:pt-0 lg:border-t-0">
+          {/* Sisi Kanan / Baris 2 Mobile: PIN Ruang Monospace + Toolbar Kontrol Host Terpadu */}
+          <div className="flex items-center justify-between sm:justify-end gap-2 flex-wrap sm:flex-nowrap border-t border-slate-800/80 pt-2 lg:pt-0 lg:border-t-0">
             
             {/* PIN Badge Kartu Presisi Monospace */}
-            <div className="flex items-center gap-2 bg-slate-950/80 border border-amber-500/40 px-3 py-1.5 rounded-2xl shadow-inner flex-shrink-0">
+            <div className="flex items-center gap-1.5 sm:gap-2 bg-slate-950/90 border border-amber-500/40 px-2.5 sm:px-3 py-1 rounded-xl shadow-inner flex-shrink-0">
               <div className="flex flex-col">
-                <span className="text-[9px] uppercase font-black text-amber-400/90 tracking-widest leading-none">
+                <span className="text-[8px] sm:text-[9px] uppercase font-black text-amber-400/90 tracking-widest leading-none">
                   PIN KELAS
                 </span>
-                <span className="font-mono font-black text-amber-300 tracking-wider text-base sm:text-lg tabular-nums leading-tight">
+                <span className="font-mono font-black text-amber-300 tracking-wider text-sm sm:text-base lg:text-lg tabular-nums leading-tight">
                   {session.pinCode}
                 </span>
               </div>
 
-              <div className="flex items-center gap-1 border-l border-slate-800 pl-2">
+              <div className="flex items-center gap-0.5 border-l border-slate-800 pl-1.5">
                 <button
                   type="button"
                   onClick={handleCopyPin}
-                  className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-850 active:bg-slate-750 transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center btn-press cursor-pointer"
+                  className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 active:bg-slate-750 transition-colors min-h-[34px] min-w-[34px] flex items-center justify-center btn-press cursor-pointer"
                   title="Salin PIN Ruang Kelas"
                   aria-label="Salin PIN"
                 >
-                  {copiedPin ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-amber-400" />}
+                  {copiedPin ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-amber-400" />}
                 </button>
                 <button
                   type="button"
                   onClick={handleCopyLink}
-                  className="p-1.5 px-2 rounded-xl bg-blue-600/25 hover:bg-blue-600/40 text-blue-200 text-xs font-bold transition-all min-h-[36px] flex items-center gap-1 border border-blue-500/35 btn-press cursor-pointer"
+                  className="p-1 px-1.5 rounded-lg bg-blue-600/25 hover:bg-blue-600/40 text-blue-200 text-xs font-bold transition-all min-h-[34px] flex items-center gap-1 border border-blue-500/35 btn-press cursor-pointer"
                   title="Salin Tautan Langsung Siswa"
                   aria-label="Salin Tautan Siswa"
                 >
-                  {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Share2 className="w-3.5 h-3.5 text-blue-400" />}
+                  {copiedLink ? <Check className="w-3 h-3 text-emerald-400" /> : <Share2 className="w-3 h-3 text-blue-400" />}
                   <span className="hidden sm:inline">{copiedLink ? 'Tersalin' : 'Tautan'}</span>
                 </button>
               </div>
             </div>
 
-            {/* Quick Actions Toolbar */}
-            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+            {/* Quick Actions Toolbar Terpadu */}
+            <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
               {/* Tombol Chat Kelas */}
               {session.status !== 'finished' && (
                 <button
                   type="button"
                   onClick={handleOpenChatDrawer}
-                  className={`relative p-2.5 sm:px-3 py-2 rounded-xl border text-xs font-bold min-h-[44px] flex items-center gap-1.5 transition-colors btn-press cursor-pointer ${
+                  className={`relative p-2 sm:px-2.5 rounded-xl border text-xs font-bold min-h-[38px] sm:min-h-[40px] flex items-center gap-1.5 transition-colors btn-press cursor-pointer ${
                     session.isChatMuted || session.settings?.isChatMuted
                       ? 'border-rose-500/40 bg-rose-500/10 text-rose-300 hover:bg-rose-500/20'
                       : 'border-blue-500/40 bg-blue-600/20 hover:bg-blue-600/30 text-blue-200'
@@ -694,10 +693,10 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                   title="Buka Ruang Obrolan Kelas"
                   aria-label="Buka Chat Kelas"
                 >
-                  <MessageSquare className="w-4 h-4 text-blue-400" />
+                  <MessageSquare className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-400" />
                   <span className="hidden xl:inline">Chat</span>
                   {unreadChatCount > 0 && (
-                    <span className="px-1.5 py-0.5 rounded-full bg-blue-500 text-white text-[10px] font-black animate-scale-in">
+                    <span className="px-1.5 py-0.2 rounded-full bg-blue-500 text-white text-[9px] font-black animate-scale-in">
                       {unreadChatCount > 99 ? '99+' : unreadChatCount}
                     </span>
                   )}
@@ -709,7 +708,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                 <button
                   type="button"
                   onClick={handleToggleChatMute}
-                  className={`p-2.5 rounded-xl border text-xs font-bold min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors btn-press cursor-pointer ${
+                  className={`p-2 rounded-xl border text-xs font-bold min-h-[38px] min-w-[38px] sm:min-h-[40px] sm:min-w-[40px] flex items-center justify-center transition-colors btn-press cursor-pointer ${
                     session.isChatMuted || session.settings?.isChatMuted
                       ? 'bg-rose-500/15 border-rose-500/30 text-rose-300 hover:bg-rose-500/25'
                       : 'bg-slate-850 border-slate-750 text-slate-300 hover:bg-slate-800'
@@ -717,7 +716,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                   title={session.isChatMuted || session.settings?.isChatMuted ? 'Buka Kunci Obrolan Siswa' : 'Bungkam Obrolan Siswa'}
                   aria-label="Toggle Kunci Obrolan"
                 >
-                  {session.isChatMuted || session.settings?.isChatMuted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
+                  {session.isChatMuted || session.settings?.isChatMuted ? <VolumeX className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-rose-400" /> : <Volume2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400" />}
                 </button>
               )}
 
@@ -726,12 +725,12 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                 type="button"
                 onClick={handleSimulateStudents}
                 disabled={isSimulating || session.status === 'finished'}
-                className="p-2.5 sm:px-3 py-2 rounded-xl bg-indigo-600/25 hover:bg-indigo-600/40 border border-indigo-500/35 text-indigo-200 text-xs font-bold min-h-[44px] flex items-center gap-1.5 transition-colors disabled:opacity-40 btn-press cursor-pointer"
+                className="p-2 px-2 sm:px-2.5 rounded-xl bg-indigo-600/25 hover:bg-indigo-600/40 border border-indigo-500/35 text-indigo-200 text-xs font-bold min-h-[38px] sm:min-h-[40px] flex items-center gap-1 transition-colors disabled:opacity-40 btn-press cursor-pointer"
                 title="Masukkan 3 Siswa Simulasi untuk Uji Coba Papan Kendali"
                 aria-label="Simulasi 3 Siswa"
               >
-                <UserPlus className="w-4 h-4 text-indigo-400" />
-                <span className="hidden md:inline">+3 Uji</span>
+                <UserPlus className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-400" />
+                <span className="text-[11px] font-bold">+3 Uji</span>
               </button>
 
               {/* Jeda / Lanjutkan Kuis */}
@@ -739,18 +738,18 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                 <button
                   type="button"
                   onClick={handleTogglePause}
-                  className="p-2.5 sm:px-3.5 py-2 rounded-xl bg-slate-850 hover:bg-slate-800 border border-slate-750 text-slate-200 text-xs font-bold min-h-[44px] flex items-center justify-center gap-1.5 transition-colors btn-press cursor-pointer"
+                  className="p-2 px-2.5 sm:px-3 rounded-xl bg-slate-850 hover:bg-slate-800 border border-slate-750 text-slate-200 text-xs font-bold min-h-[38px] sm:min-h-[40px] flex items-center justify-center gap-1 transition-colors btn-press cursor-pointer"
                   title={session.status === 'paused' ? 'Lanjutkan Pengerjaan Siswa' : 'Jeda Pengerjaan Siswa'}
                 >
                   {session.status === 'paused' ? (
                     <>
-                      <Play className="w-4 h-4 text-emerald-400" />
-                      <span className="hidden sm:inline text-emerald-300">Lanjut</span>
+                      <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400" />
+                      <span className="text-emerald-300 text-[11px] font-bold">Lanjut</span>
                     </>
                   ) : (
                     <>
-                      <Pause className="w-4 h-4 text-amber-400" />
-                      <span className="hidden sm:inline text-amber-300">Jeda</span>
+                      <Pause className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
+                      <span className="text-amber-300 text-[11px] font-bold">Jeda</span>
                     </>
                   )}
                 </button>
@@ -761,20 +760,20 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setConfirmEndModal(true)}
-                  className="px-3.5 sm:px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-black min-h-[44px] flex items-center gap-1.5 shadow-lg shadow-rose-950/50 transition-colors btn-press cursor-pointer"
+                  className="px-3 sm:px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-black min-h-[38px] sm:min-h-[40px] flex items-center gap-1 shadow-md shadow-rose-950/50 transition-colors btn-press cursor-pointer"
                   title="Akhiri Sesi Kuis & Buka Rekap Nilai"
                 >
-                  <Square className="w-3.5 h-3.5 fill-current" />
-                  <span className="whitespace-nowrap">Akhiri Kuis</span>
+                  <Square className="w-3 h-3 fill-current" />
+                  <span className="whitespace-nowrap text-[11px]">Akhiri</span>
                 </button>
               ) : (
                 <button
                   type="button"
                   onClick={() => onViewRecap(session)}
-                  className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black min-h-[44px] flex items-center gap-1.5 shadow-lg shadow-emerald-950/50 transition-colors btn-press cursor-pointer"
+                  className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black min-h-[38px] sm:min-h-[40px] flex items-center gap-1 shadow-md shadow-emerald-950/50 transition-colors btn-press cursor-pointer"
                 >
-                  <FileSpreadsheet className="w-4 h-4" />
-                  <span>Buka Rekapan</span>
+                  <FileSpreadsheet className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <span className="text-[11px]">Rekap</span>
                 </button>
               )}
             </div>
@@ -784,58 +783,81 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
       </header>
 
       {/* ─── EXECUTIVE KPI STRIP (METRIC QUICK BAR) ────────────────────────── */}
-      <section className="bg-slate-900/60 border-b border-slate-800/80 px-3 sm:px-6 lg:px-8 py-3 no-print">
-        <div className="w-full max-w-[1920px] mx-auto grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+      <section className="bg-slate-900/60 border-b border-slate-800/80 px-2.5 sm:px-6 lg:px-8 py-2 sm:py-3 no-print">
+        <div className="w-full max-w-[1920px] mx-auto">
           
-          {/* KPI 1: Siswa Terhubung */}
-          <div className="bg-slate-850/80 rounded-2xl p-3 sm:p-3.5 border border-slate-800 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-500/15 border border-blue-500/30 text-blue-400 flex items-center justify-center font-bold flex-shrink-0">
-              <Users className="w-5 h-5" />
+          {/* Mobile 4-Kolom Compact Ribbon (< sm) - Hemat Ruang Layar & Sangat Rapi */}
+          <div className="grid grid-cols-4 sm:hidden gap-1 bg-slate-900/90 rounded-xl p-1.5 border border-slate-800 text-center">
+            <div className="flex flex-col items-center justify-center py-0.5">
+              <span className="text-[9px] uppercase font-bold text-slate-400">Siswa</span>
+              <span className="text-sm font-black text-white tabular-nums">{session.participants.length}</span>
             </div>
-            <div className="min-w-0">
-              <div className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">Siswa Terhubung</div>
-              <div className="text-base sm:text-xl font-black text-white tabular-nums flex items-center gap-1.5">
-                <span>{session.participants.length}</span>
-                <span className="text-xs font-semibold text-slate-400">anak</span>
-              </div>
+            <div className="flex flex-col items-center justify-center py-0.5 border-l border-slate-800">
+              <span className="text-[9px] uppercase font-bold text-slate-400">Akurasi</span>
+              <span className="text-sm font-black text-emerald-400 tabular-nums">{classStats.accuracy}%</span>
             </div>
-          </div>
-
-          {/* KPI 2: Akurasi Kelas */}
-          <div className="bg-slate-850/80 rounded-2xl p-3 sm:p-3.5 border border-slate-800 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center font-bold flex-shrink-0">
-              <TrendingUp className="w-5 h-5" />
+            <div className="flex flex-col items-center justify-center py-0.5 border-l border-slate-800">
+              <span className="text-[9px] uppercase font-bold text-slate-400">Rata-rata</span>
+              <span className="text-sm font-black text-amber-300 tabular-nums">{classStats.avgScore}</span>
             </div>
-            <div className="min-w-0 flex-1">
-              <div className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">Akurasi Jawaban</div>
-              <div className="text-base sm:text-xl font-black text-emerald-300 tabular-nums">
-                {classStats.accuracy}%
-              </div>
+            <div className="flex flex-col items-center justify-center py-0.5 border-l border-slate-800">
+              <span className="text-[9px] uppercase font-bold text-slate-400">Selesai</span>
+              <span className="text-sm font-black text-purple-300 tabular-nums">{classStats.finishedCount}/{session.participants.length}</span>
             </div>
           </div>
 
-          {/* KPI 3: Rata-rata Skor */}
-          <div className="bg-slate-850/80 rounded-2xl p-3 sm:p-3.5 border border-slate-800 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center font-bold flex-shrink-0">
-              <Trophy className="w-5 h-5" />
-            </div>
-            <div className="min-w-0">
-              <div className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">Rata-rata Skor</div>
-              <div className="text-base sm:text-xl font-black text-amber-300 tabular-nums">
-                {classStats.avgScore} <span className="text-xs font-normal text-slate-400">/ 100</span>
+          {/* Tablet & Desktop Spacious Metric Cards (sm+) */}
+          <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            {/* KPI 1: Siswa Terhubung */}
+            <div className="bg-slate-850/80 rounded-2xl p-3 sm:p-3.5 border border-slate-800 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-blue-500/15 border border-blue-500/30 text-blue-400 flex items-center justify-center font-bold flex-shrink-0">
+                <Users className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">Siswa Terhubung</div>
+                <div className="text-base sm:text-xl font-black text-white tabular-nums flex items-center gap-1.5">
+                  <span>{session.participants.length}</span>
+                  <span className="text-xs font-semibold text-slate-400">anak</span>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* KPI 4: Selesai / Format */}
-          <div className="bg-slate-850/80 rounded-2xl p-3 sm:p-3.5 border border-slate-800 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-400 flex items-center justify-center font-bold flex-shrink-0">
-              <CheckCircle2 className="w-5 h-5" />
+            {/* KPI 2: Akurasi Kelas */}
+            <div className="bg-slate-850/80 rounded-2xl p-3 sm:p-3.5 border border-slate-800 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center font-bold flex-shrink-0">
+                <TrendingUp className="w-5 h-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">Akurasi Jawaban</div>
+                <div className="text-base sm:text-xl font-black text-emerald-300 tabular-nums">
+                  {classStats.accuracy}%
+                </div>
+              </div>
             </div>
-            <div className="min-w-0">
-              <div className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">Selesai Mengerjakan</div>
-              <div className="text-base sm:text-xl font-black text-purple-300 tabular-nums">
-                {classStats.finishedCount} <span className="text-xs font-normal text-slate-400">/ {session.participants.length}</span>
+
+            {/* KPI 3: Rata-rata Skor */}
+            <div className="bg-slate-850/80 rounded-2xl p-3 sm:p-3.5 border border-slate-800 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center font-bold flex-shrink-0">
+                <Trophy className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">Rata-rata Skor</div>
+                <div className="text-base sm:text-xl font-black text-amber-300 tabular-nums">
+                  {classStats.avgScore} <span className="text-xs font-normal text-slate-400">/ 100</span>
+                </div>
+              </div>
+            </div>
+
+            {/* KPI 4: Selesai / Format */}
+            <div className="bg-slate-850/80 rounded-2xl p-3 sm:p-3.5 border border-slate-800 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-400 flex items-center justify-center font-bold flex-shrink-0">
+                <CheckCircle2 className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">Selesai Mengerjakan</div>
+                <div className="text-base sm:text-xl font-black text-purple-300 tabular-nums">
+                  {classStats.finishedCount} <span className="text-xs font-normal text-slate-400">/ {session.participants.length}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -844,22 +866,23 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
       </section>
 
       {/* ─── TAB NAVIGATION BAR (SEGMENTED CONTROL) ───────────────────────── */}
-      <nav className="bg-slate-900/40 px-3 sm:px-6 lg:px-8 border-b border-slate-800/80 sticky top-[73px] z-20 backdrop-blur-md no-print">
-        <div className="w-full max-w-[1920px] mx-auto flex items-center gap-2 overflow-x-auto py-2.5 no-scrollbar scrollbar-none">
+      <nav className="bg-slate-900/80 px-2.5 sm:px-6 lg:px-8 border-b border-slate-800/80 no-print">
+        <div className="w-full max-w-[1920px] mx-auto flex items-center gap-1.5 sm:gap-2 overflow-x-auto py-2 no-scrollbar touch-pan-x">
           <button
             type="button"
             onClick={() => {
               playClick();
               setActiveTab('leaderboard');
             }}
-            className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all min-h-[44px] whitespace-nowrap btn-press cursor-pointer ${
+            className={`px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 sm:gap-2 transition-all min-h-[40px] sm:min-h-[44px] whitespace-nowrap btn-press cursor-pointer ${
               activeTab === 'leaderboard'
-                ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40'
+                ? 'bg-blue-600 text-white shadow-md shadow-blue-900/40'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
             }`}
           >
-            <Trophy className="w-4 h-4 flex-shrink-0" />
-            <span>Leaderboard Live ({session.participants.length})</span>
+            <Trophy className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+            <span className="sm:hidden">Peringkat ({session.participants.length})</span>
+            <span className="hidden sm:inline">Leaderboard Live ({session.participants.length})</span>
           </button>
 
           <button
@@ -868,14 +891,15 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
               playClick();
               setActiveTab('table');
             }}
-            className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all min-h-[44px] whitespace-nowrap btn-press cursor-pointer ${
+            className={`px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 sm:gap-2 transition-all min-h-[40px] sm:min-h-[44px] whitespace-nowrap btn-press cursor-pointer ${
               activeTab === 'table'
-                ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40'
+                ? 'bg-blue-600 text-white shadow-md shadow-blue-900/40'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
             }`}
           >
-            <FileSpreadsheet className="w-4 h-4 flex-shrink-0" />
-            <span>Tabel Rekapitulasi ({session.participants.length})</span>
+            <FileSpreadsheet className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+            <span className="sm:hidden">Rekap ({session.participants.length})</span>
+            <span className="hidden sm:inline">Tabel Rekapitulasi ({session.participants.length})</span>
           </button>
 
           <button
@@ -884,14 +908,15 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
               playClick();
               setActiveTab('matrix');
             }}
-            className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all min-h-[44px] whitespace-nowrap btn-press cursor-pointer ${
+            className={`px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 sm:gap-2 transition-all min-h-[40px] sm:min-h-[44px] whitespace-nowrap btn-press cursor-pointer ${
               activeTab === 'matrix'
-                ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40'
+                ? 'bg-blue-600 text-white shadow-md shadow-blue-900/40'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
             }`}
           >
-            <BarChart3 className="w-4 h-4 flex-shrink-0" />
-            <span>Matriks Akurasi Soal ({totalQuestions})</span>
+            <BarChart3 className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+            <span className="sm:hidden">Matriks ({totalQuestions})</span>
+            <span className="hidden sm:inline">Matriks Akurasi Soal ({totalQuestions})</span>
           </button>
 
           <button
@@ -900,14 +925,15 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
               playClick();
               setActiveTab('display');
             }}
-            className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all min-h-[44px] whitespace-nowrap btn-press cursor-pointer ${
+            className={`px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-1.5 sm:gap-2 transition-all min-h-[40px] sm:min-h-[44px] whitespace-nowrap btn-press cursor-pointer ${
               activeTab === 'display'
-                ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40'
+                ? 'bg-blue-600 text-white shadow-md shadow-blue-900/40'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
             }`}
           >
-            <Tv className="w-4 h-4 flex-shrink-0" />
-            <span>Layar Bersama / IFP</span>
+            <Tv className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+            <span className="sm:hidden">Layar IFP</span>
+            <span className="hidden sm:inline">Layar Bersama / IFP</span>
           </button>
         </div>
       </nav>
@@ -1051,13 +1077,14 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
 
             {/* Bilah Reaksi Semangat Guru */}
             {session.status !== 'finished' && (
-              <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-3 sm:px-6 sm:py-3.5 flex flex-col items-center justify-center gap-2 shadow-lg max-w-xl mx-auto w-full transition-all">
+              <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-2.5 sm:px-6 sm:py-3.5 flex flex-col items-center justify-center gap-2 shadow-lg max-w-xl mx-auto w-full transition-all">
                 <QuizizzReactionButtonRow
                   sessionId={session.id}
                   senderName={session.teacherName || 'Bapak/Ibu Guru'}
                   isTeacher={true}
                   playClick={playClick}
                   compact={true}
+                  scrollable={true}
                   title={session.status === 'waiting' ? 'Kirim Reaksi Guru di Ruang Tunggu:' : 'Kirim Reaksi Semangat Guru ke Siswa:'}
                 />
               </div>
@@ -1090,13 +1117,13 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                 </div>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 <div className="flex items-center justify-between text-xs font-bold text-slate-400 px-2 uppercase tracking-wider">
                   <span>Peringkat & Nama Siswa</span>
                   <span>Progres & Skor</span>
                 </div>
 
-                <div className="grid grid-cols-1 gap-2.5">
+                <div className="grid grid-cols-1 gap-2">
                   {sortedParticipants.map((p, index) => {
                     const isTop3 = index < 3;
                     const rankColor = index === 0 
@@ -1139,23 +1166,23 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                         role="button"
                         tabIndex={0}
                         title="Klik untuk melihat lembar analisis jawaban siswa ini"
-                        className={`p-3.5 sm:p-4 rounded-2xl border transition-all flex items-center justify-between gap-3 cursor-pointer hover:border-indigo-500/60 hover:bg-slate-850 hover:shadow-xl active:scale-[0.995] group ${
+                        className={`p-3 sm:p-3.5 rounded-2xl border transition-all flex items-center justify-between gap-2.5 sm:gap-3 cursor-pointer hover:border-indigo-500/60 hover:bg-slate-850 hover:shadow-xl active:scale-[0.995] group ${
                           isTop3 ? 'shadow-md ' + rankColor : 'bg-slate-900/90 border-slate-800'
                         }`}
                       >
                         {/* Kiri: Peringkat, Avatar, Nama Siswa */}
-                        <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
-                          <div className={`w-9 h-9 sm:w-11 sm:h-11 rounded-xl font-black text-sm sm:text-base flex items-center justify-center flex-shrink-0 border tabular-nums ${rankColor}`}>
+                        <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0 flex-1">
+                          <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl font-black text-xs sm:text-base flex items-center justify-center flex-shrink-0 border tabular-nums ${rankColor}`}>
                             {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
                           </div>
 
-                          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-slate-800 flex items-center justify-center text-xl sm:text-2xl flex-shrink-0 shadow-inner">
+                          <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-slate-800 flex items-center justify-center text-lg sm:text-2xl flex-shrink-0 shadow-inner">
                             {avatarEmoji}
                           </div>
 
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="font-bold text-sm sm:text-base text-white break-words group-hover:text-indigo-200 transition-colors">
+                              <span className="font-bold text-xs sm:text-sm lg:text-base text-white break-words group-hover:text-indigo-200 transition-colors">
                                 {formatStudentDisplayName(p.name)}
                               </span>
                               {(() => {
@@ -1163,7 +1190,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                                 if (!meta || !meta.isDuplicateAttempt) return null;
                                 return (
                                   <span
-                                    className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold border ${
+                                    className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] sm:text-[10px] font-bold border ${
                                       meta.attemptNumber > 1
                                         ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
                                         : 'bg-blue-500/20 text-blue-300 border-blue-500/40'
@@ -1177,14 +1204,14 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                                 );
                               })()}
                               {p.streak >= 2 && (
-                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[10px] font-black">
+                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[9px] sm:text-[10px] font-black">
                                   <Flame className="w-3 h-3 text-rose-400 fill-rose-400" />
                                   {p.streak}
                                 </span>
                               )}
                               {p.finished && (
                                 <span 
-                                  className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold border ${
+                                  className={`px-1.5 py-0.5 rounded-md text-[9px] sm:text-[10px] font-bold border ${
                                     displayUnansweredCount > 0
                                       ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
                                       : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
@@ -1195,33 +1222,33 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                               )}
                               {p.tabSwitchCount && p.tabSwitchCount > 0 ? (
                                 <span 
-                                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[10px] font-bold animate-pulse"
+                                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[9px] sm:text-[10px] font-bold animate-pulse"
                                 >
                                   <span>⚠️ {p.tabSwitchCount}x Tab</span>
                                 </span>
                               ) : null}
                             </div>
 
-                            <div className="text-[11px] text-slate-400 flex items-center gap-2 flex-wrap mt-0.5">
+                            <div className="text-[10px] sm:text-[11px] text-slate-400 flex items-center gap-1.5 flex-wrap mt-0.5">
                               <span>Benar: <strong className="text-emerald-400">{displayCorrectCount}</strong></span>
-                              <span>•</span>
+                              <span className="text-slate-600">•</span>
                               <span>Salah: <strong className="text-rose-400">{displayIncorrectCount}</strong></span>
                               {displayUnansweredCount > 0 && (
                                 <>
-                                  <span>•</span>
+                                  <span className="text-slate-600">•</span>
                                   <span className="text-amber-300 font-medium">
                                     Kosong: <strong className="text-amber-400">{displayUnansweredCount}</strong>
                                   </span>
                                 </>
                               )}
-                              <span>•</span>
+                              <span className="text-slate-600">•</span>
                               <span className="tabular-nums">{Math.round(p.timeSpentSec)} dtk</span>
                               {(p.completedAt || p.lastActiveAt) && (
                                 <>
                                   <span className="text-slate-600">•</span>
-                                  <span className={p.finished ? "text-emerald-400 font-medium inline-flex items-center gap-1" : "text-slate-400 inline-flex items-center gap-1"}>
-                                    <Clock className="w-3 h-3 text-slate-400" />
-                                    <span>{p.finished ? `Selesai: ${formatIndonesianTime(p.completedAt || p.lastActiveAt, { withDate: true })}` : `Aktif: ${formatIndonesianTime(p.lastActiveAt, { withDate: true })}`}</span>
+                                  <span className={p.finished ? "text-emerald-400/90 font-medium inline-flex items-center gap-1" : "text-slate-400 inline-flex items-center gap-1"}>
+                                    <Clock className="w-3 h-3 text-slate-500" />
+                                    <span>{p.finished ? `Selesai ${formatIndonesianTime(p.completedAt || p.lastActiveAt, { withDate: false })}` : `Aktif ${formatIndonesianTime(p.lastActiveAt, { withDate: false })}`}</span>
                                   </span>
                                 </>
                               )}
@@ -1230,8 +1257,8 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                         </div>
 
                         {/* Kanan: Progress Bar & Skor Angka */}
-                        <div className="text-right flex items-center gap-3 sm:gap-4 flex-shrink-0">
-                          <div className="hidden sm:block w-28 lg:w-44 text-left">
+                        <div className="text-right flex items-center gap-2.5 sm:gap-4 flex-shrink-0">
+                          <div className="hidden sm:block w-24 lg:w-40 text-left">
                             <div className="flex justify-between text-[10px] font-bold text-slate-400 mb-1">
                               <span>Progres</span>
                               <span className="tabular-nums">
@@ -1255,15 +1282,15 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                           </div>
 
                           <div className="flex flex-col items-end gap-1">
-                            <div className="text-base sm:text-xl font-black text-amber-300 leading-none tabular-nums">
-                              {displayScore} <span className="text-xs font-normal text-slate-400">pts</span>
+                            <div className="text-sm sm:text-lg lg:text-xl font-black text-amber-300 leading-none tabular-nums">
+                              {displayScore} <span className="text-[10px] sm:text-xs font-normal text-slate-400">pts</span>
                             </div>
-                            <div className="text-[10px] text-slate-400 font-semibold">
+                            <div className="text-[9px] sm:text-[10px] text-slate-400 font-semibold leading-none">
                               {'⭐'.repeat(p.stars || 1)}
                             </div>
-                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-300 bg-indigo-500/15 group-hover:bg-indigo-600 group-hover:text-white px-2 py-0.5 rounded-md border border-indigo-500/30 transition-all">
+                            <span className="inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-bold text-indigo-300 bg-indigo-500/15 group-hover:bg-indigo-600 group-hover:text-white px-1.5 sm:px-2 py-0.5 rounded-md border border-indigo-500/30 transition-all">
                               <ClipboardList className="w-3 h-3" />
-                              <span className="hidden sm:inline">Analisis</span>
+                              <span className="hidden xs:inline">Analisis</span>
                             </span>
                           </div>
                         </div>
