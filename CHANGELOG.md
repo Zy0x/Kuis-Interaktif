@@ -4,6 +4,31 @@ Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen in
 
 
 
+
+## [2.4.94] - 2026-10-21
+### Redesain Efisien Tab Koleksi Kuis Dasbor Guru: Akses Cepat, Bebas Redundansi & Hemat Ruang (Rule 1, Rule 2, Rule 15 & Skill Redesign)
+
+#### 1. Kartu Kuis Berdaya Akses Penuh (*Full-Card Interactive Access*) (`TeacherDashboard.tsx`)
+- **Akses Langsung Seluruh Bidang Kartu**: Seluruh badan kartu kuis kini dapat langsung diklik (`onClick -> setSelectedQuizForDetail`), memudahkan pendidik membuka detail soal dan rekap nilai secara instan tanpa perlu membidik tombol kecil.
+- **Efek Hover Dinamis**: Ditambahkan transisi halus dengan perubahan warna border (`hover:border-blue-400 dark:hover:border-blue-600/80`) dan elevasi bayangan mikro saat diarahkan kursor.
+
+#### 2. Baris Aksi Esensial 1-Baris & Eliminasi Tombol Menumpuk (`TeacherDashboard.tsx`)
+- **Pemadatan Baris Aksi Vertikal**: Menghilangkan susunan tombol bertingkat ganda yang sebelumnya memakan ruang vertikal 96px. Seluruh aksi kuis dipadatkan menjadi satu baris horizontal terpadu (tinggi 44px):
+  - **Tombol Utama 'Mainkan'**: Tombol penuh warna biru yang dominan dan fokus untuk meluncurkan sesi kelas.
+  - **Tombol Sekunder 'Detail'**: Akses cepat menuju bank soal dan rekap skor siswa.
+  - **Tombol Cepat 'Bagikan'**: Terintegrasi langsung dengan Web Share API bawaan sistem peramban/OS dengan fallback otomatis ke papan klip (*clipboard*).
+- **Penghematan Ruang Vertikal > 120px per Kartu**: Kartu kuis kini jauh lebih ringkas (~220px dibanding sebelumnya ~360px), memungkinkan guru melihat 6–8 kuis sekaligus di layar laptop/desktop dan 2–3 kuis di layar ponsel tanpa scroll berlebih.
+
+#### 3. Eliminasi Redundansi PIN & Menu Titik Tiga (`TeacherDashboard.tsx`)
+- **Chip Salin PIN Mandiri**: Menghilangkan tombol salin terpisah yang membingungkan. PIN kuis kini berupa chip interaktif ringkas (`Kls X • PIN 1001`) yang langsung menyalin dan menampilkan indikator centang hijau saat diklik.
+- **Menu Opsi Lanjutan Terpusat**: Menu titik tiga (`...`) menampung seluruh aksi sekunder seperti Edit, Duplikat Kuis, Cetak Lembar Kerja Siswa (LKS), dan Hapus Kuis.
+
+#### 4. Bilah Filter & Pencarian Ramping (*Compact Toolbar*) (`TeacherDashboard.tsx`)
+- **Toolbar Terpadu 2 Baris**: Menghapus label judul kolom teks kapital yang tinggi dan mereduksi formulir filter menjadi toolbar ramping:
+  - Baris 1: Pencarian kuis terpadu (judul, mapel, PIN) disertai tombol *Clear* dan tombol *Reset Filter*.
+  - Baris 2: Dropdown seleksi ringkas horizontal (*Semua Mapel*, *Semua Kelas*, *Semua Status*, *Terbaru*).
+- **Pembersihan Subtitle AI Slop**: Menghilangkan paragraf penjelas panjang yang redundan di bawah judul tab, menjaga pandangan guru tetap fokus pada koleksi materi pembelajaran.
+
 ## [2.4.93] - 2026-10-21
 ### Eliminasi Total AI Slop & Pemadatan Ringkasan Lembar Kerja Siswa (Rule 1, Rule 2 & Standar Baku Anti-AI Slop)
 
