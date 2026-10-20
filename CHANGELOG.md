@@ -1,6 +1,14 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.88] - 2026-10-21
+### Pembersihan Tombol Simulasi Pengembang '+3 Uji' dari Ruang Kendali Pendidik (Rule 2 & Standar Baku Anti-AI Slop)
+
+#### 1. Eliminasi Tombol Pengembang '+3 Uji' (`WaygroundHostView.tsx`)
+- **Pembersihan Bilah Header Utama**: Menghapus tombol `+3 Uji` dari bilah kontrol atas ruang kendali host kuis. Fitur simulasi data dummy merupakan fungsi pengujian lingkungan developer dan tidak boleh tampil pada antarmuka produksi guru.
+- **Pembersihan Kondisi Kosong (*Empty State*)**: Menghapus tombol simulasi pada tampilan tunggu peserta di Tab Progress, menjaga antarmuka tetap bersih, rapi, dan murni berorientasi pada peserta didik riil di kelas.
+- **Optimalisasi Kode Sumber**: Menghapus fungsi dan *state* yang tidak lagi digunakan (`handleSimulateStudents`, `isSimulating`, `UserPlus`), menghemat memori rendering dan menjaga kebersihan arsitektur.
+
 ## [2.4.87] - 2026-10-21
 ### Mode Aman Presentasi Smartboard/IFP: Kontrol Guru Mandiri untuk Kunci Jawaban & Pembahasan (Rule 1, Rule 2, Rule 8 & Rule 15)
 

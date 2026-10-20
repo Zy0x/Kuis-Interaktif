@@ -23,7 +23,6 @@ import {
   Check, 
   CheckCircle2, 
   Flame,
-  UserPlus,
   Share2,
   Tv,
   TrendingUp,
@@ -78,7 +77,6 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
 
   const [copiedPin, setCopiedPin] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
-  const [isSimulating, setIsSimulating] = useState(false);
   const [confirmEndModal, setConfirmEndModal] = useState(false);
   const [currentDisplayQuestionIdx, setCurrentDisplayQuestionIdx] = useState(0);
   const [showIfpAnswer, setShowIfpAnswer] = useState(false);
@@ -311,20 +309,6 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
     if (updated) {
       setSession(updated);
       onEndSession(updated);
-    }
-  };
-
-  const handleSimulateStudents = async () => {
-    playClick();
-    setIsSimulating(true);
-    try {
-      const updated = await DataManager.simulateAddStudentsToSession(session.id, 3);
-      if (updated) {
-        setSession(updated);
-        showToast('3 Siswa simulasi berhasil dimasukkan ke sesi!');
-      }
-    } finally {
-      setIsSimulating(false);
     }
   };
 
@@ -727,18 +711,6 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                 </button>
               )}
 
-              {/* Simulation student button */}
-              <button
-                type="button"
-                onClick={handleSimulateStudents}
-                disabled={isSimulating || session.status === 'finished'}
-                className="p-1.5 px-2 rounded-xl bg-indigo-600/25 hover:bg-indigo-600/40 border border-indigo-500/35 text-indigo-200 text-xs font-bold min-h-[34px] sm:min-h-[38px] flex items-center gap-1 transition-colors disabled:opacity-40 btn-press cursor-pointer"
-                title="Masukkan 3 Siswa Simulasi untuk Uji Coba Papan Kendali"
-                aria-label="Simulasi 3 Siswa"
-              >
-                <UserPlus className="w-3.5 h-3.5 text-indigo-400" />
-                <span className="text-[10px] sm:text-[11px] font-bold">+3 Uji</span>
-              </button>
 
               {/* Jeda / Lanjutkan Kuis */}
               {session.status !== 'finished' && (
@@ -1108,19 +1080,8 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                     Belum Ada Siswa Bergabung
                   </h4>
                   <p className="text-xs sm:text-sm text-slate-400 max-w-sm mx-auto leading-relaxed">
-                    Siswa yang memasukkan PIN <strong className="text-amber-300 font-mono">{session.pinCode}</strong> akan langsung muncul pada leaderboard ini secara real-time.
+                    Siswa yang memasukkan PIN <strong className="text-amber-300 font-mono">{session.pinCode}</strong> akan langsung muncul pada papan progres ini secara real-time.
                   </p>
-                </div>
-                <div className="pt-2">
-                  <button
-                    type="button"
-                    onClick={handleSimulateStudents}
-                    disabled={isSimulating}
-                    className="px-5 py-2.5 rounded-xl bg-slate-850 hover:bg-slate-800 border border-slate-750 text-indigo-300 text-xs font-bold inline-flex items-center gap-2 transition-colors min-h-[44px] btn-press disabled:opacity-50"
-                  >
-                    <UserPlus className="w-4 h-4" />
-                    <span>{isSimulating ? 'Memuat Simulasi...' : 'Uji Coba Masukkan 3 Siswa Simulasi'}</span>
-                  </button>
                 </div>
               </div>
             ) : (
