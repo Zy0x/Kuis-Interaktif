@@ -277,18 +277,38 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
     const success = await copyTextToClipboard(session.pinCode);
     if (success) {
       setCopiedPin(true);
-      showToast('PIN Ruang Kelas berhasil disalin!');
+      showToast(`PIN kuis ${session.pinCode} berhasil disalin!`);
       setTimeout(() => setCopiedPin(false), 2000);
     }
   };
 
-  const handleCopyLink = async () => {
+  const handleShareLink = async () => {
     playClick();
     const url = `${window.location.origin}/?pin=${session.pinCode}`;
+
+    // 1. Coba gunakan fitur bagikan bawaan perangkat (Web Share API) jika didukung
+    if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+      try {
+        await navigator.share({
+          url,
+        });
+        setCopiedLink(true);
+        setTimeout(() => setCopiedLink(false), 2000);
+        return;
+      } catch (err: any) {
+        // Abaikan jika pengguna membatalkan drawer bagikan bawaan (AbortError)
+        if (err && err.name === 'AbortError') {
+          return;
+        }
+        // Jika gagal karena pembatasan izin perangkat, lanjutkan ke fallback clipboard di bawah
+      }
+    }
+
+    // 2. Fallback otomatis ke salin tautan clipboard jika browser/perangkat tidak mendukung Web Share API
     const success = await copyTextToClipboard(url);
     if (success) {
       setCopiedLink(true);
-      showToast('Tautan kuis untuk siswa berhasil disalin!');
+      showToast('Tautan kuis berhasil disalin ke clipboard!');
       setTimeout(() => setCopiedLink(false), 2000);
     }
   };
@@ -652,17 +672,17 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                   type="button"
                   onClick={handleCopyPin}
                   className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 active:bg-slate-750 transition-colors min-h-[30px] min-w-[30px] sm:min-h-[34px] sm:min-w-[34px] flex items-center justify-center btn-press cursor-pointer"
-                  title="Salin PIN Ruang Kelas"
-                  aria-label="Salin PIN"
+                  title="Salin PIN Kuis"
+                  aria-label="Salin PIN Kuis"
                 >
                   {copiedPin ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-amber-400" />}
                 </button>
                 <button
                   type="button"
-                  onClick={handleCopyLink}
+                  onClick={handleShareLink}
                   className="p-1 rounded-lg text-blue-300 hover:text-white bg-blue-600/20 hover:bg-blue-600/35 border border-blue-500/30 transition-colors min-h-[30px] min-w-[30px] sm:min-h-[34px] sm:min-w-[34px] flex items-center justify-center btn-press cursor-pointer"
-                  title="Salin Tautan Siswa"
-                  aria-label="Salin Tautan Siswa"
+                  title="Bagikan Tautan Kuis"
+                  aria-label="Bagikan Tautan Kuis"
                 >
                   {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Share2 className="w-3.5 h-3.5 text-blue-400" />}
                 </button>
@@ -961,17 +981,19 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                         type="button"
                         onClick={handleCopyPin}
                         className="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-200 text-xs font-bold flex items-center gap-1.5 transition-colors border border-slate-700 min-h-[44px] btn-press"
+                        title="Salin PIN Kuis"
                       >
                         {copiedPin ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-amber-400" />}
-                        <span>{copiedPin ? 'Tersalin' : 'Salin PIN'}</span>
+                        <span>{copiedPin ? 'PIN Tersalin' : 'Salin PIN'}</span>
                       </button>
                       <button
                         type="button"
-                        onClick={handleCopyLink}
+                        onClick={handleShareLink}
                         className="px-3.5 py-2.5 rounded-xl bg-blue-600/30 hover:bg-blue-600/50 text-blue-200 text-xs font-bold flex items-center gap-1.5 transition-colors border border-blue-500/40 min-h-[44px] btn-press"
+                        title="Bagikan Tautan Kuis"
                       >
                         {copiedLink ? <Check className="w-4 h-4 text-emerald-400" /> : <Share2 className="w-4 h-4 text-blue-400" />}
-                        <span>{copiedLink ? 'Link Tersalin' : 'Bagi Link'}</span>
+                        <span>{copiedLink ? 'Tersalin' : 'Bagikan Link'}</span>
                       </button>
                     </div>
                   </div>

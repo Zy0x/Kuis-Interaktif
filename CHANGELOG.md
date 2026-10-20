@@ -1,6 +1,18 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.89] - 2026-10-21
+### Integrasi Fitur Bagikan Bawaan Perangkat (Web Share API) dan Penyempurnaan Tombol Salin PIN (Rule 1, Rule 2, Rule 5 & Rule 15)
+
+#### 1. Integrasi Drawer Bagikan Bawaan Perangkat (Web Share API) (`WaygroundHostView.tsx`)
+- **Pemicu Native Share Sheet Bawaan OS**: Tombol bagikan pada bilah PIN atas maupun lobi kartu tunggu kini memicu drawer bagikan bawaan perangkat (`navigator.share`) dengan menyertakan tautan URL murni (`url: ${window.location.origin}/?pin=${session.pinCode}`), memudahkan pendidik langsung membagikannya ke WhatsApp, Telegram, Google Classroom, atau aplikasi lain yang terpasang di perangkat.
+- **Fallback Cerdas ke Clipboard**: Jika peramban atau perangkat tidak mendukung Web Share API, sistem secara otomatis beralih menyalin tautan kuis ke papan klip (*clipboard*) disertai notifikasi ramah (*"Tautan kuis berhasil disalin ke clipboard!"*).
+- **Penanganan Pembatalan Pengguna (*Silent Abort*)**: Jika pengguna membatalkan drawer bagikan bawaan sistem (`AbortError`), antarmuka tidak memicu error apa pun.
+
+#### 2. Ketepatan Sasaran Tombol Salin PIN (`WaygroundHostView.tsx`)
+- **Salin PIN Mandiri**: Tombol salin (ikon salin kuning) kini secara khusus menyalin PIN kuis (`session.pinCode`) dengan notifikasi presisi (*"PIN kuis {pin} berhasil disalin!"*) dan indikator centang hijau selama 2 detik.
+- **Penyelarasan Kartu Lobi Tunggu**: Menyelaraskan teks dan fungsi tombol pada kartu lobi tunggu sebelum kuis dimulai agar memiliki aksi dan feedback visual yang identik (`Salin PIN` dan `Bagikan Link`).
+
 ## [2.4.88] - 2026-10-21
 ### Pembersihan Tombol Simulasi Pengembang '+3 Uji' dari Ruang Kendali Pendidik (Rule 2 & Standar Baku Anti-AI Slop)
 
