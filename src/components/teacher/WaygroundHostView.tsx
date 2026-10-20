@@ -641,25 +641,25 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
             </div>
           </div>
 
-          {/* Sisi Kanan / Baris 2 Mobile: PIN Ruang Monospace + Toolbar Kontrol Host Terpadu */}
-          <div className="flex items-center justify-between sm:justify-end gap-2 flex-wrap sm:flex-nowrap border-t border-slate-800/80 pt-2 lg:pt-0 lg:border-t-0">
+          {/* Sisi Kanan / Baris 2 Mobile: PIN Ruang Monospace + Toolbar Kontrol Host Terpadu (100% Adaptif & Tanpa Celah Kosong) */}
+          <div className="flex items-center justify-between gap-1.5 sm:gap-2.5 w-full lg:w-auto border-t border-slate-800/80 pt-2 lg:pt-0 lg:border-t-0 flex-nowrap">
             
-            {/* PIN Badge Kartu Presisi Monospace */}
-            <div className="flex items-center gap-1.5 sm:gap-2 bg-slate-950/90 border border-amber-500/40 px-2.5 sm:px-3 py-1 rounded-xl shadow-inner flex-shrink-0">
-              <div className="flex flex-col">
-                <span className="text-[8px] sm:text-[9px] uppercase font-black text-amber-400/90 tracking-widest leading-none">
-                  PIN KELAS
+            {/* PIN Badge Kartu Presisi Monospace (Kompak & Cerdas) */}
+            <div className="flex items-center gap-1 sm:gap-1.5 bg-slate-950/90 border border-amber-500/40 px-2 sm:px-2.5 py-1 rounded-xl shadow-inner flex-shrink-0">
+              <div className="flex flex-col leading-none">
+                <span className="text-[7px] sm:text-[8px] uppercase font-black text-amber-400/90 tracking-wider">
+                  PIN
                 </span>
-                <span className="font-mono font-black text-amber-300 tracking-wider text-sm sm:text-base lg:text-lg tabular-nums leading-tight">
+                <span className="font-mono font-black text-amber-300 tracking-wider text-xs sm:text-sm lg:text-base tabular-nums">
                   {session.pinCode}
                 </span>
               </div>
 
-              <div className="flex items-center gap-0.5 border-l border-slate-800 pl-1.5">
+              <div className="flex items-center gap-0.5 border-l border-slate-800 pl-1 ml-0.5">
                 <button
                   type="button"
                   onClick={handleCopyPin}
-                  className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 active:bg-slate-750 transition-colors min-h-[34px] min-w-[34px] flex items-center justify-center btn-press cursor-pointer"
+                  className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 active:bg-slate-750 transition-colors min-h-[30px] min-w-[30px] sm:min-h-[34px] sm:min-w-[34px] flex items-center justify-center btn-press cursor-pointer"
                   title="Salin PIN Ruang Kelas"
                   aria-label="Salin PIN"
                 >
@@ -668,24 +668,23 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                 <button
                   type="button"
                   onClick={handleCopyLink}
-                  className="p-1 px-1.5 rounded-lg bg-blue-600/25 hover:bg-blue-600/40 text-blue-200 text-xs font-bold transition-all min-h-[34px] flex items-center gap-1 border border-blue-500/35 btn-press cursor-pointer"
-                  title="Salin Tautan Langsung Siswa"
+                  className="p-1 rounded-lg text-blue-300 hover:text-white bg-blue-600/20 hover:bg-blue-600/35 border border-blue-500/30 transition-colors min-h-[30px] min-w-[30px] sm:min-h-[34px] sm:min-w-[34px] flex items-center justify-center btn-press cursor-pointer"
+                  title="Salin Tautan Siswa"
                   aria-label="Salin Tautan Siswa"
                 >
-                  {copiedLink ? <Check className="w-3 h-3 text-emerald-400" /> : <Share2 className="w-3 h-3 text-blue-400" />}
-                  <span className="hidden sm:inline">{copiedLink ? 'Tersalin' : 'Tautan'}</span>
+                  {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Share2 className="w-3.5 h-3.5 text-blue-400" />}
                 </button>
               </div>
             </div>
 
-            {/* Quick Actions Toolbar Terpadu */}
+            {/* Quick Actions Toolbar Terpadu (Sejajar di baris yang sama, TANPA CELAH KOSONG!) */}
             <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
               {/* Tombol Chat Kelas */}
               {session.status !== 'finished' && (
                 <button
                   type="button"
                   onClick={handleOpenChatDrawer}
-                  className={`relative p-2 sm:px-2.5 rounded-xl border text-xs font-bold min-h-[38px] sm:min-h-[40px] flex items-center gap-1.5 transition-colors btn-press cursor-pointer ${
+                  className={`relative p-1.5 sm:px-2.5 rounded-xl border text-xs font-bold min-h-[34px] min-w-[34px] sm:min-h-[38px] flex items-center justify-center gap-1 transition-colors btn-press cursor-pointer ${
                     session.isChatMuted || session.settings?.isChatMuted
                       ? 'border-rose-500/40 bg-rose-500/10 text-rose-300 hover:bg-rose-500/20'
                       : 'border-blue-500/40 bg-blue-600/20 hover:bg-blue-600/30 text-blue-200'
@@ -696,7 +695,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                   <MessageSquare className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-400" />
                   <span className="hidden xl:inline">Chat</span>
                   {unreadChatCount > 0 && (
-                    <span className="px-1.5 py-0.2 rounded-full bg-blue-500 text-white text-[9px] font-black animate-scale-in">
+                    <span className="px-1 py-0.2 rounded-full bg-blue-500 text-white text-[8px] sm:text-[9px] font-black animate-scale-in">
                       {unreadChatCount > 99 ? '99+' : unreadChatCount}
                     </span>
                   )}
@@ -708,7 +707,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                 <button
                   type="button"
                   onClick={handleToggleChatMute}
-                  className={`p-2 rounded-xl border text-xs font-bold min-h-[38px] min-w-[38px] sm:min-h-[40px] sm:min-w-[40px] flex items-center justify-center transition-colors btn-press cursor-pointer ${
+                  className={`p-1.5 rounded-xl border text-xs font-bold min-h-[34px] min-w-[34px] sm:min-h-[38px] sm:min-w-[38px] flex items-center justify-center transition-colors btn-press cursor-pointer ${
                     session.isChatMuted || session.settings?.isChatMuted
                       ? 'bg-rose-500/15 border-rose-500/30 text-rose-300 hover:bg-rose-500/25'
                       : 'bg-slate-850 border-slate-750 text-slate-300 hover:bg-slate-800'
@@ -716,7 +715,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                   title={session.isChatMuted || session.settings?.isChatMuted ? 'Buka Kunci Obrolan Siswa' : 'Bungkam Obrolan Siswa'}
                   aria-label="Toggle Kunci Obrolan"
                 >
-                  {session.isChatMuted || session.settings?.isChatMuted ? <VolumeX className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-rose-400" /> : <Volume2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400" />}
+                  {session.isChatMuted || session.settings?.isChatMuted ? <VolumeX className="w-3.5 h-3.5 text-rose-400" /> : <Volume2 className="w-3.5 h-3.5 text-emerald-400" />}
                 </button>
               )}
 
@@ -725,12 +724,12 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                 type="button"
                 onClick={handleSimulateStudents}
                 disabled={isSimulating || session.status === 'finished'}
-                className="p-2 px-2 sm:px-2.5 rounded-xl bg-indigo-600/25 hover:bg-indigo-600/40 border border-indigo-500/35 text-indigo-200 text-xs font-bold min-h-[38px] sm:min-h-[40px] flex items-center gap-1 transition-colors disabled:opacity-40 btn-press cursor-pointer"
+                className="p-1.5 px-2 rounded-xl bg-indigo-600/25 hover:bg-indigo-600/40 border border-indigo-500/35 text-indigo-200 text-xs font-bold min-h-[34px] sm:min-h-[38px] flex items-center gap-1 transition-colors disabled:opacity-40 btn-press cursor-pointer"
                 title="Masukkan 3 Siswa Simulasi untuk Uji Coba Papan Kendali"
                 aria-label="Simulasi 3 Siswa"
               >
-                <UserPlus className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-indigo-400" />
-                <span className="text-[11px] font-bold">+3 Uji</span>
+                <UserPlus className="w-3.5 h-3.5 text-indigo-400" />
+                <span className="text-[10px] sm:text-[11px] font-bold">+3 Uji</span>
               </button>
 
               {/* Jeda / Lanjutkan Kuis */}
@@ -738,18 +737,18 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                 <button
                   type="button"
                   onClick={handleTogglePause}
-                  className="p-2 px-2.5 sm:px-3 rounded-xl bg-slate-850 hover:bg-slate-800 border border-slate-750 text-slate-200 text-xs font-bold min-h-[38px] sm:min-h-[40px] flex items-center justify-center gap-1 transition-colors btn-press cursor-pointer"
+                  className="p-1.5 px-2 sm:px-2.5 rounded-xl bg-slate-850 hover:bg-slate-800 border border-slate-750 text-slate-200 text-xs font-bold min-h-[34px] sm:min-h-[38px] flex items-center justify-center gap-1 transition-colors btn-press cursor-pointer"
                   title={session.status === 'paused' ? 'Lanjutkan Pengerjaan Siswa' : 'Jeda Pengerjaan Siswa'}
                 >
                   {session.status === 'paused' ? (
                     <>
-                      <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400" />
-                      <span className="text-emerald-300 text-[11px] font-bold">Lanjut</span>
+                      <Play className="w-3.5 h-3.5 text-emerald-400" />
+                      <span className="text-emerald-300 text-[10px] sm:text-[11px] font-bold">Lanjut</span>
                     </>
                   ) : (
                     <>
-                      <Pause className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
-                      <span className="text-amber-300 text-[11px] font-bold">Jeda</span>
+                      <Pause className="w-3.5 h-3.5 text-amber-400" />
+                      <span className="text-amber-300 text-[10px] sm:text-[11px] font-bold">Jeda</span>
                     </>
                   )}
                 </button>
@@ -760,20 +759,20 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setConfirmEndModal(true)}
-                  className="px-3 sm:px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-black min-h-[38px] sm:min-h-[40px] flex items-center gap-1 shadow-md shadow-rose-950/50 transition-colors btn-press cursor-pointer"
+                  className="p-1.5 px-2.5 sm:px-3 rounded-xl bg-rose-600 hover:bg-rose-500 active:bg-rose-700 text-white text-xs font-black min-h-[34px] sm:min-h-[38px] flex items-center gap-1 shadow-md shadow-rose-950/50 transition-colors btn-press cursor-pointer flex-shrink-0"
                   title="Akhiri Sesi Kuis & Buka Rekap Nilai"
                 >
                   <Square className="w-3 h-3 fill-current" />
-                  <span className="whitespace-nowrap text-[11px]">Akhiri</span>
+                  <span className="whitespace-nowrap text-[10px] sm:text-[11px]">Akhiri</span>
                 </button>
               ) : (
                 <button
                   type="button"
                   onClick={() => onViewRecap(session)}
-                  className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black min-h-[38px] sm:min-h-[40px] flex items-center gap-1 shadow-md shadow-emerald-950/50 transition-colors btn-press cursor-pointer"
+                  className="p-1.5 px-2.5 sm:px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black min-h-[34px] sm:min-h-[38px] flex items-center gap-1 shadow-md shadow-emerald-950/50 transition-colors btn-press cursor-pointer flex-shrink-0"
                 >
-                  <FileSpreadsheet className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  <span className="text-[11px]">Rekap</span>
+                  <FileSpreadsheet className="w-3.5 h-3.5" />
+                  <span className="text-[10px] sm:text-[11px]">Rekap</span>
                 </button>
               )}
             </div>
@@ -1230,27 +1229,22 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                             </div>
 
                             <div className="text-[10px] sm:text-[11px] text-slate-400 flex items-center gap-1.5 flex-wrap mt-0.5">
-                              <span>Benar: <strong className="text-emerald-400">{displayCorrectCount}</strong></span>
+                              <span className="whitespace-nowrap"><strong className="text-emerald-400">{displayCorrectCount}</strong> Benar</span>
                               <span className="text-slate-600">•</span>
-                              <span>Salah: <strong className="text-rose-400">{displayIncorrectCount}</strong></span>
+                              <span className="whitespace-nowrap"><strong className="text-rose-400">{displayIncorrectCount}</strong> Salah</span>
                               {displayUnansweredCount > 0 && (
                                 <>
                                   <span className="text-slate-600">•</span>
-                                  <span className="text-amber-300 font-medium">
-                                    Kosong: <strong className="text-amber-400">{displayUnansweredCount}</strong>
-                                  </span>
+                                  <span className="text-amber-300 whitespace-nowrap"><strong className="text-amber-400">{displayUnansweredCount}</strong> Kosong</span>
                                 </>
                               )}
                               <span className="text-slate-600">•</span>
-                              <span className="tabular-nums">{Math.round(p.timeSpentSec)} dtk</span>
+                              <span className="tabular-nums whitespace-nowrap">{Math.round(p.timeSpentSec)}s</span>
                               {(p.completedAt || p.lastActiveAt) && (
-                                <>
-                                  <span className="text-slate-600">•</span>
-                                  <span className={p.finished ? "text-emerald-400/90 font-medium inline-flex items-center gap-1" : "text-slate-400 inline-flex items-center gap-1"}>
-                                    <Clock className="w-3 h-3 text-slate-500" />
-                                    <span>{p.finished ? `Selesai ${formatIndonesianTime(p.completedAt || p.lastActiveAt, { withDate: false })}` : `Aktif ${formatIndonesianTime(p.lastActiveAt, { withDate: false })}`}</span>
-                                  </span>
-                                </>
+                                <span className={`inline-flex items-center gap-1 whitespace-nowrap pl-0.5 ${p.finished ? "text-emerald-400/90 font-medium" : "text-slate-400"}`}>
+                                  <Clock className="w-2.5 h-2.5 text-slate-500" />
+                                  <span>{formatIndonesianTime(p.completedAt || p.lastActiveAt, { withDate: false })}</span>
+                                </span>
                               )}
                             </div>
                           </div>

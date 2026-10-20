@@ -1,6 +1,18 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.81] - 2026-10-21
+### Penataan Adaptif Cerdas Bilah Kendali Host: Eliminasi Celah Kosong & Harmonisasi Komando 1-Baris (Rule 1, Rule 2, Rule 4 & Rule 15)
+
+#### 1. Konsolidasi Komando Host Seluler Tanpa Celah Kosong (`WaygroundHostView.tsx`)
+- **Pemberantasan Pemecahan Baris & Celah Kosong**: Mencegah pemecahan baris (*flex-wrap*) pada bilah PIN dan tombol aksi host pada layar ponsel. PIN kelas kompak monospaced dan seluruh 4 tombol kendali host (`Chat`, `+3 Uji`, `Jeda`, `Akhiri`) kini 100% sejajar berdampingan dalam satu baris komando terpadu (`flex-nowrap justify-between w-full`).
+- **Eliminasi Baris Ketiga & Celah Hitam**: Melenyapkan ruang hitam kosong yang sebelumnya muncul di sebelah kanan kotak PIN serta menghapus baris ketiga tempat tombol aksi terisolasi.
+- **Efisiensi Vertikal Maksimal**: Tinggi header berkurang signifikan, memberikan ruang pandang yang jauh lebih lapang bagi guru untuk memantau langsung aktivitas dan papan skor siswa di smartphone.
+
+#### 2. Presisi Tipografi Baris Siswa & Penataan Metadata (`WaygroundHostView.tsx`)
+- **Pembersihan Tanda Titik Gantung (*Zero Trailing Bullet*)**: Menata ulang urutan dan pembungkus metadata jawaban (`4 Benar • 1 Salah • 68s`) serta menjadikan ikon jam (`🕒`) sebagai pemisah visual alami tanpa menyisakan karakter titik gantung saat teks terlipat.
+- **Verifikasi Lintas Viewport Lengkap**: Diuji dan diverifikasi bebas luapan horizontal pada spektrum Mobile-S (320px), Infinix Note 50s (392px), Redmi Note 7 (431px), hingga 4K IFP Smartboard.
+
 ## [2.4.80] - 2026-10-21
 ### Redesain Responsif Ruang Kendali Host: Pemadatan Header Seluler, Pita Metrik 4-Kolom, & Harmonisasi Multi-Viewport (Rule 1, Rule 2, Rule 4, Rule 5 & Rule 15)
 
