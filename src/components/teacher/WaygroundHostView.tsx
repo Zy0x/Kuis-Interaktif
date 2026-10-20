@@ -72,6 +72,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
       setToastMessage((cur) => (cur === msg ? null : cur));
     }, 3500);
   };
+
   const [copiedPin, setCopiedPin] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [isSimulating, setIsSimulating] = useState(false);
@@ -85,7 +86,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
   } | null>(null);
   const [hostCountdownSec, setHostCountdownSec] = useState<number | null>(null);
 
-  // Hitung status pesan obrolan kelas yang sudah dibaca guru (Rule 1, Rule 2 & User Request)
+  // Hitung status pesan obrolan kelas yang sudah dibaca guru
   const [lastReadChatCount, setLastReadChatCount] = useState<number>(() => {
     if (typeof window === 'undefined') return 0;
     try {
@@ -105,7 +106,6 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
         sessionStorage.setItem(`kuis_host_chat_read_count_${session.id}`, String(currentTotal));
       } catch {}
     } else if (lastReadChatCount > currentTotal) {
-      // Jika histori pesan berkurang / di-reset
       setLastReadChatCount(currentTotal);
       try {
         sessionStorage.setItem(`kuis_host_chat_read_count_${session.id}`, String(currentTotal));
@@ -251,7 +251,6 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
     const { targetIndex } = confirmAdvanceModal;
     setConfirmAdvanceModal(null);
     await handleAdvanceQuestion(targetIndex);
-    // Aktifkan indikator hitung mundur 3 detik di bar kontrol guru
     setHostCountdownSec(3);
   };
 
@@ -269,6 +268,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
     const success = await copyTextToClipboard(session.pinCode);
     if (success) {
       setCopiedPin(true);
+      showToast('PIN Ruang Kelas berhasil disalin!');
       setTimeout(() => setCopiedPin(false), 2000);
     }
   };
@@ -279,6 +279,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
     const success = await copyTextToClipboard(url);
     if (success) {
       setCopiedLink(true);
+      showToast('Tautan kuis untuk siswa berhasil disalin!');
       setTimeout(() => setCopiedLink(false), 2000);
     }
   };
@@ -309,6 +310,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
       const updated = await DataManager.simulateAddStudentsToSession(session.id, 3);
       if (updated) {
         setSession(updated);
+        showToast('3 Siswa simulasi berhasil dimasukkan ke sesi!');
       }
     } finally {
       setIsSimulating(false);
@@ -410,7 +412,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
       finishedCount,
       questionAccuracies,
     };
-  }, [session.participants, totalQuestions]);
+  }, [session.participants, totalQuestions, quiz.questions]);
 
   // Data peserta teranotasi duplikasi & pengulangan pengerjaan kuis
   const participantsWithMeta = useMemo(() => {
@@ -560,7 +562,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-    showToast('✅ Rekap nilai live berhasil diunduh (format CSV).');
+    showToast('Rekap nilai live berhasil diunduh (format CSV).');
   };
 
   const handlePrintTable = () => {
@@ -571,171 +573,129 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col select-none animate-fade-in font-sans">
-      {/* Top Wayground Host Bar */}
-      <header className="w-full bg-slate-900/95 backdrop-blur-md border-b border-slate-800 px-3 sm:px-6 lg:px-8 py-2.5 sm:py-3 sticky top-0 z-30 shadow-xl no-print">
-        <div className="w-full max-w-[2000px] mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-2.5 md:gap-4">
+      
+      {/* ─── TOP MASTER STUDIO HEADER ────────────────────────────────────────── */}
+      <header className="w-full bg-slate-900/95 backdrop-blur-md border-b border-slate-800/90 px-3 sm:px-6 lg:px-8 py-3 sticky top-0 z-30 shadow-2xl no-print">
+        <div className="w-full max-w-[1920px] mx-auto flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 lg:gap-6">
           
-          {/* Baris 1 di Mobile / Bagian Kiri di Desktop */}
-          <div className="flex items-center justify-between gap-2 sm:gap-3 min-w-0 w-full md:w-auto">
-            <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 md:flex-initial">
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  onBack();
-                }}
-                className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center flex-shrink-0"
-                title="Kembali ke Dashboard"
-                aria-label="Kembali ke Dashboard"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </button>
+          {/* Sisi Kiri: Tombol Kembali + Identitas Kuis Utama (Besar & Jelas) */}
+          <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                onBack();
+              }}
+              className="mt-0.5 sm:mt-0 p-2.5 rounded-2xl text-slate-400 hover:text-white bg-slate-850 hover:bg-slate-800 border border-slate-750 transition-all min-h-[44px] min-w-[44px] flex items-center justify-center flex-shrink-0 btn-press cursor-pointer"
+              title="Kembali ke Dasbor Guru"
+              aria-label="Kembali ke Dasbor Guru"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
 
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[10px] sm:text-xs font-black tracking-wider uppercase flex-shrink-0">
-                    {session.status === 'active' ? (
-                      <>
-                        <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
-                        <span>SESI LIVE AKTIF</span>
-                      </>
-                    ) : session.status === 'paused' ? (
-                      <>
-                        <Pause className="w-2.5 h-2.5 text-amber-400" />
-                        <span className="text-amber-300">DIJEDA</span>
-                      </>
-                    ) : session.status === 'waiting' ? (
-                      <>
-                        <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-                        <span className="text-amber-300">RUANG TUNGGU</span>
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle2 className="w-2.5 h-2.5 text-emerald-400" />
-                        <span className="text-emerald-300">SELESAI</span>
-                      </>
-                    )}
-                  </span>
-                  <span className="text-xs text-slate-400 hidden sm:inline">|</span>
-                  <span className="text-xs text-slate-300 font-semibold truncate hidden sm:inline max-w-[220px]">
-                    {quiz.title}
-                  </span>
+            <div className="min-w-0 flex-1">
+              {/* Breadcrumb & Sesi Status Ringkas */}
+              <div className="flex items-center gap-2 flex-wrap text-[11px] font-bold text-slate-400 mb-1">
+                <span className="text-slate-500 uppercase tracking-wider">Ruang Kendali Host</span>
+                <span className="text-slate-700">•</span>
+                <span className="text-indigo-400">{quiz.subject || 'Pelajaran Umum'}</span>
+                {quiz.grade && (
+                  <>
+                    <span className="text-slate-700">•</span>
+                    <span className="text-slate-400">Kelas {quiz.grade}</span>
+                  </>
+                )}
 
-                  {/* Session Settings Badges (Desktop) */}
-                  {session.settings?.mode === 'untimed' && (
-                    <span className="px-2 py-0.5 rounded-md bg-emerald-950/80 border border-emerald-500/50 text-emerald-300 text-[10px] font-bold hidden md:inline-flex items-center gap-1">
-                      <span>🧘</span>
-                      <span>Santai (Bebas Waktu)</span>
+                {/* Status Pill Sesi */}
+                <span className="ml-1 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black tracking-wide border uppercase">
+                  {session.status === 'active' ? (
+                    <span className="bg-emerald-500/15 text-emerald-300 border-emerald-500/30 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                      <span>Sesi Live Aktif</span>
                     </span>
-                  )}
-                  {session.settings?.showAnswersMode === 'exam_strict' && (
-                    <span className="px-2 py-0.5 rounded-md bg-indigo-950/80 border border-indigo-500/50 text-indigo-300 text-[10px] font-bold hidden md:inline-flex items-center gap-1">
-                      <span>🔒</span>
-                      <span>Kunci Dirahasiakan</span>
+                  ) : session.status === 'paused' ? (
+                    <span className="bg-amber-500/15 text-amber-300 border-amber-500/30 inline-flex items-center gap-1 px-2 py-0.5 rounded-full">
+                      <Pause className="w-2.5 h-2.5 text-amber-400" />
+                      <span>Dijeda</span>
                     </span>
-                  )}
-                  {session.settings?.tabSwitchDetection && (
-                    <span className="px-2 py-0.5 rounded-md bg-rose-950/80 border border-rose-500/50 text-rose-300 text-[10px] font-bold hidden md:inline-flex items-center gap-1">
-                      <span>👁️</span>
-                      <span>Anti-Mencontek</span>
+                  ) : session.status === 'waiting' ? (
+                    <span className="bg-blue-500/15 text-blue-300 border-blue-500/30 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full">
+                      <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
+                      <span>Ruang Tunggu</span>
                     </span>
-                  )}
-                </div>
-                <h1 className="text-xs sm:text-base font-black text-white truncate max-w-[190px] sm:max-w-md">
-                  Ruang Kendali Host
-                </h1>
-              </div>
-            </div>
-
-            {/* Tombol Darurat/Aksi Utama di Mobile (Pojok Kanan Baris 1) */}
-            <div className="flex items-center gap-1.5 flex-shrink-0 md:hidden">
-              {/* Pause / Resume Button (Mobile) */}
-              {session.status !== 'finished' && (
-                <button
-                  type="button"
-                  onClick={handleTogglePause}
-                  className="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-bold min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors"
-                  title={session.status === 'paused' ? 'Lanjutkan Kuis' : 'Jeda Kuis'}
-                >
-                  {session.status === 'paused' ? (
-                    <Play className="w-4 h-4 text-emerald-400" />
                   ) : (
-                    <Pause className="w-4 h-4 text-amber-400" />
+                    <span className="bg-slate-800 text-slate-300 border-slate-700 inline-flex items-center gap-1 px-2 py-0.5 rounded-full">
+                      <CheckCircle2 className="w-2.5 h-2.5 text-emerald-400" />
+                      <span>Selesai</span>
+                    </span>
                   )}
-                </button>
-              )}
+                </span>
+              </div>
 
-              {/* End Session Button or View Recap (Mobile) */}
-              {session.status !== 'finished' ? (
-                <button
-                  type="button"
-                  onClick={() => setConfirmEndModal(true)}
-                  className="px-3 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold min-h-[44px] flex items-center gap-1 shadow-md shadow-rose-950/40 transition-colors"
-                  title="Akhiri Kuis"
-                >
-                  <Square className="w-3.5 h-3.5 fill-current" />
-                  <span className="text-[11px]">Akhiri</span>
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => onViewRecap(session)}
-                  className="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold min-h-[44px] flex items-center gap-1.5 shadow-md transition-colors"
-                >
-                  <FileSpreadsheet className="w-4 h-4" />
-                  <span>Rekapan</span>
-                </button>
-              )}
+              {/* JUDUL KUIS BESAR, JELAS, DAN MENONJOL (Memecahkan Keluhan AI Slop) */}
+              <h1 
+                className="text-base sm:text-lg lg:text-xl font-black text-white tracking-tight leading-snug break-words"
+                title={quiz.title}
+              >
+                {quiz.title}
+              </h1>
             </div>
           </div>
 
-          {/* Baris 2 di Mobile / Bagian Kanan di Desktop */}
-          <div className="flex items-center justify-between md:justify-end gap-1.5 sm:gap-2 w-full md:w-auto pt-2 md:pt-0 border-t border-slate-800/80 md:border-t-0">
-            {/* PIN Badge Ringkas & Rapi */}
-            <div className="flex items-center gap-1.5 bg-slate-800/90 border border-slate-700/80 px-2.5 sm:px-3 py-1.5 rounded-xl shadow-xs flex-shrink-0">
-              <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">PIN:</span>
-              <span className="font-mono font-black text-amber-300 tracking-wider text-sm sm:text-base">
-                {session.pinCode}
-              </span>
-              <button
-                type="button"
-                onClick={handleCopyPin}
-                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-700 transition-colors min-w-[28px] min-h-[28px] flex items-center justify-center btn-press cursor-pointer"
-                title="Salin PIN Ruang"
-                aria-label="Salin PIN Ruang"
-              >
-                {copiedPin ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-slate-400" />}
-              </button>
+          {/* Sisi Kanan: PIN Ruang Monospace + Toolbar Kontrol Host */}
+          <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-3 flex-wrap lg:flex-nowrap border-t border-slate-800/80 pt-2.5 lg:pt-0 lg:border-t-0">
+            
+            {/* PIN Badge Kartu Presisi Monospace */}
+            <div className="flex items-center gap-2 bg-slate-950/80 border border-amber-500/40 px-3 py-1.5 rounded-2xl shadow-inner flex-shrink-0">
+              <div className="flex flex-col">
+                <span className="text-[9px] uppercase font-black text-amber-400/90 tracking-widest leading-none">
+                  PIN KELAS
+                </span>
+                <span className="font-mono font-black text-amber-300 tracking-wider text-base sm:text-lg tabular-nums leading-tight">
+                  {session.pinCode}
+                </span>
+              </div>
 
-              <button
-                type="button"
-                onClick={handleCopyLink}
-                className="p-1 px-1.5 rounded-lg bg-blue-600/30 hover:bg-blue-600/50 text-blue-200 text-[11px] font-bold transition-colors min-h-[28px] flex items-center gap-1 btn-press border border-blue-500/40 cursor-pointer"
-                title="Salin Tautan Kuis untuk Siswa"
-                aria-label="Salin Tautan Siswa"
-              >
-                {copiedLink ? <Check className="w-3 h-3 text-emerald-400" /> : <Share2 className="w-3 h-3 text-blue-300" />}
-                <span className="hidden sm:inline">{copiedLink ? 'Tersalin' : 'Link'}</span>
-              </button>
+              <div className="flex items-center gap-1 border-l border-slate-800 pl-2">
+                <button
+                  type="button"
+                  onClick={handleCopyPin}
+                  className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-850 active:bg-slate-750 transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center btn-press cursor-pointer"
+                  title="Salin PIN Ruang Kelas"
+                  aria-label="Salin PIN"
+                >
+                  {copiedPin ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-amber-400" />}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCopyLink}
+                  className="p-1.5 px-2 rounded-xl bg-blue-600/25 hover:bg-blue-600/40 text-blue-200 text-xs font-bold transition-all min-h-[36px] flex items-center gap-1 border border-blue-500/35 btn-press cursor-pointer"
+                  title="Salin Tautan Langsung Siswa"
+                  aria-label="Salin Tautan Siswa"
+                >
+                  {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Share2 className="w-3.5 h-3.5 text-blue-400" />}
+                  <span className="hidden sm:inline">{copiedLink ? 'Tersalin' : 'Tautan'}</span>
+                </button>
+              </div>
             </div>
 
-            {/* Toolbar Kontrol Host */}
-            <div className="flex items-center gap-1.5 sm:gap-2">
-              {/* Tombol Buka Ruang Chat Kelas Guru */}
+            {/* Quick Actions Toolbar */}
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+              {/* Tombol Chat Kelas */}
               {session.status !== 'finished' && (
                 <button
                   type="button"
                   onClick={handleOpenChatDrawer}
-                  className={`relative p-2.5 sm:px-3 py-2 rounded-xl border text-xs font-bold min-h-[44px] flex items-center gap-1.5 transition-colors ${
+                  className={`relative p-2.5 sm:px-3 py-2 rounded-xl border text-xs font-bold min-h-[44px] flex items-center gap-1.5 transition-colors btn-press cursor-pointer ${
                     session.isChatMuted || session.settings?.isChatMuted
                       ? 'border-rose-500/40 bg-rose-500/10 text-rose-300 hover:bg-rose-500/20'
                       : 'border-blue-500/40 bg-blue-600/20 hover:bg-blue-600/30 text-blue-200'
                   }`}
                   title="Buka Ruang Obrolan Kelas"
-                  aria-label="Buka Ruang Obrolan Kelas"
+                  aria-label="Buka Chat Kelas"
                 >
                   <MessageSquare className="w-4 h-4 text-blue-400" />
-                  <span className="hidden md:inline">Chat Kelas</span>
+                  <span className="hidden xl:inline">Chat</span>
                   {unreadChatCount > 0 && (
                     <span className="px-1.5 py-0.5 rounded-full bg-blue-500 text-white text-[10px] font-black animate-scale-in">
                       {unreadChatCount > 99 ? '99+' : unreadChatCount}
@@ -749,16 +709,15 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                 <button
                   type="button"
                   onClick={handleToggleChatMute}
-                  className={`p-2 sm:px-2.5 py-2 rounded-xl border text-xs font-bold min-h-[44px] flex items-center gap-1.5 transition-colors ${
+                  className={`p-2.5 rounded-xl border text-xs font-bold min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors btn-press cursor-pointer ${
                     session.isChatMuted || session.settings?.isChatMuted
-                      ? 'bg-rose-500/20 border-rose-500/40 text-rose-300 hover:bg-rose-500/30'
-                      : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'
+                      ? 'bg-rose-500/15 border-rose-500/30 text-rose-300 hover:bg-rose-500/25'
+                      : 'bg-slate-850 border-slate-750 text-slate-300 hover:bg-slate-800'
                   }`}
                   title={session.isChatMuted || session.settings?.isChatMuted ? 'Buka Kunci Obrolan Siswa' : 'Bungkam Obrolan Siswa'}
-                  aria-label={session.isChatMuted || session.settings?.isChatMuted ? 'Buka Kunci Obrolan Siswa' : 'Bungkam Obrolan Siswa'}
+                  aria-label="Toggle Kunci Obrolan"
                 >
                   {session.isChatMuted || session.settings?.isChatMuted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
-                  <span className="hidden xl:inline">{session.isChatMuted || session.settings?.isChatMuted ? 'Terkunci' : 'Chat Aktif'}</span>
                 </button>
               )}
 
@@ -767,192 +726,140 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                 type="button"
                 onClick={handleSimulateStudents}
                 disabled={isSimulating || session.status === 'finished'}
-                className="p-2 sm:px-3 py-2 rounded-xl bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-500/40 text-indigo-200 text-xs font-bold min-h-[44px] flex items-center gap-1.5 transition-colors disabled:opacity-50"
-                title="Simulasi 3 Murid Bergabung (Uji Coba Kelas)"
-                aria-label="Simulasi 3 Murid Bergabung"
+                className="p-2.5 sm:px-3 py-2 rounded-xl bg-indigo-600/25 hover:bg-indigo-600/40 border border-indigo-500/35 text-indigo-200 text-xs font-bold min-h-[44px] flex items-center gap-1.5 transition-colors disabled:opacity-40 btn-press cursor-pointer"
+                title="Masukkan 3 Siswa Simulasi untuk Uji Coba Papan Kendali"
+                aria-label="Simulasi 3 Siswa"
               >
                 <UserPlus className="w-4 h-4 text-indigo-400" />
-                <span className="hidden lg:inline">+3 Siswa Tes</span>
+                <span className="hidden md:inline">+3 Uji</span>
               </button>
 
-              {/* Desktop-only: Pause & End Session */}
-              <div className="hidden md:flex items-center gap-1.5 sm:gap-2">
-                {session.status !== 'finished' && (
-                  <button
-                    type="button"
-                    onClick={handleTogglePause}
-                    className="p-2 sm:px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-bold min-h-[44px] min-w-[44px] flex items-center justify-center gap-1.5 transition-colors"
-                    title={session.status === 'paused' ? 'Lanjutkan Kuis' : 'Jeda Kuis'}
-                  >
-                    {session.status === 'paused' ? (
-                      <>
-                        <Play className="w-4 h-4 text-emerald-400" />
-                        <span className="hidden sm:inline text-emerald-300">Lanjut</span>
-                      </>
-                    ) : (
-                      <>
-                        <Pause className="w-4 h-4 text-amber-400" />
-                        <span className="hidden sm:inline text-amber-300">Jeda</span>
-                      </>
-                    )}
-                  </button>
-                )}
+              {/* Jeda / Lanjutkan Kuis */}
+              {session.status !== 'finished' && (
+                <button
+                  type="button"
+                  onClick={handleTogglePause}
+                  className="p-2.5 sm:px-3.5 py-2 rounded-xl bg-slate-850 hover:bg-slate-800 border border-slate-750 text-slate-200 text-xs font-bold min-h-[44px] flex items-center justify-center gap-1.5 transition-colors btn-press cursor-pointer"
+                  title={session.status === 'paused' ? 'Lanjutkan Pengerjaan Siswa' : 'Jeda Pengerjaan Siswa'}
+                >
+                  {session.status === 'paused' ? (
+                    <>
+                      <Play className="w-4 h-4 text-emerald-400" />
+                      <span className="hidden sm:inline text-emerald-300">Lanjut</span>
+                    </>
+                  ) : (
+                    <>
+                      <Pause className="w-4 h-4 text-amber-400" />
+                      <span className="hidden sm:inline text-amber-300">Jeda</span>
+                    </>
+                  )}
+                </button>
+              )}
 
-                {session.status !== 'finished' ? (
-                  <button
-                    type="button"
-                    onClick={() => setConfirmEndModal(true)}
-                    className="px-3 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold min-h-[44px] flex items-center gap-1.5 shadow-md shadow-rose-950/40 transition-colors"
-                    title="Akhiri Kuis & Buka Rekapan Nilai"
-                  >
-                    <Square className="w-3.5 h-3.5 fill-current" />
-                    <span className="hidden sm:inline">Akhiri Kuis</span>
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => onViewRecap(session)}
-                    className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold min-h-[44px] flex items-center gap-1.5 shadow-md transition-colors"
-                  >
-                    <FileSpreadsheet className="w-4 h-4" />
-                    <span>Buka Rekapan</span>
-                  </button>
-                )}
-              </div>
+              {/* Tombol Utama: Akhiri Kuis atau Lihat Rekapan */}
+              {session.status !== 'finished' ? (
+                <button
+                  type="button"
+                  onClick={() => setConfirmEndModal(true)}
+                  className="px-3.5 sm:px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-black min-h-[44px] flex items-center gap-1.5 shadow-lg shadow-rose-950/50 transition-colors btn-press cursor-pointer"
+                  title="Akhiri Sesi Kuis & Buka Rekap Nilai"
+                >
+                  <Square className="w-3.5 h-3.5 fill-current" />
+                  <span className="whitespace-nowrap">Akhiri Kuis</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => onViewRecap(session)}
+                  className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black min-h-[44px] flex items-center gap-1.5 shadow-lg shadow-emerald-950/50 transition-colors btn-press cursor-pointer"
+                >
+                  <FileSpreadsheet className="w-4 h-4" />
+                  <span>Buka Rekapan</span>
+                </button>
+              )}
             </div>
           </div>
 
         </div>
       </header>
 
-      {/* Metric Quick Strip */}
-      <section className="bg-slate-900 border-b border-slate-800 px-3 sm:px-6 lg:px-8 py-2.5">
-        <div className="w-full max-w-[2000px] mx-auto grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 text-xs">
-          {session.status === 'waiting' ? (
-            <>
-              {/* Kartu 1: Siswa Terhubung */}
-              <div className="bg-slate-800/60 rounded-xl p-2.5 flex items-center gap-2.5 border border-slate-700/50">
-                <div className="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold">
-                  <Users className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="text-[10px] text-slate-400 uppercase font-bold">Siswa Terhubung</div>
-                  <div className="text-sm sm:text-base font-black text-white">
-                    {session.participants.length} <span className="text-xs font-normal text-slate-400">anak</span>
-                  </div>
-                </div>
+      {/* ─── EXECUTIVE KPI STRIP (METRIC QUICK BAR) ────────────────────────── */}
+      <section className="bg-slate-900/60 border-b border-slate-800/80 px-3 sm:px-6 lg:px-8 py-3 no-print">
+        <div className="w-full max-w-[1920px] mx-auto grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+          
+          {/* KPI 1: Siswa Terhubung */}
+          <div className="bg-slate-850/80 rounded-2xl p-3 sm:p-3.5 border border-slate-800 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-500/15 border border-blue-500/30 text-blue-400 flex items-center justify-center font-bold flex-shrink-0">
+              <Users className="w-5 h-5" />
+            </div>
+            <div className="min-w-0">
+              <div className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">Siswa Terhubung</div>
+              <div className="text-base sm:text-xl font-black text-white tabular-nums flex items-center gap-1.5">
+                <span>{session.participants.length}</span>
+                <span className="text-xs font-semibold text-slate-400">anak</span>
               </div>
+            </div>
+          </div>
 
-              {/* Kartu 2: Status Sesi */}
-              <div className="bg-slate-800/60 rounded-xl p-2.5 flex items-center gap-2.5 border border-slate-700/50">
-                <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold">
-                  <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" />
-                </div>
-                <div>
-                  <div className="text-[10px] text-slate-400 uppercase font-bold">Status Ruang</div>
-                  <div className="text-sm sm:text-base font-black text-amber-300">
-                    Ruang Tunggu Siap
-                  </div>
-                </div>
+          {/* KPI 2: Akurasi Kelas */}
+          <div className="bg-slate-850/80 rounded-2xl p-3 sm:p-3.5 border border-slate-800 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center font-bold flex-shrink-0">
+              <TrendingUp className="w-5 h-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">Akurasi Jawaban</div>
+              <div className="text-base sm:text-xl font-black text-emerald-300 tabular-nums">
+                {classStats.accuracy}%
               </div>
+            </div>
+          </div>
 
-              {/* Kartu 3: Total Soal */}
-              <div className="bg-slate-800/60 rounded-xl p-2.5 flex items-center gap-2.5 border border-slate-700/50">
-                <div className="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold">
-                  <BarChart3 className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="text-[10px] text-slate-400 uppercase font-bold">Total Soal Kuis</div>
-                  <div className="text-sm sm:text-base font-black text-indigo-300">
-                    {quiz.questions.length} <span className="text-xs font-normal text-slate-400">butir</span>
-                  </div>
-                </div>
+          {/* KPI 3: Rata-rata Skor */}
+          <div className="bg-slate-850/80 rounded-2xl p-3 sm:p-3.5 border border-slate-800 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center font-bold flex-shrink-0">
+              <Trophy className="w-5 h-5" />
+            </div>
+            <div className="min-w-0">
+              <div className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">Rata-rata Skor</div>
+              <div className="text-base sm:text-xl font-black text-amber-300 tabular-nums">
+                {classStats.avgScore} <span className="text-xs font-normal text-slate-400">/ 100</span>
               </div>
+            </div>
+          </div>
 
-              {/* Kartu 4: Format Sesi */}
-              <div className="bg-slate-800/60 rounded-xl p-2.5 flex items-center gap-2.5 border border-slate-700/50">
-                <div className="w-8 h-8 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold">
-                  <Flame className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="text-[10px] text-slate-400 uppercase font-bold">Format Sesi</div>
-                  <div className="text-sm sm:text-base font-black text-purple-300">
-                    {isTeacherLed ? 'Dipandu Guru' : 'Mandiri'}
-                  </div>
-                </div>
+          {/* KPI 4: Selesai / Format */}
+          <div className="bg-slate-850/80 rounded-2xl p-3 sm:p-3.5 border border-slate-800 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-400 flex items-center justify-center font-bold flex-shrink-0">
+              <CheckCircle2 className="w-5 h-5" />
+            </div>
+            <div className="min-w-0">
+              <div className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">Selesai Mengerjakan</div>
+              <div className="text-base sm:text-xl font-black text-purple-300 tabular-nums">
+                {classStats.finishedCount} <span className="text-xs font-normal text-slate-400">/ {session.participants.length}</span>
               </div>
-            </>
-          ) : (
-            <>
-              <div className="bg-slate-800/60 rounded-xl p-2.5 flex items-center gap-2.5 border border-slate-700/50">
-                <div className="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold">
-                  <Users className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="text-[10px] text-slate-400 uppercase font-bold">Siswa Terhubung</div>
-                  <div className="text-sm sm:text-base font-black text-white">
-                    {session.participants.length} <span className="text-xs font-normal text-slate-400">anak</span>
-                  </div>
-                </div>
-              </div>
+            </div>
+          </div>
 
-              <div className="bg-slate-800/60 rounded-xl p-2.5 flex items-center gap-2.5 border border-slate-700/50">
-                <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
-                  <TrendingUp className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="text-[10px] text-slate-400 uppercase font-bold">Akurasi Kelas</div>
-                  <div className="text-sm sm:text-base font-black text-emerald-400">
-                    {classStats.accuracy}%
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-slate-800/60 rounded-xl p-2.5 flex items-center gap-2.5 border border-slate-700/50">
-                <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold">
-                  <Trophy className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="text-[10px] text-slate-400 uppercase font-bold">Rata-rata Skor</div>
-                  <div className="text-sm sm:text-base font-black text-amber-300">
-                    {classStats.avgScore} <span className="text-xs font-normal text-slate-400">/ 100</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-slate-800/60 rounded-xl p-2.5 flex items-center gap-2.5 border border-slate-700/50">
-                <div className="w-8 h-8 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold">
-                  <CheckCircle2 className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="text-[10px] text-slate-400 uppercase font-bold">Selesai Mengerjakan</div>
-                  <div className="text-sm sm:text-base font-black text-purple-300">
-                    {classStats.finishedCount} / {session.participants.length}
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
         </div>
       </section>
 
-      {/* Main Sub-tabs Selector */}
-      <nav className="bg-slate-900/60 px-3 sm:px-6 lg:px-8 border-b border-slate-800 no-print">
-        <div className="w-full max-w-[2000px] mx-auto flex items-center gap-2 overflow-x-auto py-2 no-scrollbar scrollbar-none">
+      {/* ─── TAB NAVIGATION BAR (SEGMENTED CONTROL) ───────────────────────── */}
+      <nav className="bg-slate-900/40 px-3 sm:px-6 lg:px-8 border-b border-slate-800/80 sticky top-[73px] z-20 backdrop-blur-md no-print">
+        <div className="w-full max-w-[1920px] mx-auto flex items-center gap-2 overflow-x-auto py-2.5 no-scrollbar scrollbar-none">
           <button
             type="button"
             onClick={() => {
               playClick();
               setActiveTab('leaderboard');
             }}
-            className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all min-h-[44px] whitespace-nowrap ${
+            className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all min-h-[44px] whitespace-nowrap btn-press cursor-pointer ${
               activeTab === 'leaderboard'
-                ? 'bg-blue-600 text-white shadow-md'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
             }`}
           >
-            <Trophy className="w-4 h-4" />
-            <span>Leaderboard Siswa ({session.participants.length})</span>
+            <Trophy className="w-4 h-4 flex-shrink-0" />
+            <span>Leaderboard Live ({session.participants.length})</span>
           </button>
 
           <button
@@ -961,14 +868,14 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
               playClick();
               setActiveTab('table');
             }}
-            className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all min-h-[44px] whitespace-nowrap ${
+            className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all min-h-[44px] whitespace-nowrap btn-press cursor-pointer ${
               activeTab === 'table'
-                ? 'bg-blue-600 text-white shadow-md'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
             }`}
           >
-            <FileSpreadsheet className="w-4 h-4" />
-            <span>Tabel Rekap Live ({session.participants.length})</span>
+            <FileSpreadsheet className="w-4 h-4 flex-shrink-0" />
+            <span>Tabel Rekapitulasi ({session.participants.length})</span>
           </button>
 
           <button
@@ -977,13 +884,13 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
               playClick();
               setActiveTab('matrix');
             }}
-            className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all min-h-[44px] whitespace-nowrap ${
+            className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all min-h-[44px] whitespace-nowrap btn-press cursor-pointer ${
               activeTab === 'matrix'
-                ? 'bg-blue-600 text-white shadow-md'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
             }`}
           >
-            <BarChart3 className="w-4 h-4" />
+            <BarChart3 className="w-4 h-4 flex-shrink-0" />
             <span>Matriks Akurasi Soal ({totalQuestions})</span>
           </button>
 
@@ -993,109 +900,107 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
               playClick();
               setActiveTab('display');
             }}
-            className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all min-h-[44px] whitespace-nowrap ${
+            className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all min-h-[44px] whitespace-nowrap btn-press cursor-pointer ${
               activeTab === 'display'
-                ? 'bg-blue-600 text-white shadow-md'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
             }`}
           >
-            <Tv className="w-4 h-4" />
-            <span>Layar Bersama / Soal Aktif</span>
+            <Tv className="w-4 h-4 flex-shrink-0" />
+            <span>Layar Bersama / IFP</span>
           </button>
         </div>
       </nav>
 
-      {/* Tab Body Content */}
-      <main className="flex-1 w-full max-w-[2000px] mx-auto px-3 sm:px-6 lg:px-8 py-5">
+      {/* ─── MAIN CONTENT BODY ────────────────────────────────────────────── */}
+      <main className="flex-1 w-full max-w-[1920px] mx-auto px-3 sm:px-6 lg:px-8 py-5 sm:py-6">
         
         {/* TAB 1: LEADERBOARD LIVE */}
         {activeTab === 'leaderboard' && (
-          <div className="space-y-4">
-            {/* Teacher Led: Waiting Room Hero Status & PIN Centerpiece */}
+          <div className="space-y-5 animate-fade-in">
+            
+            {/* WAITING ROOM HERO CENTERPIECE (Sesi Belum Dimulai) */}
             {session.status === 'waiting' && (
-              <div className="bg-gradient-to-br from-slate-900 via-blue-950/40 to-slate-900 border border-blue-500/40 rounded-3xl p-5 sm:p-6 shadow-2xl space-y-4">
-                <div className="flex flex-col xl:flex-row items-center justify-between gap-5">
+              <div className="bg-gradient-to-br from-slate-900 via-slate-850 to-slate-900 border border-slate-750 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
+                <div className="flex flex-col xl:flex-row items-center justify-between gap-6">
                   
-                  {/* Kiri: Status Ruang Tunggu & Keterangan */}
-                  <div className="flex items-center gap-4 w-full xl:w-auto">
-                    <div className="w-14 h-14 rounded-2xl bg-blue-500/20 border border-blue-500/40 text-blue-400 flex items-center justify-center text-3xl animate-pulse flex-shrink-0 shadow-inner">
-                      ⏳
+                  {/* Info Header Ruang Tunggu */}
+                  <div className="space-y-2 text-center xl:text-left flex-1 min-w-0">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-300 text-xs font-bold">
+                      <Sparkles className="w-3.5 h-3.5 text-blue-400" />
+                      <span>Ruang Tunggu Kelas Siap Menerima Siswa</span>
                     </div>
-                    <div className="space-y-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h4 className="text-base sm:text-lg font-black text-white tracking-wide">
-                          Ruang Tunggu Kelas Terbuka
-                        </h4>
-                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-black text-xs flex items-center gap-1.5">
-                          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                          <span>{session.participants.length} Siswa Terhubung</span>
-                        </span>
-                      </div>
-                      <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                        Minta siswa membuka aplikasi dan memasukkan PIN di bawah, atau bagikan tautan kuis langsung:
-                      </p>
-                    </div>
+
+                    <h2 className="text-xl sm:text-2xl lg:text-3xl font-black text-white tracking-tight">
+                      {quiz.title}
+                    </h2>
+                    
+                    <p className="text-xs sm:text-sm text-slate-300 max-w-xl leading-relaxed">
+                      Minta siswa membuka aplikasi di smartphone / chromebook mereka, lalu masukkan PIN ruang kelas berikut untuk bergabung:
+                    </p>
                   </div>
 
-                  {/* Tengah: Box PIN Ruang Kelas yang Sangat Jelas & Konsisten */}
-                  <div className="flex items-center gap-3 bg-slate-950/90 border-2 border-amber-400/60 rounded-2xl px-4 sm:px-5 py-2.5 sm:py-3 shadow-lg shadow-amber-500/10 flex-shrink-0 w-full sm:w-auto justify-between sm:justify-start">
+                  {/* CENTERPIECE: PIN RUANG KELAS RAKSASA (Sangat Jelas & Terbaca Dari Kejauhan) */}
+                  <div className="bg-slate-950/90 border-2 border-amber-500/50 rounded-3xl px-6 py-4 shadow-xl flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
                     <div>
-                      <div className="text-[10px] uppercase font-black text-amber-400/90 tracking-widest flex items-center gap-1">
-                        <Sparkles className="w-3 h-3 text-amber-400" />
-                        <span>PIN Ruang Kelas</span>
+                      <div className="text-[10px] font-black uppercase text-amber-400/90 tracking-widest">
+                        PIN RUANG KELAS
                       </div>
-                      <div className="font-mono text-2xl sm:text-3xl font-black text-amber-300 tracking-widest select-all">
+                      <div className="font-mono text-3xl sm:text-5xl font-black text-amber-300 tracking-widest tabular-nums select-all">
                         {session.pinCode}
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-1.5 border-l border-slate-800 pl-3">
+                    <div className="flex items-center gap-2 border-t sm:border-t-0 sm:border-l border-slate-800 pt-3 sm:pt-0 sm:pl-4">
                       <button
                         type="button"
                         onClick={handleCopyPin}
-                        className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold flex items-center gap-1.5 transition-colors border border-slate-700 min-h-[44px] btn-press"
-                        title="Salin PIN"
+                        className="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-200 text-xs font-bold flex items-center gap-1.5 transition-colors border border-slate-700 min-h-[44px] btn-press"
                       >
                         {copiedPin ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-amber-400" />}
-                        <span className="hidden sm:inline">{copiedPin ? 'Tersalin' : 'Salin PIN'}</span>
+                        <span>{copiedPin ? 'Tersalin' : 'Salin PIN'}</span>
                       </button>
                       <button
                         type="button"
                         onClick={handleCopyLink}
-                        className="px-3 py-2 rounded-xl bg-blue-600/30 hover:bg-blue-600/50 text-blue-200 text-xs font-bold flex items-center gap-1.5 transition-colors border border-blue-500/40 min-h-[44px] btn-press"
-                        title="Bagikan Tautan Kuis"
+                        className="px-3.5 py-2.5 rounded-xl bg-blue-600/30 hover:bg-blue-600/50 text-blue-200 text-xs font-bold flex items-center gap-1.5 transition-colors border border-blue-500/40 min-h-[44px] btn-press"
                       >
                         {copiedLink ? <Check className="w-4 h-4 text-emerald-400" /> : <Share2 className="w-4 h-4 text-blue-400" />}
-                        <span className="hidden sm:inline">{copiedLink ? 'Link Tersalin' : 'Tautan'}</span>
+                        <span>{copiedLink ? 'Link Tersalin' : 'Bagi Link'}</span>
                       </button>
                     </div>
                   </div>
 
-                  {/* Kanan: Tombol Hero Mulai Kuis */}
+                  {/* Tombol Raksasa: Mulai Kuis */}
                   {isTeacherLed && (
-                    <button
-                      type="button"
-                      onClick={handleStartQuiz}
-                      className="w-full xl:w-auto px-6 py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm shadow-xl shadow-emerald-950/60 flex items-center justify-center gap-2.5 transition-all transform active:scale-95 flex-shrink-0 min-h-[48px] btn-press animate-pulse"
-                    >
-                      <Play className="w-5 h-5 fill-white" />
-                      <span>Mulai Kuis Sekarang</span>
-                    </button>
+                    <div className="w-full xl:w-auto flex flex-col items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleStartQuiz}
+                        className="w-full xl:w-auto px-8 py-4 rounded-2xl bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-black text-sm sm:text-base shadow-xl shadow-emerald-950/60 flex items-center justify-center gap-3 transition-all transform active:scale-98 min-h-[52px] btn-press"
+                      >
+                        <Play className="w-5 h-5 fill-white" />
+                        <span>Mulai Kuis Bersama</span>
+                      </button>
+                      <span className="text-[11px] text-slate-400 font-semibold">
+                        Semua siswa akan serentak mulai soal #1
+                      </span>
+                    </div>
                   )}
 
                 </div>
               </div>
             )}
 
-            {/* Teacher Led: Active Question Advance Control Bar */}
+            {/* CONTROLS: Navigasi Soal Saat Mode Dipandu Guru Aktif */}
             {isTeacherLed && session.status === 'active' && (
-              <div className="bg-slate-900/95 border border-slate-800 rounded-2xl p-3.5 sm:p-4 flex flex-wrap items-center justify-between gap-3 shadow-lg">
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3 shadow-lg">
                 <div className="flex items-center gap-3">
-                  <span className="px-3 py-1 rounded-xl bg-indigo-600 text-white text-xs font-black tracking-wide">
-                    SOAL {(session.currentQuestionIndex ?? 0) + 1} / {totalQuestions}
+                  <span className="px-3.5 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-black tracking-wide shadow-sm">
+                    SOAL {(session.currentQuestionIndex ?? 0) + 1} DARI {totalQuestions}
                   </span>
                   <span className="text-xs font-semibold text-slate-300">
-                    Mode: {session.settings?.teacherPacingSubMode === 'timed_next' ? '⏱️ Timer Soal + Kendali Lanjut Guru' : '🎯 Kendali Penuh Guru (Bebas Waktu)'}
+                    {session.settings?.teacherPacingSubMode === 'timed_next' ? '⏱️ Waktu Terjadwal + Lanjut Guru' : '🎯 Kendali Manual Penuh Guru'}
                   </span>
                 </div>
 
@@ -1103,7 +1008,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                   {hostCountdownSec !== null ? (
                     <div className="px-4 py-2 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-black min-h-[44px] flex items-center gap-2 animate-pulse">
                       <Clock className="w-4 h-4 text-amber-400 animate-spin" style={{ animationDuration: '3s' }} />
-                      <span>Countdown Siswa: {hostCountdownSec > 0 ? `${hostCountdownSec}s...` : 'Mulai!'}</span>
+                      <span>Hitung Mundur Siswa: {hostCountdownSec > 0 ? `${hostCountdownSec}s...` : 'Mulai!'}</span>
                     </div>
                   ) : (
                     <>
@@ -1111,10 +1016,10 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                         type="button"
                         onClick={() => promptAdvanceQuestion(Math.max(0, (session.currentQuestionIndex ?? 0) - 1), 'prev')}
                         disabled={(session.currentQuestionIndex ?? 0) === 0}
-                        className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-200 text-xs font-bold disabled:opacity-40 min-h-[44px] flex items-center gap-1.5 transition-colors"
-                        title="Kembali ke Soal Sebelumnya (dengan konfirmasi)"
+                        className="px-4 py-2.5 rounded-xl bg-slate-850 hover:bg-slate-800 active:bg-slate-750 text-slate-200 text-xs font-bold disabled:opacity-40 min-h-[44px] flex items-center gap-1.5 transition-colors border border-slate-750 btn-press cursor-pointer"
+                        title="Kembali ke Soal Sebelumnya"
                       >
-                        <ArrowLeft className="w-3.5 h-3.5" />
+                        <ArrowLeft className="w-4 h-4" />
                         <span>Sebelumnya</span>
                       </button>
 
@@ -1122,19 +1027,19 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                         <button
                           type="button"
                           onClick={() => promptAdvanceQuestion((session.currentQuestionIndex ?? 0) + 1, 'next')}
-                          className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white text-xs font-black min-h-[44px] flex items-center gap-1.5 shadow-md shadow-blue-950/50 transition-colors"
-                          title="Buka Soal Berikutnya (dengan konfirmasi & hitung mundur 3s)"
+                          className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white text-xs font-black min-h-[44px] flex items-center gap-2 shadow-lg shadow-blue-950/50 transition-colors btn-press cursor-pointer"
+                          title="Buka Soal Berikutnya Serentak"
                         >
                           <span>Buka Soal Berikutnya</span>
-                          <ArrowRight className="w-3.5 h-3.5" />
+                          <ArrowRight className="w-4 h-4" />
                         </button>
                       ) : (
                         <button
                           type="button"
                           onClick={() => setConfirmEndModal(true)}
-                          className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white text-xs font-black min-h-[44px] flex items-center gap-1.5 shadow-md transition-colors"
+                          className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white text-xs font-black min-h-[44px] flex items-center gap-2 shadow-lg shadow-emerald-950/50 transition-colors btn-press cursor-pointer"
                         >
-                          <Square className="w-3.5 h-3.5 fill-current" />
+                          <Square className="w-4 h-4 fill-current" />
                           <span>Selesaikan Kuis</span>
                         </button>
                       )}
@@ -1144,9 +1049,9 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
               </div>
             )}
 
-            {/* Bilah Reaksi Semangat Guru (Aktif di Ruang Tunggu Pra-Kuis maupun Saat Kuis Berlangsung) */}
+            {/* Bilah Reaksi Semangat Guru */}
             {session.status !== 'finished' && (
-              <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-3 sm:px-5 sm:py-3.5 flex flex-col items-center justify-center gap-2 shadow-lg max-w-xl mx-auto w-full transition-all">
+              <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-3 sm:px-6 sm:py-3.5 flex flex-col items-center justify-center gap-2 shadow-lg max-w-xl mx-auto w-full transition-all">
                 <QuizizzReactionButtonRow
                   sessionId={session.id}
                   senderName={session.teacherName || 'Bapak/Ibu Guru'}
@@ -1158,17 +1063,18 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
               </div>
             )}
 
+            {/* Empty State Peserta Belum Bergabung */}
             {session.participants.length === 0 ? (
-              <div className="bg-slate-900/60 rounded-3xl border border-dashed border-slate-750 p-8 sm:p-10 text-center max-w-lg mx-auto space-y-4 shadow-xl">
-                <div className="w-14 h-14 mx-auto rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center text-3xl">
+              <div className="bg-slate-900/60 rounded-3xl border border-dashed border-slate-800 p-8 sm:p-12 text-center max-w-lg mx-auto space-y-4 shadow-xl">
+                <div className="w-16 h-16 mx-auto rounded-3xl bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center text-3xl">
                   👥
                 </div>
                 <div className="space-y-1">
-                  <h4 className="text-base font-black text-white">
+                  <h4 className="text-lg font-black text-white">
                     Belum Ada Siswa Bergabung
                   </h4>
-                  <p className="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
-                    Siswa yang memasukkan PIN di atas akan langsung muncul di daftar ini secara otomatis.
+                  <p className="text-xs sm:text-sm text-slate-400 max-w-sm mx-auto leading-relaxed">
+                    Siswa yang memasukkan PIN <strong className="text-amber-300 font-mono">{session.pinCode}</strong> akan langsung muncul pada leaderboard ini secara real-time.
                   </p>
                 </div>
                 <div className="pt-2">
@@ -1176,7 +1082,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                     type="button"
                     onClick={handleSimulateStudents}
                     disabled={isSimulating}
-                    className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-750 border border-slate-700 text-indigo-300 text-xs font-bold inline-flex items-center gap-2 transition-colors min-h-[44px] btn-press disabled:opacity-50"
+                    className="px-5 py-2.5 rounded-xl bg-slate-850 hover:bg-slate-800 border border-slate-750 text-indigo-300 text-xs font-bold inline-flex items-center gap-2 transition-colors min-h-[44px] btn-press disabled:opacity-50"
                   >
                     <UserPlus className="w-4 h-4" />
                     <span>{isSimulating ? 'Memuat Simulasi...' : 'Uji Coba Masukkan 3 Siswa Simulasi'}</span>
@@ -1185,25 +1091,25 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
               </div>
             ) : (
               <div className="space-y-3">
-                <div className="flex items-center justify-between text-xs text-slate-400 px-1">
+                <div className="flex items-center justify-between text-xs font-bold text-slate-400 px-2 uppercase tracking-wider">
                   <span>Peringkat & Nama Siswa</span>
-                  <span>Progres Soal & Skor</span>
+                  <span>Progres & Skor</span>
                 </div>
 
                 <div className="grid grid-cols-1 gap-2.5">
                   {sortedParticipants.map((p, index) => {
                     const isTop3 = index < 3;
                     const rankColor = index === 0 
-                      ? 'text-amber-300 border-amber-500/50 bg-amber-500/10' 
+                      ? 'text-amber-300 border-amber-500/40 bg-amber-500/10' 
                       : index === 1 
-                      ? 'text-slate-200 border-slate-400/50 bg-slate-500/10' 
+                      ? 'text-slate-200 border-slate-400/40 bg-slate-500/10' 
                       : index === 2 
-                      ? 'text-amber-600 border-amber-700/50 bg-amber-800/10' 
+                      ? 'text-amber-600 border-amber-700/40 bg-amber-800/10' 
                       : 'text-slate-400 border-slate-800 bg-slate-900';
 
                     const avatarEmoji = AVATAR_MAP[p.avatarId] || '🦁';
 
-                    // Hitung nilai dan jumlah benar yang akurat dari riwayat jawaban unik per soal (kebal dari anomali duplikasi reload & quiz_completed)
+                    // Hitung nilai dan jumlah benar yang akurat dari riwayat jawaban unik per soal
                     const rawAns = p.answers ? Object.values(p.answers).filter((a: any) => a && a.questionId !== 'quiz_completed') : [];
                     const uniqueQMap = new Map<string, any>();
                     rawAns.forEach((a: any) => {
@@ -1233,17 +1139,17 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                         role="button"
                         tabIndex={0}
                         title="Klik untuk melihat lembar analisis jawaban siswa ini"
-                        className={`p-3 sm:p-4 rounded-2xl border transition-all flex items-center justify-between gap-3 cursor-pointer hover:border-indigo-500/60 hover:bg-slate-850 hover:shadow-lg active:scale-[0.995] group ${
+                        className={`p-3.5 sm:p-4 rounded-2xl border transition-all flex items-center justify-between gap-3 cursor-pointer hover:border-indigo-500/60 hover:bg-slate-850 hover:shadow-xl active:scale-[0.995] group ${
                           isTop3 ? 'shadow-md ' + rankColor : 'bg-slate-900/90 border-slate-800'
                         }`}
                       >
-                        {/* Left: Rank, Avatar, Name */}
-                        <div className="flex items-center gap-3 min-w-0 flex-1">
-                          <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl font-black text-sm sm:text-base flex items-center justify-center flex-shrink-0 border ${rankColor}`}>
+                        {/* Kiri: Peringkat, Avatar, Nama Siswa */}
+                        <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+                          <div className={`w-9 h-9 sm:w-11 sm:h-11 rounded-xl font-black text-sm sm:text-base flex items-center justify-center flex-shrink-0 border tabular-nums ${rankColor}`}>
                             {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
                           </div>
 
-                          <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-slate-800 flex items-center justify-center text-xl sm:text-2xl flex-shrink-0 shadow-inner">
+                          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-slate-800 flex items-center justify-center text-xl sm:text-2xl flex-shrink-0 shadow-inner">
                             {avatarEmoji}
                           </div>
 
@@ -1262,9 +1168,8 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                                         ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
                                         : 'bg-blue-500/20 text-blue-300 border-blue-500/40'
                                     }`}
-                                    title={`Percobaan ke-${meta.attemptNumber} dari ${meta.totalAttempts} kali pengerjaan kuis`}
                                   >
-                                    <span>Percobaan #{meta.attemptNumber}</span>
+                                    <span>#{meta.attemptNumber}</span>
                                     {meta.isBestScoreAttempt && meta.totalAttempts > 1 && (
                                       <span className="text-[9px] bg-amber-400 text-slate-950 font-black px-1 rounded">Terbaik</span>
                                     )}
@@ -1284,7 +1189,6 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                                       ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
                                       : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
                                   }`}
-                                  title={displayUnansweredCount > 0 ? `Selesai (${displayUnansweredCount} soal dilewati/kosong)` : 'Selesai mengerjakan seluruh soal'}
                                 >
                                   {displayUnansweredCount > 0 ? `Selesai (${displayUnansweredCount} kosong)` : 'Selesai'}
                                 </span>
@@ -1292,13 +1196,12 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                               {p.tabSwitchCount && p.tabSwitchCount > 0 ? (
                                 <span 
                                   className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-rose-500/20 text-rose-300 border border-rose-500/40 text-[10px] font-bold animate-pulse"
-                                  title={`Terdeteksi berpindah tab/layar sebanyak ${p.tabSwitchCount} kali`}
                                 >
-                                  <span>⚠️</span>
-                                  <span>{p.tabSwitchCount}x Tab</span>
+                                  <span>⚠️ {p.tabSwitchCount}x Tab</span>
                                 </span>
                               ) : null}
                             </div>
+
                             <div className="text-[11px] text-slate-400 flex items-center gap-2 flex-wrap mt-0.5">
                               <span>Benar: <strong className="text-emerald-400">{displayCorrectCount}</strong></span>
                               <span>•</span>
@@ -1306,13 +1209,13 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                               {displayUnansweredCount > 0 && (
                                 <>
                                   <span>•</span>
-                                  <span className="text-amber-300 font-medium" title={`${displayUnansweredCount} butir soal tidak dijawab / dilewati`}>
+                                  <span className="text-amber-300 font-medium">
                                     Kosong: <strong className="text-amber-400">{displayUnansweredCount}</strong>
                                   </span>
                                 </>
                               )}
                               <span>•</span>
-                              <span>{Math.round(p.timeSpentSec)} dtk</span>
+                              <span className="tabular-nums">{Math.round(p.timeSpentSec)} dtk</span>
                               {(p.completedAt || p.lastActiveAt) && (
                                 <>
                                   <span className="text-slate-600">•</span>
@@ -1326,12 +1229,12 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                           </div>
                         </div>
 
-                        {/* Right: Progress bar & Score */}
+                        {/* Kanan: Progress Bar & Skor Angka */}
                         <div className="text-right flex items-center gap-3 sm:gap-4 flex-shrink-0">
                           <div className="hidden sm:block w-28 lg:w-44 text-left">
                             <div className="flex justify-between text-[10px] font-bold text-slate-400 mb-1">
                               <span>Progres</span>
-                              <span>
+                              <span className="tabular-nums">
                                 {p.finished 
                                   ? (displayUnansweredCount > 0 ? `${answeredCount} / ${totalQuestions}` : `${totalQuestions} / ${totalQuestions}`)
                                   : `${p.currentQuestionIndex} / ${totalQuestions}`}
@@ -1352,7 +1255,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                           </div>
 
                           <div className="flex flex-col items-end gap-1">
-                            <div className="text-base sm:text-xl font-black text-amber-300 leading-none">
+                            <div className="text-base sm:text-xl font-black text-amber-300 leading-none tabular-nums">
                               {displayScore} <span className="text-xs font-normal text-slate-400">pts</span>
                             </div>
                             <div className="text-[10px] text-slate-400 font-semibold">
@@ -1374,7 +1277,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
           </div>
         )}
 
-        {/* TAB: TABEL REKAP LIVE SEMENTARA */}
+        {/* TAB 2: TABEL REKAPITULASI LIVE */}
         {activeTab === 'table' && (
           <div className="space-y-4 animate-fade-in">
             {/* Print Header (Only visible on print / PDF) */}
@@ -1394,10 +1297,10 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
               <div>
                 <h3 className="text-base sm:text-lg font-black text-white flex items-center gap-2">
                   <FileSpreadsheet className="w-5 h-5 text-blue-400" />
-                  <span>Tabel Rekap Live Pengerjaan Siswa</span>
+                  <span>Tabel Rekapitulasi Hasil Pengerjaan Siswa</span>
                 </h3>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Rekap progres pengerjaan siswa secara langsung dengan pendeteksi duplikasi pengerjaan & opsi ekspor.
+                  Rekap data pengerjaan siswa terintegrasi dengan filter percobaan dan ekspor dokumen.
                 </p>
               </div>
 
@@ -1407,7 +1310,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                   type="button"
                   onClick={handleExportLiveCSV}
                   disabled={session.participants.length === 0}
-                  className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 disabled:opacity-40 disabled:pointer-events-none text-white text-xs font-bold flex items-center gap-2 transition-colors min-h-[44px] shadow-md shadow-emerald-950/40"
+                  className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 disabled:opacity-40 disabled:pointer-events-none text-white text-xs font-bold flex items-center gap-2 transition-colors min-h-[44px] shadow-md shadow-emerald-950/40 btn-press cursor-pointer"
                   title="Unduh rekapan hasil kuis sementara ke file CSV / Excel"
                 >
                   <Download className="w-4 h-4" />
@@ -1418,7 +1321,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                   type="button"
                   onClick={handlePrintTable}
                   disabled={session.participants.length === 0}
-                  className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 active:bg-slate-650 disabled:opacity-40 disabled:pointer-events-none text-slate-200 text-xs font-bold flex items-center gap-2 transition-colors min-h-[44px] border border-slate-700"
+                  className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 active:bg-slate-650 disabled:opacity-40 disabled:pointer-events-none text-slate-200 text-xs font-bold flex items-center gap-2 transition-colors min-h-[44px] border border-slate-700 btn-press cursor-pointer"
                   title="Cetak atau simpan rekapan sebagai dokumen PDF"
                 >
                   <Printer className="w-4 h-4 text-blue-400" />
@@ -1429,29 +1332,29 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
 
             {/* Metric Summary Cards */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
-              <div className="p-3 sm:p-3.5 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
-                <div className="text-[11px] font-bold text-slate-400">Total Entri Masuk</div>
-                <div className="text-xl sm:text-2xl font-black text-white">{session.participants.length}</div>
+              <div className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
+                <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Entri Masuk</div>
+                <div className="text-xl sm:text-2xl font-black text-white tabular-nums">{session.participants.length}</div>
                 <div className="text-[10px] text-slate-500">Seluruh sesi pengerjaan</div>
               </div>
 
-              <div className="p-3 sm:p-3.5 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
-                <div className="text-[11px] font-bold text-blue-400">Siswa Unik</div>
-                <div className="text-xl sm:text-2xl font-black text-blue-300">{duplicateStats.uniqueStudents}</div>
+              <div className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
+                <div className="text-[11px] font-bold text-blue-400 uppercase tracking-wider">Siswa Unik</div>
+                <div className="text-xl sm:text-2xl font-black text-blue-300 tabular-nums">{duplicateStats.uniqueStudents}</div>
                 <div className="text-[10px] text-slate-500">Terdaftar tanpa duplikasi</div>
               </div>
 
-              <div className="p-3 sm:p-3.5 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
-                <div className="text-[11px] font-bold text-amber-400">Pengerjaan Ulang</div>
-                <div className="text-xl sm:text-2xl font-black text-amber-300">{duplicateStats.repeatAttemptsCount}</div>
+              <div className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
+                <div className="text-[11px] font-bold text-amber-400 uppercase tracking-wider">Pengerjaan Ulang</div>
+                <div className="text-xl sm:text-2xl font-black text-amber-300 tabular-nums">{duplicateStats.repeatAttemptsCount}</div>
                 <div className="text-[10px] text-slate-500">
-                  {duplicateStats.repeatAttemptsCount > 0 ? 'Siswa mengerjakan > 1x' : 'Belum ada ulangan'}
+                  {duplicateStats.repeatAttemptsCount > 0 ? 'Siswa mengulang kuis' : 'Belum ada ulangan'}
                 </div>
               </div>
 
-              <div className="p-3 sm:p-3.5 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
-                <div className="text-[11px] font-bold text-emerald-400">Selesai / Progres</div>
-                <div className="text-xl sm:text-2xl font-black text-emerald-300">
+              <div className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
+                <div className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider">Selesai / Progres</div>
+                <div className="text-xl sm:text-2xl font-black text-emerald-300 tabular-nums">
                   {classStats.finishedCount} <span className="text-xs font-normal text-slate-400">/ {session.participants.length}</span>
                 </div>
                 <div className="text-[10px] text-slate-500">Rata-rata: {classStats.avgScore} pts</div>
@@ -1469,7 +1372,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                 <button
                   type="button"
                   onClick={() => { playClick(); setDuplicateFilter('all'); }}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all min-h-[38px] ${
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all min-h-[38px] btn-press cursor-pointer ${
                     duplicateFilter === 'all'
                       ? 'bg-blue-600 text-white shadow-sm'
                       : 'bg-slate-800 text-slate-300 hover:bg-slate-750'
@@ -1480,7 +1383,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                 <button
                   type="button"
                   onClick={() => { playClick(); setDuplicateFilter('best'); }}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all min-h-[38px] ${
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all min-h-[38px] btn-press cursor-pointer ${
                     duplicateFilter === 'best'
                       ? 'bg-blue-600 text-white shadow-sm'
                       : 'bg-slate-800 text-slate-300 hover:bg-slate-750'
@@ -1492,7 +1395,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                 <button
                   type="button"
                   onClick={() => { playClick(); setDuplicateFilter('latest'); }}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all min-h-[38px] ${
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all min-h-[38px] btn-press cursor-pointer ${
                     duplicateFilter === 'latest'
                       ? 'bg-blue-600 text-white shadow-sm'
                       : 'bg-slate-800 text-slate-300 hover:bg-slate-750'
@@ -1510,7 +1413,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                   value={tableStatusFilter}
                   onChange={(e) => setTableStatusFilter(e.target.value as any)}
                   aria-label="Filter status pengerjaan siswa"
-                  className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs font-bold text-slate-200 focus:outline-none focus:border-blue-500 min-h-[40px]"
+                  className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs font-bold text-slate-200 focus:outline-none focus:border-blue-500 min-h-[40px] cursor-pointer"
                 >
                   <option value="all">Semua Status</option>
                   <option value="finished">Hanya Selesai ({classStats.finishedCount})</option>
@@ -1556,7 +1459,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                       setDuplicateFilter('all');
                       setTableStatusFilter('all');
                     }}
-                    className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-blue-300 mt-2 min-h-[40px]"
+                    className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-blue-300 mt-2 min-h-[40px] btn-press cursor-pointer"
                   >
                     Reset Semua Filter
                   </button>
@@ -1607,7 +1510,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                             className="hover:bg-slate-850/70 transition-colors"
                           >
                             {/* Peringkat */}
-                            <td className="py-3 px-3.5 text-center font-bold text-slate-400">
+                            <td className="py-3 px-3.5 text-center font-bold text-slate-400 tabular-nums">
                               {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : idx + 1}
                             </td>
 
@@ -1657,7 +1560,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
 
                             {/* Skor */}
                             <td className="py-3 px-3.5 text-center whitespace-nowrap">
-                              <span className="text-sm font-black text-amber-300">{displayScore}</span>
+                              <span className="text-sm font-black text-amber-300 tabular-nums">{displayScore}</span>
                               <span className="text-[10px] text-slate-400 ml-0.5">pts</span>
                             </td>
 
@@ -1665,7 +1568,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                             <td className="py-3 px-3.5 text-center whitespace-nowrap">
                               <div className="inline-flex flex-col items-center gap-1">
                                 <span
-                                  className={`text-xs font-bold ${
+                                  className={`text-xs font-bold tabular-nums ${
                                     accuracyRate >= 80
                                       ? 'text-emerald-400'
                                       : accuracyRate >= 60
@@ -1692,7 +1595,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
 
                             {/* Benar / Salah / Kosong */}
                             <td className="py-3 px-3.5 text-center whitespace-nowrap">
-                              <div className="flex items-center justify-center gap-1.5 text-xs">
+                              <div className="flex items-center justify-center gap-1.5 text-xs tabular-nums">
                                 <span className="text-emerald-400 font-bold" title="Jawaban Benar">
                                   ✓ {displayCorrect}
                                 </span>
@@ -1713,7 +1616,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
 
                             {/* Durasi & Waktu Selesai */}
                             <td className="py-3 px-3.5 text-center whitespace-nowrap">
-                              <div className="text-[11px] font-medium text-slate-300">
+                              <div className="text-[11px] font-medium text-slate-300 tabular-nums">
                                 {Math.round(p.timeSpentSec)} dtk
                               </div>
                               <div className="text-[10px] text-slate-500">
@@ -1745,7 +1648,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                               <button
                                 type="button"
                                 onClick={() => setSelectedStudentForAnalysis(p)}
-                                className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-slate-700 hover:border-indigo-500 text-xs font-bold inline-flex items-center gap-1.5 transition-all min-h-[36px]"
+                                className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-slate-750 hover:border-indigo-500 text-xs font-bold inline-flex items-center gap-1.5 transition-all min-h-[36px] btn-press cursor-pointer"
                                 title="Lihat lembar analisis jawaban butir soal siswa"
                               >
                                 <Eye className="w-3.5 h-3.5" />
@@ -1765,14 +1668,15 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
 
         {/* TAB 3: MATRIKS AKURASI SOAL */}
         {activeTab === 'matrix' && (
-          <div className="space-y-4">
+          <div className="space-y-4 animate-fade-in">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm sm:text-base font-bold text-white">
-                  Tingkat Keberhasilan Siswa per Butir Soal
+                <h3 className="text-base sm:text-lg font-black text-white flex items-center gap-2">
+                  <BarChart3 className="w-5 h-5 text-indigo-400" />
+                  <span>Tingkat Keberhasilan Siswa per Butir Soal</span>
                 </h3>
-                <p className="text-xs text-slate-400">
-                  Pantau soal mana yang mudah dipahami dan soal mana yang paling banyak keliru dijawab oleh kelas.
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Pantau butir soal yang mudah dipahami atau memerlukan penjelasan ulang bagi kelas.
                 </p>
               </div>
             </div>
@@ -1786,14 +1690,14 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                 return (
                   <div
                     key={q.id || idx}
-                    className="bg-slate-900 rounded-2xl p-4 border border-slate-800 space-y-3 shadow-lg"
+                    className="bg-slate-900 rounded-3xl p-5 border border-slate-800 space-y-3.5 shadow-xl hover:border-slate-750 transition-colors"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 text-xs font-bold">
+                      <span className="px-3 py-1 rounded-xl bg-slate-800 text-slate-200 text-xs font-bold border border-slate-750">
                         Soal #{idx + 1}
                       </span>
                       <span
-                        className={`text-xs font-bold px-2 py-0.5 rounded-full border ${
+                        className={`text-xs font-bold px-2.5 py-0.5 rounded-full border tabular-nums ${
                           isHard
                             ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
                             : isEasy
@@ -1805,11 +1709,11 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                       </span>
                     </div>
 
-                    <p className="text-xs sm:text-sm text-slate-200 font-medium line-clamp-2">
+                    <p className="text-xs sm:text-sm text-slate-200 font-medium line-clamp-2 leading-relaxed">
                       {q.text}
                     </p>
 
-                    <div className="space-y-1 text-xs">
+                    <div className="space-y-1.5 text-xs pt-1">
                       <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
                         <div
                           className={`h-full transition-all duration-300 ${
@@ -1822,9 +1726,13 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                           style={{ width: `${stat.correctRate}%` }}
                         />
                       </div>
-                      <div className="flex justify-between text-[10px] text-slate-400">
+                      <div className="flex justify-between text-[11px] text-slate-400">
                         <span>Dijawab {stat.totalAnswered} siswa</span>
-                        <span className="text-emerald-400 font-bold">Kunci: {q.options[q.correctIndex]}</span>
+                        {q.options && q.options[q.correctIndex] && (
+                          <span className="text-emerald-400 font-bold truncate max-w-[180px]">
+                            Kunci: {q.options[q.correctIndex]}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1834,19 +1742,19 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
           </div>
         )}
 
-        {/* TAB 3: LAYAR BERSAMA / PROYEKTOR */}
+        {/* TAB 4: LAYAR BERSAMA / IFP PROYEKTOR */}
         {activeTab === 'display' && (
-          <div className="max-w-3xl mx-auto space-y-5">
-            <div className="flex items-center justify-between bg-slate-900 p-3.5 rounded-2xl border border-slate-800">
-              <div className="flex items-center gap-2">
-                <span className="px-2.5 py-1 rounded-xl bg-blue-600 text-white text-xs font-bold">
+          <div className="max-w-4xl mx-auto space-y-5 animate-fade-in">
+            <div className="flex items-center justify-between bg-slate-900 p-4 rounded-3xl border border-slate-800 shadow-xl">
+              <div className="flex items-center gap-3">
+                <span className="px-3 py-1.5 rounded-xl bg-blue-600 text-white text-xs font-bold shadow-md shadow-blue-900/40">
                   Soal {currentDisplayQuestionIdx + 1} dari {quiz.questions.length}
                 </span>
-                <span className="text-xs text-slate-400">Tampilan Layar Presentasi</span>
+                <span className="text-xs font-semibold text-slate-300 hidden sm:inline">Tampilan Presentasi Layar Smartboard</span>
               </div>
               <div className="flex items-center gap-2">
                 {isTeacherLed && (
-                  <span className="hidden sm:inline-flex px-2 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 text-[11px] font-semibold border border-indigo-500/30">
+                  <span className="hidden md:inline-flex px-2.5 py-1 rounded-xl bg-indigo-500/20 text-indigo-300 text-xs font-bold border border-indigo-500/30">
                     📡 Terhubung Serentak ke Siswa
                   </span>
                 )}
@@ -1861,7 +1769,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                     }
                   }}
                   disabled={currentDisplayQuestionIdx === 0 || hostCountdownSec !== null}
-                  className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-xs font-bold disabled:opacity-40 min-h-[44px] transition-colors"
+                  className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-750 active:bg-slate-700 text-xs font-bold disabled:opacity-40 min-h-[44px] transition-colors border border-slate-700 btn-press cursor-pointer"
                 >
                   ◀ Sebelumnya
                 </button>
@@ -1876,7 +1784,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                     }
                   }}
                   disabled={currentDisplayQuestionIdx === quiz.questions.length - 1 || hostCountdownSec !== null}
-                  className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white text-xs font-bold disabled:opacity-40 min-h-[44px] transition-colors"
+                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white text-xs font-bold disabled:opacity-40 min-h-[44px] transition-colors shadow-md shadow-blue-900/40 btn-press cursor-pointer"
                 >
                   Selanjutnya ▶
                 </button>
@@ -1884,27 +1792,27 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
             </div>
 
             {currentDisplayQuestion && (
-              <div className="bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-800 space-y-6 shadow-2xl">
-                <h2 className="text-lg sm:text-2xl font-black text-white text-center leading-snug">
+              <div className="bg-slate-900 rounded-3xl p-6 sm:p-10 border border-slate-800 space-y-6 shadow-2xl">
+                <h2 className="text-xl sm:text-2xl lg:text-3xl font-black text-white text-center leading-snug">
                   {currentDisplayQuestion.text}
                 </h2>
 
                 {currentDisplayQuestion.imageUrl && (
-                  <div className="max-w-sm mx-auto rounded-2xl overflow-hidden border border-slate-700">
+                  <div className="max-w-md mx-auto rounded-3xl overflow-hidden border border-slate-800 shadow-xl">
                     <QuizIllustration
                       imageUrl={currentDisplayQuestion.imageUrl}
                       imageCaption={currentDisplayQuestion.imageCaption}
                       imagePrompt={currentDisplayQuestion.imagePrompt}
                       alt={currentDisplayQuestion.imageCaption || "Gambar Soal"}
-                      imgClassName="w-full max-h-60 object-contain bg-slate-950"
+                      imgClassName="w-full max-h-72 object-contain bg-slate-950"
                       enableZoom={true}
                       playClick={playClick}
                     />
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                  {currentDisplayQuestion.options.map((opt, oIdx) => {
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2">
+                  {currentDisplayQuestion.options?.map((opt, oIdx) => {
                     const isCorrect = oIdx === currentDisplayQuestion.correctIndex;
                     return (
                       <div
@@ -1912,23 +1820,25 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                         className={`p-4 rounded-2xl border text-sm sm:text-base font-bold flex items-center gap-3 transition-colors ${
                           isCorrect
                             ? 'bg-emerald-950/40 border-emerald-500/60 text-emerald-200'
-                            : 'bg-slate-800/80 border-slate-700 text-slate-200'
+                            : 'bg-slate-850/80 border-slate-750 text-slate-200'
                         }`}
                       >
-                        <span className="w-7 h-7 rounded-xl bg-slate-700 flex items-center justify-center text-xs font-black">
+                        <span className="w-8 h-8 rounded-xl bg-slate-800 flex items-center justify-center text-xs font-black shadow-inner flex-shrink-0">
                           {String.fromCharCode(65 + oIdx)}
                         </span>
                         <span className="flex-1">{opt}</span>
-                        {isCorrect && <CheckCircle2 className="w-5 h-5 text-emerald-400" />}
+                        {isCorrect && <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />}
                       </div>
                     );
                   })}
                 </div>
 
-                <div className="bg-slate-800/60 p-4 rounded-2xl border border-slate-700/60 text-xs text-slate-300">
-                  <strong className="text-amber-300 block mb-1">Penjelasan Guru:</strong>
-                  {currentDisplayQuestion.explanation}
-                </div>
+                {currentDisplayQuestion.explanation && (
+                  <div className="bg-slate-850/70 p-5 rounded-2xl border border-slate-750 text-xs sm:text-sm text-slate-300">
+                    <strong className="text-amber-300 block mb-1">Penjelasan Guru:</strong>
+                    {currentDisplayQuestion.explanation}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -1936,7 +1846,9 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
 
       </main>
 
-      {/* Confirmation Modal to Advance / Rewind Question in Teacher-Led Mode */}
+      {/* ─── MODALS ────────────────────────────────────────────────────────── */}
+
+      {/* Modal Konfirmasi Pindah Soal (Mode Dipandu Guru) */}
       {confirmAdvanceModal && (
         <div 
           className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in"
@@ -1983,14 +1895,14 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                   if (playClick) playClick();
                   setConfirmAdvanceModal(null);
                 }}
-                className="py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-300 font-bold text-xs min-h-[44px] transition-colors"
+                className="py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-300 font-bold text-xs min-h-[44px] transition-colors btn-press cursor-pointer"
               >
                 Batal
               </button>
               <button
                 type="button"
                 onClick={handleConfirmAdvance}
-                className={`py-2.5 px-4 rounded-xl font-black text-xs text-white min-h-[44px] shadow-md transition-colors ${
+                className={`py-2.5 px-4 rounded-xl font-black text-xs text-white min-h-[44px] shadow-md transition-colors btn-press cursor-pointer ${
                   confirmAdvanceModal.direction === 'next'
                     ? 'bg-blue-600 hover:bg-blue-500 active:bg-blue-700 shadow-blue-900/40'
                     : 'bg-amber-600 hover:bg-amber-500 active:bg-amber-700 shadow-amber-900/40'
@@ -2003,16 +1915,16 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
         </div>
       )}
 
-      {/* Confirmation Modal to End Session */}
+      {/* Modal Konfirmasi Akhiri Sesi */}
       {confirmEndModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-slate-900 rounded-3xl p-6 border border-slate-800 max-w-md w-full space-y-4 shadow-2xl animate-scale-up">
-            <div className="w-12 h-12 rounded-2xl bg-rose-500/20 text-rose-400 flex items-center justify-center text-2xl mx-auto">
+            <div className="w-12 h-12 rounded-2xl bg-rose-500/20 text-rose-400 flex items-center justify-center text-2xl mx-auto border border-rose-500/30">
               <Square className="w-6 h-6 fill-current" />
             </div>
             <div className="text-center space-y-2">
               <h3 className="text-lg font-black text-white">Akhiri Sesi Kuis Ini?</h3>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-300 leading-relaxed">
                 Setelah diakhiri, siswa tidak dapat lagi mengirim jawaban baru dan ruang sesi akan dikunci. Seluruh rekapan nilai akan otomatis dirangkum ke dalam laporan lengkap.
               </p>
             </div>
@@ -2020,14 +1932,14 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
               <button
                 type="button"
                 onClick={() => setConfirmEndModal(false)}
-                className="py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs min-h-[44px]"
+                className="py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs min-h-[44px] btn-press cursor-pointer"
               >
                 Batal
               </button>
               <button
                 type="button"
                 onClick={handleEndQuiz}
-                className="py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs min-h-[44px]"
+                className="py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs min-h-[44px] shadow-lg shadow-rose-950/50 btn-press cursor-pointer"
               >
                 Ya, Akhiri & Buat Rekap
               </button>
@@ -2036,7 +1948,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
         </div>
       )}
 
-      {/* Floating Live Reactions Overlay (Aktif Sepanjang Sesi) */}
+      {/* Floating Live Reactions Overlay */}
       {session.status !== 'finished' && (
         <div className="no-print">
           <QuizizzReactionOverlay sessionId={session.id} reactions={session.reactions} />
@@ -2054,7 +1966,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
         />
       </div>
 
-      {/* Laci Obrolan Interaktif Guru (Teacher Chat Drawer) */}
+      {/* Laci Obrolan Interaktif Guru */}
       <div className="no-print">
         <TeacherChatDrawer
           isOpen={isChatDrawerOpen}
@@ -2085,7 +1997,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
         <div 
           role="status" 
           aria-live="polite" 
-          className="fixed bottom-6 right-6 z-50 bg-slate-900 border border-slate-700 text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2.5 animate-scale-up text-xs sm:text-sm font-bold pointer-events-auto no-print"
+          className="fixed bottom-6 right-6 z-50 bg-slate-900 border border-slate-750 text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2.5 animate-scale-up text-xs sm:text-sm font-bold pointer-events-auto no-print"
         >
           <span>{toastMessage}</span>
         </div>

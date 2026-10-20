@@ -1,6 +1,23 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.79] - 2026-10-21
+### Redesain Total Ruang Kendali Host: Eliminasi AI Slop, Penonjolan Judul Kuis, & Antarmuka Kelas Eksekutif (Rule 1, Rule 2, Rule 4, Rule 5 & Rule 15)
+
+#### 1. Penonjolan Judul Kuis & Hierarki Header Studio (`WaygroundHostView.tsx`)
+- **Judul Kuis Utama Berbobot Display**: Mengangkat `quiz.title` menjadi judul utama (H1) yang tegas, kontras, dan langsung terbaca di semua perangkat tanpa pemotongan tersembunyi (`line-clamp-1` / `line-clamp-2`), menggantikan teks statis generik sebelumnya.
+- **Hierarki Navigasi Terstruktur**: Menambahkan breadcrumb ringkas (`Ruang Kendali Host • Mata Pelajaran • Kelas`) dan badge status sesi langsung (🟢 Live Aktif / 🟡 Ruang Tunggu / ⏸️ Dijeda / 🏁 Selesai) yang informatif dan estetik.
+- **Konsolidasi Header Responsif**: Menyederhanakan kontrol navigasi atas dari tata letak bertumpuk yang sempit menjadi bilah terpadu yang ergonomis dengan target sentuh $\ge 44 \times 44\text{ px}$.
+
+#### 2. Eliminasi "AI Slop" & Peningkatan Taste Visual (`WaygroundHostView.tsx`)
+- **Pembersihan Gradien & Kotak Pastel Acak**: Menggantikan tombol-tombol berwarna-warni kontras rendah dengan palet gelap eksekutif (*dark studio aesthetic*) berbasis slate/zinc terkalibrasi dan aksen warna bernilai semantik jelas.
+- **Pusat Nomor PIN Interaktif**: Menghadirkan kotak PIN bergaya monospaced berukuran besar dengan tombol salin tautan instan, respons visual salin satu ketukan, dan status ruang tunggu yang ramah proyektor/smartboard.
+- **Jalur Metrik Terpadu (Executive KPI Strip)**: Mendesain ulang indikator performa kelas (`Siswa Terhubung`, `Akurasi Kelas`, `Rata-rata Skor`, dan `Selesai`) dengan angka monospaced (`tabular-nums`) yang stabil dan tidak bergetar saat skor diperbarui secara langsung.
+
+#### 3. Transformasi Tampilan Ruang Tunggu (*Waiting Room Hero*) (`WaygroundHostView.tsx`)
+- **Layar Siap Proyektor & Smartboard IFP**: Kartu sambutan ruang tunggu dirancang ulang dengan nomor PIN jumbo (`text-3xl` s.d. `text-5xl`), petunjuk gabung sederhana untuk siswa, dan tombol utama "Mulai Kuis Bersama" yang kontras tinggi dan mudah ditekan dari jarak jauh.
+- **Podium & Papan Peringkat Metalik Terkalibrasi**: Penyegaran kartu peringkat siswa dengan sentuhan medali metalik (Emas, Perak, Perunggu), indikator api streak beruntun, serta panel lembar jawaban siswa yang intuitif dan mudah diakses.
+
 ## [2.4.78] - 2026-10-20
 ### Ketahanan Total Pengerjaan Kuis: Eliminasi Keluar Otomatis, Pembajakan Sesi Lintas Jendela, & Proteksi Perangkat Seluler (Rule 1, Rule 2, Rule 6, Rule 9, Rule 11 & Rule 15)
 
