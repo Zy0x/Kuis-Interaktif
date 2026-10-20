@@ -39,7 +39,9 @@ import {
   Search,
   Filter,
   RotateCcw,
-  Eye
+  Eye,
+  EyeOff,
+  BookOpen
 } from 'lucide-react';
 import { formatStudentDisplayName, analyzeSessionDuplicates } from '../../lib/studentUtils';
 
@@ -79,6 +81,8 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
   const [isSimulating, setIsSimulating] = useState(false);
   const [confirmEndModal, setConfirmEndModal] = useState(false);
   const [currentDisplayQuestionIdx, setCurrentDisplayQuestionIdx] = useState(0);
+  const [showIfpAnswer, setShowIfpAnswer] = useState(false);
+  const [showIfpExplanation, setShowIfpExplanation] = useState(false);
   const [isChatDrawerOpen, setIsChatDrawerOpen] = useState(false);
   const [selectedStudentForAnalysis, setSelectedStudentForAnalysis] = useState<QuizSessionParticipant | null>(null);
   const [confirmAdvanceModal, setConfirmAdvanceModal] = useState<{
@@ -144,6 +148,12 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
       setCurrentDisplayQuestionIdx(session.currentQuestionIndex);
     }
   }, [session.currentQuestionIndex]);
+
+  // Reset kunci jawaban & penjelasan IFP saat guru berpindah soal agar aman dan tidak bocor di Smartboard
+  useEffect(() => {
+    setShowIfpAnswer(false);
+    setShowIfpExplanation(false);
+  }, [currentDisplayQuestionIdx]);
 
   // Realtime session polling and BroadcastChannel listener
   useEffect(() => {
@@ -1835,29 +1845,110 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2">
                   {currentDisplayQuestion.options?.map((opt, oIdx) => {
                     const isCorrect = oIdx === currentDisplayQuestion.correctIndex;
+                    const isRevealedCorrect = showIfpAnswer && isCorrect;
+                    const isDimmedWrong = showIfpAnswer && !isCorrect;
+
                     return (
                       <div
                         key={oIdx}
-                        className={`p-4 rounded-2xl border text-sm sm:text-base font-bold flex items-center gap-3 transition-colors ${
-                          isCorrect
-                            ? 'bg-emerald-950/40 border-emerald-500/60 text-emerald-200'
-                            : 'bg-slate-850/80 border-slate-750 text-slate-200'
+                        className={`p-4 sm:p-5 rounded-2xl border text-sm sm:text-base font-bold flex items-center gap-3 transition-all duration-200 ${
+                          isRevealedCorrect
+                            ? 'bg-emerald-950/60 border-emerald-500 text-emerald-200 ring-2 ring-emerald-500/30 shadow-lg shadow-emerald-950/50'
+                            : isDimmedWrong
+                            ? 'bg-slate-900/50 border-slate-800/80 text-slate-400 opacity-60'
+                            : 'bg-slate-850/80 border-slate-750 text-slate-200 hover:border-slate-700'
                         }`}
                       >
-                        <span className="w-8 h-8 rounded-xl bg-slate-800 flex items-center justify-center text-xs font-black shadow-inner flex-shrink-0">
+                        <span
+                          className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center text-xs sm:text-sm font-black shadow-inner flex-shrink-0 transition-colors ${
+                            isRevealedCorrect
+                              ? 'bg-emerald-600 text-white'
+                              : 'bg-slate-800 text-slate-300'
+                          }`}
+                        >
                           {String.fromCharCode(65 + oIdx)}
                         </span>
                         <span className="flex-1">{opt}</span>
-                        {isCorrect && <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />}
+                        {isRevealedCorrect && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-bold border border-emerald-500/40 animate-fade-in flex-shrink-0">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                            <span className="hidden sm:inline">Kunci Benar</span>
+                          </span>
+                        )}
                       </div>
                     );
                   })}
                 </div>
 
-                {currentDisplayQuestion.explanation && (
-                  <div className="bg-slate-850/70 p-5 rounded-2xl border border-slate-750 text-xs sm:text-sm text-slate-300">
-                    <strong className="text-amber-300 block mb-1">Penjelasan Guru:</strong>
-                    {currentDisplayQuestion.explanation}
+                {/* Bilah Kontrol Pengungkapan Guru (IFP Presentation Toolbar) */}
+                <div className="pt-4 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5 flex-wrap">
+                    {/* Tombol Buka/Tutup Kunci Jawaban */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        setShowIfpAnswer((prev) => !prev);
+                      }}
+                      className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold border transition-all btn-press cursor-pointer min-h-[44px] ${
+                        showIfpAnswer
+                          ? 'bg-emerald-600 hover:bg-emerald-500 text-white border-emerald-500 shadow-md shadow-emerald-950/50'
+                          : 'bg-slate-800 hover:bg-slate-750 text-slate-200 border-slate-700 hover:border-slate-600'
+                      }`}
+                    >
+                      {showIfpAnswer ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      <span>{showIfpAnswer ? 'Sembunyikan Kunci' : 'Tampilkan Kunci Jawaban'}</span>
+                    </button>
+
+                    {/* Tombol Buka/Tutup Penjelasan Guru */}
+                    {currentDisplayQuestion.explanation && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          playClick();
+                          setShowIfpExplanation((prev) => !prev);
+                        }}
+                        className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold border transition-all btn-press cursor-pointer min-h-[44px] ${
+                          showIfpExplanation
+                            ? 'bg-amber-600 hover:bg-amber-500 text-white border-amber-500 shadow-md shadow-amber-950/50'
+                            : 'bg-slate-800 hover:bg-slate-750 text-slate-200 border-slate-700 hover:border-slate-600'
+                        }`}
+                      >
+                        <BookOpen className="w-4 h-4" />
+                        <span>{showIfpExplanation ? 'Sembunyikan Penjelasan' : 'Tampilkan Penjelasan'}</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Indikator Status Keamanan Smartboard */}
+                  <div className="inline-flex items-center gap-2 text-xs text-slate-400 font-medium">
+                    <span
+                      className={`w-2.5 h-2.5 rounded-full ${
+                        showIfpAnswer || showIfpExplanation
+                          ? 'bg-emerald-500 ring-2 ring-emerald-500/30 animate-pulse'
+                          : 'bg-slate-600'
+                      }`}
+                    />
+                    <span>
+                      {showIfpAnswer && showIfpExplanation
+                        ? 'Kunci & Penjelasan Terbuka'
+                        : showIfpAnswer
+                        ? 'Kunci Jawaban Terbuka'
+                        : showIfpExplanation
+                        ? 'Penjelasan Terbuka'
+                        : 'Mode Aman: Kunci & Penjelasan Tertutup'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Blok Penjelasan Guru (Hanya Tampil Jika Dibuka Oleh Guru) */}
+                {showIfpExplanation && currentDisplayQuestion.explanation && (
+                  <div className="bg-amber-950/20 p-5 sm:p-6 rounded-2xl border border-amber-500/30 text-xs sm:text-sm text-slate-200 animate-scale-up space-y-2">
+                    <div className="flex items-center gap-2 text-amber-300 font-bold text-sm sm:text-base">
+                      <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400 flex-shrink-0" />
+                      <span>Penjelasan Guru:</span>
+                    </div>
+                    <p className="leading-relaxed text-slate-200 text-sm sm:text-base whitespace-pre-line">{currentDisplayQuestion.explanation}</p>
                   </div>
                 )}
               </div>

@@ -1,6 +1,17 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.87] - 2026-10-21
+### Mode Aman Presentasi Smartboard/IFP: Kontrol Guru Mandiri untuk Kunci Jawaban & Pembahasan (Rule 1, Rule 2, Rule 8 & Rule 15)
+
+#### 1. Mode Aman Pembahasan Terkendali pada Tab Layar IFP (`WaygroundHostView.tsx`)
+- **Anti-Bocor Kunci Jawaban & Penjelasan Otomatis**: Secara default, seluruh opsi pilihan ganda ditampilkan netral (tanpa bingkai hijau/centang) dan kotak penjelasan guru disembunyikan rapat saat soal dibuka di Smartboard/IFP. Hal ini menjamin siswa tidak melihat jawaban sebelum guru siap membahasnya.
+- **Dua Tombol Kontrol Guru Mandiri**:
+  - **Tombol 'Tampilkan Kunci Jawaban'**: Mengungkap opsi jawaban benar dengan aksen emerald yang tegas (`bg-emerald-950/60 border-emerald-500`) dan meredupkan opsi lain (`opacity-60`), serta dapat ditutup kembali sewaktu-waktu (`Sembunyikan Kunci`).
+  - **Tombol 'Tampilkan Penjelasan'**: Menampilkan materi pembahasan guru dalam kartu berlatar hangat yang mudah dibaca dari kejauhan (`Penjelasan Guru`), dan dapat ditutup kembali (`Sembunyikan Penjelasan`).
+- **Reset Otomatis Saat Berpindah Soal**: Menjamin kerahasiaan penuh saat guru menekan tombol navigasi (`Sebelumnya` atau `Selanjutnya`), di mana status pengungkapan kunci dan penjelasan otomatis terkunci kembali (`false`) agar soal berikutnya tidak bocor secara instan.
+- **Indikator Status Keamanan Smartboard**: Lencana visual dengan pulse hijau/slate yang memberitahu guru status tayangan di layar IFP (`Mode Aman: Kunci & Penjelasan Tertutup` vs `Kunci Terbuka` dsb).
+
 ## [2.4.86] - 2026-10-21
 ### Eliminasi Ambigu Teks Percobaan '(2x)' dan Pembersihan Penuh Suffix Sistem pada Nama Siswa (Rule 1, Rule 2, Rule 4, Rule 5 & Rule 15)
 
