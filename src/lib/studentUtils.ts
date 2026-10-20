@@ -29,7 +29,14 @@ export function parseStudentName(rawName?: string | null, existingRoll?: string 
   let current = rawName.trim();
   let detectedRoll = existingRoll?.trim() || '';
 
-  // 1. Ekstrak dan bersihkan prefix nomor berulang di awal nama
+  // 1. Bersihkan prefix No/Absen/Huruf Kelas HANYA jika langsung diikuti angka (misal: 'No. 15', 'A. 15. 15.', 'Absen 7')
+  // JANGAN sentuh singkatan nama asli seperti 'H. Ali', 'M. Rizki', 'St. Nurhaliza'
+  const classOrPrefixPattern = /^(?:(?:no|absen|nomor)\.?\s*|(?:kelas\s*[a-z0-9]+\.?\s*)|(?:[a-z]\.?\s*(?=\d)))/i;
+  if (classOrPrefixPattern.test(current)) {
+    current = current.replace(classOrPrefixPattern, '').trim();
+  }
+
+  // 2. Ekstrak dan bersihkan prefix nomor berulang di awal nama
   // Pola: satu atau lebih blok [angka diikuti pemisah seperti titik, spasi, atau strip]
   const prefixPattern = /^(\d+)[\.\s\-]+/;
   while (prefixPattern.test(current)) {
@@ -42,7 +49,7 @@ export function parseStudentName(rawName?: string | null, existingRoll?: string 
     }
   }
 
-  // 2. Tangani kasus nomor menempel dengan titik tanpa spasi (misal: "1.Akhmad")
+  // 3. Tangani kasus nomor menempel dengan titik tanpa spasi (misal: "1.Akhmad")
   const attachedPattern = /^(\d+)\.(.+)$/;
   const attachedMatch = current.match(attachedPattern);
   if (attachedMatch) {
@@ -51,6 +58,12 @@ export function parseStudentName(rawName?: string | null, existingRoll?: string 
     }
     current = attachedMatch[2].trim();
   }
+
+  // 4. Bersihkan suffix penomoran bertumpuk di akhir nama (misal: " (2) (2)" => " (2)")
+  current = current.replace(/(?:\s*\(\d+\)){2,}$/g, (match) => {
+    const last = match.match(/\(\d+\)$/);
+    return last ? ' ' + last[0].trim() : '';
+  }).trim();
 
   // Jika nama bersih menjadi kosong karena string asli hanya berisi angka/titik
   const cleanName = current || rawName.trim();
@@ -74,13 +87,13 @@ export function formatStudentDisplayName(rawName?: string | null, existingRoll?:
 
 /**
  * Dapatkan base key unik siswa untuk mendeteksi apakah 2 entri merupakan siswa yang sama
- * Mengabaikan suffix disambiguasi seperti "(2)", "(3)" serta case sensitivity.
+ * Mengabaikan seluruh suffix disambiguasi seperti "(2)", "(3)", "(2) (2)" serta case sensitivity.
  */
 export function getStudentBaseIdentityKey(rawName?: string | null): string {
   if (!rawName) return '';
   const parsed = parseStudentName(rawName);
-  // Hilangkan suffix disambiguasi seperti " (2)", " (3)"
-  const baseName = parsed.cleanName.replace(/\s*\(\d+\)$/, '').trim().toLowerCase();
+  // Hilangkan seluruh suffix disambiguasi bertingkat seperti " (2)", " (2) (2)"
+  const baseName = parsed.cleanName.replace(/(?:\s*\(\d+\))+$/g, '').trim().toLowerCase();
   return parsed.rollNumber ? `roll_${parsed.rollNumber}_${baseName}` : `name_${baseName}`;
 }
 

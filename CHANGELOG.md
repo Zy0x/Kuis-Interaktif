@@ -1,6 +1,28 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.85] - 2026-10-21
+### Penamaan Tab 'Progress', Integrasi Kontrol Card Tabel Bebas Tabrakan, Eliminasi Metrik Ganda & Sanitasi Cerdas Nama Siswa (Rule 1, Rule 2, Rule 4, Rule 5 & Rule 15)
+
+#### 1. Penamaan Tab 'Progress' & Harmonisasi Navigasi (`WaygroundHostView.tsx`)
+- **Pembaruan Label Tab Navigasi**: Mengubah nama tab peringkat utama menjadi **"Progress"** (`Progress ({count})` pada tampilan seluler dan `Progress Siswa ({count})` pada desktop), mencerminkan pemantauan progres pengerjaan kuis siswa secara real-time.
+
+#### 2. Sanitasi Cerdas Nama Siswa & Pencegahan Duplikasi Bertingkat (`studentUtils.ts`, `supabaseClient.ts`)
+- **Pembersihan Angka Berulang Tanpa Merusak Nama Asli**: Membersihkan tumpukan nomor absen dan prefix kelas yang menumpuk akibat cache peramban lama (seperti `A. 15. 15. 15. 15. 15. Nur reva madinah` $\rightarrow$ No. 15 dan `Nur reva madinah`) secara presisi.
+- **Perlindungan Gelar & Singkatan Asli**: Memastikan singkatan nama dan gelar kehormatan asli (seperti `H. Ali`, `M. Rizki`, `St. Nurhaliza`, `R.A. Kartini`) tetap 100% terjaga dan tidak terpotong.
+- **Eliminasi Suffix Ganda '(2) (2)'**: Menghentikan pembuatan suffix nomor ganda pada proses registrasi dan penanganan reconnect peserta, membersihkan suffix bertingkat sehingga hanya menyisakan satu penomoran unik bersih (misal: `Muhamad sakur` atau `Muhamad sakur (2)`).
+
+#### 3. Integrasi Kontrol Tabel Terpadu Bebas Tabrakan (*Zero Collision*) (`WaygroundHostView.tsx`)
+- **Penyatuan Bilah Kontrol ke Dalam Card Tabel**: Memindahkan bilah pencarian dan filter percobaan langsung ke bagian header kartu tabel (`bg-slate-900 border-b border-slate-800`).
+- **Eliminasi Tabrakan Header Sticky**: Memisahkan kontainer kontrol atas dengan area gulir tabel secara hierarkis. Saat tabel digulir ke bawah, header tabel (`<thead>`) tetap menempel rapi tepat di bawah bilah pencarian dengan gap 0 pixel tanpa saling menimpa atau menutupi data.
+- **Pencarian Nama Tetap Terbuka pada Hasil Kosong**: Jika filter atau kata kunci pencarian tidak menemukan hasil, bilah pencarian tetap utuh di bagian atas kartu sehingga guru dapat segera menghapus atau mengubah kata kunci tanpa kehilangan formulir.
+
+#### 4. Eliminasi Redundansi Metrik Tab 2 (`WaygroundHostView.tsx`)
+- **Pemberantasan Kartu Ringkasan Ganda**: Menghapus 4 kartu metrik duplikat di Tab 2 karena metrik utama (`Siswa`, `Akurasi`, `Rata-rata`, `Selesai`) telah terpampang jelas pada pita eksekutif atas. Menggantinya dengan lencana metadata ringkas 1-baris pada judul tabel (`15 siswa ditampilkan • 15 siswa unik • 2 pengerjaan ulang`), menghemat lebih dari 120px ruang vertikal.
+
+#### 5. Verifikasi Multi-Viewport Penuh
+- **Nol Luapan Horizontal & Nol Tabrakan**: Diverifikasi via Playwright pada spektrum *Mobile-S 320px*, *Infinix Note 50s 392px*, tablet, hingga desktop dengan status `isColliding: false` dan `scrollWidth <= clientWidth`.
+
 ## [2.4.84] - 2026-10-21
 ### Redesain Bilah Filter & Pencarian Sticky Serta Penambahan Tanggal Presisi pada Durasi Siswa (Rule 1, Rule 2, Rule 4, Rule 5 & Rule 15)
 

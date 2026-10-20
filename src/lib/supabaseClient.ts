@@ -4149,8 +4149,9 @@ export const DataManager = {
         this.saveSessionParticipant(sessionId, { id: finalParticipant.id, name: finalParticipant.name });
       } else {
         // 2. Peserta baru mendaftar pada perangkat ini -> Deteksi tabrakan nama (Smart Disambiguation)
-        const baseName = participant.name.trim();
-        let resolvedName = baseName;
+        // Bersihkan suffix penomoran sebelumnya jika ada agar tidak pernah menumpuk menjadi "(2) (2)"
+        const baseName = participant.name.replace(/(?:\s*\(\d+\))+$/g, '').trim();
+        let resolvedName = participant.name.trim();
 
         // Periksa apakah nama sudah digunakan oleh perangkat/peserta lain di sesi ini
         const isNameTaken = (nameToCheck: string) =>
@@ -4159,7 +4160,7 @@ export const DataManager = {
           );
 
         if (isNameTaken(resolvedName)) {
-          // Tambahkan suffix penomoran otomatis: "Budi (2)", "Budi (3)", dst.
+          // Tambahkan suffix penomoran otomatis bersih: "Budi (2)", "Budi (3)", dst (tanpa pernah ganda "(2) (2)")
           let counter = 2;
           while (isNameTaken(`${baseName} (${counter})`)) {
             counter++;
