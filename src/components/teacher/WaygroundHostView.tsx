@@ -90,9 +90,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
   const [hostCountdownSec, setHostCountdownSec] = useState<number | null>(null);
 
   const headerRef = useRef<HTMLElement>(null);
-  const toolbarRef = useRef<HTMLDivElement>(null);
   const [headerHeight, setHeaderHeight] = useState(96);
-  const [toolbarHeight, setToolbarHeight] = useState(80);
 
   // Ukur tinggi header utama secara dinamis untuk sticky offset presisi
   useEffect(() => {
@@ -105,20 +103,6 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
     updateHeaderHeight();
     const ro = new ResizeObserver(updateHeaderHeight);
     ro.observe(headerRef.current);
-    return () => ro.disconnect();
-  }, []);
-
-  // Ukur tinggi toolbar filter tabel secara dinamis untuk sticky offset berjenjang
-  useEffect(() => {
-    if (!toolbarRef.current) return;
-    const updateToolbarHeight = () => {
-      if (toolbarRef.current) {
-        setToolbarHeight(toolbarRef.current.offsetHeight);
-      }
-    };
-    updateToolbarHeight();
-    const ro = new ResizeObserver(updateToolbarHeight);
-    ro.observe(toolbarRef.current);
     return () => ro.disconnect();
   }, []);
 
@@ -1390,13 +1374,17 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
               </div>
             </div>
 
-            {/* Unified Table Card Container */}
-            <div className="bg-slate-900 rounded-3xl border border-slate-800 shadow-xl relative">
-              {/* 1. Integrated Table Control Header (Search & Filter Bar) - Sticky Berjenjang Presisi */}
+            {/* Unified Table Card Container - Sticky Viewport Container Bebas Tumpang Tindih */}
+            <div 
+              style={{
+                top: `${headerHeight + 6}px`,
+                maxHeight: `calc(100dvh - ${headerHeight + 28}px)`,
+              }}
+              className="bg-slate-900 rounded-3xl border border-slate-800 shadow-xl overflow-hidden sticky z-20 flex flex-col"
+            >
+              {/* 1. Integrated Table Control Header (Search & Filter Bar) */}
               <div 
-                ref={toolbarRef}
-                style={{ top: `${headerHeight}px` }}
-                className="p-2 sm:p-3 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 sticky z-25 rounded-t-3xl shadow-md no-print"
+                className="p-2 sm:p-3 bg-slate-900 border-b border-slate-800 flex-shrink-0 z-10 no-print"
               >
                 <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-2 sm:gap-2.5">
                   
@@ -1531,12 +1519,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                   )}
                 </div>
               ) : (
-                <div 
-                  className="overflow-auto scrollbar-thin rounded-b-3xl"
-                  style={{
-                    maxHeight: `calc(100dvh - ${headerHeight + toolbarHeight + 20}px)`,
-                  }}
-                >
+                <div className="flex-1 overflow-auto scrollbar-thin">
                   <table className="w-full text-left text-xs text-slate-300 border-separate border-spacing-0">
                     <thead className="sticky top-0 z-20 shadow-md">
                       <tr>

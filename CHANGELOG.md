@@ -1,6 +1,19 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+
+## [2.4.91] - 2026-10-21
+### Arsitektur Flexbox Card Terpadu Mengeliminasi Tumpang Tindih Pencarian dan Header Tabel (Rule 1, Rule 2, Rule 4, Rule 5 & Rule 15)
+
+#### 1. Arsitektur Wadah Fleksibel Terpadu (*Unified Flexbox Card Container*) (`WaygroundHostView.tsx`)
+- **Struktur Flexbox Hirarkis**: Menghapus pola sticky sibling yang sebelumnya memicu tabrakan vertikal antar elemen sticky. Seluruh panel tabel siswa kini disatukan dalam satu wadah induk flexbox vertikal berkesinambungan (`sticky top-[headerHeight+6px] flex flex-col overflow-hidden`).
+- **Pemisahan Aliran Layout Permanen (*Zero Overlap Guarantee*)**:
+  - Bilah alat filter dan kotak pencarian nama bertindak sebagai elemen anak pertama dengan `flex-shrink-0 z-10`.
+  - Wadah data tabel siswa bertindak sebagai elemen anak kedua dengan `flex-1 overflow-auto`.
+  - Header kolom tabel (`<thead>`) memiliki posisi `sticky top-0 z-20` murni di dalam batas kontainer tabel, menjamin secara geometris bahwa header tabel **tidak akan pernah bisa menabrak atau menutupi kotak pencarian nama**, bahkan saat *scroll* mendalam di layar ponsel Android maupun saat tabel digulir internal.
+- **Ketinggian Adaptif Anti-Kelebihan Gulir Layar**: Menetapkan `maxHeight: calc(100dvh - (headerHeight + 28px))` sehingga wadah kartu presisi di dalam viewport tanpa memicu ekstra *page overscroll*, menjaga celah aman (`gap >= 10px`) terhadap bilah status/header atas.
+- **Optimalisasi Kode & Penghapusan Observasi Redundan**: Mengeliminasi `toolbarRef` dan `toolbarHeight` ResizeObserver yang tidak lagi dibutuhkan karena pembagian tinggi kini ditangani secara langsung dan mulus oleh *browser native flex layout engine*.
+
 ## [2.4.90] - 2026-10-21
 ### Arsitektur Sticky Berjenjang Presisi & Proteksi Anti-Tertutup Bilah Filter Android (Rule 1, Rule 2, Rule 4, Rule 5 & Rule 15)
 
