@@ -1,6 +1,24 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.78] - 2026-10-20
+### Ketahanan Total Pengerjaan Kuis: Eliminasi Keluar Otomatis, Pembajakan Sesi Lintas Jendela, & Proteksi Perangkat Seluler (Rule 1, Rule 2, Rule 6, Rule 9, Rule 11 & Rule 15)
+
+#### 1. Eliminasi Keluar Otomatis Akibat Gestur Back Android / Peramban (`App.tsx`)
+- **Proteksi Mutlak Arena pada Event Popstate**: Mengabaikan secara mutlak pengalihan layar mentah dari listener `popstate` ketika pengguna sedang berada di Arena Kuis aktif (`currentScreen === 'arena'`). Aksi mundur kini 100% ditangani secara hierarkis oleh `useBackHandler` yang menampilkan dialog konfirmasi keluar ramah anak, mencegah penutupan kuis tidak sengaja saat menyentuh tepi layar smartphone.
+
+#### 2. Isolasi Mutlak Sesi & Pencegahan Pembajakan Sesi Realtime (`QuizArena.tsx`, `App.tsx`)
+- **Penolakan Sinyal Selesai dari Sesi Eksternal**: Membatasi penerimaan perintah selesai (`status === 'finished'`) dan pemajuan nomor soal di `QuizArena` dan `App.tsx` hanya untuk sesi yang secara eksplisit diikuti pengguna (`activeSessionId === sess.id`). Siswa yang bermain Mandiri / Solo tidak lagi dapat dibajak atau dihentikan mendadak oleh sesi kelas live dari guru atau pengguna lain.
+
+#### 3. Preservasi Parameter Kuis Saat Rehidrasi Layar (`navigationState.ts`, `App.tsx`)
+- **Pencegahan Kehilangan `quizId`**: Menjaga persistensi parameter `quizId` dari URL Search Params dan `sessionStorage` saat rehidrasi layar arena, mencegah penghapusan parameter yang sebelumnya memicu fallback sepihak ke Beranda.
+- **Tampilan Pemuatan Menenangkan**: Menambahkan `ScreenLoadingFallback` bertuliskan *"Memulihkan sesi kuis..."* ketika layar arena sedang memuat data kuis dari database/cache lokal.
+
+#### 4. Perlindungan Penutupan Tab & Layar Tidur Ponsel (`QuizArena.tsx`, `index.css`)
+- **Pencegahan Reload / Tab Close Tak Sengaja**: Mendaftarkan event listener `beforeunload` selama kuis berlangsung yang memunculkan dialog peringatan peramban sebelum siswa meninggalkan halaman.
+- **Screen Wake Lock API**: Menjaga layar smartphone tetap menyala aktif selama kuis berlangsung agar layar tidak meredup/mati saat siswa membaca teks soal panjang atau berhitung.
+- **Pencegahan Pull-to-Refresh Seluler**: Menambahkan `overscroll-behavior-y: none;` pada root dokumen untuk menonaktifkan gestur muat ulang paksa pada Chrome Android dan Safari iOS.
+
 ## [2.4.77] - 2026-10-20
 ### Penguatan Sistem Menyeluruh: Eliminasi Race Conditions, Stabilitas Multi-Device, & Ketahanan Perangkat Seluler (Rule 1, Rule 2, Rule 5, Rule 6, Rule 11 & Rule 15)
 

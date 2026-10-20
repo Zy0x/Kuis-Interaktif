@@ -281,6 +281,13 @@ export const App: React.FC = () => {
   // Sinkronisasi navigasi browser (Tombol Back / Forward)
   useEffect(() => {
     const handlePopState = () => {
+      // PROTEKSI MUTLAK ARENA KUIS:
+      // Jangan pernah alihkan layar jika pengguna sedang berada di Arena Kuis aktif!
+      // Navigasi mundur di arena diatur penuh secara hierarkis oleh useBackHandler (modal konfirmasi keluar).
+      if (currentScreen === 'arena') {
+        return;
+      }
+
       const restored = restoreNavigationState();
       const isTeacherScreen = restored.screen === 'creator' || restored.screen === 'teacher-dashboard';
       if (!isTeacherScreen || teacher) {
@@ -297,17 +304,23 @@ export const App: React.FC = () => {
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [teacher, activeQuiz]);
+  }, [teacher, activeQuiz, currentScreen]);
 
   // Real-time Session Synchronization (BroadcastChannel, CustomEvent, and Cross-Window Storage)
   useEffect(() => {
     const handleRealtimeSync = (session: QuizSession) => {
       if (!session) return;
-      // Periksa apakah sesi ini cocok dengan kuis aktif atau sesi aktif saat ini
-      const matchesActiveQuiz = activeQuiz && (activeQuiz.id === session.quizId || (activeQuiz.pinCode && activeQuiz.pinCode === session.pinCode));
-      const matchesActiveSession = activeSession && activeSession.id === session.id;
+      // SINKRONISASI HANYA BERLAKU JIKA:
+      // 1. Pengguna memang tergabung dalam sesi kelas ini (activeSession.id cocok), ATAU
+      // 2. Berada di lobi siswa dengan PIN sesi yang cocok
+      const isMyActiveSession = Boolean(activeSession && activeSession.id === session.id);
+      const isMatchingLobbyPin = Boolean(
+        currentScreen === 'student-lobby' &&
+        ((initialNav.pin && session.pinCode === initialNav.pin) || (activeQuiz?.pinCode && session.pinCode === activeQuiz.pinCode))
+      );
 
-      if (matchesActiveQuiz || matchesActiveSession) {
+      // Jika sedang bermain mandiri (solo/tanpa activeSession), tolak pembajakan sesi dari luar!
+      if (isMyActiveSession || isMatchingLobbyPin) {
         setActiveSession(session);
         const resolved = resolveSettings(session, activeQuiz);
         setActiveSessionSettings(resolved);
@@ -918,6 +931,10 @@ export const App: React.FC = () => {
             playClick={playClick}
           />
         </React.Suspense>
+      )}
+
+      {currentScreen === 'arena' && !activeQuiz && (
+        <ScreenLoadingFallback message="Memulihkan sesi kuis..." isDark={isDark} />
       )}
 
       {currentScreen === 'arena' && activeQuiz && (

@@ -288,6 +288,61 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     };
   }, [isPreview, isTabSwitchDetectionEnabled, isGameOver, activeSessionId, liveSession?.id]);
 
+  // Cegah keluar atau reload tab browser tanpa sengaja saat pengerjaan kuis sedang aktif
+  useEffect(() => {
+    if (isPreview) return;
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      // Jika kuis sudah selesai atau sedang dalam proses penyelesaian, izinkan navigasi keluar
+      if (isFinishingRef.current || isGameOver) return;
+      e.preventDefault();
+      e.returnValue = '';
+      return '';
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [isPreview, isGameOver]);
+
+  // Pertahankan layar tetap menyala (Screen Wake Lock) saat siswa membaca dan menjawab kuis
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('wakeLock' in navigator)) return;
+
+    let wakeLockSentinel: any = null;
+    let isMounted = true;
+
+    const requestWakeLock = async () => {
+      try {
+        if (document.visibilityState === 'visible' && !wakeLockSentinel && isMounted) {
+          wakeLockSentinel = await (navigator as any).wakeLock.request('screen');
+        }
+      } catch {
+        // Abaikan jika baterai perangkat kritis atau tidak diizinkan oleh sistem operasi
+      }
+    };
+
+    requestWakeLock();
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        requestWakeLock();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      isMounted = false;
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (wakeLockSentinel) {
+        wakeLockSentinel.release().catch(() => {});
+        wakeLockSentinel = null;
+      }
+    };
+  }, []);
+
   // Active Questions (support shuffleQuestions & shuffleOptions - disabled in preview mode)
   const [activeQuestions] = useState<QuizQuestion[]>(() => {
     const shouldShuffleQuestions = !isPreview && (activeSettings.shuffleQuestions ?? quiz.shuffleQuestions);
@@ -1132,7 +1187,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
             timeSpentSec: totalTimeSpent + Math.max(1, timeSpent),
             answers: answersMap,
             tabSwitchCount,
-          });
+          }).catch(() => {});
         } catch (err) {
           console.warn('Session participant sync error:', err);
         }
@@ -1263,7 +1318,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
           answers: answersMap,
           tabSwitchCount,
           completedAt: completionIso,
-        });
+        }).catch(() => {});
       } catch (err) {
         console.warn('Session participant finish sync error:', err);
       }
@@ -1421,11 +1476,15 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   // Real-time listener for settings and question changes dispatched by teacher
   useEffect(() => {
     const applySessionUpdate = (sess: QuizSession) => {
-      if (
+      // PROTEKSI MUTLAK SESI AKTIF:
+      // Hanya terima update sesi jika siswa memang tergabung dalam sesi ini (activeSessionId cocok).
+      // Jangan pernah izinkan sesi eksternal memajukan soal atau mematikan kuis solo siswa!
+      const isTargetSession = Boolean(
         (activeSessionId && sess.id === activeSessionId) ||
-        (quiz.pinCode && sess.pinCode === quiz.pinCode) ||
-        sess.quizId === quiz.id
-      ) {
+        (liveSession?.id && sess.id === liveSession.id)
+      );
+
+      if (isTargetSession) {
         setLiveSession(sess);
         if (sess.settings) {
           setCurrentSettings((prev) => ({

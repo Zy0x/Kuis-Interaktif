@@ -41,7 +41,24 @@ export function saveNavigationState(state: {
   if (typeof window === 'undefined') return;
 
   const isPinScreen = state.screen === 'student-lobby' || state.screen === 'arena' || state.screen === 'result';
-  const quizId = (state.screen === 'home' || state.screen === 'teacher-dashboard') ? undefined : (state.quizId || state.quiz?.id);
+  let quizId = (state.screen === 'home' || state.screen === 'teacher-dashboard') ? undefined : (state.quizId || state.quiz?.id);
+
+  // Proteksi Rehidrasi: Jangan pernah hapus quizId di arena/lobby/result jika state.quiz sedang dimuat
+  if (!quizId && isPinScreen && typeof window !== 'undefined') {
+    const params = new URLSearchParams(window.location.search);
+    const urlQuiz = params.get('quiz');
+    if (urlQuiz) {
+      quizId = urlQuiz;
+    } else {
+      try {
+        const raw = sessionStorage.getItem(NAV_SESSION_KEY);
+        if (raw) {
+          const s = JSON.parse(raw);
+          if (s.quizId) quizId = s.quizId;
+        }
+      } catch {}
+    }
+  }
 
   let pin: string | undefined = undefined;
   if (isPinScreen) {
