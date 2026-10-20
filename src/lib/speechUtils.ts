@@ -5,6 +5,19 @@
  */
 
 let currentUtterance: SpeechSynthesisUtterance | null = null;
+let cachedVoices: SpeechSynthesisVoice[] = [];
+
+if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+  const updateVoices = () => {
+    try {
+      cachedVoices = window.speechSynthesis.getVoices();
+    } catch {}
+  };
+  updateVoices();
+  try {
+    window.speechSynthesis.onvoiceschanged = updateVoices;
+  } catch {}
+}
 
 export function isSpeechSupported(): boolean {
   return typeof window !== 'undefined' && 'speechSynthesis' in window;
@@ -43,6 +56,12 @@ export function speakQuestion(
 
   stopSpeech();
 
+  try {
+    if (window.speechSynthesis.paused) {
+      window.speechSynthesis.resume();
+    }
+  } catch {}
+
   // Bersihkan teks dari markup khusus agar dibaca luwes
   const cleanQ = questionText
     .replace(/[×*]/g, ' kali ')
@@ -69,7 +88,7 @@ export function speakQuestion(
   utterance.pitch = 1.05; // Nada cerah dan bersahabat
 
   // Cari suara Bahasa Indonesia terbaik di perangkat
-  const voices = window.speechSynthesis.getVoices();
+  const voices = cachedVoices.length > 0 ? cachedVoices : window.speechSynthesis.getVoices();
   const idVoice = voices.find(
     (v) => v.lang === 'id-ID' || v.lang.startsWith('id') || v.name.toLowerCase().includes('indonesia')
   );
@@ -83,14 +102,21 @@ export function speakQuestion(
 
   utterance.onend = () => {
     currentUtterance = null;
+    try {
+      delete (window as any).__activeUtterance;
+    } catch {}
     callbacks?.onEnd?.();
   };
 
   utterance.onerror = () => {
     currentUtterance = null;
+    try {
+      delete (window as any).__activeUtterance;
+    } catch {}
     callbacks?.onError?.();
   };
 
   currentUtterance = utterance;
+  (window as any).__activeUtterance = utterance; // Proteksi Garbage Collection Chrome
   window.speechSynthesis.speak(utterance);
 }

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import confetti from 'canvas-confetti';
-import type { Quiz, QuizAttemptAnswer, LeaderboardEntry } from '../../types/quiz';
+import type { Quiz, QuizAttemptAnswer, LeaderboardEntry, QuizSessionSettings } from '../../types/quiz';
 import { DataManager } from '../../lib/supabaseClient';
 import { copyTextToClipboard } from '../../lib/aiQuestionParser';
 import { triggerHaptic, formatMathExpression, getOptionLetter } from '../../lib/mobileUtils';
@@ -33,6 +33,7 @@ interface QuizResultProps {
   sessionId?: string;
   pinCode?: string;
   showLeaderboardToStudents?: boolean;
+  sessionSettings?: QuizSessionSettings;
 }
 
 export const QuizResult: React.FC<QuizResultProps> = ({
@@ -48,6 +49,7 @@ export const QuizResult: React.FC<QuizResultProps> = ({
   sessionId,
   pinCode,
   showLeaderboardToStudents = true,
+  sessionSettings,
 }) => {
   const [activeTab, setActiveTab] = useState<'review' | 'leaderboard'>('review');
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
@@ -93,6 +95,18 @@ export const QuizResult: React.FC<QuizResultProps> = ({
     } catch {
       // ignore
     }
+
+    // Idempotency guard: Cegah duplikasi riwayat/skor saat F5 atau muat ulang halaman hasil
+    const recordedSessionKey = `kuis_recorded_attempt_${quiz.id}_${sessionId || 'solo'}`;
+    const isAlreadyRecorded = typeof window !== 'undefined' && Boolean(sessionStorage.getItem(recordedSessionKey));
+
+    if (isAlreadyRecorded) {
+      DataManager.getLeaderboard(quiz.id, sessionId, pinCode).then(setLeaderboard);
+      return;
+    }
+    try {
+      sessionStorage.setItem(recordedSessionKey, 'true');
+    } catch {}
 
     const resultObj = {
       quizId: quiz.id,
@@ -438,18 +452,25 @@ export const QuizResult: React.FC<QuizResultProps> = ({
             <span className="whitespace-nowrap">Beranda</span>
           </button>
 
-          <button
-            type="button"
-            onClick={() => {
-              triggerHaptic('light');
-              playClick();
-              onReplay();
-            }}
-            className="flex-[1.5] xs:flex-[2] py-2 xs:py-2.5 px-2 xs:px-3 rounded-xl font-bold text-xs sm:text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-sm flex items-center justify-center gap-1 sm:gap-1.5 min-h-[44px] min-w-[96px] whitespace-nowrap btn-press"
-          >
-            <RotateCcw className="w-4 h-4 flex-shrink-0" />
-            <span className="whitespace-nowrap">Main Lagi</span>
-          </button>
+          {sessionSettings?.maxAttempts === 1 || sessionSettings?.pacingType === 'homework' ? (
+            <div className="flex-[1.5] xs:flex-[2] py-2 xs:py-2.5 px-2 xs:px-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-bold text-xs sm:text-sm flex items-center justify-center gap-1 sm:gap-1.5 min-h-[44px] min-w-[96px] text-center border border-slate-200 dark:border-slate-700">
+              <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+              <span className="whitespace-nowrap">Pengerjaan Selesai (1x)</span>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                triggerHaptic('light');
+                playClick();
+                onReplay();
+              }}
+              className="flex-[1.5] xs:flex-[2] py-2 xs:py-2.5 px-2 xs:px-3 rounded-xl font-bold text-xs sm:text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-sm flex items-center justify-center gap-1 sm:gap-1.5 min-h-[44px] min-w-[96px] whitespace-nowrap btn-press"
+            >
+              <RotateCcw className="w-4 h-4 flex-shrink-0" />
+              <span className="whitespace-nowrap">Main Lagi</span>
+            </button>
+          )}
 
           <button
             type="button"

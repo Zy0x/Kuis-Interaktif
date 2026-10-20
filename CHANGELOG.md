@@ -1,6 +1,25 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.77] - 2026-10-20
+### Penguatan Sistem Menyeluruh: Eliminasi Race Conditions, Stabilitas Multi-Device, & Ketahanan Perangkat Seluler (Rule 1, Rule 2, Rule 5, Rule 6, Rule 11 & Rule 15)
+
+#### 1. Stabilitas Koneksi WebSocket / Realtime Multi-Device (`QuizArena.tsx`)
+- **Penetapan Kanal Realtime Persisten**: Menghilangkan dependensi `currentIndex` dari hook pendaftaran kanal WebSocket Supabase Realtime dan BroadcastChannel. Pergantian butir soal oleh guru atau siswa kini menggunakan referensi mutabel (`currentIndexRef`) tanpa memicu re-subskripsi berulang atau lonjakan koneksi jaringan kelas.
+
+#### 2. Idempotensi Rekapitulasi & Pembatasan Percobaan Tunggal (`QuizResult.tsx`, `App.tsx`)
+- **Pencegahan Duplikasi Riwayat Nilai**: Menerapkan kunci idempotensi berbasis `sessionStorage` (`kuis_recorded_attempt_...`) sehingga aksi refresh (F5) pada layar hasil kuis tidak menduplikasi rekaman riwayat pengerjaan maupun menggelembungkan statistik kuis secara ganda.
+- **Penegakan Batas Pengerjaan Tunggal (1x)**: Menggantikan tombol "Main Lagi" menjadi lencana status "Pengerjaan Selesai (1x)" apabila kuis diatur dengan batas 1 kali percobaan (`maxAttempts: 1`) atau pada mode Penugasan Rumah (`pacingType: 'homework'`).
+
+#### 3. Ketahanan Audit Anti-Kecurangan Ramah Anak (`QuizArena.tsx`)
+- **Mekanisme Jeda Toleransi (Grace Period 3 Detik)**: Menambahkan jeda waktu 3 detik pada deteksi perpindahan tab (`document.hidden`). Tindakan wajar siswa seperti membuka notifikasi sistem, pergantian layout keyboard, atau split-screen sesaat tidak lagi memicu sanksi atau peringatan kecurangan keliru (*zero false-positives*).
+
+#### 4. Pengoptimalan Input & Tampilan Perangkat Seluler (`QuizArena.tsx`, `speechUtils.ts`)
+- **Pembersihan Virtual Keyboard Otomatis**: Menutup keyboard virtual di Android/iOS secara otomatis (`blur()`) begitu jawaban dipilih, mencegah gangguan pandangan dan lompatan viewport.
+- **Pencegahan Autocorrect pada Isian Singkat**: Menambahkan atribut `autoCapitalize="none" autoCorrect="off" spellCheck="false"` pada kotak jawaban isian singkat agar tidak terdistorsi koreksi otomatis bawaan smartphone.
+- **Pelipatan Teks Multi-baris Menjodohkan**: Mengganti pemotongan teks tunggal menjadi `line-clamp-2` pada kartu pilihan menjodohkan Kolom A & Kolom B, menjaga keterbacaan teks soal pada layar smartphone sempit (320px–390px).
+- **Stabilitas Audio TTS (Text-to-Speech)**: Memperkuat mesin narasi suara dengan sistem *voice caching*, *wake-up resume*, dan penahan memori *active utterance* dari pembersihan memori agresif pada Chrome Android.
+
 ## [2.4.76] - 2026-10-20
 ### Perbaikan Navigasi & Tautan PIN: Eliminasi Redirect Tidak Terduga ke Dasbor Guru & Fallback Berulang ke Sesi PIN (Rule 1, Rule 2, Rule 3, Rule 11 & Rule 15)
 

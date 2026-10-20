@@ -244,33 +244,46 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   const [hearts, setHearts] = useState<number>(3);
   const [isGameOver, setIsGameOver] = useState(false);
 
-  // Anti-cheat tab switch listener
+  // Anti-cheat tab switch listener (dengan grace period 3 detik cegah false-positive di Android/iOS)
   useEffect(() => {
     if (isPreview || !isTabSwitchDetectionEnabled || isGameOver) return;
 
+    let graceTimeout: ReturnType<typeof setTimeout> | null = null;
+
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        setTabSwitchCount((c) => {
-          const nextCount = c + 1;
-          const targetSessionId = activeSessionId || liveSession?.id;
-          if (targetSessionId) {
-            const profile = DataManager.getPlayerProfile();
-            const storedToken = DataManager.getSessionParticipant(targetSessionId);
-            DataManager.addOrUpdateSessionParticipant(targetSessionId, {
-              id: storedToken?.id,
-              name: storedToken?.name || profile.nickname || 'Siswa',
-              avatarId: profile.avatarId || 'lion',
-              tabSwitchCount: nextCount,
-            }).catch(() => {});
-          }
-          return nextCount;
-        });
-        setShowTabSwitchWarning(true);
+        graceTimeout = setTimeout(() => {
+          if (!document.hidden) return;
+          setTabSwitchCount((c) => {
+            const nextCount = c + 1;
+            const targetSessionId = activeSessionId || liveSession?.id;
+            if (targetSessionId) {
+              const profile = DataManager.getPlayerProfile();
+              const storedToken = DataManager.getSessionParticipant(targetSessionId);
+              DataManager.addOrUpdateSessionParticipant(targetSessionId, {
+                id: storedToken?.id,
+                name: storedToken?.name || profile.nickname || 'Siswa',
+                avatarId: profile.avatarId || 'lion',
+                tabSwitchCount: nextCount,
+              }).catch(() => {});
+            }
+            return nextCount;
+          });
+          setShowTabSwitchWarning(true);
+        }, 3000);
+      } else {
+        if (graceTimeout) {
+          clearTimeout(graceTimeout);
+          graceTimeout = null;
+        }
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => {
+      if (graceTimeout) {
+        clearTimeout(graceTimeout);
+      }
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [isPreview, isTabSwitchDetectionEnabled, isGameOver, activeSessionId, liveSession?.id]);
@@ -389,6 +402,9 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   });
   // Waktu awal saat butir soal aktif dibuka untuk pelacakan durasi per butir yang akurat (termasuk pada Mode Santai)
   const questionStartTimeRef = useRef<number>(Date.now());
+  const currentIndexRef = useRef<number>(currentIndex);
+  currentIndexRef.current = currentIndex;
+  const isFinishingRef = useRef<boolean>(false);
   const [totalTimeSpent, setTotalTimeSpent] = useState<number>(() => {
     if (!isPreview) {
       try {
@@ -953,6 +969,10 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     customMatchedCount?: number,
     customTotalPairs?: number
   ) => {
+    // Tutup keyboard virtual di Android/iOS saat menjawab untuk menjaga kenyamanan layar
+    if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
     triggerHaptic('light');
     const canReselectAnswer = canReselectAndNavigate;
     if ((isAnswerConfirmed && !canReselectAnswer) || showCountdown) return;
@@ -1173,6 +1193,8 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   };
 
   const finishCurrentQuiz = useCallback(() => {
+    if (isFinishingRef.current) return;
+
     // PROTEKSI PENUGASAN: Seluruh butir soal wajib dijawab sebelum kuis dapat diselesaikan
     const rawFinalAnswers = latestAnswersRef.current.filter((a) => a && a.questionId && a.questionId !== 'quiz_completed');
     const answeredIds = new Set(rawFinalAnswers.map((a) => a.questionId));
@@ -1183,6 +1205,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
       return;
     }
 
+    isFinishingRef.current = true;
     stopBgm();
     try {
       sessionStorage.removeItem(STORAGE_KEY);
@@ -1415,7 +1438,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
         if (sess.settings?.executionMode === 'teacher_led' && !isTeacher) {
           if (
             typeof sess.currentQuestionIndex === 'number' &&
-            sess.currentQuestionIndex !== currentIndex &&
+            sess.currentQuestionIndex !== currentIndexRef.current &&
             sess.currentQuestionIndex >= 0 &&
             sess.currentQuestionIndex < activeQuestions.length
           ) {
@@ -1494,7 +1517,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
       if (interval) clearInterval(interval);
       unsubRealtime();
     };
-  }, [activeSessionId, quiz.id, quiz.pinCode, currentIndex, isTeacher, liveSession?.id]);
+  }, [activeSessionId, quiz.id, quiz.pinCode, isTeacher, liveSession?.id]);
 
   const handleVoteAdd = (e: React.MouseEvent, optIndex: number) => {
     e.stopPropagation();
@@ -2131,6 +2154,9 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
               <div className="flex items-center gap-2">
                 <input
                   type="text"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck="false"
                   disabled={isAnswerConfirmed && !canReselectAndNavigate}
                   value={shortAnswerInput}
                   onChange={(e) => setShortAnswerInput(e.target.value)}
@@ -2268,7 +2294,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                             : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 hover:border-blue-300 hover:bg-slate-50 dark:hover:bg-slate-750'
                         }`}
                       >
-                        <span className="truncate pr-1">{pair.left}</span>
+                        <span className="line-clamp-2 break-words text-left leading-snug pr-1">{pair.left}</span>
                         {isMatched && <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />}
                       </button>
                     );
@@ -2300,7 +2326,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                             : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 opacity-80'
                         }`}
                       >
-                        <span className="truncate pr-1">{item.text}</span>
+                        <span className="line-clamp-2 break-words text-left leading-snug pr-1">{item.text}</span>
                         {isMatched && <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />}
                       </button>
                     );

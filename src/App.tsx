@@ -419,6 +419,14 @@ export const App: React.FC = () => {
 
   const handleReplay = () => {
     if (!activeQuiz) return;
+    try {
+      const keys = Object.keys(sessionStorage);
+      for (const k of keys) {
+        if (k.startsWith("kuis_recorded_attempt_" + activeQuiz.id + "_")) {
+          sessionStorage.removeItem(k);
+        }
+      }
+    } catch {}
     const shuffledQuiz: Quiz = {
       ...activeQuiz,
       questions: [...activeQuiz.questions].sort(() => Math.random() - 0.5),
@@ -958,6 +966,7 @@ export const App: React.FC = () => {
             playCelebration={playCelebration}
             sessionId={activeSession?.id}
             pinCode={activeSession?.pinCode || activeQuiz.pinCode}
+            sessionSettings={activeSessionSettings || (activeQuiz.defaultSettings as any)}
             showLeaderboardToStudents={
               activeSessionSettings?.showLeaderboardToStudents !== undefined
                 ? activeSessionSettings.showLeaderboardToStudents
