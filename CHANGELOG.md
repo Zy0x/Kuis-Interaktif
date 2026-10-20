@@ -1,6 +1,21 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.82] - 2026-10-21
+### Sticky Table Header & Sub-Header Papan Peringkat: Presisi Navigasi Pengguliran Vertikal Tanpa Kehilangan Konteks (Rule 1, Rule 2, Rule 4 & Rule 15)
+
+#### 1. Header Tabel Rekap Nilai Sticky Sepenuhnya (`WaygroundHostView.tsx`)
+- **Penetapan Sticky Header yang Kokoh**: Membungkus tabel data rekap nilai siswa dalam kontainer dengan batas tinggi dinamis berbasis viewport (`max-h-[calc(100dvh-135px)] sm:max-h-[calc(100dvh-175px)] overflow-auto scrollbar-thin`).
+- **Eliminasi Bug Border Sticky**: Menggunakan `border-separate border-spacing-0` pada elemen `<table>` untuk memastikan standar CSS sticky table bekerja konsisten di seluruh peramban (Chromium/WebKit/Firefox).
+- **Preservasi Judul Kolom Selama Pengguliran**: Mengatur `sticky top-0 z-20` pada `<thead>` serta seluruh elemen `<th>` dengan latar `bg-slate-950/95 backdrop-blur-md border-b border-slate-800`. Seluruh tajuk kolom (`#`, `NO. ABSEN & NAMA SISWA`, `PERCOBAAN`, `SKOR`, `AKURASI`, `BENAR/SALAH/KOSONG`, `DURASI`, `STATUS`, `AKSI`) tetap terkunci di bagian atas saat daftar siswa panjang digulir ke bawah.
+- **Pemisah Baris yang Kontras & Rapi**: Menambahkan `border-b border-slate-800/70` pada setiap baris data siswa (`<tr>`) untuk menjamin kerapian visual saat pengguliran berlangsung.
+
+#### 2. Sub-Header Papan Peringkat Tetap Terkunci (`WaygroundHostView.tsx`)
+- **Sticky Docking Baris Peringkat**: Mengonversi bilah judul kategori peringkat (`PERINGKAT & NAMA SISWA` dan `PROGRES & SKOR`) pada Tab 1 menjadi `sticky top-[100px] lg:top-[64px] z-10 bg-slate-950/95 backdrop-blur-md` sehingga tetap menempel tepat di bawah bilah atas host tanpa celah gantung saat memantau daftar puluhan siswa.
+
+#### 3. Sinkronisasi Sumbu Ganda (Vertikal & Horizontal)
+- **Kesesuaian Kolom 1:1**: Saat digulir secara horizontal pada layar smartphone maupun digulir secara vertikal, seluruh kolom header dan sel isi tetap sinkron tanpa distorsi atau pergeseran posisi.
+
 ## [2.4.81] - 2026-10-21
 ### Penataan Adaptif Cerdas Bilah Kendali Host: Eliminasi Celah Kosong & Harmonisasi Komando 1-Baris (Rule 1, Rule 2, Rule 4 & Rule 15)
 

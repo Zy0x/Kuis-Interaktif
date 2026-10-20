@@ -1117,7 +1117,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
               </div>
             ) : (
               <div className="space-y-2.5">
-                <div className="flex items-center justify-between text-xs font-bold text-slate-400 px-2 uppercase tracking-wider">
+                <div className="flex items-center justify-between text-xs font-bold text-slate-400 px-3 py-2 uppercase tracking-wider sticky top-[100px] lg:top-[64px] z-10 bg-slate-950/95 backdrop-blur-md rounded-xl border border-slate-800 shadow-md">
                   <span>Peringkat & Nama Siswa</span>
                   <span>Progres & Skor</span>
                 </div>
@@ -1488,19 +1488,19 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
               </div>
             ) : (
               <div className="bg-slate-900 rounded-3xl border border-slate-800 overflow-hidden shadow-xl">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs text-slate-300">
-                    <thead className="bg-slate-950/80 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800">
+                <div className="overflow-auto max-h-[calc(100dvh-135px)] sm:max-h-[calc(100dvh-175px)] scrollbar-thin">
+                  <table className="w-full text-left text-xs text-slate-300 border-separate border-spacing-0">
+                    <thead className="sticky top-0 z-20 shadow-md">
                       <tr>
-                        <th className="py-3 px-3.5 font-bold text-center w-12">#</th>
-                        <th className="py-3 px-3.5 font-bold">No. Absen & Nama Siswa</th>
-                        <th className="py-3 px-3.5 font-bold text-center">Percobaan</th>
-                        <th className="py-3 px-3.5 font-bold text-center">Skor</th>
-                        <th className="py-3 px-3.5 font-bold text-center">Akurasi</th>
-                        <th className="py-3 px-3.5 font-bold text-center">Benar / Salah / Kosong</th>
-                        <th className="py-3 px-3.5 font-bold text-center">Durasi & Selesai</th>
-                        <th className="py-3 px-3.5 font-bold text-center">Status</th>
-                        <th className="py-3 px-3.5 font-bold text-center no-print">Aksi</th>
+                        <th className="sticky top-0 z-20 bg-slate-950/95 backdrop-blur-md py-3 px-3.5 font-bold text-center w-12 border-b border-slate-800 text-slate-400 uppercase text-[10px] tracking-wider whitespace-nowrap shadow-xs">#</th>
+                        <th className="sticky top-0 z-20 bg-slate-950/95 backdrop-blur-md py-3 px-3.5 font-bold border-b border-slate-800 text-slate-400 uppercase text-[10px] tracking-wider whitespace-nowrap shadow-xs">No. Absen & Nama Siswa</th>
+                        <th className="sticky top-0 z-20 bg-slate-950/95 backdrop-blur-md py-3 px-3.5 font-bold text-center border-b border-slate-800 text-slate-400 uppercase text-[10px] tracking-wider whitespace-nowrap shadow-xs">Percobaan</th>
+                        <th className="sticky top-0 z-20 bg-slate-950/95 backdrop-blur-md py-3 px-3.5 font-bold text-center border-b border-slate-800 text-slate-400 uppercase text-[10px] tracking-wider whitespace-nowrap shadow-xs">Skor</th>
+                        <th className="sticky top-0 z-20 bg-slate-950/95 backdrop-blur-md py-3 px-3.5 font-bold text-center border-b border-slate-800 text-slate-400 uppercase text-[10px] tracking-wider whitespace-nowrap shadow-xs">Akurasi</th>
+                        <th className="sticky top-0 z-20 bg-slate-950/95 backdrop-blur-md py-3 px-3.5 font-bold text-center border-b border-slate-800 text-slate-400 uppercase text-[10px] tracking-wider whitespace-nowrap shadow-xs">Benar / Salah / Kosong</th>
+                        <th className="sticky top-0 z-20 bg-slate-950/95 backdrop-blur-md py-3 px-3.5 font-bold text-center border-b border-slate-800 text-slate-400 uppercase text-[10px] tracking-wider whitespace-nowrap shadow-xs">Durasi & Selesai</th>
+                        <th className="sticky top-0 z-20 bg-slate-950/95 backdrop-blur-md py-3 px-3.5 font-bold text-center border-b border-slate-800 text-slate-400 uppercase text-[10px] tracking-wider whitespace-nowrap shadow-xs">Status</th>
+                        <th className="sticky top-0 z-20 bg-slate-950/95 backdrop-blur-md py-3 px-3.5 font-bold text-center no-print border-b border-slate-800 text-slate-400 uppercase text-[10px] tracking-wider whitespace-nowrap shadow-xs">Aksi</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800/80">
@@ -1528,7 +1528,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                         return (
                           <tr
                             key={p.id}
-                            className="hover:bg-slate-850/70 transition-colors"
+                            className="hover:bg-slate-850/70 transition-colors border-b border-slate-800/70"
                           >
                             {/* Peringkat */}
                             <td className="py-3 px-3.5 text-center font-bold text-slate-400 tabular-nums">
