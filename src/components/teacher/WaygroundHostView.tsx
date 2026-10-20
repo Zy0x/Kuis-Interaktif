@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import type { Quiz, QuizSession, QuizSessionParticipant } from '../../types/quiz';
 import { DataManager } from '../../lib/supabaseClient';
 import { copyTextToClipboard } from '../../lib/aiQuestionParser';
@@ -88,6 +88,39 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
     direction: 'next' | 'prev';
   } | null>(null);
   const [hostCountdownSec, setHostCountdownSec] = useState<number | null>(null);
+
+  const headerRef = useRef<HTMLElement>(null);
+  const toolbarRef = useRef<HTMLDivElement>(null);
+  const [headerHeight, setHeaderHeight] = useState(96);
+  const [toolbarHeight, setToolbarHeight] = useState(80);
+
+  // Ukur tinggi header utama secara dinamis untuk sticky offset presisi
+  useEffect(() => {
+    if (!headerRef.current) return;
+    const updateHeaderHeight = () => {
+      if (headerRef.current) {
+        setHeaderHeight(headerRef.current.offsetHeight);
+      }
+    };
+    updateHeaderHeight();
+    const ro = new ResizeObserver(updateHeaderHeight);
+    ro.observe(headerRef.current);
+    return () => ro.disconnect();
+  }, []);
+
+  // Ukur tinggi toolbar filter tabel secara dinamis untuk sticky offset berjenjang
+  useEffect(() => {
+    if (!toolbarRef.current) return;
+    const updateToolbarHeight = () => {
+      if (toolbarRef.current) {
+        setToolbarHeight(toolbarRef.current.offsetHeight);
+      }
+    };
+    updateToolbarHeight();
+    const ro = new ResizeObserver(updateToolbarHeight);
+    ro.observe(toolbarRef.current);
+    return () => ro.disconnect();
+  }, []);
 
   // Hitung status pesan obrolan kelas yang sudah dibaca guru
   const [lastReadChatCount, setLastReadChatCount] = useState<number>(() => {
@@ -587,7 +620,10 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col select-none animate-fade-in font-sans">
       
       {/* ─── TOP MASTER STUDIO HEADER ────────────────────────────────────────── */}
-      <header className="w-full bg-slate-900/95 backdrop-blur-md border-b border-slate-800/90 px-3 sm:px-6 lg:px-8 py-2.5 sm:py-3 sticky top-0 z-30 shadow-xl no-print">
+      <header 
+        ref={headerRef}
+        className="w-full bg-slate-900/95 backdrop-blur-md border-b border-slate-800/90 px-3 sm:px-6 lg:px-8 py-2.5 sm:py-3 sticky top-0 z-30 shadow-xl no-print"
+      >
         <div className="w-full max-w-[1920px] mx-auto flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2.5 lg:gap-6">
           
           {/* Sisi Kiri: Tombol Kembali + Identitas Kuis Utama (Besar, Jelas, & Responsif) */}
@@ -1108,7 +1144,10 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
               </div>
             ) : (
               <div className="space-y-2.5">
-                <div className="flex items-center justify-between text-xs font-bold text-slate-400 px-3 py-2 uppercase tracking-wider sticky top-[100px] lg:top-[64px] z-10 bg-slate-950/95 backdrop-blur-md rounded-xl border border-slate-800 shadow-md">
+                <div 
+                  style={{ top: `${headerHeight + 6}px` }}
+                  className="flex items-center justify-between text-xs font-bold text-slate-400 px-3 py-2 uppercase tracking-wider sticky z-10 bg-slate-950/95 backdrop-blur-md rounded-xl border border-slate-800 shadow-md"
+                >
                   <span>Peringkat & Nama Siswa</span>
                   <span>Progres & Skor</span>
                 </div>
@@ -1352,10 +1391,14 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
             </div>
 
             {/* Unified Table Card Container */}
-            <div className="bg-slate-900 rounded-3xl border border-slate-800 overflow-hidden shadow-xl">
-              {/* 1. Integrated Table Control Header (Search & Filter Bar) */}
-              <div className="p-3 sm:p-3.5 bg-slate-900 border-b border-slate-800 no-print">
-                <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-2.5">
+            <div className="bg-slate-900 rounded-3xl border border-slate-800 shadow-xl relative">
+              {/* 1. Integrated Table Control Header (Search & Filter Bar) - Sticky Berjenjang Presisi */}
+              <div 
+                ref={toolbarRef}
+                style={{ top: `${headerHeight}px` }}
+                className="p-2 sm:p-3 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 sticky z-25 rounded-t-3xl shadow-md no-print"
+              >
+                <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-2 sm:gap-2.5">
                   
                   {/* 3-Way Attempt Filter (Segmented Control Bar - Anti-Warping & Clean) */}
                   <div className="flex items-center gap-1.5 w-full lg:w-auto">
@@ -1363,11 +1406,11 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                       <Filter className="w-3.5 h-3.5" />
                       <span>Percobaan:</span>
                     </span>
-                    <div className="grid grid-cols-3 sm:flex sm:items-center p-1 bg-slate-950/80 rounded-xl border border-slate-800/90 w-full lg:w-auto gap-0.5">
+                    <div className="grid grid-cols-3 sm:flex sm:items-center p-0.5 sm:p-1 bg-slate-950/80 rounded-xl border border-slate-800/90 w-full lg:w-auto gap-0.5">
                       <button
                         type="button"
                         onClick={() => { playClick(); setDuplicateFilter('all'); }}
-                        className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition-all text-center min-h-[36px] btn-press cursor-pointer whitespace-nowrap ${
+                        className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all text-center min-h-[34px] sm:min-h-[36px] btn-press cursor-pointer whitespace-nowrap ${
                           duplicateFilter === 'all'
                             ? 'bg-blue-600 text-white shadow-sm'
                             : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
@@ -1380,7 +1423,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                       <button
                         type="button"
                         onClick={() => { playClick(); setDuplicateFilter('best'); }}
-                        className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition-all text-center min-h-[36px] btn-press cursor-pointer whitespace-nowrap ${
+                        className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all text-center min-h-[34px] sm:min-h-[36px] btn-press cursor-pointer whitespace-nowrap ${
                           duplicateFilter === 'best'
                             ? 'bg-blue-600 text-white shadow-sm'
                             : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
@@ -1394,7 +1437,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                       <button
                         type="button"
                         onClick={() => { playClick(); setDuplicateFilter('latest'); }}
-                        className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition-all text-center min-h-[36px] btn-press cursor-pointer whitespace-nowrap ${
+                        className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all text-center min-h-[34px] sm:min-h-[36px] btn-press cursor-pointer whitespace-nowrap ${
                           duplicateFilter === 'latest'
                             ? 'bg-blue-600 text-white shadow-sm'
                             : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
@@ -1408,13 +1451,13 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                   </div>
 
                   {/* Right: Search Input & Status Filter Dropdown */}
-                  <div className="flex items-center gap-2 w-full lg:w-auto">
+                  <div className="flex items-center gap-1.5 sm:gap-2 w-full lg:w-auto">
                     {/* Status selector */}
                     <select
                       value={tableStatusFilter}
                       onChange={(e) => setTableStatusFilter(e.target.value as any)}
                       aria-label="Filter status pengerjaan siswa"
-                      className="px-2.5 sm:px-3 py-2 rounded-xl bg-slate-800/90 border border-slate-700/80 text-xs font-bold text-slate-200 focus:outline-none focus:border-blue-500 min-h-[38px] cursor-pointer flex-shrink-0"
+                      className="px-2 sm:px-3 py-1 sm:py-2 rounded-xl bg-slate-800/90 border border-slate-700/80 text-[11px] sm:text-xs font-bold text-slate-200 focus:outline-none focus:border-blue-500 min-h-[34px] sm:min-h-[38px] cursor-pointer flex-shrink-0"
                     >
                       <option value="all">Semua Status</option>
                       <option value="finished">Selesai ({classStats.finishedCount})</option>
@@ -1423,13 +1466,13 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
 
                     {/* Search Input */}
                     <div className="relative flex-1 sm:w-60 md:w-64">
-                      <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                      <Search className="w-3.5 h-3.5 absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                       <input
                         type="text"
                         value={tableSearch}
                         onChange={(e) => setTableSearch(e.target.value)}
                         placeholder="Cari nama / no. absen..."
-                        className="w-full pl-8 pr-7 py-2 rounded-xl bg-slate-800/90 border border-slate-700/80 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 min-h-[38px]"
+                        className="w-full pl-7 sm:pl-8 pr-7 py-1 sm:py-2 rounded-xl bg-slate-800/90 border border-slate-700/80 text-[11px] sm:text-xs text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 min-h-[34px] sm:min-h-[38px]"
                       />
                       {tableSearch && (
                         <button
@@ -1467,7 +1510,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
 
               {/* 2. Table or Empty State */}
               {filteredTableParticipants.length === 0 ? (
-                <div className="p-8 sm:p-12 text-center space-y-2 bg-slate-900/40">
+                <div className="p-8 sm:p-12 text-center space-y-2 bg-slate-900/40 rounded-b-3xl">
                   <div className="text-3xl">🔍</div>
                   <h4 className="text-sm font-bold text-white">Tidak Ada Data Siswa yang Cocok</h4>
                   <p className="text-xs text-slate-400 max-w-sm mx-auto">
@@ -1488,7 +1531,12 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                   )}
                 </div>
               ) : (
-                <div className="overflow-auto max-h-[calc(100dvh-170px)] sm:max-h-[calc(100dvh-190px)] scrollbar-thin">
+                <div 
+                  className="overflow-auto scrollbar-thin rounded-b-3xl"
+                  style={{
+                    maxHeight: `calc(100dvh - ${headerHeight + toolbarHeight + 20}px)`,
+                  }}
+                >
                   <table className="w-full text-left text-xs text-slate-300 border-separate border-spacing-0">
                     <thead className="sticky top-0 z-20 shadow-md">
                       <tr>

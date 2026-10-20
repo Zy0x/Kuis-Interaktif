@@ -1,6 +1,21 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.90] - 2026-10-21
+### Arsitektur Sticky Berjenjang Presisi & Proteksi Anti-Tertutup Bilah Filter Android (Rule 1, Rule 2, Rule 4, Rule 5 & Rule 15)
+
+#### 1. Arsitektur Sticky Berjenjang Presisi (*Hierarchical Sticky*) (`WaygroundHostView.tsx`)
+- **Eliminasi Kasus Bilah Filter Tertutup (*Zero Cutoff*)**: Memperbaiki masalah di mana bilah filter dan pencarian terselip di bawah header atas saat pengguna Android melakukan *scroll* mendalam.
+- **Pengukuran Dinamis (*Dynamic ResizeObserver*)**: Tinggi bilah header atas (`headerHeight`) dan bilah toolbar filter (`toolbarHeight`) diukur secara real-time via `ResizeObserver`.
+- **Penataan Sticky Bertingkat**:
+  - Level 1: Header Utama Studio menempel di puncak (`sticky top-0 z-30`).
+  - Level 2: Bilah Kontrol & Filter Tabel menempel presisi tepat di batas bawah header (`sticky top-[headerHeight] z-25`).
+  - Level 3: Header Kolom Tabel (`<thead>`) menempel tepat di puncak wadah data (`sticky top-0 z-20`).
+- **Batasan Tinggi Adaptif Viewport**: Wadah gulir tabel diberi batasan `maxHeight: calc(100dvh - (headerHeight + toolbarHeight + 20px))` dengan sudut melengkung bawah (`rounded-b-3xl`), memastikan tabel mengisi sisa layar Android secara presisi tanpa tumpang-tindih ganda.
+
+#### 2. Kepadatan Ramping & Hemat Ruang Vertikal HP (`WaygroundHostView.tsx`)
+- **Pembersihan Ruang Vertikal**: Mengurangi padding dan memadatkan tombol 3-kolom filter percobaan (`Semua`, `Terbaik`, `Terakhir`), dropdown status, dan input cari nama pada layar HP (`min-h-[34px]`). Menghasilkan penghematan ruang vertikal hingga 25px sehingga baris data siswa yang terlihat pada layar HP tetap banyak dan nyaman dipantau.
+
 ## [2.4.89] - 2026-10-21
 ### Integrasi Fitur Bagikan Bawaan Perangkat (Web Share API) dan Penyempurnaan Tombol Salin PIN (Rule 1, Rule 2, Rule 5 & Rule 15)
 
