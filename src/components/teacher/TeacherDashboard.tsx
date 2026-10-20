@@ -17,6 +17,7 @@ import { AdminDatabaseBackupModal } from './AdminDatabaseBackupModal';
 import { ExtendDeadlineModal } from './ExtendDeadlineModal';
 import { ReactivateSessionModal } from './ReactivateSessionModal';
 import { getAccurateDeadlineCountdown, useDeadlineTicker } from '../../lib/deadlineUtils';
+import { formatIndonesianTime } from '../../lib/dateUtils';
 import { saveNavigationState, type TeacherTabState } from '../../lib/navigationState';
 import { 
   GraduationCap, 
@@ -1441,28 +1442,28 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
 
       {/* TAB 2: KUIS AKTIF & SESI LIVE (WAYGROUND) */}
       {activeMainTab === 'live_sessions' && (
-        <div className="space-y-6">
-          {/* Section Header & Subtitle */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <Radio className="w-5 h-5 text-rose-500 animate-pulse" />
-                <span>Kuis Aktif & Sesi Bermain Siswa ({sessions.length})</span>
+        <div className="space-y-4">
+          {/* Section Header: Ringkas & Bersih */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+            <div className="flex items-center gap-2">
+              <Radio className="w-5 h-5 text-rose-500 animate-pulse flex-shrink-0" />
+              <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+                Kuis Aktif & Sesi Live
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Pantau interaksi siswa secara langsung, kendalikan sesi live kelas, atau buka rekapan hasil kuis.
-              </p>
+              <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/60">
+                {sessions.length}
+              </span>
             </div>
 
-            {/* Sub-Filter Pills */}
-            <div className="flex items-center gap-1.5 p-1 bg-slate-200/70 dark:bg-slate-800/80 rounded-2xl self-start sm:self-auto text-xs font-bold overflow-x-auto max-w-full no-scrollbar">
+            {/* Sub-Filter Pills (Compact Filter Row) */}
+            <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-2xl self-start sm:self-auto text-xs font-bold overflow-x-auto max-w-full no-scrollbar border border-slate-200/80 dark:border-slate-700/80">
               <button
                 type="button"
                 onClick={() => {
                   playClick();
                   setSessionFilter('all');
                 }}
-                className={`px-3 py-2 rounded-xl transition-all min-h-[44px] whitespace-nowrap flex items-center justify-center flex-shrink-0 ${
+                className={`px-3 py-1.5 rounded-xl transition-all min-h-[36px] whitespace-nowrap flex items-center justify-center flex-shrink-0 cursor-pointer ${
                   sessionFilter === 'all'
                     ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -1476,14 +1477,14 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                   playClick();
                   setSessionFilter('active');
                 }}
-                className={`px-3 py-2 rounded-xl transition-all min-h-[44px] whitespace-nowrap flex items-center gap-1.5 justify-center flex-shrink-0 ${
+                className={`px-3 py-1.5 rounded-xl transition-all min-h-[36px] whitespace-nowrap flex items-center gap-1.5 justify-center flex-shrink-0 cursor-pointer ${
                   sessionFilter === 'active'
                     ? 'bg-white dark:bg-slate-900 text-rose-600 dark:text-rose-400 shadow-xs'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
                 <span className="w-2 h-2 rounded-full bg-rose-500 flex-shrink-0" />
-                <span>Sedang Berjalan ({liveSessionsCount})</span>
+                <span>Berjalan ({liveSessionsCount})</span>
               </button>
               <button
                 type="button"
@@ -1491,7 +1492,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                   playClick();
                   setSessionFilter('finished');
                 }}
-                className={`px-3 py-2 rounded-xl transition-all min-h-[44px] whitespace-nowrap flex items-center gap-1.5 justify-center flex-shrink-0 ${
+                className={`px-3 py-1.5 rounded-xl transition-all min-h-[36px] whitespace-nowrap flex items-center gap-1.5 justify-center flex-shrink-0 cursor-pointer ${
                   sessionFilter === 'finished'
                     ? 'bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-xs'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -1504,22 +1505,22 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
 
           {/* Sessions Grid */}
           {filteredSessions.length === 0 ? (
-            <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 sm:p-12 text-center border border-slate-200 dark:border-slate-800 space-y-4 max-w-lg mx-auto shadow-xs">
-              <div className="w-16 h-16 rounded-3xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center text-3xl mx-auto shadow-sm">
-                <Radio className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+            <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 sm:p-10 text-center border border-slate-200 dark:border-slate-800 space-y-3 max-w-lg mx-auto shadow-xs">
+              <div className="w-14 h-14 rounded-2xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center text-2xl mx-auto shadow-2xs">
+                <Radio className="w-7 h-7 text-blue-600 dark:text-blue-400" />
               </div>
-              <div className="space-y-1.5">
-                <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
+              <div className="space-y-1">
+                <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
                   {sessionFilter === 'active'
-                    ? 'Tidak Ada Kuis yang Sedang Berjalan'
+                    ? 'Tidak Ada Sesi yang Sedang Berjalan'
                     : sessionFilter === 'finished'
-                    ? 'Belum Ada Riwayat Kuis Selesai'
-                    : 'Belum Ada Sesi Kuis Aktif'}
+                    ? 'Belum Ada Riwayat Sesi Selesai'
+                    : 'Belum Ada Sesi Kuis'}
                 </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+                <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto leading-relaxed">
                   {sessionFilter === 'all'
-                    ? 'Mulai sesi kuis untuk memantau nilai dan jawaban murid secara interaktif dan real-time.'
-                    : 'Pilih salah satu kuis dari Koleksi Kuis dan tekan "Mainkan Sekarang" untuk memulai sesi baru.'}
+                    ? 'Mulai sesi kuis baru dari Koleksi Kuis untuk berinteraksi bersama murid.'
+                    : 'Pilih salah satu kuis dari Koleksi Kuis dan tekan "Mainkan" untuk memulai.'}
                 </p>
               </div>
               <button
@@ -1528,13 +1529,13 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                   playClick();
                   setActiveMainTab('collection');
                 }}
-                className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs min-h-[44px]"
+                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs min-h-[44px] cursor-pointer"
               >
-                Buka Koleksi Kuis & Mulai
+                Buka Koleksi Kuis
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3.5 sm:gap-4">
               {filteredSessions.map((s) => {
                 const isLive = s.status === 'active' || s.status === 'paused' || s.status === 'waiting';
                 const isSelfPaced = s.settings?.executionMode === 'self_paced';
@@ -1544,358 +1545,312 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                 return (
                   <div
                     key={s.id}
-                    className={`bg-white dark:bg-slate-900 rounded-3xl p-5 border transition-all flex flex-col justify-between gap-4 shadow-xs hover:shadow-md ${
+                    onClick={() => {
+                      playClick();
+                      if (isLive) {
+                        setSelectedSessionForHost(s);
+                      } else {
+                        setSelectedSessionForRecap(s);
+                      }
+                    }}
+                    className={`group bg-white dark:bg-slate-900 rounded-2xl p-4 border transition-all flex flex-col justify-between gap-3 shadow-2xs hover:shadow-md cursor-pointer ${
                       isSelfPaced && s.status === 'active'
-                        ? 'border-indigo-400/80 dark:border-indigo-500/50 ring-1 ring-indigo-400/30'
+                        ? 'border-indigo-400/70 dark:border-indigo-500/50 hover:border-indigo-500'
                         : s.status === 'active'
-                        ? 'border-rose-400/80 dark:border-rose-500/50 ring-1 ring-rose-400/30'
+                        ? 'border-rose-400/70 dark:border-rose-500/50 hover:border-rose-500 ring-1 ring-rose-500/20'
                         : s.status === 'waiting'
-                        ? 'border-amber-400/80 dark:border-amber-500/50 ring-1 ring-amber-400/30'
-                        : 'border-slate-200 dark:border-slate-800'
+                        ? 'border-amber-400/70 dark:border-amber-500/50 hover:border-amber-500'
+                        : 'border-slate-200/90 dark:border-slate-800 hover:border-blue-400 dark:hover:border-blue-600/80'
                     }`}
                   >
-                    {/* Top status & PIN */}
-                    <div className="flex items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
-                      <span
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black tracking-wider uppercase border ${
-                          isSelfPaced
-                            ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800'
-                            : s.status === 'active'
-                            ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-300 border-rose-200 dark:border-rose-800'
-                            : s.status === 'waiting'
-                            ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-300 border-amber-200 dark:border-amber-800'
-                            : s.status === 'paused'
-                            ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-300 border-amber-200 dark:border-amber-800'
-                            : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
-                        }`}
-                      >
-                        {isSelfPaced ? (
-                          <>
-                            <ClipboardList className="w-3 h-3 text-indigo-500" />
-                            <span>TUGAS MANDIRI / PR</span>
-                          </>
-                        ) : s.status === 'active' ? (
-                          <>
-                            <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
-                            <span>LIVE INTERAKTIF</span>
-                          </>
-                        ) : s.status === 'waiting' ? (
-                          <>
-                            <Clock className="w-2.5 h-2.5 text-amber-500 animate-pulse" />
-                            <span>RUANG TUNGGU</span>
-                          </>
-                        ) : s.status === 'paused' ? (
-                          <>
-                            <Pause className="w-2.5 h-2.5" />
-                            <span>DIJEDA</span>
-                          </>
-                        ) : (
-                          <>
-                            <CheckCircle2 className="w-2.5 h-2.5" />
-                            <span>SELESAI</span>
-                          </>
-                        )}
-                      </span>
-
-                      {/* PIN Code & Salin Link quick actions */}
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <button
-                          type="button"
-                          onClick={() => handleCopyPin(s.pinCode)}
-                          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-xs font-bold transition-colors min-h-[40px] cursor-pointer"
-                          title="Klik untuk salin PIN"
-                        >
-                          <span className="text-slate-400 text-[10px]">PIN:</span>
-                          <span className="font-mono text-slate-800 dark:text-slate-200 tracking-wider">
-                            {s.pinCode}
-                          </span>
-                          {copiedPin === s.pinCode ? (
-                            <Check className="w-3.5 h-3.5 text-emerald-500" />
-                          ) : (
-                            <Copy className="w-3.5 h-3.5 text-slate-400" />
-                          )}
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => handleCopySessionLink(s.pinCode, s.id)}
-                          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/50 border border-blue-200 dark:border-blue-800 text-xs font-bold text-blue-700 dark:text-blue-300 transition-colors min-h-[40px] cursor-pointer btn-press"
-                          title="Salin Tautan Kuis untuk Siswa"
-                        >
-                          {copiedLink === s.id ? (
-                            <>
-                              <Check className="w-3.5 h-3.5 text-emerald-500" />
-                              <span className="text-emerald-600 dark:text-emerald-400">Tersalin!</span>
-                            </>
-                          ) : (
-                            <>
-                              <Share2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                              <span className="hidden sm:inline">Salin Link</span>
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Content */}
                     <div className="space-y-2.5">
-                      <div className="flex items-center gap-2 text-xs flex-wrap">
-                        <span className={`px-2 py-0.5 rounded-md font-bold text-[10px] border ${getSubjectBadge(s.subject)}`}>
-                          {s.subject}
-                        </span>
-                        <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-[10px]">
-                          Kelas {s.grade}
-                        </span>
-                        <span className="text-slate-400 text-[10px]">•</span>
-                        <span className="text-slate-500 dark:text-slate-400 text-[10px]">
-                          {s.totalQuestions} Soal
-                        </span>
-                      </div>
-
-                      <h3 className="text-base font-black text-slate-900 dark:text-white leading-tight">
-                        {s.quizTitle}
-                      </h3>
-
-                      {/* Mode Mandiri / PR Deadline Info Box */}
-                      {isSelfPaced && (() => {
-                        const deadlineCountdown = getAccurateDeadlineCountdown(s.settings?.deadlineAt, nowMs);
-                        return (
-                          <div className={`p-2.5 rounded-xl border text-xs flex flex-col gap-1 ${
-                            deadlineCountdown.isExpired
-                              ? 'bg-rose-50/80 dark:bg-rose-950/30 border-rose-200 dark:border-rose-900/50 text-rose-800 dark:text-rose-300'
-                              : deadlineCountdown.isUrgent
-                              ? 'bg-amber-50/80 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900/50 text-amber-800 dark:text-amber-300'
-                              : 'bg-indigo-50/70 dark:bg-indigo-950/30 border-indigo-200 dark:border-indigo-900/50 text-indigo-900 dark:text-indigo-300'
-                          }`}>
-                            <div className="flex items-center justify-between gap-1 flex-wrap">
-                              <span className="font-semibold flex items-center gap-1.5 text-[11px]">
-                                <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
-                                Batas Waktu:
-                              </span>
-                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                                deadlineCountdown.isExpired
-                                  ? 'bg-rose-200 dark:bg-rose-900/60 text-rose-800 dark:text-rose-200 animate-pulse'
-                                  : deadlineCountdown.isUrgent
-                                  ? 'bg-amber-200 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200'
-                                  : 'bg-indigo-200 dark:bg-indigo-900/60 text-indigo-800 dark:text-indigo-200'
-                              }`}>
-                                {deadlineCountdown.isExpired ? 'TENGGAT BERAKHIR' : 'AKTIF'}
-                              </span>
-                            </div>
-                            <p className="font-medium text-[11px] text-slate-700 dark:text-slate-300">
-                              {deadlineCountdown.formattedDate}
-                            </p>
-                            <p className="text-[11px] font-bold flex items-center gap-1">
-                              <Clock className="w-3 h-3 flex-shrink-0" />
-                              {deadlineCountdown.isExpired ? (
-                                <span className="text-rose-600 dark:text-rose-400">
-                                  Berakhir: {deadlineCountdown.countdownText}
-                                </span>
-                              ) : (
-                                <span>
-                                  Sisa waktu: {deadlineCountdown.countdownText}
-                                </span>
-                              )}
-                            </p>
-                          </div>
-                        );
-                      })()}
-
-                      {/* Metric Bar */}
-                      <div className="bg-slate-50 dark:bg-slate-800/60 rounded-2xl p-3 border border-slate-100 dark:border-slate-800/80 space-y-1.5">
-                        <div className="flex justify-between items-center text-xs font-bold">
-                          <span className="text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                            <Users className="w-3.5 h-3.5 text-blue-500" />
-                            {partCount} Siswa Tergabung
-                          </span>
-                          <span className="text-slate-700 dark:text-slate-300">
-                            {finishedCount} / {partCount} Selesai
-                          </span>
-                        </div>
-                        <div className="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-blue-500 transition-all duration-300"
-                            style={{ width: `${partCount > 0 ? Math.min(100, (finishedCount / partCount) * 100) : 0}%` }}
-                          />
-                        </div>
-                      </div>
-
-                      {/* Box Tautan Masuk Siswa & Salin Cepat (Rule 1, Rule 2 & User Request) */}
-                      {isLive && (
-                        <div className="p-3 rounded-2xl bg-blue-50/90 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800/80 flex flex-col xs:flex-row items-stretch xs:items-center justify-between gap-2.5 shadow-2xs">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <div className="w-8 h-8 rounded-xl bg-blue-600/10 dark:bg-blue-400/10 text-blue-600 dark:text-blue-400 flex items-center justify-center flex-shrink-0">
-                              <Share2 className="w-4 h-4" />
-                            </div>
-                            <div className="min-w-0">
-                              <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
-                                Tautan Siswa:
-                              </span>
-                              <span className="font-mono text-xs font-bold text-blue-700 dark:text-blue-300 truncate block">
-                                .../?pin={s.pinCode}
-                              </span>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-1.5 flex-shrink-0">
-                            <button
-                              type="button"
-                              onClick={() => handleCopySessionLink(s.pinCode, s.id)}
-                              className="flex-1 xs:flex-initial px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-all btn-press cursor-pointer min-h-[40px]"
-                              title="Salin Tautan Kuis untuk Siswa"
-                            >
-                              {copiedLink === s.id ? (
-                                <>
-                                  <Check className="w-3.5 h-3.5" />
-                                  <span>Tersalin!</span>
-                                </>
-                              ) : (
-                                <>
-                                  <Copy className="w-3.5 h-3.5" />
-                                  <span>Salin Tautan</span>
-                                </>
-                              )}
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => handleShareWhatsAppForSession(s)}
-                              className="px-2.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white text-xs font-bold flex items-center justify-center gap-1 shadow-xs transition-all btn-press cursor-pointer min-h-[40px]"
-                              title="Salin Pesan Format WhatsApp untuk Wali Murid"
-                            >
-                              {copiedLink === `wa_${s.id}` ? (
-                                <>
-                                  <Check className="w-3.5 h-3.5" />
-                                  <span className="text-[11px]">Tersalin!</span>
-                                </>
-                              ) : (
-                                <>
-                                  <span className="text-[11px] font-black">WA</span>
-                                </>
-                              )}
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="space-y-2 pt-1 border-t border-slate-100 dark:border-slate-800">
-                      {isLive ? (
-                        <>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              playClick();
-                              setSelectedSessionForHost(s);
-                            }}
-                            className={`w-full py-2.5 px-4 rounded-xl text-white text-xs font-black flex items-center justify-center gap-2 shadow-xs transition-all btn-press min-h-[44px] ${
+                      {/* Baris 1: Status Sesi + Mapel + PIN + Bagikan */}
+                      <div className="flex items-center justify-between gap-2">
+                        {/* Kiri: Status & Info Mapel */}
+                        <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                          <span
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${
                               isSelfPaced
-                                ? 'bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700'
+                                ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800'
+                                : s.status === 'active'
+                                ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-800'
                                 : s.status === 'waiting'
-                                ? 'bg-gradient-to-r from-amber-500 via-orange-600 to-amber-600 hover:from-amber-600 hover:to-orange-700'
-                                : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700'
+                                ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800'
+                                : s.status === 'paused'
+                                ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800'
+                                : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
                             }`}
                           >
                             {isSelfPaced ? (
                               <>
-                                <Users className="w-4 h-4" />
-                                <span>Pantau Progres Siswa</span>
+                                <ClipboardList className="w-2.5 h-2.5 text-indigo-500" />
+                                <span>Tugas PR</span>
+                              </>
+                            ) : s.status === 'active' ? (
+                              <>
+                                <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping" />
+                                <span>LIVE</span>
+                              </>
+                            ) : s.status === 'waiting' ? (
+                              <>
+                                <Clock className="w-2.5 h-2.5 text-amber-500 animate-pulse" />
+                                <span>Menunggu</span>
+                              </>
+                            ) : s.status === 'paused' ? (
+                              <>
+                                <Pause className="w-2.5 h-2.5" />
+                                <span>Dijeda</span>
                               </>
                             ) : (
                               <>
-                                <Tv className="w-4 h-4" />
-                                <span>
-                                  {s.status === 'waiting'
-                                    ? 'Masuk ke Ruang Tunggu Kelas'
-                                    : 'Buka Layar Pantau Guru'}
-                                </span>
+                                <CheckCircle2 className="w-2.5 h-2.5" />
+                                <span>Selesai</span>
+                              </>
+                            )}
+                          </span>
+
+                          <span className={`px-1.5 py-0.5 rounded-md font-bold text-[10px] border whitespace-nowrap ${getSubjectBadge(s.subject)}`}>
+                            {s.subject}
+                          </span>
+                          <span className="px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-[10px] whitespace-nowrap">
+                            Kls {s.grade}
+                          </span>
+                        </div>
+
+                        {/* Kanan: Chip PIN Interaktif & Tombol Bagikan */}
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCopyPin(s.pinCode);
+                            }}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-mono font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer min-h-[32px]"
+                            title="Klik untuk salin PIN"
+                          >
+                            <span className="text-[10px] text-slate-400 font-sans">PIN</span>
+                            <span>{s.pinCode}</span>
+                            {copiedPin === s.pinCode ? (
+                              <Check className="w-3 h-3 text-emerald-500 flex-shrink-0" />
+                            ) : (
+                              <Copy className="w-3 h-3 text-slate-400 flex-shrink-0" />
+                            )}
+                          </button>
+
+                          {isLive && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleShareWhatsAppForSession(s);
+                              }}
+                              className="p-1.5 rounded-lg text-slate-500 hover:text-emerald-600 dark:text-slate-400 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-slate-200 dark:border-slate-750 min-h-[32px] min-w-[32px] flex items-center justify-center transition-colors cursor-pointer btn-press"
+                              title="Bagikan ke WhatsApp / Salin Tautan"
+                              aria-label="Bagikan Tautan Sesi"
+                            >
+                              {copiedLink === `wa_${s.id}` || copiedLink === s.id ? (
+                                <Check className="w-3.5 h-3.5 text-emerald-500" />
+                              ) : (
+                                <Share2 className="w-3.5 h-3.5" />
+                              )}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Judul Sesi Kuis */}
+                      <div>
+                        <h3 
+                          className="font-bold text-slate-900 dark:text-white text-sm sm:text-base leading-snug line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors"
+                          title={s.quizTitle}
+                        >
+                          {s.quizTitle}
+                        </h3>
+                        <div className="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5">
+                          <span>{s.totalQuestions} Soal</span>
+                          {s.createdAt && (
+                            <>
+                              <span>•</span>
+                              <span>{formatIndonesianTime(s.createdAt)}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Kotak Deadline Batas Waktu PR (Jika Self-Paced) - Ringkas 1 Baris */}
+                      {isSelfPaced && (() => {
+                        const deadlineCountdown = getAccurateDeadlineCountdown(s.settings?.deadlineAt, nowMs);
+                        return (
+                          <div className={`px-2.5 py-1.5 rounded-xl border text-[11px] flex items-center justify-between gap-1.5 ${
+                            deadlineCountdown.isExpired
+                              ? 'bg-rose-50/70 dark:bg-rose-950/30 border-rose-200/80 dark:border-rose-900/40 text-rose-700 dark:text-rose-300'
+                              : deadlineCountdown.isUrgent
+                              ? 'bg-amber-50/70 dark:bg-amber-950/30 border-amber-200/80 dark:border-amber-900/40 text-amber-700 dark:text-amber-300'
+                              : 'bg-indigo-50/60 dark:bg-indigo-950/20 border-indigo-200/70 dark:border-indigo-900/40 text-indigo-700 dark:text-indigo-300'
+                          }`}>
+                            <div className="flex items-center gap-1.5 truncate">
+                              <Clock className="w-3 h-3 flex-shrink-0" />
+                              <span className="font-semibold truncate">
+                                {deadlineCountdown.isExpired ? 'Tenggat Berakhir' : `Sisa: ${deadlineCountdown.countdownText}`}
+                              </span>
+                            </div>
+                            <span className="text-[10px] text-slate-500 dark:text-slate-400 flex-shrink-0">
+                              {deadlineCountdown.formattedDate}
+                            </span>
+                          </div>
+                        );
+                      })()}
+
+                      {/* Bar Progres Siswa (Ramping & Bersih) */}
+                      <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 space-y-1.5">
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="text-slate-600 dark:text-slate-300 font-semibold flex items-center gap-1">
+                            <Users className="w-3.5 h-3.5 text-blue-500" />
+                            <span>{partCount} Siswa</span>
+                          </span>
+                          <span className="font-bold text-slate-800 dark:text-slate-200">
+                            {finishedCount}/{partCount} Selesai
+                          </span>
+                        </div>
+                        <div className="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full transition-all duration-300 ${
+                              finishedCount === partCount && partCount > 0
+                                ? 'bg-emerald-500'
+                                : 'bg-blue-500'
+                            }`}
+                            style={{ width: `${partCount > 0 ? Math.min(100, (finishedCount / partCount) * 100) : 0}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Baris Tombol Aksi Esensial (1 Baris Terpadu & Bebas Redundansi) */}
+                    <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+                      {isLive ? (
+                        <div className="flex items-center gap-1.5">
+                          {/* Tombol Utama: Pantau Live / Ruang Tunggu */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              playClick();
+                              setSelectedSessionForHost(s);
+                            }}
+                            className={`flex-1 py-2 px-3 rounded-xl text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-colors btn-press min-h-[44px] cursor-pointer ${
+                              isSelfPaced
+                                ? 'bg-indigo-600 hover:bg-indigo-700'
+                                : s.status === 'waiting'
+                                ? 'bg-amber-500 hover:bg-amber-600'
+                                : 'bg-blue-600 hover:bg-blue-700'
+                            }`}
+                          >
+                            {isSelfPaced ? (
+                              <>
+                                <Users className="w-4 h-4 flex-shrink-0" />
+                                <span>Pantau Progres</span>
+                              </>
+                            ) : s.status === 'waiting' ? (
+                              <>
+                                <Clock className="w-4 h-4 flex-shrink-0" />
+                                <span>Ruang Tunggu</span>
+                              </>
+                            ) : (
+                              <>
+                                <Tv className="w-4 h-4 flex-shrink-0" />
+                                <span>Layar Pantau</span>
                               </>
                             )}
                           </button>
 
-                          <div className={`grid ${isSelfPaced ? 'grid-cols-3' : 'grid-cols-2'} gap-1.5 xs:gap-2`}>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                playClick();
-                                setSelectedSessionForRecap(s);
-                              }}
-                              className="py-2.5 px-1.5 xs:px-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1 min-h-[44px] transition-colors"
-                            >
-                              <BarChart3 className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
-                              <span className="truncate">Rekap</span>
-                            </button>
-
-                            {isSelfPaced && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  playClick();
-                                  setSessionToExtendDeadline(s);
-                                }}
-                                className="py-2.5 px-1.5 xs:px-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-900/40 text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1 min-h-[44px] transition-colors"
-                                title="Perpanjang batas waktu pengerjaan PR"
-                              >
-                                <Calendar className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
-                                <span className="truncate">Perpanjang</span>
-                              </button>
-                            )}
-
-                            <button
-                              type="button"
-                              onClick={() => handleEndSessionDirectly(s.id)}
-                              className="py-2.5 px-1.5 xs:px-2 rounded-xl bg-rose-50 dark:bg-rose-950/30 hover:bg-rose-100 dark:hover:bg-rose-900/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/40 text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1 min-h-[44px] transition-colors"
-                            >
-                              <span className="truncate">Akhiri Sesi</span>
-                            </button>
-                          </div>
-                        </>
-                      ) : (
-                        <div className="space-y-2">
-                          {/* Tombol Utama: Aktifkan Kembali Sesi Kuis */}
+                          {/* Tombol Sekunder: Rekap Nilai */}
                           <button
                             type="button"
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              playClick();
+                              setSelectedSessionForRecap(s);
+                            }}
+                            className="px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center justify-center gap-1 min-h-[44px] transition-colors cursor-pointer border border-transparent hover:border-slate-300 dark:hover:border-slate-700"
+                            title="Lihat Rekapitulasi Nilai Siswa"
+                          >
+                            <BarChart3 className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
+                            <span>Rekap</span>
+                          </button>
+
+                          {/* Aksi Tambahan: Perpanjang (PR) atau Akhiri Sesi (Live) */}
+                          {isSelfPaced ? (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                playClick();
+                                setSessionToExtendDeadline(s);
+                              }}
+                              className="p-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors cursor-pointer"
+                              title="Perpanjang Batas Waktu PR"
+                            >
+                              <Calendar className="w-4 h-4" />
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEndSessionDirectly(s.id);
+                              }}
+                              className="px-2.5 py-2 rounded-xl bg-rose-50 dark:bg-rose-950/30 hover:bg-rose-100 dark:hover:bg-rose-900/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/40 text-xs font-bold flex items-center justify-center min-h-[44px] transition-colors cursor-pointer whitespace-nowrap"
+                              title="Selesaikan & Akhiri Sesi Kuis"
+                            >
+                              <span>Akhiri</span>
+                            </button>
+                          )}
+                        </div>
+                      ) : (
+                        /* Sesi Selesai */
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              playClick();
+                              setSelectedSessionForRecap(s);
+                            }}
+                            className="flex-1 py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-colors min-h-[44px] cursor-pointer"
+                          >
+                            <FileSpreadsheet className="w-4 h-4 flex-shrink-0" />
+                            <span>Lihat Rekap Nilai</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
                               playClick();
                               setSessionToReactivate(s);
                             }}
-                            className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-black flex items-center justify-center gap-2 shadow-md shadow-emerald-950/20 transition-all btn-press min-h-[44px]"
-                            title="Buka dan aktifkan kembali sesi kuis ini agar siswa dapat mengerjakan lagi"
+                            className="px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold flex items-center justify-center gap-1 min-h-[44px] transition-colors cursor-pointer"
+                            title="Buka Kembali Sesi Ini"
                           >
-                            <RotateCcw className="w-4 h-4" />
-                            <span>Aktifkan Kembali Kuis</span>
+                            <RotateCcw className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
+                            <span className="hidden sm:inline">Aktifkan</span>
                           </button>
 
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                playClick();
-                                setSelectedSessionForRecap(s);
-                              }}
-                              className="flex-1 py-2.5 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors min-h-[44px]"
-                            >
-                              <FileSpreadsheet className="w-4 h-4 text-emerald-500" />
-                              <span>Rekap & Analisis</span>
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => {
-                                playClick();
-                                setSessionToDelete(s);
-                              }}
-                              className="p-2.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-slate-200 dark:border-slate-800 min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors flex-shrink-0"
-                              title="Hapus Sesi Kuis Ini"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              playClick();
+                              setSessionToDelete(s);
+                            }}
+                            className="p-2.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-slate-200 dark:border-slate-800 min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors cursor-pointer flex-shrink-0"
+                            title="Hapus Arsip Sesi Ini"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
                       )}
                     </div>
-
                   </div>
                 );
               })}

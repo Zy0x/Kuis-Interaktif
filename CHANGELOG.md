@@ -5,6 +5,29 @@ Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen in
 
 
 
+
+## [2.4.95] - 2026-10-21
+### Redesain Efisien Tab Kuis Aktif & Sesi Live: Zero Redundancy, Kartu Interaktif & Hemat Ruang (Rule 1, Rule 2, Rule 15 & Skill Redesign)
+
+#### 1. Eliminasi Total Duplikasi Tautan & PIN pada Kartu Sesi (`TeacherDashboard.tsx`)
+- **Pembersihan Kontainer Duplikat**: Menghapus seluruh kotak biru raksasa di badan kartu (*"Box Tautan Masuk Siswa"*) yang sebelumnya mengulang PIN dan tombol salin tautan secara redundan.
+- **Chip PIN & Tombol Bagikan Terpadu**:
+  - PIN kuis disajikan dalam bentuk chip interaktif mandiri di sudut atas kartu (`PIN 1001`), menyalin secara instan dengan indikator centang hijau.
+  - Tombol bagikan cepat (`Share2`) langsung memicu drawer *Web Share API* / pesan WhatsApp siswa dengan satu ketukan.
+
+#### 2. Baris Aksi Esensial 1-Baris & Kartu Berdaya Akses Penuh (`TeacherDashboard.tsx`)
+- **Akses Langsung Seluruh Bidang Kartu Sesi**:
+  - Mengklik badan kartu sesi yang sedang berjalan (*Live / PR*) langsung membuka Ruang Kendali Host (`setSelectedSessionForHost`).
+  - Mengklik kartu sesi yang telah selesai langsung membuka Rekapitulasi Nilai Siswa (`setSelectedSessionForRecap`).
+- **Baris Aksi Terpadu 1-Baris (Tinggi 44px)**:
+  - **Sesi Aktif**: Tombol utama `[ Pantau Progres / Layar Pantau ]` (lebar penuh fleksibel), tombol sekunder `[ Rekap ]`, dan tombol aksi kontekstual `[ Perpanjang / Akhiri ]`.
+  - **Sesi Selesai**: Tombol utama `[ Lihat Rekap Nilai ]` (lebar penuh hijau emerald), tombol sekunder `[ Aktifkan ]`, dan tombol hapus arsip `[ 🗑️ ]`.
+- **Penghematan Ruang Vertikal > 180px per Kartu**: Tinggi kartu sesi terpangkas dari **~420px menjadi ~220px**, memberikan tampilan yang bersih, proporsional, dan nyaman dipantau tanpa harus menggulir layar berlebihan.
+
+#### 3. Ringkasan Progres & Deadline Ramping (`TeacherDashboard.tsx`)
+- **Batas Waktu PR 1-Baris**: Deadline tugas mandiri disajikan dalam strip 1-baris yang elegan dengan indikator sisa waktu dan tanggal pengumpulan.
+- **Bar Progres Siswa Kompak**: Menampilkan rasio penyelesaian murid (`X/Y Selesai`) dengan progress bar responsif beraksen hijau emerald saat tuntas.
+
 ## [2.4.94] - 2026-10-21
 ### Redesain Efisien Tab Koleksi Kuis Dasbor Guru: Akses Cepat, Bebas Redundansi & Hemat Ruang (Rule 1, Rule 2, Rule 15 & Skill Redesign)
 
