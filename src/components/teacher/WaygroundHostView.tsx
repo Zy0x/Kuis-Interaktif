@@ -38,6 +38,7 @@ import {
   Printer,
   Search,
   Filter,
+  RotateCcw,
   Eye
 } from 'lucide-react';
 import { formatStudentDisplayName, analyzeSessionDuplicates } from '../../lib/studentUtils';
@@ -1349,7 +1350,28 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
             </div>
 
             {/* Metric Summary Cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+            {/* Mobile 4-Column Compact Ribbon (< sm) */}
+            <div className="grid grid-cols-4 sm:hidden gap-1 bg-slate-900/90 rounded-xl p-1.5 border border-slate-800 text-center">
+              <div className="flex flex-col items-center justify-center py-0.5">
+                <span className="text-[9px] uppercase font-bold text-slate-400">Total</span>
+                <span className="text-sm font-black text-white tabular-nums">{session.participants.length}</span>
+              </div>
+              <div className="flex flex-col items-center justify-center py-0.5 border-l border-slate-800">
+                <span className="text-[9px] uppercase font-bold text-blue-400">Unik</span>
+                <span className="text-sm font-black text-blue-300 tabular-nums">{duplicateStats.uniqueStudents}</span>
+              </div>
+              <div className="flex flex-col items-center justify-center py-0.5 border-l border-slate-800">
+                <span className="text-[9px] uppercase font-bold text-amber-400">Ulang</span>
+                <span className="text-sm font-black text-amber-300 tabular-nums">{duplicateStats.repeatAttemptsCount}</span>
+              </div>
+              <div className="flex flex-col items-center justify-center py-0.5 border-l border-slate-800">
+                <span className="text-[9px] uppercase font-bold text-emerald-400">Selesai</span>
+                <span className="text-sm font-black text-emerald-300 tabular-nums">{classStats.finishedCount}/{session.participants.length}</span>
+              </div>
+            </div>
+
+            {/* Tablet & Desktop Spacious Metric Cards (sm+) */}
+            <div className="hidden sm:grid sm:grid-cols-4 gap-2.5 sm:gap-3">
               <div className="p-3.5 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
                 <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Entri Masuk</div>
                 <div className="text-xl sm:text-2xl font-black text-white tabular-nums">{session.participants.length}</div>
@@ -1379,85 +1401,115 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
               </div>
             </div>
 
-            {/* Filter Toolbar */}
-            <div className="p-3 sm:p-4 rounded-2xl bg-slate-900/90 border border-slate-800 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 no-print">
-              {/* Left: Filter Attempt Pills */}
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-xs font-bold text-slate-400 mr-1 flex items-center gap-1">
-                  <Filter className="w-3.5 h-3.5" />
-                  <span>Percobaan:</span>
-                </span>
-                <button
-                  type="button"
-                  onClick={() => { playClick(); setDuplicateFilter('all'); }}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all min-h-[38px] btn-press cursor-pointer ${
-                    duplicateFilter === 'all'
-                      ? 'bg-blue-600 text-white shadow-sm'
-                      : 'bg-slate-800 text-slate-300 hover:bg-slate-750'
-                  }`}
-                >
-                  Semua ({session.participants.length})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { playClick(); setDuplicateFilter('best'); }}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all min-h-[38px] btn-press cursor-pointer ${
-                    duplicateFilter === 'best'
-                      ? 'bg-blue-600 text-white shadow-sm'
-                      : 'bg-slate-800 text-slate-300 hover:bg-slate-750'
-                  }`}
-                  title="Hanya tampilkan percobaan dengan nilai tertinggi untuk setiap siswa"
-                >
-                  Nilai Tertinggi ({duplicateStats.uniqueStudents})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { playClick(); setDuplicateFilter('latest'); }}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all min-h-[38px] btn-press cursor-pointer ${
-                    duplicateFilter === 'latest'
-                      ? 'bg-blue-600 text-white shadow-sm'
-                      : 'bg-slate-800 text-slate-300 hover:bg-slate-750'
-                  }`}
-                  title="Hanya tampilkan percobaan terkini/terakhir untuk setiap siswa"
-                >
-                  Percobaan Terakhir ({duplicateStats.uniqueStudents})
-                </button>
-              </div>
-
-              {/* Right: Search & Status Filter */}
-              <div className="flex items-center gap-2 flex-wrap">
-                {/* Status selector */}
-                <select
-                  value={tableStatusFilter}
-                  onChange={(e) => setTableStatusFilter(e.target.value as any)}
-                  aria-label="Filter status pengerjaan siswa"
-                  className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs font-bold text-slate-200 focus:outline-none focus:border-blue-500 min-h-[40px] cursor-pointer"
-                >
-                  <option value="all">Semua Status</option>
-                  <option value="finished">Hanya Selesai ({classStats.finishedCount})</option>
-                  <option value="active">Sedang Mengerjakan ({Math.max(0, session.participants.length - classStats.finishedCount)})</option>
-                </select>
-
-                {/* Search Input */}
-                <div className="relative flex-1 sm:w-56">
-                  <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                  <input
-                    type="text"
-                    value={tableSearch}
-                    onChange={(e) => setTableSearch(e.target.value)}
-                    placeholder="Cari nama / no. absen..."
-                    className="w-full pl-8 pr-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 min-h-[40px]"
-                  />
-                  {tableSearch && (
+            {/* Sticky Filter & Search Control Toolbar (Anti-Warping & Always Accessible on Scroll) */}
+            <div className="sticky top-[96px] sm:top-[100px] lg:top-[56px] z-25 bg-slate-900/95 backdrop-blur-md p-2.5 sm:p-3 rounded-2xl border border-slate-800 shadow-xl no-print">
+              <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-2 sm:gap-2.5">
+                
+                {/* 3-Way Attempt Filter (Segmented Control Bar - Anti-Warping & Clean) */}
+                <div className="flex items-center gap-1.5 w-full lg:w-auto">
+                  <span className="text-[11px] font-bold text-slate-400 hidden xl:flex items-center gap-1 flex-shrink-0">
+                    <Filter className="w-3.5 h-3.5" />
+                    <span>Percobaan:</span>
+                  </span>
+                  <div className="grid grid-cols-3 sm:flex sm:items-center p-1 bg-slate-950/80 rounded-xl border border-slate-800/90 w-full lg:w-auto gap-0.5">
                     <button
                       type="button"
-                      onClick={() => setTableSearch('')}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs p-1"
+                      onClick={() => { playClick(); setDuplicateFilter('all'); }}
+                      className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition-all text-center min-h-[36px] btn-press cursor-pointer whitespace-nowrap ${
+                        duplicateFilter === 'all'
+                          ? 'bg-blue-600 text-white shadow-sm'
+                          : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                      }`}
+                      title="Tampilkan semua riwayat pengerjaan siswa"
                     >
-                      ✕
+                      Semua ({session.participants.length})
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => { playClick(); setDuplicateFilter('best'); }}
+                      className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition-all text-center min-h-[36px] btn-press cursor-pointer whitespace-nowrap ${
+                        duplicateFilter === 'best'
+                          ? 'bg-blue-600 text-white shadow-sm'
+                          : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                      }`}
+                      title="Hanya tampilkan percobaan dengan nilai tertinggi untuk setiap siswa"
+                    >
+                      <span className="sm:hidden">Terbaik ({duplicateStats.uniqueStudents})</span>
+                      <span className="hidden sm:inline">Nilai Terbaik ({duplicateStats.uniqueStudents})</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => { playClick(); setDuplicateFilter('latest'); }}
+                      className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition-all text-center min-h-[36px] btn-press cursor-pointer whitespace-nowrap ${
+                        duplicateFilter === 'latest'
+                          ? 'bg-blue-600 text-white shadow-sm'
+                          : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                      }`}
+                      title="Hanya tampilkan percobaan terakhir untuk setiap siswa"
+                    >
+                      <span className="sm:hidden">Terakhir ({duplicateStats.uniqueStudents})</span>
+                      <span className="hidden sm:inline">Percobaan Terakhir ({duplicateStats.uniqueStudents})</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Right: Search Input & Status Filter Dropdown */}
+                <div className="flex items-center gap-2 w-full lg:w-auto">
+                  {/* Status selector */}
+                  <select
+                    value={tableStatusFilter}
+                    onChange={(e) => setTableStatusFilter(e.target.value as any)}
+                    aria-label="Filter status pengerjaan siswa"
+                    className="px-2.5 sm:px-3 py-2 rounded-xl bg-slate-800/90 border border-slate-700/80 text-xs font-bold text-slate-200 focus:outline-none focus:border-blue-500 min-h-[38px] cursor-pointer flex-shrink-0"
+                  >
+                    <option value="all">Semua Status</option>
+                    <option value="finished">Selesai ({classStats.finishedCount})</option>
+                    <option value="active">Mengerjakan ({Math.max(0, session.participants.length - classStats.finishedCount)})</option>
+                  </select>
+
+                  {/* Search Input */}
+                  <div className="relative flex-1 sm:w-60 md:w-64">
+                    <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                    <input
+                      type="text"
+                      value={tableSearch}
+                      onChange={(e) => setTableSearch(e.target.value)}
+                      placeholder="Cari nama / no. absen..."
+                      className="w-full pl-8 pr-7 py-2 rounded-xl bg-slate-800/90 border border-slate-700/80 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 min-h-[38px]"
+                    />
+                    {tableSearch && (
+                      <button
+                        type="button"
+                        onClick={() => setTableSearch('')}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs p-1 rounded-md cursor-pointer"
+                        title="Hapus pencarian"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Quick Reset Button if active filters applied */}
+                  {(tableSearch || duplicateFilter !== 'all' || tableStatusFilter !== 'all') && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        setTableSearch('');
+                        setDuplicateFilter('all');
+                        setTableStatusFilter('all');
+                      }}
+                      className="px-2.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-[11px] font-bold text-amber-300 border border-slate-700 transition-colors flex-shrink-0 min-h-[38px] btn-press cursor-pointer flex items-center gap-1"
+                      title="Reset semua filter ke default"
+                    >
+                      <RotateCcw className="w-3 h-3" />
+                      <span className="hidden sm:inline">Reset</span>
                     </button>
                   )}
                 </div>
+
               </div>
             </div>
 
@@ -1626,14 +1678,12 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
 
                             {/* Durasi & Waktu Selesai */}
                             <td className="py-3 px-3.5 text-center whitespace-nowrap">
-                              <div className="text-[11px] font-medium text-slate-300 tabular-nums">
+                              <div className="text-[11px] font-semibold text-slate-200 tabular-nums">
                                 {Math.round(p.timeSpentSec)} dtk
                               </div>
-                              <div className="text-[10px] text-slate-500">
-                                {p.completedAt
-                                  ? formatIndonesianTime(p.completedAt)
-                                  : p.lastActiveAt
-                                  ? `Aktif ${formatIndonesianTime(p.lastActiveAt)}`
+                              <div className="text-[10px] text-slate-400 tabular-nums mt-0.5">
+                                {p.completedAt || p.lastActiveAt
+                                  ? formatIndonesianTime(p.completedAt || p.lastActiveAt, { withDate: true, withDay: false })
                                   : '-'}
                               </div>
                             </td>

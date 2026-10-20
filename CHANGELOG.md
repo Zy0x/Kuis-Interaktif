@@ -1,6 +1,21 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.84] - 2026-10-21
+### Redesain Bilah Filter & Pencarian Sticky Serta Penambahan Tanggal Presisi pada Durasi Siswa (Rule 1, Rule 2, Rule 4, Rule 5 & Rule 15)
+
+#### 1. Bilah Kontrol Filter & Pencarian Sticky yang Anti-Warping (`WaygroundHostView.tsx`)
+- **Pemberantasan Tombol Terlipat (*Anti-Warping Segmented Control*)**: Mengonversi 3 tombol filter percobaan yang sebelumnya melipat dan terisolasi gantung di baris kedua menjadi satu *Segmented Control Bar* 3-kolom yang simetris dan rapi (`grid grid-cols-3` di seluler dan `flex` di desktop: `Semua`, `Terbaik`, `Terakhir`).
+- **Aksesibilitas Sticky Saat Pengguliran**: Mengatur bilah filter dan kotak pencarian menjadi `sticky top-[96px] sm:top-[100px] lg:top-[56px] z-25 bg-slate-900/95 backdrop-blur-md` sehingga tidak pernah hilang atau tenggelam ke atas saat guru menggulir daftar puluhan siswa. Kotak pencarian nama/absen dan filter status selalu langsung siap digunakan tanpa harus menggulir balik ke puncak layar.
+- **Pita Ringkasan Metrik 4-Kolom Ultra-Ramping**: Menghemat lebih dari 110px ruang vertikal pada layar ponsel dengan pita ringkasan 4-kolom kompak (`Total`, `Unik`, `Ulang`, `Selesai`) sebelum tabel.
+
+#### 2. Penambahan Tanggal Presisi & Eliminasi Redundansi Teks Status (`WaygroundHostView.tsx`)
+- **Tanggal & Waktu Lengkap Nan Kompak**: Menambahkan informasi tanggal dan waktu lokal yang akurat pada kolom *Durasi & Selesai* (`formatIndonesianTime(..., { withDate: true, withDay: false })`, contoh: `60 dtk` dan `21 Okt, 04:22 WITA`) dengan format 2-baris yang rapat.
+- **Pembersihan Kata Redundan 'Aktif'**: Menghapus teks *"Aktif "* yang sebelumnya redundan karena status pengerjaan siswa sudah ditampilkan secara visual melalui lencana berwarna di kolom *Status* (`Selesai` atau `Mengerjakan`).
+
+#### 3. Verifikasi Responsivitas Multi-Viewport
+- **Nol Luapan Horizontal**: Teruji dan terverifikasi bebas horizontal scrollbar (`scrollWidth === clientWidth`) pada *Mobile-S 320px*, *Infinix Note 50s 392px*, tablet potret/lanskap, hingga layar desktop.
+
 ## [2.4.83] - 2026-10-21
 ### Eliminasi Redundansi Visual Kolom Tabel Rekap Nilai: Konsolidasi Metrik 'Nilai (0-100)' yang Ramping & Bersih (Rule 1, Rule 2, Rule 4 & Rule 15)
 
