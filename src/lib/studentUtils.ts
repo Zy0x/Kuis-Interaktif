@@ -59,11 +59,9 @@ export function parseStudentName(rawName?: string | null, existingRoll?: string 
     current = attachedMatch[2].trim();
   }
 
-  // 4. Bersihkan suffix penomoran bertumpuk di akhir nama (misal: " (2) (2)" => " (2)")
-  current = current.replace(/(?:\s*\(\d+\)){2,}$/g, (match) => {
-    const last = match.match(/\(\d+\)$/);
-    return last ? ' ' + last[0].trim() : '';
-  }).trim();
+  // 4. Bersihkan seluruh suffix penomoran otomatis/disambiguasi di akhir nama (misal: " (2)", " (2) (2)", " (3)")
+  // Nama siswa yang ditampilkan ke guru harus murni nama asli siswa tanpa embel-embel sistem (misal: 'Salsabila', 'Muhamad sakur', 'Asshifa')
+  current = current.replace(/(?:\s*\(\d+\))+$/g, '').trim();
 
   // Jika nama bersih menjadi kosong karena string asli hanya berisi angka/titik
   const cleanName = current || rawName.trim();

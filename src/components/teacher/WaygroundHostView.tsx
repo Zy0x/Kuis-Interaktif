@@ -1192,8 +1192,9 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                                         ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
                                         : 'bg-blue-500/20 text-blue-300 border-blue-500/40'
                                     }`}
+                                    title={`Percobaan ke-${meta.attemptNumber} dari ${meta.totalAttempts} pengerjaan`}
                                   >
-                                    <span>#{meta.attemptNumber}</span>
+                                    <span>Ke-{meta.attemptNumber}</span>
                                     {meta.isBestScoreAttempt && meta.totalAttempts > 1 && (
                                       <span className="text-[9px] bg-amber-400 text-slate-950 font-black px-1 rounded">Terbaik</span>
                                     )}
@@ -1570,13 +1571,16 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                                   className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${
                                     p.attemptNumber > 1
                                       ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                                      : p.totalAttempts > 1
+                                      ? 'bg-blue-500/20 text-blue-300 border-blue-500/40'
                                       : 'bg-slate-800 text-slate-300 border-slate-700'
                                   }`}
+                                  title={p.totalAttempts > 1 ? `Percobaan ke-${p.attemptNumber} dari total ${p.totalAttempts} pengerjaan` : 'Percobaan tunggal'}
                                 >
-                                  Ke-{p.attemptNumber} {p.totalAttempts > 1 ? `(${p.totalAttempts}x)` : ''}
+                                  Ke-{p.attemptNumber}
                                 </span>
                                 {p.isBestScoreAttempt && p.totalAttempts > 1 && (
-                                  <span className="text-[9px] bg-amber-400 text-slate-950 font-black px-1.5 py-0.2 rounded-full">
+                                  <span className="text-[9px] bg-amber-400 text-slate-950 font-black px-1.5 py-0.2 rounded-full shadow-xs">
                                     Terbaik
                                   </span>
                                 )}

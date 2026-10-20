@@ -1,6 +1,20 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.86] - 2026-10-21
+### Eliminasi Ambigu Teks Percobaan '(2x)' dan Pembersihan Penuh Suffix Sistem pada Nama Siswa (Rule 1, Rule 2, Rule 4, Rule 5 & Rule 15)
+
+#### 1. Penyederhanaan Kolom Percobaan Siswa Bebas Ambigu (`WaygroundHostView.tsx`)
+- **Pembersihan Teks Ambigu '(2x)'**: Menghapus teks `(2x)` yang sebelumnya membingungkan guru (seperti `Ke-1 (2x)` dan `Ke-2 (2x)`).
+- **Indikator Percobaan Bersih & Intuitif**:
+  - Siswa yang mengerjakan 1 kali: Ditampilkan lencana netral **`Ke-1`** (abu-abu tenang).
+  - Siswa yang mengulang: Ditampilkan lencana **`Ke-1`** (biru) untuk percobaan pertama, dan **`Ke-2`** (amber) untuk pengulangan berikutnya.
+  - Lencana emas **`Terbaik`** tetap disematkan pada baris dengan capaian nilai tertinggi dari percobaan berulang tersebut.
+- **Tooltip Informatif Lengkap**: Menyematkan keterangan konteks ramah pengguna pada atribut judul saat hover (`Percobaan ke-X dari total Y pengerjaan`).
+
+#### 2. Pembersihan 100% Suffix Sistem Disambiguasi pada Nama Siswa (`studentUtils.ts`)
+- **Nama Asli Murni Tanpa Polusi Sistem**: Membersihkan seluruh suffix penomoran otomatis sistem (seperti `(2)`, `(3)`, `(2) (2)`) dari nama tampilan siswa. Nama siswa di daftar progres dan tabel rekap kini 100% konsisten menampilkan nama asli siswa (misal: `No. 18 Salsabila`, bukan lagi `Salsabila (2)`), sementara status pengulangan sepenuhnya dipegang oleh kolom Percobaan.
+
 ## [2.4.85] - 2026-10-21
 ### Penamaan Tab 'Progress', Integrasi Kontrol Card Tabel Bebas Tabrakan, Eliminasi Metrik Ganda & Sanitasi Cerdas Nama Siswa (Rule 1, Rule 2, Rule 4, Rule 5 & Rule 15)
 
