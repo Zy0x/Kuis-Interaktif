@@ -2,7 +2,6 @@ import React, { useState, useMemo, useEffect } from 'react';
 import {
   X,
   CheckCircle2,
-  XCircle,
   Clock,
   AlertTriangle,
   ChevronDown,
@@ -13,6 +12,10 @@ import {
   Calendar,
   Check,
   Filter,
+  Share2,
+  Sparkles,
+  Lightbulb,
+  BookOpen,
 } from 'lucide-react';
 import type { Quiz, QuizQuestion, QuizSessionParticipant } from '../../types/quiz';
 import { AVATAR_MAP } from '../../data/seedQuizzes';
@@ -20,7 +23,6 @@ import { formatIndonesianTime, formatIndonesianDate } from '../../lib/dateUtils'
 import { formatMathExpression, getOptionLetter, triggerHaptic } from '../../lib/mobileUtils';
 import { StudentAppreciationCardModal } from './StudentAppreciationCardModal';
 import { generateStudentWhatsAppUrl } from '../../lib/shareUtils';
-import { Share2 } from 'lucide-react';
 
 interface StudentAnswerAnalysisModalProps {
   isOpen: boolean;
@@ -39,20 +41,6 @@ export const StudentAnswerAnalysisModal: React.FC<StudentAnswerAnalysisModalProp
 }) => {
   const [filter, setFilter] = useState<FilterType>('all');
   const [isCardOpen, setIsCardOpen] = useState(false);
-
-  const handleShareWA = () => {
-    if (!participant) return;
-    triggerHaptic('light');
-    const url = generateStudentWhatsAppUrl({
-      studentName: participant.name,
-      quizTitle: quiz.title,
-      score: participant.score,
-      correctCount: participant.correctCount,
-      totalQuestions: totalQuestions,
-      timeSpentSec: participant.timeSpentSec,
-    });
-    window.open(url, '_blank');
-  };
   const [expandedExplanations, setExpandedExplanations] = useState<Record<number, boolean>>({});
 
   // Close modal on Escape key
@@ -76,6 +64,41 @@ export const StudentAnswerAnalysisModal: React.FC<StudentAnswerAnalysisModalProp
 
   const totalQuestions = quiz?.questions?.length || participant?.totalQuestions || 1;
   const avatarEmoji = participant ? (AVATAR_MAP[participant.avatarId] || '🦁') : '🦁';
+
+  // Hitung durasi pengerjaan yang akurat dan toleran terhadap kondisi timer 0
+  const durationInfo = useMemo(() => {
+    if (!participant) return { seconds: 0, text: 'Kurang dari 1 mnt' };
+    let seconds = participant.timeSpentSec || 0;
+    if ((!seconds || seconds <= 0) && participant.joinedAt) {
+      const endTimestamp = participant.completedAt || participant.lastActiveAt;
+      if (endTimestamp) {
+        const diffMs = new Date(endTimestamp).getTime() - new Date(participant.joinedAt).getTime();
+        if (diffMs > 0) {
+          seconds = Math.round(diffMs / 1000);
+        }
+      }
+    }
+    if (seconds <= 0) return { seconds: 0, text: 'Kurang dari 1 mnt' };
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.round(seconds % 60);
+    if (mins === 0) return { seconds, text: `${secs} dtk` };
+    if (secs === 0) return { seconds, text: `${mins} mnt` };
+    return { seconds, text: `${mins} mnt ${secs} dtk` };
+  }, [participant]);
+
+  const handleShareWA = () => {
+    if (!participant) return;
+    triggerHaptic('light');
+    const url = generateStudentWhatsAppUrl({
+      studentName: participant.name,
+      quizTitle: quiz.title,
+      score: participant.score,
+      correctCount: participant.correctCount,
+      totalQuestions: totalQuestions,
+      timeSpentSec: durationInfo.seconds || participant.timeSpentSec,
+    });
+    window.open(url, '_blank');
+  };
 
   // Extract clean answers list mapped by questionId (kebal terhadap pengacakan urutan soal)
   const studentAnswersMap = useMemo(() => {
@@ -145,7 +168,7 @@ export const StudentAnswerAnalysisModal: React.FC<StudentAnswerAnalysisModalProp
     });
   }, [evaluatedQuestionList, filter]);
 
-  // Accurate counts derived directly from evaluatedQuestionList (100% sinkron antara angka tab dan isi list)
+  // Accurate counts derived directly from evaluatedQuestionList
   const correctCount = useMemo(() => evaluatedQuestionList.filter(item => item.isAnswered && item.isCorrect).length, [evaluatedQuestionList]);
   const incorrectCount = useMemo(() => evaluatedQuestionList.filter(item => item.isAnswered && !item.isCorrect).length, [evaluatedQuestionList]);
   const unansweredCount = useMemo(() => evaluatedQuestionList.filter(item => !item.isAnswered).length, [evaluatedQuestionList]);
@@ -156,6 +179,7 @@ export const StudentAnswerAnalysisModal: React.FC<StudentAnswerAnalysisModalProp
 
   // Toggle explanation expansion for specific question
   const toggleExplanation = (idx: number) => {
+    triggerHaptic('light');
     setExpandedExplanations((prev) => ({
       ...prev,
       [idx]: !prev[idx],
@@ -195,209 +219,283 @@ export const StudentAnswerAnalysisModal: React.FC<StudentAnswerAnalysisModalProp
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 md:p-6 animate-fade-in">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity"
+        className="absolute inset-0 bg-slate-950/80 backdrop-blur-md transition-opacity"
         onClick={onClose}
       />
 
       {/* Modal Container */}
-      <div className="relative w-full max-w-4xl max-h-[92vh] flex flex-col bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden z-10 text-slate-900 dark:text-white">
+      <div className="relative w-full max-w-4xl max-h-[94vh] flex flex-col bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden z-10 text-slate-900 dark:text-white">
+        
         {/* ================= HEADER ================= */}
-        <div className="p-4 sm:p-6 border-b border-slate-100 dark:border-slate-800 flex-shrink-0 bg-gradient-to-r from-slate-50 via-white to-blue-50/40 dark:from-slate-900 dark:via-slate-900 dark:to-blue-950/20">
+        <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 flex-shrink-0 bg-gradient-to-r from-slate-50 via-white to-indigo-50/30 dark:from-slate-900 dark:via-slate-900 dark:to-indigo-950/20">
           <div className="flex items-start justify-between gap-3">
-            <div className="flex items-center gap-3.5 min-w-0">
-              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800/60 flex items-center justify-center text-2xl sm:text-3xl flex-shrink-0 shadow-inner">
+            <div className="flex items-start gap-3 sm:gap-3.5 min-w-0 flex-1">
+              
+              {/* Avatar Squircle with Soft Glow */}
+              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-indigo-100 to-indigo-50 dark:from-indigo-950/80 dark:to-slate-800 border border-indigo-200/80 dark:border-indigo-800/60 flex items-center justify-center text-2xl sm:text-3xl flex-shrink-0 shadow-sm shadow-indigo-500/10">
                 {avatarEmoji}
               </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white truncate max-w-[200px] sm:max-w-md">
-                    {participant.name}
-                  </h2>
+
+              <div className="min-w-0 flex-1">
+                {/* Nama Lengkap Siswa - Wrap Alami, Bebas Potongan Teks Kaku */}
+                <h2 className="text-base sm:text-lg font-black tracking-tight text-slate-900 dark:text-white leading-snug break-words">
+                  {participant.name}
+                </h2>
+
+                {/* Lencana Status & Performa */}
+                <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap mt-1">
                   {participant.finished ? (
-                    <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-[11px] font-bold">
-                      Selesai
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-[11px] font-bold">
+                      <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                      <span>Selesai Dikerjakan</span>
                     </span>
                   ) : (
-                    <span className="px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-[11px] font-bold">
-                      Sedang Mengerjakan
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-[11px] font-bold">
+                      <Clock className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+                      <span>Sedang Mengerjakan</span>
                     </span>
                   )}
+
                   {participant.streak >= 2 && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30 text-[11px] font-bold">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30 text-[11px] font-bold">
                       <Flame className="w-3 h-3 fill-rose-500 text-rose-500" />
-                      {participant.streak}x Combo
+                      <span>{participant.streak}x Combo</span>
+                    </span>
+                  )}
+
+                  {accuracyPercent === 100 && participant.finished && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-[11px] font-bold">
+                      <Sparkles className="w-3 h-3 text-amber-500" />
+                      <span>Skor Sempurna</span>
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">
-                  Lembar Analisis Jawaban • {quiz.title}
+
+                {/* Subtitle Deskriptif Edukatif */}
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1.5 truncate">
+                  <BookOpen className="w-3.5 h-3.5 text-indigo-500 flex-shrink-0" />
+                  <span className="truncate">Lembar Evaluasi Siswa • {quiz.title}</span>
                 </p>
               </div>
             </div>
 
+            {/* Tombol Tutup Touch-Friendly */}
             <button
               type="button"
               onClick={onClose}
-              className="p-2.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center -mr-1 -mt-1 cursor-pointer"
-              title="Tutup lembar analisis"
+              className="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center -mr-1 -mt-1 cursor-pointer flex-shrink-0"
+              title="Tutup lembar evaluasi"
               aria-label="Tutup"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          {/* Alert Integritas (Tab Switch) */}
-          {participant.tabSwitchCount && participant.tabSwitchCount > 0 ? (
-            <div className="mt-3 p-2.5 sm:p-3 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 flex items-center gap-2.5 text-xs text-rose-700 dark:text-rose-300">
-              <AlertTriangle className="w-4 h-4 text-rose-500 flex-shrink-0" />
-              <span>
-                <strong>Peringatan Integritas:</strong> Terdeteksi meninggalkan kuis / berpindah layar sebanyak <strong>{participant.tabSwitchCount} kali</strong>.
+          {/* Banner Apresiasi & Keamanan Psikologis */}
+          {participant.finished && accuracyPercent === 100 ? (
+            <div className="mt-3.5 p-3 rounded-2xl bg-emerald-500/10 dark:bg-emerald-950/30 border border-emerald-500/25 flex items-center gap-2.5 text-xs text-emerald-800 dark:text-emerald-300">
+              <Sparkles className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+              <span className="leading-relaxed">
+                <strong>Hebat Sekali!</strong> Seluruh butir soal berhasil dijawab dengan sangat tepat dan percaya diri.
+              </span>
+            </div>
+          ) : participant.finished && incorrectCount > 0 ? (
+            <div className="mt-3.5 p-3 rounded-2xl bg-amber-500/10 dark:bg-amber-950/30 border border-amber-500/25 flex items-center gap-2.5 text-xs text-amber-800 dark:text-amber-300">
+              <Lightbulb className="w-4 h-4 text-amber-500 flex-shrink-0" />
+              <span className="leading-relaxed">
+                <strong>Refleksi Belajar:</strong> Terdapat <strong>{incorrectCount} butir soal</strong> yang perlu dipelajari kembali untuk memperkuat pemahaman konsep.
               </span>
             </div>
           ) : null}
 
-          {/* Grid Statistik & Jam Input */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 mt-4">
-            <div className="p-2.5 sm:p-3 rounded-2xl bg-white/80 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 shadow-xs">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Skor Akhir</div>
-              <div className="text-lg sm:text-xl font-black text-amber-500 flex items-center gap-1 mt-0.5">
-                <Award className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500" />
-                <span>{participant.score} pts</span>
+          {/* Catatan Fokus Layar (Tab Switch) - Bahasa Santun & Bersahabat */}
+          {participant.tabSwitchCount && participant.tabSwitchCount > 0 ? (
+            <div className="mt-2.5 p-2.5 sm:p-3 rounded-2xl bg-slate-100 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-750 flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
+              <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0" />
+              <span>
+                <strong>Catatan Fokus:</strong> Terdeteksi beralih dari aplikasi/layar kuis sebanyak <strong>{participant.tabSwitchCount} kali</strong>.
+              </span>
+            </div>
+          ) : null}
+
+          {/* Grid Statistik & Jam Input (Bento Card Compact & Bersih) */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5 mt-3.5">
+            {/* Kartu 1: Capaian Nilai */}
+            <div className="p-2.5 sm:p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-750/80 shadow-2xs flex flex-col justify-between">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                Capaian Nilai
               </div>
-              <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
-                Akurasi: <strong>{accuracyPercent}%</strong>
+              <div className="text-xl sm:text-2xl font-black text-amber-500 flex items-center gap-1.5 my-1">
+                <Award className="w-5 h-5 text-amber-500 flex-shrink-0" />
+                <span className="tabular-nums">{participant.score}</span>
+                <span className="text-xs font-bold text-slate-400">pts</span>
+              </div>
+              <div className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">
+                Akurasi: <span className="font-bold text-slate-900 dark:text-white">{accuracyPercent}%</span>
               </div>
             </div>
 
-            <div className="p-2.5 sm:p-3 rounded-2xl bg-white/80 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 shadow-xs">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Status Soal</div>
-              <div className="text-sm sm:text-base font-bold text-slate-900 dark:text-white mt-0.5 flex items-center gap-1.5 flex-wrap">
-                <span className="text-emerald-600 dark:text-emerald-400 whitespace-nowrap">{correctCount} Benar</span>
-                <span className="text-slate-300 dark:text-slate-600">•</span>
-                <span className="text-rose-600 dark:text-rose-400 whitespace-nowrap">{incorrectCount} Salah</span>
-                {unansweredCount > 0 && (
-                  <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+            {/* Kartu 2: Ketuntasan Soal */}
+            <div className="p-2.5 sm:p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-750/80 shadow-2xs flex flex-col justify-between">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                Ketuntasan Soal
+              </div>
+              <div className="text-base sm:text-lg font-black text-slate-900 dark:text-white flex items-center gap-1.5 my-1">
+                <span className="text-emerald-600 dark:text-emerald-400 tabular-nums">{correctCount} Tepat</span>
+                {incorrectCount > 0 && (
+                  <>
                     <span className="text-slate-300 dark:text-slate-600">•</span>
-                    <span className="text-amber-600 dark:text-amber-400">{unansweredCount} Kosong</span>
-                  </span>
+                    <span className="text-amber-600 dark:text-amber-400 tabular-nums">{incorrectCount} Review</span>
+                  </>
                 )}
               </div>
-              <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
-                {unansweredCount > 0 ? `${unansweredCount} butir soal tidak dijawab / dilewati` : 'Semua butir soal terjawab'}
+              <div className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 truncate">
+                {unansweredCount > 0 
+                  ? `${unansweredCount} soal dilewati` 
+                  : `${totalQuestions} dari ${totalQuestions} terjawab`}
               </div>
             </div>
 
-            <div className="p-2.5 sm:p-3 rounded-2xl bg-white/80 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 shadow-xs">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Waktu Mulai</div>
-              <div className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200 mt-0.5 flex items-center gap-1 truncate">
-                <Calendar className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
+            {/* Kartu 3: Waktu Mulai */}
+            <div className="p-2.5 sm:p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-750/80 shadow-2xs flex flex-col justify-between">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                Waktu Mulai
+              </div>
+              <div className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 my-1 truncate">
+                <Calendar className="w-4 h-4 text-blue-500 flex-shrink-0" />
                 <span className="truncate">{formatIndonesianTime(participant.joinedAt, { withSeconds: true })}</span>
               </div>
-              <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
-                {formatIndonesianDate(participant.joinedAt, { withDay: true })} • {Math.round(participant.timeSpentSec)} dtk
+              <div className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                {formatIndonesianDate(participant.joinedAt, { withDay: true, withYear: true })}
               </div>
             </div>
 
-            <div className="p-2.5 sm:p-3 rounded-2xl bg-white/80 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 shadow-xs">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Waktu Selesai / Submit</div>
-              <div className="text-xs sm:text-sm font-bold text-emerald-600 dark:text-emerald-400 mt-0.5 flex items-center gap-1 truncate">
-                <Clock className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
+            {/* Kartu 4: Waktu Selesai & Durasi */}
+            <div className="p-2.5 sm:p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-750/80 shadow-2xs flex flex-col justify-between">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                Selesai & Durasi
+              </div>
+              <div className="text-xs sm:text-sm font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 my-1 truncate">
+                <Clock className="w-4 h-4 text-emerald-500 flex-shrink-0" />
                 <span className="truncate">
                   {participant.finished 
                     ? formatIndonesianTime(participant.completedAt || participant.lastActiveAt, { withSeconds: true })
                     : 'Masih Berjalan'}
                 </span>
               </div>
-              <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
-                {participant.finished 
-                  ? formatIndonesianDate(participant.completedAt || participant.lastActiveAt, { withDay: true, withYear: true })
-                  : 'Aktif terpantau'}
+              <div className="text-[10px] sm:text-[11px] font-medium text-slate-600 dark:text-slate-300 truncate">
+                Durasi: <strong className="text-slate-900 dark:text-white">{durationInfo.text}</strong>
               </div>
             </div>
           </div>
 
           {/* ================= QUICK FILTER TABS ================= */}
-          <div className="flex items-center gap-1.5 sm:gap-2 mt-4 pt-3 border-t border-slate-200/60 dark:border-slate-800 overflow-x-auto pb-1 no-scrollbar">
-            <span className="text-[11px] font-bold text-slate-400 flex items-center gap-1 mr-1 flex-shrink-0">
-              <Filter className="w-3 h-3" /> Filter:
-            </span>
-            <button
-              type="button"
-              onClick={() => setFilter('all')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex-shrink-0 min-h-[36px] flex items-center gap-1.5 cursor-pointer ${
-                filter === 'all'
-                  ? 'bg-blue-600 text-white shadow-xs'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-750'
-              }`}
-            >
-              <span>Semua Soal</span>
-              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-black/15 font-black">{totalQuestions}</span>
-            </button>
+          <div className="mt-3.5 pt-3 border-t border-slate-200/60 dark:border-slate-800">
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 no-scrollbar">
+              <span className="text-[11px] font-bold text-slate-400 flex items-center gap-1 mr-1 flex-shrink-0">
+                <Filter className="w-3 h-3" /> Filter:
+              </span>
 
-            <button
-              type="button"
-              onClick={() => setFilter('wrong')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex-shrink-0 min-h-[36px] flex items-center gap-1.5 cursor-pointer ${
-                filter === 'wrong'
-                  ? 'bg-rose-600 text-white shadow-xs'
-                  : 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200/60 dark:border-rose-900/60 hover:bg-rose-100 dark:hover:bg-rose-900/60'
-              }`}
-            >
-              <span>Jawaban Salah (Remedial)</span>
-              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-black/15 font-black">{incorrectCount}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setFilter('correct')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex-shrink-0 min-h-[36px] flex items-center gap-1.5 cursor-pointer ${
-                filter === 'correct'
-                  ? 'bg-emerald-600 text-white shadow-xs'
-                  : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60'
-              }`}
-            >
-              <span>Jawaban Benar</span>
-              <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-black/15 font-black">{correctCount}</span>
-            </button>
-
-            {unansweredCount > 0 && (
               <button
                 type="button"
-                onClick={() => setFilter('unanswered')}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex-shrink-0 min-h-[36px] flex items-center gap-1.5 cursor-pointer ${
-                  filter === 'unanswered'
-                    ? 'bg-slate-700 text-white shadow-xs'
+                onClick={() => {
+                  triggerHaptic('light');
+                  setFilter('all');
+                }}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex-shrink-0 min-h-[38px] flex items-center gap-1.5 cursor-pointer ${
+                  filter === 'all'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-750'
+                }`}
+              >
+                <span>Semua Soal</span>
+                <span className="px-1.5 py-0.5 rounded-md text-[10px] bg-black/15 font-black">{totalQuestions}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  triggerHaptic('light');
+                  setFilter('wrong');
+                }}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex-shrink-0 min-h-[38px] flex items-center gap-1.5 cursor-pointer ${
+                  filter === 'wrong'
+                    ? 'bg-amber-600 text-white shadow-xs'
+                    : incorrectCount > 0
+                    ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/40'
                     : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-750'
                 }`}
               >
-                <span>Belum Dijawab</span>
-                <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-black/15 font-black">{unansweredCount}</span>
+                <span>Perlu Ditinjau</span>
+                <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-black ${
+                  filter === 'wrong' ? 'bg-black/20 text-white' : 'bg-black/10'
+                }`}>
+                  {incorrectCount}
+                </span>
               </button>
-            )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  triggerHaptic('light');
+                  setFilter('correct');
+                }}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex-shrink-0 min-h-[38px] flex items-center gap-1.5 cursor-pointer ${
+                  filter === 'correct'
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/40'
+                }`}
+              >
+                <span>Jawaban Tepat</span>
+                <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-black ${
+                  filter === 'correct' ? 'bg-black/20 text-white' : 'bg-black/10'
+                }`}>
+                  {correctCount}
+                </span>
+              </button>
+
+              {unansweredCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    triggerHaptic('light');
+                    setFilter('unanswered');
+                  }}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex-shrink-0 min-h-[38px] flex items-center gap-1.5 cursor-pointer ${
+                    filter === 'unanswered'
+                      ? 'bg-slate-700 text-white shadow-xs'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-750'
+                  }`}
+                >
+                  <span>Dilewati</span>
+                  <span className="px-1.5 py-0.5 rounded-md text-[10px] bg-black/15 font-black">{unansweredCount}</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
         {/* ================= BODY / QUESTION LIST ================= */}
-        <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-3.5 sm:space-y-4">
+        <div className="p-3.5 sm:p-5 overflow-y-auto flex-1 space-y-3 sm:space-y-3.5 scrollbar-thin">
           {filteredQuestionList.length === 0 ? (
             <div className="py-12 text-center text-slate-400 dark:text-slate-500 space-y-2">
               <Check className="w-10 h-10 mx-auto text-emerald-500/80 mb-2" />
-              <p className="font-bold text-sm">
+              <p className="font-bold text-sm text-slate-700 dark:text-slate-300">
                 {filter === 'wrong'
-                  ? 'Hebat! Tidak ada jawaban salah pada filter ini.'
+                  ? 'Luar biasa! Seluruh soal dijawab dengan tepat tanpa ada butir evaluasi.'
                   : filter === 'unanswered'
-                  ? 'Semua soal telah dijawab oleh siswa.'
-                  : 'Tidak ada soal pada kategori ini.'}
+                  ? 'Hebat! Semua butir soal telah berhasil dijawab oleh siswa.'
+                  : 'Tidak ada butir soal pada kategori ini.'}
               </p>
               <button
                 type="button"
                 onClick={() => setFilter('all')}
-                className="text-xs text-blue-600 dark:text-blue-400 font-bold underline hover:opacity-80 cursor-pointer"
+                className="text-xs text-blue-600 dark:text-blue-400 font-bold underline hover:opacity-80 cursor-pointer min-h-[36px] inline-flex items-center"
               >
-                Kembali ke Semua Soal
+                Tampilkan Semua Soal
               </button>
             </div>
           ) : (
@@ -408,12 +506,12 @@ export const StudentAnswerAnalysisModal: React.FC<StudentAnswerAnalysisModalProp
               return (
                 <div
                   key={q.id || idx}
-                  className={`p-4 sm:p-5 rounded-2xl border transition-all space-y-3 ${
+                  className={`p-3.5 sm:p-4 rounded-2xl border transition-all space-y-2.5 ${
                     !isAnswered
-                      ? 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800'
+                      ? 'bg-slate-50/80 dark:bg-slate-800/40 border-slate-200 dark:border-slate-750'
                       : isCorrect
-                      ? 'bg-emerald-50/40 dark:bg-emerald-950/15 border-emerald-200/80 dark:border-emerald-800/50'
-                      : 'bg-rose-50/40 dark:bg-rose-950/15 border-rose-200/80 dark:border-rose-800/50'
+                      ? 'bg-emerald-50/30 dark:bg-emerald-950/15 border-emerald-200/80 dark:border-emerald-800/40'
+                      : 'bg-amber-50/30 dark:bg-amber-950/15 border-amber-200/80 dark:border-amber-800/40'
                   }`}
                 >
                   {/* Top Bar: Question Number, Type, & Status */}
@@ -430,12 +528,12 @@ export const StudentAnswerAnalysisModal: React.FC<StudentAnswerAnalysisModalProp
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-2 flex-wrap">
+                    <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                       {/* Jam Input Siswa & Durasi */}
                       {isAnswered && (
                         <span 
                           className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-white/90 dark:bg-slate-800/90 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-[11px] font-medium shadow-2xs"
-                          title={`Waktu Rekam Jawaban: ${formatIndonesianTime(ans?.answeredAt || participant.lastActiveAt, { withDate: true, withSeconds: true, withYear: true })}`}
+                          title={`Waktu Input: ${formatIndonesianTime(ans?.answeredAt || participant.lastActiveAt, { withDate: true, withSeconds: true, withYear: true })}`}
                         >
                           <Clock className="w-3 h-3 text-blue-500" />
                           <span>Input: <strong>{formatIndonesianTime(ans?.answeredAt || participant.lastActiveAt, { withSeconds: true })}</strong></span>
@@ -448,25 +546,21 @@ export const StudentAnswerAnalysisModal: React.FC<StudentAnswerAnalysisModalProp
                         </span>
                       )}
 
-                      {/* Status Lencana */}
+                      {/* Status Lencana Ramah & Konstruktif */}
                       {!isAnswered ? (
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-xs font-bold ${
-                          participant.finished
-                            ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30'
-                            : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
-                        }`}>
-                          <Clock className={`w-3.5 h-3.5 ${participant.finished ? 'text-amber-600 dark:text-amber-400' : 'text-slate-500'}`} />
-                          <span>{participant.finished ? 'Tidak Dijawab / Dilewati' : 'Belum Dijawab'}</span>
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-300 dark:border-slate-700 text-xs font-bold">
+                          <Clock className="w-3.5 h-3.5 text-slate-500" />
+                          <span>Dilewati</span>
                         </span>
                       ) : isCorrect ? (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-xs font-bold">
                           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                          <span>Benar (+{ans?.pointsEarned ?? q.points ?? 10} pts)</span>
+                          <span>Tepat (+{ans?.pointsEarned ?? q.points ?? 10} pts)</span>
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30 text-xs font-bold">
-                          <XCircle className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
-                          <span>Keliru</span>
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 text-xs font-bold">
+                          <HelpCircle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                          <span>Perlu Dipelajari</span>
                         </span>
                       )}
                     </div>
@@ -484,45 +578,83 @@ export const StudentAnswerAnalysisModal: React.FC<StudentAnswerAnalysisModalProp
                     </div>
                   )}
 
-                  {/* Perbandingan Jawaban Siswa vs Kunci Benar */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-2 border-t border-slate-200/60 dark:border-slate-800/80">
-                    <div className={`p-2.5 rounded-xl border ${
-                      !isAnswered
-                        ? 'bg-slate-100/70 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-500'
-                        : isCorrect
-                        ? 'bg-emerald-100/50 dark:bg-emerald-950/30 border-emerald-300/70 dark:border-emerald-800/60 text-emerald-900 dark:text-emerald-200'
-                        : 'bg-rose-100/50 dark:bg-rose-950/30 border-rose-300/70 dark:border-rose-800/60 text-rose-900 dark:text-rose-200'
-                    }`}>
-                      <div className="text-[10px] uppercase font-bold text-slate-400 mb-0.5">Jawaban Siswa:</div>
-                      <div className="font-black text-xs sm:text-sm break-words">
-                        {getStudentAnswerText(q, ans)}
+                  {/* Perbandingan Jawaban Siswa vs Kunci Benar (Format Bersih, Rapi, & Tidak Redundan) */}
+                  <div className="pt-2 border-t border-slate-200/60 dark:border-slate-800">
+                    {!isAnswered ? (
+                      /* Kondisi Soal Dilewati */
+                      <div className="p-3 rounded-2xl bg-slate-100/70 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                        <div className="text-[10px] uppercase font-bold text-slate-400 mb-0.5">
+                          Kunci Jawaban Soal:
+                        </div>
+                        <div className="font-bold text-xs sm:text-sm text-emerald-600 dark:text-emerald-400 break-words">
+                          {getCorrectAnswerText(q)}
+                        </div>
+                        <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                          Soal ini tidak dijawab atau dilewati siswa saat sesi kuis.
+                        </div>
                       </div>
-                    </div>
+                    ) : isCorrect ? (
+                      /* Kondisi Jawaban Tepat: Tampilan Bersih Terpadu (Tanpa Pengulangan Kotak Ganda Identik) */
+                      <div className="p-3 rounded-2xl bg-emerald-500/10 dark:bg-emerald-950/25 border border-emerald-500/25 flex items-start gap-2.5">
+                        <div className="w-6 h-6 rounded-lg bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <Check className="w-4 h-4 stroke-[3]" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-[10px] uppercase font-bold text-emerald-700 dark:text-emerald-400">
+                            Jawaban Siswa (Tepat):
+                          </div>
+                          <div className="font-bold text-xs sm:text-sm text-emerald-950 dark:text-emerald-200 mt-0.5 break-words">
+                            {getStudentAnswerText(q, ans)}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      /* Kondisi Jawaban Perlu Evaluasi: Perbandingan Komparatif Bersahabat */
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                        <div className="p-3 rounded-2xl bg-amber-500/10 dark:bg-amber-950/25 border border-amber-500/25">
+                          <div className="text-[10px] uppercase font-bold text-amber-700 dark:text-amber-400 mb-0.5 flex items-center gap-1">
+                            <span>Pilihan Siswa:</span>
+                          </div>
+                          <div className="font-bold text-xs sm:text-sm text-amber-950 dark:text-amber-200 break-words">
+                            {getStudentAnswerText(q, ans)}
+                          </div>
+                        </div>
 
-                    <div className="p-2.5 rounded-xl bg-slate-100/70 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700 text-slate-800 dark:text-slate-200">
-                      <div className="text-[10px] uppercase font-bold text-slate-400 mb-0.5">Kunci Jawaban Benar:</div>
-                      <div className="font-black text-xs sm:text-sm text-emerald-600 dark:text-emerald-400 break-words">
-                        {getCorrectAnswerText(q)}
+                        <div className="p-3 rounded-2xl bg-emerald-500/10 dark:bg-emerald-950/25 border border-emerald-500/25">
+                          <div className="text-[10px] uppercase font-bold text-emerald-700 dark:text-emerald-400 mb-0.5 flex items-center gap-1">
+                            <Check className="w-3 h-3 text-emerald-500 stroke-[3]" />
+                            <span>Kunci Jawaban yang Tepat:</span>
+                          </div>
+                          <div className="font-bold text-xs sm:text-sm text-emerald-950 dark:text-emerald-200 break-words">
+                            {getCorrectAnswerText(q)}
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
 
-                  {/* Toggle Pembahasan Materi */}
+                  {/* Toggle Pembahasan Materi Pembelajaran */}
                   {q.explanation && (
-                    <div className="pt-1">
+                    <div className="pt-0.5">
                       <button
                         type="button"
                         onClick={() => toggleExplanation(idx)}
-                        className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 flex items-center gap-1 cursor-pointer min-h-[36px]"
+                        className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 flex items-center gap-1.5 cursor-pointer min-h-[36px]"
                       >
-                        <HelpCircle className="w-3.5 h-3.5" />
+                        <Lightbulb className="w-3.5 h-3.5 text-indigo-500" />
                         <span>{isExpanded ? 'Tutup Pembahasan' : 'Lihat Pembahasan Konsep'}</span>
                         {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                       </button>
 
                       {isExpanded && (
-                        <div className="mt-2 p-3 rounded-xl bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-200/60 dark:border-indigo-800/40 text-xs text-indigo-950 dark:text-indigo-200 leading-relaxed animate-fade-in">
-                          <strong className="font-bold">Penjelasan:</strong> {formatMathExpression(q.explanation)}
+                        <div className="mt-1.5 p-3 sm:p-3.5 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-200/60 dark:border-indigo-800/40 text-xs text-indigo-950 dark:text-indigo-200 leading-relaxed animate-fade-in">
+                          <div className="font-bold text-indigo-700 dark:text-indigo-300 flex items-center gap-1.5 mb-1">
+                            <BookOpen className="w-3.5 h-3.5 text-indigo-500" />
+                            <span>Pembahasan Guru:</span>
+                          </div>
+                          <p className="font-medium text-slate-800 dark:text-slate-200">
+                            {formatMathExpression(q.explanation)}
+                          </p>
                         </div>
                       )}
                     </div>
@@ -546,7 +678,7 @@ export const StudentAnswerAnalysisModal: React.FC<StudentAnswerAnalysisModalProp
                 triggerHaptic('light');
                 setIsCardOpen(true);
               }}
-              className="px-3.5 py-2 rounded-xl text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 dark:hover:bg-amber-900/40 border border-amber-200 dark:border-amber-800 flex items-center gap-1.5 min-h-[44px] transition-colors btn-press"
+              className="px-3.5 py-2 rounded-xl text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 dark:hover:bg-amber-900/40 border border-amber-200 dark:border-amber-800 flex items-center gap-1.5 min-h-[44px] transition-colors btn-press cursor-pointer flex-1 sm:flex-none justify-center"
               title="Lihat & Cetak Kartu Apresiasi Siswa"
             >
               <Award className="w-4 h-4 text-amber-500" />
@@ -556,17 +688,17 @@ export const StudentAnswerAnalysisModal: React.FC<StudentAnswerAnalysisModalProp
             <button
               type="button"
               onClick={handleShareWA}
-              className="px-3.5 py-2 rounded-xl text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 border border-emerald-200 dark:border-emerald-800 flex items-center gap-1.5 min-h-[44px] transition-colors btn-press"
+              className="px-3.5 py-2 rounded-xl text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 border border-emerald-200 dark:border-emerald-800 flex items-center gap-1.5 min-h-[44px] transition-colors btn-press cursor-pointer flex-1 sm:flex-none justify-center"
               title="Kirim Nilai ke WhatsApp Wali Murid"
             >
               <Share2 className="w-4 h-4 text-emerald-500" />
-              <span className="hidden xs:inline">Kirim ke WA</span>
+              <span>Kirim ke WA</span>
             </button>
 
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-slate-900 dark:bg-slate-700 hover:bg-slate-800 dark:hover:bg-slate-600 min-h-[44px] transition-all cursor-pointer"
+              className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-slate-900 dark:bg-slate-750 hover:bg-slate-800 dark:hover:bg-slate-650 min-h-[44px] transition-all cursor-pointer flex-1 sm:flex-none justify-center"
             >
               Tutup
             </button>
