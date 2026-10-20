@@ -1,6 +1,101 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.75] - 2026-10-20
+### Perbaikan Menyeluruh Mode Santai (Bebas Waktu): Eliminasi Bug Otomatisasi Akhir Soal & Harmonisasi Multi-Pintu Masuk Arena Kuis (Rule 1, Rule 2, Rule 3, Rule 11 & Rule 15)
+
+#### 1. Eliminasi Bug Soal Berakhir Sendiri pada Mode Santai (`QuizArena.tsx`)
+- **Proteksi Berlapis Interval Timer**: Memastikan timer interval hitung mundur 100% dilewati saat berada pada Mode Santai (`isUntimedMode`), mencegah pemicuan otomatis pemilihan jawaban kosong (`handleAnswerSelect(-1)`) yang sebelumnya mengakhiri soal secara instan.
+- **Pencegahan Timeout Mutlak**: Menambahkan pemblokiran ketat pada penerimaan jawaban dengan indeks `-1` jika mode pengerjaan bebas waktu aktif, sehingga soal tidak akan pernah ditutup oleh siklus timeout sistem.
+- **Tampilan Waktu Berjalan Tenang (Stopwatch Non-Countdown)**: Menggantikan jam pasir/countdown menjadi indikator ramah anak berikon `🧘 Santai (m:ss)` yang mencatat total waktu pengerjaan kumulatif dengan tenang tanpa rasa tergesa-gesa.
+- **Pencatatan Durasi Nyata per Butir Soal**: Menghitung lama siswa membaca dan menjawab butir soal secara akurat menggunakan selisih waktu pembukaan butir soal (`questionStartTimeRef`), memastikan data rekapitulasi nilai tetap bermakna dan presisi.
+
+#### 2. Resolusi Prioritas Mode Permainan Tanpa Konflik Sesi Usang (`QuizArena.tsx`, `App.tsx`)
+- **Isolasi Pengaturan Solo Play & Pratinjau**: Memutus pewarisan pengaturan lama dari sesi aktif tersimpan (`DataManager.getActiveSessionByQuizId`) ketika siswa atau guru memulai pengerjaan mandiri atau pratinjau studio, memastikan mode Santai yang dipilih tidak ter-override menjadi mode Standar berdurasi 30 detik.
+- **Penanganan Nilai Durasi 0 Detik**: Mengoreksi evaluasi logika nilai durasi agar angka `0` detik tidak dianggap falsy (`0 || 30`) yang sebelumnya memaksa durasi kembali ke 30 detik.
+
+#### 3. Sinkronisasi Sempurna Mode Santai dari Lobi Siswa (`StudentLobby.tsx`)
+- **Propagasi Opsi Permainan Utuh ke Arena**: Memperbarui callback `onStartQuiz` di lobi siswa agar meneruskan mode efektif (`effectiveMode`) beserta seluruh parameter sesi yang telah diselaraskan (`resolvedSettings`) ke arena kuis.
+- **Sinkronisasi Mode & Durasi Bebas Waktu**: Memastikan saat siswa masuk ke kuis dengan mode santai atau durasi 0 detik, nilai `mode: 'untimed'` dan `durationPerQuestionSec: 0` selalu terdistribusi konsisten.
+
+#### 4. Konsistensi Pratinjau Pembuat Kuis & Modal Publikasi (`QuizCreator.tsx`, `PublishQuizModal.tsx`)
+- **Penyesuaian Durasi Otomatis pada Pembuat Kuis**: Mengatur durasi butir soal secara konsisten ke 0 detik saat beralih ke Mode Santai pada formulir publikasi kuis maupun pratinjau arena di studio kuis.
+- **Konfigurasi Arena Studio Kuis**: Menyertakan `defaultGameMode` dan `sessionSettings` lengkap ke dalam pratinjau studio kuis guru untuk mencerminkan pengalaman bermain nyata siswa.
+
+## [2.4.74] - 2026-10-20
+### Suite Pengalaman Pengguna (UX & Comfort) Kuis Ramah Anak & Guru: Compact Minimalist Tool Dock, Suara Soal TTS, Kertas Buram Digital, Penskalaan Tipografi, Penanda Ragu, Mode Bahas di Kelas Smartboard, & Kartu Apresiasi Siswa (Rule 1, Rule 2, Rule 3, Rule 4, Rule 5, Rule 14 & Rule 15)
+
+#### 1. Grouped Floating Quiz Tool Dock (Compact Minimalist FAB) (`QuizToolDock.tsx`, `QuizArena.tsx`)
+- **Dock Terpadu Satu Tombol**: Menggabungkan seluruh alat bantu pengerjaan kuis siswa ke dalam satu tombol dock mengambang minimalis (38×38 px) di bilah navigasi atas.
+- **Bebas Distraksi & Layar Lapang**: Tombol tidak menghalangi teks soal dan kartu pilihan jawaban; popover tray hanya mengembang saat ditekan dengan efek latar belakang *backdrop blur* modern.
+- **Akses Cepat 4-in-1**: Menyediakan akses instan ke Suara Bacakan Soal (TTS), Kertas Buram Digital, Pengatur Ukuran Teks, dan Penanda Butir Soal Ragu.
+
+#### 2. Suara Bacakan Soal (Text-to-Speech) Ramah Anak SD Fase A & Inklusif (`speechUtils.ts`, `QuizToolDock.tsx`, `QuizArena.tsx`)
+- **Web Speech API Native Lokal**: Berjalan 100% lokal pada peramban tanpa memerlukan kuota internet tambahan atau API key.
+- **Intonasi Bahasa Indonesia Alami**: Menggunakan suara Bahasa Indonesia jernih dengan ritme ramah anak SD (`rate: 0.92`, `pitch: 1.05`).
+- **Penerjemahan Simbol Matematika**: Mengonversi simbol matematika teknis menjadi bahasa lisan komunikatif (misal: "tambah", "kurang", "kali", "bagi", "sama dengan").
+- **Manajemen Siklus Hidup Cerdas**: Suara otomatis dijeda atau dihentikan saat nomor soal berganti atau kuis dijeda oleh guru.
+
+#### 3. Kertas Buram Digital Kanvas Sentuh (*Digital Scratchpad Canvas*) (`ScratchpadOverlay.tsx`, `QuizArena.tsx`)
+- **Cakar Hitungan di Layar**: Memberikan kanvas transparan ramah anak bagi siswa untuk mencakar hitungan matematika atau sketsa logika langsung dengan jari pada layar sentuh ponsel/tablet.
+- **Alat Gambar Intuitif**: Menyediakan pena warna ceria (biru langit, kuning cerah, hijau mint, merah mawar), penghapus, dan tombol pembersihan kanvas 1-sentuhan.
+- **Rendering Retina DPR Tinggi**: Menyesuaikan resolusi kanvas secara otomatis dengan rasio piksel perangkat (*Device Pixel Ratio*) untuk goresan mulus tanpa blur.
+
+#### 4. Penskalaan Ukuran Tipografi Soal Dinamis (Font Size Scaler: A / A+ / A++) (`QuizToolDock.tsx`, `QuizArena.tsx`)
+- **Tiga Tingkat Ukuran Teks**: Memungkinkan siswa atau tampilan kelas menyesuaikan ukuran teks soal dan opsi jawaban (Normal → Besar → Ekstra Besar) secara instan.
+- **Transisi Halus**: Animasi transisi ukuran font berlangsung mulus (200ms) tanpa menggeser proporsi kartu soal.
+
+#### 5. Penanda Butir Soal Ragu-Ragu (*Doubt Flagging*) (`QuizToolDock.tsx`, `QuizArena.tsx`)
+- **Tandai Soal untuk Ditinjau**: Memungkinkan siswa memberi tanda pada nomor soal yang belum diyakini agar dapat diperiksa kembali sebelum pengumpulan lembar kuis.
+- **Lencana Header Visual Bersahabat**: Menampilkan lencana kuning berdenyut lembut (`🚩 Ragu`) pada header soal aktif dan daftar navigasi soal.
+
+#### 6. Mode Bahas Bersama di Kelas untuk Smartboard/Proyektor IFP (`ClassReviewModal.tsx`, `QuizSessionRecapView.tsx`)
+- **Bebas Stigma (Privasi Terjaga)**: Dirancang khusus untuk proyektor ruang kelas atau panel interaktif (IFP) tanpa menampilkan nama perorangan siswa, menjaga kenyamanan psikologis peserta didik.
+- **Distribusi Pilihan Responsif**: Menampilkan persentase dan jumlah pemilih tiap opsi jawaban (A, B, C, D) dengan visual progress bar yang bersih dan jelas.
+- **Urutan Berdasarkan Tingkat Kesulitan**: Guru dapat mengurutkan butir soal dari yang paling banyak salah (akurasi terendah) untuk pembahasan kelas yang terfokus.
+- **Sorotan Pembahasan Pedagogis**: Menampilkan kotak penjelasan konsep materi dari guru secara terstruktur.
+
+#### 7. Kartu Apresiasi Siswa Digital & Ekspor WhatsApp Wali Murid (`StudentAppreciationCardModal.tsx`, `shareUtils.ts`, `StudentAnswerAnalysisModal.tsx`, `QuizSessionRecapView.tsx`)
+- **Kartu Prestasi Digital**: Menghadirkan piagam apresiasi digital yang memuat nama siswa, skor perolehan, bintang pencapaian, dan kata-kata motivasi edukatif.
+- **Dukungan Cetak Fisik & PDF**: Guru dapat langsung mencetak piagam fisik dengan format ramah kertas (*print-friendly*).
+- **Berbagi Santun ke WhatsApp Wali Murid**: Format pesan laporan hasil belajar yang hangat, sopan, dan rapi untuk dikirimkan ke orang tua siswa melalui satu klik tautan `wa.me`.
+
+## [2.4.73] - 2026-10-20
+### Peningkatan Kenyamanan Ponsel Pintar (Mobile-First UX), Tipografi Matematika SD, & Fitur Hitung Ulang Nilai Sesi Guru (Rule 1, Rule 2, Rule 3, Rule 4, Rule 5, Rule 7, Rule 15 & Rule 16)
+
+#### 1. Eliminasi Terpotongnya Tombol Aksi Bawah Ponsel (`QuizResult.tsx`)
+- **Tombol Navigasi Utuh Tanpa Truncate**: Menghilangkan pemotongan teks vertikal/horizontal seperti teks *"Beran..."* pada layar HP sempit dengan menerapkan `min-w-[76px]` dan `whitespace-nowrap` sehingga teks *"Beranda"* dan *"Main Lagi"* tampil utuh 100%.
+- **Padding Safe Area Khusus Navigasi Bar 3 Tombol**: Menambahkan inset bawah dinamis `pb-[max(env(safe-area-inset-bottom),0.875rem)]` untuk mencegah tertutupnya tombol oleh bar navigasi bawaan Android/iOS.
+
+#### 2. Label Abjad Opsi (A, B, C, D) pada Lembar Analisis & Hasil Kuis (`QuizResult.tsx`, `StudentAnswerAnalysisModal.tsx`)
+- **Penyelarasan Huruf Opsi Jawaban**: Menampilkan label huruf abjad secara eksplisit berdampingan dengan isi teks jawaban siswa dan kunci jawaban (contoh: *Jawabanmu: C. 25* dan *Kunci Jawaban: C. 25*) sehingga memudahkan guru dan orang tua dalam mencocokkan lembar kerja.
+- **Integrasi Utilitas Abjad**: Memanfaatkan modul `getOptionLetter` untuk penamaan opsi seragam pada seluruh modal ulasan pengerjaan kuis.
+
+#### 3. Tipografi Matematika Kurikulum Merdeka SD (`mobileUtils.ts`, `QuizArena.tsx`, `QuizResult.tsx`, `StudentAnswerAnalysisModal.tsx`)
+- **Format Simbol Operasi Hitung Standar Buku Pelajaran**: Otomatisasi konversi karakter operator hitung SD:
+  - Perkalian: Mengubah `'x'` atau `'*'` menjadi simbol perkalian resmi `'×'` (`\u00D7`).
+  - Pembagian: Mengubah `':'` atau `'/'` menjadi simbol pembagian resmi `'÷'` (`\u00F7`).
+  - Penjumlahan & Pengurangan: Menggunakan spasi tak terputus (*non-breaking space* `\u00A0`) agar deret angka dan operator operasi hitung tidak terbelah baris di layar sempit ponsel.
+
+#### 4. Respon Getaran Mikro (Micro Haptic Feedback) Interaksi Sentuh Ponsel (`mobileUtils.ts`)
+- **Umpan Balik Taktil Halus (10–25ms)**: Menambahkan getaran haptic mikro pada pemilihan opsi soal di arena kuis (`QuizArena.tsx`), penekanan tombol navigasi beranda/main lagi, penyelesaian kuis (`triggerHaptic('success')`), dan filter rekapitulasi nilai guru.
+- **Aman & Ringan**: Dilengkapi pemeriksaan kompatibilitas `navigator.vibrate` sehingga senyap dan tanpa efek samping pada peramban desktop atau perangkat tanpa fitur getar.
+
+#### 5. Fitur Hitung Ulang Nilai Sesi Mandiri (*Self-Service Recalculate Scores*) Guru (`QuizSessionRecapView.tsx`, `RecalculateScoresModal.tsx`, `supabaseClient.ts`)
+- **Tombol & Modal Hitung Ulang Nilai**: Menyediakan tombol mandiri bagi guru untuk mengevaluasi ulang nilai seluruh siswa dalam suatu sesi kuis kapan saja (misal setelah kunci jawaban diperbaiki atau butir soal dimodifikasi).
+- **Keamanan Data Siswa Terjamin**: Jawaban asli siswa tetap utuh dan tersimpan rapi, sistem hanya menghitung ulang skor, akurasi, dan status ketuntasan secara transparan.
+- **Sinkronisasi Ganda Lintas Sistem**: Nilai yang dihitung ulang langsung tersimpan ke penyimpanan lokal dan disinkronkan ke tabel `quiz_sessions`, `quiz_session_participants`, serta `quiz_attempts` di backend Supabase.
+
+#### 6. Tampilan Kartu Ponsel & Filter Status Ketuntasan 1-Klik (`QuizSessionRecapView.tsx`)
+- **Filter Status Instan**: Menambahkan pil filter satu sentuhan: *Semua*, *🟢 Tuntas (≥70)*, dan *🔴 Remedial (<70)* dengan lencana jumlah siswa langsung.
+- **Mobile Card View Khusus Ponsel**: Menghadirkan tampilan kartu khusus (`block sm:hidden`) dengan target sentuh ergonomis (≥44px), avatar siswa yang ramah anak, indikator perpindahan tab, dan tombol akses cepat lembar analisis jawaban per anak.
+
+#### 7. Penguatan Kepatuhan Prompt Opsional & Kecerdasan AI Generator (`geminiApi.ts`, `generate-quiz-ai`, `AiGeneratorStep.tsx`)
+- **Penyambungan Pipa Data Utuh (*Full Parameter Pipeline*)**: Mengirimkan `contextNotes` (Catatan Tambahan/Opsional) beserta parameter kognitif dan pedagogis lengkap ke Supabase Edge Function `generate-quiz-ai` sehingga tidak ada instruksi guru yang hilang.
+- **Struktur Mandat Tertinggi Pendidik**: Memformat catatan guru menjadi blok *MANDAT UTAMA & INSTRUKSI KHUSUS PENDIDIK (PRIORITAS NOMOR 1)* yang berdiri di puncak prompt dan mengesampingkan pola umum lainnya.
+- **Penguatan Ganda pada Pesan Pengguna (*User Prompt Reinforcement*)**: Menyematkan catatan guru ke pesan pengguna terakhir pada DeepSeek, Groq, dan Gemini untuk kepatuhan 100%.
+- **Preset Pintar Cepat Arahan Guru (UI)**: Menyediakan tombol chip instan di bawah textarea Catatan Tambahan (misal: *💡 Soal Cerita Nyata*, *🔢 Angka Sederhana (≤50)*, *🧠 Nalar Logika HOTS*, *🌱 Profil Pelajar Pancasila*, *🚫 Tanpa Hafalan Rumus*).
+
 ## [2.4.72] - 2026-10-19
 ### Perbaikan Kunci Jawaban, Evaluasi Berlapis Pilihan Ganda, & Eliminasi Monolog Internal AI (Rule 1, Rule 2, Rule 3, Rule 4, Rule 5, Rule 7, Rule 15 & Rule 16)
 

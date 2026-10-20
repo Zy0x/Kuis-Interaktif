@@ -178,7 +178,7 @@ const DurationSelectorSection: React.FC<DurationSelectorSectionProps> = ({
             onClick={() => {
               playClick();
               setDurationSelectionType('default');
-              setSelectedDuration(quiz.durationPerQuestionSec || 30);
+              setSelectedDuration(quiz.durationPerQuestionSec === 0 || quiz.defaultGameMode === 'untimed' ? 0 : (quiz.durationPerQuestionSec || 30));
             }}
             className={`py-2 px-3 rounded-xl text-xs font-bold transition-all min-h-[44px] flex items-center justify-center gap-1 flex-1 sm:flex-initial btn-press ${
               durationSelectionType === 'default'
@@ -601,8 +601,9 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
       const def = quiz.defaultSettings || {};
       setCurrentStep('select_mode'); // Always start with clean card picker
       setIsTeacherAdvancedOpen(false);
-      setSelectedMode(quiz.defaultGameMode || 'standard');
-      const initDur = quiz.durationPerQuestionSec || 30;
+      const isQuizUntimed = quiz.defaultGameMode === 'untimed' || quiz.durationPerQuestionSec === 0;
+      setSelectedMode(isQuizUntimed ? 'untimed' : (quiz.defaultGameMode || 'standard'));
+      const initDur = isQuizUntimed ? 0 : (quiz.durationPerQuestionSec || 30);
       setSelectedDuration(initDur);
       setDurationSelectionType('default');
       if (initDur >= 60 && initDur % 60 === 0) {

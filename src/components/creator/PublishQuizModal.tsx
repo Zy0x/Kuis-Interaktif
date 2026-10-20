@@ -230,7 +230,7 @@ export const PublishQuizModal: React.FC<PublishQuizModalProps> = ({
               </div>
             </div>
             <p className="text-[11px] text-slate-400 dark:text-slate-500">
-              Saat ini: <span className="font-bold text-slate-600 dark:text-slate-300">{durationPerQuestionSec} detik/soal</span>
+              Saat ini: <span className="font-bold text-slate-600 dark:text-slate-300">{defaultGameMode === 'untimed' || durationPerQuestionSec === 0 ? 'Bebas Waktu' : `${durationPerQuestionSec} detik/soal`}</span>
               {defaultGameMode === 'untimed' && <span className="ml-1 text-emerald-600 dark:text-emerald-400">(mode santai — timer tidak aktif)</span>}
             </p>
           </div>
@@ -295,7 +295,15 @@ export const PublishQuizModal: React.FC<PublishQuizModalProps> = ({
                   <button
                     key={item.mode}
                     type="button"
-                    onClick={() => { playClick(); setDefaultGameMode(item.mode); }}
+                    onClick={() => {
+                      playClick();
+                      setDefaultGameMode(item.mode);
+                      if (item.mode === 'untimed') {
+                        setDurationPerQuestionSec(0);
+                      } else if (durationPerQuestionSec === 0) {
+                        setDurationPerQuestionSec(30);
+                      }
+                    }}
                     className={`flex flex-col items-center gap-1 p-2.5 rounded-2xl border text-center transition-all min-h-[68px] btn-press ${
                       isActive ? item.activeClass : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800'
                     }`}

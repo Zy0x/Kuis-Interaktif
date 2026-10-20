@@ -416,6 +416,7 @@ KEMBALIKAN HANYA OBJEK JSON MURNI DENGAN FORMAT:
       topic, 
       count = 5, 
       questionType = "campuran", 
+      contextNotes,
       provider = deepseekApiKey ? "deepseek" : (groqApiKey ? "groq" : "gemini"),
       model 
     } = body;
@@ -487,7 +488,7 @@ KEMBALIKAN HANYA ARRAY JSON MURNI TANPA PEMBUKA/PENUTUP MARKDOWN ATAU PENJELASAN
         model: modelName,
         messages: [
           { role: isReasoner ? "user" : "system", content: systemPrompt },
-          { role: "user", content: `Buatkan ${count} butir soal tentang materi "${topic}". Kembalikan array JSON valid.` },
+          { role: "user", content: userPromptContent },
         ],
         max_tokens: 3500,
       };
@@ -526,7 +527,7 @@ KEMBALIKAN HANYA ARRAY JSON MURNI TANPA PEMBUKA/PENUTUP MARKDOWN ATAU PENJELASAN
           model: modelName,
           messages: [
             { role: "system", content: systemPrompt },
-            { role: "user", content: `Buatkan ${count} butir soal tentang materi "${topic}". Kembalikan array JSON valid.` },
+            { role: "user", content: userPromptContent },
           ],
           temperature: 0.6,
           max_tokens: 3500,

@@ -3935,6 +3935,118 @@ export const DataManager = {
     return sessionToUpdate;
   },
 
+  async recalculateSessionScores(sessionId: string): Promise<{ session: QuizSession | null; updatedCount: number }> {
+    if (!sessionId) return { session: null, updatedCount: 0 };
+    const existing = this.getActiveSessions();
+    const idx = existing.findIndex((s) => s.id === sessionId);
+    if (idx === -1) return { session: null, updatedCount: 0 };
+
+    const session = existing[idx];
+    const quiz = await this.getQuizById(session.quizId);
+    const totalQuestions = quiz?.questions?.length || session.totalQuestions || 1;
+    const questionMap = new Map<string, any>((quiz?.questions || []).map((q: any) => [q.id, q]));
+
+    let updatedCount = 0;
+    const updatedParticipants = (session.participants || []).map((p) => {
+      const rawAns = p.answers ? Object.values(p.answers).filter((a) => a && a.questionId !== 'quiz_completed') : [];
+      const uniqueQMap = new Map();
+      rawAns.forEach((a) => {
+        const key = a.questionId || String(a.questionIndex);
+        uniqueQMap.set(key, a);
+      });
+
+      const pAnsList = Array.from(uniqueQMap.values());
+      let evaluatedCorrect = 0;
+      let evaluatedIncorrect = 0;
+
+      if (pAnsList.length > 0) {
+        pAnsList.forEach((a: any) => {
+          const q: any = questionMap.get(a.questionId);
+          if (q && q.type === 'multiple_choice' && typeof a.selectedOption === 'number' && typeof q.correctIndex === 'number') {
+            const isMatch = a.selectedOption === q.correctIndex;
+            a.isCorrect = isMatch;
+            if (isMatch) evaluatedCorrect++;
+            else evaluatedIncorrect++;
+          } else {
+            if (a.isCorrect) evaluatedCorrect++;
+            else evaluatedIncorrect++;
+          }
+        });
+      } else {
+        evaluatedCorrect = Math.min(totalQuestions, p.correctCount);
+        evaluatedIncorrect = Math.min(totalQuestions - evaluatedCorrect, p.incorrectCount);
+      }
+
+      const safeCorrect = Math.min(totalQuestions, evaluatedCorrect);
+      const safeIncorrect = Math.min(totalQuestions - safeCorrect, evaluatedIncorrect);
+      const safeScore = Math.min(100, Math.round((safeCorrect / totalQuestions) * 100));
+      const safeStars = safeCorrect;
+
+      updatedCount++;
+      return {
+        ...p,
+        score: safeScore,
+        stars: safeStars,
+        correctCount: safeCorrect,
+        incorrectCount: safeIncorrect,
+      };
+    });
+
+    session.participants = updatedParticipants;
+    session.totalQuestions = totalQuestions;
+    existing[idx] = session;
+
+    try {
+      localStorage.setItem(STORAGE_KEY_QUIZ_SESSIONS, JSON.stringify(existing));
+    } catch (e) {
+      console.warn('Gagal menyimpan sesi kuis terhitung ulang ke localStorage:', e);
+    }
+
+    if (supabase) {
+      try {
+        await supabase
+          .from('quiz_sessions')
+          .update({
+            total_questions: totalQuestions,
+          })
+          .eq('id', sessionId);
+
+        for (const p of updatedParticipants) {
+          try {
+            await supabase
+              .from('quiz_session_participants')
+              .update({
+                score: p.score,
+                stars: p.stars,
+                correct_count: p.correctCount,
+                incorrect_count: p.incorrectCount,
+                answers: p.answers,
+              })
+              .eq('session_id', sessionId)
+              .eq('student_name', p.name);
+          } catch {}
+
+          try {
+            await supabase
+              .from('quiz_attempts')
+              .update({
+                score: p.score,
+                stars: p.stars,
+                correct_count: p.correctCount,
+                incorrect_count: p.incorrectCount,
+              })
+              .eq('session_id', sessionId)
+              .eq('student_name', p.name);
+          } catch {}
+        }
+      } catch (err) {
+        console.warn('Supabase recalculateSessionScores notice:', err);
+      }
+    }
+
+    return { session, updatedCount };
+  },
+
   async updateSessionHeartbeat(sessionId: string): Promise<void> {
     if (!sessionId) return;
     const now = new Date().toISOString();

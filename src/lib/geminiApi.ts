@@ -531,9 +531,20 @@ export async function callSupabaseAiEdgeFunction(params: GenerateAiQuestionsPara
   const payload = {
     subject: params.subject,
     grade: params.grade,
+    educationLevel: params.educationLevel,
     topic: params.topic,
     count: params.count,
     questionType: params.questionType,
+    contextNotes: params.contextNotes?.trim() || undefined,
+    cognitiveFocus: params.cognitiveFocus,
+    cognitiveCustomLevels: params.cognitiveCustomLevels,
+    cognitiveProportions: params.cognitiveProportions,
+    kurmerContext: params.kurmerContext,
+    mcOptionCount: params.mcOptionCount,
+    matchingPairCount: params.matchingPairCount,
+    trueFalseStyle: params.trueFalseStyle,
+    typeProportions: params.typeProportions,
+    includeAiImages: params.includeAiImages,
     provider: params.provider || defaultProvider,
     model: params.model || defaultModel,
   };
@@ -1073,16 +1084,16 @@ WAJIB sertakan properti berikut pada setiap butir soal yang dihasilkan:
   - "image about this question" (tidak ada deskripsi visual)\n`
     : '';
 
-  const contextBlock = params.contextNotes && params.contextNotes.trim()
-    ? `\n- Catatan Khusus Pendidik: "${params.contextNotes.trim()}"`
+  const teacherMandateBlock = params.contextNotes && params.contextNotes.trim()
+    ? `\r\n══════════════════════════════════════════════════════════════════════════════\r\n🔴 MANDAT UTAMA & INSTRUKSI KHUSUS PENDIDIK (PRIORITAS NOMOR 1 - WAJIB DITAATI 100%):\r\nPendidik memberikan instruksi wajib berikut untuk seluruh butir soal yang Anda susun:\r\n>>> "${params.contextNotes.trim()}" <<<\r\n\r\nHUKUM KEPATUHAN MUTLAK PENDIDIK:\r\n1. Seluruh butir soal WAJIB secara aktif mengintegrasikan, mematuhi, dan mencerminkan instruksi khusus guru di atas.\r\n2. Jika instruksi guru meminta fokus materi/subtopik tertentu (contoh: jenis materi spesifik, soal cerita kontekstual, nama tokoh, batasan angka, gaya bahasa), aturan ini MENGESAMPINGKAN pola umum lainnya!\r\n3. DILARANG KERAS membuat soal generik yang mengabaikan mandat pendidik ini.\r\n══════════════════════════════════════════════════════════════════════════════\r\n`
     : '';
 
   return `${roleText}
-
+${teacherMandateBlock}
 SPESIFIKASI KURIKULUM MERDEKA & SASARAN BELAJAR:
 - Mata Pelajaran: ${subject}
 - Tingkat / Jenjang: ${levelText} (${faseLabel})
-- Topik / Materi: "${topic}"${contextBlock}
+- Topik / Materi: "${topic}"
 - Target Jumlah: TEPAT ${count} butir soal lengkap
 - ${cognitiveInstruction}
 - ${contextInstruction}
@@ -1098,6 +1109,7 @@ STANDAR KUALITAS BUTIR SOAL (ANTI-AI SLOP & HIGH-PEDAGOGY):
 4. Pembahasan Edukatif Berbobot (Explanation): Properti "explanation" WAJIB menjelaskan konsep mengapa jawaban benar dan mengapa opsi lain keliru dengan bahasa santun dan menumbuhkan rasa percaya diri anak (1-3 kalimat).
 5. LARANGAN KERAS MONOLOG INTERNAL: DILARANG KERAS menyertakan monolog berpikir, koreksi diri, atau kalimat seperti "Tunggu...", "Maaf, mari periksa lagi", "Opsi D adalah...", "Mari saya koreksi index". Explanation HANYA berisi penjelasan materi final!
 6. KETEPATAN INDEKS KUNCI: Nilai 'correctIndex' adalah angka 0-based yang WAJIB menunjuk ke opsi yang benar pada 'options' (0 untuk A, 1 untuk B, 2 untuk C, 3 untuk D). Pastikan options[correctIndex] tepat dan cocok 100%!
+7. KEPATUHAN PENUH PADA MANDAT PENDIDIK: Sebelum merampungkan JSON, verifikasi bahwa setiap butir soal mematuhi Catatan Khusus Pendidik di atas tanpa terkecuali!
 
 ATURAN WAJIB OUTPUT:
 1. Kembalikan HANYA format JSON valid tanpa pembuka/penutup obrolan teks.
@@ -1783,7 +1795,9 @@ Kembalikan objek JSON dengan format:
       },
       {
         role: 'user',
-        content: `Tolong buatkan ${params.count} butir soal ${params.subject} Kelas ${params.grade} tentang materi "${params.topic}" dalam format JSON yang telah ditentukan. Lengkapi juga dengan judul kuis, deskripsi motivatif, emoji sampul, dan gelar lencana prestasi.`,
+        content: params.contextNotes && params.contextNotes.trim()
+          ? `Tolong buatkan ${params.count} butir soal ${params.subject} Kelas ${params.grade} tentang materi "${params.topic}".\r\n\r\n🔴 MANDAT KHUSUS PENDIDIK YANG WAJIB DITERAPKAN PADA SOAL:\r\n"${params.contextNotes.trim()}"\r\n\r\nPastikan seluruh instruksi catatan pendidik di atas terwujud nyata dalam stimulus, pertanyaan, atau pilihan opsi. Lengkapi dengan judul kuis, deskripsi motivatif, emoji sampul, dan gelar lencana prestasi dalam format JSON yang telah ditentukan.`
+          : `Tolong buatkan ${params.count} butir soal ${params.subject} Kelas ${params.grade} tentang materi "${params.topic}" dalam format JSON yang telah ditentukan. Lengkapi juga dengan judul kuis, deskripsi motivatif, emoji sampul, dan gelar lencana prestasi.`,
       },
     ],
     response_format: { type: 'json_object' },
@@ -1898,7 +1912,9 @@ Kembalikan objek JSON dengan format:
       },
       {
         role: 'user',
-        content: `Tolong buatkan ${params.count} butir soal ${params.subject} Kelas ${params.grade} tentang materi "${params.topic}" dalam format JSON yang telah ditentukan. Lengkapi juga dengan judul kuis, deskripsi motivatif, emoji sampul, dan gelar lencana prestasi.`,
+        content: params.contextNotes && params.contextNotes.trim()
+          ? `Tolong buatkan ${params.count} butir soal ${params.subject} Kelas ${params.grade} tentang materi "${params.topic}".\r\n\r\n🔴 MANDAT KHUSUS PENDIDIK YANG WAJIB DITERAPKAN PADA SOAL:\r\n"${params.contextNotes.trim()}"\r\n\r\nPastikan seluruh instruksi catatan pendidik di atas terwujud nyata dalam stimulus, pertanyaan, atau pilihan opsi. Lengkapi dengan judul kuis, deskripsi motivatif, emoji sampul, dan gelar lencana prestasi dalam format JSON yang telah ditentukan.`
+          : `Tolong buatkan ${params.count} butir soal ${params.subject} Kelas ${params.grade} tentang materi "${params.topic}" dalam format JSON yang telah ditentukan. Lengkapi juga dengan judul kuis, deskripsi motivatif, emoji sampul, dan gelar lencana prestasi.`,
       },
     ],
     max_tokens: 3800,

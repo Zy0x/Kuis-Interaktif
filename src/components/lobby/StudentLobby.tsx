@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import type { Quiz, QuizSession, QuizSessionSettings } from '../../types/quiz';
+import type { Quiz, QuizSession, QuizSessionSettings, GameMode } from '../../types/quiz';
 import { AVATAR_LIST } from '../../data/seedQuizzes';
 import { DataManager } from '../../lib/supabaseClient';
 import { parseStudentName } from '../../lib/studentUtils';
@@ -31,7 +31,7 @@ export interface StudentLobbyProps {
   quiz: Quiz;
   sessionSettings?: QuizSessionSettings;
   activeSession?: QuizSession | null;
-  onStartQuiz: () => void;
+  onStartQuiz: (mode?: GameMode, settings?: QuizSessionSettings) => void;
   onBackToHome: () => void;
   playClick: () => void;
   isDark?: boolean;
@@ -259,7 +259,7 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
     const defaults: QuizSessionSettings = {
       executionMode: 'self_paced',
       mode: quiz.defaultGameMode || 'standard',
-      durationPerQuestionSec: quiz.durationPerQuestionSec || 30,
+      durationPerQuestionSec: quiz.defaultGameMode === 'untimed' || quiz.durationPerQuestionSec === 0 ? 0 : (quiz.durationPerQuestionSec ?? 30),
       shuffleQuestions: quiz.shuffleQuestions ?? true,
       shuffleOptions: quiz.shuffleOptions ?? true,
       presentationTarget: 'student-lobby',
@@ -279,12 +279,31 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
     };
   }, [liveSettings, liveSession?.settings, sessionSettings, quiz.defaultSettings, quiz.defaultGameMode, quiz.durationPerQuestionSec, quiz.shuffleQuestions, quiz.shuffleOptions]);
 
-  const effectiveMode =
-    effectiveSettings.mode === 'untimed' || quiz.defaultGameMode === 'untimed'
-      ? 'untimed'
-      : (effectiveSettings.mode || quiz.defaultGameMode || 'standard');
-  const isUntimed = effectiveMode === 'untimed' || effectiveSettings.durationPerQuestionSec === 0;
-  const effectiveDuration = isUntimed ? 0 : (effectiveSettings.durationPerQuestionSec || quiz.durationPerQuestionSec || 30);
+  const isUntimed =
+    effectiveSettings.mode === 'untimed' ||
+    quiz.defaultGameMode === 'untimed' ||
+    effectiveSettings.durationPerQuestionSec === 0 ||
+    quiz.durationPerQuestionSec === 0;
+
+  const effectiveMode: GameMode = isUntimed
+    ? 'untimed'
+    : (effectiveSettings.mode || quiz.defaultGameMode || 'standard');
+
+  const effectiveDuration = isUntimed
+    ? 0
+    : typeof effectiveSettings.durationPerQuestionSec === 'number' && effectiveSettings.durationPerQuestionSec > 0
+    ? effectiveSettings.durationPerQuestionSec
+    : typeof quiz.durationPerQuestionSec === 'number' && quiz.durationPerQuestionSec > 0
+    ? quiz.durationPerQuestionSec
+    : 30;
+
+  const resolvedSettings: QuizSessionSettings = useMemo(() => {
+    return {
+      ...effectiveSettings,
+      mode: effectiveMode,
+      durationPerQuestionSec: isUntimed ? 0 : effectiveDuration,
+    };
+  }, [effectiveSettings, effectiveMode, isUntimed, effectiveDuration]);
 
   // Nama mode permainan ramah anak
   const modeLabel = useMemo(() => {
@@ -386,7 +405,7 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
   const handleStartQuizFromWaiting = () => {
     clearWaitingSessionStorage();
     setIsInWaitingRoom(false);
-    onStartQuiz();
+    onStartQuiz(effectiveMode, resolvedSettings);
   };
 
   const handleBackToLobbyFromWaiting = () => {
@@ -546,7 +565,7 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
       setIsInWaitingRoom(true);
     } else {
       clearWaitingSessionStorage();
-      onStartQuiz();
+      onStartQuiz(effectiveMode, resolvedSettings);
     }
   };
 

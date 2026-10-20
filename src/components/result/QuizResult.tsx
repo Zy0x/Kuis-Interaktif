@@ -3,6 +3,7 @@ import confetti from 'canvas-confetti';
 import type { Quiz, QuizAttemptAnswer, LeaderboardEntry } from '../../types/quiz';
 import { DataManager } from '../../lib/supabaseClient';
 import { copyTextToClipboard } from '../../lib/aiQuestionParser';
+import { triggerHaptic, formatMathExpression, getOptionLetter } from '../../lib/mobileUtils';
 import { ThemeToggle } from '../common/ThemeToggle';
 import { QuizIllustration } from '../shared/QuizIllustration';
 import { 
@@ -81,6 +82,7 @@ export const QuizResult: React.FC<QuizResultProps> = ({
     hasRecordedRef.current = true;
 
     playCelebration();
+    triggerHaptic('success');
 
     try {
       confetti({
@@ -291,7 +293,7 @@ export const QuizResult: React.FC<QuizResultProps> = ({
                   </div>
 
                   <p className="font-bold text-slate-900 dark:text-white text-sm leading-snug">
-                    {q.text}
+                    {formatMathExpression(q.text)}
                   </p>
 
                   {q.imageUrl && (
@@ -317,11 +319,7 @@ export const QuizResult: React.FC<QuizResultProps> = ({
                               ? `⚖️ ${studentAnswer.matchedCount} dari ${studentAnswer.totalPairs} Pasangan Cocok (${earned} Poin)`
                               : 'Belum Ada Pasangan Cocok')
                             : (isCorrect ? 'Semua Pasangan Tepat' : 'Belum Selesai'))
-                          : studentAnswer?.textAnswer 
-                          ? studentAnswer.textAnswer 
-                          : selectedIdx >= 0 && q.options?.[selectedIdx]
-                          ? q.options[selectedIdx] 
-                          : 'Waktu Habis'}
+                          : studentAnswer?.textAnswer ? formatMathExpression(studentAnswer.textAnswer) : selectedIdx >= 0 && q.options?.[selectedIdx] ? `${getOptionLetter(selectedIdx)}. ${formatMathExpression(q.options[selectedIdx])}` : 'Waktu Habis'}
                       </span>
                     </p>
                     {!isCorrect && (
@@ -330,9 +328,7 @@ export const QuizResult: React.FC<QuizResultProps> = ({
                         <span className="font-bold text-emerald-700 dark:text-emerald-400">
                           {q.type === 'matching_pairs'
                             ? (q.matchingPairs?.map((p) => `${p.left} ↔ ${p.right}`).join(', ') || 'Pasangan Konsep Tepat')
-                            : (q.correctIndex !== undefined && q.options?.[q.correctIndex] !== undefined)
-                            ? q.options[q.correctIndex]
-                            : q.acceptableAnswers?.[0] || 'Jawaban Tepat'}
+                            : (q.correctIndex !== undefined && q.options?.[q.correctIndex] !== undefined) ? `${getOptionLetter(q.correctIndex)}. ${formatMathExpression(q.options[q.correctIndex])}` : formatMathExpression(q.acceptableAnswers?.[0] || 'Jawaban Tepat')}
                         </span>
                       </p>
                     )}
@@ -340,7 +336,7 @@ export const QuizResult: React.FC<QuizResultProps> = ({
 
                   <div className="text-xs text-slate-700 dark:text-slate-300 bg-blue-50/60 dark:bg-blue-950/40 p-3 rounded-lg border border-blue-100 dark:border-blue-900/60">
                     <span className="font-bold text-blue-900 dark:text-blue-300 block mb-0.5">💡 Penjelasan:</span>
-                    {q.explanation}
+                    {formatMathExpression(q.explanation)}
                   </div>
                 </div>
               );
@@ -427,30 +423,32 @@ export const QuizResult: React.FC<QuizResultProps> = ({
       </main>
 
       {/* Sticky Bottom Action Bar - Docked at viewport bottom, never covers content */}
-      <footer className="sticky bottom-0 w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200/80 dark:border-slate-800 p-2.5 xs:p-3 sm:p-3.5 z-20 shadow-lg pb-[max(env(safe-area-inset-bottom),0.625rem)]">
+      <footer className="sticky bottom-0 w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200/80 dark:border-slate-800 p-2.5 xs:p-3 sm:p-3.5 z-20 shadow-lg pb-[max(env(safe-area-inset-bottom),0.875rem)]">
         <div className="max-w-2xl lg:max-w-4xl xl:max-w-5xl 2xl:max-w-6xl mx-auto flex items-center gap-1.5 xs:gap-2.5">
           <button
             type="button"
             onClick={() => {
+              triggerHaptic('light');
               playClick();
               onGoHome();
             }}
-            className="flex-1 py-2 xs:py-2.5 px-2 xs:px-3 rounded-xl font-bold text-xs sm:text-sm text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 flex items-center justify-center gap-1 sm:gap-1.5 min-h-[44px] btn-press truncate"
+            className="flex-1 py-2 xs:py-2.5 px-2 xs:px-3 rounded-xl font-bold text-xs sm:text-sm text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 flex items-center justify-center gap-1 sm:gap-1.5 min-h-[44px] min-w-[76px] whitespace-nowrap btn-press"
           >
             <Home className="w-4 h-4 flex-shrink-0" />
-            <span className="truncate">Beranda</span>
+            <span className="whitespace-nowrap">Beranda</span>
           </button>
 
           <button
             type="button"
             onClick={() => {
+              triggerHaptic('light');
               playClick();
               onReplay();
             }}
-            className="flex-[1.5] xs:flex-[2] py-2 xs:py-2.5 px-2 xs:px-3 rounded-xl font-bold text-xs sm:text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-sm flex items-center justify-center gap-1 sm:gap-1.5 min-h-[44px] btn-press truncate"
+            className="flex-[1.5] xs:flex-[2] py-2 xs:py-2.5 px-2 xs:px-3 rounded-xl font-bold text-xs sm:text-sm text-white bg-blue-600 hover:bg-blue-700 shadow-sm flex items-center justify-center gap-1 sm:gap-1.5 min-h-[44px] min-w-[96px] whitespace-nowrap btn-press"
           >
             <RotateCcw className="w-4 h-4 flex-shrink-0" />
-            <span className="truncate">Main Lagi</span>
+            <span className="whitespace-nowrap">Main Lagi</span>
           </button>
 
           <button

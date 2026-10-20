@@ -103,13 +103,18 @@ export const App: React.FC = () => {
   const resolveSettings = (session?: QuizSession | null, q?: Quiz | null): QuizSessionSettings => {
     const base = session?.settings || q?.defaultSettings;
     const resolvedMode = base?.mode || q?.defaultGameMode || 'standard';
-    const isUntimed = resolvedMode === 'untimed';
+    const isUntimed = resolvedMode === 'untimed' || base?.durationPerQuestionSec === 0 || q?.durationPerQuestionSec === 0;
+    const rawDuration = typeof base?.durationPerQuestionSec === 'number'
+      ? base.durationPerQuestionSec
+      : typeof q?.durationPerQuestionSec === 'number'
+      ? q.durationPerQuestionSec
+      : 30;
     return {
       executionMode: base?.executionMode || 'self_paced',
       teacherPacingSubMode: base?.teacherPacingSubMode || 'manual',
       isChatMuted: base?.isChatMuted ?? false,
       mode: resolvedMode,
-      durationPerQuestionSec: isUntimed ? 0 : (base?.durationPerQuestionSec || q?.durationPerQuestionSec || 30),
+      durationPerQuestionSec: isUntimed ? 0 : rawDuration,
       shuffleQuestions: base?.shuffleQuestions ?? q?.shuffleQuestions ?? true,
       shuffleOptions: base?.shuffleOptions ?? q?.shuffleOptions ?? true,
       presentationTarget: base?.presentationTarget || 'student-lobby',
@@ -369,9 +374,10 @@ export const App: React.FC = () => {
       return;
     }
     const resolvedMode = mode || quiz.defaultGameMode || 'standard';
+    const isUntimed = resolvedMode === 'untimed' || quiz.durationPerQuestionSec === 0;
     const settings = resolveSettings(null, quiz);
     settings.mode = resolvedMode;
-    settings.durationPerQuestionSec = resolvedMode === 'untimed' ? 0 : (quiz.durationPerQuestionSec || 30);
+    settings.durationPerQuestionSec = isUntimed ? 0 : (typeof quiz.durationPerQuestionSec === 'number' && quiz.durationPerQuestionSec > 0 ? quiz.durationPerQuestionSec : 30);
 
     setActiveQuiz(quiz);
     setActiveGameMode(resolvedMode);
@@ -552,7 +558,12 @@ export const App: React.FC = () => {
   const handleStudentLogout = handleFullLogout;
 
   const handleLaunchSmartboard = (quiz: Quiz) => {
+    const session = DataManager.getActiveSessionByQuizId(quiz.id) || (quiz.pinCode ? DataManager.getActiveSessionByPin(quiz.pinCode) : null);
+    const settings = resolveSettings(session, quiz);
     setActiveQuiz(quiz);
+    setActiveSession(session || null);
+    setActiveSessionSettings(settings);
+    setActiveGameMode(settings.mode);
     setCurrentScreen('arena');
     saveNavigationState({ screen: 'arena', quiz, replace: false });
   };
@@ -789,7 +800,9 @@ export const App: React.FC = () => {
           quiz={activeQuiz}
           sessionSettings={activeSessionSettings || (activeQuiz.defaultSettings as QuizSessionSettings)}
           activeSession={activeSession}
-          onStartQuiz={() => {
+          onStartQuiz={(lobbyMode, lobbySettings) => {
+            if (lobbyMode) setActiveGameMode(lobbyMode);
+            if (lobbySettings) setActiveSessionSettings(lobbySettings);
             // 1. Alihkan layar ke arena secara instan tanpa hambatan request jaringan
             setIsJoinedViaStudentLobby(true);
             setCurrentScreen('arena');

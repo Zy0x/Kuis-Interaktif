@@ -57,7 +57,9 @@ import {
   AlertTriangle,
   Lock,
   AlertCircle,
-  CheckCircle2
+  CheckCircle2,
+  Flag,
+  Type
 } from 'lucide-react';
 import { useAntiReaction } from '../../lib/reactionPreferences';
 import { QuizIllustration } from '../shared/QuizIllustration';
@@ -66,6 +68,10 @@ import { QuizizzReactionOverlay } from '../common/QuizizzReactionOverlay';
 import { FloatingReactionButton } from '../common/FloatingReactionButton';
 import { ZoomChatToast } from '../common/ZoomChatToast';
 import { StudentChatDrawer } from '../chat/StudentChatDrawer';
+import { triggerHaptic, formatMathExpression } from '../../lib/mobileUtils';
+import type { QuestionTextScale } from './QuizToolDock';
+import { ScratchpadOverlay } from './ScratchpadOverlay';
+import { speakQuestion, stopSpeech } from '../../lib/speechUtils';
 
 export interface QuizArenaProps {
   quiz: Quiz;
@@ -114,9 +120,14 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 }) => {
   const STORAGE_KEY = `kuis_arena_progress_${quiz.id}`;
 
+  const isQuizInherentlyUntimed = quiz.defaultGameMode === 'untimed' || quiz.durationPerQuestionSec === 0 || quiz.defaultSettings?.mode === 'untimed' || quiz.defaultSettings?.durationPerQuestionSec === 0;
+
   const defaultSettingsFallback: QuizSessionSettings = {
-    mode: initialMode || quiz.defaultGameMode || 'standard',
-    durationPerQuestionSec: quiz.durationPerQuestionSec || 30,
+    executionMode: isTeacher ? 'teacher_led' : 'self_paced',
+    teacherPacingSubMode: 'manual',
+    isChatMuted: false,
+    mode: isQuizInherentlyUntimed ? 'untimed' : (quiz.defaultGameMode || initialMode || 'standard'),
+    durationPerQuestionSec: isQuizInherentlyUntimed ? 0 : (typeof quiz.durationPerQuestionSec === 'number' && quiz.durationPerQuestionSec > 0 ? quiz.durationPerQuestionSec : 30),
     shuffleQuestions: quiz.shuffleQuestions ?? true,
     shuffleOptions: quiz.shuffleOptions ?? true,
     presentationTarget: 'student-lobby',
@@ -129,20 +140,17 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 
   const [liveSession, setLiveSession] = useState<QuizSession | null>(() => {
     if (activeSessionId) return DataManager.getActiveSessionById(activeSessionId);
-    if (quiz.pinCode) return DataManager.getActiveSessionByPin(quiz.pinCode);
-    return DataManager.getActiveSessionByQuizId(quiz.id);
+    return null;
   });
 
   // Read active session settings with real-time reactive sync
   const [currentSettings, setCurrentSettings] = useState<QuizSessionSettings>(() => {
-    const initialSession = activeSessionId
-      ? DataManager.getActiveSessionById(activeSessionId)
-      : (quiz.pinCode ? DataManager.getActiveSessionByPin(quiz.pinCode) : DataManager.getActiveSessionByQuizId(quiz.id));
+    const initialSession = activeSessionId ? DataManager.getActiveSessionById(activeSessionId) : null;
     return {
       ...defaultSettingsFallback,
+      ...(initialSession?.settings || {}),
       ...(quiz.defaultSettings || {}),
       ...(sessionSettings || {}),
-      ...(initialSession?.settings || {}),
     };
   });
 
@@ -169,24 +177,34 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   // Resolusi Mode Permainan secara presisi, berbobot, dan anti-konflik:
   // 1. Jika sessionSettings eksplisit (dari sesi/modal), itu prioritas utama
   // 2. Jika sesi live dari database/localstorage memiliki settings.mode
-  // 3. Jika initialMode di-pass oleh pemanggil layar
-  // 4. Default settings kuis / quiz.defaultGameMode
-  // 5. Fallback 'standard'
+  // 3. Default mode kuis (quiz.defaultSettings?.mode atau quiz.defaultGameMode) jika eksplisit untimed
+  // 4. Jika initialMode di-pass oleh pemanggil layar
+  // 5. Default settings kuis / quiz.defaultGameMode
+  // 6. Fallback 'standard'
   const resolvedGameMode: GameMode = (() => {
     if (sessionSettings?.mode) return sessionSettings.mode;
     if (liveSession?.settings?.mode) return liveSession.settings.mode;
-    if (initialMode) return initialMode;
+    if (quiz.defaultSettings?.mode === 'untimed' || quiz.defaultGameMode === 'untimed') return 'untimed';
+    if (initialMode && initialMode !== 'standard') return initialMode;
     if (quiz.defaultSettings?.mode) return quiz.defaultSettings.mode;
     if (quiz.defaultGameMode) return quiz.defaultGameMode;
+    if (initialMode) return initialMode;
     return 'standard';
   })();
-  const isUntimedMode =
+
+  const isUntimedMode = Boolean(
     resolvedGameMode === 'untimed' ||
     activeSettings.mode === 'untimed' ||
     initialMode === 'untimed' ||
     sessionSettings?.mode === 'untimed' ||
     liveSession?.settings?.mode === 'untimed' ||
-    activeSettings.durationPerQuestionSec === 0;
+    quiz.defaultGameMode === 'untimed' ||
+    quiz.defaultSettings?.mode === 'untimed' ||
+    activeSettings.durationPerQuestionSec === 0 ||
+    quiz.durationPerQuestionSec === 0 ||
+    quiz.defaultSettings?.durationPerQuestionSec === 0 ||
+    (activeSettings.executionMode === 'teacher_led' && activeSettings.teacherPacingSubMode === 'manual')
+  );
   const gameMode: GameMode = isUntimedMode ? 'untimed' : resolvedGameMode;
 
   const showAnswersMode: AnswerVisibilityMode = activeSettings.showAnswersMode || 'immediate';
@@ -197,7 +215,13 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   // Fitur ubah jawaban & navigasi mundur soal HANYA aktif pada Mode Santai (Bebas Waktu)
   // yang dipadukan dengan Kunci Rahasia (exam_strict) untuk mencegah konflik timer per soal.
   const canReselectAndNavigate = showAnswersMode === 'exam_strict' && isUntimedMode;
-  const defaultDurationSec = isUntimedMode ? 0 : (activeSettings.durationPerQuestionSec || quiz.durationPerQuestionSec || 30);
+  const defaultDurationSec = isUntimedMode
+    ? 0
+    : typeof activeSettings.durationPerQuestionSec === 'number' && activeSettings.durationPerQuestionSec > 0
+    ? activeSettings.durationPerQuestionSec
+    : typeof quiz.durationPerQuestionSec === 'number' && quiz.durationPerQuestionSec > 0
+    ? quiz.durationPerQuestionSec
+    : 30;
   const getQuestionDuration = (q: QuizQuestion | undefined): number => {
     if (isUntimedMode) return 0;
     if (!q) return defaultDurationSec;
@@ -380,6 +404,53 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [showFinishConfirmModal, setShowFinishConfirmModal] = useState(false);
   const [isMobileToolsOpen, setIsMobileToolsOpen] = useState(false);
+
+  // Floating Tool Dock & Assistive States for Students (Compact Minimalist)
+  const [isScratchpadOpen, setIsScratchpadOpen] = useState(false);
+  const [textScale, setTextScale] = useState<QuestionTextScale>('normal');
+  const [flaggedQuestions, setFlaggedQuestions] = useState<Set<number>>(new Set());
+  const [isSpeechPlaying, setIsSpeechPlaying] = useState(false);
+
+  const handleToggleSpeech = useCallback(() => {
+    if (isSpeechPlaying) {
+      stopSpeech();
+      setIsSpeechPlaying(false);
+    } else {
+      const currentQ = activeQuestions[currentIndex];
+      if (currentQ) {
+        speakQuestion(currentQ.text, currentQ.options, {
+          onStart: () => setIsSpeechPlaying(true),
+          onEnd: () => setIsSpeechPlaying(false),
+          onError: () => setIsSpeechPlaying(false),
+        });
+      }
+    }
+  }, [isSpeechPlaying, activeQuestions, currentIndex]);
+
+  const handleCycleTextScale = useCallback(() => {
+    setTextScale((prev) => {
+      if (prev === 'normal') return 'large';
+      if (prev === 'large') return 'xlarge';
+      return 'normal';
+    });
+  }, []);
+
+  const handleToggleFlag = useCallback(() => {
+    setFlaggedQuestions((prev) => {
+      const next = new Set(prev);
+      if (next.has(currentIndex)) {
+        next.delete(currentIndex);
+      } else {
+        next.add(currentIndex);
+      }
+      return next;
+    });
+  }, [currentIndex]);
+
+  useEffect(() => {
+    stopSpeech();
+    setIsSpeechPlaying(false);
+  }, [currentIndex]);
 
   // Status Anti-Reaksi Layar Siswa (Sembunyikan reaksi teman agar layar bersih & fokus)
   const [isAntiReact, toggleAntiReaction] = useAntiReaction();
@@ -678,7 +749,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 
   // 3. Accelerate tempo during last 5 seconds countdown (only in timed modes)
   useEffect(() => {
-    if (!isUntimedMode && gameMode !== 'untimed' && timeLeft <= 5 && timeLeft > 0 && !isAnswerConfirmed && !isPaused && !isGameOver) {
+    if (!isUntimedMode && timeLeft <= 5 && timeLeft > 0 && !isAnswerConfirmed && !isPaused && !isGameOver) {
       setUrgent(true);
     } else {
       setUrgent(false);
@@ -811,11 +882,17 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     timerRef.current = window.setInterval(() => {
       setTotalTimeSpent((t) => t + 1);
 
-      if (isUntimedMode || gameMode === 'untimed' || (activeSettings.executionMode === 'teacher_led' && activeSettings.teacherPacingSubMode === 'manual')) {
-        return; // Untimed mode or teacher-led manual pacing does not count down
+      // Mode Santai (Bebas Waktu) ATAU kendali manual guru: sama sekali tidak ada hitung mundur per soal
+      if (isUntimedMode) {
+        return;
       }
 
       setTimeLeft((prev) => {
+        // Proteksi berlapis: jika mode santai, jangan pernah jalankan timeout otomatis
+        if (isUntimedMode) {
+          return 0;
+        }
+
         if (prev <= 1) {
           // Eksekusi pemilihan jawaban otomatis di luar cycle updater state untuk kestabilan React 19
           setTimeout(() => {
@@ -844,7 +921,11 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     gameMode, 
     isUntimedMode,
     activeSettings.executionMode, 
-    activeSettings.teacherPacingSubMode
+    activeSettings.teacherPacingSubMode,
+    activeSettings.durationPerQuestionSec,
+    activeSettings.mode,
+    quiz.defaultGameMode,
+    quiz.durationPerQuestionSec
   ]);
 
   const normalizeAnswer = (text: string) => {
@@ -872,10 +953,13 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     customMatchedCount?: number,
     customTotalPairs?: number
   ) => {
+    triggerHaptic('light');
     const canReselectAnswer = canReselectAndNavigate;
     if ((isAnswerConfirmed && !canReselectAnswer) || showCountdown) return;
-    // Pada Mode Santai (Bebas Waktu), peristiwa timeout (optionIndex = -1) ditolak mentah-mentah
-    if (isUntimedMode && optionIndex === -1) return;
+    // Pada Mode Santai (Bebas Waktu / Tanpa Waktu), peristiwa timeout (optionIndex = -1) DITOLAK MUTLAK
+    if (optionIndex === -1 && isUntimedMode) {
+      return;
+    }
     if (timerRef.current) clearInterval(timerRef.current);
 
     setSelectedOption(optionIndex);
@@ -1161,6 +1245,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
         console.warn('Session participant finish sync error:', err);
       }
     }
+    triggerHaptic('success');
     onFinishQuiz(finalAnswers, finalTime);
   }, [activeSessionId, activeQuestions, onFinishQuiz, stopBgm, STORAGE_KEY, tabSwitchCount, isMandatoryAllAnswered, activeSettings.executionMode]);
 
@@ -1380,29 +1465,25 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
       });
     }
 
-    // Polling fallback lokal + cloud Supabase setiap 2 detik
-    const interval = setInterval(async () => {
-      const targetId = activeSessionId || liveSession?.id;
-      const freshLocal = targetId
-        ? DataManager.getActiveSessionById(targetId)
-        : quiz.pinCode
-        ? DataManager.getActiveSessionByPin(quiz.pinCode)
-        : DataManager.getActiveSessionByQuizId(quiz.id);
+    // Polling fallback lokal + cloud Supabase setiap 2 detik HANYA jika ada sesi live aktif
+    let interval: number | null = null;
+    if (targetSessionId) {
+      interval = window.setInterval(async () => {
+        const freshLocal = DataManager.getActiveSessionById(targetSessionId);
 
-      if (freshLocal) {
-        applySessionUpdate(freshLocal);
-      }
+        if (freshLocal) {
+          applySessionUpdate(freshLocal);
+        }
 
-      // KRUSIAL UNTUK MULTI-DEVICE: Query ke Supabase Cloud agar perubahan soal guru langsung masuk ke smartphone siswa
-      if (targetId) {
+        // KRUSIAL UNTUK MULTI-DEVICE: Query ke Supabase Cloud agar perubahan soal guru langsung masuk ke smartphone siswa
         try {
-          const freshCloud = await DataManager.fetchActiveSessionById(targetId);
+          const freshCloud = await DataManager.fetchActiveSessionById(targetSessionId);
           if (freshCloud) {
             applySessionUpdate(freshCloud);
           }
         } catch {}
-      }
-    }, 2000);
+      }, 2000);
+    }
 
     return () => {
       if (bc) {
@@ -1410,7 +1491,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
         bc.close();
       }
       window.removeEventListener('kuis_session_updated', handleCustomSync);
-      clearInterval(interval);
+      if (interval) clearInterval(interval);
       unsubRealtime();
     };
   }, [activeSessionId, quiz.id, quiz.pinCode, currentIndex, isTeacher, liveSession?.id]);
@@ -1624,63 +1705,66 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                   <X className="w-5 h-5" />
                 </button>
 
-                <div className="min-w-0 flex flex-col justify-center">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    {canTeacherReveal || (isTeacher && activeSettings.executionMode === 'teacher_led') ? (
-                      <select
-                        value={currentIndex}
-                        onChange={(e) => {
-                          const val = Number(e.target.value);
-                          if (isTeacher && activeSettings.executionMode === 'teacher_led') {
-                            promptTeacherNav(val, val > currentIndex ? 'next' : 'prev');
-                          } else {
-                            handleJumpToQuestion(val);
-                          }
-                        }}
-                        className="text-[11px] sm:text-xs font-black text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/70 border border-blue-200/80 dark:border-blue-900/80 px-2.5 py-1.5 rounded-xl cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-500 min-h-[44px] inline-flex items-center"
-                        title="Lompat ke Nomor Soal Tertentu (Khusus Guru)"
-                        aria-label="Pilih Nomor Soal"
-                      >
-                        {activeQuestions.map((_, qIdx) => (
-                          <option key={qIdx} value={qIdx} className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200">
-                            Soal {qIdx + 1}/{activeQuestions.length}
-                          </option>
-                        ))}
-                      </select>
-                    ) : canReselectAndNavigate ? (
-                      <button
-                        type="button"
-                        onClick={() => setIsQuestionGridOpen(true)}
-                        className="text-[11px] sm:text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/70 border border-blue-200/80 dark:border-blue-900/80 hover:bg-blue-100 dark:hover:bg-blue-900/50 px-2.5 py-1 rounded-xl inline-flex items-center gap-1.5 transition-all shadow-xs cursor-pointer min-h-[36px] active:scale-95"
-                        title="Buka Peta Nomor Soal"
-                        aria-label="Buka Peta Nomor Soal"
-                      >
-                        <LayoutGrid className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                        <span>Soal {currentIndex + 1}/{activeQuestions.length}</span>
-                      </button>
-                    ) : (
-                      <span className="text-[11px] sm:text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/50 px-2 py-0.5 rounded-md inline-block whitespace-nowrap self-start">
-                        Soal {currentIndex + 1}/{activeQuestions.length}
-                      </span>
-                    )}
-                    {isPreview && (
-                      <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-indigo-600 text-white shadow-xs">
-                        Pratinjau
-                      </span>
-                    )}
-                    <span className="text-[10px] sm:text-[11px] font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/50 border border-amber-200/60 dark:border-amber-800/60 px-1.5 py-0.5 rounded-md inline-flex items-center gap-0.5">
-                      <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" /> {question.points || 10} Poin
+                <div className="min-w-0 flex items-center gap-1.5">
+                  {canTeacherReveal || (isTeacher && activeSettings.executionMode === 'teacher_led') ? (
+                    <select
+                      value={currentIndex}
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        if (isTeacher && activeSettings.executionMode === 'teacher_led') {
+                          promptTeacherNav(val, val > currentIndex ? 'next' : 'prev');
+                        } else {
+                          handleJumpToQuestion(val);
+                        }
+                      }}
+                      className="text-[11px] sm:text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/70 border border-blue-200/80 dark:border-blue-900/80 px-2 py-1 rounded-xl cursor-pointer focus:outline-none min-h-[40px] inline-flex items-center"
+                      title="Lompat ke Nomor Soal Tertentu (Khusus Guru)"
+                      aria-label="Pilih Nomor Soal"
+                    >
+                      {activeQuestions.map((_, qIdx) => (
+                        <option key={qIdx} value={qIdx} className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200">
+                          Soal {qIdx + 1}/{activeQuestions.length}
+                        </option>
+                      ))}
+                    </select>
+                  ) : canReselectAndNavigate ? (
+                    <button
+                      type="button"
+                      onClick={() => setIsQuestionGridOpen(true)}
+                      className="text-[11px] sm:text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/70 border border-blue-200/80 dark:border-blue-900/80 hover:bg-blue-100 dark:hover:bg-blue-900/50 px-2 py-1 rounded-xl inline-flex items-center gap-1 transition-all shadow-xs cursor-pointer min-h-[38px] active:scale-95"
+                      title="Buka Peta Nomor Soal"
+                      aria-label="Buka Peta Nomor Soal"
+                    >
+                      <LayoutGrid className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                      <span>{currentIndex + 1}/{activeQuestions.length}</span>
+                    </button>
+                  ) : (
+                    <span className="text-[11px] sm:text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/50 border border-blue-200/60 dark:border-blue-800/60 px-2 py-1 rounded-xl inline-block whitespace-nowrap">
+                      Soal {currentIndex + 1}/{activeQuestions.length}
                     </span>
-                    {isTeacher && activeSettings.executionMode === 'teacher_led' && (
-                      <span className="text-[10px] sm:text-[11px] font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 border border-blue-200/80 dark:border-blue-900/80 px-2 py-0.5 rounded-md inline-flex items-center gap-1">
-                        <Users className="w-3.5 h-3.5 text-blue-500" />
-                        <span>
-                          {liveSession?.participants?.filter(p => p.answers && p.answers[question.id])?.length || 0} / {liveSession?.participants?.length || 0} Menjawab
-                        </span>
+                  )}
+
+                  {isPreview && (
+                    <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-indigo-600 text-white shadow-xs hidden xs:inline-block">
+                      Pratinjau
+                    </span>
+                  )}
+
+                  <span className="text-[10px] sm:text-[11px] font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/50 border border-amber-200/60 dark:border-amber-800/60 px-2 py-1 rounded-xl inline-flex items-center gap-1 whitespace-nowrap shrink-0">
+                    <Star className="w-3 h-3 text-amber-500 fill-amber-500 shrink-0" />
+                    <span>{question.points || 10}</span>
+                  </span>
+
+                  {isTeacher && activeSettings.executionMode === 'teacher_led' && (
+                    <span className="text-[10px] sm:text-[11px] font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 border border-blue-200/80 dark:border-blue-900/80 px-2 py-1 rounded-xl inline-flex items-center gap-1 hidden sm:inline-flex">
+                      <Users className="w-3.5 h-3.5 text-blue-500" />
+                      <span>
+                        {liveSession?.participants?.filter(p => p.answers && p.answers[question.id])?.length || 0}/{liveSession?.participants?.length || 0}
                       </span>
-                    )}
-                  </div>
-                  <h2 className="text-[11px] sm:text-xs font-semibold text-slate-600 dark:text-slate-400 truncate max-w-[85px] xs:max-w-[130px] sm:max-w-[200px] md:max-w-[280px] hidden xs:block">
+                    </span>
+                  )}
+
+                  <h2 className="text-xs font-semibold text-slate-600 dark:text-slate-400 truncate max-w-[180px] hidden md:block ml-1">
                     {quiz.title}
                   </h2>
                 </div>
@@ -1757,36 +1841,52 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                   </button>
                 )}
 
-                {/* Play/Pause Button */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    playClick();
-                    setIsPaused(!isPaused);
-                  }}
-                  className={`p-2 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors ${
-                    isPaused 
-                      ? 'bg-amber-500 text-white shadow-sm' 
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-                  }`}
-                  title={isPaused ? 'Lanjutkan Waktu' : 'Jeda Waktu untuk Menjelaskan'}
-                  aria-label={isPaused ? 'Lanjutkan Waktu' : 'Jeda Waktu'}
-                >
-                  {isPaused ? <Play className="w-4 h-4 fill-white" /> : <Pause className="w-4 h-4" />}
-                </button>
+                {/* Play/Pause Button (HANYA untuk Guru / Presenter / Pratinjau) */}
+                {(canTeacherReveal || (isTeacher && activeSettings.executionMode === 'teacher_led') || isPreview) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setIsPaused(!isPaused);
+                    }}
+                    className={`p-2 rounded-xl min-h-[40px] min-w-[40px] flex items-center justify-center transition-colors ${
+                      isPaused 
+                        ? 'bg-amber-500 text-white shadow-sm' 
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                    }`}
+                    title={isPaused ? 'Lanjutkan Waktu' : 'Jeda Waktu untuk Menjelaskan'}
+                    aria-label={isPaused ? 'Lanjutkan Waktu' : 'Jeda Waktu'}
+                  >
+                    {isPaused ? <Play className="w-4 h-4 fill-white" /> : <Pause className="w-4 h-4" />}
+                  </button>
+                )}
 
-                {/* Mobile Tools Drawer Trigger (<sm) */}
+                {/* Tombol Tunggal Terpadu Alat & Pengaturan Kuis */}
                 <button
                   type="button"
                   onClick={() => {
+                    triggerHaptic('light');
                     playClick();
                     setIsMobileToolsOpen(true);
                   }}
-                  className="p-2 sm:hidden text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors"
-                  title="Menu Pengaturan & Alat Kuis"
-                  aria-label="Menu Pengaturan & Alat Kuis"
+                  className={`px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl min-h-[40px] min-w-[40px] flex items-center gap-1.5 transition-all btn-press border text-xs font-bold ${
+                    isSpeechPlaying
+                      ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 shadow-xs'
+                      : flaggedQuestions.has(currentIndex)
+                      ? 'bg-amber-50 dark:bg-amber-950/60 border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300 shadow-xs'
+                      : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 border-slate-200/80 dark:border-slate-700/80'
+                  }`}
+                  title="Menu Alat Bantu & Pengaturan Kuis"
+                  aria-label="Menu Alat Bantu & Pengaturan Kuis"
                 >
-                  <MoreVertical className="w-5 h-5" />
+                  {isSpeechPlaying ? (
+                    <Volume2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 animate-pulse" />
+                  ) : flaggedQuestions.has(currentIndex) ? (
+                    <Flag className="w-4 h-4 text-amber-500 fill-amber-500" />
+                  ) : (
+                    <Sparkles className="w-4 h-4 text-amber-500 dark:text-amber-400" />
+                  )}
+                  <span className="hidden xs:inline">Alat</span>
                 </button>
 
                 {/* Desktop / Tablet / Smartboard Full Toolbar (>=sm) */}
@@ -1878,7 +1978,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 
       {/* Main Quiz Arena Card - Locked to Viewport with Auto-centering & Smooth Top-to-Bottom Overflow */}
       <main className="flex-1 min-h-0 w-full overflow-y-auto px-3 py-2 sm:px-6 sm:py-4 flex flex-col items-center overscroll-contain">
-        <div className="w-full max-w-2xl lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl 3xl:max-w-6xl 4k:max-w-7xl bg-white dark:bg-slate-900 rounded-3xl p-4 sm:p-6 md:p-8 2xl:p-10 3xl:p-12 border border-slate-200/90 dark:border-slate-800 shadow-card flex flex-col gap-3.5 sm:gap-5 xl:gap-6 my-auto animate-fade-in relative">
+        <div className="w-full max-w-2xl lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl 3xl:max-w-6xl 4k:max-w-7xl bg-white dark:bg-slate-900 rounded-3xl p-3.5 xs:p-4 sm:p-6 md:p-8 2xl:p-10 border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col gap-2.5 sm:gap-4 xl:gap-5 my-1 sm:my-auto animate-fade-in relative">
           
           {/* Paused Overlay Banner */}
           {isPaused && (
@@ -1889,8 +1989,14 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
           )}
 
           {/* Question Text */}
-          <h3 className="text-sm xs:text-base sm:text-lg md:text-xl xl:text-2xl 2xl:text-3xl 3xl:text-4xl font-extrabold text-slate-900 dark:text-white leading-snug break-words">
-            {question.text}
+          <h3 className={`${
+            textScale === 'xlarge'
+              ? 'text-base xs:text-lg sm:text-xl md:text-2xl xl:text-3xl 2xl:text-4xl 3xl:text-5xl'
+              : textScale === 'large'
+              ? 'text-sm xs:text-base sm:text-lg md:text-xl xl:text-2xl 2xl:text-3xl 3xl:text-4xl'
+              : 'text-sm xs:text-base sm:text-lg md:text-xl xl:text-2xl 2xl:text-3xl 3xl:text-4xl'
+          } font-extrabold text-slate-900 dark:text-white leading-snug break-words transition-all duration-200`}>
+            {formatMathExpression(question.text)}
           </h3>
 
           {/* Illustration Container (Special Mystery Grid for image_guess) */}
@@ -2001,13 +2107,17 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
               />
             </div>
           ) : question.imageCaption ? (
-            <div className="bg-slate-50 dark:bg-slate-850 border border-slate-200/80 dark:border-slate-800 rounded-2xl py-2 px-4 sm:py-3 sm:px-6 text-center flex-shrink-0">
-              <div className="text-3xl sm:text-4xl xl:text-5xl select-none">
-                {question.imageCaption}
-              </div>
-              <span className="text-[11px] sm:text-xs xl:text-sm text-slate-500 dark:text-slate-400 font-medium">
-                Perhatikan petunjuk ilustrasi di atas
-              </span>
+            <div className="flex justify-center flex-shrink-0 my-0.5">
+              {question.imageCaption.length <= 4 ? (
+                <div className="bg-slate-50 dark:bg-slate-850 border border-slate-200/80 dark:border-slate-800 rounded-2xl py-2 px-5 text-3xl sm:text-4xl select-none text-center">
+                  {question.imageCaption}
+                </div>
+              ) : (
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-800/80 text-amber-900 dark:text-amber-200 text-xs font-semibold">
+                  <Lightbulb className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                  <span>{question.imageCaption}</span>
+                </div>
+              )}
             </div>
           ) : null}
 
@@ -2278,7 +2388,13 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                     >
                       {question.type === 'true_false' ? (idx === 0 ? '✓' : '✗') : (letters[idx] || String.fromCharCode(65 + idx))}
                     </span>
-                    <span className="text-xs sm:text-sm md:text-base xl:text-lg 3xl:text-xl font-bold break-words leading-snug">{optText}</span>
+                    <span className={`${
+  textScale === 'xlarge'
+    ? 'text-sm sm:text-base md:text-lg xl:text-xl 3xl:text-2xl'
+    : textScale === 'large'
+    ? 'text-xs sm:text-sm md:text-base xl:text-lg 3xl:text-xl'
+    : 'text-xs sm:text-sm md:text-base xl:text-lg 3xl:text-xl'
+} font-bold break-words leading-snug`}>{formatMathExpression(optText)}</span>
                   </div>
 
                   <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -2528,7 +2644,115 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
               </button>
             </div>
 
-            <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+            <div className="space-y-3 max-h-[65vh] overflow-y-auto pr-1">
+              {/* Bagian 1: Alat Bantu Pengerjaan Siswa */}
+              <div className="space-y-1.5">
+                <div className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 px-1">
+                  Alat Bantu Siswa
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  {/* 1. Suara Bacakan Soal (TTS) */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      triggerHaptic('light');
+                      handleToggleSpeech();
+                    }}
+                    className={`p-2.5 rounded-2xl border flex flex-col justify-between text-left transition-all min-h-[70px] btn-press ${
+                      isSpeechPlaying
+                        ? 'bg-emerald-50 dark:bg-emerald-950/50 border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-200 shadow-xs ring-1 ring-emerald-400/40'
+                        : 'bg-slate-50 dark:bg-slate-800/70 border-slate-200/80 dark:border-slate-750 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <Volume2 className={`w-4 h-4 ${isSpeechPlaying ? 'text-emerald-600 animate-pulse' : 'text-slate-500'}`} />
+                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${isSpeechPlaying ? 'bg-emerald-200 text-emerald-800' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}`}>
+                        {isSpeechPlaying ? 'Memutar' : 'Suara'}
+                      </span>
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold leading-tight">{isSpeechPlaying ? 'Hentikan Suara' : 'Bacakan Soal'}</div>
+                      <div className="text-[10px] text-slate-400">Bahasa Indonesia</div>
+                    </div>
+                  </button>
+
+                  {/* 2. Kertas Buram Digital */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      triggerHaptic('light');
+                      setIsMobileToolsOpen(false);
+                      setIsScratchpadOpen(true);
+                    }}
+                    className="p-2.5 rounded-2xl border border-slate-200/80 dark:border-slate-750 bg-slate-50 dark:bg-slate-800/70 hover:bg-slate-100 dark:hover:bg-slate-800 flex flex-col justify-between text-left transition-all min-h-[70px] btn-press text-slate-700 dark:text-slate-200"
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <Edit3 className="w-4 h-4 text-blue-500" />
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300">
+                        Kanvas
+                      </span>
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold leading-tight">Kertas Buram</div>
+                      <div className="text-[10px] text-slate-400">Cakar dengan jari</div>
+                    </div>
+                  </button>
+
+                  {/* 3. Ukuran Huruf Soal */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      triggerHaptic('light');
+                      handleCycleTextScale();
+                    }}
+                    className="p-2.5 rounded-2xl border border-slate-200/80 dark:border-slate-750 bg-slate-50 dark:bg-slate-800/70 hover:bg-slate-100 dark:hover:bg-slate-800 flex flex-col justify-between text-left transition-all min-h-[70px] btn-press text-slate-700 dark:text-slate-200"
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <Type className="w-4 h-4 text-indigo-500" />
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 font-mono">
+                        {textScale === 'xlarge' ? 'A++' : textScale === 'large' ? 'A+' : 'A'}
+                      </span>
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold leading-tight">Ukuran Huruf</div>
+                      <div className="text-[10px] text-slate-400">
+                        {textScale === 'xlarge' ? 'Ekstra Besar' : textScale === 'large' ? 'Besar' : 'Normal'}
+                      </div>
+                    </div>
+                  </button>
+
+                  {/* 4. Tandai Ragu-Ragu */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      triggerHaptic('light');
+                      handleToggleFlag();
+                    }}
+                    className={`p-2.5 rounded-2xl border flex flex-col justify-between text-left transition-all min-h-[70px] btn-press ${
+                      flaggedQuestions.has(currentIndex)
+                        ? 'bg-amber-50 dark:bg-amber-950/50 border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-200 shadow-xs ring-1 ring-amber-400/40'
+                        : 'bg-slate-50 dark:bg-slate-800/70 border-slate-200/80 dark:border-slate-750 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <Flag className={`w-4 h-4 ${flaggedQuestions.has(currentIndex) ? 'text-amber-500 fill-amber-500' : 'text-slate-500'}`} />
+                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${flaggedQuestions.has(currentIndex) ? 'bg-amber-200 text-amber-800' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}`}>
+                        {flaggedQuestions.has(currentIndex) ? 'Ragu' : 'Tandai'}
+                      </span>
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold leading-tight">{flaggedQuestions.has(currentIndex) ? 'Ditandai Ragu' : 'Tandai Ragu'}</div>
+                      <div className="text-[10px] text-slate-400">Cek ulang nanti</div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              {/* Bagian 2: Pengaturan & Tampilan */}
+              <div className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 px-1 pt-1 border-t border-slate-100 dark:border-slate-800">
+                Pengaturan Kuis
+              </div>
               {/* Tombol Edit Soal (Khusus Mode Pratinjau Guru) */}
               {isPreview && onEditQuestion && (
                 <button
@@ -3276,6 +3500,12 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
           isMuted={isMuted}
         />
       )}
+
+      <ScratchpadOverlay
+        isOpen={isScratchpadOpen}
+        onClose={() => setIsScratchpadOpen(false)}
+        isDark={isDark}
+      />
 
       {/* Modal Konfirmasi Navigasi Soal Guru di Mode Dipandu Guru */}
       {confirmTeacherNavModal && (

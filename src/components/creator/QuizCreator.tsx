@@ -238,7 +238,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
       subject: subject || editingQuiz?.subject || 'Matematika',
       grade: grade ?? editingQuiz?.grade ?? 3,
       educationLevel: educationLevel || editingQuiz?.educationLevel || (grade >= 10 ? 'SMA' : grade >= 7 ? 'SMP' : 'SD'),
-      durationPerQuestionSec: durationPerQuestionSec || editingQuiz?.durationPerQuestionSec || 30,
+      durationPerQuestionSec: defaultGameMode === 'untimed' ? 0 : (typeof durationPerQuestionSec === 'number' && durationPerQuestionSec > 0 ? durationPerQuestionSec : (editingQuiz?.durationPerQuestionSec ?? 30)),
       coverEmoji: coverEmoji || editingQuiz?.coverEmoji || '🍎',
       badgeTitle: badgeTitle.trim() || editingQuiz?.badgeTitle || 'Bintang Pintar',
       themeColor: editingQuiz?.themeColor || '#2563eb',
@@ -469,7 +469,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
           explanation: 'Pembahasan materi terkait soal contoh ini.',
         }
       ],
-      durationPerQuestionSec: durationPerQuestionSec,
+      durationPerQuestionSec: defaultGameMode === 'untimed' ? 0 : durationPerQuestionSec,
       defaultGameMode: defaultGameMode,
       visibility: visibility,
       themeColor: editingQuiz?.themeColor || 'blue',
@@ -2428,7 +2428,20 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
         <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col animate-fade-in overflow-hidden">
           <QuizArena
             quiz={previewQuiz}
-            initialMode="standard"
+            initialMode={defaultGameMode || previewQuiz.defaultGameMode || 'standard'}
+            sessionSettings={{
+              mode: defaultGameMode || previewQuiz.defaultGameMode || 'standard',
+              durationPerQuestionSec: defaultGameMode === 'untimed' ? 0 : durationPerQuestionSec,
+              executionMode: 'self_paced',
+              showAnswersMode: 'immediate',
+              showExplanationMode: 'immediate',
+              showLeaderboardToStudents: true,
+              presentationTarget: 'student-lobby',
+              maxAttempts: 0,
+              tabSwitchDetection: false,
+              shuffleQuestions: shuffleQuestions ?? false,
+              shuffleOptions: shuffleOptions ?? false,
+            }}
             isPreview={true}
             initialQuestionIndex={previewArenaConfig.initialIndex}
             onExit={(lastIdx) => {

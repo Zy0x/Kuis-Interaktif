@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { triggerHaptic } from '../../lib/mobileUtils';
 import type { Subject, QuizQuestion, EducationLevel, GameMode } from '../../types/quiz';
 import { 
   generateHybridQuizQuestions, 
@@ -2508,6 +2509,41 @@ export const AiGeneratorStep: React.FC<AiGeneratorStepProps> = ({
                 <span>Tambahkan panduan fokus materi atau gaya bahasa khusus untuk ditaati AI.</span>
                 <span className="hidden sm:inline text-[10px] text-slate-400/80">Tarik sudut kanan bawah untuk perbesar</span>
               </p>
+
+              {/* Preset Cepat Catatan Pendidik */}
+              <div className="pt-1 space-y-1.5">
+                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
+                  Preset Cepat Arahan Guru:
+                </span>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {[
+                    { label: '💡 Soal Cerita Nyata', text: 'Sajikan seluruh pertanyaan dalam format soal cerita nyata kehidupan anak SD' },
+                    { label: '🔢 Angka Sederhana (≤50)', text: 'Gunakan angka-angka kecil dan mudah dihitung (maksimal 50), hindari pecahan rumit' },
+                    { label: '🧠 Nalar Logika HOTS', text: 'Fokuskan pada penalaran logika berpikir tingkat tinggi (HOTS), hindari hafalan' },
+                    { label: '🌱 Profil Pelajar Pancasila', text: 'Kaitkan stimulus dengan nilai gotong royong, kejujuran, dan kepedulian lingkungan' },
+                    { label: '🚫 Tanpa Hafalan Rumus', text: 'Utamakan pemahaman konsep terapan, jangan tanyakan rumus kering' },
+                  ].map((preset, pIdx) => (
+                    <button
+                      key={pIdx}
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        triggerHaptic('light');
+                        setContextNotes((prev) => {
+                          const clean = prev.trim();
+                          if (!clean) return preset.text;
+                          if (clean.includes(preset.text)) return clean;
+                          return `${clean}. ${preset.text}`;
+                        });
+                      }}
+                      className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-950/40 text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 border border-slate-200/80 dark:border-slate-700/80 transition-colors btn-press min-h-[32px]"
+                      title={`Klik untuk menambahkan: "${preset.text}"`}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
 
           </div>

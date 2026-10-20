@@ -17,6 +17,10 @@ import {
 import type { Quiz, QuizQuestion, QuizSessionParticipant } from '../../types/quiz';
 import { AVATAR_MAP } from '../../data/seedQuizzes';
 import { formatIndonesianTime, formatIndonesianDate } from '../../lib/dateUtils';
+import { formatMathExpression, getOptionLetter, triggerHaptic } from '../../lib/mobileUtils';
+import { StudentAppreciationCardModal } from './StudentAppreciationCardModal';
+import { generateStudentWhatsAppUrl } from '../../lib/shareUtils';
+import { Share2 } from 'lucide-react';
 
 interface StudentAnswerAnalysisModalProps {
   isOpen: boolean;
@@ -34,6 +38,21 @@ export const StudentAnswerAnalysisModal: React.FC<StudentAnswerAnalysisModalProp
   quiz,
 }) => {
   const [filter, setFilter] = useState<FilterType>('all');
+  const [isCardOpen, setIsCardOpen] = useState(false);
+
+  const handleShareWA = () => {
+    if (!participant) return;
+    triggerHaptic('light');
+    const url = generateStudentWhatsAppUrl({
+      studentName: participant.name,
+      quizTitle: quiz.title,
+      score: participant.score,
+      correctCount: participant.correctCount,
+      totalQuestions: totalQuestions,
+      timeSpentSec: participant.timeSpentSec,
+    });
+    window.open(url, '_blank');
+  };
   const [expandedExplanations, setExpandedExplanations] = useState<Record<number, boolean>>({});
 
   // Close modal on Escape key
@@ -146,13 +165,13 @@ export const StudentAnswerAnalysisModal: React.FC<StudentAnswerAnalysisModalProp
   // Format student's selected answer text
   const getStudentAnswerText = (q: any, ans: any): string => {
     if (!ans) return 'Belum Dijawab';
-    if (typeof ans.textAnswer === 'string' && ans.textAnswer.trim() !== '') return ans.textAnswer;
+    if (typeof ans.textAnswer === 'string' && ans.textAnswer.trim() !== '') return formatMathExpression(ans.textAnswer);
     if (typeof ans.textAnswer === 'number' || typeof ans.textAnswer === 'boolean') return String(ans.textAnswer);
     if (ans.selectedOption !== undefined && ans.selectedOption >= 0 && Array.isArray(q?.options) && q.options[ans.selectedOption]) {
-      return String(q.options[ans.selectedOption]);
+      return `${getOptionLetter(ans.selectedOption)}. ${formatMathExpression(String(q.options[ans.selectedOption]))}`;
     }
     if (typeof ans.selectedOption === 'number' && ans.selectedOption >= 0) {
-      return `Pilihan Opsi #${ans.selectedOption + 1}`;
+      return `${getOptionLetter(ans.selectedOption)}. Pilihan Opsi #${ans.selectedOption + 1}`;
     }
     return 'Jawaban Terpilih';
   };
@@ -165,12 +184,12 @@ export const StudentAnswerAnalysisModal: React.FC<StudentAnswerAnalysisModalProp
     }
     if (q.type === 'short_answer') {
       if (Array.isArray(q.acceptableAnswers) && q.acceptableAnswers.length > 0) {
-        return q.acceptableAnswers.join(' / ');
+        return q.acceptableAnswers.map((a: string) => formatMathExpression(a)).join(' / ');
       }
-      return String(q.options?.[q.correctIndex] || 'Kunci Jawaban');
+      return formatMathExpression(String(q.options?.[q.correctIndex] || 'Kunci Jawaban'));
     }
     if (Array.isArray(q.options) && q.correctIndex !== undefined && q.options[q.correctIndex] !== undefined) {
-      return String(q.options[q.correctIndex]);
+      return `${getOptionLetter(q.correctIndex)}. ${formatMathExpression(String(q.options[q.correctIndex]))}`;
     }
     return 'Kunci Jawaban';
   };
@@ -455,7 +474,7 @@ export const StudentAnswerAnalysisModal: React.FC<StudentAnswerAnalysisModalProp
 
                   {/* Pertanyaan Teks */}
                   <div className="text-sm font-semibold text-slate-900 dark:text-white leading-relaxed">
-                    {q.text}
+                    {formatMathExpression(q.text)}
                   </div>
 
                   {/* Gambar Soal jika ada */}
@@ -503,7 +522,7 @@ export const StudentAnswerAnalysisModal: React.FC<StudentAnswerAnalysisModalProp
 
                       {isExpanded && (
                         <div className="mt-2 p-3 rounded-xl bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-200/60 dark:border-indigo-800/40 text-xs text-indigo-950 dark:text-indigo-200 leading-relaxed animate-fade-in">
-                          <strong className="font-bold">Penjelasan:</strong> {q.explanation}
+                          <strong className="font-bold">Penjelasan:</strong> {formatMathExpression(q.explanation)}
                         </div>
                       )}
                     </div>
@@ -515,19 +534,53 @@ export const StudentAnswerAnalysisModal: React.FC<StudentAnswerAnalysisModalProp
         </div>
 
         {/* ================= FOOTER ================= */}
-        <div className="p-3 sm:p-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3 bg-slate-50/80 dark:bg-slate-900/80 flex-shrink-0">
-          <span className="text-xs text-slate-500 dark:text-slate-400">
+        <div className="p-3 sm:p-4 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 bg-slate-50/80 dark:bg-slate-900/80 flex-shrink-0">
+          <span className="text-xs text-slate-500 dark:text-slate-400 text-center sm:text-left">
             Menampilkan <strong>{filteredQuestionList.length}</strong> dari <strong>{totalQuestions}</strong> butir soal
           </span>
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-white bg-slate-900 dark:bg-slate-700 hover:bg-slate-800 dark:hover:bg-slate-600 active:scale-95 transition-all min-h-[44px] cursor-pointer"
-          >
-            Selesai / Tutup
-          </button>
+          
+          <div className="flex items-center justify-end gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={() => {
+                triggerHaptic('light');
+                setIsCardOpen(true);
+              }}
+              className="px-3.5 py-2 rounded-xl text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 dark:hover:bg-amber-900/40 border border-amber-200 dark:border-amber-800 flex items-center gap-1.5 min-h-[44px] transition-colors btn-press"
+              title="Lihat & Cetak Kartu Apresiasi Siswa"
+            >
+              <Award className="w-4 h-4 text-amber-500" />
+              <span>Kartu Apresiasi</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleShareWA}
+              className="px-3.5 py-2 rounded-xl text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 border border-emerald-200 dark:border-emerald-800 flex items-center gap-1.5 min-h-[44px] transition-colors btn-press"
+              title="Kirim Nilai ke WhatsApp Wali Murid"
+            >
+              <Share2 className="w-4 h-4 text-emerald-500" />
+              <span className="hidden xs:inline">Kirim ke WA</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-slate-900 dark:bg-slate-700 hover:bg-slate-800 dark:hover:bg-slate-600 min-h-[44px] transition-all cursor-pointer"
+            >
+              Tutup
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* Modal Kartu Apresiasi Prestasi Siswa */}
+      <StudentAppreciationCardModal
+        isOpen={isCardOpen}
+        onClose={() => setIsCardOpen(false)}
+        participant={participant}
+        quiz={quiz}
+      />
     </div>
   );
 };

@@ -18,9 +18,15 @@ import {
   TrendingUp,
   Users,
   Eye,
-  RotateCcw
+  RotateCcw,
+  Calculator,
+  Share2
 } from 'lucide-react';
 import { ReactivateSessionModal } from './ReactivateSessionModal';
+import { RecalculateScoresModal } from './RecalculateScoresModal';
+import { ClassReviewModal } from './ClassReviewModal';
+import { generateStudentWhatsAppUrl } from '../../lib/shareUtils';
+import { triggerHaptic } from '../../lib/mobileUtils';
 import { DataManager } from '../../lib/supabaseClient';
 
 interface QuizSessionRecapViewProps {
@@ -40,6 +46,9 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
 }) => {
   const [currentSession, setCurrentSession] = useState<QuizSession>(session);
   const [isReactivateModalOpen, setIsReactivateModalOpen] = useState(false);
+  const [isRecalculateModalOpen, setIsRecalculateModalOpen] = useState(false);
+  const [isClassReviewOpen, setIsClassReviewOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<'all' | 'passed' | 'remedial'>('all');
   const [activeTab, setActiveTab] = useState<'overview' | 'students' | 'questions'>('overview');
   const [searchStudent, setSearchStudent] = useState('');
   const [selectedStudentForModal, setSelectedStudentForModal] = useState<QuizSessionParticipant | null>(null);
@@ -64,6 +73,17 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
         onSessionUpdated(updated);
       }
       showToast(`🎉 Sesi kuis PIN ${updated.pinCode} berhasil diaktifkan kembali! Siswa dapat mengerjakan kembali.`);
+    }
+  };
+
+  const handleRecalculateScores = async () => {
+    const res = await DataManager.recalculateSessionScores(currentSession.id);
+    if (res.session) {
+      setCurrentSession({ ...res.session });
+      if (onSessionUpdated) {
+        onSessionUpdated(res.session);
+      }
+      showToast(`🎉 Nilai ${res.updatedCount} siswa berhasil dihitung ulang dan disinkronkan!`);
     }
   };
 
@@ -107,12 +127,21 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
     });
   }, [participants, totalQuestions]);
 
-  // Filtered by search
+  // Filtered by search and status
   const filteredParticipants = useMemo(() => {
-    if (!searchStudent.trim()) return rankedParticipants;
+    let list = rankedParticipants;
+    if (statusFilter === 'passed') {
+      list = list.filter((p) => p.score >= 70);
+    } else if (statusFilter === 'remedial') {
+      list = list.filter((p) => p.score < 70);
+    }
+    if (!searchStudent.trim()) return list;
     const q = searchStudent.toLowerCase();
-    return rankedParticipants.filter((p) => p.name.toLowerCase().includes(q));
-  }, [rankedParticipants, searchStudent]);
+    return list.filter((p) => p.name.toLowerCase().includes(q));
+  }, [rankedParticipants, searchStudent, statusFilter]);
+
+  const passedCount = useMemo(() => rankedParticipants.filter((p) => p.score >= 70).length, [rankedParticipants]);
+  const remedialCount = useMemo(() => rankedParticipants.filter((p) => p.score < 70).length, [rankedParticipants]);
 
   // Deep Analytics calculation
   const analytics = useMemo(() => {
@@ -342,6 +371,34 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
                 <span className="hidden sm:inline">Sesi Sedang Aktif</span>
               </span>
             )}
+
+            <button
+              type="button"
+              onClick={() => {
+                triggerHaptic('light');
+                playClick();
+                setIsClassReviewOpen(true);
+              }}
+              className="px-3 sm:px-3.5 py-2 rounded-xl bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 text-xs font-bold min-h-[44px] min-w-[44px] flex items-center justify-center gap-1.5 transition-colors btn-press"
+              title="Bahas butir soal bersama siswa di proyektor kelas (bebas stigma/tanpa nama siswa)"
+            >
+              <BarChart3 className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+              <span className="hidden md:inline">Bahas di Kelas</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                triggerHaptic('light');
+                playClick();
+                setIsRecalculateModalOpen(true);
+              }}
+              className="px-3 sm:px-3.5 py-2 rounded-xl bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-xs font-bold min-h-[44px] min-w-[44px] flex items-center justify-center gap-1.5 transition-colors btn-press"
+              title="Hitung ulang nilai seluruh siswa berdasarkan kunci jawaban saat ini"
+            >
+              <Calculator className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              <span className="hidden md:inline">Hitung Ulang Nilai</span>
+            </button>
 
             <button
               type="button"
@@ -669,21 +726,191 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
                 </p>
               </div>
 
-              {/* Search Box */}
-              <div className="relative max-w-xs w-full print:hidden">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  value={searchStudent}
-                  onChange={(e) => setSearchStudent(e.target.value)}
-                  placeholder="Cari nama siswa..."
-                  className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-medium focus:outline-none min-h-[44px]"
-                />
+              {/* Search Box & Status Filter Pills */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto print:hidden">
+                {/* Status Pills */}
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      triggerHaptic('light');
+                      setStatusFilter('all');
+                    }}
+                    className={`px-3 py-2 rounded-xl text-xs font-bold transition-all min-h-[40px] whitespace-nowrap btn-press ${
+                      statusFilter === 'all'
+                        ? 'bg-blue-600 text-white shadow-xs'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                    }`}
+                  >
+                    Semua ({rankedParticipants.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      triggerHaptic('light');
+                      setStatusFilter('passed');
+                    }}
+                    className={`px-3 py-2 rounded-xl text-xs font-bold transition-all min-h-[40px] whitespace-nowrap btn-press flex items-center gap-1.5 ${
+                      statusFilter === 'passed'
+                        ? 'bg-emerald-600 text-white shadow-xs'
+                        : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/80 hover:bg-emerald-100 dark:hover:bg-emerald-900/40'
+                    }`}
+                  >
+                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                    <span>Tuntas (≥70)</span>
+                    <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-black/15 font-black">{passedCount}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      triggerHaptic('light');
+                      setStatusFilter('remedial');
+                    }}
+                    className={`px-3 py-2 rounded-xl text-xs font-bold transition-all min-h-[40px] whitespace-nowrap btn-press flex items-center gap-1.5 ${
+                      statusFilter === 'remedial'
+                        ? 'bg-rose-600 text-white shadow-xs'
+                        : 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/80 hover:bg-rose-100 dark:hover:bg-rose-900/40'
+                    }`}
+                  >
+                    <span className="w-2 h-2 rounded-full bg-rose-500" />
+                    <span>Remedial (&lt;70)</span>
+                    <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-black/15 font-black">{remedialCount}</span>
+                  </button>
+                </div>
+
+                <div className="relative min-w-[180px] sm:w-56">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={searchStudent}
+                    onChange={(e) => setSearchStudent(e.target.value)}
+                    placeholder="Cari siswa..."
+                    className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-medium focus:outline-none min-h-[40px]"
+                  />
+                </div>
               </div>
             </div>
 
-            {/* Table */}
-            <div className="overflow-x-auto">
+            {/* Mobile Card View (sm:hidden) */}
+            <div className="block sm:hidden space-y-2.5 print:hidden">
+              {filteredParticipants.length === 0 ? (
+                <div className="text-center py-8 text-slate-400 text-xs font-medium">
+                  Tidak ada data siswa yang cocok dengan filter.
+                </div>
+              ) : (
+                filteredParticipants.map((p, pIdx) => {
+                  const isPassed = p.score >= 70;
+                  return (
+                    <div
+                      key={p.id}
+                      onClick={() => {
+                        triggerHaptic('light');
+                        setSelectedStudentForModal(p);
+                      }}
+                      className="p-3.5 rounded-2xl bg-slate-50/80 dark:bg-slate-850/80 border border-slate-200/80 dark:border-slate-800 space-y-2.5 active:scale-[0.99] transition-transform cursor-pointer"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="w-6 text-center font-black text-xs text-slate-400">
+                            #{pIdx + 1}
+                          </span>
+                          <span className="text-xl flex-shrink-0">{AVATAR_MAP[p.avatarId] || '🦁'}</span>
+                          <div className="min-w-0">
+                            <span className="font-bold text-xs text-slate-900 dark:text-white truncate block">
+                              {p.name}
+                            </span>
+                            {p.tabSwitchCount && p.tabSwitchCount > 0 ? (
+                              <span className="inline-flex items-center gap-0.5 text-[10px] text-rose-500 font-bold">
+                                <AlertTriangle className="w-3 h-3" />
+                                {p.tabSwitchCount}x Pindah Tab
+                              </span>
+                            ) : null}
+                          </div>
+                        </div>
+
+                        <div className="text-right flex-shrink-0">
+                          <div className="text-base font-black text-amber-600 dark:text-amber-400 leading-none">
+                            {p.score}
+                          </div>
+                          <span
+                            className={`inline-block px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase mt-0.5 ${
+                              isPassed
+                                ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300'
+                                : 'bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300'
+                            }`}
+                          >
+                            {isPassed ? 'TUNTAS' : 'REMEDIAL'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-1.5 text-center text-[11px] pt-1 border-t border-slate-200/60 dark:border-slate-800/80">
+                        <div className="p-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-750">
+                          <div className="text-[10px] text-slate-400">Akurasi</div>
+                          <div className="font-bold text-slate-700 dark:text-slate-200">
+                            {Math.round((p.correctCount / totalQuestions) * 100)}%
+                          </div>
+                        </div>
+                        <div className="p-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-750">
+                          <div className="text-[10px] text-slate-400">Benar / Salah</div>
+                          <div className="font-bold">
+                            <span className="text-emerald-600 dark:text-emerald-400">{p.correctCount}</span>
+                            <span className="text-slate-300 dark:text-slate-600 mx-1">/</span>
+                            <span className="text-rose-600 dark:text-rose-400">{p.incorrectCount}</span>
+                          </div>
+                        </div>
+                        <div className="p-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-750">
+                          <div className="text-[10px] text-slate-400">Durasi</div>
+                          <div className="font-bold text-slate-700 dark:text-slate-200">
+                            {p.timeSpentSec} dtk
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            triggerHaptic('light');
+                            const url = generateStudentWhatsAppUrl({
+                              studentName: p.name,
+                              quizTitle: quiz.title,
+                              score: p.score,
+                              correctCount: p.correctCount,
+                              totalQuestions: totalQuestions,
+                              timeSpentSec: p.timeSpentSec,
+                            });
+                            window.open(url, '_blank');
+                          }}
+                          className="px-3 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-xs font-bold flex items-center justify-center gap-1.5 min-h-[44px] transition-colors btn-press flex-shrink-0"
+                          title="Kirim ke WhatsApp Wali Murid"
+                        >
+                          <Share2 className="w-4 h-4 text-emerald-500" />
+                          <span className="hidden xs:inline">WhatsApp</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            triggerHaptic('light');
+                            setSelectedStudentForModal(p);
+                          }}
+                          className="flex-1 py-2 px-3 rounded-xl bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-950/40 text-blue-600 dark:text-blue-400 border border-slate-200 dark:border-slate-700 text-xs font-bold flex items-center justify-center gap-1.5 min-h-[44px] transition-colors btn-press"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>Lembar Jawaban</span>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Desktop Table View (hidden sm:block) */}
+            <div className="hidden sm:block overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-400 uppercase text-[10px] font-bold">
@@ -757,13 +984,36 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
                           </span>
                         </td>
                         <td className="py-2 px-2 print:hidden">
-                          <button
-                            type="button"
-                            className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors btn-press"
-                            title="Lihat Lembar Jawaban"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                triggerHaptic('light');
+                                const url = generateStudentWhatsAppUrl({
+                                  studentName: p.name,
+                                  quizTitle: quiz.title,
+                                  score: p.score,
+                                  correctCount: p.correctCount,
+                                  totalQuestions: totalQuestions,
+                                  timeSpentSec: p.timeSpentSec,
+                                });
+                                window.open(url, '_blank');
+                              }}
+                              className="w-10 h-10 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-xl text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors btn-press"
+                              title={`Kirim Nilai ${p.name} ke WhatsApp Wali Murid`}
+                            >
+                              <Share2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                            </button>
+
+                            <button
+                              type="button"
+                              className="w-10 h-10 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-xl text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors btn-press"
+                              title="Lihat Lembar Jawaban"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                          </div>
                         </td>
 
                       </tr>
@@ -895,6 +1145,24 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
           quiz={quiz}
         />
       )}
+
+      {/* Modal Hitung Ulang Skor Sesi Kuis */}
+      <RecalculateScoresModal
+        isOpen={isRecalculateModalOpen}
+        onClose={() => setIsRecalculateModalOpen(false)}
+        onConfirm={handleRecalculateScores}
+        quizTitle={quiz.title}
+        pinCode={currentSession.pinCode}
+        participantCount={participants.length}
+      />
+
+      {/* Modal Bahas Bersama di Kelas (Smartboard / Proyektor) */}
+      <ClassReviewModal
+        isOpen={isClassReviewOpen}
+        onClose={() => setIsClassReviewOpen(false)}
+        quiz={quiz}
+        participants={participants}
+      />
 
       {/* Modal Aktifkan Kembali Sesi Kuis */}
       <ReactivateSessionModal
