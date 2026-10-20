@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import type { Quiz, QuizAttemptAnswer, TeacherProfile, PlayerProfile, ScreenState, GameMode, QuizSessionSettings, QuizSession } from './types/quiz';
 import { SplashScreen } from './components/pwa/SplashScreen';
 import { InstallPrompt } from './components/pwa/InstallPrompt';
@@ -36,7 +36,7 @@ export const App: React.FC = () => {
   const { isDark, toggleTheme } = useTheme();
 
   // 1. Pulihkan status navigasi dan sesi layar dari URL / sessionStorage
-  const [initialNav] = useState(() => restoreNavigationState());
+  const [initialNav, setInitialNav] = useState(() => restoreNavigationState());
   const initialTeacher = DataManager.getTeacherProfile();
 
   const isTeacherRoute = initialNav.screen === 'creator' || initialNav.screen === 'teacher-dashboard';
@@ -132,8 +132,12 @@ export const App: React.FC = () => {
     };
   };
 
-  // Memulihkan data kuis saat reload (F5) berdasarkan quizId atau pin
+  // Memulihkan data kuis saat reload (F5) berdasarkan quizId atau pin (Hanya berjalan SEKALI pada mount)
+  const hasRestoredInitialRef = useRef(false);
   useEffect(() => {
+    if (hasRestoredInitialRef.current) return;
+    hasRestoredInitialRef.current = true;
+
     const pinToMatch = (initialNav.pin || '').trim().toUpperCase();
     if (initialNav.quizId) {
       DataManager.getQuizById(initialNav.quizId).then(async (q) => {
@@ -148,34 +152,37 @@ export const App: React.FC = () => {
           const teacher = DataManager.getTeacherProfile();
           const isOwnerTeacher = Boolean(teacher && (teacher.id === q.creatorId || teacher.email === q.creatorId));
 
-          if (q.visibility === 'private' && !session && !isOwnerTeacher && currentScreen !== 'creator') {
+          if (q.visibility === 'private' && !session && !isOwnerTeacher && initialNav.screen !== 'creator') {
             console.warn('Akses langsung kuis privat via ?quiz= ditolak.');
             setPrivateQuizAlertModal('Kuis ini bersifat privat. Silakan minta PIN Ruang Kelas (6 digit) dari gurumu untuk bergabung ke sesi belajar.');
             setCurrentScreen('home');
             clearNavigationState();
+            setInitialNav({ screen: 'home', isRestored: false });
             return;
           }
 
-          if ((currentScreen === 'arena' || initialNav.screen === 'arena') && (!q.questions || q.questions.length === 0)) {
+          if ((initialNav.screen === 'arena') && (!q.questions || q.questions.length === 0)) {
             console.warn('Kuis tidak memiliki butir soal untuk dimainkan, kembali ke beranda.');
             setPrivateQuizAlertModal(`Kuis "${q.title}" belum memiliki butir soal yang dapat dikerjakan saat ini. Silakan pilih kuis lainnya.`);
             setCurrentScreen('home');
             clearNavigationState();
+            setInitialNav({ screen: 'home', isRestored: false });
             return;
           }
 
           const settings = resolveSettings(session, q);
           setActiveQuiz(q);
-          if (currentScreen === 'creator' || initialNav.screen === 'creator') {
+          if (initialNav.screen === 'creator') {
             setEditingQuiz(q);
           }
           if (session) setActiveSession(session);
           setActiveSessionSettings(settings);
           setActiveGameMode(settings.mode);
-        } else if (['arena', 'student-lobby', 'result', 'worksheet-print'].includes(currentScreen)) {
+        } else if (['arena', 'student-lobby', 'result', 'worksheet-print'].includes(initialNav.screen)) {
           console.warn('Kuis tidak ditemukan untuk sesi ini, kembali ke beranda.');
           setCurrentScreen('home');
           clearNavigationState();
+          setInitialNav({ screen: 'home', isRestored: false });
         }
       });
     } else if (pinToMatch) {
@@ -188,9 +195,7 @@ export const App: React.FC = () => {
             setActiveSessionSettings(settings);
             setActiveGameMode(settings.mode);
             setActiveQuiz(q);
-            if (currentScreen === 'home') {
-              setCurrentScreen('student-lobby');
-            }
+            setCurrentScreen(initialNav.screen === 'arena' ? 'arena' : 'student-lobby');
             return;
           }
         }
@@ -214,9 +219,7 @@ export const App: React.FC = () => {
               setActiveSessionSettings(settings);
               setActiveGameMode(settings.mode);
               setActiveQuiz(q);
-              if (currentScreen === 'home') {
-                setCurrentScreen('student-lobby');
-              }
+              setCurrentScreen(initialNav.screen === 'arena' ? 'arena' : 'student-lobby');
               return;
             }
           }
@@ -225,6 +228,7 @@ export const App: React.FC = () => {
           setPrivateQuizAlertModal('Sesi kuis untuk PIN ini telah selesai/diakhiri oleh Guru. Silakan minta PIN sesi yang baru kepada gurumu.');
           setCurrentScreen('home');
           clearNavigationState();
+          setInitialNav({ screen: 'home', isRestored: false });
           return;
         }
 
@@ -235,6 +239,7 @@ export const App: React.FC = () => {
               console.warn('Akses kuis privat ditolak via tautan langsung tanpa sesi live.');
               setCurrentScreen('home');
               clearNavigationState();
+              setInitialNav({ screen: 'home', isRestored: false });
               return;
             }
             const localSession = DataManager.getActiveSessionByPin(pinToMatch);
@@ -242,17 +247,17 @@ export const App: React.FC = () => {
             setActiveSessionSettings(settings);
             setActiveGameMode(settings.mode);
             setActiveQuiz(q);
-            if (currentScreen === 'home') {
-              setCurrentScreen('student-lobby');
-            }
-          } else if (currentScreen === 'student-lobby') {
+            setCurrentScreen(initialNav.screen === 'arena' ? 'arena' : 'student-lobby');
+          } else {
             setCurrentScreen('home');
             clearNavigationState();
+            setInitialNav({ screen: 'home', isRestored: false });
           }
         });
       });
     }
-  }, [initialNav.quizId, initialNav.pin, currentScreen]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Simpan otomatis status navigasi setiap terjadi perpindahan layar atau kuis aktif
   useEffect(() => {
@@ -426,7 +431,9 @@ export const App: React.FC = () => {
   const handleGoHome = () => {
     setActiveQuiz(null);
     setActiveSession(null);
+    setIsJoinedViaStudentLobby(false);
     clearNavigationState();
+    setInitialNav({ screen: 'home', isRestored: false });
     setCurrentScreen('home');
   };
 
@@ -830,14 +837,7 @@ export const App: React.FC = () => {
               });
             }
           }}
-          onBackToHome={() => {
-            if (teacher) {
-              setCurrentScreen('teacher-dashboard');
-              saveNavigationState({ screen: 'teacher-dashboard', replace: false });
-            } else {
-              handleGoHome();
-            }
-          }}
+          onBackToHome={handleGoHome}
           isDark={isDark}
           onToggleTheme={toggleTheme}
           playClick={playClick}
@@ -923,7 +923,7 @@ export const App: React.FC = () => {
             onFinishQuiz={handleFinishQuiz}
             onExit={() => {
               setIsJoinedViaStudentLobby(false);
-              if (teacher) {
+              if (teacher && activeSessionSettings?.presentationTarget === 'smartboard' && !initialNav.pin && !isJoinedViaStudentLobby) {
                 setCurrentScreen('teacher-dashboard');
                 saveNavigationState({ screen: 'teacher-dashboard', replace: false });
               } else {

@@ -599,6 +599,7 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
             type="button"
             onClick={() => {
               playClick();
+              clearWaitingSessionStorage();
               onBackToHome();
             }}
             className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 px-2.5 sm:px-3 py-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors min-h-[44px] min-w-[44px] flex-shrink-0"

@@ -40,21 +40,26 @@ export function saveNavigationState(state: {
 }) {
   if (typeof window === 'undefined') return;
 
-  const quizId = state.quizId || state.quiz?.id;
-  let pin = state.pin || state.quiz?.pinCode;
-  if (!pin && typeof window !== 'undefined') {
-    const params = new URLSearchParams(window.location.search);
-    const urlPin = params.get('pin');
-    if (urlPin) {
-      pin = urlPin;
-    } else {
-      try {
-        const raw = sessionStorage.getItem(NAV_SESSION_KEY);
-        if (raw) {
-          const s = JSON.parse(raw);
-          if (s.pin) pin = s.pin;
-        }
-      } catch {}
+  const isPinScreen = state.screen === 'student-lobby' || state.screen === 'arena' || state.screen === 'result';
+  const quizId = (state.screen === 'home' || state.screen === 'teacher-dashboard') ? undefined : (state.quizId || state.quiz?.id);
+
+  let pin: string | undefined = undefined;
+  if (isPinScreen) {
+    pin = state.pin || state.quiz?.pinCode;
+    if (!pin && typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const urlPin = params.get('pin');
+      if (urlPin) {
+        pin = urlPin;
+      } else {
+        try {
+          const raw = sessionStorage.getItem(NAV_SESSION_KEY);
+          if (raw) {
+            const s = JSON.parse(raw);
+            if (s.pin) pin = s.pin;
+          }
+        } catch {}
+      }
     }
   }
 
@@ -168,7 +173,11 @@ export function saveNavigationState(state: {
   };
 
   try {
-    sessionStorage.setItem(NAV_SESSION_KEY, JSON.stringify(payload));
+    if (state.screen === 'home') {
+      sessionStorage.removeItem(NAV_SESSION_KEY);
+    } else {
+      sessionStorage.setItem(NAV_SESSION_KEY, JSON.stringify(payload));
+    }
   } catch (err) {
     console.warn('Gagal menyimpan sesi navigasi ke sessionStorage:', err);
   }
@@ -185,13 +194,14 @@ export function saveNavigationState(state: {
       url.searchParams.delete('hostSession');
       url.searchParams.delete('recapSession');
       url.searchParams.delete('detailQuiz');
-      if (!pin) url.searchParams.delete('pin');
+      url.searchParams.delete('pin');
     } else {
       url.searchParams.set('screen', state.screen);
       if (quizId) url.searchParams.set('quiz', quizId);
       else url.searchParams.delete('quiz');
 
-      if (pin) url.searchParams.set('pin', pin);
+      if (pin && isPinScreen) url.searchParams.set('pin', pin);
+      else url.searchParams.delete('pin');
       
       if (state.screen === 'teacher-dashboard') {
         if (resolvedTab && resolvedTab !== 'collection' && resolvedTab !== 'quizzes') {
@@ -286,7 +296,11 @@ export function restoreNavigationState(): {
 
     const targetScreen = screenParam || sessionData?.screen;
 
-    if (targetScreen && targetScreen !== 'home') {
+    if (screenParam === 'home' || targetScreen === 'home') {
+      return { screen: 'home', isRestored: false };
+    }
+
+    if (targetScreen) {
       return {
         screen: targetScreen,
         quizId: quizParam || sessionData?.quizId,

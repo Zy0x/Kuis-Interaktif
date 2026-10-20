@@ -1,6 +1,18 @@
 # Catatan Perubahan (Changelog)
 Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen ini sesuai dengan standar penomoran versi berlanjut.
 
+## [2.4.76] - 2026-10-20
+### Perbaikan Navigasi & Tautan PIN: Eliminasi Redirect Tidak Terduga ke Dasbor Guru & Fallback Berulang ke Sesi PIN (Rule 1, Rule 2, Rule 3, Rule 11 & Rule 15)
+
+#### 1. Perbaikan Navigasi Kembali ke Katalog Kuis dari Lobi Siswa (`App.tsx`, `StudentLobby.tsx`)
+- **Konsistensi Tindakan Tombol Kembali**: Menghapus pengalihan paksa ke Dasbor Guru (`teacher-dashboard`) saat pengguna dengan profil pendidik menekan tombol "Katalog Kuis" atau "Kembali ke Beranda / Katalog Kuis" di lobi siswa. Aksi kembali kini secara konsisten mengarahkan ke halaman Beranda/Katalog (`home`).
+- **Pembersihan Cache Ruang Tunggu**: Menambahkan pembersihan menyeluruh pada data ruang tunggu sesi (`clearWaitingSessionStorage`) pada tombol header lobi kuis.
+
+#### 2. Eliminasi Fallback Otomatis Berulang ke Sesi Tautan PIN (`App.tsx`, `navigationState.ts`)
+- **Pembatasan Siklus Hidup Restorasi Mount-Only**: Membatasi efek pemulihan kuis dari URL (`pin` / `quizId`) hanya dieksekusi satu kali saat aplikasi pertama kali dimuat (*initial mount*), mencegah pemicuan ulang efek saat pengguna berpindah ke layar Beranda (`home`).
+- **Pembersihan Bersih Status Navigasi Awal**: Memastikan `initialNav` disetel ulang secara eksplisit (`setInitialNav({ screen: 'home', isRestored: false })`) saat `handleGoHome` dipanggil, menghapus residu PIN yang sebelumnya memicu fallback tak terhindarkan.
+- **Isolasi Parameter PIN pada Status Navigasi**: Parameter PIN pada URL dan `sessionStorage` kini hanya aktif pada layar yang relevan (`student-lobby`, `arena`, `result`). Saat beralih ke `home` atau `teacher-dashboard`, parameter PIN dihapus secara otomatis dan mutlak.
+
 ## [2.4.75] - 2026-10-20
 ### Perbaikan Menyeluruh Mode Santai (Bebas Waktu): Eliminasi Bug Otomatisasi Akhir Soal & Harmonisasi Multi-Pintu Masuk Arena Kuis (Rule 1, Rule 2, Rule 3, Rule 11 & Rule 15)
 
