@@ -57,8 +57,7 @@ import {
   Lock,
   AlertCircle,
   CheckCircle2,
-  Flag,
-  Type
+  Flag
 } from 'lucide-react';
 import { QuizToolCurtain } from './QuizToolCurtain';
 import { useAntiReaction } from '../../lib/reactionPreferences';
@@ -2079,6 +2078,20 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
             style={{ width: `${progressPercent}%` }}
           />
         </div>
+
+        {/* Bilah 1 Baris Kompak (4 Alat + 1 Settings) - Muncul di bawah header saat tombol Alat aktif */}
+        <QuizToolCurtain
+          isSpeaking={isSpeechPlaying}
+          onToggleSpeech={handleToggleSpeech}
+          onOpenScratchpad={() => setIsScratchpadOpen(true)}
+          textScale={textScale}
+          onCycleTextScale={handleCycleTextScale}
+          isFlagged={flaggedQuestions.has(currentIndex)}
+          onToggleFlag={handleToggleFlag}
+          isOpen={isCurtainOpen}
+          onClose={() => setIsCurtainOpen(false)}
+          onOpenSettings={() => setIsMobileToolsOpen(true)}
+        />
       </header>
 
       {/* Main Quiz Arena Card - Locked to Viewport with Auto-centering & Smooth Top-to-Bottom Overflow */}
@@ -2736,8 +2749,8 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
               <div>
-                <h4 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">Pengaturan & Alat Kuis</h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Sesuaikan tema tampilan, audio, & alat bantu</p>
+                <h4 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">Pengaturan Kuis</h4>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Sesuaikan tema tampilan, audio, & layar</p>
               </div>
               <button
                 type="button"
@@ -2746,121 +2759,13 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                   setIsMobileToolsOpen(false);
                 }}
                 className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center"
-                aria-label="Tutup Menu Alat"
+                aria-label="Tutup Menu Pengaturan"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <div className="space-y-3 max-h-[65vh] overflow-y-auto pr-1">
-              {/* Bagian 1: Alat Bantu Pengerjaan Siswa */}
-              <div className="space-y-1.5">
-                <div className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 px-1">
-                  Alat Bantu Siswa
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  {/* 1. Suara Bacakan Soal (TTS) */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      triggerHaptic('light');
-                      handleToggleSpeech();
-                    }}
-                    className={`p-2.5 rounded-2xl border flex flex-col justify-between text-left transition-all min-h-[70px] btn-press ${
-                      isSpeechPlaying
-                        ? 'bg-emerald-50 dark:bg-emerald-950/50 border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-200 shadow-xs ring-1 ring-emerald-400/40'
-                        : 'bg-slate-50 dark:bg-slate-800/70 border-slate-200/80 dark:border-slate-750 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between w-full">
-                      <Volume2 className={`w-4 h-4 ${isSpeechPlaying ? 'text-emerald-600 animate-pulse' : 'text-slate-500'}`} />
-                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${isSpeechPlaying ? 'bg-emerald-200 text-emerald-800' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}`}>
-                        {isSpeechPlaying ? 'Memutar' : 'Suara'}
-                      </span>
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold leading-tight">{isSpeechPlaying ? 'Hentikan Suara' : 'Bacakan Soal'}</div>
-                      <div className="text-[10px] text-slate-400">Bahasa Indonesia</div>
-                    </div>
-                  </button>
-
-                  {/* 2. Kertas Buram Digital */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      triggerHaptic('light');
-                      setIsMobileToolsOpen(false);
-                      setIsScratchpadOpen(true);
-                    }}
-                    className="p-2.5 rounded-2xl border border-slate-200/80 dark:border-slate-750 bg-slate-50 dark:bg-slate-800/70 hover:bg-slate-100 dark:hover:bg-slate-800 flex flex-col justify-between text-left transition-all min-h-[70px] btn-press text-slate-700 dark:text-slate-200"
-                  >
-                    <div className="flex items-center justify-between w-full">
-                      <Edit3 className="w-4 h-4 text-blue-500" />
-                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300">
-                        Kanvas
-                      </span>
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold leading-tight">Kertas Buram</div>
-                      <div className="text-[10px] text-slate-400">Cakar dengan jari</div>
-                    </div>
-                  </button>
-
-                  {/* 3. Ukuran Huruf Soal */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      triggerHaptic('light');
-                      handleCycleTextScale();
-                    }}
-                    className="p-2.5 rounded-2xl border border-slate-200/80 dark:border-slate-750 bg-slate-50 dark:bg-slate-800/70 hover:bg-slate-100 dark:hover:bg-slate-800 flex flex-col justify-between text-left transition-all min-h-[70px] btn-press text-slate-700 dark:text-slate-200"
-                  >
-                    <div className="flex items-center justify-between w-full">
-                      <Type className="w-4 h-4 text-indigo-500" />
-                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 font-mono">
-                        {textScale === 'xlarge' ? 'A++' : textScale === 'large' ? 'A+' : 'A'}
-                      </span>
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold leading-tight">Ukuran Huruf</div>
-                      <div className="text-[10px] text-slate-400">
-                        {textScale === 'xlarge' ? 'Ekstra Besar' : textScale === 'large' ? 'Besar' : 'Normal'}
-                      </div>
-                    </div>
-                  </button>
-
-                  {/* 4. Tandai Ragu-Ragu */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      triggerHaptic('light');
-                      handleToggleFlag();
-                    }}
-                    className={`p-2.5 rounded-2xl border flex flex-col justify-between text-left transition-all min-h-[70px] btn-press ${
-                      flaggedQuestions.has(currentIndex)
-                        ? 'bg-amber-50 dark:bg-amber-950/50 border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-200 shadow-xs ring-1 ring-amber-400/40'
-                        : 'bg-slate-50 dark:bg-slate-800/70 border-slate-200/80 dark:border-slate-750 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between w-full">
-                      <Flag className={`w-4 h-4 ${flaggedQuestions.has(currentIndex) ? 'text-amber-500 fill-amber-500' : 'text-slate-500'}`} />
-                      <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${flaggedQuestions.has(currentIndex) ? 'bg-amber-200 text-amber-800' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}`}>
-                        {flaggedQuestions.has(currentIndex) ? 'Ragu' : 'Tandai'}
-                      </span>
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold leading-tight">{flaggedQuestions.has(currentIndex) ? 'Ditandai Ragu' : 'Tandai Ragu'}</div>
-                      <div className="text-[10px] text-slate-400">Cek ulang nanti</div>
-                    </div>
-                  </button>
-                </div>
-              </div>
-
-              {/* Bagian 2: Pengaturan & Tampilan */}
-              <div className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 px-1 pt-1 border-t border-slate-100 dark:border-slate-800">
-                Pengaturan Kuis
-              </div>
               {/* Tombol Edit Soal (Khusus Mode Pratinjau Guru) */}
               {isPreview && onEditQuestion && (
                 <button
@@ -3631,20 +3536,6 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
           isMuted={isMuted}
         />
       )}
-
-      {/* Tirai Alat Bantu Siswa (Floating Overlay Dropdown) */}
-      <QuizToolCurtain
-        isSpeaking={isSpeechPlaying}
-        onToggleSpeech={handleToggleSpeech}
-        onOpenScratchpad={() => setIsScratchpadOpen(true)}
-        textScale={textScale}
-        onCycleTextScale={handleCycleTextScale}
-        isFlagged={flaggedQuestions.has(currentIndex)}
-        onToggleFlag={handleToggleFlag}
-        isOpen={isCurtainOpen}
-        onClose={() => setIsCurtainOpen(false)}
-        onOpenSettings={() => setIsMobileToolsOpen(true)}
-      />
 
       <ScratchpadOverlay
         isOpen={isScratchpadOpen}

@@ -6,6 +6,27 @@ Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen in
 
 
 
+## [2.5.6] - 2026-10-21
+### Bilah Subheader Kompak 4 Alat + 1 Pengaturan di Bawah Header & Modal Pengaturan Mandiri (Rule 1, Rule 2, Rule 4, Rule 7, Rule 15 & AGENTS.md)
+
+#### 1. Rekonstruksi Bilah Subheader 1 Baris Kompak (QuizToolCurtain.tsx)
+- **Struktur Bar Subheader**: Menempatkan 4 alat bantu siswa (Suara, Buram, Ragu, Huruf) dan 1 tombol Pengaturan dalam 1 baris grid kompak horizontal (grid-cols-5, tinggi ~46px) langsung menempel di bawah garis progress bar header arena.
+- **Tirai Dinamis (0px saat Tertutup)**: Ketika tombol ✨ Alat di header tidak aktif, bar tertutup sempurna tanpa memakan ruang sedikit pun (0px) dan tidak menggeser kartu soal.
+- **Interaksi Intuitif**:
+  - Mengetuk Suara, Ragu, atau Huruf mengubah status secara instan dengan indikator warna tematik tanpa menutup bar.
+  - Mengetuk Buram atau Pengaturan secara otomatis melipat bar dan membuka kanvas coret-coret atau lembar pengaturan.
+
+#### 2. Dekoupling & Pembersihan Modal Pengaturan (QuizArena.tsx)
+- **Eliminasi Redundansi Alat Siswa**: Menghilangkan duplikasi tombol alat bantu di dalam bottom sheet pengaturan, sehingga modal berfokus murni pada konfigurasi lingkungan (Tema Gelap/Terang, Musik Latar BGM, Efek Suara SFX, Layar Penuh Fullscreen, Animasi Emoji, & Keluar).
+- **Header Tunggal Bebas Tabrakan**: Memastikan header bar di seluruh perangkat mobile hanya memuat 1 tombol ✨ Alat di sisi kanan, menghindarkan tabrakan horizontal antara poin bintang dan indikator timer.
+
+#### 3. Standar Sentuh & Responsivitas Multi-Viewport
+- Seluruh 5 tombol subheader memenuhi syarat target sentuh minimal >= 44x44 px.
+- Terverifikasi mulus pada viewport smartphone sempit (Infinix Note 50s 392x778 px) hingga desktop lebar (1280x800 px) baik pada mode terang maupun gelap.
+
+#### 4. Pembaruan Cache PWA Service Worker (public/sw.js)
+- Menaikkan versi cache ke kuis-sd-seru-v2.5.6.
+
 ## [2.5.5] - 2026-10-21
 ### Eliminasi Tabrakan Header, Pemulihan Kerapian Kartu Soal & Rekonstruksi Tirai Gantung Dropdown (Rule 1, Rule 2, Rule 4, Rule 7, Rule 15 & AGENTS.md)
 

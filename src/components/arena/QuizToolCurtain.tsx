@@ -4,8 +4,6 @@ import {
   Edit3,
   Type,
   Flag,
-  Sparkles,
-  X,
   Settings
 } from 'lucide-react';
 import { triggerHaptic } from '../../lib/mobileUtils';
@@ -22,7 +20,7 @@ interface QuizToolCurtainProps {
   onToggleFlag: () => void;
   isOpen: boolean;
   onClose: () => void;
-  onOpenSettings?: () => void;
+  onOpenSettings: () => void;
 }
 
 export const QuizToolCurtain: React.FC<QuizToolCurtainProps> = ({
@@ -42,88 +40,31 @@ export const QuizToolCurtain: React.FC<QuizToolCurtainProps> = ({
   const scaleLabel = textScale === 'xlarge' ? 'A++' : textScale === 'large' ? 'A+' : 'A';
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-start justify-center pt-14 sm:pt-16 px-3 sm:px-6 overscroll-contain"
-      onWheel={(e) => e.stopPropagation()}
-      onTouchMove={(e) => e.stopPropagation()}
-    >
-      {/* Backdrop (Sentuh di luar untuk menutup tirai) */}
-      <div 
-        className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs animate-fade-in touch-none cursor-pointer"
-        onClick={() => {
-          triggerHaptic('light');
-          onClose();
-        }}
-        aria-hidden="true"
-      />
-
-      {/* Floating Curtain Drawer / Tray */}
-      <div 
-        className="relative z-10 w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl p-4 sm:p-5 shadow-2xl border border-slate-200 dark:border-slate-800 animate-modal-card-in space-y-3.5"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header Tirai */}
-        <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-500 flex items-center justify-center shrink-0">
-              <Sparkles className="w-4 h-4" />
-            </div>
-            <div>
-              <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
-                Alat Bantu Siswa
-              </h4>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                Alat interaktif pendukung pengerjaan soal
-              </p>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => {
-              triggerHaptic('light');
-              onClose();
-            }}
-            className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 min-h-[40px] min-w-[40px] flex items-center justify-center transition-colors"
-            title="Tutup tirai alat bantu"
-            aria-label="Tutup"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* 4 Tombol Alat Bantu Interaktif dengan Kontras Tinggi */}
-        <div className="grid grid-cols-2 gap-2 sm:gap-2.5">
-          {/* Alat 1: Bacakan Soal (TTS) */}
+    <div className="w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-sm z-30 transition-all duration-200 animate-slide-down">
+      <div className="max-w-2xl lg:max-w-3xl xl:max-w-4xl mx-auto px-2 sm:px-4 py-1.5">
+        <div className="grid grid-cols-5 gap-1 sm:gap-2">
+          {/* 1. Suara Bacakan Soal (TTS) */}
           <button
             type="button"
             onClick={() => {
               triggerHaptic('light');
               onToggleSpeech();
             }}
-            className={`p-3 rounded-2xl border flex flex-col justify-between text-left transition-all min-h-[70px] btn-press ${
+            className={`py-1.5 px-1 rounded-xl flex flex-col items-center justify-center gap-0.5 min-h-[46px] border transition-all btn-press ${
               isSpeaking
-                ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-400 dark:border-emerald-700 text-emerald-800 dark:text-emerald-200 ring-2 ring-emerald-500/30'
-                : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-750'
+                ? 'bg-emerald-50 dark:bg-emerald-950/70 border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-400/40'
+                : 'bg-slate-50 dark:bg-slate-800/80 border-slate-200/90 dark:border-slate-700/80 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-750'
             }`}
+            title={isSpeaking ? 'Hentikan pembacaan suara' : 'Bacakan soal (Bahasa Indonesia)'}
+            aria-label="Bacakan Soal"
           >
-            <div className="flex items-center justify-between w-full">
-              <Volume2 className={`w-4 h-4 ${isSpeaking ? 'text-emerald-600 animate-pulse' : 'text-slate-500 dark:text-slate-400'}`} />
-              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
-                isSpeaking ? 'bg-emerald-200 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
-              }`}>
-                {isSpeaking ? 'Membaca...' : 'Suara'}
-              </span>
-            </div>
-            <div>
-              <div className="text-xs font-bold leading-tight">
-                {isSpeaking ? 'Hentikan Suara' : 'Bacakan Soal'}
-              </div>
-              <div className="text-[10px] text-slate-400 dark:text-slate-500">Bahasa Indonesia</div>
-            </div>
+            <Volume2 className={`w-4 h-4 shrink-0 ${isSpeaking ? 'text-emerald-600 dark:text-emerald-400 animate-pulse' : 'text-slate-500 dark:text-slate-400'}`} />
+            <span className="text-[10px] sm:text-[11px] font-bold leading-none truncate max-w-full">
+              {isSpeaking ? 'Membaca' : 'Suara'}
+            </span>
           </button>
 
-          {/* Alat 2: Kertas Buram (Kanvas Coretan) */}
+          {/* 2. Kertas Buram (Kanvas) */}
           <button
             type="button"
             onClick={() => {
@@ -131,91 +72,77 @@ export const QuizToolCurtain: React.FC<QuizToolCurtainProps> = ({
               onClose();
               onOpenScratchpad();
             }}
-            className="p-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-200 flex flex-col justify-between text-left transition-all min-h-[70px] btn-press"
+            className="py-1.5 px-1 rounded-xl flex flex-col items-center justify-center gap-0.5 min-h-[46px] border border-slate-200/90 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-750 hover:text-blue-600 dark:hover:text-blue-400 transition-all btn-press"
+            title="Buka kertas buram kanvas untuk mencakar hitungan"
+            aria-label="Kertas Buram"
           >
-            <div className="flex items-center justify-between w-full">
-              <Edit3 className="w-4 h-4 text-blue-500" />
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300">
-                Kanvas
-              </span>
-            </div>
-            <div>
-              <div className="text-xs font-bold leading-tight">Kertas Buram</div>
-              <div className="text-[10px] text-slate-400 dark:text-slate-500">Cakar dengan jari</div>
-            </div>
+            <Edit3 className="w-4 h-4 text-blue-500 shrink-0" />
+            <span className="text-[10px] sm:text-[11px] font-bold leading-none truncate max-w-full">
+              Buram
+            </span>
           </button>
 
-          {/* Alat 3: Tandai Ragu */}
+          {/* 3. Tandai Ragu-Ragu */}
           <button
             type="button"
             onClick={() => {
               triggerHaptic('light');
               onToggleFlag();
             }}
-            className={`p-3 rounded-2xl border flex flex-col justify-between text-left transition-all min-h-[70px] btn-press ${
+            className={`py-1.5 px-1 rounded-xl flex flex-col items-center justify-center gap-0.5 min-h-[46px] border transition-all btn-press ${
               isFlagged
-                ? 'bg-amber-50 dark:bg-amber-950/60 border-amber-400 dark:border-amber-700 text-amber-800 dark:text-amber-200 ring-2 ring-amber-500/30'
-                : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-750'
+                ? 'bg-amber-50 dark:bg-amber-950/70 border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300 ring-1 ring-amber-400/40'
+                : 'bg-slate-50 dark:bg-slate-800/80 border-slate-200/90 dark:border-slate-700/80 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-750'
             }`}
+            title={isFlagged ? 'Hapus tanda ragu' : 'Tandai soal untuk diperiksa ulang'}
+            aria-label="Tandai Ragu"
           >
-            <div className="flex items-center justify-between w-full">
-              <Flag className={`w-4 h-4 ${isFlagged ? 'text-amber-500 fill-amber-500' : 'text-slate-500 dark:text-slate-400'}`} />
-              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
-                isFlagged ? 'bg-amber-200 dark:bg-amber-900 text-amber-800 dark:text-amber-200' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
-              }`}>
-                {isFlagged ? 'Ditandai' : 'Ragu'}
-              </span>
-            </div>
-            <div>
-              <div className="text-xs font-bold leading-tight">{isFlagged ? 'Ditandai Ragu' : 'Tandai Ragu'}</div>
-              <div className="text-[10px] text-slate-400 dark:text-slate-500">Cek ulang nanti</div>
-            </div>
+            <Flag className={`w-4 h-4 shrink-0 ${isFlagged ? 'text-amber-500 fill-amber-500' : 'text-slate-500 dark:text-slate-400'}`} />
+            <span className="text-[10px] sm:text-[11px] font-bold leading-none truncate max-w-full">
+              {isFlagged ? 'Ditandai' : 'Ragu'}
+            </span>
           </button>
 
-          {/* Alat 4: Ukuran Huruf */}
+          {/* 4. Ukuran Huruf (A / A+ / A++) */}
           <button
             type="button"
             onClick={() => {
               triggerHaptic('light');
               onCycleTextScale();
             }}
-            className="p-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-200 flex flex-col justify-between text-left transition-all min-h-[70px] btn-press"
+            className="py-1.5 px-1 rounded-xl flex flex-col items-center justify-center gap-0.5 min-h-[46px] border border-slate-200/90 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-750 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all btn-press"
+            title="Ubah ukuran teks pertanyaan (Normal, Besar, Ekstra Besar)"
+            aria-label="Ukuran Teks"
           >
-            <div className="flex items-center justify-between w-full">
-              <Type className="w-4 h-4 text-indigo-500" />
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 font-mono">
+            <div className="flex items-center gap-0.5">
+              <Type className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+              <span className="text-[9px] font-black text-indigo-600 dark:text-indigo-400 font-mono">
                 {scaleLabel}
               </span>
             </div>
-            <div>
-              <div className="text-xs font-bold leading-tight">Ukuran Huruf</div>
-              <div className="text-[10px] text-slate-400 dark:text-slate-500">
-                {textScale === 'xlarge' ? 'Ekstra Besar' : textScale === 'large' ? 'Besar' : 'Normal'}
-              </div>
-            </div>
+            <span className="text-[10px] sm:text-[11px] font-bold leading-none truncate max-w-full">
+              Huruf
+            </span>
+          </button>
+
+          {/* 5. Pengaturan (Settings Bottom Sheet) */}
+          <button
+            type="button"
+            onClick={() => {
+              triggerHaptic('light');
+              onClose();
+              onOpenSettings();
+            }}
+            className="py-1.5 px-1 rounded-xl flex flex-col items-center justify-center gap-0.5 min-h-[46px] border border-slate-200/90 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-750 hover:text-purple-600 dark:hover:text-purple-400 transition-all btn-press"
+            title="Buka pengaturan tema, suara, musik & layar penuh"
+            aria-label="Pengaturan Kuis"
+          >
+            <Settings className="w-4 h-4 text-purple-500 dark:text-purple-400 shrink-0" />
+            <span className="text-[10px] sm:text-[11px] font-bold leading-none truncate max-w-full">
+              Pengaturan
+            </span>
           </button>
         </div>
-
-        {/* Akses ke Pengaturan Kuis (Tema, SFX, BGM) */}
-        {onOpenSettings && (
-          <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-            <button
-              type="button"
-              onClick={() => {
-                triggerHaptic('light');
-                onClose();
-                onOpenSettings();
-              }}
-              className="w-full py-2.5 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center justify-between transition-colors min-h-[44px] btn-press"
-            >
-              <div className="flex items-center gap-2">
-                <Settings className="w-4 h-4 text-slate-500" />
-                <span>Pengaturan Kuis (Tema & Audio)</span>
-              </div>
-              <span className="text-[11px] text-blue-600 dark:text-blue-400 font-semibold">Buka →</span>
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );
