@@ -97,15 +97,15 @@ export const ReactivateSessionModal: React.FC<ReactivateSessionModalProps> = ({
       aria-modal="true"
       aria-labelledby="reactivate-modal-title"
     >
-      <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 p-5 sm:p-7 space-y-5 animate-scale-up">
+      <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-300/90 dark:border-slate-800 p-5 sm:p-7 space-y-5 animate-scale-up">
         {/* Header */}
-        <div className="flex items-start justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+        <div className="flex items-start justify-between gap-3 pb-3 border-b border-slate-200/80 dark:border-slate-800">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 flex items-center justify-center shadow-xs flex-shrink-0">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800 flex items-center justify-center shadow-xs flex-shrink-0">
               <RotateCcw className="w-6 h-6 animate-pulse" />
             </div>
             <div>
-              <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 text-[10px] font-black uppercase tracking-wider mb-0.5">
+              <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 text-[10px] font-black uppercase tracking-wider mb-0.5 border border-emerald-300/70 dark:border-emerald-800">
                 <Sparkles className="w-3 h-3 text-emerald-500" />
                 <span>Buka Kembali Kuis</span>
               </div>
@@ -129,12 +129,12 @@ export const ReactivateSessionModal: React.FC<ReactivateSessionModalProps> = ({
         </div>
 
         {/* Ringkasan Sesi Kuis */}
-        <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 space-y-2">
+        <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-300/80 dark:border-slate-700/80 shadow-2xs space-y-2">
           <div className="flex items-center justify-between gap-2">
             <div className="font-black text-sm text-slate-900 dark:text-white truncate max-w-[280px]">
               {session.quizTitle}
             </div>
-            <span className="font-mono text-xs font-black px-2 py-0.5 rounded-lg bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+            <span className="font-mono text-xs font-black px-2 py-0.5 rounded-lg bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 border border-blue-300 dark:border-blue-800">
               PIN {session.pinCode}
             </span>
           </div>
@@ -145,7 +145,7 @@ export const ReactivateSessionModal: React.FC<ReactivateSessionModalProps> = ({
             <span>Data Siswa: <strong className="text-emerald-600 dark:text-emerald-400">{session.participants?.length || 0} Siswa</strong></span>
           </div>
 
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed pt-1 border-t border-slate-200/60 dark:border-slate-700/60">
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed pt-1.5 border-t border-slate-200/90 dark:border-slate-700/60">
             Siswa dapat kembali memasukkan PIN <strong>{session.pinCode}</strong> untuk bergabung atau mengulang pengerjaan kuis. Rekapitulasi pengerjaan sebelumnya tetap tersimpan secara aman.
           </p>
         </div>
@@ -169,10 +169,10 @@ export const ReactivateSessionModal: React.FC<ReactivateSessionModalProps> = ({
                 <button
                   type="button"
                   onClick={() => handlePresetSelect(2)}
-                  className={`py-2 px-2.5 rounded-xl text-xs font-bold transition-all border flex flex-col items-center justify-center min-h-[48px] ${
+                  className={`py-2 px-2.5 rounded-xl text-xs font-bold transition-all border flex flex-col items-center justify-center min-h-[48px] shadow-2xs ${
                     deadlineMode === 'preset' && selectedPresetDays === 2
                       ? 'bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-950/20'
-                      : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-emerald-500/50'
+                      : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300/80 dark:border-slate-700 hover:border-emerald-500/50'
                   }`}
                 >
                   <span className="text-xs">2 Hari</span>
@@ -182,10 +182,10 @@ export const ReactivateSessionModal: React.FC<ReactivateSessionModalProps> = ({
                 <button
                   type="button"
                   onClick={() => handlePresetSelect(1)}
-                  className={`py-2 px-2.5 rounded-xl text-xs font-bold transition-all border flex flex-col items-center justify-center min-h-[48px] ${
+                  className={`py-2 px-2.5 rounded-xl text-xs font-bold transition-all border flex flex-col items-center justify-center min-h-[48px] shadow-2xs ${
                     deadlineMode === 'preset' && selectedPresetDays === 1
                       ? 'bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-950/20'
-                      : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-emerald-500/50'
+                      : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300/80 dark:border-slate-700 hover:border-emerald-500/50'
                   }`}
                 >
                   <span className="text-xs">1 Hari</span>
@@ -195,10 +195,10 @@ export const ReactivateSessionModal: React.FC<ReactivateSessionModalProps> = ({
                 <button
                   type="button"
                   onClick={() => handlePresetSelect(3)}
-                  className={`py-2 px-2.5 rounded-xl text-xs font-bold transition-all border flex flex-col items-center justify-center min-h-[48px] ${
+                  className={`py-2 px-2.5 rounded-xl text-xs font-bold transition-all border flex flex-col items-center justify-center min-h-[48px] shadow-2xs ${
                     deadlineMode === 'preset' && selectedPresetDays === 3
                       ? 'bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-950/20'
-                      : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-emerald-500/50'
+                      : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300/80 dark:border-slate-700 hover:border-emerald-500/50'
                   }`}
                 >
                   <span className="text-xs">3 Hari</span>
@@ -208,10 +208,10 @@ export const ReactivateSessionModal: React.FC<ReactivateSessionModalProps> = ({
                 <button
                   type="button"
                   onClick={handleUnlimitedSelect}
-                  className={`py-2 px-2.5 rounded-xl text-xs font-bold transition-all border flex flex-col items-center justify-center min-h-[48px] ${
+                  className={`py-2 px-2.5 rounded-xl text-xs font-bold transition-all border flex flex-col items-center justify-center min-h-[48px] shadow-2xs ${
                     deadlineMode === 'unlimited'
                       ? 'bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-950/20'
-                      : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-emerald-500/50'
+                      : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300/80 dark:border-slate-700 hover:border-emerald-500/50'
                   }`}
                 >
                   <span className="text-xs">Bebas</span>
@@ -236,7 +236,7 @@ export const ReactivateSessionModal: React.FC<ReactivateSessionModalProps> = ({
                   type="datetime-local"
                   value={customDateTime}
                   onChange={(e) => handleCustomDateChange(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:border-emerald-500 min-h-[44px]"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300/90 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:border-emerald-500 min-h-[44px] shadow-2xs"
                 />
               </div>
             )}
@@ -250,7 +250,7 @@ export const ReactivateSessionModal: React.FC<ReactivateSessionModalProps> = ({
                   onClose();
                 }}
                 disabled={isSubmitting}
-                className="py-3 px-4 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs min-h-[44px] transition-colors disabled:opacity-50"
+                className="py-3 px-4 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs min-h-[44px] transition-colors border border-slate-300/80 dark:border-slate-700 disabled:opacity-50"
               >
                 Batal
               </button>
@@ -275,7 +275,7 @@ export const ReactivateSessionModal: React.FC<ReactivateSessionModalProps> = ({
         {/* Jika mode dipandu guru (teacher_led) */}
         {!isSelfPaced && (
           <div className="space-y-4">
-            <div className="p-3 rounded-2xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 text-blue-900 dark:text-blue-200 text-xs flex items-center gap-2.5">
+            <div className="p-3 rounded-2xl bg-blue-50 dark:bg-blue-950/40 border border-blue-300/80 dark:border-blue-800 text-blue-900 dark:text-blue-200 text-xs flex items-center gap-2.5 shadow-2xs">
               <Sparkles className="w-4 h-4 text-blue-500 flex-shrink-0" />
               <span>Sesi ini berada dalam mode interaktif langsung di kelas. Sesi akan dibuka kembali ke ruang tunggu murid.</span>
             </div>
@@ -288,7 +288,7 @@ export const ReactivateSessionModal: React.FC<ReactivateSessionModalProps> = ({
                   onClose();
                 }}
                 disabled={isSubmitting}
-                className="py-3 px-4 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs min-h-[44px] transition-colors disabled:opacity-50"
+                className="py-3 px-4 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs min-h-[44px] transition-colors border border-slate-300/80 dark:border-slate-700 disabled:opacity-50"
               >
                 Batal
               </button>

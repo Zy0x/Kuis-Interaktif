@@ -361,10 +361,10 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
     : new Date().toLocaleDateString('id-ID');
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans select-none animate-fade-in print:bg-white print:text-black">
+    <div className="min-h-screen bg-slate-100/80 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans select-none animate-fade-in print:bg-white print:text-black">
       
       {/* Top Bar (Hidden on Print) */}
-      <header className="w-full bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-3 sm:px-8 py-2.5 sticky top-0 z-30 shadow-2xs print:hidden">
+      <header className="w-full bg-white dark:bg-slate-900 border-b border-slate-300/80 dark:border-slate-800 px-3 sm:px-8 py-2.5 sticky top-0 z-30 shadow-xs shadow-slate-200/50 dark:shadow-none print:hidden">
         <div className="w-full max-w-[2000px] mx-auto flex items-center justify-between gap-3">
           
           {/* Kiri: Tombol Kembali & Konteks Halaman */}
@@ -389,7 +389,7 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
                   Rekap Hasil Kuis
                 </span>
                 <span>•</span>
-                <span className="font-mono bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-700 dark:text-slate-300">
+                <span className="font-mono bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-700 dark:text-slate-300 border border-slate-300/70 dark:border-slate-700">
                   PIN {currentSession.pinCode}
                 </span>
               </div>
@@ -404,7 +404,7 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
             <button
               type="button"
               onClick={handleExportCSV}
-              className="hidden sm:inline-flex px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:text-emerald-600 dark:hover:text-emerald-400 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-xs font-bold min-h-[44px] items-center gap-1.5 transition-colors btn-press cursor-pointer"
+              className="hidden sm:inline-flex px-3.5 py-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:text-emerald-600 dark:hover:text-emerald-400 text-slate-700 dark:text-slate-300 border border-slate-300/90 dark:border-slate-700 text-xs font-bold min-h-[44px] items-center gap-1.5 transition-colors btn-press cursor-pointer shadow-2xs"
               title="Unduh seluruh rekap nilai siswa (CSV/Excel)"
             >
               <Download className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
@@ -414,7 +414,7 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
             <button
               type="button"
               onClick={handlePrint}
-              className="hidden sm:inline-flex px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-xs font-bold min-h-[44px] items-center gap-1.5 transition-colors btn-press cursor-pointer"
+              className="hidden sm:inline-flex px-3.5 py-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300/90 dark:border-slate-700 text-xs font-bold min-h-[44px] items-center gap-1.5 transition-colors btn-press cursor-pointer shadow-2xs"
               title="Cetak rapor atau simpan dalam format PDF"
             >
               <Printer className="w-4 h-4 flex-shrink-0" />
@@ -429,21 +429,21 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
       <main className="w-full max-w-[2000px] mx-auto px-3 sm:px-8 py-5 sm:py-6 flex-1 space-y-5 sm:space-y-6">
         
         {/* Header Metadata Info Card & Action Hub */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-slate-300/80 dark:border-slate-800 shadow-xs shadow-slate-200/70 dark:shadow-none space-y-4">
           
           {/* Baris Atas: Tags Meta Pelajaran & Status Sesi */}
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <div className="flex items-center gap-1.5 flex-wrap text-xs">
-              <span className="px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 font-bold border border-blue-200 dark:border-blue-900/60">
+              <span className="px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 font-bold border border-blue-300/80 dark:border-blue-900/60">
                 {quiz.subject}
               </span>
-              <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold">
+              <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold border border-slate-300/70 dark:border-slate-700">
                 Kelas {quiz.grade}
               </span>
-              <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-medium">
+              <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium border border-slate-300/70 dark:border-slate-700">
                 {totalQuestions} Butir Soal
               </span>
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60 font-bold">
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-300/80 dark:border-indigo-800/60 font-bold">
                 <Users className="w-3.5 h-3.5" />
                 <span>{participants.length} Siswa</span>
               </span>
@@ -451,12 +451,12 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
 
             {/* Status Sesi */}
             {currentSession.status === 'finished' ? (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-xs font-bold">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 text-xs font-bold shadow-2xs">
                 <span className="w-2 h-2 rounded-full bg-slate-400" />
                 <span>Sesi Selesai</span>
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-xs font-bold">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 text-xs font-bold shadow-2xs">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 <span>Sesi Aktif</span>
               </span>
@@ -476,7 +476,7 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
               <span>•</span>
               <div className="flex items-center gap-1">
                 <span>Ruang Kelas:</span>
-                <strong className="font-mono text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded font-bold">
+                <strong className="font-mono text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded font-bold border border-slate-300/70 dark:border-slate-700">
                   PIN {currentSession.pinCode}
                 </strong>
               </div>
@@ -484,7 +484,7 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
           </div>
 
           {/* Hub Aksi Sesi (Action Hub) - Jelas, Terstruktur & Berlabel Nyata */}
-          <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-2.5">
+          <div className="pt-3.5 border-t border-slate-200/90 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-2.5">
             {/* Tombol Utama: Aktifkan Kembali Kuis (Jika sesi telah selesai) */}
             {currentSession.status === 'finished' ? (
               <button
@@ -493,14 +493,14 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
                   playClick();
                   setIsReactivateModalOpen(true);
                 }}
-                className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs sm:text-sm font-black min-h-[44px] flex items-center justify-center gap-2 shadow-xs shadow-emerald-950/20 btn-press transition-all cursor-pointer"
+                className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs sm:text-sm font-black min-h-[44px] flex items-center justify-center gap-2 shadow-xs shadow-emerald-950/20 btn-press transition-all cursor-pointer border border-emerald-500"
                 title="Buka kembali akses kuis agar siswa dapat melanjutkan atau mengerjakan ulang"
               >
                 <RotateCcw className="w-4 h-4 text-white flex-shrink-0" />
                 <span>Aktifkan Kembali Kuis</span>
               </button>
             ) : (
-              <span className="px-3.5 py-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-xs font-bold flex items-center gap-2 min-h-[44px]">
+              <span className="px-3.5 py-2.5 rounded-xl bg-emerald-50/90 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800/80 text-xs font-bold flex items-center gap-2 min-h-[44px] shadow-2xs">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 <span>Siswa dapat mengakses sesi kuis ini</span>
               </span>
@@ -515,7 +515,7 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
                   playClick();
                   setIsClassReviewOpen(true);
                 }}
-                className="px-3.5 py-2.5 rounded-xl bg-purple-50 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 text-xs font-bold min-h-[44px] flex items-center justify-center gap-1.5 transition-colors btn-press cursor-pointer"
+                className="px-3.5 py-2.5 rounded-xl bg-purple-50/80 dark:bg-purple-950/60 hover:bg-purple-100 dark:hover:bg-purple-900/60 text-purple-700 dark:text-purple-300 border border-purple-300/80 dark:border-purple-800 text-xs font-bold min-h-[44px] flex items-center justify-center gap-1.5 transition-colors btn-press cursor-pointer shadow-2xs"
                 title="Tampilkan pembahasan soal di proyektor tanpa identitas nilai siswa"
               >
                 <BarChart3 className="w-4 h-4 text-purple-600 dark:text-purple-400 flex-shrink-0" />
@@ -529,7 +529,7 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
                   playClick();
                   setIsRecalculateModalOpen(true);
                 }}
-                className="px-3.5 py-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-xs font-bold min-h-[44px] flex items-center justify-center gap-1.5 transition-colors btn-press cursor-pointer"
+                className="px-3.5 py-2.5 rounded-xl bg-blue-50/80 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 border border-blue-300/80 dark:border-blue-800 text-xs font-bold min-h-[44px] flex items-center justify-center gap-1.5 transition-colors btn-press cursor-pointer shadow-2xs"
                 title="Hitung ulang skor seluruh siswa jika ada pembaruan kunci jawaban"
               >
                 <Calculator className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
@@ -540,7 +540,7 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
               <button
                 type="button"
                 onClick={handleExportCSV}
-                className="sm:hidden px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-xs font-bold min-h-[44px] flex items-center justify-center gap-1.5 transition-colors btn-press"
+                className="sm:hidden px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300/90 dark:border-slate-700 text-xs font-bold min-h-[44px] flex items-center justify-center gap-1.5 transition-colors btn-press shadow-2xs"
                 title="Unduh seluruh rekap nilai siswa (CSV)"
               >
                 <Download className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
@@ -550,7 +550,7 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
               <button
                 type="button"
                 onClick={handlePrint}
-                className="sm:hidden px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-xs font-bold min-h-[44px] flex items-center justify-center gap-1.5 transition-colors btn-press"
+                className="sm:hidden px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300/90 dark:border-slate-700 text-xs font-bold min-h-[44px] flex items-center justify-center gap-1.5 transition-colors btn-press shadow-2xs"
                 title="Cetak rapor atau simpan PDF"
               >
                 <Printer className="w-4 h-4 flex-shrink-0" />
@@ -561,18 +561,18 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
           </div>
         </div>
 
-        {/* Sub-tabs Selector (Hidden on Print) */}
-        <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-2 print:hidden overflow-x-auto scrollbar-none">
+        {/* Sub-tabs Selector (Segmented Control Bar Modern) */}
+        <div className="bg-slate-200/75 dark:bg-slate-900/90 p-1.5 rounded-2xl border border-slate-300/90 dark:border-slate-800 flex items-center gap-1.5 shadow-2xs print:hidden overflow-x-auto scrollbar-none">
           <button
             type="button"
             onClick={() => {
               playClick();
               setActiveTab('overview');
             }}
-            className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all min-h-[44px] whitespace-nowrap btn-press cursor-pointer ${
+            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all min-h-[44px] whitespace-nowrap btn-press cursor-pointer ${
               activeTab === 'overview'
-                ? 'bg-blue-600 text-white shadow-xs'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
+                ? 'bg-blue-600 text-white shadow-xs font-black'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/70 dark:hover:bg-slate-800/80'
             }`}
           >
             <BarChart3 className="w-4 h-4" />
@@ -585,16 +585,18 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
               playClick();
               setActiveTab('students');
             }}
-            className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all min-h-[44px] whitespace-nowrap btn-press cursor-pointer ${
+            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all min-h-[44px] whitespace-nowrap btn-press cursor-pointer ${
               activeTab === 'students'
-                ? 'bg-blue-600 text-white shadow-xs'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
+                ? 'bg-blue-600 text-white shadow-xs font-black'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/70 dark:hover:bg-slate-800/80'
             }`}
           >
             <Trophy className="w-4 h-4" />
             <span>Tabel Nilai Siswa</span>
-            <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
-              activeTab === 'students' ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
+            <span className={`px-2 py-0.5 rounded-full text-xs font-black border ${
+              activeTab === 'students'
+                ? 'bg-white/20 text-white border-white/20'
+                : 'bg-slate-300/80 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700'
             }`}>
               {participants.length}
             </span>
@@ -606,16 +608,18 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
               playClick();
               setActiveTab('questions');
             }}
-            className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all min-h-[44px] whitespace-nowrap btn-press cursor-pointer ${
+            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all min-h-[44px] whitespace-nowrap btn-press cursor-pointer ${
               activeTab === 'questions'
-                ? 'bg-blue-600 text-white shadow-xs'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
+                ? 'bg-blue-600 text-white shadow-xs font-black'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/70 dark:hover:bg-slate-800/80'
             }`}
           >
             <HelpCircle className="w-4 h-4" />
             <span>Analisis Butir Soal</span>
-            <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
-              activeTab === 'questions' ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
+            <span className={`px-2 py-0.5 rounded-full text-xs font-black border ${
+              activeTab === 'questions'
+                ? 'bg-white/20 text-white border-white/20'
+                : 'bg-slate-300/80 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700'
             }`}>
               {totalQuestions}
             </span>
@@ -628,10 +632,10 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
             
             {/* 4 Metric Cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-              <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-2xs space-y-1.5 transition-all">
+              <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-slate-300/80 dark:border-slate-800 shadow-xs shadow-slate-200/60 dark:shadow-none space-y-1.5 transition-all">
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Rata-rata Akurasi</span>
-                  <span className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex-shrink-0">
+                  <span className="p-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800/80 flex-shrink-0">
                     <TrendingUp className="w-4 h-4" />
                   </span>
                 </div>
@@ -643,10 +647,10 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-2xs space-y-1.5 transition-all">
+              <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-slate-300/80 dark:border-slate-800 shadow-xs shadow-slate-200/60 dark:shadow-none space-y-1.5 transition-all">
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Rata-rata Skor</span>
-                  <span className="p-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex-shrink-0">
+                  <span className="p-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200/80 dark:border-amber-800/80 flex-shrink-0">
                     <Trophy className="w-4 h-4" />
                   </span>
                 </div>
@@ -658,10 +662,10 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-2xs space-y-1.5 transition-all">
+              <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-slate-300/80 dark:border-slate-800 shadow-xs shadow-slate-200/60 dark:shadow-none space-y-1.5 transition-all">
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Ketuntasan (KKM 70)</span>
-                  <span className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex-shrink-0">
+                  <span className="p-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border border-blue-200/80 dark:border-blue-800/80 flex-shrink-0">
                     <CheckCircle2 className="w-4 h-4" />
                   </span>
                 </div>
@@ -673,10 +677,10 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-2xs space-y-1.5 transition-all">
+              <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-slate-300/80 dark:border-slate-800 shadow-xs shadow-slate-200/60 dark:shadow-none space-y-1.5 transition-all">
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Rata Waktu Selesai</span>
-                  <span className="p-1.5 rounded-lg bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 flex-shrink-0">
+                  <span className="p-1.5 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 border border-purple-200/80 dark:border-purple-800/80 flex-shrink-0">
                     <Clock className="w-4 h-4" />
                   </span>
                 </div>
@@ -691,7 +695,7 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
 
             {/* Podium Juara 3 Besar */}
             {rankedParticipants.length >= 1 && (
-              <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-6 border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
+              <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-6 border border-slate-300/80 dark:border-slate-800 shadow-xs shadow-slate-200/60 dark:shadow-none space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm sm:text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
                     <Award className="w-5 h-5 text-amber-500" />
@@ -704,20 +708,20 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
                   {rankedParticipants.slice(0, 3).map((p, pIdx) => {
                     const medal = pIdx === 0 ? '🥇 Juara 1' : pIdx === 1 ? '🥈 Juara 2' : '🥉 Juara 3';
                     const medalColor = pIdx === 0 
-                      ? 'border-amber-400 bg-amber-50/50 dark:bg-amber-950/20 text-amber-800 dark:text-amber-200' 
+                      ? 'border-2 border-amber-400 bg-amber-50/70 dark:bg-amber-950/20 text-amber-900 dark:text-amber-200' 
                       : pIdx === 1 
-                      ? 'border-slate-300 bg-slate-50 dark:bg-slate-800/40 text-slate-800 dark:text-slate-200' 
-                      : 'border-amber-700 bg-amber-100/30 dark:bg-amber-950/10 text-amber-900 dark:text-amber-300';
+                      ? 'border-2 border-slate-300 bg-slate-50/90 dark:bg-slate-800/40 text-slate-800 dark:text-slate-200' 
+                      : 'border-2 border-amber-600/70 bg-amber-100/50 dark:bg-amber-950/10 text-amber-900 dark:text-amber-300';
 
                     return (
                       <div
                         key={p.id}
                         className={`p-4 rounded-2xl border ${medalColor} flex flex-col items-center text-center space-y-2 relative shadow-xs`}
                       >
-                        <span className="text-xs font-black tracking-wider uppercase px-2.5 py-0.5 rounded-full bg-white dark:bg-slate-900 shadow-xs">
+                        <span className="text-xs font-black tracking-wider uppercase px-2.5 py-0.5 rounded-full bg-white dark:bg-slate-900 shadow-xs border border-slate-200 dark:border-slate-700">
                           {medal}
                         </span>
-                        <div className="w-14 h-14 rounded-2xl bg-white dark:bg-slate-800 shadow-sm flex items-center justify-center text-3xl">
+                        <div className="w-14 h-14 rounded-2xl bg-white dark:bg-slate-800 shadow-sm flex items-center justify-center text-3xl border border-slate-200 dark:border-slate-700">
                           {AVATAR_MAP[p.avatarId] || '🦁'}
                         </div>
                         <div>
@@ -742,14 +746,14 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               
               {/* Soal Paling Sulit */}
-              <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-xs space-y-2.5">
+              <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-300/80 dark:border-slate-800 shadow-xs shadow-slate-200/60 dark:shadow-none space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-rose-600 dark:text-rose-400 uppercase tracking-wider flex items-center gap-1.5">
                     <AlertTriangle className="w-4 h-4" />
                     Soal Paling Menantang
                   </span>
                   {analytics.hardestQuestionIdx >= 0 && (
-                    <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-rose-50 dark:bg-rose-950/40 text-rose-600 border border-rose-200 dark:border-rose-900/60">
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-rose-50 dark:bg-rose-950/40 text-rose-600 border border-rose-300 dark:border-rose-900/60 shadow-2xs">
                       Akurasi: {analytics.questionStats[analytics.hardestQuestionIdx]?.correctRate}%
                     </span>
                   )}
@@ -763,7 +767,7 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
                     <p className="text-slate-500 dark:text-slate-400 text-[11px]">
                       Kunci Jawaban: <strong className="text-emerald-600 dark:text-emerald-400">{quiz.questions[analytics.hardestQuestionIdx]?.options[quiz.questions[analytics.hardestQuestionIdx]?.correctIndex]}</strong>
                     </p>
-                    <div className="bg-slate-50 dark:bg-slate-800 p-2.5 rounded-xl text-[11px] text-slate-600 dark:text-slate-300">
+                    <div className="bg-slate-100/80 dark:bg-slate-800 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-[11px] text-slate-700 dark:text-slate-300">
                       💡 <strong>Saran:</strong> Tinjau kembali konsep ini bersama siswa di sesi kelas berikutnya.
                     </div>
                   </div>
@@ -773,14 +777,14 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
               </div>
 
               {/* Soal Paling Mudah */}
-              <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-xs space-y-2.5">
+              <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-300/80 dark:border-slate-800 shadow-xs shadow-slate-200/60 dark:shadow-none space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
                     <CheckCircle2 className="w-4 h-4" />
                     Soal Paling Dikuasai
                   </span>
                   {analytics.easiestQuestionIdx >= 0 && (
-                    <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 border border-emerald-200 dark:border-emerald-900/60">
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 border border-emerald-300 dark:border-emerald-900/60 shadow-2xs">
                       Akurasi: {analytics.questionStats[analytics.easiestQuestionIdx]?.correctRate}%
                     </span>
                   )}
@@ -794,7 +798,7 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
                     <p className="text-slate-500 dark:text-slate-400 text-[11px]">
                       Kunci Jawaban: <strong className="text-emerald-600 dark:text-emerald-400">{quiz.questions[analytics.easiestQuestionIdx]?.options[quiz.questions[analytics.easiestQuestionIdx]?.correctIndex]}</strong>
                     </p>
-                    <div className="bg-slate-50 dark:bg-slate-800 p-2.5 rounded-xl text-[11px] text-slate-600 dark:text-slate-300">
+                    <div className="bg-slate-100/80 dark:bg-slate-800 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-[11px] text-slate-700 dark:text-slate-300">
                       🌟 <strong>Apresiasi:</strong> Sebagian besar siswa telah menguasai materi ini dengan baik.
                     </div>
                   </div>
@@ -810,7 +814,7 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
 
         {/* TAB 2: TABEL NILAI SISWA RESPONSIP & LENGKAP */}
         {(activeTab === 'students' || window.matchMedia?.('print').matches) && (
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden space-y-4 p-4 sm:p-6">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-300/80 dark:border-slate-800 shadow-xs shadow-slate-200/60 dark:shadow-none overflow-hidden space-y-4 p-4 sm:p-6">
             
             {/* Header Judul Tabel & Ringkasan Metrik Jumlah */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -842,7 +846,7 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
             </div>
 
             {/* Filter Toolbar (Percobaan, Status Ketuntasan & Pencarian Nama/Absen) */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-800 print:hidden">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5 pt-3 border-t border-slate-200/90 dark:border-slate-800 print:hidden">
               
               {/* Filter Percobaan: Semua / Terbaik / Terakhir */}
               <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 scrollbar-none flex-shrink-0">
@@ -852,10 +856,10 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
                     triggerHaptic('light');
                     setAttemptFilter('all');
                   }}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all min-h-[38px] whitespace-nowrap btn-press cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all min-h-[38px] whitespace-nowrap btn-press cursor-pointer border ${
                     attemptFilter === 'all'
-                      ? 'bg-blue-600 text-white shadow-xs'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                      ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300/80 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700'
                   }`}
                 >
                   Semua ({participantsWithMeta.length})
@@ -866,10 +870,10 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
                     triggerHaptic('light');
                     setAttemptFilter('best');
                   }}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all min-h-[38px] whitespace-nowrap btn-press cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all min-h-[38px] whitespace-nowrap btn-press cursor-pointer border ${
                     attemptFilter === 'best'
-                      ? 'bg-blue-600 text-white shadow-xs'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                      ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300/80 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700'
                   }`}
                   title="Tampilkan hanya skor terbaik dari tiap siswa unik"
                 >
@@ -881,10 +885,10 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
                     triggerHaptic('light');
                     setAttemptFilter('latest');
                   }}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all min-h-[38px] whitespace-nowrap btn-press cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all min-h-[38px] whitespace-nowrap btn-press cursor-pointer border ${
                     attemptFilter === 'latest'
-                      ? 'bg-blue-600 text-white shadow-xs'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                      ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300/80 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700'
                   }`}
                   title="Tampilkan hanya pengerjaan terakhir dari tiap siswa unik"
                 >
@@ -902,10 +906,10 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
                       triggerHaptic('light');
                       setStatusFilter('all');
                     }}
-                    className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all min-h-[38px] whitespace-nowrap btn-press cursor-pointer ${
+                    className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all min-h-[38px] whitespace-nowrap btn-press cursor-pointer border ${
                       statusFilter === 'all'
-                        ? 'bg-slate-800 text-white dark:bg-slate-700'
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
+                        ? 'bg-slate-800 text-white dark:bg-slate-700 border-slate-800 dark:border-slate-600 shadow-xs'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-400 border-slate-300/80 dark:border-slate-700 hover:bg-slate-200'
                     }`}
                   >
                     Semua Status
@@ -916,10 +920,10 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
                       triggerHaptic('light');
                       setStatusFilter('passed');
                     }}
-                    className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all min-h-[38px] whitespace-nowrap btn-press flex items-center gap-1 cursor-pointer ${
+                    className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all min-h-[38px] whitespace-nowrap btn-press flex items-center gap-1 cursor-pointer border ${
                       statusFilter === 'passed'
-                        ? 'bg-emerald-600 text-white shadow-xs'
-                        : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/80 hover:bg-emerald-100'
+                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                        : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800/80 hover:bg-emerald-100'
                     }`}
                   >
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
@@ -932,10 +936,10 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
                       triggerHaptic('light');
                       setStatusFilter('remedial');
                     }}
-                    className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all min-h-[38px] whitespace-nowrap btn-press flex items-center gap-1 cursor-pointer ${
+                    className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all min-h-[38px] whitespace-nowrap btn-press flex items-center gap-1 cursor-pointer border ${
                       statusFilter === 'remedial'
-                        ? 'bg-rose-600 text-white shadow-xs'
-                        : 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/80 hover:bg-rose-100'
+                        ? 'bg-rose-600 text-white border-rose-600 shadow-xs'
+                        : 'bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-800/80 hover:bg-rose-100'
                     }`}
                   >
                     <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
@@ -952,7 +956,7 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
                     value={searchStudent}
                     onChange={(e) => setSearchStudent(e.target.value)}
                     placeholder="Cari nama / no. absen..."
-                    className="w-full pl-9 pr-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-medium focus:outline-none min-h-[38px] text-slate-900 dark:text-white"
+                    className="w-full pl-9 pr-3 py-1.5 rounded-xl border border-slate-300/90 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium focus:outline-none min-h-[38px] text-slate-900 dark:text-white shadow-2xs focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
                   />
                 </div>
               </div>
@@ -960,26 +964,26 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
 
             {/* Tabel Data Rekapitulasi Nilai Siswa Responsif & Detail */}
             {filteredParticipants.length === 0 ? (
-              <div className="text-center py-12 text-slate-400 text-xs font-medium bg-slate-50 dark:bg-slate-850/50 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
+              <div className="text-center py-12 text-slate-400 text-xs font-medium bg-slate-50 dark:bg-slate-850/50 rounded-2xl border border-dashed border-slate-300 dark:border-slate-800">
                 Tidak ada data siswa yang cocok dengan filter pencarian saat ini.
               </div>
             ) : (
-              <div className="overflow-x-auto scrollbar-thin rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+              <div className="overflow-x-auto scrollbar-thin rounded-2xl border border-slate-300/90 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs">
                 <table className="w-full text-left text-xs border-separate border-spacing-0 min-w-[760px]">
                   <thead className="sticky top-0 z-10">
-                    <tr className="bg-slate-100/95 dark:bg-slate-850/95 backdrop-blur-md text-slate-500 dark:text-slate-400 uppercase text-[10px] font-bold tracking-wider">
-                      <th className="py-3 px-3 text-center w-12 border-b border-slate-200 dark:border-slate-800 shadow-2xs">#</th>
-                      <th className="py-3 px-3.5 border-b border-slate-200 dark:border-slate-800 shadow-2xs">No. Absen & Nama Siswa</th>
-                      <th className="py-3 px-3 text-center border-b border-slate-200 dark:border-slate-800 shadow-2xs">Percobaan</th>
-                      <th className="py-3 px-3 text-center border-b border-slate-200 dark:border-slate-800 shadow-2xs">Nilai (0-100)</th>
-                      <th className="py-3 px-3 text-center border-b border-slate-200 dark:border-slate-800 shadow-2xs">Akurasi</th>
-                      <th className="py-3 px-3 text-center border-b border-slate-200 dark:border-slate-800 shadow-2xs">Benar / Salah / Kosong</th>
-                      <th className="py-3 px-3 text-center border-b border-slate-200 dark:border-slate-800 shadow-2xs">Durasi & Waktu</th>
-                      <th className="py-3 px-3 text-center border-b border-slate-200 dark:border-slate-800 shadow-2xs">Status</th>
-                      <th className="py-3 px-3 text-center border-b border-slate-200 dark:border-slate-800 shadow-2xs print:hidden">Aksi</th>
+                    <tr className="bg-slate-100 dark:bg-slate-850 text-slate-700 dark:text-slate-300 uppercase text-[10px] font-black tracking-wider">
+                      <th className="py-3 px-3 text-center w-12 border-b-2 border-slate-300 dark:border-slate-700 shadow-2xs">#</th>
+                      <th className="py-3 px-3.5 border-b-2 border-slate-300 dark:border-slate-700 shadow-2xs">No. Absen & Nama Siswa</th>
+                      <th className="py-3 px-3 text-center border-b-2 border-slate-300 dark:border-slate-700 shadow-2xs">Percobaan</th>
+                      <th className="py-3 px-3 text-center border-b-2 border-slate-300 dark:border-slate-700 shadow-2xs">Nilai (0-100)</th>
+                      <th className="py-3 px-3 text-center border-b-2 border-slate-300 dark:border-slate-700 shadow-2xs">Akurasi</th>
+                      <th className="py-3 px-3 text-center border-b-2 border-slate-300 dark:border-slate-700 shadow-2xs">Benar / Salah / Kosong</th>
+                      <th className="py-3 px-3 text-center border-b-2 border-slate-300 dark:border-slate-700 shadow-2xs">Durasi & Waktu</th>
+                      <th className="py-3 px-3 text-center border-b-2 border-slate-300 dark:border-slate-700 shadow-2xs">Status</th>
+                      <th className="py-3 px-3 text-center border-b-2 border-slate-300 dark:border-slate-700 shadow-2xs print:hidden">Aksi</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
+                  <tbody className="divide-y divide-slate-200/90 dark:divide-slate-800/80">
                     {filteredParticipants.map((p, idx) => {
                       const isPassed = p.score >= 70;
                       const unanswered = Math.max(0, totalQuestions - (p.correctCount + p.incorrectCount));
@@ -990,7 +994,7 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
                             triggerHaptic('light');
                             setSelectedStudentForModal(p);
                           }}
-                          className="hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition-colors border-b border-slate-100 dark:border-slate-800/60"
+                          className="hover:bg-blue-50/50 dark:hover:bg-slate-800/60 cursor-pointer transition-colors border-b border-slate-200/90 dark:border-slate-800/60"
                         >
                           {/* Rank */}
                           <td className="py-3 px-3 text-center font-bold text-slate-500 dark:text-slate-400 tabular-nums">
@@ -1028,10 +1032,10 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
                               <span
                                 className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${
                                   p.attemptNumber > 1
-                                    ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800'
+                                    ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-800'
                                     : p.totalAttempts > 1
-                                    ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800'
-                                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                                    ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-800'
+                                    : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300/80 dark:border-slate-700'
                                 }`}
                                 title={p.totalAttempts > 1 ? `Percobaan ke-${p.attemptNumber} dari total ${p.totalAttempts} pengerjaan` : 'Percobaan tunggal'}
                               >
@@ -1057,7 +1061,7 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
                               >
                                 {p.score}
                               </span>
-                              <div className="w-12 bg-slate-200 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                              <div className="w-12 bg-slate-200 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden border border-slate-300/40 dark:border-slate-700">
                                 <div
                                   className={`h-full transition-all duration-300 ${
                                     isPassed ? 'bg-emerald-500' : 'bg-rose-500'
@@ -1111,10 +1115,10 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
                           {/* Status */}
                           <td className="py-3 px-3 text-center whitespace-nowrap">
                             <span
-                              className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
+                              className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${
                                 isPassed
-                                  ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
-                                  : 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800'
+                                  ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800'
+                                  : 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-800'
                               }`}
                             >
                               {isPassed ? 'TUNTAS' : 'REMEDIAL'}
@@ -1133,7 +1137,7 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
                                   triggerHaptic('light');
                                   setSelectedStudentForModal(p);
                                 }}
-                                className="px-2.5 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-[11px] font-bold flex items-center gap-1 transition-colors btn-press min-h-[36px] cursor-pointer"
+                                className="px-2.5 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 border border-blue-300/90 dark:border-blue-800 text-[11px] font-bold flex items-center gap-1 transition-colors btn-press min-h-[36px] cursor-pointer shadow-2xs"
                                 title="Lihat lembar koreksi jawaban siswa"
                               >
                                 <Eye className="w-3.5 h-3.5" />
@@ -1154,7 +1158,7 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
                                   });
                                   window.open(url, '_blank');
                                 }}
-                                className="p-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 transition-colors btn-press min-h-[36px] min-w-[36px] flex items-center justify-center cursor-pointer"
+                                className="p-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300/90 dark:border-emerald-800 transition-colors btn-press min-h-[36px] min-w-[36px] flex items-center justify-center cursor-pointer shadow-2xs"
                                 title={`Kirim nilai ${p.parsedCleanName || p.name} ke WhatsApp Wali Murid`}
                               >
                                 <Share2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
@@ -1189,11 +1193,11 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
                 return (
                   <div
                     key={q.id || idx}
-                    className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-6 border border-slate-200 dark:border-slate-800 shadow-xs space-y-4"
+                    className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-6 border border-slate-300/80 dark:border-slate-800 shadow-xs shadow-slate-200/60 dark:shadow-none space-y-4"
                   >
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/90 dark:border-slate-800 pb-3">
                       <div className="flex items-center gap-2">
-                        <span className="px-2.5 py-1 rounded-xl bg-blue-600 text-white font-black text-xs">
+                        <span className="px-2.5 py-1 rounded-xl bg-blue-600 text-white font-black text-xs shadow-2xs">
                           Nomor {idx + 1}
                         </span>
                         <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
@@ -1204,12 +1208,12 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
                       <div className="flex items-center gap-2 text-xs font-bold">
                         <span className="text-slate-500 dark:text-slate-400">Dijawab: {stat.totalAnswered} siswa</span>
                         <span className="text-slate-300 dark:text-slate-700">•</span>
-                        <span className={`px-2.5 py-0.5 rounded-full border ${
+                        <span className={`px-2.5 py-0.5 rounded-full border shadow-2xs ${
                           stat.correctRate >= 70
-                            ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
+                            ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800'
                             : stat.correctRate >= 50
-                            ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800'
-                            : 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800'
+                            ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-800'
+                            : 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-300 dark:border-rose-800'
                         }`}>
                           Tingkat Ketercapaian: {stat.correctRate}%
                         </span>
@@ -1230,10 +1234,10 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
                         return (
                           <div
                             key={oIdx}
-                            className={`p-3 rounded-2xl border transition-colors space-y-1.5 ${
+                            className={`p-3 rounded-2xl border transition-colors space-y-1.5 shadow-2xs ${
                               isCorrect
-                                ? 'bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800'
-                                : 'bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700'
+                                ? 'bg-emerald-50/80 dark:bg-emerald-950/30 border-2 border-emerald-400 dark:border-emerald-700'
+                                : 'bg-slate-50 dark:bg-slate-800/60 border border-slate-300/80 dark:border-slate-700'
                             }`}
                           >
                             <div className="flex items-center justify-between text-xs font-bold">
@@ -1243,11 +1247,11 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
                                 }`}>
                                   {String.fromCharCode(65 + oIdx)}
                                 </span>
-                                <span className={isCorrect ? 'text-emerald-900 dark:text-emerald-200' : 'text-slate-800 dark:text-slate-200'}>
+                                <span className={isCorrect ? 'text-emerald-900 dark:text-emerald-200 font-bold' : 'text-slate-800 dark:text-slate-200'}>
                                   {opt}
                                 </span>
                                 {isCorrect && (
-                                  <span className="px-2 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-black uppercase tracking-wider">
+                                  <span className="px-2 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-black uppercase tracking-wider shadow-2xs">
                                     Kunci Jawaban ✓
                                   </span>
                                 )}
@@ -1268,7 +1272,7 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
                       })}
                     </div>
 
-                    <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-300">
+                    <div className="p-3.5 rounded-2xl bg-slate-100/80 dark:bg-slate-800/80 border border-slate-300/80 dark:border-slate-700 text-xs text-slate-700 dark:text-slate-300">
                       <strong className="text-amber-600 dark:text-amber-400 block mb-0.5">Penjelasan / Pembahasan Soal:</strong>
                       {q.explanation}
                     </div>

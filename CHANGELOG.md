@@ -6,6 +6,36 @@ Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen in
 
 
 
+## [2.5.0] - 2026-10-21
+### Redesain Visual Presisi Tinggi: Penegasan Batas, Border, Pembatas & Kontras Kartu Berdefinisi Tinggi pada Mode Terang dan Gelap (Rule 1, Rule 2, Rule 4, Rule 15 & Skill Redesign)
+
+#### 1. Penegasan Kanvas Latar Belakang & Pembatas Kartu (`QuizSessionRecapView.tsx`)
+- **Peningkatan Kontras Kanvas Latar Belakang**:
+  - Mengganti latar belakang halaman dari `bg-slate-50` yang cenderung menyatu dengan kartu putih menjadi `bg-slate-100/80 dark:bg-slate-950` yang memberikan fondasi abu-abu lembut dan elegan, sehingga kartu putih (`bg-white`) langsung terangkat secara kontras dan natural.
+- **Peningkatan Ketajaman Border & Elevasi Fisik (*High-Definition Card Boundaries*)**:
+  - Memperbarui border kartu utama, kartu metrik, dan tabel dari `border-slate-200` menjadi `border-slate-300/80 dark:border-slate-800` disertai bayangan halus terarah (`shadow-xs shadow-slate-200/60 dark:shadow-none`).
+  - Menghilangkan kesan visual kabur/menyatu (*washed-out surfaces*) saat diakses di bawah pencahayaan terang maupun layar ponsel.
+
+#### 2. Segmented Control Sub-Tabs Modern & Terpadu (`QuizSessionRecapView.tsx`)
+- **Wadah Segmented Pill Bar**:
+  - Mengganti barisan tab datar yang terpotong garis menjadi satu wadah terpadu (*segmented control bar*): `bg-slate-200/75 dark:bg-slate-900/90 p-1.5 rounded-2xl border border-slate-300/90 dark:border-slate-800 shadow-2xs`.
+  - Tab aktif mendapatkan penekanan visual warna biru (`bg-blue-600 text-white font-black shadow-xs`), sementara tab non-aktif memiliki area sentuh yang nyaman dengan efek *hover* yang lembut.
+  - Lencana jumlah pada tab memiliki border dan kontras yang tegas sehingga mudah dibaca.
+
+#### 3. Peningkatan Kontras Kartu Metrik, Podium & Tabel Data (`QuizSessionRecapView.tsx`)
+- **4 Kartu Metrik Utama**:
+  - Wadah kartu diperkuat dengan `border-slate-300/80` dan lencana ikon memiliki border terkoordinasi (`border-emerald-200/80`, `border-amber-200/80`, `border-blue-200/80`, `border-purple-200/80`).
+- **Podium Juara 3 Besar**:
+  - Setiap kartu podium juara 1, 2, dan 3 memiliki border tegas (`border-2 border-amber-400`, `border-2 border-slate-300`, `border-2 border-amber-600/70`) yang menciptakan hierarki visual yang jelas.
+- **Tabel Nilai & Toolbar Filter**:
+  - Bilah alat filter (*Semua / Terbaik / Terakhir*) dan status (*Semua / Tuntas / Remedial*) serta kotak pencarian memiliki border `border-slate-300/80` dan *shadow-2xs*.
+  - Header tabel menggunakan `border-b-2 border-slate-300 dark:border-slate-700` dan baris tabel memiliki garis pemisah `divide-slate-200/90` yang bersih dan rapi.
+- **Kartu Analisis Butir Soal**:
+  - Bilah opsi jawaban benar ditegaskan dengan `border-2 border-emerald-400`, opsi lainnya `border-slate-300/80`, dan kotak pembahasan konsep menggunakan batas yang jelas.
+
+#### 4. Harmonisasi Modal Terkait (`StudentAnswerAnalysisModal.tsx`, `ReactivateSessionModal.tsx`, `RecalculateScoresModal.tsx`, `ClassReviewModal.tsx`)
+- Mempertegas border wadah modal, kartu ringkasan, dan tombol interaktif sekunder ke standar `border-slate-300/80` agar selaras secara visual di seluruh tampilan guru.
+
 ## [2.4.99] - 2026-10-21
 ### Redesain Tabel Rekapitulasi Nilai Siswa Responsif, Detail & Terstruktur: Zero Card Bloat, Multi-Percobaan & Sanitasi Absen (Rule 1, Rule 2, Rule 15 & Skill Redesign)
 
