@@ -6,6 +6,25 @@ Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen in
 
 
 
+## [2.5.16] - 2026-10-22
+### Konfigurasi HTTPS Lokal Dev Server & Penguatan Aksi Bagikan Native Android (Rule 1, Rule 2, Rule 9, Rule 15 & AGENTS.md)
+
+#### 1. Pengaktifan Protokol HTTPS Aman Lokal (@vitejs/plugin-basic-ssl)
+- **Aktivasi Secure Context pada Jaringan Lokal Wi-Fi**:
+  - Mengintegrasikan plugin `@vitejs/plugin-basic-ssl` pada `vite.config.ts` sehingga dev server otomatis berjalan di bawah protokol HTTPS (`https://192.168.1.x:5173/`).
+  - Menjadikan browser Chrome/Chromium pada smartphone Android mengenali sesi sebagai *Secure Context* (`window.isSecureContext === true`), yang merupakan syarat wajib pengaktifan fitur Web Share API (`navigator.share`).
+
+#### 2. Ketangguhan Pemicu Share Drawer Android (TeacherDashboard)
+- **Validasi canShare Dinamis**:
+  - Menyematkan pengecekan `navigator.canShare` untuk memverifikasi apakah kombinasi `title`, `text`, dan `url` didukung oleh peramban sebelum dikirim ke sistem operasi.
+  - Jika kombinasi lengkap tidak didukung oleh aplikasi tertentu, sistem secara pintar mengirimkan format `text` atau `url` yang kompatibel sehingga Share Drawer sistem Android tetap terbuka 100%.
+- **Notifikasi Toast Feedback Ramah Pengguna**:
+  - Jika tombol ditekan di lingkungan tanpa Web Share API (seperti desktop browser tertentu), sistem menyalin format pesan lengkap tugas kuis beserta tautan masuknya dan menampilkan toast konfirmasi yang jelas.
+
+#### 3. Pembaruan Cache PWA Service Worker (public/sw.js)
+- Menaikkan versi cache ke `kuis-sd-seru-v2.5.16`.
+
+
 ## [2.5.15] - 2026-10-21
 ### Integrasi Arsitektur Dual-Engine TTS (Native + Cloud Fallback) Khusus Perangkat Custom ROM & De-Googled (Rule 1, Rule 2, Rule 6, Rule 15 & AGENTS.md)
 

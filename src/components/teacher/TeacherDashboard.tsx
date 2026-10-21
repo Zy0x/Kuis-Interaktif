@@ -426,21 +426,36 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
     if (e) e.stopPropagation();
     playClick();
     const url = `${window.location.origin}/?pin=${quiz.pinCode || '1001'}`;
-    if (typeof navigator !== 'undefined' && navigator.share) {
+    const shareText = `Ayo ikuti kuis "${quiz.title}"! Masukkan PIN: ${quiz.pinCode || '1001'}`;
+
+    if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
       try {
-        await navigator.share({
+        const shareData = {
           title: quiz.title,
-          text: `Ayo ikuti kuis "${quiz.title}"! Masukkan PIN: ${quiz.pinCode || '1001'}`,
+          text: shareText,
           url: url,
-        });
+        };
+        if (typeof navigator.canShare === 'function') {
+          if (navigator.canShare(shareData)) {
+            await navigator.share(shareData);
+          } else {
+            await navigator.share({ title: quiz.title, url });
+          }
+        } else {
+          await navigator.share(shareData);
+        }
+        setCopiedLink(quiz.id);
+        setTimeout(() => setCopiedLink(null), 2000);
         return;
       } catch (err: any) {
         if (err.name === 'AbortError') return;
       }
     }
+
     const success = await copyTextToClipboard(url);
     if (success) {
       setCopiedLink(quiz.id);
+      showToast('Tautan kuis disalin ke clipboard!');
       setTimeout(() => setCopiedLink(null), 2000);
     }
   };
@@ -456,22 +471,36 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
       : '';
     const shareMessage = `Halo anak-anak dan Ayah/Bunda! 📚\nBerikut tugas kuis interaktif kita:\n\n*${session.quizTitle}*\n📖 Mata Pelajaran: ${session.subject} (Kelas ${session.grade})\n${deadlineStr}\n🔑 PIN Ruang: *${session.pinCode}*\n🔗 Tautan Masuk: ${studentUrl}\n\nKerjakan dengan teliti dan raih bintang terbaik! 🌟`;
 
-    if (typeof navigator !== 'undefined' && navigator.share) {
+    if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
       try {
-        await navigator.share({
+        const shareData = {
           title: session.quizTitle,
           text: shareMessage,
           url: studentUrl,
-        });
+        };
+        if (typeof navigator.canShare === 'function') {
+          if (navigator.canShare(shareData)) {
+            await navigator.share(shareData);
+          } else if (navigator.canShare({ title: session.quizTitle, text: shareMessage })) {
+            await navigator.share({ title: session.quizTitle, text: shareMessage });
+          } else {
+            await navigator.share({ url: studentUrl });
+          }
+        } else {
+          await navigator.share(shareData);
+        }
+        setCopiedLink(trackingKey);
+        setTimeout(() => setCopiedLink(null), 2500);
         return;
       } catch (err: any) {
         if (err.name === 'AbortError') return;
       }
     }
 
-    const success = await copyTextToClipboard(studentUrl);
+    const success = await copyTextToClipboard(shareMessage);
     if (success) {
       setCopiedLink(trackingKey);
+      showToast('Pesan & tautan sesi kuis disalin ke clipboard!');
       setTimeout(() => setCopiedLink(null), 2500);
     }
   };
@@ -489,11 +518,22 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
 
     if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
       try {
-        await navigator.share({
+        const shareData = {
           title: session.quizTitle,
           text: message,
           url: studentUrl,
-        });
+        };
+        if (typeof navigator.canShare === 'function') {
+          if (navigator.canShare(shareData)) {
+            await navigator.share(shareData);
+          } else if (navigator.canShare({ title: session.quizTitle, text: message })) {
+            await navigator.share({ title: session.quizTitle, text: message });
+          } else {
+            await navigator.share({ url: studentUrl });
+          }
+        } else {
+          await navigator.share(shareData);
+        }
         setCopiedLink(`wa_${session.id}`);
         setTimeout(() => setCopiedLink(null), 2500);
         return;
@@ -505,6 +545,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
     const success = await copyTextToClipboard(message);
     if (success) {
       setCopiedLink(`wa_${session.id}`);
+      showToast('Pesan tugas & tautan kuis disalin ke clipboard!');
       setTimeout(() => setCopiedLink(null), 2500);
     }
   };
