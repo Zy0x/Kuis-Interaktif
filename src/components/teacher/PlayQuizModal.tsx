@@ -15,6 +15,7 @@ import { useDrawerSwipeDown } from '../../hooks/useDrawerSwipeDown';
 import { DrawerHandle } from '../common/DrawerHandle';
 import { QuizCoverDisplay } from '../common/QuizCoverDisplay';
 import { copyTextToClipboard } from '../../lib/aiQuestionParser';
+import { shareLinkUniversal } from '../../lib/shareUtils';
 import { DataManager } from '../../lib/supabaseClient';
 import { 
   X, 
@@ -819,14 +820,19 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
     const session = await ensureSessionAndSyncSettings();
     const pinToCopy = session?.pinCode || activeSessionPin || quiz.pinCode || '';
     const studentUrl = `${window.location.origin}/?pin=${pinToCopy}`;
-    const deadlineStr = pacingType === 'homework' && deadlineAt ? `⏰ Batas Pengumpulan: ${formatIndonesianDeadline(deadlineAt)}\n` : '';
-    const message = `Halo anak-anak dan Ayah/Bunda! 📚\nBerikut tugas kuis interaktif kita:\n\n*${quiz.title}*\n📖 Mata Pelajaran: ${quiz.subject} (Kelas ${quiz.grade})\n${deadlineStr}🔑 PIN Ruang Kelas: *${pinToCopy}*\n🔗 Tautan Masuk Langsung: ${studentUrl}\n\nKerjakan dengan teliti dan raih bintang terbaik! 🌟`;
 
-    const success = await copyTextToClipboard(message);
-    if (success) {
-      setIsCopiedWa(true);
-      setTimeout(() => setIsCopiedWa(false), 2000);
-    }
+    await shareLinkUniversal({
+      url: studentUrl,
+      title: quiz.title,
+      onSuccess: () => {
+        setIsCopiedWa(true);
+        setTimeout(() => setIsCopiedWa(false), 2000);
+      },
+      onCopied: () => {
+        setIsCopiedWa(true);
+        setTimeout(() => setIsCopiedWa(false), 2000);
+      },
+    });
   };
 
   const handleLaunch = () => {

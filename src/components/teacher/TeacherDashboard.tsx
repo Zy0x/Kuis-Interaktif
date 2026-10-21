@@ -4,6 +4,7 @@ import { MASTER_TEACHER_EMAIL } from '../../types/quiz';
 import { DataManager } from '../../lib/supabaseClient';
 import { useBackHandler } from '../../lib/navigationHistory';
 import { copyTextToClipboard } from '../../lib/aiQuestionParser';
+import { shareLinkUniversal } from '../../lib/shareUtils';
 import { ThemeToggle } from '../common/ThemeToggle';
 import { ConfirmDeleteModal } from '../common/ConfirmDeleteModal';
 import { QuizSettingsModal } from '../common/QuizSettingsModal';
@@ -426,128 +427,55 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
     if (e) e.stopPropagation();
     playClick();
     const url = `${window.location.origin}/?pin=${quiz.pinCode || '1001'}`;
-    const shareText = `Ayo ikuti kuis "${quiz.title}"! Masukkan PIN: ${quiz.pinCode || '1001'}`;
-
-    if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
-      try {
-        const shareData = {
-          title: quiz.title,
-          text: shareText,
-          url: url,
-        };
-        if (typeof navigator.canShare === 'function') {
-          if (navigator.canShare(shareData)) {
-            await navigator.share(shareData);
-          } else {
-            await navigator.share({ title: quiz.title, url });
-          }
-        } else {
-          await navigator.share(shareData);
-        }
+    await shareLinkUniversal({
+      url,
+      title: quiz.title,
+      onSuccess: () => {
         setCopiedLink(quiz.id);
         setTimeout(() => setCopiedLink(null), 2000);
-        return;
-      } catch (err: any) {
-        if (err.name === 'AbortError') return;
-      }
-    }
-
-    const success = await copyTextToClipboard(url);
-    if (success) {
-      setCopiedLink(quiz.id);
-      showToast('Tautan kuis disalin ke clipboard!');
-      setTimeout(() => setCopiedLink(null), 2000);
-    }
+      },
+      onCopied: () => {
+        setCopiedLink(quiz.id);
+        showToast('Tautan kuis berhasil disalin!');
+        setTimeout(() => setCopiedLink(null), 2000);
+      },
+    });
   };
 
   const handleShareSession = async (session: QuizSession, trackingKey: string) => {
     playClick();
     const studentUrl = `${window.location.origin}/?pin=${session.pinCode}`;
-    const deadlineCountdown = session.settings?.deadlineAt 
-      ? getAccurateDeadlineCountdown(session.settings.deadlineAt) 
-      : null;
-    const deadlineStr = deadlineCountdown?.formattedDate 
-      ? `\n⏰ Batas Pengumpulan: ${deadlineCountdown.formattedDate}` 
-      : '';
-    const shareMessage = `Halo anak-anak dan Ayah/Bunda! 📚\nBerikut tugas kuis interaktif kita:\n\n*${session.quizTitle}*\n📖 Mata Pelajaran: ${session.subject} (Kelas ${session.grade})\n${deadlineStr}\n🔑 PIN Ruang: *${session.pinCode}*\n🔗 Tautan Masuk: ${studentUrl}\n\nKerjakan dengan teliti dan raih bintang terbaik! 🌟`;
-
-    if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
-      try {
-        const shareData = {
-          title: session.quizTitle,
-          text: shareMessage,
-          url: studentUrl,
-        };
-        if (typeof navigator.canShare === 'function') {
-          if (navigator.canShare(shareData)) {
-            await navigator.share(shareData);
-          } else if (navigator.canShare({ title: session.quizTitle, text: shareMessage })) {
-            await navigator.share({ title: session.quizTitle, text: shareMessage });
-          } else {
-            await navigator.share({ url: studentUrl });
-          }
-        } else {
-          await navigator.share(shareData);
-        }
+    await shareLinkUniversal({
+      url: studentUrl,
+      title: session.quizTitle,
+      onSuccess: () => {
         setCopiedLink(trackingKey);
         setTimeout(() => setCopiedLink(null), 2500);
-        return;
-      } catch (err: any) {
-        if (err.name === 'AbortError') return;
-      }
-    }
-
-    const success = await copyTextToClipboard(shareMessage);
-    if (success) {
-      setCopiedLink(trackingKey);
-      showToast('Pesan & tautan sesi kuis disalin ke clipboard!');
-      setTimeout(() => setCopiedLink(null), 2500);
-    }
+      },
+      onCopied: () => {
+        setCopiedLink(trackingKey);
+        showToast('Tautan sesi kuis berhasil disalin!');
+        setTimeout(() => setCopiedLink(null), 2500);
+      },
+    });
   };
 
   const handleShareWhatsAppForSession = async (session: QuizSession) => {
     playClick();
     const studentUrl = `${window.location.origin}/?pin=${session.pinCode}`;
-    const deadlineCountdown = session.settings?.deadlineAt 
-      ? getAccurateDeadlineCountdown(session.settings.deadlineAt) 
-      : null;
-    const deadlineStr = deadlineCountdown?.formattedDate 
-      ? `⏰ Batas Pengumpulan: ${deadlineCountdown.formattedDate}\n` 
-      : '';
-    const message = `Halo anak-anak dan Ayah/Bunda! 📚\nBerikut tugas kuis interaktif kita:\n\n*${session.quizTitle}*\n📖 Mata Pelajaran: ${session.subject} (Kelas ${session.grade})\n${deadlineStr}🔑 PIN Ruang Kelas: *${session.pinCode}*\n🔗 Tautan Masuk Langsung: ${studentUrl}\n\nKerjakan dengan teliti dan raih bintang terbaik! 🌟`;
-
-    if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
-      try {
-        const shareData = {
-          title: session.quizTitle,
-          text: message,
-          url: studentUrl,
-        };
-        if (typeof navigator.canShare === 'function') {
-          if (navigator.canShare(shareData)) {
-            await navigator.share(shareData);
-          } else if (navigator.canShare({ title: session.quizTitle, text: message })) {
-            await navigator.share({ title: session.quizTitle, text: message });
-          } else {
-            await navigator.share({ url: studentUrl });
-          }
-        } else {
-          await navigator.share(shareData);
-        }
+    await shareLinkUniversal({
+      url: studentUrl,
+      title: session.quizTitle,
+      onSuccess: () => {
         setCopiedLink(`wa_${session.id}`);
         setTimeout(() => setCopiedLink(null), 2500);
-        return;
-      } catch (err: any) {
-        if (err.name === 'AbortError') return;
-      }
-    }
-
-    const success = await copyTextToClipboard(message);
-    if (success) {
-      setCopiedLink(`wa_${session.id}`);
-      showToast('Pesan tugas & tautan kuis disalin ke clipboard!');
-      setTimeout(() => setCopiedLink(null), 2500);
-    }
+      },
+      onCopied: () => {
+        setCopiedLink(`wa_${session.id}`);
+        showToast('Tautan kuis berhasil disalin!');
+        setTimeout(() => setCopiedLink(null), 2500);
+      },
+    });
   };
 
   const handleConfirmDeleteQuiz = async () => {

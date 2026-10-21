@@ -1,7 +1,8 @@
+import { copyTextToClipboard } from './aiQuestionParser';
+
 /**
  * Utilitas Berbagi Laporan Hasil Kuis ke WhatsApp Wali Murid & Media Komunikasi
  */
-
 export interface StudentQuizReportParams {
   studentName: string;
   quizTitle: string;
@@ -41,4 +42,67 @@ ${
 Terima kasih banyak atas kerja sama dan pendampingan Bapak/Ibu di rumah. 🙏`;
 
   return `https://wa.me/?text=${encodeURIComponent(message)}`;
+}
+
+export interface ShareLinkOptions {
+  url: string;
+  title?: string;
+  onSuccess?: () => void;
+  onCopied?: () => void;
+}
+
+/**
+ * Membagikan tautan kuis secara universal hanya berupa link murni (tanpa teks panjang).
+ * 1. Menggunakan Web Share API (navigator.share) jika didukung (HTTPS / localhost).
+ * 2. Memicu Share Drawer sistem Android via Android Intent jika diakses melalui HTTP lokal.
+ * 3. Fallback otomatis ke salin tautan clipboard jika keduanya tidak didukung.
+ */
+export async function shareLinkUniversal(options: ShareLinkOptions): Promise<void> {
+  const { url, title, onSuccess, onCopied } = options;
+
+  // 1. Coba Web Share API native (HTTPS / Localhost)
+  if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+    try {
+      const shareData: ShareData = { url };
+      if (title) shareData.title = title;
+
+      if (typeof navigator.canShare === 'function') {
+        if (navigator.canShare(shareData)) {
+          await navigator.share(shareData);
+          onSuccess?.();
+          return;
+        } else if (navigator.canShare({ url })) {
+          await navigator.share({ url });
+          onSuccess?.();
+          return;
+        }
+      } else {
+        await navigator.share(shareData);
+        onSuccess?.();
+        return;
+      }
+    } catch (err: any) {
+      if (err.name === 'AbortError') return;
+    }
+  }
+
+  // 2. Pada smartphone Android di jaringan HTTP (misal IP Wi-Fi lokal),
+  // picu Share Drawer sistem Android bawaan menggunakan Android Intent
+  const isAndroid = typeof navigator !== 'undefined' && /android/i.test(navigator.userAgent);
+  if (isAndroid) {
+    try {
+      const intentUrl = `intent:#Intent;action=android.intent.action.SEND;type=text/plain;S.android.intent.extra.TEXT=${encodeURIComponent(
+        url
+      )};end`;
+      window.location.href = intentUrl;
+      onSuccess?.();
+      return;
+    } catch {}
+  }
+
+  // 3. Fallback otomatis ke Clipboard
+  const copied = await copyTextToClipboard(url);
+  if (copied) {
+    onCopied?.();
+  }
 }

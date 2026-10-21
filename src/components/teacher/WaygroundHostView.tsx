@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import type { Quiz, QuizSession, QuizSessionParticipant } from '../../types/quiz';
 import { DataManager } from '../../lib/supabaseClient';
 import { copyTextToClipboard } from '../../lib/aiQuestionParser';
+import { shareLinkUniversal } from '../../lib/shareUtils';
 import { AVATAR_MAP } from '../../data/seedQuizzes';
 import { QuizizzReactionOverlay } from '../common/QuizizzReactionOverlay';
 import { QuizizzReactionButtonRow } from '../common/QuizizzReactionButtonRow';
@@ -306,32 +307,19 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
   const handleShareLink = async () => {
     playClick();
     const url = `${window.location.origin}/?pin=${session.pinCode}`;
-
-    // 1. Coba gunakan fitur bagikan bawaan perangkat (Web Share API) jika didukung
-    if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
-      try {
-        await navigator.share({
-          url,
-        });
+    await shareLinkUniversal({
+      url,
+      title: session.quizTitle,
+      onSuccess: () => {
         setCopiedLink(true);
         setTimeout(() => setCopiedLink(false), 2000);
-        return;
-      } catch (err: any) {
-        // Abaikan jika pengguna membatalkan drawer bagikan bawaan (AbortError)
-        if (err && err.name === 'AbortError') {
-          return;
-        }
-        // Jika gagal karena pembatasan izin perangkat, lanjutkan ke fallback clipboard di bawah
-      }
-    }
-
-    // 2. Fallback otomatis ke salin tautan clipboard jika browser/perangkat tidak mendukung Web Share API
-    const success = await copyTextToClipboard(url);
-    if (success) {
-      setCopiedLink(true);
-      showToast('Tautan kuis berhasil disalin ke clipboard!');
-      setTimeout(() => setCopiedLink(false), 2000);
-    }
+      },
+      onCopied: () => {
+        setCopiedLink(true);
+        showToast('Tautan kuis berhasil disalin ke clipboard!');
+        setTimeout(() => setCopiedLink(false), 2000);
+      },
+    });
   };
 
   const handleTogglePause = async () => {

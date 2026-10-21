@@ -3,6 +3,7 @@ import type { Quiz, StudentSubmission, TeacherProfile } from '../../types/quiz';
 import { DataManager } from '../../lib/supabaseClient';
 import { useBackHandler } from '../../lib/navigationHistory';
 import { copyTextToClipboard } from '../../lib/aiQuestionParser';
+import { shareLinkUniversal } from '../../lib/shareUtils';
 import { ConfirmDeleteModal } from '../common/ConfirmDeleteModal';
 import { QuizCoverDisplay } from '../common/QuizCoverDisplay';
 import { QuizIllustration } from '../shared/QuizIllustration';
@@ -247,12 +248,19 @@ export const QuizDetail: React.FC<QuizDetailProps> = ({
   const handleCopyLink = async () => {
     playClick();
     const url = `${window.location.origin}/?pin=${currentPin}`;
-    const success = await copyTextToClipboard(url);
-    if (success) {
-      setCopiedLink(true);
-      showToast('✓ Tautan kuis disalin!');
-      setTimeout(() => setCopiedLink(false), 2000);
-    }
+    await shareLinkUniversal({
+      url,
+      title: quiz.title,
+      onSuccess: () => {
+        setCopiedLink(true);
+        setTimeout(() => setCopiedLink(false), 2000);
+      },
+      onCopied: () => {
+        setCopiedLink(true);
+        showToast('✓ Tautan kuis disalin!');
+        setTimeout(() => setCopiedLink(false), 2000);
+      },
+    });
   };
 
   const handleToggleVisibility = async () => {

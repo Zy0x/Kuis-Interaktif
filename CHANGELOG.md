@@ -6,6 +6,25 @@ Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen in
 
 
 
+## [2.5.17] - 2026-10-22
+### Standarisasi Berbagi Tautan Bersih (Hanya Link Murni) & Dukungan Android Intent Drawer pada HTTP Lokal (Rule 1, Rule 2, Rule 15 & AGENTS.md)
+
+#### 1. Pembagian Tautan Bersih Tanpa Teks Template Panjang (Clean Link Sharing)
+- **Hanya Membagikan Tautan/Link Murni**:
+  - Seluruh tombol bagikan kuis dan sesi (di *Dashboard Guru*, *Modal Mulai Kuis*, *Wayground Host View*, dan *Detail Kuis*) kini hanya membagikan tautan/URL murni tanpa teks pengantar berbelit-belit.
+  - Memudahkan guru dan siswa saat membagikan link ke grup WhatsApp, media sosial, atau aplikasi pesan lainnya tanpa format teks berantakan.
+
+#### 2. Dukungan Penuh Share Drawer Android pada HTTP Lokal (shareLinkUniversal)
+- **Pemicu Otomatis Android System Share Sheet**:
+  - Mengimplementasikan `shareLinkUniversal` yang menggunakan Android Intent (`intent:#Intent;action=android.intent.action.SEND...`) saat diakses melalui HTTP dev server (`http://192.168.1.7:5173/`).
+  - Menghilangkan kendala pemblokiran Web Share API pada HTTP polos, sehingga Share Drawer bawaan HP Android (WhatsApp, Telegram, dsb.) tetap terbuka seketika tombol ditekan.
+- **Kembalikan Dev Server ke HTTP Standar Ramah Perangkat**:
+  - Menghapus HTTPS lokal agar server dapat dibuka kembali secara instan dan mulus di HP via `http://192.168.1.7:5173/` tanpa perlu mengetik `https://` dan tanpa peringatan sertifikat peramban.
+
+#### 3. Pembaruan Cache PWA Service Worker (public/sw.js)
+- Menaikkan versi cache ke `kuis-sd-seru-v2.5.17`.
+
+
 ## [2.5.16] - 2026-10-22
 ### Konfigurasi HTTPS Lokal Dev Server & Penguatan Aksi Bagikan Native Android (Rule 1, Rule 2, Rule 9, Rule 15 & AGENTS.md)
 
