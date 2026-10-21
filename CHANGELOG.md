@@ -6,6 +6,36 @@ Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen in
 
 
 
+## [2.5.20] - 2026-10-22
+### Redesain Ketegasan Visual, Kontras Border, Pembatas & Keterbacaan Dasbor Guru (Rule 1, Rule 2, Rule 4 & Rule 15)
+
+#### 1. Penajaman Kontur & Border Komponen Dasbor (`TeacherDashboard.tsx`)
+- **Kartu Kuis Lebih Berdimensi & Tegas**:
+  - Mengganti border pudar `border-slate-200/90` menjadi `border-slate-300 dark:border-slate-700/80` dengan bayangan taktil (`shadow-xs`).
+  - Memperjelas garis pembatas (*divider*) di dalam kartu sebelum baris tombol aksi dari `border-slate-100` menjadi `border-t border-slate-200 dark:border-slate-800`.
+- **Gaya Taktil & Kontras Tombol Aksi**:
+  - Tombol *"Detail"* dan *"Bagikan"* kini memiliki border solid `border-slate-300 dark:border-slate-700` dengan latar belakang putih/solid dan bayangan mikro (`shadow-2xs`), serasi dengan tombol utama *"Mainkan"*.
+  - PIN Chip kuis dipertegas dengan border `border-blue-300 dark:border-blue-700/80` dan latar belakang biru lembut kontras.
+- **Peningkatan Kontras Teks & Keterbacaan Tipografi**:
+  - Judul kuis ditingkatkan ke `font-extrabold text-slate-900 dark:text-white`.
+  - Teks deskripsi ditingkatkan ke `text-slate-600 dark:text-slate-300 font-medium`.
+  - Teks meta info (soal, durasi, publik/privat) ditingkatkan ke `text-slate-600 dark:text-slate-300 font-semibold` dengan ikon berwarna cerah yang jelas.
+  - Lencana mata pelajaran dan kelas diperkuat kontras teks dan garis tepinya.
+
+#### 2. Redesain Bilah Pencarian & Filter
+- **Eliminasi Glitch Scrollbar & Border Tegas**:
+  - Mengganti border luar filter toolbar ke `border-slate-300 dark:border-slate-700/80`.
+  - Memperjelas border input pencarian ke `border-slate-300` dengan latar putih solid dan ring fokus biru.
+  - Memperbarui dropdown selector mapel, kelas, status, dan urutan dengan border tegas `border-slate-300 dark:border-slate-700` dan teks tebal (`font-bold`).
+  - Memperbaiki pembatas baris status hasil pencarian ke `border-t border-slate-200 dark:border-slate-800` serta menghilangkan artefak visual garis horizontal.
+
+#### 3. Banner Sesi Live Aktif Lebih Kokoh & Terstruktur
+- Memberikan garis tepi tebal 2px (`border-2 border-blue-400/50 dark:border-blue-500/50`) pada kontainer banner.
+- Mempertegas border lencana status dan peserta (`border-white/25 bg-white/15`), PIN button (`border-white/30 bg-black/50`), dan divider aksi (`border-t border-white/20`).
+
+#### 4. Pembaruan Cache PWA Service Worker (`public/sw.js`)
+- Menaikkan versi cache ke `kuis-sd-seru-v2.5.20`.
+
 ## [2.5.19] - 2026-10-22
 ### Penyempurnaan Estetika Modal Metode Buat Kuis (Bebas Badge & Anti-Slop) (Rule 1, Rule 2 & Rule 15)
 

@@ -57,15 +57,15 @@ import {
 const getSubjectBadge = (subject: string) => {
   switch (subject) {
     case 'Matematika':
-      return 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-900/60';
+      return 'bg-blue-50 dark:bg-blue-950/60 text-blue-800 dark:text-blue-200 border-blue-300 dark:border-blue-800';
     case 'IPA':
-      return 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/60';
+      return 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-200 border-emerald-300 dark:border-emerald-800';
     case 'Bahasa Indonesia':
-      return 'bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-900/60';
+      return 'bg-purple-50 dark:bg-purple-950/60 text-purple-800 dark:text-purple-200 border-purple-300 dark:border-purple-800';
     case 'Pendidikan Pancasila':
-      return 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-900/60';
+      return 'bg-rose-50 dark:bg-rose-950/60 text-rose-800 dark:text-rose-200 border-rose-300 dark:border-rose-800';
     default:
-      return 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700';
+      return 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-700';
   }
 };
 
@@ -833,7 +833,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
       </header>
 
       {/* Main Tab Navigation: Koleksi Kuis vs Kuis Aktif */}
-      <nav className="w-full bg-white dark:bg-slate-900 border-b border-slate-200/90 dark:border-slate-800 px-3 sm:px-8 lg:px-12 transition-colors">
+      <nav className="w-full bg-white dark:bg-slate-900 border-b border-slate-300 dark:border-slate-800 px-3 sm:px-8 lg:px-12 transition-colors shadow-2xs">
         <div className="w-full max-w-[2000px] mx-auto flex items-center gap-2 sm:gap-4 overflow-x-auto py-2.5 no-scrollbar">
           <button
             type="button"
@@ -906,10 +906,10 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
           const deadlineCountdown = isSelfPaced ? getAccurateDeadlineCountdown(currentBannerSession.settings?.deadlineAt, nowMs) : null;
 
           return (
-            <div className={`rounded-2xl p-3.5 sm:p-4 text-white shadow-lg flex flex-col gap-2.5 sm:gap-3 animate-fade-in relative overflow-hidden ${
+            <div className={`rounded-2xl p-4 sm:p-5 text-white shadow-lg flex flex-col gap-3 animate-fade-in relative overflow-hidden ${
               isSelfPaced
-                ? 'bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border border-indigo-500/30'
-                : 'bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 border border-blue-400/30'
+                ? 'bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border-2 border-indigo-400/50 dark:border-indigo-500/50'
+                : 'bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 border-2 border-blue-400/50 dark:border-blue-500/50'
             }`}>
               {/* Subtle ambient accent glow */}
               <div className="absolute -right-8 -bottom-8 w-36 h-36 bg-white/5 rounded-full blur-2xl pointer-events-none" />
@@ -934,7 +934,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                     </span>
                   )}
 
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/10 text-[11px] font-medium text-slate-200 border border-white/10 flex-shrink-0">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/15 text-[11px] font-bold text-white border border-white/25 flex-shrink-0">
                     <Users className="w-3 h-3 text-slate-300" />
                     <span>{currentBannerSession.participants.length} Siswa</span>
                   </span>
@@ -945,7 +945,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                   <button
                     type="button"
                     onClick={() => handleCopyPin(currentBannerSession.pinCode)}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-black/40 hover:bg-black/60 border border-white/20 text-white transition-colors cursor-pointer min-h-[32px] btn-press"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-black/50 hover:bg-black/70 border border-white/30 text-white transition-colors cursor-pointer min-h-[34px] btn-press"
                     title="Klik untuk salin PIN"
                   >
                     <span className="text-[10px] text-white/60 font-sans">PIN</span>
@@ -960,7 +960,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                   <button
                     type="button"
                     onClick={() => handleShareSession(currentBannerSession, `banner_${currentBannerSession.id}`)}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-white/15 hover:bg-white/25 border border-white/20 text-white transition-colors cursor-pointer min-h-[32px] btn-press"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-white/20 hover:bg-white/30 border border-white/30 text-white transition-colors cursor-pointer min-h-[34px] btn-press"
                     title="Bagikan tautan sesi kuis"
                   >
                     {copiedLink === `banner_${currentBannerSession.id}` ? (
@@ -1032,7 +1032,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
               </div>
 
               {/* Baris Tombol Aksi (1 Baris Rapi & Seimbang) */}
-              <div className="pt-2 border-t border-white/10 flex items-center gap-2 z-10">
+              <div className="pt-2.5 border-t border-white/20 flex items-center gap-2 z-10">
                 <button
                   type="button"
                   onClick={() => {
@@ -1085,7 +1085,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
 
               {/* Multi-Session Switcher jika lebih dari 1 sesi aktif */}
               {activeHostSessions.length > 1 && (
-                <div className="w-full pt-2 border-t border-white/10 flex items-center justify-between gap-2 text-xs text-slate-300 z-10">
+                <div className="w-full pt-2.5 border-t border-white/20 flex items-center justify-between gap-2 text-xs text-slate-200 z-10">
                   <div className="flex items-center gap-1.5">
                     <span className="text-[11px] text-slate-400 font-medium">Sesi:</span>
                     <div className="flex items-center gap-1 bg-black/30 rounded-lg p-0.5 border border-white/10">
@@ -1146,7 +1146,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                 <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
                   Koleksi Kuis
                 </h2>
-                <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
+                <span className="px-2 py-0.5 rounded-full text-xs font-extrabold bg-blue-50 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-700">
                   {quizzes.length}
                 </span>
               </div>
@@ -1164,7 +1164,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
             </div>
 
             {/* Search, Filters & Sorting Bar - Compact Toolbar */}
-            <div className="bg-white dark:bg-slate-900 rounded-2xl p-3 border border-slate-200/90 dark:border-slate-800 shadow-2xs space-y-2.5">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl p-3.5 border border-slate-300 dark:border-slate-700/80 shadow-xs space-y-3">
               {/* Baris 1: Input Pencarian & Tombol Reset */}
               <div className="flex items-center gap-2">
                 <div className="relative flex-1">
@@ -1174,7 +1174,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Cari judul kuis, mata pelajaran, atau PIN kelas..."
-                    className="w-full pl-9 pr-8 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-slate-900 dark:text-white text-xs sm:text-sm font-medium focus:outline-none focus:border-blue-500 min-h-[40px]"
+                    className="w-full pl-9 pr-8 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 text-xs sm:text-sm font-medium focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 min-h-[40px] transition-colors"
                   />
                   {searchQuery && (
                     <button
@@ -1202,11 +1202,11 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
               </div>
 
               {/* Baris 2: Filter Selectors */}
-              <div className="flex items-center gap-2 overflow-x-auto pb-0.5 no-scrollbar text-xs">
+              <div className="flex items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden text-xs">
                 <select
                   value={filterSubject}
                   onChange={(e) => setFilterSubject(e.target.value as any)}
-                  className="px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold focus:outline-none min-h-[38px] flex-shrink-0 cursor-pointer"
+                  className="px-2.5 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-bold focus:outline-none focus:border-blue-500 min-h-[38px] flex-shrink-0 cursor-pointer shadow-2xs"
                 >
                   <option value="Semua">Semua Mapel</option>
                   <option value="Matematika">Matematika</option>
@@ -1219,7 +1219,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                 <select
                   value={filterGrade}
                   onChange={(e) => setFilterGrade(e.target.value === 'Semua' ? 'Semua' : Number(e.target.value))}
-                  className="px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold focus:outline-none min-h-[38px] flex-shrink-0 cursor-pointer"
+                  className="px-2.5 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-bold focus:outline-none focus:border-blue-500 min-h-[38px] flex-shrink-0 cursor-pointer shadow-2xs"
                 >
                   <option value="Semua">Semua Kelas</option>
                   <option value="1">Kelas 1</option>
@@ -1233,7 +1233,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                 <select
                   value={filterVisibility}
                   onChange={(e) => setFilterVisibility(e.target.value as any)}
-                  className="px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold focus:outline-none min-h-[38px] flex-shrink-0 cursor-pointer"
+                  className="px-2.5 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-bold focus:outline-none focus:border-blue-500 min-h-[38px] flex-shrink-0 cursor-pointer shadow-2xs"
                 >
                   <option value="all">Semua Status</option>
                   <option value="public">🌐 Publik</option>
@@ -1243,7 +1243,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                 <select
                   value={sortOption}
                   onChange={(e) => setSortOption(e.target.value as any)}
-                  className="px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold focus:outline-none min-h-[38px] flex-shrink-0 cursor-pointer sm:ml-auto"
+                  className="px-2.5 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-bold focus:outline-none focus:border-blue-500 min-h-[38px] flex-shrink-0 cursor-pointer shadow-2xs sm:ml-auto"
                 >
                   <option value="newest">🕒 Terbaru</option>
                   <option value="oldest">⏳ Terlama</option>
@@ -1254,7 +1254,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
               </div>
 
               {/* Baris 3: Status Hasil Pencarian */}
-              <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 text-[11px] font-medium text-slate-500 dark:text-slate-400 flex items-center justify-between">
+              <div className="pt-2.5 border-t border-slate-200 dark:border-slate-800 text-xs font-medium text-slate-600 dark:text-slate-400 flex items-center justify-between">
                 <span>
                   Menampilkan <strong>{filteredQuizzes.length}</strong> dari <strong>{quizzes.length}</strong> kuis
                 </span>
@@ -1309,7 +1309,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                       playClick();
                       setSelectedQuizForDetail(quiz);
                     }}
-                    className="group bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200/90 dark:border-slate-800 shadow-2xs hover:shadow-md hover:border-blue-400 dark:hover:border-blue-600/80 transition-all flex flex-col justify-between gap-3 cursor-pointer"
+                    className="group bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-4.5 border border-slate-300 dark:border-slate-700/80 shadow-xs hover:shadow-md hover:border-blue-500 dark:hover:border-blue-500 transition-all flex flex-col justify-between gap-3 cursor-pointer"
                   >
                     <div className="space-y-2.5">
                       {/* Baris Atas: Cover + Lencana Mapel/Kelas + PIN & Menu Opsi */}
@@ -1317,11 +1317,11 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                         <div className="flex items-center gap-2.5 min-w-0">
                           <QuizCoverDisplay
                             cover={quiz.coverEmoji}
-                            className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xl flex-shrink-0 shadow-2xs border border-slate-200/60 dark:border-slate-700/60 select-none overflow-hidden group-hover:scale-105 transition-transform"
+                            className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xl flex-shrink-0 shadow-2xs border border-slate-300 dark:border-slate-700 select-none overflow-hidden group-hover:scale-105 transition-transform"
                           />
                           <div className="min-w-0">
                             <div className="flex items-center gap-1 flex-wrap">
-                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 whitespace-nowrap">
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 whitespace-nowrap">
                                 Kelas {quiz.grade}
                               </span>
                               <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md border whitespace-nowrap truncate max-w-[120px] ${getSubjectBadge(quiz.subject)}`}>
@@ -1339,7 +1339,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                               e.stopPropagation();
                               handleCopyPin(quiz.pinCode || '1001');
                             }}
-                            className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-mono font-bold bg-blue-50/80 dark:bg-blue-950/50 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 border border-blue-200/80 dark:border-blue-800/80 transition-colors cursor-pointer min-h-[36px]"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-700/80 transition-colors cursor-pointer min-h-[36px]"
                             title="Klik untuk salin PIN"
                           >
                             <span className="text-[10px] text-slate-400 font-sans">PIN</span>
@@ -1370,20 +1370,20 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                       {/* Judul & Deskripsi Kuis */}
                       <div>
                         <h3 
-                          className="font-bold text-slate-900 dark:text-white text-sm sm:text-base leading-snug line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors"
+                          className="font-extrabold text-slate-900 dark:text-white text-sm sm:text-base leading-snug line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors"
                           title={quiz.title}
                         >
                           {quiz.title}
                         </h3>
                         {quiz.description && (
-                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1 leading-normal">
+                          <p className="text-xs text-slate-600 dark:text-slate-300 font-medium mt-1 line-clamp-1 leading-normal">
                             {quiz.description}
                           </p>
                         )}
                       </div>
 
                       {/* Meta Info Ringkas: Soal, Durasi & Akses */}
-                      <div className="flex items-center gap-2 text-[11px] font-medium text-slate-400 dark:text-slate-400 pt-0.5">
+                      <div className="flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-slate-300 pt-1">
                         <span className="inline-flex items-center gap-1">
                           <HelpCircle className="w-3 h-3 text-blue-500 flex-shrink-0" />
                           <span>{quiz.questions.length} Soal</span>
@@ -1411,7 +1411,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                     </div>
 
                     {/* Baris Tombol Aksi Esensial (1 Baris Terpadu & Hemat Ruang) */}
-                    <div className="flex items-center gap-2 pt-2.5 border-t border-slate-100 dark:border-slate-800">
+                    <div className="flex items-center gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
                       {/* Tombol Utama: Mainkan Kuis */}
                       <button
                         type="button"
@@ -1435,7 +1435,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                           playClick();
                           setSelectedQuizForDetail(quiz);
                         }}
-                        className="px-3.5 py-2 rounded-xl font-semibold text-xs text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 flex items-center justify-center gap-1.5 min-h-[44px] transition-colors btn-press whitespace-nowrap cursor-pointer border border-transparent hover:border-slate-300 dark:hover:border-slate-700"
+                        className="px-3.5 py-2 rounded-xl font-bold text-xs text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 flex items-center justify-center gap-1.5 min-h-[44px] transition-colors btn-press whitespace-nowrap cursor-pointer border border-slate-300 dark:border-slate-700 shadow-2xs"
                         title="Lihat Soal & Rekap Nilai Siswa"
                       >
                         <BarChart3 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
@@ -1446,7 +1446,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                       <button
                         type="button"
                         onClick={(e) => handleCopyLink(quiz, e)}
-                        className="p-2.5 rounded-xl text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 bg-slate-100/80 dark:bg-slate-800/80 hover:bg-blue-50 dark:hover:bg-blue-950/50 border border-slate-200/60 dark:border-slate-700/60 min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors btn-press cursor-pointer flex-shrink-0"
+                        className="p-2.5 rounded-xl text-slate-700 hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-400 bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-950/40 border border-slate-300 dark:border-slate-700 min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors btn-press cursor-pointer flex-shrink-0 shadow-2xs"
                         title="Bagi Tautan Kuis ke WhatsApp / Salin"
                         aria-label="Bagikan Tautan Kuis"
                       >
@@ -1649,7 +1649,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                               e.stopPropagation();
                               handleCopyPin(s.pinCode);
                             }}
-                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-mono font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer min-h-[32px]"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 transition-colors cursor-pointer min-h-[34px] shadow-2xs"
                             title="Klik untuk salin PIN"
                           >
                             <span className="text-[10px] text-slate-400 font-sans">PIN</span>
@@ -1668,7 +1668,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                                 e.stopPropagation();
                                 handleShareWhatsAppForSession(s);
                               }}
-                              className="p-1.5 rounded-lg text-slate-500 hover:text-emerald-600 dark:text-slate-400 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-slate-200 dark:border-slate-750 min-h-[36px] min-w-[36px] flex items-center justify-center transition-colors cursor-pointer btn-press"
+                              className="p-1.5 rounded-lg text-slate-700 hover:text-emerald-600 dark:text-slate-300 dark:hover:text-emerald-400 bg-white dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-slate-300 dark:border-slate-700 min-h-[36px] min-w-[36px] flex items-center justify-center transition-colors cursor-pointer btn-press shadow-2xs"
                               title="Bagikan Tautan Sesi Kuis"
                               aria-label="Bagikan Tautan Sesi"
                             >
