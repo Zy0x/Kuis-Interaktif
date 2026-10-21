@@ -487,6 +487,21 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
       : '';
     const message = `Halo anak-anak dan Ayah/Bunda! 📚\nBerikut tugas kuis interaktif kita:\n\n*${session.quizTitle}*\n📖 Mata Pelajaran: ${session.subject} (Kelas ${session.grade})\n${deadlineStr}🔑 PIN Ruang Kelas: *${session.pinCode}*\n🔗 Tautan Masuk Langsung: ${studentUrl}\n\nKerjakan dengan teliti dan raih bintang terbaik! 🌟`;
 
+    if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+      try {
+        await navigator.share({
+          title: session.quizTitle,
+          text: message,
+          url: studentUrl,
+        });
+        setCopiedLink(`wa_${session.id}`);
+        setTimeout(() => setCopiedLink(null), 2500);
+        return;
+      } catch (err: any) {
+        if (err.name === 'AbortError') return;
+      }
+    }
+
     const success = await copyTextToClipboard(message);
     if (success) {
       setCopiedLink(`wa_${session.id}`);
@@ -1684,8 +1699,8 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                                 e.stopPropagation();
                                 handleShareWhatsAppForSession(s);
                               }}
-                              className="p-1.5 rounded-lg text-slate-500 hover:text-emerald-600 dark:text-slate-400 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-slate-200 dark:border-slate-750 min-h-[32px] min-w-[32px] flex items-center justify-center transition-colors cursor-pointer btn-press"
-                              title="Bagikan ke WhatsApp / Salin Tautan"
+                              className="p-1.5 rounded-lg text-slate-500 hover:text-emerald-600 dark:text-slate-400 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-slate-200 dark:border-slate-750 min-h-[36px] min-w-[36px] flex items-center justify-center transition-colors cursor-pointer btn-press"
+                              title="Bagikan Tautan Sesi Kuis"
                               aria-label="Bagikan Tautan Sesi"
                             >
                               {copiedLink === `wa_${s.id}` || copiedLink === s.id ? (

@@ -6,6 +6,22 @@ Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen in
 
 
 
+## [2.5.10] - 2026-10-21
+### Integrasi Web Share API pada Tombol Bagikan Kartu Sesi Kuis Live (Rule 1, Rule 2, Rule 15 & AGENTS.md)
+
+#### 1. Pemanggilan Drawer Share Android & iOS Native
+- **Akar Masalah**: Tombol bagikan pada kartu sesi kuis aktif sebelumnya memanggil fungsi yang hanya menyalin teks ke clipboard tanpa memicu Web Share API (`navigator.share`).
+- **Solusi**: Memperbarui fungsi `handleShareWhatsAppForSession` pada [`TeacherDashboard.tsx`](file:///e:/Data/GitHub/Kuis%20Interaktif/src/components/teacher/TeacherDashboard.tsx) agar memanggil `navigator.share(...)` terlebih dahulu ketika didukung oleh peramban/perangkat.
+- **Hasil**: Mengetuk tombol bagikan pada kartu sesi kuis kini langsung membuka laci berbagi bawaan sistem operasi Android / iOS (*native share sheet*) yang memuat WhatsApp, Telegram, Google Classroom, Quick Share, dan aplikasi lainnya secara instan.
+- **Fallback Otomatis**: Jika perangkat atau peramban tidak mendukung Web Share API, sistem otomatis menyalin pesan undangan beserta tautan langsung ke *clipboard*.
+
+#### 2. Peningkatan Ergonomi Target Sentuh
+- Memperbesar tombol bagikan pada kartu sesi dari `min-h-[32px]` menjadi `min-h-[36px] min-w-[36px]` dengan area padding sentuh yang nyaman sesuai panduan *touch-first*.
+
+#### 3. Pembaruan Cache PWA Service Worker (public/sw.js)
+- Menaikkan versi cache ke `kuis-sd-seru-v2.5.10`.
+
+
 ## [2.5.9] - 2026-10-21
 ### Redesain Bottom Sheet Pengaturan Kuis dengan Kontrol Toggle Switch Modern (Rule 1, Rule 2, Rule 4, Rule 15 & AGENTS.md)
 
