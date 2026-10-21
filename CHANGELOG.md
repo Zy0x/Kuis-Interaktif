@@ -6,6 +6,27 @@ Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen in
 
 
 
+## [2.5.12] - 2026-10-21
+### Redesain Bilah Navigasi Bawah (Footer) Arena Kuis Siswa Lebih Ringkas, Rapi & Ergonomis (Rule 1, Rule 2, Rule 4, Rule 15 & AGENTS.md)
+
+#### 1. Transformasi Tata Letak 1 Baris Seimbang (Single-Row Action Dock)
+- **Eliminasi Tumpukan Baris Ganda (*Anti-Double-Stack*)**: Menghilangkan wrapping tidak disengaja pada kontainer kontrol kiri yang sebelumnya memicu lencana status (`Mode Ujian Terproteksi`) turun ke baris kedua dan membuat tata letak bertingkat canggung.
+- **Pencegahan Teks Terbelah (*No Text-Warping*)**: Tombol navigasi utama (`Soal Berikutnya`) kini selalu tampil utuh pada satu baris (`whitespace-nowrap`) dengan area sentuh luas dan mantap, mencegah teks terpotong vertikal menjadi `Soal \n Berikutnya`.
+- **Harmonisasi Tombol Navigasi Sekunder**: Menyelaraskan ukuran, radius sudut (`rounded-xl`), dan palet warna tombol `ArrowLeft` (Sebelumnya) dan `LayoutGrid` (Daftar Soal) agar memiliki keselarasan visual estetis (`min-h-[46px] min-w-[46px]`).
+
+#### 2. Distribusi Informasi Proporsional Lintas Ukuran Layar
+- **Tampilan Mobile (Smartphone $\le 640\text{ px}$)**:
+  - Sisi kiri fokus pada tombol navigasi taktil ringkas: `[ ← ]` dan `[ ⊞ ]`.
+  - Sisi kanan menyediakan tombol aksi utama yang lebar dan ergonomis: `[ Soal Berikutnya → ]` atau `[ Selesai & Rekap ]`.
+  - Bebas dari pergeseran layout mendadak (*zero layout shift*) saat siswa memilih atau mengubah opsi jawaban.
+- **Tampilan Tablet & Desktop ($\ge 768\text{ px}$)**:
+  - Tombol kiri dilengkapi label teks yang jelas: `[ ← Sebelumnya ]` dan `[ ⊞ Daftar Soal ]`.
+  - Bilah tengah menampilkan pill status ujian terproteksi atau panduan pengerjaan yang simetris dan elegan (`ShieldAlert` / `CheckCircle`).
+
+#### 3. Pembaruan Cache PWA Service Worker (public/sw.js)
+- Menaikkan versi cache ke `kuis-sd-seru-v2.5.12`.
+
+
 ## [2.5.11] - 2026-10-21
 ### Redesain Modal Pemilihan Metode Pembuatan Kuis Anti-Slop & Human-Centered (Rule 1, Rule 2, Rule 4, Rule 15 & AGENTS.md)
 

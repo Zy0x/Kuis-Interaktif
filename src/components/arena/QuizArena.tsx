@@ -2601,16 +2601,17 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
       </main>
 
       {/* Bottom Footer Control */}
-      <footer className="w-full bg-white dark:bg-slate-900 border-t border-slate-200/80 dark:border-slate-800 px-3 sm:px-6 py-2.5 sm:py-3 pb-[max(env(safe-area-inset-bottom),0.625rem)] flex-shrink-0 z-20 shadow-sm">
-        <div className="w-full max-w-2xl lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl 3xl:max-w-6xl 4k:max-w-7xl mx-auto flex items-center justify-between gap-3">
+      <footer className="w-full bg-white dark:bg-slate-900 border-t border-slate-200/80 dark:border-slate-800 px-3 sm:px-6 py-2.5 sm:py-3 pb-[max(env(safe-area-inset-bottom),0.625rem)] flex-shrink-0 z-20 shadow-xs">
+        <div className="w-full max-w-2xl lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl 3xl:max-w-6xl 4k:max-w-7xl mx-auto flex items-center justify-between gap-2.5 sm:gap-4">
           
-          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-            {/* Tombol Soal Sebelumnya (Prev) - Khusus Mode Dipandu Guru, Guru Terverifikasi, ATAU Mode Ujian Rahasia Santai (canReselectAndNavigate) */}
+          {/* Left Secondary Navigation Controls */}
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+            {/* Tombol Soal Sebelumnya (Prev) */}
             {(canTeacherReveal || (isTeacher && activeSettings.executionMode === 'teacher_led') || canReselectAndNavigate) && currentIndex > 0 && (
               <button
                 type="button"
                 onClick={handlePrev}
-                className="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 min-h-[46px] sm:min-h-[50px] transition-colors btn-press active:scale-95"
+                className="flex items-center justify-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 border border-slate-200/80 dark:border-slate-700/80 min-h-[46px] min-w-[46px] transition-all btn-press active:scale-95"
                 title="Kembali ke Soal Sebelumnya"
                 aria-label="Soal Sebelumnya"
               >
@@ -2619,7 +2620,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
               </button>
             )}
 
-            {/* Tombol Peta Nomor Soal (Khusus Mode Ujian Santai / Bebas Waktu) */}
+            {/* Tombol Peta Nomor Soal */}
             {canReselectAndNavigate && (
               <button
                 type="button"
@@ -2627,7 +2628,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                   if (playClick) playClick();
                   setIsQuestionGridOpen(true);
                 }}
-                className="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800 min-h-[46px] sm:min-h-[50px] transition-colors btn-press active:scale-95"
+                className="flex items-center justify-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 border border-slate-200/80 dark:border-slate-700/80 min-h-[46px] min-w-[46px] transition-all btn-press active:scale-95"
                 title="Buka Peta Nomor Soal"
                 aria-label="Daftar Soal"
               >
@@ -2636,7 +2637,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
               </button>
             )}
 
-            {/* Tombol Hold Timer / Jeda Waktu Guru */}
+            {/* Tombol Hold Timer Guru */}
             {(canTeacherReveal || (isTeacher && activeSettings.executionMode === 'teacher_led')) && (
               <button
                 type="button"
@@ -2644,7 +2645,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                   if (playClick) playClick();
                   setIsPaused(!isPaused);
                 }}
-                className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold min-h-[46px] sm:min-h-[50px] transition-colors btn-press ${
+                className={`flex items-center justify-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold min-h-[46px] min-w-[46px] transition-all btn-press ${
                   isPaused
                     ? 'bg-amber-500 text-white shadow-xs'
                     : 'text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 dark:hover:bg-amber-900/60 border border-amber-200 dark:border-amber-800'
@@ -2653,91 +2654,108 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                 aria-label={isPaused ? 'Lanjutkan Waktu' : 'Jeda Waktu'}
               >
                 {isPaused ? <Play className="w-4 h-4 sm:w-5 sm:h-5 fill-white" /> : <Pause className="w-4 h-4 sm:w-5 sm:h-5" />}
-                <span className="hidden sm:inline">{isPaused ? 'Lanjut' : 'Jeda Waktu'}</span>
+                <span className="hidden sm:inline">{isPaused ? 'Lanjut' : 'Jeda'}</span>
               </button>
             )}
 
-            {/* Teacher Reveal Button (HANYA untuk Guru pada Smartboard atau Pratinjau Studio - 100% Bebas Kebocoran Siswa) */}
-            {canTeacherReveal && !isAnswerConfirmed ? (
+            {/* Teacher Reveal Button */}
+            {canTeacherReveal && !isAnswerConfirmed && (
               <button
                 type="button"
                 onClick={handleTeacherReveal}
-                className="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-blue-700 dark:text-blue-300 hover:text-blue-800 dark:hover:text-blue-200 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800 min-h-[46px] sm:min-h-[50px] transition-colors btn-press"
-                title="Buka Kunci Jawaban untuk Pembahasan Bersama (Khusus Guru / Smartboard)"
+                className="flex items-center justify-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold text-blue-700 dark:text-blue-300 hover:text-blue-800 dark:hover:text-blue-200 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800 min-h-[46px] min-w-[46px] transition-all btn-press"
+                title="Buka Kunci Jawaban untuk Pembahasan Bersama"
               >
                 <Eye className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 dark:text-blue-400" />
                 <span className="hidden sm:inline">Buka Kunci</span>
-                <span className="sm:hidden">Kunci</span>
               </button>
-            ) : !isAnswerConfirmed && !(canTeacherReveal || (isTeacher && activeSettings.executionMode === 'teacher_led')) ? (
-              <div className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-xs font-bold border border-slate-200/80 dark:border-slate-700">
+            )}
+
+            {/* Fallback Micro-status untuk mode linear tanpa tombol mundur */}
+            {!(canTeacherReveal || (isTeacher && activeSettings.executionMode === 'teacher_led') || canReselectAndNavigate) && (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-xs font-semibold border border-slate-200/80 dark:border-slate-700">
                 {showAnswersMode === 'exam_strict' ? (
                   <>
-                    <ShieldAlert className="w-4 h-4 text-indigo-500 flex-shrink-0" />
-                    <span>Mode Ujian Terproteksi</span>
+                    <ShieldAlert className="w-3.5 h-3.5 text-indigo-500 flex-shrink-0" />
+                    <span className="truncate">Mode Ujian</span>
                   </>
                 ) : (
                   <>
-                    <Clock className="w-4 h-4 text-blue-500 flex-shrink-0" />
-                    <span>Pilih satu jawaban terbaik</span>
+                    <Clock className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
+                    <span className="truncate">Pilih Jawaban</span>
                   </>
                 )}
               </div>
-            ) : isAnswerConfirmed ? (
-              <span className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium hidden sm:block">
-                {canReselectAndNavigate
-                  ? 'Jawaban tersimpan (dapat diubah kapan saja)'
-                  : showAnswersMode === 'exam_strict'
-                  ? 'Jawaban tersimpan'
-                  : 'Tekan lanjut untuk soal berikutnya'}
-              </span>
-            ) : null}
+            )}
           </div>
 
-          {activeSettings.executionMode === 'teacher_led' && !isTeacher ? (
-            isLastQuestion && isAnswerConfirmed ? (
+          {/* Center Status / Reassurance Helper (Tampil elegan di layar menengah ke atas agar tidak memadati mobile) */}
+          <div className="hidden md:flex items-center justify-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400 min-w-0">
+            {showAnswersMode === 'exam_strict' ? (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800/80 border border-slate-200/70 dark:border-slate-700/70 text-slate-600 dark:text-slate-300 text-xs">
+                <ShieldAlert className="w-3.5 h-3.5 text-indigo-500 flex-shrink-0" />
+                <span>Mode Ujian Terproteksi</span>
+              </span>
+            ) : isAnswerConfirmed ? (
+              <span className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
+                <CheckCircle className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
+                <span>Jawaban tersimpan otomatis</span>
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+                <Clock className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
+                <span>Pilih satu opsi jawaban terbaik</span>
+              </span>
+            )}
+          </div>
+
+          {/* Right Primary Action */}
+          <div className="flex items-center justify-end flex-1 sm:flex-initial">
+            {activeSettings.executionMode === 'teacher_led' && !isTeacher ? (
+              isLastQuestion && isAnswerConfirmed ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (playClick) playClick();
+                    setShowWaitingLounge(true);
+                  }}
+                  className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-500 text-white text-xs sm:text-sm font-black shadow-md flex items-center justify-center gap-2 btn-press min-h-[46px] whitespace-nowrap"
+                >
+                  <Trophy className="w-4 h-4 text-amber-300 flex-shrink-0" />
+                  <span>Kuis Selesai • Hasil & Peringkat</span>
+                </button>
+              ) : (
+                <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-xs font-bold shadow-xs whitespace-nowrap">
+                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping flex-shrink-0" />
+                  <span>Dipandu Guru</span>
+                </div>
+              )
+            ) : (
               <button
                 type="button"
-                onClick={() => {
-                  if (playClick) playClick();
-                  setShowWaitingLounge(true);
-                }}
-                className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-500 text-white text-xs sm:text-sm font-black shadow-md flex items-center gap-2 btn-press min-h-[46px]"
+                disabled={!isAnswerConfirmed && !(canTeacherReveal || (isTeacher && activeSettings.executionMode === 'teacher_led') || canReselectAndNavigate)}
+                onClick={handleNext}
+                className={`w-full sm:w-auto sm:min-w-[190px] xl:min-w-[220px] px-5 sm:px-6 py-2.5 sm:py-3 rounded-xl font-bold text-xs sm:text-sm xl:text-base flex items-center justify-center gap-2 transition-all min-h-[46px] btn-press whitespace-nowrap ${
+                  isAnswerConfirmed || canTeacherReveal || (isTeacher && activeSettings.executionMode === 'teacher_led') || canReselectAndNavigate
+                    ? isLastQuestion
+                      ? isMandatoryAllAnswered && hasUnansweredQuestions
+                        ? 'bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 hover:from-amber-500 hover:to-orange-500 text-white shadow-md'
+                        : 'bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-500 text-white shadow-md'
+                      : 'bg-blue-600 hover:bg-blue-700 text-white shadow-md'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed border border-slate-200 dark:border-slate-700'
+                }`}
               >
-                <Trophy className="w-4 h-4 text-amber-300 flex-shrink-0" />
-                <span>Kuis Selesai • Buka Layar Hasil & Peringkat</span>
-              </button>
-            ) : (
-              <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-xs font-bold shadow-xs">
-                <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping flex-shrink-0" />
-                <span>Dipandu Guru di Depan Kelas</span>
-              </div>
-            )
-          ) : (
-            <button
-              type="button"
-              disabled={!isAnswerConfirmed && !(canTeacherReveal || (isTeacher && activeSettings.executionMode === 'teacher_led') || canReselectAndNavigate)}
-              onClick={handleNext}
-              className={`flex-1 sm:flex-initial sm:min-w-[200px] xl:min-w-[240px] px-6 py-2.5 sm:py-3 rounded-2xl font-bold text-xs sm:text-sm xl:text-base flex items-center justify-center gap-2 transition-all min-h-[46px] sm:min-h-[50px] btn-press ${
-                isAnswerConfirmed || canTeacherReveal || (isTeacher && activeSettings.executionMode === 'teacher_led') || canReselectAndNavigate
-                  ? isLastQuestion
+                <span>
+                  {isLastQuestion
                     ? isMandatoryAllAnswered && hasUnansweredQuestions
-                      ? 'bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 hover:from-amber-500 hover:to-orange-500 text-white shadow-md'
-                      : 'bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-500 text-white shadow-md'
-                    : 'bg-blue-600 hover:bg-blue-700 text-white shadow-md'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed border border-slate-200 dark:border-slate-700'
-              }`}
-            >
-              <span>
-                {isLastQuestion
-                  ? isMandatoryAllAnswered && hasUnansweredQuestions
-                    ? `Periksa Soal (${unansweredIndices.length} Belum Diisi)`
-                    : 'Selesai & Rekap Nilai'
-                  : 'Soal Berikutnya'}
-              </span>
-              <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
-            </button>
-          )}
+                      ? `Periksa Soal (${unansweredIndices.length} Belum)`
+                      : 'Selesai & Rekap'
+                    : 'Soal Berikutnya'}
+                </span>
+                <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+              </button>
+            )}
+          </div>
         </div>
       </footer>
 
