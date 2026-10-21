@@ -6,6 +6,34 @@ Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen in
 
 
 
+## [2.4.99] - 2026-10-21
+### Redesain Tabel Rekapitulasi Nilai Siswa Responsif, Detail & Terstruktur: Zero Card Bloat, Multi-Percobaan & Sanitasi Absen (Rule 1, Rule 2, Rule 15 & Skill Redesign)
+
+#### 1. Eliminasi Tampilan Kartu Menumpuk Menjadi Tabel Data Tunggal Terpadu (`QuizSessionRecapView.tsx`)
+- **Tabel Responsif Ramping untuk Mobile & Desktop**:
+  - Menggantikan tampilan kartu bertingkat yang tebal di layar ponsel dengan **Tabel Rekapitulasi Nilai Siswa** presisi tinggi yang dapat digulir horizontal secara mulus (`min-w-[760px]`).
+  - Dilengkapi *sticky table header* (`sticky top-0 z-10`) dengan efek *backdrop blur*, sehingga nama kolom tetap terlihat jelas saat menggulir puluhan data siswa.
+  - Memungkinkan pendidik melihat 8–10 baris siswa sekaligus dalam satu pandangan layar tanpa harus menggulir vertikal berkali-kali.
+
+#### 2. Sanitasi Nomor Absen & Deteksi Percobaan Berulang (`QuizSessionRecapView.tsx`)
+- **Pembersihan Nomor Absen Berulang (*Absen Sanitation*)**:
+  - Mengintegrasikan fungsi sanitasi otomatis (`parseStudentName`), sehingga nama yang sebelumnya tertumpuk seperti *"30. 30. Tes"* langsung dirapikan menjadi lencana badge `No. 30` dan nama bersih `Tes`.
+- **Kolom Percobaan & Lencana Nilai Terbaik**:
+  - Menampilkan lencana pengerjaan (`Ke-1`, `Ke-2`, dst) serta lencana emas `Terbaik` pada siswa yang melakukan pengulangan atau remedial.
+  - Ringkasan header menampilkan jumlah siswa ditampilkan, siswa unik, dan jumlah pengerjaan ulang secara akurat.
+
+#### 3. Kolom Statistik Nilai Detail & Aksi Terpadu (`QuizSessionRecapView.tsx`)
+- **Kolom Nilai & Progres Bar Visual**:
+  - Skor ditampilkan dengan angka tebal berwarna (*emerald* jika $\ge 70$, *rose* jika $< 70$) disertai visual bar progres akurasi di bawahnya.
+- **Rincian Benar / Salah / Kosong**:
+  - Format visual terstruktur: `✓ Benar / ✗ Salah / ⊘ Kosong` yang informatif.
+- **Waktu & Timestamp Selesai**:
+  - Menampilkan durasi pengerjaan dalam detik dan tanggal/jam pengerjaan selesai secara rapi.
+- **Aksi Cepat Interaktif**:
+  - Tombol `[ Lembar ]` untuk membuka analisis jawaban individual siswa.
+  - Tombol `[ WA ]` untuk mengirimkan rapor ringkas ke WhatsApp wali murid.
+  - Seluruh baris tabel dapat diklik langsung untuk memicu modal lembar koreksi siswa.
+
 ## [2.4.98] - 2026-10-21
 ### Statistik Interaktif Distribusi Pilihan Jawaban pada Matriks Soal Host (`WaygroundHostView.tsx`)
 

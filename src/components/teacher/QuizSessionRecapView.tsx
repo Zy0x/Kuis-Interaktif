@@ -6,7 +6,8 @@ import { formatIndonesianTime } from '../../lib/dateUtils';
 import { 
   ArrowLeft, 
   Download, 
-  Printer, 
+  Printer,
+  FileSpreadsheet, 
   Trophy, 
   BarChart3, 
   Clock, 
@@ -23,6 +24,7 @@ import {
   Share2
 } from 'lucide-react';
 import { ReactivateSessionModal } from './ReactivateSessionModal';
+import { analyzeSessionDuplicates } from '../../lib/studentUtils';
 import { RecalculateScoresModal } from './RecalculateScoresModal';
 import { ClassReviewModal } from './ClassReviewModal';
 import { generateStudentWhatsAppUrl } from '../../lib/shareUtils';
@@ -49,6 +51,7 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
   const [isRecalculateModalOpen, setIsRecalculateModalOpen] = useState(false);
   const [isClassReviewOpen, setIsClassReviewOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<'all' | 'passed' | 'remedial'>('all');
+  const [attemptFilter, setAttemptFilter] = useState<'all' | 'best' | 'latest'>('all');
   const [activeTab, setActiveTab] = useState<'overview' | 'students' | 'questions'>('overview');
   const [searchStudent, setSearchStudent] = useState('');
   const [selectedStudentForModal, setSelectedStudentForModal] = useState<QuizSessionParticipant | null>(null);
@@ -127,21 +130,64 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
     });
   }, [participants, totalQuestions]);
 
-  // Filtered by search and status
+  // Anotasi data duplikasi & percobaan berulang per siswa
+  const participantsWithMeta = useMemo(() => {
+    return analyzeSessionDuplicates(rankedParticipants);
+  }, [rankedParticipants]);
+
+  const uniqueStudentCount = useMemo(() => {
+    const names = new Set(participantsWithMeta.map((p) => p.parsedCleanName.toLowerCase()));
+    return names.size;
+  }, [participantsWithMeta]);
+
+  const duplicateAttemptCount = useMemo(() => {
+    return participantsWithMeta.filter((p) => p.attemptNumber > 1).length;
+  }, [participantsWithMeta]);
+
+  const bestCount = useMemo(() => participantsWithMeta.filter((p) => p.isBestScoreAttempt).length, [participantsWithMeta]);
+  const latestCount = useMemo(() => participantsWithMeta.filter((p) => p.isLatestAttempt).length, [participantsWithMeta]);
+
+  // Peserta terfilter berdasarkan percobaan, status ketuntasan, dan pencarian nama/absen
   const filteredParticipants = useMemo(() => {
-    let list = rankedParticipants;
+    let list = [...participantsWithMeta];
+
+    if (attemptFilter === 'best') {
+      list = list.filter((p) => p.isBestScoreAttempt);
+    } else if (attemptFilter === 'latest') {
+      list = list.filter((p) => p.isLatestAttempt);
+    }
+
     if (statusFilter === 'passed') {
       list = list.filter((p) => p.score >= 70);
     } else if (statusFilter === 'remedial') {
       list = list.filter((p) => p.score < 70);
     }
-    if (!searchStudent.trim()) return list;
-    const q = searchStudent.toLowerCase();
-    return list.filter((p) => p.name.toLowerCase().includes(q));
-  }, [rankedParticipants, searchStudent, statusFilter]);
 
-  const passedCount = useMemo(() => rankedParticipants.filter((p) => p.score >= 70).length, [rankedParticipants]);
-  const remedialCount = useMemo(() => rankedParticipants.filter((p) => p.score < 70).length, [rankedParticipants]);
+    if (searchStudent.trim()) {
+      const q = searchStudent.toLowerCase();
+      list = list.filter((p) => 
+        p.name.toLowerCase().includes(q) ||
+        p.parsedCleanName.toLowerCase().includes(q) ||
+        p.parsedRollNumber.toLowerCase().includes(q)
+      );
+    }
+
+    return list;
+  }, [participantsWithMeta, attemptFilter, statusFilter, searchStudent]);
+
+  const passedCount = useMemo(() => {
+    let list = participantsWithMeta;
+    if (attemptFilter === 'best') list = list.filter((p) => p.isBestScoreAttempt);
+    else if (attemptFilter === 'latest') list = list.filter((p) => p.isLatestAttempt);
+    return list.filter((p) => p.score >= 70).length;
+  }, [participantsWithMeta, attemptFilter]);
+
+  const remedialCount = useMemo(() => {
+    let list = participantsWithMeta;
+    if (attemptFilter === 'best') list = list.filter((p) => p.isBestScoreAttempt);
+    else if (attemptFilter === 'latest') list = list.filter((p) => p.isLatestAttempt);
+    return list.filter((p) => p.score < 70).length;
+  }, [participantsWithMeta, attemptFilter]);
 
   // Deep Analytics calculation
   const analytics = useMemo(() => {
@@ -762,36 +808,107 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
           </div>
         )}
 
-        {/* TAB 2: TABEL NILAI SISWA */}
+        {/* TAB 2: TABEL NILAI SISWA RESPONSIP & LENGKAP */}
         {(activeTab === 'students' || window.matchMedia?.('print').matches) && (
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden space-y-3 p-4 sm:p-6">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden space-y-4 p-4 sm:p-6">
+            
+            {/* Header Judul Tabel & Ringkasan Metrik Jumlah */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <h3 className="text-base font-black text-slate-900 dark:text-white">
-                  Daftar Nilai Lengkap Siswa ({filteredParticipants.length})
+                <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
+                  <FileSpreadsheet className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                  <span>Tabel Rekapitulasi Nilai Siswa</span>
                 </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Klik pada baris siswa untuk melihat lembar koreksi jawaban individual.
-                </p>
+                <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 mt-0.5 flex-wrap">
+                  <span className="font-semibold text-slate-700 dark:text-slate-300">
+                    {filteredParticipants.length} siswa ditampilkan
+                  </span>
+                  <span>•</span>
+                  <span>{uniqueStudentCount} siswa unik</span>
+                  {duplicateAttemptCount > 0 && (
+                    <>
+                      <span>•</span>
+                      <span className="text-amber-600 dark:text-amber-400 font-bold">
+                        {duplicateAttemptCount} pengerjaan ulang
+                      </span>
+                    </>
+                  )}
+                </div>
               </div>
 
-              {/* Search Box & Status Filter Pills */}
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto print:hidden">
-                {/* Status Pills */}
-                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+              <div className="text-xs text-slate-500 dark:text-slate-400 hidden lg:block">
+                💡 Klik baris siswa mana saja untuk membuka lembar koreksi jawaban
+              </div>
+            </div>
+
+            {/* Filter Toolbar (Percobaan, Status Ketuntasan & Pencarian Nama/Absen) */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-800 print:hidden">
+              
+              {/* Filter Percobaan: Semua / Terbaik / Terakhir */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 scrollbar-none flex-shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    triggerHaptic('light');
+                    setAttemptFilter('all');
+                  }}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all min-h-[38px] whitespace-nowrap btn-press cursor-pointer ${
+                    attemptFilter === 'all'
+                      ? 'bg-blue-600 text-white shadow-xs'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                  }`}
+                >
+                  Semua ({participantsWithMeta.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    triggerHaptic('light');
+                    setAttemptFilter('best');
+                  }}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all min-h-[38px] whitespace-nowrap btn-press cursor-pointer ${
+                    attemptFilter === 'best'
+                      ? 'bg-blue-600 text-white shadow-xs'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                  }`}
+                  title="Tampilkan hanya skor terbaik dari tiap siswa unik"
+                >
+                  Terbaik ({bestCount})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    triggerHaptic('light');
+                    setAttemptFilter('latest');
+                  }}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all min-h-[38px] whitespace-nowrap btn-press cursor-pointer ${
+                    attemptFilter === 'latest'
+                      ? 'bg-blue-600 text-white shadow-xs'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                  }`}
+                  title="Tampilkan hanya pengerjaan terakhir dari tiap siswa unik"
+                >
+                  Terakhir ({latestCount})
+                </button>
+              </div>
+
+              {/* Status Pills & Search Input */}
+              <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                {/* Status Filter */}
+                <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0 scrollbar-none flex-shrink-0">
                   <button
                     type="button"
                     onClick={() => {
                       triggerHaptic('light');
                       setStatusFilter('all');
                     }}
-                    className={`px-3 py-2 rounded-xl text-xs font-bold transition-all min-h-[40px] whitespace-nowrap btn-press ${
+                    className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all min-h-[38px] whitespace-nowrap btn-press cursor-pointer ${
                       statusFilter === 'all'
-                        ? 'bg-blue-600 text-white shadow-xs'
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                        ? 'bg-slate-800 text-white dark:bg-slate-700'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200'
                     }`}
                   >
-                    Semua ({rankedParticipants.length})
+                    Semua Status
                   </button>
                   <button
                     type="button"
@@ -799,15 +916,15 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
                       triggerHaptic('light');
                       setStatusFilter('passed');
                     }}
-                    className={`px-3 py-2 rounded-xl text-xs font-bold transition-all min-h-[40px] whitespace-nowrap btn-press flex items-center gap-1.5 ${
+                    className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all min-h-[38px] whitespace-nowrap btn-press flex items-center gap-1 cursor-pointer ${
                       statusFilter === 'passed'
                         ? 'bg-emerald-600 text-white shadow-xs'
-                        : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/80 hover:bg-emerald-100 dark:hover:bg-emerald-900/40'
+                        : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/80 hover:bg-emerald-100'
                     }`}
                   >
-                    <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                    <span>Tuntas (≥70)</span>
-                    <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-black/15 font-black">{passedCount}</span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    <span>Tuntas</span>
+                    <span className="text-[10px] opacity-80">({passedCount})</span>
                   </button>
                   <button
                     type="button"
@@ -815,262 +932,242 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
                       triggerHaptic('light');
                       setStatusFilter('remedial');
                     }}
-                    className={`px-3 py-2 rounded-xl text-xs font-bold transition-all min-h-[40px] whitespace-nowrap btn-press flex items-center gap-1.5 ${
+                    className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all min-h-[38px] whitespace-nowrap btn-press flex items-center gap-1 cursor-pointer ${
                       statusFilter === 'remedial'
                         ? 'bg-rose-600 text-white shadow-xs'
-                        : 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/80 hover:bg-rose-100 dark:hover:bg-rose-900/40'
+                        : 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/80 hover:bg-rose-100'
                     }`}
                   >
-                    <span className="w-2 h-2 rounded-full bg-rose-500" />
-                    <span>Remedial (&lt;70)</span>
-                    <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-black/15 font-black">{remedialCount}</span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                    <span>Remedial</span>
+                    <span className="text-[10px] opacity-80">({remedialCount})</span>
                   </button>
                 </div>
 
-                <div className="relative min-w-[180px] sm:w-56">
+                {/* Search Box */}
+                <div className="relative min-w-[160px] sm:w-52 flex-1 sm:flex-initial">
                   <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
                     value={searchStudent}
                     onChange={(e) => setSearchStudent(e.target.value)}
-                    placeholder="Cari siswa..."
-                    className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-medium focus:outline-none min-h-[40px]"
+                    placeholder="Cari nama / no. absen..."
+                    className="w-full pl-9 pr-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-medium focus:outline-none min-h-[38px] text-slate-900 dark:text-white"
                   />
                 </div>
               </div>
             </div>
 
-            {/* Mobile Card View (sm:hidden) */}
-            <div className="block sm:hidden space-y-2.5 print:hidden">
-              {filteredParticipants.length === 0 ? (
-                <div className="text-center py-8 text-slate-400 text-xs font-medium">
-                  Tidak ada data siswa yang cocok dengan filter.
-                </div>
-              ) : (
-                filteredParticipants.map((p, pIdx) => {
-                  const isPassed = p.score >= 70;
-                  return (
-                    <div
-                      key={p.id}
-                      onClick={() => {
-                        triggerHaptic('light');
-                        setSelectedStudentForModal(p);
-                      }}
-                      className="p-3.5 rounded-2xl bg-slate-50/80 dark:bg-slate-850/80 border border-slate-200/80 dark:border-slate-800 space-y-2.5 active:scale-[0.99] transition-transform cursor-pointer"
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className="w-6 text-center font-black text-xs text-slate-400">
-                            #{pIdx + 1}
-                          </span>
-                          <span className="text-xl flex-shrink-0">{AVATAR_MAP[p.avatarId] || '🦁'}</span>
-                          <div className="min-w-0">
-                            <span className="font-bold text-xs text-slate-900 dark:text-white truncate block">
-                              {p.name}
-                            </span>
-                            {p.tabSwitchCount && p.tabSwitchCount > 0 ? (
-                              <span className="inline-flex items-center gap-0.5 text-[10px] text-rose-500 font-bold">
-                                <AlertTriangle className="w-3 h-3" />
-                                {p.tabSwitchCount}x Pindah Tab
-                              </span>
-                            ) : null}
-                          </div>
-                        </div>
-
-                        <div className="text-right flex-shrink-0">
-                          <div className="text-base font-black text-amber-600 dark:text-amber-400 leading-none">
-                            {p.score}
-                          </div>
-                          <span
-                            className={`inline-block px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase mt-0.5 ${
-                              isPassed
-                                ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300'
-                                : 'bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300'
-                            }`}
-                          >
-                            {isPassed ? 'TUNTAS' : 'REMEDIAL'}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-3 gap-1.5 text-center text-[11px] pt-1 border-t border-slate-200/60 dark:border-slate-800/80">
-                        <div className="p-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-750">
-                          <div className="text-[10px] text-slate-400">Akurasi</div>
-                          <div className="font-bold text-slate-700 dark:text-slate-200">
-                            {Math.round((p.correctCount / totalQuestions) * 100)}%
-                          </div>
-                        </div>
-                        <div className="p-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-750">
-                          <div className="text-[10px] text-slate-400">Benar / Salah</div>
-                          <div className="font-bold">
-                            <span className="text-emerald-600 dark:text-emerald-400">{p.correctCount}</span>
-                            <span className="text-slate-300 dark:text-slate-600 mx-1">/</span>
-                            <span className="text-rose-600 dark:text-rose-400">{p.incorrectCount}</span>
-                          </div>
-                        </div>
-                        <div className="p-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-750">
-                          <div className="text-[10px] text-slate-400">Durasi</div>
-                          <div className="font-bold text-slate-700 dark:text-slate-200">
-                            {p.timeSpentSec} dtk
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2 pt-1">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            triggerHaptic('light');
-                            const url = generateStudentWhatsAppUrl({
-                              studentName: p.name,
-                              quizTitle: quiz.title,
-                              score: p.score,
-                              correctCount: p.correctCount,
-                              totalQuestions: totalQuestions,
-                              timeSpentSec: p.timeSpentSec,
-                            });
-                            window.open(url, '_blank');
-                          }}
-                          className="px-3 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-xs font-bold flex items-center justify-center gap-1.5 min-h-[44px] transition-colors btn-press flex-shrink-0"
-                          title="Kirim ke WhatsApp Wali Murid"
-                        >
-                          <Share2 className="w-4 h-4 text-emerald-500" />
-                          <span className="hidden xs:inline">WhatsApp</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
+            {/* Tabel Data Rekapitulasi Nilai Siswa Responsif & Detail */}
+            {filteredParticipants.length === 0 ? (
+              <div className="text-center py-12 text-slate-400 text-xs font-medium bg-slate-50 dark:bg-slate-850/50 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
+                Tidak ada data siswa yang cocok dengan filter pencarian saat ini.
+              </div>
+            ) : (
+              <div className="overflow-x-auto scrollbar-thin rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+                <table className="w-full text-left text-xs border-separate border-spacing-0 min-w-[760px]">
+                  <thead className="sticky top-0 z-10">
+                    <tr className="bg-slate-100/95 dark:bg-slate-850/95 backdrop-blur-md text-slate-500 dark:text-slate-400 uppercase text-[10px] font-bold tracking-wider">
+                      <th className="py-3 px-3 text-center w-12 border-b border-slate-200 dark:border-slate-800 shadow-2xs">#</th>
+                      <th className="py-3 px-3.5 border-b border-slate-200 dark:border-slate-800 shadow-2xs">No. Absen & Nama Siswa</th>
+                      <th className="py-3 px-3 text-center border-b border-slate-200 dark:border-slate-800 shadow-2xs">Percobaan</th>
+                      <th className="py-3 px-3 text-center border-b border-slate-200 dark:border-slate-800 shadow-2xs">Nilai (0-100)</th>
+                      <th className="py-3 px-3 text-center border-b border-slate-200 dark:border-slate-800 shadow-2xs">Akurasi</th>
+                      <th className="py-3 px-3 text-center border-b border-slate-200 dark:border-slate-800 shadow-2xs">Benar / Salah / Kosong</th>
+                      <th className="py-3 px-3 text-center border-b border-slate-200 dark:border-slate-800 shadow-2xs">Durasi & Waktu</th>
+                      <th className="py-3 px-3 text-center border-b border-slate-200 dark:border-slate-800 shadow-2xs">Status</th>
+                      <th className="py-3 px-3 text-center border-b border-slate-200 dark:border-slate-800 shadow-2xs print:hidden">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
+                    {filteredParticipants.map((p, idx) => {
+                      const isPassed = p.score >= 70;
+                      const unanswered = Math.max(0, totalQuestions - (p.correctCount + p.incorrectCount));
+                      return (
+                        <tr
+                          key={p.id}
+                          onClick={() => {
                             triggerHaptic('light');
                             setSelectedStudentForModal(p);
                           }}
-                          className="flex-1 py-2 px-3 rounded-xl bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-950/40 text-blue-600 dark:text-blue-400 border border-slate-200 dark:border-slate-700 text-xs font-bold flex items-center justify-center gap-1.5 min-h-[44px] transition-colors btn-press"
+                          className="hover:bg-slate-50 dark:hover:bg-slate-800/60 cursor-pointer transition-colors border-b border-slate-100 dark:border-slate-800/60"
                         >
-                          <Eye className="w-3.5 h-3.5" />
-                          <span>Lembar Jawaban</span>
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
+                          {/* Rank */}
+                          <td className="py-3 px-3 text-center font-bold text-slate-500 dark:text-slate-400 tabular-nums">
+                            {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : idx + 1}
+                          </td>
 
-            {/* Desktop Table View (hidden sm:block) */}
-            <div className="hidden sm:block overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-400 uppercase text-[10px] font-bold">
-                    <th className="py-2.5 px-3">Rank</th>
-                    <th className="py-2.5 px-3">Nama Siswa</th>
-                    <th className="py-2.5 px-3">Skor</th>
-                    <th className="py-2.5 px-3">Akurasi</th>
-                    <th className="py-2.5 px-3">Benar / Salah</th>
-                    <th className="py-2.5 px-3">Durasi & Waktu</th>
-                    <th className="py-2.5 px-3">Status</th>
-                    <th className="py-2.5 px-3 print:hidden">Detail</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {filteredParticipants.map((p, pIdx) => {
-                    const isPassed = p.score >= 70;
-                    return (
-                      <tr
-                        key={p.id}
-                        onClick={() => setSelectedStudentForModal(p)}
-                        className="hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors"
-                      >
-                        <td className="py-3 px-3 font-bold text-slate-700 dark:text-slate-300">
-                          #{pIdx + 1}
-                        </td>
-                        <td className="py-3 px-3 font-bold text-slate-900 dark:text-white flex items-center gap-2 flex-wrap">
-                          <span className="text-xl">{AVATAR_MAP[p.avatarId] || '🦁'}</span>
-                          <span>{p.name}</span>
-                          {p.tabSwitchCount && p.tabSwitchCount > 0 ? (
-                            <span 
-                              className="px-1.5 py-0.5 rounded-md bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 text-[10px] font-bold border border-rose-200 dark:border-rose-900/60 flex items-center gap-1"
-                              title={`Terdeteksi berpindah tab/aplikasi ${p.tabSwitchCount} kali selama kuis`}
-                            >
-                              <AlertTriangle className="w-3 h-3 text-rose-500" />
-                              <span>{p.tabSwitchCount}x Pindah Tab</span>
-                            </span>
-                          ) : null}
-                        </td>
-                        <td className="py-3 px-3 font-black text-sm text-amber-600 dark:text-amber-400">
-                          {p.score}
-                        </td>
-                        <td className="py-3 px-3 font-bold text-slate-700 dark:text-slate-300">
-                          {Math.round((p.correctCount / totalQuestions) * 100)}%
-                        </td>
-                        <td className="py-3 px-3 text-slate-600 dark:text-slate-400">
-                          <span className="text-emerald-600 dark:text-emerald-400 font-bold">{p.correctCount}</span> / <span className="text-rose-600 dark:text-rose-400 font-bold">{p.incorrectCount}</span>
-                          {((p as any).unansweredCount ?? 0) > 0 && (
-                            <span className="text-amber-500 dark:text-amber-400 font-semibold ml-1.5 text-[10px]" title={`${(p as any).unansweredCount} butir soal tidak dijawab / dilewati`}>
-                              ({(p as any).unansweredCount} kosong)
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-3 px-3 text-slate-500 dark:text-slate-400">
-                          <div className="font-semibold text-slate-700 dark:text-slate-300">{p.timeSpentSec} dtk</div>
-                          {(p.completedAt || p.lastActiveAt) && (
-                            <div className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5" title="Waktu pengisian / selesai">
-                              <Clock className="w-3 h-3 text-slate-400 flex-shrink-0" />
-                              <span>{formatIndonesianTime(p.completedAt || p.lastActiveAt, { withDate: true })}</span>
+                          {/* No. Absen & Nama Siswa */}
+                          <td className="py-3 px-3.5">
+                            <div className="flex items-center gap-2.5 min-w-[190px] max-w-sm">
+                              <span className="text-xl flex-shrink-0" role="img" aria-label="avatar">
+                                {AVATAR_MAP[p.avatarId] || '🦁'}
+                              </span>
+                              <div className="min-w-0 flex-1">
+                                <div className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm break-words leading-snug">
+                                  {p.parsedRollNumber ? (
+                                    <span className="inline-flex items-center gap-1 mr-1.5 px-1.5 py-0.2 rounded bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 font-mono text-[11px] font-black border border-indigo-200 dark:border-indigo-800/60 flex-shrink-0">
+                                      No.{p.parsedRollNumber}
+                                    </span>
+                                  ) : null}
+                                  <span>{p.parsedCleanName || p.name}</span>
+                                </div>
+                                {p.tabSwitchCount && p.tabSwitchCount > 0 ? (
+                                  <span className="text-[10px] text-rose-500 font-bold inline-flex items-center gap-0.5 mt-0.5">
+                                    <AlertTriangle className="w-3 h-3" />
+                                    <span>Pindah Tab: {p.tabSwitchCount}x</span>
+                                  </span>
+                                ) : null}
+                              </div>
                             </div>
-                          )}
-                        </td>
-                        <td className="py-3 px-3">
-                          <span
-                            className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
-                              isPassed
-                                ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
-                                : 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800'
-                            }`}
-                          >
-                            {isPassed ? 'TUNTAS' : 'REMEDIAL'}
-                          </span>
-                        </td>
-                        <td className="py-2 px-2 print:hidden">
-                          <div className="flex items-center gap-1">
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                triggerHaptic('light');
-                                const url = generateStudentWhatsAppUrl({
-                                  studentName: p.name,
-                                  quizTitle: quiz.title,
-                                  score: p.score,
-                                  correctCount: p.correctCount,
-                                  totalQuestions: totalQuestions,
-                                  timeSpentSec: p.timeSpentSec,
-                                });
-                                window.open(url, '_blank');
-                              }}
-                              className="w-10 h-10 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-xl text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors btn-press"
-                              title={`Kirim Nilai ${p.name} ke WhatsApp Wali Murid`}
-                            >
-                              <Share2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                            </button>
+                          </td>
 
-                            <button
-                              type="button"
-                              className="w-10 h-10 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-xl text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors btn-press"
-                              title="Lihat Lembar Jawaban"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
+                          {/* Percobaan / Duplikasi */}
+                          <td className="py-3 px-3 text-center whitespace-nowrap">
+                            <div className="inline-flex flex-col items-center gap-0.5">
+                              <span
+                                className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${
+                                  p.attemptNumber > 1
+                                    ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800'
+                                    : p.totalAttempts > 1
+                                    ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800'
+                                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                                }`}
+                                title={p.totalAttempts > 1 ? `Percobaan ke-${p.attemptNumber} dari total ${p.totalAttempts} pengerjaan` : 'Percobaan tunggal'}
+                              >
+                                Ke-{p.attemptNumber}
+                              </span>
+                              {p.isBestScoreAttempt && p.totalAttempts > 1 && (
+                                <span className="text-[9px] bg-amber-400 text-slate-950 font-black px-1.5 py-0.2 rounded-full shadow-2xs">
+                                  Terbaik
+                                </span>
+                              )}
+                            </div>
+                          </td>
 
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                          {/* Nilai / Skor (0-100) */}
+                          <td className="py-3 px-3 text-center whitespace-nowrap">
+                            <div className="inline-flex flex-col items-center gap-1">
+                              <span
+                                className={`text-sm font-black tabular-nums ${
+                                  isPassed
+                                    ? 'text-emerald-600 dark:text-emerald-400'
+                                    : 'text-rose-600 dark:text-rose-400'
+                                }`}
+                              >
+                                {p.score}
+                              </span>
+                              <div className="w-12 bg-slate-200 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full transition-all duration-300 ${
+                                    isPassed ? 'bg-emerald-500' : 'bg-rose-500'
+                                  }`}
+                                  style={{ width: `${p.score}%` }}
+                                />
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Akurasi */}
+                          <td className="py-3 px-3 text-center whitespace-nowrap">
+                            <span className="font-bold text-slate-700 dark:text-slate-300 tabular-nums">
+                              {Math.round((p.correctCount / totalQuestions) * 100)}%
+                            </span>
+                          </td>
+
+                          {/* Benar / Salah / Kosong */}
+                          <td className="py-3 px-3 text-center whitespace-nowrap">
+                            <div className="flex items-center justify-center gap-1.5 text-xs tabular-nums">
+                              <span className="text-emerald-600 dark:text-emerald-400 font-bold" title="Jawaban Benar">
+                                ✓ {p.correctCount}
+                              </span>
+                              <span className="text-slate-300 dark:text-slate-700">/</span>
+                              <span className="text-rose-600 dark:text-rose-400 font-bold" title="Jawaban Salah">
+                                ✗ {p.incorrectCount}
+                              </span>
+                              {unanswered > 0 && (
+                                <>
+                                  <span className="text-slate-300 dark:text-slate-700">/</span>
+                                  <span className="text-amber-500 dark:text-amber-400 font-bold" title="Belum Dijawab / Kosong">
+                                    ⊘ {unanswered}
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                          </td>
+
+                          {/* Durasi & Waktu Selesai */}
+                          <td className="py-3 px-3 text-center whitespace-nowrap">
+                            <div className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 tabular-nums">
+                              {p.timeSpentSec} dtk
+                            </div>
+                            {(p.completedAt || p.lastActiveAt) && (
+                              <div className="text-[10px] text-slate-400 tabular-nums mt-0.5" title="Waktu selesai pengerjaan">
+                                {formatIndonesianTime(p.completedAt || p.lastActiveAt, { withDate: true, withDay: false })}
+                              </div>
+                            )}
+                          </td>
+
+                          {/* Status */}
+                          <td className="py-3 px-3 text-center whitespace-nowrap">
+                            <span
+                              className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
+                                isPassed
+                                  ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                                  : 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800'
+                              }`}
+                            >
+                              {isPassed ? 'TUNTAS' : 'REMEDIAL'}
+                            </span>
+                          </td>
+
+                          {/* Aksi */}
+                          <td className="py-2.5 px-3 print:hidden whitespace-nowrap">
+                            <div 
+                              className="flex items-center justify-center gap-1.5"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  triggerHaptic('light');
+                                  setSelectedStudentForModal(p);
+                                }}
+                                className="px-2.5 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-[11px] font-bold flex items-center gap-1 transition-colors btn-press min-h-[36px] cursor-pointer"
+                                title="Lihat lembar koreksi jawaban siswa"
+                              >
+                                <Eye className="w-3.5 h-3.5" />
+                                <span>Lembar</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  triggerHaptic('light');
+                                  const url = generateStudentWhatsAppUrl({
+                                    studentName: p.parsedCleanName || p.name,
+                                    quizTitle: quiz.title,
+                                    score: p.score,
+                                    correctCount: p.correctCount,
+                                    totalQuestions,
+                                    timeSpentSec: p.timeSpentSec,
+                                  });
+                                  window.open(url, '_blank');
+                                }}
+                                className="p-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 transition-colors btn-press min-h-[36px] min-w-[36px] flex items-center justify-center cursor-pointer"
+                                title={`Kirim nilai ${p.parsedCleanName || p.name} ke WhatsApp Wali Murid`}
+                              >
+                                <Share2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
 
