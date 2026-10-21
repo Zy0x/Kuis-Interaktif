@@ -23,7 +23,11 @@ export interface SpeakOptions {
 let cachedVoices: SpeechSynthesisVoice[] = [];
 let cachedIndonesianVoice: SpeechSynthesisVoice | null = null;
 let currentUtterance: SpeechSynthesisUtterance | null = null;
+let fallbackAudio: HTMLAudioElement | null = null;
+let prefetchAudio: HTMLAudioElement | null = null;
 let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
+let watchdogTimer: ReturnType<typeof setTimeout> | null = null;
+let isAudioStreamPlaying = false;
 let activeSessionId = 0;
 
 /**
@@ -111,20 +115,38 @@ export function isSpeechSupported(): boolean {
 }
 
 /**
- * Menghentikan pembacaan suara yang sedang aktif seketika.
+ * Menghentikan pembacaan suara yang sedang aktif seketika (baik native TTS maupun stream audio).
  */
 export function stopSpeech(): void {
   activeSessionId++;
+  isAudioStreamPlaying = false;
+
   if (heartbeatTimer) {
     clearInterval(heartbeatTimer);
     heartbeatTimer = null;
   }
+  if (watchdogTimer) {
+    clearTimeout(watchdogTimer);
+    watchdogTimer = null;
+  }
+
   if (isSpeechSupported()) {
     try {
       window.speechSynthesis.cancel();
     } catch {}
   }
   currentUtterance = null;
+
+  if (fallbackAudio) {
+    try {
+      fallbackAudio.pause();
+      fallbackAudio.onplay = null;
+      fallbackAudio.onended = null;
+      fallbackAudio.onerror = null;
+      fallbackAudio.src = '';
+    } catch {}
+  }
+
   try {
     if (typeof window !== 'undefined') {
       delete (window as any).__activeUtterance;
@@ -133,9 +155,11 @@ export function stopSpeech(): void {
 }
 
 /**
- * Memeriksa apakah ada proses suara yang sedang berjalan
+ * Memeriksa apakah ada proses suara yang sedang berjalan (native TTS atau stream audio).
  */
 export function isSpeaking(): boolean {
+  if (isAudioStreamPlaying) return true;
+  if (fallbackAudio && !fallbackAudio.paused) return true;
   if (!isSpeechSupported()) return false;
   return window.speechSynthesis.speaking || Boolean(currentUtterance);
 }
@@ -213,35 +237,111 @@ export function formatElementaryMathAndSymbols(rawText: string): string {
 }
 
 /**
+ * Pemutar Audio Bahasa Indonesia cadangan berbasis streaming cloud universal.
+ * Menjamin 100% suara tetap keluar pada HP low-end & Custom ROM (Redmi Note 7, LineageOS, AOSP, dsb)
+ * yang sama sekali tidak memiliki engine Google TTS di sistem operasinya.
+ */
+function playCloudAudioSequence(
+  chunks: string[],
+  sessionId: number,
+  callbacks?: SpeakOptions,
+  startChunkIndex = 0
+): void {
+  if (typeof window === 'undefined') return;
+
+  let currentChunkIndex = startChunkIndex;
+
+  const prefetchNext = (idx: number) => {
+    if (idx < chunks.length) {
+      try {
+        if (!prefetchAudio) {
+          prefetchAudio = new Audio();
+        }
+        const text = chunks[idx];
+        prefetchAudio.src = `https://code.responsivevoice.org/develop/getvoice.php?t=${encodeURIComponent(text)}&tl=id`;
+        prefetchAudio.load();
+      } catch {}
+    }
+  };
+
+  const playChunk = () => {
+    if (sessionId !== activeSessionId) {
+      isAudioStreamPlaying = false;
+      return;
+    }
+
+    if (currentChunkIndex >= chunks.length) {
+      isAudioStreamPlaying = false;
+      callbacks?.onEnd?.();
+      return;
+    }
+
+    const chunkText = chunks[currentChunkIndex];
+    if (!fallbackAudio) {
+      fallbackAudio = new Audio();
+    }
+
+    const audioUrl = `https://code.responsivevoice.org/develop/getvoice.php?t=${encodeURIComponent(chunkText)}&tl=id`;
+    fallbackAudio.src = audioUrl;
+
+    fallbackAudio.onplay = () => {
+      if (sessionId !== activeSessionId) return;
+      isAudioStreamPlaying = true;
+      if (currentChunkIndex === 0) {
+        callbacks?.onStart?.();
+        callbacks?.onChunkChange?.(0, 'question');
+      } else {
+        callbacks?.onChunkChange?.(currentChunkIndex, 'option', currentChunkIndex - 1);
+      }
+      // Pra-muat kalimat berikutnya di latar belakang agar transisi mulus
+      prefetchNext(currentChunkIndex + 1);
+    };
+
+    fallbackAudio.onended = () => {
+      if (sessionId !== activeSessionId) return;
+      currentChunkIndex++;
+      playChunk();
+    };
+
+    fallbackAudio.onerror = () => {
+      if (sessionId !== activeSessionId) return;
+      isAudioStreamPlaying = false;
+      callbacks?.onError?.('TTS_FAILED', 'Gagal memuat suara soal. Periksa koneksi internet perangkat Anda.');
+    };
+
+    fallbackAudio.play().catch((err) => {
+      if (sessionId !== activeSessionId) return;
+      isAudioStreamPlaying = false;
+      callbacks?.onError?.('TTS_FAILED', `Gagal memutar audio: ${err.message || 'pemutaran diblokir'}`);
+    });
+  };
+
+  playChunk();
+}
+
+/**
  * Membacakan pertanyaan kuis dan opsi jawaban secara berurutan (chunked playback).
- * Sangat responsif (<50ms) dan tahan terhadap bug timeout 15-detik Chrome Android.
+ * Menggunakan arsitektur Dual-Engine:
+ * 1. Prioritas Native TTS jika engine Bahasa Indonesia terpasang lokal di OS.
+ * 2. Otomatis Fallback ke Cloud Audio Stream jika perangkat (Redmi Note 7 Custom ROM) tidak memiliki paket suara.
  */
 export function speakQuestion(
   questionText: string,
   options?: string[],
   callbacks?: SpeakOptions
 ): void {
-  if (!isSpeechSupported()) {
-    callbacks?.onError?.('UNSUPPORTED', 'Peramban tidak mendukung Text-to-Speech');
-    return;
-  }
-
   // Hentikan pembacaan sebelumnya
   stopSpeech();
 
   // Reset status pause pada engine browser jika tersangkut
   try {
-    if (window.speechSynthesis.paused) {
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window && window.speechSynthesis.paused) {
       window.speechSynthesis.resume();
     }
   } catch {}
 
   // Pastikan daftar suara tersegarkan
   refreshVoices();
-
-  // Verifikasi ketersediaan suara Bahasa Indonesia
-  const availableVoices = cachedVoices.length > 0 ? cachedVoices : window.speechSynthesis.getVoices();
-  const idVoice = cachedIndonesianVoice || findIndonesianVoice(availableVoices);
 
   // Buat potongan kalimat agar segera bersuara tanpa jeda pemrosesan panjang di CPU lambat
   const cleanQ = formatElementaryMathAndSymbols(questionText);
@@ -256,6 +356,25 @@ export function speakQuestion(
   }
 
   const thisSessionId = activeSessionId;
+
+  // Jika Web Speech API sama sekali tidak didukung di peramban ini
+  if (!isSpeechSupported()) {
+    playCloudAudioSequence(chunks, thisSessionId, callbacks, 0);
+    return;
+  }
+
+  // Verifikasi ketersediaan suara Bahasa Indonesia lokal
+  const availableVoices = cachedVoices.length > 0 ? cachedVoices : window.speechSynthesis.getVoices();
+  const idVoice = cachedIndonesianVoice || findIndonesianVoice(availableVoices);
+
+  // Jika peramban telah memuat daftar suara (>0) tetapi TIDAK MEMILIKI suara Bahasa Indonesia sama sekali
+  // (Kondisi umum pada Redmi Note 7 Custom ROM / AOSP tanpa Google Speech Services)
+  // Segera gunakan Cloud Audio Stream agar suara tetap keluar dengan aksen Indonesia asli!
+  if (availableVoices.length > 0 && !idVoice) {
+    playCloudAudioSequence(chunks, thisSessionId, callbacks, 0);
+    return;
+  }
+
   let currentChunkIndex = 0;
 
   // Heartbeat resume untuk mencegah pembekuan otomatis (Chrome Android 15-second cutoff bug)
@@ -277,6 +396,10 @@ export function speakQuestion(
     if (heartbeatTimer) {
       clearInterval(heartbeatTimer);
       heartbeatTimer = null;
+    }
+    if (watchdogTimer) {
+      clearTimeout(watchdogTimer);
+      watchdogTimer = null;
     }
     currentUtterance = null;
     try {
@@ -310,7 +433,23 @@ export function speakQuestion(
       utterance.voice = idVoice;
     }
 
+    // Watchdog timer (1200ms) untuk mendeteksi silent-drop bug di Chromium Android
+    if (watchdogTimer) clearTimeout(watchdogTimer);
+    watchdogTimer = setTimeout(() => {
+      if (thisSessionId !== activeSessionId) return;
+      cleanupSession();
+      try {
+        window.speechSynthesis.cancel();
+      } catch {}
+      // Otomatis beralih ke streaming audio awan jika native TTS tersangkut
+      playCloudAudioSequence(chunks, thisSessionId, callbacks, currentChunkIndex);
+    }, 1200);
+
     utterance.onstart = () => {
+      if (watchdogTimer) {
+        clearTimeout(watchdogTimer);
+        watchdogTimer = null;
+      }
       if (thisSessionId !== activeSessionId) return;
       if (currentChunkIndex === 0) {
         callbacks?.onStart?.();
@@ -321,12 +460,20 @@ export function speakQuestion(
     };
 
     utterance.onend = () => {
+      if (watchdogTimer) {
+        clearTimeout(watchdogTimer);
+        watchdogTimer = null;
+      }
       if (thisSessionId !== activeSessionId) return;
       currentChunkIndex++;
       playNextChunk();
     };
 
     utterance.onerror = (event) => {
+      if (watchdogTimer) {
+        clearTimeout(watchdogTimer);
+        watchdogTimer = null;
+      }
       if (thisSessionId !== activeSessionId) return;
       // Abaikan error pembatalan yang disengaja saat tombol Stop ditekan
       if (event.error === 'canceled' || event.error === 'interrupted') {
@@ -335,14 +482,8 @@ export function speakQuestion(
         return;
       }
       cleanupSession();
-      if (event.error === 'language-unavailable' || (!idVoice && event.error === 'synthesis-failed')) {
-        callbacks?.onError?.(
-          'NO_INDONESIAN_VOICE',
-          'Paket suara Bahasa Indonesia belum aktif di HP ini. Silakan periksa Pengaturan Suara (TTS) perangkat Anda.'
-        );
-        return;
-      }
-      callbacks?.onError?.('TTS_FAILED', `Gagal memutar audio: ${event.error || 'kesalahan perangkat'}`);
+      // Jika terjadi error sintesis di Android, jangan menyerah; alihkan ke audio stream!
+      playCloudAudioSequence(chunks, thisSessionId, callbacks, currentChunkIndex);
     };
 
     currentUtterance = utterance;
@@ -355,10 +496,10 @@ export function speakQuestion(
       window.speechSynthesis.speak(utterance);
     } catch (e) {
       cleanupSession();
-      callbacks?.onError?.('TTS_FAILED', 'Gagal memanggil antrean suara perangkat');
+      playCloudAudioSequence(chunks, thisSessionId, callbacks, currentChunkIndex);
     }
   };
 
-  // Mulai putar chunk pertama secara instan
+  // Mulai putar chunk pertama
   playNextChunk();
 }

@@ -885,6 +885,15 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     }
   }, [timeLeft, isAnswerConfirmed, isPaused, isGameOver, gameMode, isUntimedMode, setUrgent]);
 
+  // 4. Duck BGM saat pembacaan soal (TTS) aktif agar artikulasi suara jelas
+  useEffect(() => {
+    if (isSpeechPlaying) {
+      setDucked(true);
+    } else if (!isAnswerConfirmed) {
+      setDucked(false);
+    }
+  }, [isSpeechPlaying, isAnswerConfirmed, setDucked]);
+
   // Back Handlers
   useBackHandler('arena-mobile-tools', 100, () => {
     if (isMobileToolsOpen) {

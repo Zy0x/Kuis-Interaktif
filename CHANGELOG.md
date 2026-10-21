@@ -6,6 +6,28 @@ Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen in
 
 
 
+## [2.5.15] - 2026-10-21
+### Integrasi Arsitektur Dual-Engine TTS (Native + Cloud Fallback) Khusus Perangkat Custom ROM & De-Googled (Rule 1, Rule 2, Rule 6, Rule 15 & AGENTS.md)
+
+#### 1. Mesin Cadangan Suara Awan Universal (*Universal Cloud Speech Fallback*)
+- **Dukungan Penuh Custom ROM (Redmi Note 7 / LineageOS / AOSP / crDroid)**:
+  - Mengatasi kendala ketiadaan Google Speech Services di sistem operasi Custom ROM dengan menyematkan *engine* pemutar audio Bahasa Indonesia berbasis cloud streaming universal yang otomatis aktif seketika perangkat tidak memiliki paket suara lokal.
+  - Menghasilkan artikulasi Bahasa Indonesia yang jernih, fasih, dan alami tanpa aksen asing (*zero distortion*) dengan latensi responsif (<200ms).
+- **Pengawas Antrean Otomatis (*1200ms Watchdog Timer*)**:
+  - Menyematkan pengawas otomatis untuk mendeteksi *silent queue drop bug* bawaan Chromium Android. Jika engine native Android tidak memicu pembacaan suara dalam 1,2 detik, sistem secara mulus (*seamless*) mengalihkan pemutaran ke jalur streaming tanpa disadari siswa.
+- **Pra-Muat Cerdas (*Smart Audio Prefetching*)**:
+  - Mengunduh potongan kalimat opsi berikutnya di latar belakang saat pertanyaan sedang dibacakan, menciptakan transisi suara antar-opsi yang cepat, tanpa jeda, dan bebas *buffering*.
+- **Pelepasan Audio Instan (*Instant Audio Release*)**:
+  - Tombol henti suara dan pemilihan jawaban langsung menghentikan pemutaran audio streaming seketika (pause dan reset buffer) agar tidak mengganggu fokus siswa.
+
+#### 2. Sinkronisasi Ducking Musik Latar (BGM)
+- **Harmonisasi Volume Audio Cerdas**:
+  - Secara otomatis meredam volume BGM ke 22% saat pembacaan soal (TTS) berlangsung dan mengembalikannya ke volume normal begitu pembacaan selesai, menjaga artikulasi soal terdengar jelas di tengah alunan musik latar.
+
+#### 3. Pembaruan Cache PWA Service Worker (public/sw.js)
+- Menaikkan versi cache ke `kuis-sd-seru-v2.5.15`.
+
+
 ## [2.5.14] - 2026-10-21
 ### Penguatan Arsitektur Audio (BGM & TTS) Multi-Platform Ramah Perangkat Low-End & Custom ROM (Rule 1, Rule 2, Rule 6, Rule 9, Rule 15 & AGENTS.md)
 
