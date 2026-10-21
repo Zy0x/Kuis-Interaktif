@@ -491,6 +491,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   const [textScale, setTextScale] = useState<QuestionTextScale>('normal');
   const [flaggedQuestions, setFlaggedQuestions] = useState<Set<number>>(new Set());
   const [isSpeechPlaying, setIsSpeechPlaying] = useState(false);
+  const [speechToastMessage, setSpeechToastMessage] = useState<string | null>(null);
 
   const handleToggleSpeech = useCallback(() => {
     if (isSpeechPlaying) {
@@ -502,7 +503,17 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
         speakQuestion(currentQ.text, currentQ.options, {
           onStart: () => setIsSpeechPlaying(true),
           onEnd: () => setIsSpeechPlaying(false),
-          onError: () => setIsSpeechPlaying(false),
+          onError: (reason, message) => {
+            setIsSpeechPlaying(false);
+            if (reason === 'NO_INDONESIAN_VOICE') {
+              setSpeechToastMessage('Paket Suara Bahasa Indonesia belum aktif di HP ini. Silakan aktifkan Layanan Suara Google.');
+            } else if (reason === 'UNSUPPORTED') {
+              setSpeechToastMessage('Peramban ini tidak mendukung pembacaan suara otomatis.');
+            } else {
+              setSpeechToastMessage(message || 'Suara tidak dapat diputar. Periksa volume media HP Anda.');
+            }
+            setTimeout(() => setSpeechToastMessage(null), 3800);
+          },
         });
       }
     }
@@ -531,6 +542,9 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   useEffect(() => {
     stopSpeech();
     setIsSpeechPlaying(false);
+    return () => {
+      stopSpeech();
+    };
   }, [currentIndex]);
 
   // Status Anti-Reaksi Layar Siswa (Sembunyikan reaksi teman agar layar bersih & fokus)
@@ -3456,6 +3470,16 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                 <span>Animasi Emoji Ditampilkan ✨</span>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notifikasi Status Pembacaan Suara Soal (TTS) */}
+      {speechToastMessage && (
+        <div className="fixed top-16 sm:top-20 left-1/2 -translate-x-1/2 z-50 pointer-events-none animate-slide-up max-w-[90vw] sm:max-w-md w-full px-4">
+          <div className="px-4 py-2.5 rounded-2xl text-xs font-semibold shadow-2xl flex items-center gap-2.5 border bg-slate-900/95 dark:bg-slate-100/95 text-white dark:text-slate-900 border-amber-500/50 backdrop-blur-md">
+            <VolumeX className="w-4 h-4 text-amber-400 dark:text-amber-600 shrink-0" />
+            <span className="leading-snug">{speechToastMessage}</span>
           </div>
         </div>
       )}

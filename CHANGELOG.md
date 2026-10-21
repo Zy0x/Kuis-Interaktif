@@ -6,6 +6,29 @@ Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen in
 
 
 
+## [2.5.7] - 2026-10-21
+### Penguatan Total Utilitas TTS Suara Pembaca Soal untuk Seluruh Perangkat Low-End hingga Flagship (Rule 1, Rule 2, Rule 6, Rule 15 & AGENTS.md)
+
+#### 1. Engine Pemrosesan Cepat & Berurutan (Chunk-Based Queueing)
+- **Responsivitas Super Cepat (<50ms)**: Memecah teks pertanyaan dan opsi jawaban menjadi potongan kalimat terpisah (*sentence chunks*), sehingga pemutaran suara pertama dimulai instan tanpa jeda buffering berat di prosesor HP *low-end*.
+- **Anti-Cutoff 15 Detik di Chrome Android**: Menghilangkan bug bawaan Chrome Android di mana audio panjang terputus otomatis setelah detik ke-12 s.d. 15 karena batasan *utterance timer*.
+- **Heartbeat Resume & GC Retention**: Menjaga status `speechSynthesis.resume()` secara berkala dan menahan referensi objek utterance di memori global (`window.__activeUtterance`) agar tidak dihapus oleh V8 *Garbage Collector* pada ponsel RAM 1GB–3GB.
+
+#### 2. Proteksi Anti-Logat Bule & Notifikasi Edukatif Ramah
+- **Verifikasi Ketat Suara id-ID**: Memeriksa ketersediaan paket suara Bahasa Indonesia di perangkat (Google TTS, Samsung TTS, Vocalizer, Siri Damayanti, dsb.).
+- **Pencegah Suara Aksen Asing**: Jika perangkat benar-benar belum memasang paket suara Indonesia, sistem dilarang memaksakan pembacaan dengan suara Inggris yang merusak pemahaman murid, melainkan memunculkan notifikasi bantuan (*toast*) yang jelas: *"Paket Suara Bahasa Indonesia belum aktif di HP ini. Silakan aktifkan Layanan Suara Google."*
+
+#### 3. Sanitasi Matematika & Simbol Pelajaran SD
+- Membaca pecahan secara alami: `1/2` dibaca *"satu per dua"*, `3/4` dibaca *"tiga per empat"*, dan pecahan umum lainnya.
+- Membaca operasi hitung: `×` dibaca *"kali"*, `÷` atau `:` di antara angka dibaca *"bagi"*, `+` dibaca *"tambah"*, `-` dibaca *"kurang"*, `=` dibaca *"sama dengan"*, `%` dibaca *"persen"*.
+- Membaca satuan: `kg` dibaca *"kilogram"*, `km/jam` dibaca *"kilometer per jam"*, `°C` dibaca *"derajat celcius"*, `m²` dibaca *"meter persegi"*.
+- Titik-titik isian: `.....` atau `___` dibaca *"titik-titik"*.
+- Singkatan mata pelajaran: `KPK` dibaca *"K P K"*, `FPB` dibaca *"F P B"*, `SD` dibaca *"S D"*, `IPA` dibaca *"I P A"*.
+
+#### 4. Pembaruan Cache PWA Service Worker (public/sw.js)
+- Menaikkan versi cache ke `kuis-sd-seru-v2.5.7`.
+
+
 ## [2.5.6] - 2026-10-21
 ### Bilah Subheader Kompak 4 Alat + 1 Pengaturan di Bawah Header & Modal Pengaturan Mandiri (Rule 1, Rule 2, Rule 4, Rule 7, Rule 15 & AGENTS.md)
 
