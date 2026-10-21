@@ -37,7 +37,6 @@ import {
   Eye,
   Users,
   Flame,
-  MoreVertical,
   Sun,
   Moon,
   RotateCcw,
@@ -59,8 +58,10 @@ import {
   AlertCircle,
   CheckCircle2,
   Flag,
-  Type
+  Type,
+  Settings
 } from 'lucide-react';
+import { QuizToolCurtain } from './QuizToolCurtain';
 import { useAntiReaction } from '../../lib/reactionPreferences';
 import { QuizIllustration } from '../shared/QuizIllustration';
 import { ImageZoomModal } from '../common/ImageZoomModal';
@@ -487,6 +488,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   const [isMobileToolsOpen, setIsMobileToolsOpen] = useState(false);
 
   // Floating Tool Dock & Assistive States for Students (Compact Minimalist)
+  const [isCurtainOpen, setIsCurtainOpen] = useState(false);
   const [isScratchpadOpen, setIsScratchpadOpen] = useState(false);
   const [textScale, setTextScale] = useState<QuestionTextScale>('normal');
   const [flaggedQuestions, setFlaggedQuestions] = useState<Set<number>>(new Set());
@@ -1765,7 +1767,25 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                   </button>
                 )}
 
-                {/* Tombol Titik 3 (Menu Alat & Pengaturan Kuis) */}
+                {/* Tombol Alat Bantu Belajar (Tirai) */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (playClick) playClick();
+                    setIsCurtainOpen((prev) => !prev);
+                  }}
+                  className={`p-2 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors shadow-xs ${
+                    isCurtainOpen 
+                      ? 'bg-blue-600 text-white' 
+                      : 'text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750'
+                  }`}
+                  title="Buka / Tutup Tirai Alat Bantu"
+                  aria-label="Tirai Alat Bantu"
+                >
+                  <Sparkles className="w-5 h-5 text-amber-500" />
+                </button>
+
+                {/* Tombol Pengaturan Kuis */}
                 <button
                   type="button"
                   onClick={() => {
@@ -1773,10 +1793,10 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                     setIsMobileToolsOpen(true);
                   }}
                   className="p-2 text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors shadow-xs"
-                  title="Menu Pengaturan & Alat Kuis"
-                  aria-label="Menu Pengaturan & Alat Kuis"
+                  title="Menu Pengaturan Kuis"
+                  aria-label="Menu Pengaturan Kuis"
                 >
-                  <MoreVertical className="w-5 h-5" />
+                  <Settings className="w-5 h-5" />
                 </button>
               </div>
             </>
@@ -1958,23 +1978,26 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                   </button>
                 )}
 
-                {/* Tombol Tunggal Terpadu Alat & Pengaturan Kuis */}
+                {/* Tombol Tirai Alat Bantu Belajar Siswa */}
                 <button
                   type="button"
                   onClick={() => {
                     triggerHaptic('light');
                     playClick();
-                    setIsMobileToolsOpen(true);
+                    setIsCurtainOpen((prev) => !prev);
                   }}
                   className={`px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl min-h-[40px] min-w-[40px] flex items-center gap-1.5 transition-all btn-press border text-xs font-bold ${
                     isSpeechPlaying
                       ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 shadow-xs'
                       : flaggedQuestions.has(currentIndex)
                       ? 'bg-amber-50 dark:bg-amber-950/60 border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300 shadow-xs'
+                      : isCurtainOpen
+                      ? 'bg-blue-600 text-white border-blue-500 shadow-xs'
                       : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 border-slate-200/80 dark:border-slate-700/80'
                   }`}
-                  title="Menu Alat Bantu & Pengaturan Kuis"
-                  aria-label="Menu Alat Bantu & Pengaturan Kuis"
+                  title="Buka / Tutup Tirai Alat Bantu Belajar"
+                  aria-label="Tirai Alat Bantu Siswa"
+                  aria-expanded={isCurtainOpen}
                 >
                   {isSpeechPlaying ? (
                     <Volume2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 animate-pulse" />
@@ -1984,6 +2007,21 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                     <Sparkles className="w-4 h-4 text-amber-500 dark:text-amber-400" />
                   )}
                   <span className="hidden xs:inline">Alat</span>
+                </button>
+
+                {/* Tombol Pengaturan Kuis (Tema, SFX, BGM) */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    triggerHaptic('light');
+                    playClick();
+                    setIsMobileToolsOpen(true);
+                  }}
+                  className="p-2 text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 rounded-xl min-h-[40px] min-w-[40px] flex items-center justify-center transition-colors border border-slate-200/80 dark:border-slate-700/80"
+                  title="Pengaturan Kuis (Tema & Audio)"
+                  aria-label="Pengaturan Kuis"
+                >
+                  <Settings className="w-4 h-4" />
                 </button>
 
                 {/* Desktop / Tablet / Smartboard Full Toolbar (>=sm) */}
@@ -2077,6 +2115,22 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
       <main className="flex-1 min-h-0 w-full overflow-y-auto px-3 py-2 sm:px-6 sm:py-4 flex flex-col items-center overscroll-contain">
         <div className="w-full max-w-2xl lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl 3xl:max-w-6xl 4k:max-w-7xl bg-white dark:bg-slate-900 rounded-3xl p-3.5 xs:p-4 sm:p-6 md:p-8 2xl:p-10 border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col gap-2.5 sm:gap-4 xl:gap-5 my-1 sm:my-auto animate-fade-in relative">
           
+          {/* Tirai Alat Bantu Siswa (Collapsible Assistive Curtain) */}
+          <QuizToolCurtain
+            isSpeaking={isSpeechPlaying}
+            onToggleSpeech={handleToggleSpeech}
+            onOpenScratchpad={() => setIsScratchpadOpen(true)}
+            textScale={textScale}
+            onCycleTextScale={handleCycleTextScale}
+            isFlagged={flaggedQuestions.has(currentIndex)}
+            onToggleFlag={handleToggleFlag}
+            isOpen={isCurtainOpen}
+            onToggleOpen={() => {
+              triggerHaptic('light');
+              setIsCurtainOpen((prev) => !prev);
+            }}
+          />
+
           {/* Paused Overlay Banner */}
           {isPaused && (
             <div className="p-2.5 rounded-2xl bg-amber-500 text-white text-center text-xs sm:text-sm font-bold shadow-md flex items-center justify-center gap-2 animate-bounce flex-shrink-0">
@@ -2728,8 +2782,8 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
               <div>
-                <h4 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">Alat & Pengaturan Kuis</h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Sesuaikan tampilan & audio kuis</p>
+                <h4 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">Pengaturan & Alat Kuis</h4>
+                <p className="text-xs text-slate-500 dark:text-slate-400">Sesuaikan tema tampilan, audio, & alat bantu</p>
               </div>
               <button
                 type="button"

@@ -6,6 +6,29 @@ Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen in
 
 
 
+## [2.5.4] - 2026-10-21
+### Fitur Tirai Alat Bantu Siswa (Collapsible Assistive Curtain) & Pemisahan Menu Pengaturan di Arena Kuis (Rule 1, Rule 2, Rule 7, Rule 15 & AGENTS.md)
+
+#### 1. Komponen Tirai Alat Bantu Siswa (`QuizToolCurtain.tsx`)
+- **Akar Masalah**: Sebelumnya, seluruh alat bantu siswa (Bacakan Soal, Kertas Buram, Ukuran Teks, Tandai Ragu) berada di dalam bottom sheet modal besar bersama pengaturan audio dan tema. Siswa harus melalui 3-4 langkah untuk mengakses alat bantu sehingga menutupi soal dan mengganggu fokus menjawab.
+- **Solusi Desain Opsi B (Tirai Lipat / Collapsible Curtain)**:
+  - Mengimplementasikan laci/tirai lipat yang terintegrasi di bagian atas kartu soal tanpa menggeser atau menutupi pilihan jawaban (A, B, C, D).
+  - **Saat Tirai Ditutup (Tertutup / Minimalis)**: Hanya berupa *pull-tab* kapsul ramping berdimensi ~24 px (`Alat Bantu Siswa ▾`) dengan indikator status otomatis (ikon audio berdenyut saat TTS aktif, atau ikon bendera amber saat soal ditandai).
+  - **Saat Tirai Dibuka (Tirai Ditarik Turun)**: Membuka baris alat 1-sentuh ergonomis yang mencakup:
+    - 🔊 **Bacakan Soal (TTS)**: 1 sentuh untuk mendengarkan pembacaan soal Bahasa Indonesia.
+    - ✏️ **Kertas Buram**: 1 sentuh untuk membuka kanvas corat-coret hitungan rumus matematika/IPA.
+    - 🚩 **Tandai Ragu**: 1 sentuh untuk menandai nomor soal yang perlu dicek ulang.
+    - 🔤 **Ukuran Huruf**: 1 sentuh untuk beralih ukuran teks (`A` / `A+` / `A++`).
+    - **Tutup Tirai [▴]**: Tombol lipat cepat agar siswa kembali fokus 100% pada pertanyaan.
+
+#### 2. Pemisahan Mandiri Pengaturan Kuis vs Alat Belajar (`QuizArena.tsx`)
+- Memisahkan alat bantu belajar aktif dengan pengaturan sistem:
+  - Tombol `✨ Alat` pada header kuis kini bertindak sebagai sakelar instan untuk membuka/menutup Tirai Alat Bantu.
+  - Tombol mandiri `⚙️` (Pengaturan) disediakan di header untuk membuka pengaturan global kuis (Tema Tampilan, Musik Latar BGM, Efek Suara SFX, Layar Penuh Fullscreen).
+
+#### 3. Pembaruan Cache PWA Service Worker (`public/sw.js`)
+- Menaikkan versi cache ke `kuis-sd-seru-v2.5.4` untuk pembaruan instan pada peramban siswa dan guru.
+
 ## [2.5.3] - 2026-10-21
 ### Redesain Total Detail Kuis Dasbor Guru: Rekonstruksi Komando Hero Terpadu, Eliminasi Card Bloat, Kartu Hasil Mobile & Sinkronisasi Cache PWA (Rule 1, Rule 2, Rule 4, Rule 7, Rule 15 & Skill Redesign)
 
