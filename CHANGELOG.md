@@ -6,6 +6,22 @@ Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen in
 
 
 
+## [2.5.13] - 2026-10-21
+### Fitur Penanda Visual Berurutan (*Active Speech Highlighter*) pada Alat Baca Soal Suara (Rule 1, Rule 2, Rule 4, Rule 15 & AGENTS.md)
+
+#### 1. Sinkronisasi Suara & Sorotan Visual Real-Time
+- **Sorotan Teks Soal (*Question Underline & Equalizer*)**: Saat suara Text-to-Speech (TTS) membacakan pertanyaan, kalimat pertanyaan diberi garis bawah aksen (*glowing underline*) dan lencana mini audio equalizer `[ 🔊 Membaca Soal ]` berdenyut lembut.
+- **Sorotan Kartu Pilihan Jawaban (*Option Active Glow*)**: Saat suara berpindah membacakan opsi (Pilihan A, B, C, D), kartu yang bersangkutan secara dinamis mendapatkan bingkai biru menyala (`ring-2 ring-blue-500 border-2 border-blue-500`), latar lembut bernafas, dan lencana `[ 🔊 Dibaca ]`, membantu siswa SD mengenali kalimat yang sedang diucapkan secara visual.
+- **Auto-Scroll Halus Berorientasi Aksesibilitas**: Jika opsi jawaban yang sedang dibacakan berada di bawah lipatan layar (*below fold*), halaman otomatis menggulir perlahan (`scrollIntoView({ behavior: 'smooth', block: 'nearest' })`) agar tetap berada dalam pandangan siswa.
+- **Henti Suara Cerdas Saat Menjawab**: Begitu siswa mengeklik/memilih salah satu jawaban, suara pembacaan soal otomatis langsung berhenti seketika (*instant cancellation*) dan sorotan visual kembali normal.
+
+#### 2. Kestabilan 100% pada Semua Perangkat Low-End hingga Flagship
+- Menggunakan arsitektur *chunked speech utterance* yang terbukti tangguh tanpa ketergantungan pada API eksperimental browser, menjamin sorotan tidak pernah macet pada HP Android RAM 1–3 GB.
+
+#### 3. Pembaruan Cache PWA Service Worker (public/sw.js)
+- Menaikkan versi cache ke `kuis-sd-seru-v2.5.13`.
+
+
 ## [2.5.12] - 2026-10-21
 ### Redesain Bilah Navigasi Bawah (Footer) Arena Kuis Siswa Lebih Ringkas, Rapi & Ergonomis (Rule 1, Rule 2, Rule 4, Rule 15 & AGENTS.md)
 

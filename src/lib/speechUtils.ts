@@ -9,11 +9,13 @@
  */
 
 export type SpeechErrorReason = 'UNSUPPORTED' | 'NO_INDONESIAN_VOICE' | 'TTS_FAILED';
+export type SpeechChunkTarget = 'question' | 'option' | 'none';
 
 export interface SpeakOptions {
   onStart?: () => void;
   onEnd?: () => void;
   onError?: (reason: SpeechErrorReason, message?: string) => void;
+  onChunkChange?: (chunkIndex: number, target: SpeechChunkTarget, optionIndex?: number) => void;
   rate?: number;
   pitch?: number;
 }
@@ -305,6 +307,9 @@ export function speakQuestion(
       if (thisSessionId !== activeSessionId) return;
       if (currentChunkIndex === 0) {
         callbacks?.onStart?.();
+        callbacks?.onChunkChange?.(0, 'question');
+      } else {
+        callbacks?.onChunkChange?.(currentChunkIndex, 'option', currentChunkIndex - 1);
       }
     };
 

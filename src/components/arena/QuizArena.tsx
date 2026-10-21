@@ -493,19 +493,35 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   const [flaggedQuestions, setFlaggedQuestions] = useState<Set<number>>(new Set());
   const [isSpeechPlaying, setIsSpeechPlaying] = useState(false);
   const [speechToastMessage, setSpeechToastMessage] = useState<string | null>(null);
+  const [activeSpeechHighlight, setActiveSpeechHighlight] = useState<{
+    target: 'question' | 'option';
+    optionIndex?: number;
+  } | null>(null);
 
   const handleToggleSpeech = useCallback(() => {
     if (isSpeechPlaying) {
       stopSpeech();
       setIsSpeechPlaying(false);
+      setActiveSpeechHighlight(null);
     } else {
       const currentQ = activeQuestions[currentIndex];
       if (currentQ) {
         speakQuestion(currentQ.text, currentQ.options, {
           onStart: () => setIsSpeechPlaying(true),
-          onEnd: () => setIsSpeechPlaying(false),
+          onEnd: () => {
+            setIsSpeechPlaying(false);
+            setActiveSpeechHighlight(null);
+          },
+          onChunkChange: (_chunkIdx, target, optionIndex) => {
+            if (target === 'none') {
+              setActiveSpeechHighlight(null);
+            } else {
+              setActiveSpeechHighlight({ target, optionIndex });
+            }
+          },
           onError: (reason, message) => {
             setIsSpeechPlaying(false);
+            setActiveSpeechHighlight(null);
             if (reason === 'NO_INDONESIAN_VOICE') {
               setSpeechToastMessage('Paket Suara Bahasa Indonesia belum aktif di HP ini. Silakan aktifkan Layanan Suara Google.');
             } else if (reason === 'UNSUPPORTED') {
@@ -519,6 +535,23 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
       }
     }
   }, [isSpeechPlaying, activeQuestions, currentIndex]);
+
+  // Hentikan suara dan reset highlight saat berpindah soal
+  useEffect(() => {
+    stopSpeech();
+    setIsSpeechPlaying(false);
+    setActiveSpeechHighlight(null);
+  }, [currentIndex]);
+
+  // Auto-scroll halus ke kartu pilihan yang sedang dibacakan jika posisinya di luar pandangan
+  useEffect(() => {
+    if (activeSpeechHighlight?.target === 'option' && typeof activeSpeechHighlight.optionIndex === 'number') {
+      const optionEl = document.getElementById(`quiz-option-${activeSpeechHighlight.optionIndex}`);
+      if (optionEl) {
+        optionEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+  }, [activeSpeechHighlight]);
 
   const handleCycleTextScale = useCallback(() => {
     setTextScale((prev) => {
@@ -1061,6 +1094,13 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
       return;
     }
     if (timerRef.current) clearInterval(timerRef.current);
+
+    // Otomatis hentikan suara pembacaan soal seketika saat siswa memilih jawaban
+    if (isSpeechPlaying) {
+      stopSpeech();
+      setIsSpeechPlaying(false);
+      setActiveSpeechHighlight(null);
+    }
 
     setSelectedOption(optionIndex);
     setIsAnswerConfirmed(true);
@@ -2128,8 +2168,16 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
               : textScale === 'large'
               ? 'text-sm xs:text-base sm:text-lg md:text-xl xl:text-2xl 2xl:text-3xl 3xl:text-4xl'
               : 'text-sm xs:text-base sm:text-lg md:text-xl xl:text-2xl 2xl:text-3xl 3xl:text-4xl'
-          } font-extrabold text-slate-900 dark:text-white leading-snug break-words transition-all duration-200`}>
-            {formatMathExpression(question.text)}
+          } font-extrabold text-slate-900 dark:text-white leading-snug break-words transition-all duration-200 relative`}>
+            <span className={activeSpeechHighlight?.target === 'question' ? 'underline decoration-blue-500 dark:decoration-blue-400 decoration-2 sm:decoration-3 underline-offset-4 sm:underline-offset-6 transition-all duration-300' : ''}>
+              {formatMathExpression(question.text)}
+            </span>
+            {activeSpeechHighlight?.target === 'question' && (
+              <span className="inline-flex items-center gap-1 ml-2 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border border-blue-200/80 dark:border-blue-800/80 align-middle animate-fade-in shadow-xs flex-shrink-0">
+                <Volume2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 animate-pulse" />
+                <span className="hidden xs:inline">Membaca Soal</span>
+              </span>
+            )}
           </h3>
 
           {/* Illustration Container (Special Mystery Grid for image_guess) */}
@@ -2455,8 +2503,11 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
               const acceptableList = (question.acceptableAnswers || []).map(normalizeAnswer);
               const isCorrectOpt = question.correctIndex === idx
                 || (acceptableList.length > 0 && acceptableList.includes(cleanOpt));
+              const isCurrentlySpeakingThisOption = activeSpeechHighlight?.target === 'option' && activeSpeechHighlight?.optionIndex === idx;
 
-              let btnStyle = 'bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 hover:border-blue-300 dark:hover:border-blue-500/60 hover:bg-slate-50 dark:hover:bg-slate-750';
+              let btnStyle = isCurrentlySpeakingThisOption
+                ? 'bg-blue-50/90 dark:bg-blue-950/60 border-2 border-blue-500 dark:border-blue-400 text-blue-950 dark:text-blue-50 font-bold ring-2 ring-blue-400/40 shadow-sm transition-all duration-200'
+                : 'bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 hover:border-blue-300 dark:hover:border-blue-500/60 hover:bg-slate-50 dark:hover:bg-slate-750';
 
               if (isAnswerConfirmed) {
                 if (showAnswersMode === 'immediate') {
@@ -2495,6 +2546,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
               return (
                 <button
                   key={idx}
+                  id={`quiz-option-${idx}`}
                   type="button"
                   disabled={isAnswerConfirmed && !canReselectAndNavigate}
                   onClick={() => handleAnswerSelect(idx)}
@@ -2502,7 +2554,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                 >
                   <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
                     <span
-                      className={`w-8 h-8 sm:w-9 sm:h-9 xl:w-11 xl:h-11 3xl:w-14 3xl:h-14 rounded-xl flex items-center justify-center font-bold text-xs sm:text-sm xl:text-base 3xl:text-xl flex-shrink-0 ${
+                      className={`w-8 h-8 sm:w-9 sm:h-9 xl:w-11 xl:h-11 3xl:w-14 3xl:h-14 rounded-xl flex items-center justify-center font-bold text-xs sm:text-sm xl:text-base 3xl:text-xl flex-shrink-0 transition-all ${
                         isAnswerConfirmed
                           ? showAnswersMode === 'immediate'
                             ? isCorrectOpt
@@ -2519,6 +2571,8 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                             : isSelected
                             ? 'bg-blue-600 text-white'
                             : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200'
+                          : isCurrentlySpeakingThisOption
+                          ? 'bg-blue-600 text-white shadow-xs ring-2 ring-blue-300 dark:ring-blue-500/60 animate-pulse'
                           : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200'
                       }`}
                     >
@@ -2534,6 +2588,14 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                   </div>
 
                   <div className="flex items-center gap-1.5 flex-shrink-0">
+                    {/* Indikator Pilihan Sedang Dibacakan Voice */}
+                    {isCurrentlySpeakingThisOption && !isAnswerConfirmed && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 dark:bg-blue-900/80 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-700 animate-fade-in flex-shrink-0">
+                        <Volume2 className="w-3 h-3 text-blue-600 dark:text-blue-400 animate-pulse" />
+                        <span className="hidden xs:inline">Dibaca</span>
+                      </span>
+                    )}
+
                     {/* Class Voting Pill if Poll Mode is Active */}
                     {isPollOpen && !isAnswerConfirmed && (
                       <span
