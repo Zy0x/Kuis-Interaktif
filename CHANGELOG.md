@@ -6,6 +6,27 @@ Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen in
 
 
 
+## [2.4.96] - 2026-10-21
+### Redesain Ramping Banner Sesi Aktif Dasbor Guru: Anti-Redundan, Hemat Ruang & Navigasi Cepat (Rule 1, Rule 2, Rule 15 & Skill Redesign)
+
+#### 1. Pemangkasan Tinggi Vertikal >50% & Zero AI Slop (`TeacherDashboard.tsx`)
+- **Eliminasi Paragraf Filler**: Menghapus teks deskripsi klise (*"Siswa dapat mengerjakan tugas secara mandiri hingga batas waktu pengumpulan..."*) yang memakan ruang vertikal tanpa memberi nilai tambah bagi pendidik.
+- **Kompaksi Layout Kartu Banner**: Mengurangi tinggi banner dari **~380px menjadi ~175px**, sehingga pada layar ponsel pintar konten daftar koleksi kuis tetap terlihat nyaman di bawah banner tanpa tertutup atau terdorong ke luar layar.
+
+#### 2. Penghapusan Duplikasi Tautan & Koreksi Format Hitung Mundur (`TeacherDashboard.tsx`)
+- **Pembersihan Tautan Redundan**: Mengeliminasi pil tombol *"Salin Link Siswa"* yang sebelumnya berdampingan dengan chip PIN.
+- **Chip PIN & Tombol Bagikan Native Bawaan**:
+  - Tombol PIN interaktif (`PIN 144180`) langsung menyalin kode PIN dengan indikator centang hijau.
+  - Tombol Bagikan (`Share2`) langsung memicu drawer *Web Share API* bawaan perangkat untuk dikirim ke WhatsApp/aplikasi pilihan atau menyalin tautan secara otomatis.
+- **Koreksi Teks Ganda Countdown**: Menghapus redundansi kata kapital *"SISA WAKTU: SISA..."* menjadi strip ringkas bersih berikon jam/kalender: `Tenggat: [Tanggal] • Sisa [Hari/Jam/Menit]`.
+
+#### 3. Baris Tombol Aksi 1-Baris Terpadu & Ergonomis (Rule 1 Mobile-First)
+- **Aksi 1-Baris Terpadu (Tinggi 44px)**:
+  - Tombol utama `[ 👥 Pantau Progres ]` (atau `[ Masuk Ruang Tunggu / Layar Pantau Live ]`) menempati ruang fleksibel dominan.
+  - Tombol sekunder `[ 📅 Perpanjang ]` (pada sesi tugas mandiri/PR) terintegrasi rapi di samping tombol utama.
+  - Tombol `[ Akhiri ]` ringkas dengan aksen merah lembut tanpa memakan baris vertikal baru.
+- **Paginasi Multi-Sesi Kompak**: Pager pengalih antar-sesi aktif (`< 1 / 5 >`) dan tautan `Lihat Semua (X Sesi) →` disajikan rapi di bagian kaki banner dengan batas divider tipis.
+
 ## [2.4.95] - 2026-10-21
 ### Redesain Efisien Tab Kuis Aktif & Sesi Live: Zero Redundancy, Kartu Interaktif & Hemat Ruang (Rule 1, Rule 2, Rule 15 & Skill Redesign)
 

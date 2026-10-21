@@ -427,13 +427,34 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
     }
   };
 
-  const handleCopySessionLink = async (pinCode: string, trackingKey: string) => {
+  const handleShareSession = async (session: QuizSession, trackingKey: string) => {
     playClick();
-    const url = `${window.location.origin}/?pin=${pinCode}`;
-    const success = await copyTextToClipboard(url);
+    const studentUrl = `${window.location.origin}/?pin=${session.pinCode}`;
+    const deadlineCountdown = session.settings?.deadlineAt 
+      ? getAccurateDeadlineCountdown(session.settings.deadlineAt) 
+      : null;
+    const deadlineStr = deadlineCountdown?.formattedDate 
+      ? `\n⏰ Batas Pengumpulan: ${deadlineCountdown.formattedDate}` 
+      : '';
+    const shareMessage = `Halo anak-anak dan Ayah/Bunda! 📚\nBerikut tugas kuis interaktif kita:\n\n*${session.quizTitle}*\n📖 Mata Pelajaran: ${session.subject} (Kelas ${session.grade})\n${deadlineStr}\n🔑 PIN Ruang: *${session.pinCode}*\n🔗 Tautan Masuk: ${studentUrl}\n\nKerjakan dengan teliti dan raih bintang terbaik! 🌟`;
+
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({
+          title: session.quizTitle,
+          text: shareMessage,
+          url: studentUrl,
+        });
+        return;
+      } catch (err: any) {
+        if (err.name === 'AbortError') return;
+      }
+    }
+
+    const success = await copyTextToClipboard(studentUrl);
     if (success) {
       setCopiedLink(trackingKey);
-      setTimeout(() => setCopiedLink(null), 2000);
+      setTimeout(() => setCopiedLink(null), 2500);
     }
   };
 
@@ -876,195 +897,196 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
       {/* Main Container */}
       <main className="w-full max-w-[2000px] mx-auto px-3 xs:px-4 sm:px-8 lg:px-12 pt-5 sm:pt-6 space-y-6 flex-1">
         
-        {/* BANNER SESI AKTIF: Hanya tampil di tab Koleksi Kuis agar tidak redundan dengan daftar card sesi pada tab Kuis Aktif */}
+        {/* BANNER SESI AKTIF: Desain ringkas, anti-redundan, hemat ruang, dan informatif */}
         {activeMainTab !== 'live_sessions' && activeHostSessions.length > 0 && (() => {
           const currentBannerSession = activeHostSessions[activeSessionBannerIdx] || activeHostSessions[0];
           const isSelfPaced = currentBannerSession.settings?.executionMode === 'self_paced';
           const deadlineCountdown = isSelfPaced ? getAccurateDeadlineCountdown(currentBannerSession.settings?.deadlineAt, nowMs) : null;
 
           return (
-            <div className={`rounded-3xl p-4 sm:p-6 text-white shadow-xl flex flex-col gap-3.5 sm:gap-4 animate-fade-in relative overflow-hidden ${
+            <div className={`rounded-2xl p-3.5 sm:p-4 text-white shadow-lg flex flex-col gap-2.5 sm:gap-3 animate-fade-in relative overflow-hidden ${
               isSelfPaced
-                ? 'bg-gradient-to-br from-slate-900 via-indigo-950 to-blue-950 border border-indigo-500/40'
-                : 'bg-gradient-to-br from-blue-700 via-indigo-700 to-purple-800 border border-blue-400/40'
+                ? 'bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border border-indigo-500/30'
+                : 'bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 border border-blue-400/30'
             }`}>
-              {/* Glow accent */}
-              <div className="absolute -right-10 -bottom-10 w-48 h-48 bg-white/10 rounded-full blur-2xl pointer-events-none" />
+              {/* Subtle ambient accent glow */}
+              <div className="absolute -right-8 -bottom-8 w-36 h-36 bg-white/5 rounded-full blur-2xl pointer-events-none" />
 
-              {/* Top Meta Bar: Status Badge, PIN, and Participant Count */}
-              <div className="flex items-center justify-between gap-2 flex-wrap z-10">
-                <div className="flex items-center gap-1.5 xs:gap-2 flex-wrap min-w-0">
+              {/* Baris Atas: Status Badge, Peserta, PIN Interaktif, dan Tombol Bagikan */}
+              <div className="flex items-center justify-between gap-2 z-10 flex-wrap">
+                {/* Kiri: Tipe Sesi & Jumlah Peserta */}
+                <div className="flex items-center gap-1.5 flex-wrap">
                   {isSelfPaced ? (
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-wider bg-indigo-400/30 border border-indigo-300/50 text-indigo-100 backdrop-blur-sm flex-shrink-0">
-                      <ClipboardList className="w-3.5 h-3.5 text-indigo-200 flex-shrink-0" />
-                      <span>Tugas Mandiri / PR</span>
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-indigo-500/20 border border-indigo-400/30 text-indigo-200 flex-shrink-0">
+                      <ClipboardList className="w-3 h-3 text-indigo-300" />
+                      <span>Tugas Mandiri</span>
                     </span>
                   ) : (
-                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-wider backdrop-blur-sm flex-shrink-0 ${
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border flex-shrink-0 ${
                       currentBannerSession.status === 'waiting'
-                        ? 'bg-amber-400/30 border border-amber-300/50 text-amber-200'
-                        : 'bg-rose-500/35 border border-rose-400/50 text-rose-200'
+                        ? 'bg-amber-500/20 border-amber-400/30 text-amber-200'
+                        : 'bg-rose-500/20 border-rose-400/30 text-rose-200'
                     }`}>
-                      <span className="w-2 h-2 rounded-full bg-white animate-ping flex-shrink-0" />
-                      <span>{currentBannerSession.status === 'waiting' ? 'Ruang Tunggu' : 'Sesi Live Berjalan'}</span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      <span>{currentBannerSession.status === 'waiting' ? 'Ruang Tunggu' : 'Sesi Live'}</span>
                     </span>
                   )}
 
-                  {/* PIN Code with quick copy */}
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/10 text-[11px] font-medium text-slate-200 border border-white/10 flex-shrink-0">
+                    <Users className="w-3 h-3 text-slate-300" />
+                    <span>{currentBannerSession.participants.length} Siswa</span>
+                  </span>
+                </div>
+
+                {/* Kanan: PIN Copy & Bagikan */}
+                <div className="flex items-center gap-1.5 flex-shrink-0">
                   <button
                     type="button"
                     onClick={() => handleCopyPin(currentBannerSession.pinCode)}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono font-black bg-black/30 hover:bg-black/50 border border-white/20 text-white transition-colors flex-shrink-0 cursor-pointer min-h-[30px]"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-black/40 hover:bg-black/60 border border-white/20 text-white transition-colors cursor-pointer min-h-[32px] btn-press"
                     title="Klik untuk salin PIN"
                   >
-                    <span className="text-[10px] text-white/70 font-sans">PIN:</span>
+                    <span className="text-[10px] text-white/60 font-sans">PIN</span>
                     <span className="tracking-wider">{currentBannerSession.pinCode}</span>
                     {copiedPin === currentBannerSession.pinCode ? (
                       <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
                     ) : (
-                      <Copy className="w-3.5 h-3.5 text-white/60 flex-shrink-0" />
+                      <Copy className="w-3.5 h-3.5 text-white/70 flex-shrink-0" />
                     )}
                   </button>
 
-                  {/* Salin Tautan Langsung Siswa */}
                   <button
                     type="button"
-                    onClick={() => handleCopySessionLink(currentBannerSession.pinCode, `banner_${currentBannerSession.id}`)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-white/20 hover:bg-white/30 border border-white/30 text-white transition-colors flex-shrink-0 cursor-pointer min-h-[30px] btn-press shadow-2xs"
-                    title="Salin Tautan Kuis untuk Siswa"
+                    onClick={() => handleShareSession(currentBannerSession, `banner_${currentBannerSession.id}`)}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-white/15 hover:bg-white/25 border border-white/20 text-white transition-colors cursor-pointer min-h-[32px] btn-press"
+                    title="Bagikan tautan sesi kuis"
                   >
                     {copiedLink === `banner_${currentBannerSession.id}` ? (
                       <>
                         <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
-                        <span className="text-emerald-300 font-extrabold">Link Tersalin!</span>
+                        <span className="text-emerald-300 font-bold">Tersalin!</span>
                       </>
                     ) : (
                       <>
                         <Share2 className="w-3.5 h-3.5 text-white/90 flex-shrink-0" />
-                        <span>Salin Link Siswa</span>
+                        <span className="hidden xs:inline">Bagikan</span>
                       </>
                     )}
                   </button>
                 </div>
-
-                {/* Participants counter */}
-                <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/10 border border-white/15 text-[11px] sm:text-xs text-blue-100 font-semibold backdrop-blur-sm flex-shrink-0">
-                  <Users className="w-3.5 h-3.5 text-blue-300 flex-shrink-0" />
-                  <span>{currentBannerSession.participants.length} Siswa Tergabung</span>
-                </div>
               </div>
 
-              {/* Title & Description with full width and zero brutal truncation */}
+              {/* Judul Kuis & Info Status/Tenggat */}
               <div className="space-y-1 z-10 min-w-0">
-                <h3 className="font-black text-base sm:text-lg md:text-xl leading-snug break-words text-white drop-shadow-xs">
+                <h3 
+                  className="font-bold text-sm sm:text-base text-white leading-snug line-clamp-1 sm:line-clamp-2"
+                  title={currentBannerSession.quizTitle}
+                >
                   {currentBannerSession.quizTitle}
                 </h3>
 
-                <p className="text-xs sm:text-sm text-blue-100/90 leading-relaxed line-clamp-2">
-                  {isSelfPaced
-                    ? 'Siswa dapat mengerjakan tugas secara mandiri hingga batas waktu pengumpulan.'
-                    : currentBannerSession.status === 'waiting'
-                    ? 'Siswa sedang menunggu di ruang tunggu. Tekan tombol di bawah untuk kembali memimpin sesi.'
-                    : 'Kuis interaktif sedang dipandu oleh Anda. Buka layar kendali untuk memimpin kuis.'}
-                </p>
-              </div>
-
-              {/* Deadline & Countdown Pill Box for Self-Paced / PR */}
-              {isSelfPaced && deadlineCountdown && (
-                <div className={`p-2.5 sm:p-3 rounded-2xl border text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2 z-10 backdrop-blur-sm ${
-                  deadlineCountdown.isExpired
-                    ? 'bg-rose-500/25 border-rose-400/40 text-rose-100'
-                    : deadlineCountdown.isUrgent
-                    ? 'bg-amber-500/25 border-amber-400/40 text-amber-100'
-                    : 'bg-white/10 border-white/15 text-indigo-100'
-                }`}>
-                  <div className="flex items-center gap-1.5 font-medium flex-wrap">
-                    <Calendar className="w-3.5 h-3.5 text-indigo-300 flex-shrink-0" />
-                    <span>Batas Waktu: <strong className="text-white font-bold">{deadlineCountdown.formattedDate}</strong></span>
+                {isSelfPaced && deadlineCountdown ? (
+                  <div className="flex items-center gap-2 text-xs flex-wrap text-slate-300">
+                    <div className="flex items-center gap-1">
+                      <Calendar className="w-3.5 h-3.5 text-indigo-300 flex-shrink-0" />
+                      <span>Tenggat: <strong className="text-white font-medium">{deadlineCountdown.formattedDate}</strong></span>
+                    </div>
+                    <span className="text-white/40 hidden sm:inline">•</span>
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold ${
+                      deadlineCountdown.isExpired
+                        ? 'bg-rose-500/30 text-rose-200 border border-rose-400/40 animate-pulse'
+                        : deadlineCountdown.isUrgent
+                        ? 'bg-amber-500/25 text-amber-200 border border-amber-400/40'
+                        : 'bg-indigo-500/25 text-indigo-200 border border-indigo-400/30'
+                    }`}>
+                      {deadlineCountdown.isExpired ? (
+                        <>
+                          <AlertTriangle className="w-3 h-3 text-rose-300 flex-shrink-0" />
+                          <span>Tenggat Berakhir ({deadlineCountdown.countdownText})</span>
+                        </>
+                      ) : (
+                        <>
+                          <Clock className="w-3 h-3 text-amber-300 flex-shrink-0" />
+                          <span>{deadlineCountdown.countdownText}</span>
+                        </>
+                      )}
+                    </span>
                   </div>
-
-                  <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-wider self-start sm:self-auto flex-shrink-0 ${
-                    deadlineCountdown.isExpired
-                      ? 'bg-rose-500/40 text-rose-100 border border-rose-300/60 animate-pulse'
-                      : deadlineCountdown.isUrgent
-                      ? 'bg-amber-500/40 text-amber-100 border border-amber-300/60'
-                      : 'bg-indigo-500/35 text-indigo-100 border border-indigo-300/50'
-                  }`}>
-                    {deadlineCountdown.isExpired ? (
+                ) : !isSelfPaced ? (
+                  <div className="flex items-center gap-1.5 text-xs text-slate-300">
+                    {currentBannerSession.status === 'waiting' ? (
                       <>
-                        <AlertTriangle className="w-3.5 h-3.5 text-rose-200" />
-                        TENGGAT BERAKHIR ({deadlineCountdown.countdownText})
+                        <Clock className="w-3.5 h-3.5 text-amber-300 flex-shrink-0" />
+                        <span>Siswa bersiap di ruang tunggu lobi</span>
                       </>
                     ) : (
                       <>
-                        <Clock className="w-3.5 h-3.5 text-amber-300" />
-                        Sisa Waktu: {deadlineCountdown.countdownText}
+                        <Tv className="w-3.5 h-3.5 text-emerald-300 flex-shrink-0" />
+                        <span>Kuis interaktif sedang berjalan live</span>
                       </>
                     )}
-                  </span>
-                </div>
-              )}
+                  </div>
+                ) : null}
+              </div>
 
-              {/* Action Buttons: Responsive mobile-first stacked + 2-col secondary actions */}
-              <div className="pt-2 border-t border-white/15 flex flex-col md:flex-row items-stretch md:items-center gap-2 z-10">
+              {/* Baris Tombol Aksi (1 Baris Rapi & Seimbang) */}
+              <div className="pt-2 border-t border-white/10 flex items-center gap-2 z-10">
                 <button
                   type="button"
                   onClick={() => {
                     playClick();
                     setSelectedSessionForHost(currentBannerSession);
                   }}
-                  className="w-full md:flex-1 py-3 px-4 rounded-2xl bg-white text-indigo-950 hover:bg-blue-50 text-xs sm:text-sm font-black shadow-md transition-all flex items-center justify-center gap-2 btn-press min-h-[48px]"
+                  className="flex-1 py-2.5 px-3.5 rounded-xl bg-white text-slate-900 hover:bg-slate-100 text-xs sm:text-sm font-bold shadow-xs transition-all flex items-center justify-center gap-2 btn-press min-h-[44px]"
                 >
                   {isSelfPaced ? (
                     <>
                       <Users className="w-4 h-4 text-indigo-600 flex-shrink-0" />
-                      <span>Pantau Progres Siswa</span>
+                      <span>Pantau Progres</span>
                     </>
                   ) : (
                     <>
                       <Tv className="w-4 h-4 text-indigo-600 flex-shrink-0" />
                       <span>
                         {currentBannerSession.status === 'waiting'
-                          ? 'Kembali ke Ruang Tunggu'
-                          : 'Buka Layar Pantau Live'}
+                          ? 'Masuk Ruang Tunggu'
+                          : 'Layar Pantau Live'}
                       </span>
                     </>
                   )}
                 </button>
 
-                <div className={`grid ${isSelfPaced ? 'grid-cols-2' : 'grid-cols-1'} md:flex md:items-center gap-2 w-full md:w-auto`}>
-                  {isSelfPaced && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        playClick();
-                        setSessionToExtendDeadline(currentBannerSession);
-                      }}
-                      className="py-3 px-3.5 rounded-2xl bg-indigo-500/30 hover:bg-indigo-500/50 border border-indigo-300/40 text-white text-xs font-bold transition-all min-h-[48px] flex items-center justify-center gap-1.5 btn-press"
-                      title="Perpanjang batas waktu PR"
-                    >
-                      <Calendar className="w-4 h-4 text-indigo-300 flex-shrink-0" />
-                      <span>Perpanjang</span>
-                    </button>
-                  )}
-
+                {isSelfPaced && (
                   <button
                     type="button"
-                    onClick={() => handleEndSessionDirectly(currentBannerSession.id)}
-                    className="py-3 px-3.5 rounded-2xl bg-white/15 hover:bg-rose-600/80 border border-white/25 text-white text-xs font-bold transition-all min-h-[48px] flex items-center justify-center gap-1.5 btn-press"
-                    title="Akhiri sesi ini"
+                    onClick={() => {
+                      playClick();
+                      setSessionToExtendDeadline(currentBannerSession);
+                    }}
+                    className="py-2.5 px-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-white text-xs font-semibold transition-all min-h-[44px] flex items-center justify-center gap-1.5 btn-press whitespace-nowrap flex-shrink-0"
+                    title="Perpanjang batas waktu pengumpulan tugas"
                   >
-                    <span>Akhiri Sesi</span>
+                    <Calendar className="w-3.5 h-3.5 text-indigo-300 flex-shrink-0" />
+                    <span>Perpanjang</span>
                   </button>
-                </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => handleEndSessionDirectly(currentBannerSession.id)}
+                  className="py-2.5 px-3 rounded-xl bg-rose-500/20 hover:bg-rose-600/30 border border-rose-400/30 text-rose-200 hover:text-white text-xs font-semibold transition-all min-h-[44px] flex items-center justify-center gap-1 btn-press whitespace-nowrap flex-shrink-0"
+                  title="Akhiri sesi ini"
+                >
+                  <span>Akhiri</span>
+                </button>
               </div>
 
-              {/* Multi-Session Switcher if more than 1 active session */}
+              {/* Multi-Session Switcher jika lebih dari 1 sesi aktif */}
               {activeHostSessions.length > 1 && (
-                <div className="w-full pt-2.5 mt-1 border-t border-white/15 flex flex-wrap items-center justify-between gap-2 text-xs text-white/90 z-10">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-[11px] text-white/80">Sesi Aktif:</span>
-                    <div className="flex items-center gap-1 bg-black/25 rounded-xl p-1 border border-white/15">
+                <div className="w-full pt-2 border-t border-white/10 flex items-center justify-between gap-2 text-xs text-slate-300 z-10">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] text-slate-400 font-medium">Sesi:</span>
+                    <div className="flex items-center gap-1 bg-black/30 rounded-lg p-0.5 border border-white/10">
                       <button
                         type="button"
                         disabled={activeSessionBannerIdx === 0}
@@ -1072,12 +1094,12 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                           playClick();
                           setActiveSessionBannerIdx((prev) => Math.max(0, prev - 1));
                         }}
-                        className="p-1 rounded-lg hover:bg-white/20 disabled:opacity-30 transition-all min-w-[28px] min-h-[28px] flex items-center justify-center"
+                        className="p-1 rounded hover:bg-white/15 disabled:opacity-25 transition-all min-w-[28px] min-h-[28px] flex items-center justify-center cursor-pointer"
                         aria-label="Sesi Sebelumnya"
                       >
-                        <ChevronLeft className="w-4 h-4" />
+                        <ChevronLeft className="w-3.5 h-3.5" />
                       </button>
-                      <span className="px-2 font-mono text-xs font-bold">
+                      <span className="px-1.5 font-mono text-[11px] font-bold text-white">
                         {activeSessionBannerIdx + 1} / {activeHostSessions.length}
                       </span>
                       <button
@@ -1087,10 +1109,10 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                           playClick();
                           setActiveSessionBannerIdx((prev) => Math.min(activeHostSessions.length - 1, prev + 1));
                         }}
-                        className="p-1 rounded-lg hover:bg-white/20 disabled:opacity-30 transition-all min-w-[28px] min-h-[28px] flex items-center justify-center"
+                        className="p-1 rounded hover:bg-white/15 disabled:opacity-25 transition-all min-w-[28px] min-h-[28px] flex items-center justify-center cursor-pointer"
                         aria-label="Sesi Berikutnya"
                       >
-                        <ChevronRight className="w-4 h-4" />
+                        <ChevronRight className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </div>
@@ -1101,10 +1123,10 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                       playClick();
                       setActiveMainTab('live_sessions');
                     }}
-                    className="inline-flex items-center gap-1 text-[11px] font-bold text-white/90 hover:text-white underline underline-offset-2 py-1 px-2 rounded-lg hover:bg-white/10 transition-colors"
+                    className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-300 hover:text-white py-1 px-1.5 rounded hover:bg-white/10 transition-colors"
                   >
-                    Lihat Semua ({activeHostSessions.length} Sesi) di Tab Sesi
-                    <ChevronRight className="w-3.5 h-3.5" />
+                    Lihat Semua ({activeHostSessions.length})
+                    <ChevronRight className="w-3 h-3" />
                   </button>
                 </div>
               )}
