@@ -57,7 +57,8 @@ import {
   Lock,
   AlertCircle,
   CheckCircle2,
-  Flag
+  Flag,
+  ChevronDown
 } from 'lucide-react';
 import { QuizToolCurtain } from './QuizToolCurtain';
 import { useAntiReaction } from '../../lib/reactionPreferences';
@@ -2796,178 +2797,253 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                 </button>
               )}
 
-              {/* Toggle Tema */}
-              <button
-                type="button"
-                onClick={() => {
-                  if (playClick) playClick();
-                  onToggleTheme();
-                }}
-                className="w-full p-3 rounded-2xl flex items-center justify-between bg-slate-50 dark:bg-slate-800/70 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-700 min-h-[50px] transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-amber-300">
-                    {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-                  </div>
-                  <div className="text-left">
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">Tema Tampilan</span>
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400">{isDark ? 'Mode Gelap (Malam)' : 'Mode Terang (Siang)'}</span>
-                  </div>
-                </div>
-                <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200">
-                  {isDark ? 'Gelap' : 'Terang'}
-                </span>
-              </button>
-
-              {/* Toggle SFX */}
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  onToggleMute();
-                }}
-                className="w-full p-3 rounded-2xl flex items-center justify-between bg-slate-50 dark:bg-slate-800/70 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-700 min-h-[50px] transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${isMuted ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-500' : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600'}`}>
-                    {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
-                  </div>
-                  <div className="text-left">
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">Efek Suara (SFX)</span>
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400">{isMuted ? 'Suara efek dimatikan' : 'Suara efek jawaban aktif'}</span>
-                  </div>
-                </div>
-                <span className={`text-xs font-bold px-2.5 py-1 rounded-lg border ${isMuted ? 'bg-rose-50 dark:bg-rose-950 text-rose-600 border-rose-200 dark:border-rose-800' : 'bg-emerald-50 dark:bg-emerald-950 text-emerald-600 border-emerald-200 dark:border-emerald-800'}`}>
-                  {isMuted ? 'Senyap' : 'Aktif'}
-                </span>
-              </button>
-
-              {/* Toggle BGM */}
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  toggleBgmMute();
-                }}
-                className="w-full p-3 rounded-2xl flex items-center justify-between bg-slate-50 dark:bg-slate-800/70 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-700 min-h-[50px] transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${isBgmMuted ? 'bg-slate-100 dark:bg-slate-800 text-slate-400' : 'bg-blue-50 dark:bg-blue-950/60 text-blue-600'}`}>
-                    <Music className="w-5 h-5" />
-                  </div>
-                  <div className="text-left">
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">Musik Latar (BGM)</span>
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400">{isBgmMuted ? 'Musik latar hening' : 'Musik prosedural kuis'}</span>
-                  </div>
-                </div>
-                <span className={`text-xs font-bold px-2.5 py-1 rounded-lg border ${isBgmMuted ? 'bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700' : 'bg-blue-50 dark:bg-blue-950 text-blue-600 border-blue-200 dark:border-blue-800'}`}>
-                  {isBgmMuted ? 'Hening' : 'Putar'}
-                </span>
-              </button>
-
-              {/* Toggle Fullscreen */}
-              <button
-                type="button"
-                onClick={() => {
-                  toggleFullscreen();
-                  setIsMobileToolsOpen(false);
-                }}
-                className="w-full p-3 rounded-2xl flex items-center justify-between bg-slate-50 dark:bg-slate-800/70 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-700 min-h-[50px] transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-cyan-50 dark:bg-cyan-950/60 text-cyan-600">
-                    {isFullscreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
-                  </div>
-                  <div className="text-left">
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">Layar Penuh (Fullscreen)</span>
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400">{isFullscreen ? 'Keluar mode fullscreen' : 'Maksimalkan tampilan layar'}</span>
-                  </div>
-                </div>
-                <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200">
-                  {isFullscreen ? 'Layar Penuh' : 'Standar'}
-                </span>
-              </button>
-
-              {/* Toggle Polling (Khusus Guru / Presenter) */}
-              {isTeacher && (
-                <button
-                  type="button"
+              {/* Panel Kontrol Pengaturan Bergaya Toggle Switch Sesuai Rekomendasi */}
+              <div className="rounded-2xl sm:rounded-3xl border border-slate-200/90 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/60 divide-y divide-slate-200/80 dark:divide-slate-800/80 overflow-hidden shadow-xs">
+                {/* 1. Tema Tampilan */}
+                <div
                   onClick={() => {
-                    playClick();
-                    setIsPollOpen(!isPollOpen);
-                    setIsMobileToolsOpen(false);
+                    if (playClick) playClick();
+                    onToggleTheme();
                   }}
-                  className="w-full p-3 rounded-2xl flex items-center justify-between bg-slate-50 dark:bg-slate-800/70 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-700 min-h-[50px] transition-colors"
+                  role="button"
+                  tabIndex={0}
+                  className="w-full p-3.5 sm:p-4 flex items-center justify-between hover:bg-slate-100/70 dark:hover:bg-slate-800/50 transition-colors cursor-pointer select-none min-h-[56px] btn-press"
+                  aria-label="Ubah Tema Tampilan"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${isPollOpen ? 'bg-purple-50 dark:bg-purple-950/60 text-purple-600' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}>
-                      <Users className="w-5 h-5" />
+                  <div className="flex items-center gap-3 sm:gap-3.5">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-indigo-50 dark:bg-indigo-950/70 text-indigo-600 dark:text-amber-300">
+                      {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
                     </div>
                     <div className="text-left">
-                      <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">Mode Polling / Voting Kelas</span>
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400">Catat jumlah angkat tangan siswa</span>
+                      <span className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100 block">Tema Tampilan</span>
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
+                        {isDark ? 'Mode gelap sedang digunakan' : 'Mode terang sedang digunakan'}
+                      </span>
+                      <span className="text-[10px] text-blue-600 dark:text-blue-400 font-medium block">
+                        Pilihan: Terang, Gelap
+                      </span>
                     </div>
                   </div>
-                  <span className={`text-xs font-bold px-2.5 py-1 rounded-lg border ${isPollOpen ? 'bg-purple-50 dark:bg-purple-950 text-purple-600 border-purple-200 dark:border-purple-800' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700'}`}>
-                    {isPollOpen ? 'Aktif' : 'Nonaktif'}
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 shadow-xs shrink-0">
+                    <span>{isDark ? 'Gelap' : 'Terang'}</span>
+                    <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                  </div>
+                </div>
+
+                {/* 2. Efek Suara (SFX Toggle) */}
+                <div
+                  onClick={() => {
+                    playClick();
+                    onToggleMute();
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  className="w-full p-3.5 sm:p-4 flex items-center justify-between hover:bg-slate-100/70 dark:hover:bg-slate-800/50 transition-colors cursor-pointer select-none min-h-[56px] btn-press"
+                  aria-label="Alihkan Efek Suara"
+                >
+                  <div className="flex items-center gap-3 sm:gap-3.5">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isMuted ? 'bg-slate-100 dark:bg-slate-800 text-slate-400' : 'bg-emerald-50 dark:bg-emerald-950/70 text-emerald-600 dark:text-emerald-400'}`}>
+                      {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+                    </div>
+                    <div className="text-left">
+                      <span className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100 block">Efek Suara</span>
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 block">Suara saat menjawab soal</span>
+                    </div>
+                  </div>
+                  {/* Toggle Switch */}
+                  <div
+                    aria-checked={!isMuted}
+                    role="switch"
+                    className={`w-11 h-6 rounded-full transition-colors duration-200 relative flex items-center px-0.5 shrink-0 ${
+                      !isMuted ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'
+                    }`}
+                  >
+                    <div
+                      className={`w-5 h-5 bg-white rounded-full shadow-sm transform transition-transform duration-200 ease-in-out ${
+                        !isMuted ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
+                  </div>
+                </div>
+
+                {/* 3. Musik Latar (BGM Toggle) */}
+                <div
+                  onClick={() => {
+                    playClick();
+                    toggleBgmMute();
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  className="w-full p-3.5 sm:p-4 flex items-center justify-between hover:bg-slate-100/70 dark:hover:bg-slate-800/50 transition-colors cursor-pointer select-none min-h-[56px] btn-press"
+                  aria-label="Alihkan Musik Latar"
+                >
+                  <div className="flex items-center gap-3 sm:gap-3.5">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isBgmMuted ? 'bg-slate-100 dark:bg-slate-800 text-slate-400' : 'bg-blue-50 dark:bg-blue-950/70 text-blue-600 dark:text-blue-400'}`}>
+                      <Music className="w-5 h-5" />
+                    </div>
+                    <div className="text-left">
+                      <span className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100 block">Musik Latar</span>
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 block">Musik selama kuis berlangsung</span>
+                    </div>
+                  </div>
+                  {/* Toggle Switch */}
+                  <div
+                    aria-checked={!isBgmMuted}
+                    role="switch"
+                    className={`w-11 h-6 rounded-full transition-colors duration-200 relative flex items-center px-0.5 shrink-0 ${
+                      !isBgmMuted ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'
+                    }`}
+                  >
+                    <div
+                      className={`w-5 h-5 bg-white rounded-full shadow-sm transform transition-transform duration-200 ease-in-out ${
+                        !isBgmMuted ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
+                  </div>
+                </div>
+
+                {/* 4. Layar Penuh (Fullscreen Toggle) */}
+                <div
+                  onClick={() => {
+                    toggleFullscreen();
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  className="w-full p-3.5 sm:p-4 flex items-center justify-between hover:bg-slate-100/70 dark:hover:bg-slate-800/50 transition-colors cursor-pointer select-none min-h-[56px] btn-press"
+                  aria-label="Alihkan Layar Penuh"
+                >
+                  <div className="flex items-center gap-3 sm:gap-3.5">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isFullscreen ? 'bg-cyan-50 dark:bg-cyan-950/70 text-cyan-600 dark:text-cyan-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>
+                      {isFullscreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
+                    </div>
+                    <div className="text-left">
+                      <span className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100 block">Layar Penuh</span>
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 block">Perluas tampilan kuis</span>
+                    </div>
+                  </div>
+                  {/* Toggle Switch */}
+                  <div
+                    aria-checked={isFullscreen}
+                    role="switch"
+                    className={`w-11 h-6 rounded-full transition-colors duration-200 relative flex items-center px-0.5 shrink-0 ${
+                      isFullscreen ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'
+                    }`}
+                  >
+                    <div
+                      className={`w-5 h-5 bg-white rounded-full shadow-sm transform transition-transform duration-200 ease-in-out ${
+                        isFullscreen ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
+                  </div>
+                </div>
+
+                {/* 5. Animasi Emoji (Emoji Toggle) */}
+                <div
+                  onClick={() => {
+                    if (playClick) playClick();
+                    toggleAntiReaction();
+                    setShowAntiReactToast(true);
+                    setTimeout(() => setShowAntiReactToast(false), 2200);
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  className="w-full p-3.5 sm:p-4 flex items-center justify-between hover:bg-slate-100/70 dark:hover:bg-slate-800/50 transition-colors cursor-pointer select-none min-h-[56px] btn-press"
+                  aria-label="Alihkan Animasi Emoji"
+                >
+                  <div className="flex items-center gap-3 sm:gap-3.5">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isAntiReact ? 'bg-slate-100 dark:bg-slate-800 text-slate-400' : 'bg-amber-50 dark:bg-amber-950/70 text-amber-500 dark:text-amber-400'}`}>
+                      {isAntiReact ? <EyeOff className="w-5 h-5" /> : <Sparkles className="w-5 h-5" />}
+                    </div>
+                    <div className="text-left">
+                      <span className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100 block">Animasi Emoji</span>
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 block">Animasi saat menjawab soal</span>
+                    </div>
+                  </div>
+                  {/* Toggle Switch */}
+                  <div
+                    aria-checked={!isAntiReact}
+                    role="switch"
+                    className={`w-11 h-6 rounded-full transition-colors duration-200 relative flex items-center px-0.5 shrink-0 ${
+                      !isAntiReact ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'
+                    }`}
+                  >
+                    <div
+                      className={`w-5 h-5 bg-white rounded-full shadow-sm transform transition-transform duration-200 ease-in-out ${
+                        !isAntiReact ? 'translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
+                  </div>
+                </div>
+
+                {/* 6. Mode Polling (Khusus Guru / Presenter) */}
+                {isTeacher && (
+                  <div
+                    onClick={() => {
+                      playClick();
+                      setIsPollOpen(!isPollOpen);
+                      setIsMobileToolsOpen(false);
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    className="w-full p-3.5 sm:p-4 flex items-center justify-between hover:bg-slate-100/70 dark:hover:bg-slate-800/50 transition-colors cursor-pointer select-none min-h-[56px] btn-press"
+                    aria-label="Alihkan Mode Polling Kelas"
+                  >
+                    <div className="flex items-center gap-3 sm:gap-3.5">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isPollOpen ? 'bg-purple-50 dark:bg-purple-950/70 text-purple-600 dark:text-purple-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>
+                        <Users className="w-5 h-5" />
+                      </div>
+                      <div className="text-left">
+                        <span className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100 block">Mode Polling Kelas</span>
+                        <span className="text-[11px] text-slate-500 dark:text-slate-400 block">Catat angkat tangan siswa</span>
+                      </div>
+                    </div>
+                    {/* Toggle Switch */}
+                    <div
+                      aria-checked={isPollOpen}
+                      role="switch"
+                      className={`w-11 h-6 rounded-full transition-colors duration-200 relative flex items-center px-0.5 shrink-0 ${
+                        isPollOpen ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'
+                      }`}
+                    >
+                      <div
+                        className={`w-5 h-5 bg-white rounded-full shadow-sm transform transition-transform duration-200 ease-in-out ${
+                          isPollOpen ? 'translate-x-5' : 'translate-x-0'
+                        }`}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* 7. Keluar dari Kuis */}
+                <div
+                  onClick={() => {
+                    if (playClick) playClick();
+                    setIsMobileToolsOpen(false);
+                    if (isPreview) {
+                      onExit(currentIndex);
+                    } else {
+                      setShowExitConfirm(true);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  className="w-full p-3.5 sm:p-4 flex items-center justify-between hover:bg-rose-50/50 dark:hover:bg-rose-950/20 transition-colors cursor-pointer select-none min-h-[56px] btn-press"
+                  aria-label="Keluar dari Kuis"
+                >
+                  <div className="flex items-center gap-3 sm:gap-3.5">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-rose-50 dark:bg-rose-950/60 text-rose-500 dark:text-rose-400">
+                      <LogOut className="w-5 h-5" />
+                    </div>
+                    <div className="text-left">
+                      <span className="text-xs sm:text-sm font-bold text-rose-600 dark:text-rose-400 block">Keluar dari Kuis</span>
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 block">Akhiri sesi kuis</span>
+                    </div>
+                  </div>
+                  <span className="text-xs font-semibold px-3 py-1 rounded-xl border border-rose-500/80 text-rose-600 dark:text-rose-400 hover:bg-rose-500 hover:text-white transition-colors shrink-0">
+                    Keluar
                   </span>
-                </button>
-              )}
-
-              {/* Toggle Anti-Reaksi Layar (Sembunyikan Emoji & Reaksi Teman) */}
-              <button
-                type="button"
-                onClick={() => {
-                  if (playClick) playClick();
-                  toggleAntiReaction();
-                  setShowAntiReactToast(true);
-                  setTimeout(() => setShowAntiReactToast(false), 2200);
-                }}
-                className="w-full p-3 rounded-2xl flex items-center justify-between bg-slate-50 dark:bg-slate-800/70 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-700 min-h-[50px] transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${isAntiReact ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-500' : 'bg-amber-50 dark:bg-amber-950/60 text-amber-500'}`}>
-                    {isAntiReact ? <EyeOff className="w-5 h-5" /> : <Sparkles className="w-5 h-5" />}
-                  </div>
-                  <div className="text-left">
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">Animasi Emoji Layar</span>
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                      {isAntiReact ? 'Animasi emoji disembunyikan (Layar Bersih)' : 'Animasi emoji & reaksi teman ditampilkan'}
-                    </span>
-                  </div>
                 </div>
-                <span className={`text-xs font-bold px-2.5 py-1 rounded-lg border ${isAntiReact ? 'bg-rose-50 dark:bg-rose-950 text-rose-600 border-rose-200 dark:border-rose-800' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700'}`}>
-                  {isAntiReact ? 'Disembunyikan' : 'Tampil'}
-                </span>
-              </button>
-
-              {/* Tombol Keluar dari Kuis */}
-              <button
-                type="button"
-                onClick={() => {
-                  if (playClick) playClick();
-                  setIsMobileToolsOpen(false);
-                  if (isPreview) {
-                    onExit(currentIndex);
-                  } else {
-                    setShowExitConfirm(true);
-                  }
-                }}
-                className="w-full p-3 rounded-2xl flex items-center justify-between bg-rose-50/70 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/40 border border-rose-200/80 dark:border-rose-900/70 min-h-[50px] transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-rose-100 dark:bg-rose-900/60 text-rose-600 dark:text-rose-400">
-                    <LogOut className="w-5 h-5" />
-                  </div>
-                  <div className="text-left">
-                    <span className="text-xs font-bold text-rose-700 dark:text-rose-300 block">Keluar dari Kuis</span>
-                    <span className="text-[11px] text-rose-600/80 dark:text-rose-400/80">Akhiri dan tinggalkan sesi kuis</span>
-                  </div>
-                </div>
-                <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-white dark:bg-slate-800 border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-400">
-                  Keluar
-                </span>
-              </button>
+              </div>
             </div>
 
             <button

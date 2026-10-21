@@ -6,6 +6,27 @@ Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen in
 
 
 
+## [2.5.9] - 2026-10-21
+### Redesain Bottom Sheet Pengaturan Kuis dengan Kontrol Toggle Switch Modern (Rule 1, Rule 2, Rule 4, Rule 15 & AGENTS.md)
+
+#### 1. Transformasi Antarmuka Kontrol Toggle Switch Modern
+- **Panel Terpadu Rapi**: Mengemas seluruh opsi pengaturan ke dalam satu kontainer panel sudut membulat dengan garis pembatas halus (*unified rounded panel with subtle dividers*), menyingkirkan kartu-kartu terpisah yang memakan banyak ruang vertikal.
+- **Kontrol Toggle Switch iOS/Modern**:
+  - **Efek Suara (SFX)**: Dilengkapi toggle switch interaktif hijau zamrud (*emerald*) saat aktif dengan animasi lingkaran geser halus.
+  - **Musik Latar (BGM)**: Dilengkapi toggle switch interaktif.
+  - **Layar Penuh (Fullscreen)**: Dilengkapi toggle switch interaktif.
+  - **Animasi Emoji Layar**: Dilengkapi toggle switch interaktif.
+- **Selektor Tema Modern**: Menghadirkan pill pemilih tema dengan indikator panah bawah (`Gelap ∨` / `Terang ∨`) serta subteks penjelasan yang jelas.
+- **Tombol Keluar Elegan**: Didesain sebagai pill tombol berbingkai merah halus (*outlined red pill*) yang tegas namun tidak mencolok.
+
+#### 2. Ergonomi Sentuh & Responsivitas Sempurna
+- Seluruh baris pengaturan memiliki area sentuh $\ge 56\text{ px}$ (`min-h-[56px]`), jauh melampaui standar minimal 44 px, sehingga pengguna dapat mengetuk bagian mana pun pada baris untuk mengaktifkan/menonaktifkan toggle.
+- Terverifikasi 100% presisi dan stabil pada viewport smartphone (Infinix Note 50s 392×778 px).
+
+#### 3. Pembaruan Cache PWA Service Worker (public/sw.js)
+- Menaikkan versi cache ke `kuis-sd-seru-v2.5.9`.
+
+
 ## [2.5.8] - 2026-10-21
 ### Pembaruan Penamaan Label Tombol Alat: "Baca Soal" & "Coretan" (Rule 2, Rule 3, Rule 4, Rule 15 & AGENTS.md)
 
