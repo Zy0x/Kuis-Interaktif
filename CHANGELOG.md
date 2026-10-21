@@ -6,6 +6,30 @@ Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen in
 
 
 
+## [2.4.97] - 2026-10-21
+### Redesain Terstruktur & Ergonomis Halaman Rekap Sesi Kuis Siswa: Zero AI Slop, Tombol Aksi Nyata & Hierarki Jelas (Rule 1, Rule 2, Rule 15 & Skill Redesign)
+
+#### 1. Hub Aksi Sesi Terpusat & Menonjol (*Prominent Action Hub*) (`QuizSessionRecapView.tsx`)
+- **Tombol 'Aktifkan Kembali Kuis' Jelas & Kontras**:
+  - Memindahkan aksi reaktivasi sesi dari ikon samar di navbar menjadi tombol utama bergradien hijau emerald-teal (`[ 🔄 Aktifkan Kembali Kuis ]`) berdaya jangkau penuh di badan kartu sesi.
+  - Memberikan kepastian visual bagi pendidik saat ingin membuka kembali akses kuis bagi siswa yang belum tuntas.
+- **Label Nyata pada Seluruh Tombol Aksi**:
+  - Menghilangkan 5 kotak tombol warna-warni tanpa teks di bilah navbar yang membingungkan pendidik di layar ponsel.
+  - Seluruh fungsi pendukung disajikan dalam grup tombol berlabel jelas: `[ 📊 Bahas di Kelas ]`, `[ 🧮 Hitung Ulang ]`, `[ 📥 Unduh CSV ]`, dan `[ 🖨️ Cetak Rapor ]`.
+
+#### 2. Restrukturisasi Hierarki & Eliminasi Total AI Slop (`QuizSessionRecapView.tsx`)
+- **Restrukturisasi Judul Kuis Utama**:
+  - Mengangkat judul kuis sebenarnya (*misal: "Ekosistem & Keanekaragaman Hayati"*) sebagai tajuk utama (`h2` berukuran besar dan tebal).
+  - Menghapus judul birokratis klise AI slop (*"Laporan Analisis Hasil Kuis Siswa"*).
+  - Mengeliminasi teks teknis backend/admin (*"Disajikan untuk Admin"*), digantikan dengan meta waktu dan PIN ruang yang bersih dan ramah pendidik.
+- **Pembersihan Baris Tag & Metadata**:
+  - Menata ulang pil mata pelajaran, kelas, butir soal, dan jumlah peserta dalam satu baris flex teratur tanpa tanda pemisah menggantung (*trailing bullets*).
+
+#### 3. Bilah Navigasi Bersih & Peningkatan Responsivitas Mobile
+- **Header Navbar Ramping**: Menjadikan bilah atas bersih dan fokus pada konteks halaman dan tombol kembali, dengan aksi ekspor cepat di desktop/tablet.
+- **Pills Sub-tab Ringkas**: Menghilangkan track scrollbar bawaan peramban (`scrollbar-none`) dan menambahkan badge jumlah murid dan soal yang kontras dan proporsional.
+- **Kartu Metrik Presisi**: Menambahkan format angka tabular (`tabular-nums`) serta keterangan ketuntasan konkret (`X dari Y siswa tuntas`).
+
 ## [2.4.96] - 2026-10-21
 ### Redesain Ramping Banner Sesi Aktif Dasbor Guru: Anti-Redundan, Hemat Ruang & Navigasi Cepat (Rule 1, Rule 2, Rule 15 & Skill Redesign)
 
