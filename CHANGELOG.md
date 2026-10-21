@@ -6,6 +6,24 @@ Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen in
 
 
 
+## [2.4.98] - 2026-10-21
+### Statistik Interaktif Distribusi Pilihan Jawaban pada Matriks Soal Host (`WaygroundHostView.tsx`)
+
+#### 1. Interaktivitas Kartu Butir Soal pada Tab Matriks (`WaygroundHostView.tsx`)
+- **Kartu Akurasi Soal Berdaya Ketuk (*Interactive Expandable Card*)**:
+  - Seluruh kartu butir soal pada tab Matriks kini dapat diketuk untuk membuka atau menutup rincian statistik pilihan jawaban secara instan (*smooth inline expand*).
+  - Dilengkapi indikator visual `ChevronDown` / `ChevronUp` dan petunjuk status *"Statistik Opsi / Tutup Opsi"*.
+  - Efek fokus halus dengan border beraksen indigo dan elevasi bayangan saat kartu terbuka.
+
+#### 2. Statistik Distribusi Pilihan Jawaban Lengkap & Real-Time (`WaygroundHostView.tsx`)
+- **Rincian Opsi Jawaban (A, B, C, D)**:
+  - Menampilkan jumlah siswa yang memilih setiap opsi (`X Siswa`), persentase keterpilihan (`%`), dan bar distribusi horizontal.
+  - Opsi jawaban benar ditandai secara tegas dengan warna hijau emerald dan badge lencana *"Kunci"*.
+- **Transparansi Identitas Pemilih Jawaban**:
+  - Menampilkan daftar nama siswa yang memilih masing-masing opsi secara ringkas untuk membantu guru memahami pola miskonsepsi kelas.
+- **Indikator Siswa Belum Menjawab**:
+  - Menampilkan informasi jumlah siswa yang masih belum menyelesaikan butir soal tersebut secara real-time.
+
 ## [2.4.97] - 2026-10-21
 ### Redesain Terstruktur & Ergonomis Halaman Rekap Sesi Kuis Siswa: Zero AI Slop, Tombol Aksi Nyata & Hierarki Jelas (Rule 1, Rule 2, Rule 15 & Skill Redesign)
 

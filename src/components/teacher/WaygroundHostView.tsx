@@ -40,9 +40,12 @@ import {
   RotateCcw,
   Eye,
   EyeOff,
-  BookOpen
+  BookOpen,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { formatStudentDisplayName, analyzeSessionDuplicates } from '../../lib/studentUtils';
+import { triggerHaptic } from '../../lib/mobileUtils';
 
 interface WaygroundHostViewProps {
   session: QuizSession;
@@ -79,6 +82,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
   const [copiedLink, setCopiedLink] = useState(false);
   const [confirmEndModal, setConfirmEndModal] = useState(false);
   const [currentDisplayQuestionIdx, setCurrentDisplayQuestionIdx] = useState(0);
+  const [expandedQuestionIdx, setExpandedQuestionIdx] = useState<number | null>(null);
   const [showIfpAnswer, setShowIfpAnswer] = useState(false);
   const [showIfpExplanation, setShowIfpExplanation] = useState(false);
   const [isChatDrawerOpen, setIsChatDrawerOpen] = useState(false);
@@ -382,7 +386,7 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
     });
   }, [session.participants, totalQuestions]);
 
-  // Class accuracy metrics
+  // Class accuracy metrics & option distribution
   const classStats = useMemo(() => {
     const totalParts = session.participants.length;
     if (totalParts === 0) {
@@ -390,7 +394,13 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
         accuracy: 0,
         avgScore: 0,
         finishedCount: 0,
-        questionAccuracies: [] as { index: number; correctRate: number; totalAnswered: number }[],
+        questionAccuracies: [] as {
+          index: number;
+          correctRate: number;
+          totalAnswered: number;
+          optionCounts: number[];
+          optionStudents: string[][];
+        }[],
       };
     }
 
@@ -398,6 +408,20 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
     let finishedCount = 0;
     const questionCorrectCounts: number[] = new Array(totalQuestions).fill(0);
     const questionAnsweredCounts: number[] = new Array(totalQuestions).fill(0);
+    const questionOptionDist: number[][] = Array.from(
+      { length: totalQuestions },
+      (_, idx) => {
+        const qOptionsLen = quiz.questions?.[idx]?.options?.length || 4;
+        return new Array(qOptionsLen).fill(0);
+      }
+    );
+    const questionOptionStudents: string[][][] = Array.from(
+      { length: totalQuestions },
+      (_, idx) => {
+        const qOptionsLen = quiz.questions?.[idx]?.options?.length || 4;
+        return Array.from({ length: qOptionsLen }, () => [] as string[]);
+      }
+    );
 
     session.participants.forEach((p) => {
       const rawAns = p.answers ? Object.values(p.answers).filter((a: any) => a && a.questionId !== 'quiz_completed') : [];
@@ -421,6 +445,14 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
           if (ans.isCorrect) {
             questionCorrectCounts[resolvedIdx]++;
           }
+          if (
+            typeof ans.selectedOption === 'number' &&
+            ans.selectedOption >= 0 &&
+            ans.selectedOption < questionOptionDist[resolvedIdx].length
+          ) {
+            questionOptionDist[resolvedIdx][ans.selectedOption]++;
+            questionOptionStudents[resolvedIdx][ans.selectedOption].push(p.name);
+          }
         }
       });
     });
@@ -431,6 +463,8 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
         index: idx,
         correctRate: answered > 0 ? Math.round((correct / answered) * 100) : 0,
         totalAnswered: answered,
+        optionCounts: questionOptionDist[idx],
+        optionStudents: questionOptionStudents[idx],
       };
     });
 
@@ -1728,19 +1762,52 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
               {quiz.questions.map((q, idx) => {
-                const stat = classStats.questionAccuracies[idx] || { correctRate: 0, totalAnswered: 0 };
+                const stat = classStats.questionAccuracies[idx] || { 
+                  index: idx, 
+                  correctRate: 0, 
+                  totalAnswered: 0,
+                  optionCounts: [],
+                  optionStudents: []
+                };
                 const isHard = stat.totalAnswered > 0 && stat.correctRate < 50;
                 const isEasy = stat.totalAnswered > 0 && stat.correctRate >= 80;
+                const isExpanded = expandedQuestionIdx === idx;
 
                 return (
                   <div
                     key={q.id || idx}
-                    className="bg-slate-900 rounded-3xl p-5 border border-slate-800 space-y-3.5 shadow-xl hover:border-slate-750 transition-colors"
+                    onClick={() => {
+                      triggerHaptic('light');
+                      playClick();
+                      setExpandedQuestionIdx((prev) => (prev === idx ? null : idx));
+                    }}
+                    className={`bg-slate-900 rounded-3xl p-4 sm:p-5 border space-y-3 shadow-xl transition-all cursor-pointer ${
+                      isExpanded
+                        ? 'border-indigo-500/70 bg-slate-900/95 ring-2 ring-indigo-500/25 shadow-indigo-950/40'
+                        : 'border-slate-800 hover:border-slate-700 hover:bg-slate-850/60'
+                    }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <span className="px-3 py-1 rounded-xl bg-slate-800 text-slate-200 text-xs font-bold border border-slate-750">
-                        Soal #{idx + 1}
-                      </span>
+                    {/* Header Butir Soal & Akurasi */}
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="px-3 py-1 rounded-xl bg-slate-800 text-slate-200 text-xs font-bold border border-slate-750">
+                          Soal #{idx + 1}
+                        </span>
+                        <span className="text-[11px] text-slate-400 flex items-center gap-1 font-medium">
+                          {isExpanded ? (
+                            <>
+                              <ChevronUp className="w-3.5 h-3.5 text-indigo-400 flex-shrink-0" />
+                              <span className="text-indigo-300 font-semibold">Tutup Opsi</span>
+                            </>
+                          ) : (
+                            <>
+                              <ChevronDown className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                              <span className="text-slate-400">Statistik Opsi</span>
+                            </>
+                          )}
+                        </span>
+                      </div>
+
                       <span
                         className={`text-xs font-bold px-2.5 py-0.5 rounded-full border tabular-nums ${
                           isHard
@@ -1754,10 +1821,12 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                       </span>
                     </div>
 
-                    <p className="text-xs sm:text-sm text-slate-200 font-medium line-clamp-2 leading-relaxed">
+                    {/* Teks Pertanyaan */}
+                    <p className={`text-xs sm:text-sm text-slate-200 font-medium leading-relaxed ${isExpanded ? '' : 'line-clamp-2'}`}>
                       {q.text}
                     </p>
 
+                    {/* Progress Bar Akurasi Global */}
                     <div className="space-y-1.5 text-xs pt-1">
                       <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
                         <div
@@ -1780,6 +1849,117 @@ export const WaygroundHostView: React.FC<WaygroundHostViewProps> = ({
                         )}
                       </div>
                     </div>
+
+                    {/* STATISTIK RINCIAN DISTRIBUSI PILIHAN JAWABAN (TAMPIL SAAT DITEKAN) */}
+                    {isExpanded && (
+                      <div 
+                        className="pt-3 border-t border-slate-800 space-y-2.5 animate-fade-in text-xs"
+                        onClick={(e) => e.stopPropagation()} // Mencegah buble toggle saat berinteraksi di dalam
+                      >
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="font-bold text-indigo-300 flex items-center gap-1.5">
+                            <BarChart3 className="w-3.5 h-3.5 text-indigo-400 flex-shrink-0" />
+                            <span>Pilihan Jawaban Siswa</span>
+                          </span>
+                          <span className="text-slate-400 font-medium">
+                            {stat.totalAnswered} dari {session.participants.length} Menjawab
+                          </span>
+                        </div>
+
+                        {q.options && q.options.length > 0 ? (
+                          <div className="space-y-2">
+                            {q.options.map((opt, optIdx) => {
+                              const count = stat.optionCounts?.[optIdx] || 0;
+                              const percent = stat.totalAnswered > 0 ? Math.round((count / stat.totalAnswered) * 100) : 0;
+                              const isCorrect = optIdx === q.correctIndex;
+                              const studentNames = stat.optionStudents?.[optIdx] || [];
+
+                              return (
+                                <div
+                                  key={optIdx}
+                                  className={`p-2.5 rounded-2xl border transition-all ${
+                                    isCorrect
+                                      ? 'bg-emerald-950/30 border-emerald-500/40 text-emerald-200'
+                                      : count > 0
+                                      ? 'bg-slate-800/60 border-slate-700/80 text-slate-200'
+                                      : 'bg-slate-850/40 border-slate-800 text-slate-400'
+                                  }`}
+                                >
+                                  <div className="flex items-start justify-between gap-2">
+                                    <div className="flex items-center gap-2 min-w-0">
+                                      <span
+                                        className={`w-6 h-6 rounded-lg flex items-center justify-center font-bold text-xs flex-shrink-0 ${
+                                          isCorrect
+                                            ? 'bg-emerald-500 text-white'
+                                            : count > 0
+                                            ? 'bg-slate-700 text-slate-200'
+                                            : 'bg-slate-800 text-slate-400'
+                                        }`}
+                                      >
+                                        {String.fromCharCode(65 + optIdx)}
+                                      </span>
+                                      <span className="font-medium text-xs break-words">
+                                        {opt}
+                                      </span>
+                                    </div>
+
+                                    <div className="flex items-center gap-1.5 flex-shrink-0 text-right">
+                                      {isCorrect && (
+                                        <span className="px-1.5 py-0.5 rounded text-[10px] font-black bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                                          Kunci
+                                        </span>
+                                      )}
+                                      <span className="font-mono font-bold text-xs tabular-nums text-white">
+                                        {count} Siswa
+                                      </span>
+                                      <span className="text-[11px] text-slate-400 tabular-nums">
+                                        ({percent}%)
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  {/* Progress Bar Opsi */}
+                                  <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mt-2">
+                                    <div
+                                      className={`h-full transition-all duration-300 ${
+                                        isCorrect
+                                          ? 'bg-emerald-500'
+                                          : count > 0
+                                          ? 'bg-indigo-400'
+                                          : 'bg-slate-700'
+                                      }`}
+                                      style={{ width: `${percent}%` }}
+                                    />
+                                  </div>
+
+                                  {/* Daftar Siswa yang Memilih Opsi Ini */}
+                                  {studentNames.length > 0 && (
+                                    <div className="mt-1.5 pt-1 border-t border-white/5 text-[10px] text-slate-400 flex items-center gap-1 flex-wrap">
+                                      <span className="text-slate-500 font-semibold">Siswa:</span>
+                                      <span className="text-slate-300">
+                                        {studentNames.slice(0, 6).join(', ')}
+                                        {studentNames.length > 6 && ` (+${studentNames.length - 6} lainnya)`}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <div className="text-slate-400 text-xs text-center py-2">
+                            Pilihan jawaban tidak tersedia untuk butir soal ini.
+                          </div>
+                        )}
+
+                        {/* Peringatan jika ada siswa yang belum menjawab */}
+                        {session.participants.length > stat.totalAnswered && (
+                          <div className="text-[11px] text-amber-300/90 text-center pt-1 bg-amber-500/10 rounded-xl p-1.5 border border-amber-500/20">
+                            ⏳ {session.participants.length - stat.totalAnswered} siswa belum menyelesaikan butir soal ini
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 );
               })}
