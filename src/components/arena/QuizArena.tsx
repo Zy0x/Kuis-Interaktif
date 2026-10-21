@@ -523,13 +523,13 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
             setIsSpeechPlaying(false);
             setActiveSpeechHighlight(null);
             if (reason === 'NO_INDONESIAN_VOICE') {
-              setSpeechToastMessage('Paket Suara Bahasa Indonesia belum aktif di HP ini. Silakan aktifkan Layanan Suara Google.');
+              setSpeechToastMessage('Paket Suara Bahasa Indonesia belum aktif di HP ini. Buka Pengaturan HP > Aksesibilitas > Keluaran Teks-ke-Suara.');
             } else if (reason === 'UNSUPPORTED') {
               setSpeechToastMessage('Peramban ini tidak mendukung pembacaan suara otomatis.');
             } else {
               setSpeechToastMessage(message || 'Suara tidak dapat diputar. Periksa volume media HP Anda.');
             }
-            setTimeout(() => setSpeechToastMessage(null), 3800);
+            setTimeout(() => setSpeechToastMessage(null), 4500);
           },
         });
       }

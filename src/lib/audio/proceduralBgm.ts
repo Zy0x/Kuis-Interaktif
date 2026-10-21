@@ -22,6 +22,7 @@ export class ProceduralBgmPlayer {
   private currentStep = 0;
   private nextNoteTime = 0;
   private timerId: number | null = null;
+  private cachedShakerBuffer: AudioBuffer | null = null;
 
   private baseBpm = 110;
   private urgentBpm = 128;
@@ -166,39 +167,57 @@ export class ProceduralBgmPlayer {
     osc.stop(time + dur);
   }
 
+  // Pre-warm / reuse a single static noise buffer to avoid memory thrashing on 1GB-2GB RAM phones
+  private getShakerBuffer(): AudioBuffer | null {
+    if (!this.audioCtx) return null;
+    const sampleRate = this.audioCtx.sampleRate || 44100;
+    if (!this.cachedShakerBuffer || this.cachedShakerBuffer.sampleRate !== sampleRate) {
+      try {
+        const bufferSize = Math.floor(sampleRate * 0.04);
+        const buffer = this.audioCtx.createBuffer(1, bufferSize, sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = (Math.random() * 2 - 1) * 0.5;
+        }
+        this.cachedShakerBuffer = buffer;
+      } catch {
+        return null;
+      }
+    }
+    return this.cachedShakerBuffer;
+  }
+
   // Play a very subtle high shaker pulse
   private playShaker(time: number, accent: boolean) {
     if (!this.audioCtx || !this.masterGain) return;
-    const bufferSize = Math.floor(this.audioCtx.sampleRate * 0.035);
-    const buffer = this.audioCtx.createBuffer(1, bufferSize, this.audioCtx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) {
-      data[i] = (Math.random() * 2 - 1) * 0.5;
-    }
+    const buffer = this.getShakerBuffer();
+    if (!buffer) return;
 
-    const noise = this.audioCtx.createBufferSource();
-    noise.buffer = buffer;
+    try {
+      const noise = this.audioCtx.createBufferSource();
+      noise.buffer = buffer;
 
-    const filter = this.audioCtx.createBiquadFilter();
-    filter.type = 'highpass';
-    filter.frequency.setValueAtTime(6000, time);
+      const filter = this.audioCtx.createBiquadFilter();
+      filter.type = 'highpass';
+      filter.frequency.setValueAtTime(6000, time);
 
-    const gain = this.audioCtx.createGain();
-    const vol = accent ? 0.04 : 0.02;
-    gain.gain.setValueAtTime(vol, time);
-    gain.gain.exponentialRampToValueAtTime(0.001, time + 0.035);
+      const gain = this.audioCtx.createGain();
+      const vol = accent ? 0.04 : 0.02;
+      gain.gain.setValueAtTime(vol, time);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.035);
 
-    noise.connect(filter);
-    filter.connect(gain);
-    gain.connect(this.masterGain);
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(this.masterGain);
 
-    noise.start(time);
-    noise.stop(time + 0.04);
+      noise.start(time);
+      noise.stop(time + 0.04);
+    } catch {}
   }
 
   private scheduleStep() {
     const ctx = this.audioCtx;
-    if (!ctx) return;
+    if (!ctx || ctx.state !== 'running') return;
 
     const lookahead = 0.1; // Schedule ahead by 100ms
     const activeBpm = this.isUrgent ? this.urgentBpm : this.baseBpm;
@@ -244,8 +263,35 @@ export class ProceduralBgmPlayer {
 
     this.isPlaying = true;
     this.isPaused = false;
-    this.nextNoteTime = ctx.currentTime + 0.05;
     this.updateGain(0.2);
+
+    if (ctx.state === 'suspended') {
+      ctx.resume().then(() => {
+        if (this.isPlaying && !this.isPaused) {
+          this.nextNoteTime = ctx.currentTime + 0.05;
+        }
+      }).catch(() => {});
+
+      // Pasang listener sekali sentuh untuk unlock hardware seketika jika autoplay diblokir browser
+      const handleUserGesture = () => {
+        if (ctx.state === 'suspended') {
+          ctx.resume().then(() => {
+            if (this.isPlaying && !this.isPaused) {
+              this.nextNoteTime = ctx.currentTime + 0.05;
+              this.updateGain(0.2);
+            }
+          }).catch(() => {});
+        }
+        window.removeEventListener('pointerdown', handleUserGesture, true);
+        window.removeEventListener('touchstart', handleUserGesture, true);
+        window.removeEventListener('click', handleUserGesture, true);
+      };
+      window.addEventListener('pointerdown', handleUserGesture, { capture: true, passive: true });
+      window.addEventListener('touchstart', handleUserGesture, { capture: true, passive: true });
+      window.addEventListener('click', handleUserGesture, { capture: true, passive: true });
+    } else {
+      this.nextNoteTime = ctx.currentTime + 0.05;
+    }
 
     if (this.timerId !== null) {
       window.clearInterval(this.timerId);
@@ -253,7 +299,9 @@ export class ProceduralBgmPlayer {
 
     this.timerId = window.setInterval(() => {
       if (!this.isPaused && this.isPlaying) {
-        this.scheduleStep();
+        if (this.audioCtx && this.audioCtx.state === 'running') {
+          this.scheduleStep();
+        }
       }
     }, 40);
   }

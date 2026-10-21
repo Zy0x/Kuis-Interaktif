@@ -6,6 +6,31 @@ Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen in
 
 
 
+## [2.5.14] - 2026-10-21
+### Penguatan Arsitektur Audio (BGM & TTS) Multi-Platform Ramah Perangkat Low-End & Custom ROM (Rule 1, Rule 2, Rule 6, Rule 9, Rule 15 & AGENTS.md)
+
+#### 1. Pemulihan & Jaminan Autoplay Musik Latar (BGM) Tanpa Hambatan
+- **Auto-Unlock AudioContext Global pada Interaksi Pertama (`setupAudioAutoUnlock`)**:
+  - Mengaktifkan listener pointer/touch/click persisten sejak startup aplikasi di `src/main.tsx`, memastikan `AudioContext` perangkat langsung teraktivasi (*unlocked*) seketika pengguna menyentuh layar pertama kali.
+  - Memperbaiki pre-warming buffer hardware untuk menggunakan `ctx.sampleRate` dinamis perangkat (bukan hardcoded 22050 Hz yang kerap memicu crash pada driver ALSA chipset murah).
+- **Anti-Thrashing Buffer Shaker (`proceduralBgm.ts`)**:
+  - Mengganti alokasi `createBuffer` berfrekuensi tinggi (15x per detik) dengan satu *cached noise buffer* statis (`cachedShakerBuffer`), mencegah kelelahan memori (memory thrashing / GC pauses) pada perangkat Android dengan RAM 1–2 GB.
+  - Melindungi penjadwalan tangga nada (`scheduleStep`) agar hanya berjalan saat status context aktif (`running`), menghindari backlog audio membeku saat browser melakukan background tab throttle.
+- **Fail-Safe Listener Sentuhan Pertama**:
+  - Saat `startBgm()` dipanggil sebelum gestur pengguna terjadi (kebijakan ketat autoplay browser), sistem secara cerdas mendaftarkan listener sentuhan otomatis yang segera membangunkan context musik tanpa perlu memuat ulang halaman.
+
+#### 2. Ketangguhan Mesin Pembaca Soal (TTS) pada Beragam Varian ROM Android
+- **Ekspansi Pendeteksi Bahasa Indonesia Warisan Android (`in-ID`)**:
+  - Mesin pencari suara `findIndonesianVoice()` kini mengenali seluruh varian kode bahasa lokal Indonesia: `id-ID`, `id_ID`, `id`, `in-ID`, `in_ID`, `in`, `ind-ID`, serta nama suara bawaan pabrikan HP (`Gadis`, `Ardi`, `Andika`, `Xiaomi`, `Samsung`).
+- **Pelepasan Pemblokir Buatan (*Zero Premature Blocker*)**:
+  - Menghapus pengecekan prematur yang menolak sintesis jika `getVoices()` peramban belum selesai mengindeks daftar suara perangkat. Browser kini selalu diizinkan meminta sintesis bahasa Indonesia ke engine OS Android secara langsung.
+- **Penanganan Kesalahan Cerdas & Panduan Pengguna**:
+  - Jika peramban atau OS perangkat benar-benar belum memiliki paket bahasa Indonesia (`language-unavailable`), sistem menangkap event error secara anggun dan menampilkan petunjuk jelas ke pengguna: *"Paket Suara Bahasa Indonesia belum aktif di HP ini. Buka Pengaturan HP > Aksesibilitas > Keluaran Teks-ke-Suara."*
+
+#### 3. Pembaruan Cache PWA Service Worker (public/sw.js)
+- Menaikkan versi cache ke `kuis-sd-seru-v2.5.14`.
+
+
 ## [2.5.13] - 2026-10-21
 ### Fitur Penanda Visual Berurutan (*Active Speech Highlighter*) pada Alat Baca Soal Suara (Rule 1, Rule 2, Rule 4, Rule 15 & AGENTS.md)
 

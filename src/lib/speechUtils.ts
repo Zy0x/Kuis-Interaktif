@@ -29,34 +29,51 @@ let activeSessionId = 0;
 /**
  * Mencari suara Bahasa Indonesia terbaik dari daftar suara perangkat.
  * Mengutamakan suara lokal offline dan natural berdefinisi tinggi.
+ * Mendukung kode modern (id-ID) dan kode warisan Android (in-ID).
  */
 export function findIndonesianVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
   if (!voices || voices.length === 0) return null;
 
-  // 1. Suara lokal offline / natural persis id-ID atau id_ID
+  const isIndonesianLang = (lang: string) => {
+    const l = (lang || '').toLowerCase().replace(/_/g, '-');
+    return (
+      l === 'id' ||
+      l === 'in' ||
+      l === 'ind' ||
+      l.startsWith('id-') ||
+      l.startsWith('in-') ||
+      l.startsWith('ind-')
+    );
+  };
+
+  const isIndonesianName = (name: string) => {
+    const n = (name || '').toLowerCase();
+    return (
+      n.includes('indonesia') ||
+      n.includes('indonesian') ||
+      n.includes('bahasa') ||
+      n.includes('id-id') ||
+      n.includes('in-id') ||
+      n.includes('gadis') ||
+      n.includes('ardi') ||
+      n.includes('andika')
+    );
+  };
+
+  // 1. Suara lokal offline / natural persis id-ID atau in-ID
   const localNaturalId = voices.find(
     (v) =>
-      (v.lang === 'id-ID' || v.lang === 'id_ID' || v.lang.toLowerCase() === 'id-id') &&
+      (isIndonesianLang(v.lang) || isIndonesianName(v.name)) &&
       (v.localService || v.name.toLowerCase().includes('natural') || v.name.toLowerCase().includes('local'))
   );
   if (localNaturalId) return localNaturalId;
 
-  // 2. Suara dengan kode bahasa persis id-ID / id_ID
-  const exactId = voices.find(
-    (v) => v.lang === 'id-ID' || v.lang === 'id_ID' || v.lang.toLowerCase() === 'id-id'
-  );
+  // 2. Suara dengan kode bahasa persis id-ID / in-ID
+  const exactId = voices.find((v) => isIndonesianLang(v.lang));
   if (exactId) return exactId;
 
-  // 3. Suara dengan awalan id (misal: 'id', 'id-')
-  const prefixId = voices.find((v) => v.lang.toLowerCase().startsWith('id'));
-  if (prefixId) return prefixId;
-
-  // 4. Suara dengan nama mengandung "indonesia" atau "indonesian"
-  const nameId = voices.find(
-    (v) =>
-      v.name.toLowerCase().includes('indonesia') ||
-      v.name.toLowerCase().includes('indonesian')
-  );
+  // 3. Suara dengan nama mengandung kata kunci Indonesia
+  const nameId = voices.find((v) => isIndonesianName(v.name));
   if (nameId) return nameId;
 
   return null;
@@ -226,16 +243,6 @@ export function speakQuestion(
   const availableVoices = cachedVoices.length > 0 ? cachedVoices : window.speechSynthesis.getVoices();
   const idVoice = cachedIndonesianVoice || findIndonesianVoice(availableVoices);
 
-  // Jika peramban telah memuat daftar suara (>0) tetapi sama sekali tidak memiliki suara Bahasa Indonesia
-  if (availableVoices.length > 0 && !idVoice) {
-    // Jangan paksakan membaca dengan aksen Inggris/asing karena akan terdengar aneh bagi anak SD
-    callbacks?.onError?.(
-      'NO_INDONESIAN_VOICE',
-      'Paket suara Bahasa Indonesia belum aktif di perangkat ini. Silakan aktifkan Layanan Suara Google.'
-    );
-    return;
-  }
-
   // Buat potongan kalimat agar segera bersuara tanpa jeda pemrosesan panjang di CPU lambat
   const cleanQ = formatElementaryMathAndSymbols(questionText);
   const chunks: string[] = [`Pertanyaan: ${cleanQ}.`];
@@ -295,7 +302,7 @@ export function speakQuestion(
 
     const chunkText = chunks[currentChunkIndex];
     const utterance = new SpeechSynthesisUtterance(chunkText);
-    utterance.lang = 'id-ID';
+    utterance.lang = idVoice?.lang || 'id-ID';
     utterance.rate = callbacks?.rate ?? 0.92; // Kecepatan ramah pemahaman anak SD
     utterance.pitch = callbacks?.pitch ?? 1.04; // Nada bersahabat
 
@@ -328,6 +335,13 @@ export function speakQuestion(
         return;
       }
       cleanupSession();
+      if (event.error === 'language-unavailable' || (!idVoice && event.error === 'synthesis-failed')) {
+        callbacks?.onError?.(
+          'NO_INDONESIAN_VOICE',
+          'Paket suara Bahasa Indonesia belum aktif di HP ini. Silakan periksa Pengaturan Suara (TTS) perangkat Anda.'
+        );
+        return;
+      }
       callbacks?.onError?.('TTS_FAILED', `Gagal memutar audio: ${event.error || 'kesalahan perangkat'}`);
     };
 

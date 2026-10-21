@@ -1,8 +1,13 @@
 // Shared Singleton Audio Engine for Kuis Interaktif
 // Provides unified AudioContext, hardware pre-warming (silent unlock), and background tab management.
+// Specially hardened for low-end mobile hardware, custom ROMs, and aggressive browser autoplay policies.
 
 let sharedAudioContext: AudioContext | null = null;
 let isAudioUnlocked = false;
+
+export function isAudioHardwareUnlocked(): boolean {
+  return isAudioUnlocked;
+}
 
 export function getSharedAudioContext(): AudioContext | null {
   if (typeof window === 'undefined') return null;
@@ -14,9 +19,14 @@ export function getSharedAudioContext(): AudioContext | null {
 
     if (AudioCtx) {
       try {
-        sharedAudioContext = new AudioCtx();
-      } catch (err) {
-        console.warn('Gagal menginisialisasi AudioContext:', err);
+        // Mode latency interactive untuk performa mulus di low-end CPU
+        sharedAudioContext = new AudioCtx({ latencyHint: 'interactive' });
+      } catch {
+        try {
+          sharedAudioContext = new AudioCtx();
+        } catch (err) {
+          console.warn('Gagal menginisialisasi AudioContext:', err);
+        }
       }
     }
   }
@@ -28,9 +38,7 @@ export function getSharedAudioContext(): AudioContext | null {
   return sharedAudioContext;
 }
 
-export function unlockAudioContext() {
-  if (isAudioUnlocked) return;
-
+export function unlockAudioContext(): void {
   const ctx = getSharedAudioContext();
   if (!ctx) return;
 
@@ -42,8 +50,11 @@ export function unlockAudioContext() {
     isAudioUnlocked = true;
   }
 
+  // Pre-warm hardware dengan 1 sampel hening menggunakan sampleRate perangkat asli
+  // Hindari hardcode 22050 yang memicu crash pada ALSA / chip audio murah
   try {
-    const buffer = ctx.createBuffer(1, 1, 22050);
+    const sampleRate = ctx.sampleRate || 44100;
+    const buffer = ctx.createBuffer(1, 1, sampleRate);
     const source = ctx.createBufferSource();
     source.buffer = buffer;
     source.connect(ctx.destination);
@@ -51,25 +62,29 @@ export function unlockAudioContext() {
   } catch {}
 }
 
-export function setupAudioAutoUnlock() {
+export function ensureAudioRunning(): Promise<boolean> {
+  const ctx = getSharedAudioContext();
+  if (!ctx) return Promise.resolve(false);
+  if (ctx.state === 'running') return Promise.resolve(true);
+
+  return ctx.resume().then(() => {
+    isAudioUnlocked = true;
+    return true;
+  }).catch(() => false);
+}
+
+export function setupAudioAutoUnlock(): () => void {
   if (typeof window === 'undefined') return () => {};
 
-  const handleFirstInteraction = () => {
+  const handleInteraction = () => {
     unlockAudioContext();
-    removeListeners();
   };
 
-  const removeListeners = () => {
-    window.removeEventListener('pointerdown', handleFirstInteraction, true);
-    window.removeEventListener('touchstart', handleFirstInteraction, true);
-    window.removeEventListener('keydown', handleFirstInteraction, true);
-    window.removeEventListener('click', handleFirstInteraction, true);
-  };
-
-  window.addEventListener('pointerdown', handleFirstInteraction, { capture: true, passive: true });
-  window.addEventListener('touchstart', handleFirstInteraction, { capture: true, passive: true });
-  window.addEventListener('keydown', handleFirstInteraction, { capture: true, passive: true });
-  window.addEventListener('click', handleFirstInteraction, { capture: true, passive: true });
+  // Jangan lepas event listener terlalu cepat di Android low-end; biarkan aktif untuk menjaga status context
+  window.addEventListener('pointerdown', handleInteraction, { capture: true, passive: true });
+  window.addEventListener('touchstart', handleInteraction, { capture: true, passive: true });
+  window.addEventListener('keydown', handleInteraction, { capture: true, passive: true });
+  window.addEventListener('click', handleInteraction, { capture: true, passive: true });
 
   const handleVisibilityChange = () => {
     if (document.visibilityState === 'visible') {
@@ -81,7 +96,10 @@ export function setupAudioAutoUnlock() {
   document.addEventListener('visibilitychange', handleVisibilityChange);
 
   return () => {
-    removeListeners();
+    window.removeEventListener('pointerdown', handleInteraction, true);
+    window.removeEventListener('touchstart', handleInteraction, true);
+    window.removeEventListener('keydown', handleInteraction, true);
+    window.removeEventListener('click', handleInteraction, true);
     document.removeEventListener('visibilitychange', handleVisibilityChange);
   };
 }
