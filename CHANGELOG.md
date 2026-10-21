@@ -6,6 +6,29 @@ Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen in
 
 
 
+## [2.5.2] - 2026-10-21
+### Redesain Visual Detail Kuis Dasbor Pendidik: Tata Letak Ultra Kompak, Eliminasi Tumpang Tindih, Quick PIN Strip & Segmented Control Terpadu (Rule 1, Rule 2, Rule 4, Rule 15 & AGENTS.md)
+
+#### 1. Penyusutan Drastis Tinggi Kartu Header & Eliminasi Celah Kosong (`QuizDetail.tsx`)
+- **Akar Masalah**: Pada tampilan detail kuis sebelumnya di layar ponsel (seperti Infinix Note 50s 392×778 px), kartu sampul kuis berukuran sangat besar (mencapai ~700 px) sehingga menelan hampir seluruh tinggi layar pertama. Tombol aksi penting (`Bagi Tautan`, `Duplikat`, `Hapus`) terdorong ke bawah, muncul bullet point liar yang melipat terpisah ke baris baru (`• Pendidik: Admin`), serta tab rekap nilai dan pratinjau soal tertutup sepenuhnya sebelum digulir.
+- **Solusi**:
+  - Memangkas ketinggian kartu utama menjadi sangat ringkas (~250 px pada mobile) tanpa menghilangkan informasi esensial.
+  - Memindahkan tombol aksi kritis (`Edit Kuis`, `Duplikat`, `Hapus`) ke bilah navigasi atas yang lengket (*sticky header bar*) dengan tombol ikonik yang ergonomis.
+  - Mengganti kotak emoji besar dengan sampul squircle proporsional (`w-13 h-13 sm:w-16 sm:h-16`).
+  - Menata ulang badge mata pelajaran, tingkatan kelas, status visibilitas publik/privat yang dapat diklik langsung, serta meta data (jumlah butir, estimasi durasi, dan nama pendidik) dalam baris fleksibel rapi tanpa pemisah bullet point yang rawan terbelah (*anti-warping*).
+
+#### 2. Integrasi Bilah Cepat PIN & Tombol Aksi Kuis (`Quick PIN Strip`)
+- Menggabungkan lencana PIN kelas (`PIN: XXXX`), tombol 1-sentuh `Salin PIN`, dan tombol `Bagi Tautan` ke dalam satu strip kontainer terpadu.
+- Menempatkan tombol utama `Mainkan Sekarang` (aksen gradien menonjol) dan tombol `Cetak LKS` bersisian secara seimbang dengan area sentuh minimal 44×44 px sesuai standar aksesibilitas touch-first Rule 1.
+
+#### 3. Segmented Control Sub-Tabs Bar & Kartu Ringkasan Terpadu
+- Menggantikan baris tab konvensional dengan *segmented control* berbentuk kapsul (*pill container*) yang memisahkan tab `Rekap Nilai` (disertai badge jumlah siswa) dan `Pratinjau Soal` (disertai badge butir soal), selaras dengan identitas visual Dasbor Guru v2.5.0.
+- Menata 4 kartu statistik ringkasan (Total Pengerjaan, Rata-rata Skor, Nilai Tertinggi, Nilai Terendah) dengan penegasan border berdefinisi tinggi (`border-slate-300/80 dark:border-slate-800`), angka tabular jelas, dan palet warna edukatif (biru, amber, zamrud, dan ungu).
+
+#### 4. Kerapian Tabel Riwayat Siswa & Pratinjau Butir Soal
+- Memperjelas hierarki tabel hasil pengerjaan siswa: avatar nama siswa, tanggal & waktu penyelesaian, badge nilai dengan kriteria ketuntasan (Lulus/Perlu Bimbingan), serta tombol aksi ekspor file.
+- Kartu pratinjau butir soal disusun rapi dengan penomoran jelas, pill tipe soal (Pilihan Ganda, Benar/Salah, Isian Singkat), dan tanda centang visual pada opsi kunci jawaban.
+
 ## [2.5.1] - 2026-10-21
 ### Peningkatan Stabilitas Sesi Kuis: Eliminasi Auto-Expiration Kill Switch, Perlindungan Rehidrasi Multi-Device & Pencegahan Pelemparan Otomatis (Rule 1, Rule 2, Rule 9, Rule 11, Rule 15 & AGENTS.md)
 
