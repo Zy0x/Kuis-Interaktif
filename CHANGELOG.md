@@ -6,6 +6,26 @@ Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen in
 
 
 
+## [2.5.3] - 2026-10-21
+### Redesain Total Detail Kuis Dasbor Guru: Rekonstruksi Komando Hero Terpadu, Eliminasi Card Bloat, Kartu Hasil Mobile & Sinkronisasi Cache PWA (Rule 1, Rule 2, Rule 4, Rule 7, Rule 15 & Skill Redesign)
+
+#### 1. Rekonstruksi Total Hero Command Card (`QuizDetail.tsx`)
+- **Akar Masalah**: Tampilan detail kuis sebelumnya masih menyisakan tumpukan vertikal tombol berukuran raksasa (*button overload*) dan kotak bersarang yang memakan seluruh tinggi layar pertama pada perangkat ponsel, menyisakan pengalaman pengguna yang berantakan dan menutupi tabel rekap nilai serta pratinjau soal.
+- **Solusi**:
+  - Menggantikan tumpukan kartu terpisah dengan **Hero Command Card** terpadu yang memadukan sampul squircle, lencana mata pelajaran & jenjang, status visibilitas (Publik / Privat), judul proporsional, serta deskripsi yang dapat diciutkan (*collapsible text*) agar tidak memboroskan ruang layar.
+  - Mengorganisir bilah aksi bawah menjadi satu baris terpadu: PIN kelas interaktif berformat pill taktil dengan tombol salin 1-ketuk, tombol *Bagi Tautan*, tombol *Cetak LKS*, dan tombol utama *Mainkan Sekarang* (gradien aktif).
+
+#### 2. Tampilan Hasil Siswa Adaptif (Mobile Card View & Desktop Table)
+- **Mode Mobile (< 640 px)**: Riwayat pengerjaan siswa kini ditampilkan sebagai kartu hasil responsif (*compact cards*) yang mudah dibaca dengan satu tangan, dilengkapi nomor peringkat, lencana skor berbobot warna (hijau KKM $\ge 70$, merah bimbingan $< 70$), bintang prestasi, jumlah jawaban benar, dan durasi pengerjaan tanpa luapan scrollbar horizontal.
+- **Mode Desktop (≥ 640 px)**: Menampilkan tabel data berbaris bersih dengan sorotan hover, pencarian nama siswa real-time (*instant search filter*), dan tombol ekspor rekapan file CSV.
+
+#### 3. Sub-Tabs Navigasi Terpadu & Pratinjau Butir Soal Modern
+- Navigasi sub-tab *segmented control pill* yang mulus dan instan untuk beralih antara Rekap Nilai Siswa dan Pratinjau Soal.
+- Pratinjau soal menyajikan penomoran tegas, lencana tipe soal (Pilihan Ganda, Benar/Salah, Isian Singkat, Menjodohkan), bobot poin, estimasi durasi, serta penanda kunci jawaban berbingkai hijau zamrud yang jelas.
+
+#### 4. Pembaruan Cache PWA Service Worker (`public/sw.js`)
+- Memperbarui `CACHE_NAME` ke `kuis-sd-seru-v2.5.3` guna memicu siklus aktivasi service worker baru, membersihkan file bundel lama yang tersimpan di memori perangkat/PWA siswa dan pendidik, serta memastikan tampilan terbaru termuat sempurna secara instan.
+
 ## [2.5.2] - 2026-10-21
 ### Redesain Visual Detail Kuis Dasbor Pendidik: Tata Letak Ultra Kompak, Eliminasi Tumpang Tindih, Quick PIN Strip & Segmented Control Terpadu (Rule 1, Rule 2, Rule 4, Rule 15 & AGENTS.md)
 
