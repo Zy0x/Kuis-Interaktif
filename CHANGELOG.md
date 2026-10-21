@@ -6,6 +6,21 @@ Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen in
 
 
 
+## [2.5.19] - 2026-10-22
+### Penyempurnaan Estetika Modal Metode Buat Kuis (Bebas Badge & Anti-Slop) (Rule 1, Rule 2 & Rule 15)
+
+#### 1. Penyederhanaan Visual Kartu Metode Pembuatan Kuis (`CreateQuizMethodModal.tsx`)
+- **Pembersihan Badge & Micro-Chips Berlebih**:
+  - Menghapus badge judul *"Praktis & Kilat"* dan *"Kendali Penuh"*.
+  - Menghapus deretan micro-chip badge di bagian bawah kartu (*~15 Detik*, *Topik / Dokumen Bebas*, *Fleksibel & Mandiri*, *Editor Interaktif*).
+  - Menghilangkan kesan visual padat dan bising (*visual clutter*), menyajikan kartu opsi yang luas (*breathable*), elegan, dan berorientasi kenyamanan psikologis pendidik.
+- **Penyelarasan Tipografi & Tata Letak Vertikal**:
+  - Teks judul dan deskripsi kini sejajar secara vertikal dengan ikon squircle dan panah chevron kanan.
+  - Memastikan kontras dan keterbacaan sempurna di mode terang (*light*) maupun mode gelap (*dark*).
+
+#### 2. Pembaruan Cache PWA Service Worker (`public/sw.js`)
+- Menaikkan versi cache ke `kuis-sd-seru-v2.5.19`.
+
 ## [2.5.18] - 2026-10-22
 ### Konsistensi Pembagian Tautan Murni & Android Share Drawer di Seluruh Komponen (Rule 1, Rule 2, Rule 15 & AGENTS.md)
 

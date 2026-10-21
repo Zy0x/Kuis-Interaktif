@@ -7,10 +7,7 @@ import {
   Pencil, 
   Zap, 
   ChevronRight,
-  CheckCircle2,
-  Clock,
-  FileText,
-  Sliders
+  CheckCircle2
 } from 'lucide-react';
 
 interface CreateQuizMethodModalProps {
@@ -74,7 +71,7 @@ export const CreateQuizMethodModal: React.FC<CreateQuizMethodModalProps> = ({
                 Pilih Cara Membuat Kuis
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400 font-medium truncate">
-                Pilih metode yang paling nyaman untuk Anda hari ini
+                Pilih metode yang paling nyaman untuk Anda
               </p>
             </div>
           </div>
@@ -92,10 +89,10 @@ export const CreateQuizMethodModal: React.FC<CreateQuizMethodModalProps> = ({
           </button>
         </div>
 
-        {/* Content Body: Kartu Pilihan Ergonomis & Anti-Slop */}
+        {/* Content Body: Kartu Pilihan Bersih, Ergonomis & Bebas Badge Berlebih */}
         <div className="p-4 sm:p-5 space-y-3 sm:space-y-3.5">
           
-          {/* Opsi 1: Asisten AI (Praktis & Cepat) */}
+          {/* Opsi 1: Asisten AI */}
           <button
             type="button"
             onClick={() => {
@@ -112,40 +109,22 @@ export const CreateQuizMethodModal: React.FC<CreateQuizMethodModalProps> = ({
 
               {/* Konten Utama */}
               <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between gap-2 mb-1">
-                  <h3 className="font-extrabold text-slate-900 dark:text-white text-sm sm:text-base group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                    Buat dengan Bantuan AI
-                  </h3>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border border-blue-200/80 dark:border-blue-800/80 whitespace-nowrap flex-shrink-0">
-                    Praktis & Kilat
-                  </span>
-                </div>
-
-                <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed mb-2.5">
-                  Ketik topik materi atau tempel bahan ajar. AI menyusun pertanyaan, pilihan jawaban, dan kunci secara instan.
+                <h3 className="font-extrabold text-slate-900 dark:text-white text-sm sm:text-base group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors mb-1">
+                  Buat dengan Bantuan AI
+                </h3>
+                <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                  Ketik topik materi atau tempel bahan ajar. Pertanyaan dan pilihan jawaban disusun otomatis secara instan.
                 </p>
-
-                {/* Micro-Chips Manfaat */}
-                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-white/80 dark:bg-slate-800/90 text-slate-600 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/80">
-                    <Clock className="w-3 h-3 text-blue-500" />
-                    <span>~15 Detik</span>
-                  </span>
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-white/80 dark:bg-slate-800/90 text-slate-600 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/80">
-                    <FileText className="w-3 h-3 text-indigo-500" />
-                    <span>Topik / Dokumen Bebas</span>
-                  </span>
-                </div>
               </div>
 
               {/* Panah Aksi Kanan */}
-              <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 group-hover:bg-blue-600 group-hover:text-white flex items-center justify-center transition-all flex-shrink-0 hidden xs:flex sm:flex">
+              <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 group-hover:bg-blue-600 group-hover:text-white flex items-center justify-center transition-all flex-shrink-0">
                 <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
               </div>
             </div>
           </button>
 
-          {/* Opsi 2: Buat Manual dari Awal (Kendali Penuh) */}
+          {/* Opsi 2: Tulis Kuis Manual */}
           <button
             type="button"
             onClick={() => {
@@ -162,41 +141,23 @@ export const CreateQuizMethodModal: React.FC<CreateQuizMethodModalProps> = ({
 
               {/* Konten Utama */}
               <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between gap-2 mb-1">
-                  <h3 className="font-extrabold text-slate-900 dark:text-white text-sm sm:text-base group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                    Tulis Kuis Manual
-                  </h3>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 whitespace-nowrap flex-shrink-0">
-                    Kendali Penuh
-                  </span>
-                </div>
-
-                <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed mb-2.5">
+                <h3 className="font-extrabold text-slate-900 dark:text-white text-sm sm:text-base group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors mb-1">
+                  Tulis Kuis Manual
+                </h3>
+                <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
                   Tulis pertanyaan, tentukan opsi jawaban, skor, dan waktu secara leluasa langkah demi langkah di formulir editor.
                 </p>
-
-                {/* Micro-Chips Manfaat */}
-                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-50 dark:bg-slate-800/90 text-slate-600 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/80">
-                    <Sliders className="w-3 h-3 text-slate-500" />
-                    <span>Fleksibel & Mandiri</span>
-                  </span>
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-slate-50 dark:bg-slate-800/90 text-slate-600 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700/80">
-                    <FileText className="w-3 h-3 text-slate-500" />
-                    <span>Editor Interaktif</span>
-                  </span>
-                </div>
               </div>
 
               {/* Panah Aksi Kanan */}
-              <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:bg-slate-700 group-hover:text-white dark:group-hover:bg-slate-200 dark:group-hover:text-slate-900 flex items-center justify-center transition-all flex-shrink-0 hidden xs:flex sm:flex">
+              <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 group-hover:bg-slate-700 group-hover:text-white dark:group-hover:bg-slate-200 dark:group-hover:text-slate-900 flex items-center justify-center transition-all flex-shrink-0">
                 <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
               </div>
             </div>
           </button>
         </div>
 
-        {/* Footer Tenang & Menenangkan Psikologis Pendidik */}
+        {/* Footer Tenang & Ramah Pendidik */}
         <div className="px-5 py-3.5 bg-slate-50/80 dark:bg-slate-850/60 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
           <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 font-medium min-w-0">
             <CheckCircle2 className="w-4 h-4 text-emerald-500 dark:text-emerald-400 flex-shrink-0" />
