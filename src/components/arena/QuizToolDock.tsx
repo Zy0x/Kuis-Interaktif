@@ -113,7 +113,7 @@ export const QuizToolDock: React.FC<QuizToolDockProps> = ({
                 {isSpeaking ? <Volume2 className="w-4 h-4 animate-pulse" /> : <Volume2 className="w-4 h-4" />}
               </div>
               <div className="text-left">
-                <div className="leading-tight">{isSpeaking ? 'Hentikan Suara' : 'Bacakan Soal'}</div>
+                <div className="leading-tight">{isSpeaking ? 'Hentikan Suara' : 'Baca Soal'}</div>
                 <div className="text-[10px] text-slate-400 dark:text-slate-500 font-normal">
                   {isSpeaking ? 'Sedang membacakan...' : 'Suara Bahasa Indonesia'}
                 </div>
@@ -121,7 +121,7 @@ export const QuizToolDock: React.FC<QuizToolDockProps> = ({
             </div>
           </button>
 
-          {/* 2. Kertas Buram Digital (Scratchpad Canvas) */}
+          {/* 2. Coretan (Kanvas Hitungan) */}
           <button
             type="button"
             onClick={() => {
@@ -136,7 +136,7 @@ export const QuizToolDock: React.FC<QuizToolDockProps> = ({
                 <Edit3 className="w-4 h-4" />
               </div>
               <div className="text-left">
-                <div className="leading-tight">Kertas Buram</div>
+                <div className="leading-tight">Coretan</div>
                 <div className="text-[10px] text-slate-400 dark:text-slate-500 font-normal">Cakar hitungan dengan jari</div>
               </div>
             </div>

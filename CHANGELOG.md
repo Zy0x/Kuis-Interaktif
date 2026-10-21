@@ -6,6 +6,21 @@ Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen in
 
 
 
+## [2.5.8] - 2026-10-21
+### Pembaruan Penamaan Label Tombol Alat: "Baca Soal" & "Coretan" (Rule 2, Rule 3, Rule 4, Rule 15 & AGENTS.md)
+
+#### 1. Penyelarasan Nomenklatur Lebih Komunikatif & Ramah Anak
+- **"Suara" Menjadi "Baca Soal"**: Mengubah label tombol alat bantu dengar pada bilah subheader arena (`QuizToolCurtain.tsx`) dan dock (`QuizToolDock.tsx`) dari *"Suara"* menjadi *"Baca Soal"*. Istilah ini secara langsung dan eksplisit mengomunikasikan fungsinya kepada siswa bahwa tombol tersebut bertugas membacakan soal kuis.
+- **"Buram" Menjadi "Coretan"**: Mengubah label tombol kanvas corat-coret dari *"Buram"* menjadi *"Coretan"*. Istilah "Coretan" lebih akrab dan intuitif bagi anak SD untuk mencakar hitungan atau coret-coret angka.
+- **Konsistensi Label**: Menyelaraskan seluruh atribut `aria-label`, tooltip `title`, dan teks subheader di [`QuizToolCurtain.tsx`](file:///e:/Data/GitHub/Kuis%20Interaktif/src/components/arena/QuizToolCurtain.tsx), [`QuizToolDock.tsx`](file:///e:/Data/GitHub/Kuis%20Interaktif/src/components/arena/QuizToolDock.tsx), dan [`ScratchpadOverlay.tsx`](file:///e:/Data/GitHub/Kuis%20Interaktif/src/components/arena/ScratchpadOverlay.tsx).
+
+#### 2. Kestabilan Layout Multi-Viewport
+- Label baru "Baca Soal" (9 karakter) dan "Coretan" (7 karakter) terbukti muat presisi dalam 1 baris grid 5 kolom pada layar sempit (Infinix Note 50s 392 px) tanpa pelipatan teks vertikal (*anti-warping*).
+
+#### 3. Pembaruan Cache PWA Service Worker (public/sw.js)
+- Menaikkan versi cache ke `kuis-sd-seru-v2.5.8`.
+
+
 ## [2.5.7] - 2026-10-21
 ### Penguatan Total Utilitas TTS Suara Pembaca Soal untuk Seluruh Perangkat Low-End hingga Flagship (Rule 1, Rule 2, Rule 6, Rule 15 & AGENTS.md)
 

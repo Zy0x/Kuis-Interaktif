@@ -216,8 +216,8 @@ export const ScratchpadOverlay: React.FC<ScratchpadOverlayProps> = ({
             onClose();
           }}
           className="p-2 rounded-2xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-md text-slate-700 dark:text-slate-200 hover:bg-rose-500 hover:text-white dark:hover:bg-rose-600 border border-slate-200/80 dark:border-slate-800 shadow-xl min-h-[44px] min-w-[44px] flex items-center justify-center btn-press transition-colors"
-          title="Tutup Kertas Buram"
-          aria-label="Tutup Kertas Buram"
+          title="Tutup Kanvas Coretan"
+          aria-label="Tutup Kanvas Coretan"
         >
           <X className="w-5 h-5" />
         </button>

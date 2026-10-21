@@ -55,16 +55,16 @@ export const QuizToolCurtain: React.FC<QuizToolCurtainProps> = ({
                 ? 'bg-emerald-50 dark:bg-emerald-950/70 border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-400/40'
                 : 'bg-slate-50 dark:bg-slate-800/80 border-slate-200/90 dark:border-slate-700/80 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-750'
             }`}
-            title={isSpeaking ? 'Hentikan pembacaan suara' : 'Bacakan soal (Bahasa Indonesia)'}
-            aria-label="Bacakan Soal"
+            title={isSpeaking ? 'Hentikan pembacaan soal' : 'Bacakan soal (Bahasa Indonesia)'}
+            aria-label="Baca Soal"
           >
             <Volume2 className={`w-4 h-4 shrink-0 ${isSpeaking ? 'text-emerald-600 dark:text-emerald-400 animate-pulse' : 'text-slate-500 dark:text-slate-400'}`} />
             <span className="text-[10px] sm:text-[11px] font-bold leading-none truncate max-w-full">
-              {isSpeaking ? 'Membaca' : 'Suara'}
+              {isSpeaking ? 'Membaca' : 'Baca Soal'}
             </span>
           </button>
 
-          {/* 2. Kertas Buram (Kanvas) */}
+          {/* 2. Coretan (Kanvas Hitungan Siswa) */}
           <button
             type="button"
             onClick={() => {
@@ -73,12 +73,12 @@ export const QuizToolCurtain: React.FC<QuizToolCurtainProps> = ({
               onOpenScratchpad();
             }}
             className="py-1.5 px-1 rounded-xl flex flex-col items-center justify-center gap-0.5 min-h-[46px] border border-slate-200/90 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-750 hover:text-blue-600 dark:hover:text-blue-400 transition-all btn-press"
-            title="Buka kertas buram kanvas untuk mencakar hitungan"
-            aria-label="Kertas Buram"
+            title="Buka kanvas coretan untuk mencakar hitungan"
+            aria-label="Coretan"
           >
             <Edit3 className="w-4 h-4 text-blue-500 shrink-0" />
             <span className="text-[10px] sm:text-[11px] font-bold leading-none truncate max-w-full">
-              Buram
+              Coretan
             </span>
           </button>
 
