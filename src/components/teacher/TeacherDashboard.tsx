@@ -289,6 +289,24 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
       window.removeEventListener('kuis_teacher_profile_updated', handleProfileUpdated);
     };
   }, []);
+  // Sinyal detak keaktifan (heartbeat) berkala untuk seluruh sesi aktif milik guru yang sedang dibuka
+  useEffect(() => {
+    if (!teacher?.email) return;
+
+    const sendTeacherHostHeartbeats = () => {
+      const active = sessions.filter(
+        (s) => s.status === 'active' || s.status === 'waiting' || s.status === 'paused'
+      );
+      active.forEach((s) => {
+        DataManager.updateSessionHeartbeat(s.id).catch(() => {});
+      });
+    };
+
+    sendTeacherHostHeartbeats();
+    const interval = setInterval(sendTeacherHostHeartbeats, 25000);
+    return () => clearInterval(interval);
+  }, [teacher?.email, sessions]);
+
 
   const loadData = async () => {
     // 1. Instant local cached data

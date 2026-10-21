@@ -6,6 +6,38 @@ Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen in
 
 
 
+## [2.5.1] - 2026-10-21
+### Peningkatan Stabilitas Sesi Kuis: Eliminasi Auto-Expiration Kill Switch, Perlindungan Rehidrasi Multi-Device & Pencegahan Pelemparan Otomatis (Rule 1, Rule 2, Rule 9, Rule 11, Rule 15 & AGENTS.md)
+
+#### 1. Penghapusan Kill-Switch 10 Menit pada Query Baca (`supabaseClient.ts`)
+- **Akar Masalah**: Sebelumnya, pemanggilan `fetchActiveSessionByPin` dan `fetchActiveSessionByQuizId` menerapkan batasan heartbeat 10 menit yang secara sepihak memutasi baris sesi di database cloud (`UPDATE quiz_sessions SET status = 'finished'`) apabila laptop/perangkat guru terkunci atau tidak mengirimkan detak sinyal. Hal ini memicu siaran Realtime `status: 'finished'` ke seluruh gawai siswa secara serentak sehingga seluruh kelas terlempar dari kuis.
+- **Solusi**: 
+  - Menghapus mutasi status otomatis pada query baca client-side. Query baca dilarang mengubah status database di latar belakang.
+  - Sesi kuis live aktif hanya dapat diselesaikan melalui tindakan sadar guru via tombol kontrol host atau dasbor.
+  - Untuk mode penugasan mandiri/PR (`self_paced`), batas tenggat waktu kini diberikan toleransi jeda 15 menit dan tidak lagi mematikan sesi siswa yang sedang aktif menjawab.
+
+#### 2. Transisi Ramah Saat Sesi Diakhiri Guru (`QuizArena.tsx`)
+- Menggantikan terminasi instan `finishCurrentQuiz()` tanpa aba-aba saat menerima pembaruan status `finished` dengan dialog transisi edukatif ramah (`isTeacherEndingGracefully`).
+- Memberikan pemberitahuan visual bahwa guru telah menyelesaikan sesi belajar bersama dan sistem sedang merekap jawaban yang telah dikerjakan siswa, sehingga siswa tidak lagi merasa terlempar secara misterius.
+- Menyimpan salinan kuis aktif ke `sessionStorage` (`kuis_active_quiz_cache_{quiz.id}`) saat arena dibuka agar butir soal tidak hilang ketika terjadi reload tab atau gangguan jaringan seluler sesaat.
+
+#### 3. Resolusi Sesi Berjalan pada Lobi & Ruang Tunggu (`StudentLobby.tsx`)
+- Memperbaiki logika penentuan `isSessionEnded`: status sesi live aktif/menunggu (`active`, `waiting`, `paused`) yang diterima dari server kini diprioritaskan mutlak di atas rekaman riwayat lokal usang di `localStorage`.
+- Menghilangkan bug false-positive di mana siswa baru bergabung atau melakukan refresh langsung terlempar keluar dari ruang tunggu akibat kecocokan PIN sesi lama yang sudah selesai.
+
+#### 4. Hardening Pemulihan Sesi & Proteksi Kuis Privat (`App.tsx`)
+- Melindungi siswa yang sedang memulihkan pengerjaan di layar arena dari penolakan penjaga kuis privat (private quiz access guard) saat halaman mengalami muat ulang tidak disengaja.
+- Menambahkan mekanisme pemulihan darurat dari cache kuis aktif `sessionStorage` sebelum memutuskan kuis tidak ditemukan.
+- Jika siswa berada di arena dan sesi kelas ditutup oleh guru, alur navigasi otomatis mengarahkan ke halaman rekap hasil kuis (`result`) alih-alih melempar siswa ke beranda (`home`).
+
+#### 5. Detak Keaktifan Berkala Dasbor Guru (`TeacherDashboard.tsx`)
+- Menambahkan interval heartbeat otomatis setiap 25 detik pada Dasbor Guru untuk seluruh sesi aktif/menunggu miliknya.
+- Menjaga kebaruan kolom `last_heartbeat` di Supabase tetap sinkron dan hangat meskipun guru tidak sedang membuka layar pantau live (host view).
+
+#### 6. Multi-Tier Fallback Cache Kuis (`supabaseClient.ts`)
+- Fungsi `getQuizById` kini menyimpan cache sekunder di `localStorage` (`kuis_sd_cached_quizzes_v1`) setiap kali kuis berhasil dimuat dari database cloud.
+- Jika gawai siswa mengalami lonjakan offline atau peralihan seluler sekejap saat reload, data kuis tetap dapat dipulihkan secara instan dari cache lokal tanpa error.
+
 ## [2.5.0] - 2026-10-21
 ### Redesain Visual Presisi Tinggi: Penegasan Batas, Border, Pembatas & Kontras Kartu Berdefinisi Tinggi pada Mode Terang dan Gelap (Rule 1, Rule 2, Rule 4, Rule 15 & Skill Redesign)
 

@@ -653,6 +653,16 @@ export const DataManager = {
     const local = all.find((q) => q.id === id);
     if (local && Array.isArray(local.questions) && local.questions.length > 0) return local;
 
+    // Cache Fallback: Ambil dari cache lokal sekunder jika koneksi terputus sesaat
+    try {
+      const rawCache = localStorage.getItem('kuis_sd_cached_quizzes_v1');
+      if (rawCache) {
+        const cached: Quiz[] = JSON.parse(rawCache);
+        const hit = cached.find((q) => q.id === id);
+        if (hit && Array.isArray(hit.questions) && hit.questions.length > 0) return hit;
+      }
+    } catch {}
+
     if (supabase) {
       try {
         const { data, error } = await supabase
@@ -713,7 +723,7 @@ export const DataManager = {
 
           rawQuestions.sort((a, b) => a.order_number - b.order_number);
 
-          return {
+                    const resolvedFetchedQuiz: Quiz = {
             id: data.id,
             title: data.title,
             description: data.description || '',
@@ -754,6 +764,15 @@ export const DataManager = {
               };
             }),
           };
+
+          try {
+            const rawCache = localStorage.getItem('kuis_sd_cached_quizzes_v1');
+            const cached: Quiz[] = rawCache ? JSON.parse(rawCache) : [];
+            const filtered = cached.filter((item) => item.id !== resolvedFetchedQuiz.id);
+            localStorage.setItem('kuis_sd_cached_quizzes_v1', JSON.stringify([resolvedFetchedQuiz, ...filtered].slice(0, 30)));
+          } catch {}
+
+          return resolvedFetchedQuiz;
         }
       } catch {
         // ignore
@@ -3172,36 +3191,15 @@ export const DataManager = {
         }
 
         if (data && !error) {
-          // AUTO-EXPIRATION: Cek apakah sesi zombi (tidak ada heartbeat / sesi ditinggalkan guru)
+          // PROTEKSI STABILITAS SESI: Query baca dilarang keras mengubah status sesi menjadi 'finished' di database.
+          // Sesi aktif SD harus tetap hidup dan stabil tanpa risiko terlempar akibat ketiadaan sinyal sesaat.
           const isSelfPaced = data.settings?.executionMode === 'self_paced';
           const nowMs = Date.now();
-          const sessionTime = new Date(data.created_at).getTime();
-          const heartbeatTime = data.last_heartbeat ? new Date(data.last_heartbeat).getTime() : sessionTime;
-          const TEN_MINUTES_MS = 10 * 60 * 1000;
-          const THREE_HOURS_MS = 3 * 60 * 60 * 1000;
 
-          if (isSelfPaced) {
-            // Mode Mandiri / PR: Sesi aktif hingga tenggat batas waktu
-            if (data.settings?.deadlineAt && new Date(data.settings.deadlineAt).getTime() <= nowMs) {
-              supabase
-                .from('quiz_sessions')
-                .update({ status: 'finished', ended_at: new Date().toISOString() })
-                .eq('id', data.id)
-                .then(() => {}, () => {});
-              return null;
-            }
-          } else {
-            // Sesi Live Interaktif (teacher_led): Cek heartbeat atau batas 3 jam
-            const isStaleActive = data.status === 'active' && (nowMs - heartbeatTime > TEN_MINUTES_MS);
-            const isTooOld = nowMs - sessionTime > THREE_HOURS_MS;
-
-            if (isStaleActive || isTooOld) {
-              // Tandai sesi selesai di background agar tidak menggantung
-              supabase
-                .from('quiz_sessions')
-                .update({ status: 'finished', ended_at: new Date().toISOString() })
-                .eq('id', data.id)
-                .then(() => {}, () => {});
+          if (isSelfPaced && data.settings?.deadlineAt) {
+            // Mode Mandiri / PR: Beri toleransi 15 menit terhadap tenggat waktu sebelum menolak akses baru
+            const deadlineTime = new Date(data.settings.deadlineAt).getTime();
+            if (deadlineTime + (15 * 60 * 1000) < nowMs) {
               return null;
             }
           }
@@ -3323,20 +3321,10 @@ export const DataManager = {
         if (data && !error) {
           const isSelfPaced = data.settings?.executionMode === 'self_paced';
           const nowMs = Date.now();
-          const sessionTime = new Date(data.created_at).getTime();
-          const heartbeatTime = data.last_heartbeat ? new Date(data.last_heartbeat).getTime() : sessionTime;
-          const TEN_MINUTES_MS = 10 * 60 * 1000;
-          const THREE_HOURS_MS = 3 * 60 * 60 * 1000;
 
-          if (isSelfPaced) {
-            if (data.settings?.deadlineAt && new Date(data.settings.deadlineAt).getTime() <= nowMs) {
-              return null;
-            }
-          } else {
-            const isStaleActive = data.status === 'active' && (nowMs - heartbeatTime > TEN_MINUTES_MS);
-            const isTooOld = nowMs - sessionTime > THREE_HOURS_MS;
-
-            if (isStaleActive || isTooOld) {
+          if (isSelfPaced && data.settings?.deadlineAt) {
+            const deadlineTime = new Date(data.settings.deadlineAt).getTime();
+            if (deadlineTime + (15 * 60 * 1000) < nowMs) {
               return null;
             }
           }

@@ -384,6 +384,15 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     return list;
   });
 
+  // Simpan salinan kuis aktif ke sessionStorage agar saat reload/koneksi terputus tidak terlempar
+  useEffect(() => {
+    if (quiz && quiz.id && !isPreview) {
+      try {
+        sessionStorage.setItem(`kuis_active_quiz_cache_${quiz.id}`, JSON.stringify(quiz));
+      } catch {}
+    }
+  }, [quiz, isPreview]);
+
   // 1. Muat riwayat jawaban tersimpan (dari sessionStorage atau server)
   const [answersList, setAnswersList] = useState<QuizAttemptAnswer[]>(() => {
     if (!isPreview) {
@@ -460,6 +469,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
   const currentIndexRef = useRef<number>(currentIndex);
   currentIndexRef.current = currentIndex;
   const isFinishingRef = useRef<boolean>(false);
+  const [isTeacherEndingGracefully, setIsTeacherEndingGracefully] = useState<boolean>(false);
   const [totalTimeSpent, setTotalTimeSpent] = useState<number>(() => {
     if (!isPreview) {
       try {
@@ -1506,7 +1516,12 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
           }
           if (sess.status === 'finished') {
             setShowWaitingLounge(false);
-            finishCurrentQuiz();
+            if (!isFinishingRef.current) {
+              setIsTeacherEndingGracefully(true);
+              setTimeout(() => {
+                finishCurrentQuiz();
+              }, 1500);
+            }
           }
         }
       }
@@ -3574,6 +3589,29 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
           playCorrect={playCorrect}
           playCelebration={playApplause || playCorrect}
         />
+      )}
+
+      {/* Modal Notifikasi Sesi Selesai Dipandu Guru (Ramah & Tidak Mengejutkan Siswa) */}
+      {isTeacherEndingGracefully && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/75 backdrop-blur-sm animate-fade-in select-none">
+          <div className="max-w-md w-full bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-200 dark:border-slate-800 text-center space-y-4 animate-scale-in">
+            <div className="w-16 h-16 mx-auto rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200/80 dark:border-blue-900/80 flex items-center justify-center text-3xl shadow-xs animate-bounce">
+              🏁
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white">
+                Sesi Kuis Selesai
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                Guru telah menyelesaikan sesi belajar bersama ini. Jawabanmu sedang direkap rapi...
+              </p>
+            </div>
+            <div className="flex items-center justify-center gap-2 pt-2 text-xs font-bold text-blue-600 dark:text-blue-400">
+              <span className="w-4 h-4 border-2 border-blue-600 dark:border-blue-400 border-t-transparent rounded-full animate-spin" />
+              <span>Menyiapkan ringkasan nilaimu...</span>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Hitung Mundur 3 Detik Sebelum Memulai Soal di Mode Dipandu Guru */}

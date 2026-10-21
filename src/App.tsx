@@ -140,7 +140,16 @@ export const App: React.FC = () => {
 
     const pinToMatch = (initialNav.pin || '').trim().toUpperCase();
     if (initialNav.quizId) {
-      DataManager.getQuizById(initialNav.quizId).then(async (q) => {
+      DataManager.getQuizById(initialNav.quizId).then(async (fetchedQuiz) => {
+        let q = fetchedQuiz;
+        if (!q && initialNav.quizId) {
+          try {
+            const rawCached = sessionStorage.getItem(`kuis_active_quiz_cache_${initialNav.quizId}`);
+            if (rawCached) {
+              q = JSON.parse(rawCached);
+            }
+          } catch {}
+        }
         if (q) {
           const session = (pinToMatch ? await DataManager.fetchActiveSessionByPin(pinToMatch) : null) || 
             (pinToMatch ? DataManager.getActiveSessionByPin(pinToMatch) : null) || 
@@ -152,7 +161,13 @@ export const App: React.FC = () => {
           const teacher = DataManager.getTeacherProfile();
           const isOwnerTeacher = Boolean(teacher && (teacher.id === q.creatorId || teacher.email === q.creatorId));
 
-          if (q.visibility === 'private' && !session && !isOwnerTeacher && initialNav.screen !== 'creator') {
+          // Cek apakah siswa sedang memulihkan pengerjaan di arena aktif
+          const hasOngoingArenaProgress = initialNav.screen === 'arena' && Boolean(
+            sessionStorage.getItem(`kuis_arena_progress_${q.id}`) ||
+            sessionStorage.getItem(`kuis_active_quiz_cache_${q.id}`)
+          );
+
+          if (q.visibility === 'private' && !session && !isOwnerTeacher && initialNav.screen !== 'creator' && !hasOngoingArenaProgress) {
             console.warn('Akses langsung kuis privat via ?quiz= ditolak.');
             setPrivateQuizAlertModal('Kuis ini bersifat privat. Silakan minta PIN Ruang Kelas (6 digit) dari gurumu untuk bergabung ke sesi belajar.');
             setCurrentScreen('home');
@@ -220,6 +235,26 @@ export const App: React.FC = () => {
               setActiveGameMode(settings.mode);
               setActiveQuiz(q);
               setCurrentScreen(initialNav.screen === 'arena' ? 'arena' : 'student-lobby');
+              return;
+            }
+          }
+
+          if (initialNav.screen === 'arena') {
+            const q = await DataManager.getQuizById(finishedSession.quizId);
+            if (q) {
+              setActiveQuiz(q);
+              setCurrentScreen('result');
+              saveNavigationState({ screen: 'result', quiz: q, replace: false });
+              return;
+            }
+          }
+
+          if (initialNav.screen === 'arena') {
+            const q = await DataManager.getQuizById(finishedSession.quizId);
+            if (q) {
+              setActiveQuiz(q);
+              setCurrentScreen('result');
+              saveNavigationState({ screen: 'result', quiz: q, replace: false });
               return;
             }
           }

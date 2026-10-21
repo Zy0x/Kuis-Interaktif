@@ -349,31 +349,34 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
 
   // Cek secara komprehensif apakah sesi kuis telah selesai (finished)
   const isSessionEnded = useMemo(() => {
-    // 1. liveSession atau activeSession eksplisit finished
+    // 1. Prioritas Mutlak Sesi Berjalan: Jika status liveSession/activeSession sedang aktif/menunggu/jeda,
+    // MAKA SESI DIJAMIN TIDAK SELESAI! Jangan biarkan cache lokal usang merusaknya.
+    if (
+      liveSession?.status === 'active' ||
+      liveSession?.status === 'waiting' ||
+      liveSession?.status === 'paused' ||
+      activeSession?.status === 'active' ||
+      activeSession?.status === 'waiting' ||
+      activeSession?.status === 'paused'
+    ) {
+      return false;
+    }
+
+    // 2. liveSession atau activeSession eksplisit finished
     if (liveSession?.status === 'finished' || activeSession?.status === 'finished') {
       return true;
     }
-    // 2. Cek sesi lokal berdasarkan PIN sesi atau quizId
-    const all = DataManager.getActiveSessions();
-    const pin = activeSession?.pinCode || (quiz.pinCode && quiz.pinCode.length === 6 ? quiz.pinCode : null);
-    if (pin) {
-      const matchPin = all.find((s) => s.pinCode === pin);
-      if (matchPin && matchPin.status === 'finished') {
-        return true;
-      }
+
+    // 3. Cek sesi lokal HANYA jika ID sesi cocok secara spesifik
+    const currentTargetId = activeSession?.id || liveSession?.id;
+    if (currentTargetId) {
+      const all = DataManager.getActiveSessions();
+      const match = all.find((s) => s.id === currentTargetId);
+      if (match) return match.status === 'finished';
     }
-    // 3. Jika mode dipandu guru dan sesi terbaru kuis ini berstatus finished tanpa ada sesi aktif baru
-    if (effectiveSettings.executionMode === 'teacher_led') {
-      const latestQuizSession = all.find((s) => s.quizId === quiz.id);
-      if (latestQuizSession && latestQuizSession.status === 'finished') {
-        const hasActiveOrWaiting = all.some(
-          (s) => s.quizId === quiz.id && (s.status === 'active' || s.status === 'waiting' || s.status === 'paused')
-        );
-        if (!hasActiveOrWaiting) return true;
-      }
-    }
+
     return false;
-  }, [liveSession?.status, activeSession?.status, activeSession?.pinCode, quiz.pinCode, quiz.id, effectiveSettings.executionMode]);
+  }, [liveSession?.status, liveSession?.id, activeSession?.status, activeSession?.id]);
 
   // Cek apakah mode dipandu guru dan sesi masih berstatus waiting
   const isTeacherLedWaiting = effectiveSettings.executionMode === 'teacher_led' && (liveSession?.status === 'waiting') && !isSessionEnded;
