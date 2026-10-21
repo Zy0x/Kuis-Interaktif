@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import type { Quiz, QuizAttemptAnswer, LeaderboardEntry, QuizSessionSettings } from '../../types/quiz';
 import { DataManager } from '../../lib/supabaseClient';
-import { copyTextToClipboard } from '../../lib/aiQuestionParser';
+import { shareLinkUniversal } from '../../lib/shareUtils';
 import { triggerHaptic, formatMathExpression, getOptionLetter } from '../../lib/mobileUtils';
 import { ThemeToggle } from '../common/ThemeToggle';
 import { QuizIllustration } from '../shared/QuizIllustration';
@@ -131,12 +131,20 @@ export const QuizResult: React.FC<QuizResultProps> = ({
 
   const handleShare = async () => {
     playClick();
-    const shareText = `Aku baru saja meraih nilai ${score} (${earnedPoints}/${maxPoints} Poin, ${stars} Bintang ⭐) di Kuis Interaktif: "${quiz.title}"!`;
-    const success = await copyTextToClipboard(shareText);
-    if (success) {
-      setCopiedShare(true);
-      setTimeout(() => setCopiedShare(false), 2000);
-    }
+    const pin = pinCode || quiz.pinCode || '';
+    const quizUrl = `${window.location.origin}/?pin=${pin}`;
+    await shareLinkUniversal({
+      url: quizUrl,
+      title: quiz.title,
+      onSuccess: () => {
+        setCopiedShare(true);
+        setTimeout(() => setCopiedShare(false), 2000);
+      },
+      onCopied: () => {
+        setCopiedShare(true);
+        setTimeout(() => setCopiedShare(false), 2000);
+      },
+    });
   };
 
   return (
@@ -476,8 +484,8 @@ export const QuizResult: React.FC<QuizResultProps> = ({
             type="button"
             onClick={handleShare}
             className="p-2 xs:p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 min-h-[44px] min-w-[44px] flex items-center justify-center btn-press flex-shrink-0"
-            title="Bagikan Skor"
-            aria-label="Bagikan Skor Kuis"
+            title="Bagikan Tautan Kuis"
+            aria-label="Bagikan Tautan Kuis"
           >
             <Share2 className="w-4 h-4" />
           </button>
@@ -489,7 +497,7 @@ export const QuizResult: React.FC<QuizResultProps> = ({
         </div>
         {copiedShare && (
           <div className="text-center text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 mt-1 animate-fade-in">
-            ✓ Teks skor berhasil disalin ke clipboard!
+            ✓ Tautan kuis berhasil disalin!
           </div>
         )}
       </footer>

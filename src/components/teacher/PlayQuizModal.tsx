@@ -807,11 +807,18 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
     const session = await ensureSessionAndSyncSettings();
     const pinToCopy = session?.pinCode || activeSessionPin || quiz.pinCode || '';
     const url = `${window.location.origin}/?pin=${pinToCopy}`;
-    const success = await copyTextToClipboard(url);
-    if (success) {
-      setIsCopiedLink(true);
-      setTimeout(() => setIsCopiedLink(false), 2000);
-    }
+    await shareLinkUniversal({
+      url,
+      title: quiz.title,
+      onSuccess: () => {
+        setIsCopiedLink(true);
+        setTimeout(() => setIsCopiedLink(false), 2000);
+      },
+      onCopied: () => {
+        setIsCopiedLink(true);
+        setTimeout(() => setIsCopiedLink(false), 2000);
+      },
+    });
   };
 
   const handleShareWhatsApp = async (e: React.MouseEvent) => {
@@ -1443,12 +1450,12 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
                       {isCopiedWa ? (
                         <>
                           <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                          <span>Pesan Tugas Disalin ke Clipboard!</span>
+                          <span>Tautan Tugas Berhasil Disalin!</span>
                         </>
                       ) : (
                         <>
                           <MessageCircle className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                          <span>Salin Format Tugas ke WhatsApp</span>
+                          <span>Bagikan Tautan Tugas Kuis</span>
                         </>
                       )}
                     </button>

@@ -6,6 +6,21 @@ Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen in
 
 
 
+## [2.5.18] - 2026-10-22
+### Konsistensi Pembagian Tautan Murni & Android Share Drawer di Seluruh Komponen (Rule 1, Rule 2, Rule 15 & AGENTS.md)
+
+#### 1. Universal Pure Link Sharing pada Seluruh Tampilan Kuis
+- **Hasil Kuis Siswa (`QuizResult.tsx`)**:
+  - Memperbarui tombol bagikan pada halaman akhir hasil kuis siswa agar menggunakan `shareLinkUniversal`.
+  - Berbagi murni hanya berupa link/tautan kuis tanpa teks pengantar berlebih.
+  - Membuka Android Share Sheet secara native saat dibuka dari smartphone Android.
+- **Modal Mulai Kuis Guru (`PlayQuizModal.tsx`)**:
+  - Mengintegrasikan `shareLinkUniversal` pada tombol "Salin Tautan Siswa" dan tombol berbagi tugas.
+  - Memperbarui label tombol menjadi lebih intuitif: *"Bagikan Tautan Tugas Kuis"* dan *"Tautan Tugas Berhasil Disalin!"*.
+
+#### 2. Pembaruan Cache PWA Service Worker (`public/sw.js`)
+- Menaikkan versi cache ke `kuis-sd-seru-v2.5.18`.
+
 ## [2.5.17] - 2026-10-22
 ### Standarisasi Berbagi Tautan Bersih (Hanya Link Murni) & Dukungan Android Intent Drawer pada HTTP Lokal (Rule 1, Rule 2, Rule 15 & AGENTS.md)
 
