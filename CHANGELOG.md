@@ -6,6 +6,28 @@ Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen in
 
 
 
+## [2.5.5] - 2026-10-21
+### Eliminasi Tabrakan Header, Pemulihan Kerapian Kartu Soal & Rekonstruksi Tirai Gantung Dropdown (Rule 1, Rule 2, Rule 4, Rule 7, Rule 15 & AGENTS.md)
+
+#### 1. Eliminasi Tabrakan Header Bar (`QuizArena.tsx`)
+- **Akar Masalah**: Penambahan tombol kedua di bilah navigasi atas sebelumnya menyebabkan kelebihan muatan horizontal pada viewport ponsel (seperti Infinix Note 50s 392 px), sehingga lencana poin bintang `⭐ 10` menabrak dan menumpuk di bawah pill mode santai `🧘 Santai (27:42)`.
+- **Solusi**:
+  - Menghapus tombol kedua dari header mobile. Header kini hanya memuat tombol tunggal `✨ Alat` yang proporsional.
+  - Membatasi visibilitas badge poin di potret mobile sempit (`hidden sm:inline-flex`) untuk memberikan ruang bernapas yang cukup bagi timer dan nomor soal.
+  - Menjamin zero-collision dan layout simetris di seluruh resolusi layar.
+
+#### 2. Pemulihan Kerapian Kartu Soal (Anti-Clutter)
+- Menghapus kotak alat bantu yang sebelumnya tertanam permanen di dalam kartu soal di atas teks pertanyaan.
+- Kartu soal kini kembali bersih, lapang, dan berfokus penuh pada pertanyaan serta 4 pilihan jawaban tanpa pergeseran tata letak.
+
+#### 3. Rekonstruksi Tirai Menjadi Floating Dropdown Shade (`QuizToolCurtain.tsx`)
+- Saat tirai tidak dibuka: Mengambil **0 piksel ruang** di dalam kartu soal dan tidak mengubah tata letak.
+- Saat tombol `✨ Alat` ditekan: Membuka tirai gantung melayang (*floating dropdown tray*) dengan latar redup halus, menyajikan 4 kartu alat bantu berdefinisi kontras tinggi (Bacakan Soal, Kertas Buram, Tandai Ragu, Ukuran Teks) serta tautan ke Pengaturan Tema & Audio.
+- Mengetuk area di luar atau menekan tombol silang `✕` langsung melipat tirai kembali secara instan.
+
+#### 4. Pembaruan Cache PWA Service Worker (`public/sw.js`)
+- Menaikkan versi cache ke `kuis-sd-seru-v2.5.5`.
+
 ## [2.5.4] - 2026-10-21
 ### Fitur Tirai Alat Bantu Siswa (Collapsible Assistive Curtain) & Pemisahan Menu Pengaturan di Arena Kuis (Rule 1, Rule 2, Rule 7, Rule 15 & AGENTS.md)
 

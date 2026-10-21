@@ -58,8 +58,7 @@ import {
   AlertCircle,
   CheckCircle2,
   Flag,
-  Type,
-  Settings
+  Type
 } from 'lucide-react';
 import { QuizToolCurtain } from './QuizToolCurtain';
 import { useAntiReaction } from '../../lib/reactionPreferences';
@@ -1779,24 +1778,10 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                       ? 'bg-blue-600 text-white' 
                       : 'text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750'
                   }`}
-                  title="Buka / Tutup Tirai Alat Bantu"
-                  aria-label="Tirai Alat Bantu"
+                  title="Menu Alat Bantu Belajar"
+                  aria-label="Alat Bantu Belajar"
                 >
                   <Sparkles className="w-5 h-5 text-amber-500" />
-                </button>
-
-                {/* Tombol Pengaturan Kuis */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (playClick) playClick();
-                    setIsMobileToolsOpen(true);
-                  }}
-                  className="p-2 text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors shadow-xs"
-                  title="Menu Pengaturan Kuis"
-                  aria-label="Menu Pengaturan Kuis"
-                >
-                  <Settings className="w-5 h-5" />
                 </button>
               </div>
             </>
@@ -1867,7 +1852,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                     </span>
                   )}
 
-                  <span className="text-[10px] sm:text-[11px] font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/50 border border-amber-200/60 dark:border-amber-800/60 px-2 py-1 rounded-xl inline-flex items-center gap-1 whitespace-nowrap shrink-0">
+                  <span className="text-[10px] sm:text-[11px] font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/50 border border-amber-200/60 dark:border-amber-800/60 px-2 py-1 rounded-xl hidden sm:inline-flex items-center gap-1 whitespace-nowrap shrink-0">
                     <Star className="w-3 h-3 text-amber-500 fill-amber-500 shrink-0" />
                     <span>{question.points || 10}</span>
                   </span>
@@ -2009,21 +1994,6 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
                   <span className="hidden xs:inline">Alat</span>
                 </button>
 
-                {/* Tombol Pengaturan Kuis (Tema, SFX, BGM) */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    triggerHaptic('light');
-                    playClick();
-                    setIsMobileToolsOpen(true);
-                  }}
-                  className="p-2 text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 rounded-xl min-h-[40px] min-w-[40px] flex items-center justify-center transition-colors border border-slate-200/80 dark:border-slate-700/80"
-                  title="Pengaturan Kuis (Tema & Audio)"
-                  aria-label="Pengaturan Kuis"
-                >
-                  <Settings className="w-4 h-4" />
-                </button>
-
                 {/* Desktop / Tablet / Smartboard Full Toolbar (>=sm) */}
                 <div className="hidden sm:flex items-center gap-1 sm:gap-1.5">
                   {/* Theme Toggle Button */}
@@ -2115,22 +2085,6 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
       <main className="flex-1 min-h-0 w-full overflow-y-auto px-3 py-2 sm:px-6 sm:py-4 flex flex-col items-center overscroll-contain">
         <div className="w-full max-w-2xl lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl 3xl:max-w-6xl 4k:max-w-7xl bg-white dark:bg-slate-900 rounded-3xl p-3.5 xs:p-4 sm:p-6 md:p-8 2xl:p-10 border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col gap-2.5 sm:gap-4 xl:gap-5 my-1 sm:my-auto animate-fade-in relative">
           
-          {/* Tirai Alat Bantu Siswa (Collapsible Assistive Curtain) */}
-          <QuizToolCurtain
-            isSpeaking={isSpeechPlaying}
-            onToggleSpeech={handleToggleSpeech}
-            onOpenScratchpad={() => setIsScratchpadOpen(true)}
-            textScale={textScale}
-            onCycleTextScale={handleCycleTextScale}
-            isFlagged={flaggedQuestions.has(currentIndex)}
-            onToggleFlag={handleToggleFlag}
-            isOpen={isCurtainOpen}
-            onToggleOpen={() => {
-              triggerHaptic('light');
-              setIsCurtainOpen((prev) => !prev);
-            }}
-          />
-
           {/* Paused Overlay Banner */}
           {isPaused && (
             <div className="p-2.5 rounded-2xl bg-amber-500 text-white text-center text-xs sm:text-sm font-bold shadow-md flex items-center justify-center gap-2 animate-bounce flex-shrink-0">
@@ -3677,6 +3631,20 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
           isMuted={isMuted}
         />
       )}
+
+      {/* Tirai Alat Bantu Siswa (Floating Overlay Dropdown) */}
+      <QuizToolCurtain
+        isSpeaking={isSpeechPlaying}
+        onToggleSpeech={handleToggleSpeech}
+        onOpenScratchpad={() => setIsScratchpadOpen(true)}
+        textScale={textScale}
+        onCycleTextScale={handleCycleTextScale}
+        isFlagged={flaggedQuestions.has(currentIndex)}
+        onToggleFlag={handleToggleFlag}
+        isOpen={isCurtainOpen}
+        onClose={() => setIsCurtainOpen(false)}
+        onOpenSettings={() => setIsMobileToolsOpen(true)}
+      />
 
       <ScratchpadOverlay
         isOpen={isScratchpadOpen}
