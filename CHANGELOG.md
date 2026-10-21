@@ -6,6 +6,29 @@ Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen in
 
 
 
+## [2.5.11] - 2026-10-21
+### Redesain Modal Pemilihan Metode Pembuatan Kuis Anti-Slop & Human-Centered (Rule 1, Rule 2, Rule 4, Rule 15 & AGENTS.md)
+
+#### 1. Eliminasi AI Slop & Pengurangan Beban Kognitif (Cognitive Ease)
+- **Judul Bersih & Bebas Emoji Berlebihan**: Mengganti judul bertumpuk emoji seperti `⚡ Generator Kilat AI` dan `✏️ Buat Kuis Manual` menjadi tipografi yang tenang, lugas, dan profesional: `Buat dengan Bantuan AI` dan `Tulis Kuis Manual`.
+- **Perbaikan Bug Pelipatan Teks Lencana (Anti-Warping)**: Memperbaiki lencana status agar tidak terbelah vertikal (`DARI \n NOL` menjadi satu baris utuh `Kendali Penuh`), dilengkapi `whitespace-nowrap flex-shrink-0`.
+- **Bahasa Singkat & Bernilai Tinggi**: Mengganti paragraf panjang bertele-tele dengan kalimat ringkas dan berorientasi manfaat nyata bagi guru sekolah dasar.
+- **Pemberian Micro-Chips Fitur**: Menghadirkan pill ringkas penunjuk estimasi waktu (`~15 Detik`) dan cakupan materi (`Topik / Dokumen Bebas`) yang langsung dapat dipindai sekilas tanpa perlu membaca teks panjang.
+
+#### 2. Kerapian Tata Letak & Kenyamanan Psikologis Pengguna
+- **Permukaan Interaktif Taktil (Unified Clickable Tile)**: Menghilangkan tombol tautan redundan di dalam kartu (`Mulai dengan Asisten AI →` dan `Buka Editor Kosong →`). Seluruh kartu kini berfungsi sebagai satu kesatuan area sentuh yang responsif dengan efek tekan pegas (`btn-press active:scale-[0.985]`).
+- **Pelepasan Beban Kecemasan Pendidik (Footer Reassurance)**: Menambahkan catatan penenang ramah edukatif pada bilah bawah: *"Soal selalu dapat ditinjau & diedit kembali"*, menghilangkan ketakutan guru akan salah memilih metode.
+- **Proporsi Ramping & Bernafas**: Ketinggian modal turun secara proporsional sehingga menyisakan ruang vertikal yang lega (~350 px) pada layar smartphone, mencegah kesan sesak atau menutupi layar secara berlebihan.
+
+#### 3. Presisi Antar-Platform & Aksesibilitas
+- Terverifikasi 100% lulus audit nol luapan horizontal (`scrollWidth === clientWidth`) pada spektrum Mobile-S (320×568 px), Infinix Note 50s (392×778 px), hingga Desktop HD/Full HD.
+- Memenuhi target sentuh ergonomis $\ge 44 \times 44\text{ px}$ pada seluruh elemen interaktif, termasuk tombol tutup, tombol batal, dan kartu pilihan.
+- Kontras warna seimbang dan nyaman di mata baik pada mode gelap (*Dark Mode*) maupun mode terang (*Light Mode*).
+
+#### 4. Pembaruan Cache PWA Service Worker (public/sw.js)
+- Menaikkan versi cache ke `kuis-sd-seru-v2.5.11`.
+
+
 ## [2.5.10] - 2026-10-21
 ### Integrasi Web Share API pada Tombol Bagikan Kartu Sesi Kuis Live (Rule 1, Rule 2, Rule 15 & AGENTS.md)
 
