@@ -598,7 +598,18 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 
   // Daftar indeks butir soal (0-indexed) yang belum dijawab oleh siswa
   const unansweredIndices = useMemo(() => {
-    const answeredIds = new Set(answersList.map((a) => a.questionId));
+    const answeredIds = new Set(
+      answersList
+        .filter((a) => {
+          if (!a || !a.questionId || a.questionId === 'quiz_completed') return false;
+          // Validasi ketat: butir soal benar-benar terisi / tidak kosong
+          if (typeof a.selectedIndex === 'number' && a.selectedIndex >= 0) return true;
+          if (typeof a.textAnswer === 'string' && a.textAnswer.trim().length > 0) return true;
+          if (typeof a.matchedCount === 'number' && a.matchedCount > 0) return true;
+          return false;
+        })
+        .map((a) => a.questionId)
+    );
     return activeQuestions
       .map((q, idx) => (answeredIds.has(q.id) ? -1 : idx))
       .filter((idx) => idx !== -1);
@@ -1326,7 +1337,16 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 
     // PROTEKSI PENUGASAN: Seluruh butir soal wajib dijawab sebelum kuis dapat diselesaikan
     const rawFinalAnswers = latestAnswersRef.current.filter((a) => a && a.questionId && a.questionId !== 'quiz_completed');
-    const answeredIds = new Set(rawFinalAnswers.map((a) => a.questionId));
+    const answeredIds = new Set(
+      rawFinalAnswers
+        .filter((a) => {
+          if (typeof a.selectedIndex === 'number' && a.selectedIndex >= 0) return true;
+          if (typeof a.textAnswer === 'string' && a.textAnswer.trim().length > 0) return true;
+          if (typeof a.matchedCount === 'number' && a.matchedCount > 0) return true;
+          return false;
+        })
+        .map((a) => a.questionId)
+    );
     const missingQuestions = activeQuestions.filter((q) => !answeredIds.has(q.id));
 
     if (missingQuestions.length > 0 && activeSettings.executionMode !== 'teacher_led' && isMandatoryAllAnswered) {

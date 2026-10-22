@@ -43,7 +43,8 @@ import {
   Info,
   Clock,
   Key,
-  BookOpen
+  BookOpen,
+  CheckSquare
 } from 'lucide-react';
 
 export interface PlayQuizSessionOptions {
@@ -538,6 +539,7 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
   const [maxAttempts, setMaxAttempts] = useState<number>(0);
   const [tabSwitchDetection, setTabSwitchDetection] = useState<boolean>(false);
   const [overrideCustomDurations, setOverrideCustomDurations] = useState<boolean>(false);
+  const [requireAllQuestionsAnswered, setRequireAllQuestionsAnswered] = useState<boolean>(true);
 
   // Analisis cerdas durasi butir soal (apakah seragam atau bervariasi karena soal kustom)
   const questionDurationStats = React.useMemo(() => {
@@ -642,6 +644,7 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
       setShowLeaderboardToStudents(def.showLeaderboardToStudents ?? true);
       setMaxAttempts(def.maxAttempts ?? 0);
       setTabSwitchDetection(def.tabSwitchDetection ?? false);
+      setRequireAllQuestionsAnswered(def.requireAllQuestionsAnswered ?? true);
     }
   }, [quiz, isOpen]);
 
@@ -702,7 +705,7 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
           pacingType,
           deadlineAt: pacingType === 'homework' ? deadlineAt : undefined,
           requireStudentInfo: pacingType === 'homework' ? requireStudentInfo : false,
-          requireAllQuestionsAnswered: pacingType === 'homework' || showAnswersMode === 'exam_strict' || selectedMode === 'untimed',
+          requireAllQuestionsAnswered,
         });
       }
     }
@@ -722,6 +725,7 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
     showLeaderboardToStudents,
     maxAttempts,
     tabSwitchDetection,
+    requireAllQuestionsAnswered,
     executionMode,
     teacherPacingSubMode,
     isChatMuted,
@@ -771,7 +775,7 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
       pacingType: overrides?.pacingType ?? pacingType,
       deadlineAt: overrides?.deadlineAt ?? (pacingType === 'homework' ? deadlineAt : undefined),
       requireStudentInfo: overrides?.requireStudentInfo ?? (pacingType === 'homework' ? requireStudentInfo : false),
-      requireAllQuestionsAnswered: overrides?.requireAllQuestionsAnswered ?? (pacingType === 'homework' || showAnswersMode === 'exam_strict' || selectedMode === 'untimed'),
+      requireAllQuestionsAnswered: overrides?.requireAllQuestionsAnswered ?? requireAllQuestionsAnswered,
       overrideCustomQuestionDurations: !isUntimed && (overrides?.overrideCustomQuestionDurations ?? (durationSelectionType !== 'default' && overrideCustomDurations)),
     };
 
@@ -864,6 +868,7 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
       pacingType,
       deadlineAt: pacingType === 'homework' ? deadlineAt : undefined,
       requireStudentInfo: pacingType === 'homework' ? requireStudentInfo : false,
+      requireAllQuestionsAnswered,
       overrideCustomQuestionDurations: !isUntimed && durationSelectionType !== 'default' && overrideCustomDurations,
     });
   };
@@ -1629,6 +1634,40 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
                         }`}>
                           <span className={`w-4 h-4 rounded-full bg-white shadow-xs transition-transform transform ${
                             shuffleOptions ? 'translate-x-5' : 'translate-x-0'
+                          }`} />
+                        </span>
+                      </button>
+                    </div>
+
+                    {/* Wajib Jawab Seluruh Soal (Larang Jawaban Kosong) */}
+                    <div 
+                      onClick={() => {
+                        playClick();
+                        setRequireAllQuestionsAnswered(!requireAllQuestionsAnswered);
+                      }}
+                      className="flex items-center justify-between p-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors"
+                    >
+                      <div className="flex items-center gap-2.5 text-xs font-bold text-slate-900 dark:text-white pr-2 min-w-0">
+                        <CheckSquare className="w-4 h-4 text-emerald-500 shrink-0" />
+                        <div className="min-w-0">
+                          <span className="block truncate">Wajib Jawab Seluruh Soal</span>
+                          <span className="block text-[10px] font-normal text-slate-500 dark:text-slate-400 leading-tight">
+                            Larang kuis dikumpulkan jika ada butir soal yang dilewati atau kosong
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={requireAllQuestionsAnswered}
+                        aria-label="Wajib Jawab Seluruh Soal"
+                        className="min-w-[44px] min-h-[44px] flex items-center justify-center -mr-1.5 -my-2 focus:outline-none shrink-0"
+                      >
+                        <span className={`w-10 h-5 rounded-full transition-colors relative flex items-center p-0.5 shrink-0 ${
+                          requireAllQuestionsAnswered ? 'bg-emerald-600' : 'bg-slate-200 dark:bg-slate-700'
+                        }`}>
+                          <span className={`w-4 h-4 rounded-full bg-white shadow-xs transition-transform transform ${
+                            requireAllQuestionsAnswered ? 'translate-x-5' : 'translate-x-0'
                           }`} />
                         </span>
                       </button>

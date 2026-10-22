@@ -3,6 +3,8 @@ import type { QuizQuestion, QuestionType, Subject } from '../../types/quiz';
 import { 
   generateAiPrompt, 
   parseRawQuestionsText, 
+  parseCsvQuestions,
+  getQuestionCsvTemplate,
   copyTextToClipboard,
   type ParsedQuestionItem 
 } from '../../lib/aiQuestionParser';
@@ -24,7 +26,9 @@ import {
   EyeOff,
   Loader2,
   ExternalLink,
-  Zap
+  Zap,
+  UploadCloud,
+  Download
 } from 'lucide-react';
 import { ResizableTextarea } from '../common/ResizableTextarea';
 import {
@@ -70,7 +74,8 @@ const TOPIC_SUGGESTIONS = [
   'Pecahan Senilai & Perkalian Dasar',
   'Lambang & Pengamalan Sila Pancasila',
   'Siklus Air & Perubahan Wujud Benda',
-  'Ciri-Ciri Makhluk Hidup & Habitatnya'
+  'Ciri-Ciri Makhluk Hidup & Habitatnya',
+  '📖 Pemahaman Teks Cerita / Dongeng',
 ];
 
 export const AiQuestionModal: React.FC<AiQuestionModalProps> = ({
@@ -197,11 +202,55 @@ export const AiQuestionModal: React.FC<AiQuestionModalProps> = ({
   };
 
   // Real-time parser saat teks di tab impor berubah
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target?.result as string;
+      if (content) {
+        setRawText(content);
+        showToast(`Berkas "${file.name}" berhasil dimuat! Sedang mengurai butir soal...`);
+      }
+    };
+    reader.onerror = () => {
+      showToast('Gagal membaca berkas. Pastikan format berkas teks atau CSV valid.');
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
+  const handleDownloadCsvTemplate = () => {
+    playClick();
+    const csvContent = getQuestionCsvTemplate();
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'template_bank_soal_sd.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    showToast('Template CSV berhasil diunduh! Silakan buka di Microsoft Excel atau Google Sheets.');
+  };
+
   useEffect(() => {
     if (activeTab === 'import') {
       if (!rawText.trim()) {
         setParsedResults([]);
         return;
+      }
+      // Deteksi otomatis jika teks berformat tabel CSV/TSV
+      if (rawText.includes('\n') && (rawText.includes(',') || rawText.includes(';'))) {
+        const csvResults = parseCsvQuestions(rawText);
+        if (csvResults.length > 0) {
+          setParsedResults(csvResults);
+          return;
+        }
       }
       const results = parseRawQuestionsText(rawText);
       setParsedResults(results);
@@ -1004,6 +1053,44 @@ Pembahasan: Insang menyaring oksigen yang terlarut di dalam air.`;
           {/* ================= TAB 2: TEMPEL & IMPOR ================= */}
           {activeTab === 'import' && (
             <div className="space-y-3 animate-fade-in">
+              {/* File Upload Dropzone & CSV Template Download */}
+              <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 space-y-2">
+                <div className="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-300">
+                  <span className="flex items-center gap-1.5">
+                    <FileText className="w-4 h-4 text-indigo-500" />
+                    <span>Punya File Spreadsheet atau Dokumen Soal?</span>
+                  </span>
+                  <span className="text-[10px] text-slate-400">(.csv, .tsv, .txt, .json)</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".csv,.tsv,.txt,.json"
+                    className="hidden"
+                    onChange={handleFileUpload}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full py-2.5 px-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:border-indigo-400 dark:hover:border-indigo-500 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center justify-center gap-2 min-h-[44px] transition-all btn-press shadow-2xs group"
+                  >
+                    <UploadCloud className="w-4 h-4 text-indigo-500 group-hover:scale-110 transition-transform" />
+                    <span>Unggah File Dokumen / CSV</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleDownloadCsvTemplate}
+                    className="w-full py-2.5 px-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 hover:border-emerald-400 dark:hover:border-emerald-500 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center justify-center gap-2 min-h-[44px] transition-all btn-press shadow-2xs group"
+                  >
+                    <Download className="w-4 h-4 text-emerald-500 group-hover:scale-110 transition-transform" />
+                    <span>Unduh Template CSV Excel</span>
+                  </button>
+                </div>
+              </div>
+
               <div className="flex items-center justify-between">
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
                   Tempelkan Teks Soal / Hasil Keluaran AI di Bawah Ini:

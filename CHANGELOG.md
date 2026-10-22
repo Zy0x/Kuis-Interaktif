@@ -6,6 +6,31 @@ Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen in
 
 
 
+## [2.5.27] - 2026-10-23
+### Penegakan Larangan Jawaban Kosong, Fitur Teleportasi Bank Soal Antar-Kuis & Impor Dokumen Spreadsheet (Rule 1, Rule 2, Rule 9, Rule 15 & Rule 16)
+
+#### 1. Penegakan Opsi "Wajib Jawab Seluruh Soal (Larang Jawaban Kosong)"
+- Menghadirkan sakelar kontrol interaktif baru di menu pengaturan bermain kuis guru ([`PlayQuizModal.tsx`](file:///e:/Data/GitHub/Kuis%20Interaktif/src/components/teacher/PlayQuizModal.tsx)) pada kelompok **Opsi Keamanan & Integritas**.
+- Menjamin integrasi menyeluruh di mesin pengerjaan kuis ([`QuizArena.tsx`](file:///e:/Data/GitHub/Kuis%20Interaktif/src/components/arena/QuizArena.tsx)):
+  - Tombol pengumpulan otomatis terkunci dan berganti menjadi *`Periksa Soal (X Belum)`* jika masih terdapat butir soal yang dilewati/kosong.
+  - Memblokir pengiriman kuis secara mutlak dan menampilkan modal pemandu interaktif yang mengarahkan siswa langsung ke butir soal yang belum dijawab.
+  - Mencegah manipulasi jawaban kosong pada seluruh variasi soal (Pilihan Ganda, Benar/Salah, Isian Singkat, dan Menjodohkan).
+
+#### 2. Fitur "Ambil dari Bank Soal" (*Question Teleport*) ala Quizizz
+- Menambahkan modal bank soal terintegrasi ([`QuestionBankModal.tsx`](file:///e:/Data/GitHub/Kuis%20Interaktif/src/components/creator/QuestionBankModal.tsx)) di Studio Kuis:
+  - Guru dapat mencari dan menyaring butir soal dari seluruh kuis publik maupun kuis pribadi berdasarkan kata kunci materi, mata pelajaran, dan tipe soal.
+  - Pratinjau butir soal lengkap dengan pilihan jawaban, indikator kunci jawaban benar, dan pembahasan materi.
+  - Mendukung penambahan 1-klik per soal serta pemilihan multi-butir sekaligus (*batch add*) dengan konfirmasi umpan balik haptik.
+  - Terhubung langsung pada status kuis kosong, bilah aksi cepat bawah, dan floating menu *SpeedDial* di [`QuizCreator.tsx`](file:///e:/Data/GitHub/Kuis%20Interaktif/src/components/creator/QuizCreator.tsx).
+
+#### 3. Unggah Berkas Dokumen / Spreadsheet & Generator Pemahaman Bacaan
+- Menambahkan fitur unggah berkas langsung (`.csv`, `.tsv`, `.txt`, `.json`) pada tab impor asisten kuis ([`AiQuestionModal.tsx`](file:///e:/Data/GitHub/Kuis%20Interaktif/src/components/creator/AiQuestionModal.tsx)).
+- Menyediakan tombol unduh **Template CSV Excel Resmi** yang dapat langsung dibuka dan diisi di Microsoft Excel atau Google Sheets.
+- Menambahkan preset topik khusus **Pemahaman Teks Cerita / Dongeng** (*Reading Comprehension*) untuk mempermudah guru meracik soal dari wacana bacaan.
+
+#### 4. Presisi Responsivitas Mobile-First
+- Memastikan seluruh dialog baru, bilah pencarian, kartu bank soal, dan sakelar pengaturan memenuhi standar target sentuh $\ge 44 \times 44\text{ px}$ dan nol luapan horizontal pada viewport mobile Android maupun desktop.
+
 ## [2.5.26] - 2026-10-22
 ### Audit Ketahanan Menyeluruh: Dukungan Jenjang Kelas Multi-Fase (1-12), Preservasi Mode Santai, dan Protokol Bersih Uji Coba (Rule 1, Rule 2, Rule 9, Rule 11, Rule 15 & Rule 16)
 

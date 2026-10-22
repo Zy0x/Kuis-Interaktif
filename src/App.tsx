@@ -129,6 +129,7 @@ export const App: React.FC = () => {
       deadlineAt: base?.deadlineAt,
       requireStudentInfo: base?.requireStudentInfo,
       selectedQuestionIds: base?.selectedQuestionIds,
+      requireAllQuestionsAnswered: base?.requireAllQuestionsAnswered ?? true,
     };
   };
 
@@ -657,6 +658,7 @@ export const App: React.FC = () => {
       requireStudentInfo: options.requireStudentInfo,
       selectedQuestionIds: options.selectedQuestionIds,
       overrideCustomQuestionDurations: isUntimed ? false : options.overrideCustomQuestionDurations,
+      requireAllQuestionsAnswered: options.requireAllQuestionsAnswered,
     };
 
     const sessionQuiz: Quiz = {

@@ -25,9 +25,11 @@ import {
   Check,
   CheckCircle2,
   Clock,
-  Scale
+  Scale,
+  BookOpen
 } from 'lucide-react';
 import { AiQuestionModal } from './AiQuestionModal';
+import { QuestionBankModal } from './QuestionBankModal';
 import { ImageSelectorModal } from './ImageSelectorModal';
 import { AiGeneratorStep, clearAiGeneratorDraft } from './AiGeneratorStep';
 import { InfoKuisStep } from './InfoKuisStep';
@@ -225,6 +227,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+  const [isQuestionBankModalOpen, setIsQuestionBankModalOpen] = useState(false);
 
   // Auto-save state saat mode pengeditan kuis aktif
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
@@ -2616,6 +2619,34 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                 </button>
               </div>
 
+              {/* Item 3: Ambil dari Bank Soal */}
+              <div 
+                onClick={() => {
+                  playClick();
+                  setIsSpeedDialOpen(false);
+                  setIsQuestionBankModalOpen(true);
+                }}
+                className="flex items-center gap-2 cursor-pointer group"
+              >
+                <span className="px-2.5 py-1 rounded-xl text-xs font-bold text-emerald-900 dark:text-emerald-200 bg-white dark:bg-slate-800 shadow-md border border-emerald-200/80 dark:border-emerald-800/80 whitespace-nowrap group-hover:bg-emerald-50 dark:group-hover:bg-slate-750 transition-colors">
+                  Bank Soal
+                </span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    playClick();
+                    setIsSpeedDialOpen(false);
+                    setIsQuestionBankModalOpen(true);
+                  }}
+                  className="w-11 h-11 rounded-full flex items-center justify-center bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/25 transition-all active:scale-95 btn-press min-h-[44px] min-w-[44px]"
+                  title="Ambil soal dari kuis lain (Teleport Soal)"
+                  aria-label="Ambil dari Bank Soal"
+                >
+                  <BookOpen className="w-5 h-5" />
+                </button>
+              </div>
+
               {/* Item 1: Tambah Soal Manual */}
               <div 
                 onClick={() => {
@@ -2683,6 +2714,20 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
         onImportQuestions={handleImportAiQuestions}
         currentSubject={subject}
         currentGrade={grade}
+        playClick={playClick}
+      />
+
+      {/* Modal Bank Soal (Teleport Soal dari Kuis Lain) */}
+      <QuestionBankModal
+        isOpen={isQuestionBankModalOpen}
+        onClose={() => setIsQuestionBankModalOpen(false)}
+        onAddQuestions={(newQuestions) => {
+          setQuestions((prev) => [...prev, ...newQuestions]);
+          showToast(`📚 ${newQuestions.length} butir soal berhasil ditambahkan dari Bank Soal!`);
+        }}
+        currentQuestions={questions}
+        currentQuizId={editingQuiz?.id}
+        currentSubject={subject}
         playClick={playClick}
       />
 
@@ -2839,15 +2884,40 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
             {/* Questions List (Mengalir ke bawah alami dan lega) */}
             <div className="space-y-4">
               {questions.length === 0 ? (
-                <div className="text-center py-12 px-4 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 text-slate-400 space-y-3">
-                  <p className="text-sm font-semibold text-slate-600 dark:text-slate-400">Belum ada butir soal di kuis ini.</p>
-                  <button
-                    type="button"
-                    onClick={handleOpenNewQuestion}
-                    className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold inline-flex items-center gap-2 min-h-[44px] shadow-sm active:scale-95 btn-press"
-                  >
-                    <Plus className="w-4 h-4" /> Buat Butir Soal Pertama
-                  </button>
+                <div className="text-center py-12 px-4 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 text-slate-400 space-y-4">
+                  <div className="space-y-1">
+                    <p className="text-sm font-bold text-slate-700 dark:text-slate-300">Belum ada butir soal di kuis ini.</p>
+                    <p className="text-xs text-slate-400">Pilih salah satu cara di bawah untuk mulai menambahkan butir soal:</p>
+                  </div>
+                  <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={handleOpenNewQuestion}
+                      className="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold inline-flex items-center gap-2 min-h-[44px] shadow-sm active:scale-95 btn-press"
+                    >
+                      <Plus className="w-4 h-4" /> Buat Soal Manual
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        setIsAiModalOpen(true);
+                      }}
+                      className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold inline-flex items-center gap-2 min-h-[44px] shadow-sm active:scale-95 btn-press"
+                    >
+                      <Sparkles className="w-4 h-4" /> AI Bantu Soal
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        setIsQuestionBankModalOpen(true);
+                      }}
+                      className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold inline-flex items-center gap-2 min-h-[44px] shadow-sm active:scale-95 btn-press"
+                    >
+                      <BookOpen className="w-4 h-4" /> Ambil dari Bank Soal
+                    </button>
+                  </div>
                 </div>
               ) : (
                 questions.map((q, idx) => {
@@ -3140,16 +3210,40 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                 })
               )}
 
-              {/* Quick Add Question Button below question cards */}
+              {/* Quick Add Buttons below question cards */}
               {questions.length > 0 && (
-                <div className="pt-1">
+                <div className="pt-2 grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                   <button
                     type="button"
                     onClick={handleOpenNewQuestion}
-                    className="w-full py-3.5 px-4 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-indigo-400 dark:hover:border-indigo-500 bg-white/60 dark:bg-slate-900/60 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/20 text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all min-h-[48px] active:scale-99 shadow-2xs group"
+                    className="py-3 px-4 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-indigo-400 dark:hover:border-indigo-500 bg-white/60 dark:bg-slate-900/60 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/20 text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all min-h-[48px] active:scale-99 shadow-2xs group"
                   >
                     <Plus className="w-4 h-4 text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors stroke-[2.5]" />
-                    <span>Tambah Butir Soal Baru</span>
+                    <span>Buat Soal Manual</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setIsAiModalOpen(true);
+                    }}
+                    className="py-3 px-4 rounded-2xl border-2 border-dashed border-purple-200 dark:border-purple-900 hover:border-purple-400 dark:hover:border-purple-500 bg-purple-50/40 dark:bg-purple-950/20 hover:bg-purple-50 dark:hover:bg-purple-950/40 text-purple-700 dark:text-purple-300 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all min-h-[48px] active:scale-99 shadow-2xs group"
+                  >
+                    <Sparkles className="w-4 h-4 text-purple-500 group-hover:scale-110 transition-transform" />
+                    <span>AI Buat Soal</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setIsQuestionBankModalOpen(true);
+                    }}
+                    className="py-3 px-4 rounded-2xl border-2 border-dashed border-emerald-200 dark:border-emerald-900 hover:border-emerald-400 dark:hover:border-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/20 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all min-h-[48px] active:scale-99 shadow-2xs group"
+                  >
+                    <BookOpen className="w-4 h-4 text-emerald-500 group-hover:scale-110 transition-transform" />
+                    <span>Ambil dari Bank Soal</span>
                   </button>
                 </div>
               )}
