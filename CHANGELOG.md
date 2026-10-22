@@ -6,6 +6,19 @@ Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen in
 
 
 
+## [2.5.21] - 2026-10-22
+### Penonaktifan Otomatisasi Deploy Vercel & GitHub Actions untuk Fokus Pengembangan Lokal (Rule 15 & Rule 16)
+
+#### 1. Konfigurasi Penonaktifan Deploy Vercel (`vercel.json`)
+- Menonaktifkan otomatisasi deploy Git (`git.deploymentEnabled: false`).
+- Mengaktifkan pengabaian build otomatis Vercel melalui `ignoreCommand: "exit 0"` sehingga Vercel langsung membatalkan build ketika ada pembaruan di repositori.
+
+#### 2. Penonaktifan Otomatisasi Alur Kerja GitHub Actions (`.github/workflows/deploy.yml`)
+- Mematikan pemicu event `push: main`, menyisakan hanya opsi manual `workflow_dispatch`.
+
+#### 3. Pembaruan Cache PWA Service Worker (`public/sw.js`)
+- Menaikkan versi cache ke `kuis-sd-seru-v2.5.21`.
+
 ## [2.5.20] - 2026-10-22
 ### Redesain Ketegasan Visual, Kontras Border, Pembatas & Keterbacaan Dasbor Guru (Rule 1, Rule 2, Rule 4 & Rule 15)
 
