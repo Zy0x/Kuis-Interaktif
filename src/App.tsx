@@ -906,6 +906,7 @@ export const App: React.FC = () => {
       {currentScreen === 'creator' && teacher && (
         <React.Suspense fallback={<ScreenLoadingFallback message="Menyiapkan studio pembuatan kuis..." isDark={isDark} />}>
           <QuizCreator
+            key={editingQuiz ? `edit-${editingQuiz.id}` : `new-${creatorInitialMode}`}
             editingQuiz={editingQuiz}
             initialMode={creatorInitialMode}
             onBack={() => {

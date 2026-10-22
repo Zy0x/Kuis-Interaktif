@@ -6,6 +6,25 @@ Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen in
 
 
 
+## [2.5.24] - 2026-10-22
+### Audit Komprehensif Edge Cases & Penutupan Celah Sistem Database, Auth, dan Simulasi Kuis (Rule 1, Rule 2, Rule 9, Rule 11, Rule 15 & Rule 16)
+
+#### 1. Resolusi Celah Constraint Database Multi-Jenjang & Fleksibilitas Skor
+- **Pelonggaran Batasan Tingkat Kelas Siswa (`profiles_player`)**:
+  - Memperbarui skema dan migrasi database (`docs/setup.sql`) dari batas jenjang kelas 1–6 menjadi rentang kelas 1–12 (`CHECK (grade_level BETWEEN 1 AND 12)`).
+  - Mencegah penolakan database saat pendaftaran siswa jenjang SMP (kelas 7–9) dan SMA (kelas 10–12).
+  - Menyertakan sanitasi proteksi otomatis pada fungsi pendaftaran dan pembaruan profil siswa (`signUpStudent` & `updateStudentProfile`) di [`supabaseClient.ts`](file:///e:/Data/GitHub/Kuis%20Interaktif/src/lib/supabaseClient.ts).
+- **Fleksibilitas Nilai Skor Kuis (`quiz_attempts`)**:
+  - Mengatasi potensi penolakan database ketika kuis memiliki bobot butir soal kustom di mana total akumulasi skor melebihi 100 poin (misal 150 atau 200 poin).
+  - Memperbarui batasan skema menjadi `CHECK (score >= 0)` dan menerapkan sanitasi nilai aman pada payload penyimpanan hasil pengerjaan kuis dan rekapitulasi sesi guru.
+
+#### 2. Isolasi State Studio Kuis & Proteksi Simulasi Pratinjau
+- **Isolasi Penuh State Studio Antar-Kuis**:
+  - Menambahkan pengikatan `key` dinamis berbasis identitas kuis dan mode pembuatan pada [`App.tsx`](file:///e:/Data/GitHub/Kuis%20Interaktif/src/App.tsx) (`key={editingQuiz ? ... : ...}`).
+  - Menjamin peramban mereset seluruh pohon status secara bersih tanpa ada data draf atau input yang bocor saat berpindah antar-kuis yang diedit.
+- **Proteksi Simulasi Pratinjau Soal Kosong**:
+  - Menambahkan pengecekan pengaman pada tombol simulasi siswa di Langkah 3 Studio Kuis (`QuizCreator.tsx`) untuk mencegah inisialisasi arena kuis saat bank soal masih belum terisi butir soal.
+
 ## [2.5.23] - 2026-10-22
 ### Pemulihan Pipeline Deployment Otomatis & Perbaikan Menyeluruh Studio Pembuatan Kuis Guru dan Admin (Rule 1, Rule 2, Rule 9, Rule 11, Rule 15 & Rule 16)
 

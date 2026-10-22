@@ -4238,6 +4238,10 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                 type="button"
                 onClick={() => {
                   playClick();
+                  if (questions.length === 0) {
+                    showToast('Tambahkan minimal 1 butir soal untuk mencoba simulasi kuis.');
+                    return;
+                  }
                   setPreviewArenaConfig({ initialIndex: 0 });
                 }}
                 className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-3 px-5 rounded-2xl shadow-sm flex items-center justify-center gap-2 min-h-[46px] btn-press text-xs sm:text-sm transition-all"

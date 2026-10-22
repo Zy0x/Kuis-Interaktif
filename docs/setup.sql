@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS public.profiles_player (
     email VARCHAR(255),
     nickname VARCHAR(64) NOT NULL DEFAULT 'Saya',
     avatar_id VARCHAR(32) NOT NULL DEFAULT 'lion',
-    grade_level SMALLINT CHECK (grade_level BETWEEN 1 AND 6),
+    grade_level SMALLINT CHECK (grade_level BETWEEN 1 AND 12),
     total_score INT NOT NULL DEFAULT 0,
     quizzes_completed INT NOT NULL DEFAULT 0,
     stars_earned INT NOT NULL DEFAULT 0,
@@ -115,7 +115,7 @@ ALTER TABLE public.quiz_questions ADD COLUMN IF NOT EXISTS matching_pairs JSONB;
 ALTER TABLE public.quiz_questions ADD COLUMN IF NOT EXISTS custom_duration_sec SMALLINT;
 ALTER TABLE public.quiz_questions ADD COLUMN IF NOT EXISTS points SMALLINT DEFAULT 10;
 
--- Migrasi Pelonggaran Constraint Kuises (v2.5.23) untuk Jenjang SMP/SMA, Mode Santai & Custom Cover:
+-- Migrasi Pelonggaran Constraint Kuises (v2.5.23 - v2.5.24) untuk Jenjang SMP/SMA, Mode Santai, Custom Cover & Fleksibilitas Skor:
 ALTER TABLE public.quizzes DROP CONSTRAINT IF EXISTS quizzes_target_grade_check;
 ALTER TABLE public.quizzes ADD CONSTRAINT quizzes_target_grade_check CHECK (target_grade BETWEEN 1 AND 12);
 
@@ -123,6 +123,12 @@ ALTER TABLE public.quizzes DROP CONSTRAINT IF EXISTS quizzes_duration_per_questi
 ALTER TABLE public.quizzes ADD CONSTRAINT quizzes_duration_per_question_sec_check CHECK (duration_per_question_sec >= 0);
 
 ALTER TABLE public.quizzes ALTER COLUMN cover_emoji TYPE TEXT;
+
+ALTER TABLE public.profiles_player DROP CONSTRAINT IF EXISTS profiles_player_grade_level_check;
+ALTER TABLE public.profiles_player ADD CONSTRAINT profiles_player_grade_level_check CHECK (grade_level BETWEEN 1 AND 12);
+
+ALTER TABLE public.quiz_attempts DROP CONSTRAINT IF EXISTS quiz_attempts_score_check;
+ALTER TABLE public.quiz_attempts ADD CONSTRAINT quiz_attempts_score_check CHECK (score >= 0);
 
 -- ==========================================================
 -- 6. TABEL PERCOBAAN KUIS & SKOR (QUIZ_ATTEMPTS)
@@ -133,7 +139,7 @@ CREATE TABLE IF NOT EXISTS public.quiz_attempts (
     player_id TEXT,
     player_nickname VARCHAR(64) NOT NULL DEFAULT 'Siswa SD',
     player_avatar VARCHAR(32) NOT NULL DEFAULT 'lion',
-    score SMALLINT NOT NULL CHECK (score BETWEEN 0 AND 100),
+    score INT NOT NULL CHECK (score >= 0),
     stars SMALLINT NOT NULL CHECK (stars BETWEEN 0 AND 3),
     total_questions SMALLINT NOT NULL,
     correct_answers SMALLINT NOT NULL,

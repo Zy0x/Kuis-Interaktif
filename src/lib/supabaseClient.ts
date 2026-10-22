@@ -1150,7 +1150,7 @@ export const DataManager = {
             email: updated.email,
             nickname: updated.nickname,
             avatar_id: updated.avatarId || current.avatarId || 'lion',
-            grade_level: updated.grade || current.grade || 3,
+            grade_level: Math.min(Math.max(Number(updated.grade || current.grade || 3), 1), 6),
             stars_earned: updated.starsEarned ?? current.starsEarned ?? 0,
             total_score: updated.totalScore ?? current.totalScore ?? 0,
             quizzes_completed: updated.quizzesCompleted ?? current.quizzesCompleted ?? 0,
@@ -1248,7 +1248,7 @@ export const DataManager = {
           options: {
             data: {
               nickname,
-              grade_level: gradeLevel,
+              grade_level: Math.min(Math.max(Number(gradeLevel) || 1, 1), 6),
             },
           },
         });
@@ -1412,10 +1412,12 @@ export const DataManager = {
       console.warn('Local storage save error:', e);
     }
 
+    const safeScore = Math.min(100, Math.max(0, Math.round(Number(result.score) || 0)));
+    const safeStars = Math.min(3, Math.max(0, Math.round(Number(result.stars) || 0)));
     const attemptPayload: Record<string, any> = {
       quiz_id: result.quizId,
-      score: result.score,
-      stars: result.stars,
+      score: safeScore,
+      stars: safeStars,
       total_questions: result.totalCount,
       correct_answers: result.correctCount,
       time_spent_sec: result.timeSpentSec,
@@ -3802,11 +3804,11 @@ export const DataManager = {
               quiz_id: finishedSession.quizId,
               player_nickname: p.name,
               player_avatar: p.avatarId,
-              score: p.score ?? 0,
-              stars: p.stars ?? 0,
+              score: Math.min(100, Math.max(0, Math.round(Number(p.score) || 0))),
+              stars: Math.min(3, Math.max(0, Math.round(Number(p.stars) || 0))),
               total_questions: finishedSession.totalQuestions || 1,
-              correct_answers: p.correctCount ?? 0,
-              time_spent_sec: p.timeSpentSec ?? 0,
+              correct_answers: Math.min(finishedSession.totalQuestions || 1, Math.max(0, Number(p.correctCount) || 0)),
+              time_spent_sec: Math.max(0, Number(p.timeSpentSec) || 0),
               created_at: finishedSession.endedAt || new Date().toISOString(),
             }));
 
