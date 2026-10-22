@@ -6,6 +6,22 @@ Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen in
 
 
 
+## [2.5.25] - 2026-10-22
+### Sinkronisasi Deployment Produksi Vercel & Verifikasi Sukses Penerbitan Kuis AI Mode Santai (Rule 1, Rule 2, Rule 9, Rule 15 & Rule 16)
+
+#### 1. Optimalisasi Integrasi Pipeline Vercel Production
+- **Konfigurasi Git Deployment Eksplisit (`vercel.json`)**:
+  - Menetapkan `ignoreCommand: "exit 1"` dan `git.deploymentEnabled.main: true` untuk memastikan Vercel selalu mengeksekusi build otomatis di setiap commit Git tanpa dibatalkan oleh perintah *Ignored Build Step* lama di pengaturan proyek.
+  - Memastikan rilis produksi langsung aktif dan selaras dengan perubahan kode terbaru.
+
+#### 2. Verifikasi Sukses Penerbitan Kuis AI & Mode Santai (Bebas Waktu / 0d)
+- **Validasi Kompatibilitas Durasi Nol Detik**:
+  - Memvalidasi secara langsung pada lingkungan live produksi Vercel (`https://kuis-interaktif-plum.vercel.app`) bahwa pembuatan kuis via Generator AI dengan pengaturan durasi 0 detik (Bebas Waktu) dan mode *Santai* berhasil disimpan 100% tanpa hambatan.
+  - Alur penerbitan kuis langsung menyimpan data ke katalog, mengalihkan pengguna ke Dasbor Guru, dan menampilkan kartu kuis aktif dengan PIN secara instan.
+
+#### 3. Pembaruan Cache PWA Service Worker
+- Menaikkan versi cache PWA ke `kuis-sd-seru-v2.5.25` pada `public/sw.js` untuk pembaruan instan bagi pengguna mobile dan desktop.
+
 ## [2.5.24] - 2026-10-22
 ### Audit Komprehensif Edge Cases & Penutupan Celah Sistem Database, Auth, dan Simulasi Kuis (Rule 1, Rule 2, Rule 9, Rule 11, Rule 15 & Rule 16)
 
