@@ -190,7 +190,7 @@ export const StudentWaitingRoom: React.FC<StudentWaitingRoomProps> = ({
       <QuizizzReactionOverlay sessionId={session.id} reactions={session.reactions} />
 
       {/* Top Header - Fluid Max-W 2000px */}
-      <header className="w-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-3 sm:px-6 md:px-8 lg:px-12 py-2.5 sm:py-3 sticky top-0 z-30 shadow-sm">
+      <header className="w-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-300 dark:border-slate-800 px-3 sm:px-6 md:px-8 lg:px-12 py-2.5 sm:py-3 sticky top-0 z-30 shadow-xs">
         <div className="w-full max-w-[2000px] mx-auto flex items-center justify-between gap-2 sm:gap-4">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <button
@@ -208,11 +208,11 @@ export const StudentWaitingRoom: React.FC<StudentWaitingRoomProps> = ({
             </button>
 
             {/* Breadcrumb Info on Tablet / Desktop */}
-            <div className="hidden sm:flex items-center gap-2 min-w-0 pl-1 border-l border-slate-200 dark:border-slate-800">
+            <div className="hidden sm:flex items-center gap-2 min-w-0 pl-1 border-l border-slate-300 dark:border-slate-800">
               <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate max-w-[180px] md:max-w-xs lg:max-w-md">
                 {quiz.title}
               </span>
-              <span className="hidden md:inline-flex px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 shrink-0">
+              <span className="hidden md:inline-flex px-2 py-0.5 rounded-full text-[10px] font-black uppercase bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 shrink-0">
                 Ruang Tunggu Kelas
               </span>
             </div>
@@ -226,10 +226,10 @@ export const StudentWaitingRoom: React.FC<StudentWaitingRoomProps> = ({
                 playClick();
                 toggleAntiReaction();
               }}
-              className={`p-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 min-h-[44px] min-w-[44px] justify-center border btn-press ${
+              className={`p-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 min-h-[44px] min-w-[44px] justify-center border shadow-2xs btn-press ${
                 isAntiReact
                   ? 'bg-rose-50 dark:bg-rose-950/60 border-rose-300 dark:border-rose-800 text-rose-600 dark:text-rose-400'
-                  : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-750'
+                  : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-750'
               }`}
               title={isAntiReact ? 'Layar Bersih: Animasi emoji sedang disembunyikan. Ketuk untuk menampilkan kembali.' : 'Sembunyikan animasi emoji agar layar tenang dan fokus'}
               aria-label={isAntiReact ? 'Tampilkan Emoji' : 'Sembunyikan Emoji'}
@@ -261,7 +261,7 @@ export const StudentWaitingRoom: React.FC<StudentWaitingRoomProps> = ({
       <main className="flex-1 w-full max-w-[2000px] mx-auto px-3 sm:px-6 md:px-8 lg:px-12 py-3.5 sm:py-6 flex flex-col gap-4 sm:gap-6 justify-start">
         
         {/* Banner Status Menunggu Guru - Responsive Hero Layout */}
-        <div className="bg-white dark:bg-slate-900 rounded-3xl p-4 sm:p-6 lg:p-7 border border-slate-200/90 dark:border-slate-800 shadow-pop animate-fade-in relative overflow-hidden">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-4 sm:p-6 lg:p-7 border border-slate-300 dark:border-slate-700/80 shadow-md animate-fade-in relative overflow-hidden">
           {/* Animated Background Pulse Glow */}
           <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-96 h-96 bg-blue-500/10 dark:bg-blue-500/20 rounded-full blur-3xl pointer-events-none" />
 
@@ -270,7 +270,7 @@ export const StudentWaitingRoom: React.FC<StudentWaitingRoomProps> = ({
             <div className="flex flex-col sm:flex-row items-center gap-3.5 sm:gap-5 text-center sm:text-left">
               {/* User Mascot Avatar Display */}
               <div className="relative shrink-0 select-none">
-                <div className="w-16 h-16 sm:w-20 sm:h-20 lg:w-22 lg:h-22 rounded-3xl bg-blue-50 dark:bg-blue-900/40 border-2 border-blue-300 dark:border-blue-700 flex items-center justify-center text-3xl sm:text-4xl lg:text-5xl shadow-md animate-bounce">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 lg:w-22 lg:h-22 rounded-3xl bg-blue-50 dark:bg-blue-900/40 border-2 border-blue-400 dark:border-blue-700 flex items-center justify-center text-3xl sm:text-4xl lg:text-5xl shadow-md animate-bounce">
                   {myAvatar}
                 </div>
                 <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-emerald-500 text-white text-[10px] font-black uppercase tracking-wider shadow-xs whitespace-nowrap">
@@ -288,10 +288,10 @@ export const StudentWaitingRoom: React.FC<StudentWaitingRoomProps> = ({
                   </div>
                 )}
                 <div className="flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2 flex-wrap text-xs">
-                  <span className="px-2.5 py-1 rounded-xl bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 font-bold">
+                  <span className="px-2.5 py-1 rounded-xl bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 font-bold border border-blue-200 dark:border-blue-800">
                     {quiz.title}
                   </span>
-                  <span className="px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold">
+                  <span className="px-2.5 py-1 rounded-xl bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-semibold border border-slate-300 dark:border-slate-700 shadow-2xs">
                     Kelas {quiz.grade}
                   </span>
                   <span className="px-2.5 py-1 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 font-semibold">
@@ -302,14 +302,14 @@ export const StudentWaitingRoom: React.FC<StudentWaitingRoomProps> = ({
             </div>
 
             {/* Right Wing: Waiting Status Badge & Reactions Row */}
-            <div className="flex flex-col items-center lg:items-end gap-2.5 sm:gap-3 shrink-0 pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-100 dark:border-slate-800">
+            <div className="flex flex-col items-center lg:items-end gap-2.5 sm:gap-3 shrink-0 pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-200 dark:border-slate-800">
               {/* Waiting Status Indicator with Pulse */}
               <div className="inline-flex items-center gap-2.5 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-amber-900 dark:text-amber-200 text-xs sm:text-sm font-black shadow-xs animate-pulse">
                 <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping shrink-0" />
                 <span>Menunggu Bapak/Ibu Guru Memulai Kuis di Depan Kelas...</span>
               </div>
 
-              <p className="text-[11px] sm:text-xs text-slate-400 dark:text-slate-500 text-center lg:text-right max-w-md">
+              <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 text-center lg:text-right max-w-md font-medium">
                 Layar perangkatmu akan otomatis menyajikan soal pertama secara serentak begitu Guru menekan tombol mulai.
               </p>
 
@@ -349,19 +349,19 @@ export const StudentWaitingRoom: React.FC<StudentWaitingRoomProps> = ({
         {/* Galeri Teman Sekelas (Showcase Arena) - Lebar Penuh, Rapi, & Responsif */}
         <section 
           aria-labelledby="participants-heading"
-          className="bg-white dark:bg-slate-900 rounded-3xl p-4 sm:p-6 lg:p-7 border border-slate-200/90 dark:border-slate-800 shadow-sm flex flex-col flex-1 min-h-[380px] sm:min-h-[440px]"
+          className="bg-white dark:bg-slate-900 rounded-3xl p-4 sm:p-6 lg:p-7 border border-slate-300 dark:border-slate-700/80 shadow-xs flex flex-col flex-1 min-h-[380px] sm:min-h-[440px]"
         >
           {/* Header Galeri */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200 dark:border-slate-800">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-2xl bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-300 flex items-center justify-center shrink-0 shadow-2xs">
+              <div className="w-9 h-9 rounded-2xl bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-300 flex items-center justify-center shrink-0 shadow-2xs border border-blue-200 dark:border-blue-800">
                 <Users className="w-5 h-5" />
               </div>
               <div>
-                <h2 id="participants-heading" className="text-sm sm:text-base font-black text-slate-800 dark:text-slate-100 tracking-tight">
+                <h2 id="participants-heading" className="text-sm sm:text-base font-black text-slate-900 dark:text-white tracking-tight">
                   Teman Sekelas yang Sudah Bergabung
                 </h2>
-                <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold">
                   Semua peserta yang terhubung di ruang tunggu ini akan bersaing secara sehat
                 </p>
               </div>
@@ -403,8 +403,8 @@ export const StudentWaitingRoom: React.FC<StudentWaitingRoomProps> = ({
                       key={p.id}
                       className={`relative p-3 sm:p-3.5 rounded-2xl flex flex-col items-center text-center gap-2 border transition-all duration-200 hover:-translate-y-0.5 shadow-2xs ${
                         isMe
-                          ? 'bg-gradient-to-b from-blue-50/90 to-indigo-50/50 dark:from-blue-950/60 dark:to-slate-900 border-blue-300 dark:border-blue-700 ring-2 ring-blue-400/40 shadow-blue-500/10'
-                          : 'bg-white dark:bg-slate-800/60 border-slate-200/80 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50/80 dark:hover:bg-slate-800'
+                          ? 'bg-gradient-to-b from-blue-50/90 to-indigo-50/50 dark:from-blue-950/60 dark:to-slate-900 border-blue-400 dark:border-blue-700 ring-2 ring-blue-400/40 shadow-blue-500/10'
+                          : 'bg-white dark:bg-slate-800/80 border-slate-300 dark:border-slate-700/80 hover:border-slate-400 dark:hover:border-slate-600 hover:bg-slate-50/80 dark:hover:bg-slate-800'
                       }`}
                     >
                       {/* Badge "Kamu" jika profil diri sendiri */}
@@ -417,8 +417,8 @@ export const StudentWaitingRoom: React.FC<StudentWaitingRoomProps> = ({
                       {/* Avatar Peserta */}
                       <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center text-2xl sm:text-3xl shadow-sm select-none border ${
                         isMe 
-                          ? 'bg-white dark:bg-slate-800 border-blue-200 dark:border-blue-800' 
-                          : 'bg-slate-50 dark:bg-slate-800 border-slate-200/80 dark:border-slate-700'
+                          ? 'bg-white dark:bg-slate-800 border-blue-300 dark:border-blue-700' 
+                          : 'bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-700'
                       }`}>
                         {pAvatar}
                       </div>

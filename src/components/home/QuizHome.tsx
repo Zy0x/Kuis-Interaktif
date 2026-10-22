@@ -408,15 +408,15 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
   const getSubjectBadge = (subj: Subject) => {
     switch (subj) {
       case 'Matematika':
-        return 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800/80';
+        return 'bg-blue-50 text-blue-800 border-blue-300 dark:bg-blue-950/60 dark:text-blue-200 dark:border-blue-800';
       case 'IPA':
-        return 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800/80';
+        return 'bg-emerald-50 text-emerald-800 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-200 dark:border-emerald-800';
       case 'Bahasa Indonesia':
-        return 'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800/80';
+        return 'bg-purple-50 text-purple-800 border-purple-300 dark:bg-purple-950/60 dark:text-purple-200 dark:border-purple-800';
       case 'Pendidikan Pancasila':
-        return 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/50 dark:text-purple-300 dark:border-purple-800/80';
+        return 'bg-rose-50 text-rose-800 border-rose-300 dark:bg-rose-950/60 dark:text-rose-200 dark:border-rose-800';
       default:
-        return 'bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700';
+        return 'bg-slate-100 text-slate-800 border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700';
     }
   };
 
@@ -610,7 +610,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
       <main className="w-full max-w-[2000px] mx-auto px-3 sm:px-8 lg:px-12 pt-4 sm:pt-7 space-y-5 sm:space-y-6 flex-1">
         
         {/* Quick PIN Entry Bar for Students */}
-        <div className="w-full bg-white dark:bg-slate-900 rounded-2xl p-3 sm:p-4 border border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
+        <div className="w-full bg-white dark:bg-slate-900 rounded-2xl p-3.5 sm:p-4 border border-slate-300 dark:border-slate-700/80 shadow-xs transition-colors">
           <form onSubmit={handlePinSubmit} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3">
             <div className="flex items-center gap-2 text-slate-800 dark:text-slate-200 font-bold text-xs sm:text-sm whitespace-nowrap self-start sm:self-center flex-shrink-0">
               <div className="w-8 h-8 rounded-xl bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 flex items-center justify-center flex-shrink-0">
@@ -860,7 +860,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
               return (
                 <div
                   key={quiz.id}
-                  className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200/90 dark:border-slate-800 shadow-card hover:shadow-card-hover hover:border-blue-300 dark:hover:border-blue-500/50 transition-all flex flex-col justify-between"
+                  className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-300 dark:border-slate-700/80 shadow-xs hover:shadow-md hover:border-blue-500 dark:hover:border-blue-500 transition-all flex flex-col justify-between"
                 >
                   <div>
                     {/* Header Row: Emoji & Subject Badge on Left, Grade & Guru Pill on Right */}
@@ -868,7 +868,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                       <div className="flex items-center gap-2.5 min-w-0 flex-1">
                         <QuizCoverDisplay
                           cover={quiz.coverEmoji}
-                          className="w-11 h-11 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 flex items-center justify-center text-2xl select-none flex-shrink-0 shadow-xs overflow-hidden"
+                          className="w-11 h-11 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-2xl select-none flex-shrink-0 shadow-2xs border border-slate-300 dark:border-slate-700 overflow-hidden"
                         />
                         <div className="min-w-0 flex-1">
                           <span
@@ -886,25 +886,25 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                             {quiz.creatorName?.includes('Master') ? 'Admin' : 'Guru'}
                           </span>
                         )}
-                        <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700 font-bold text-xs tracking-tight whitespace-nowrap">
+                        <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 font-bold text-xs tracking-tight whitespace-nowrap">
                           Kelas {quiz.grade} {quiz.educationLevel || (quiz.grade >= 10 ? 'SMA' : quiz.grade >= 7 ? 'SMP' : 'SD')}
                         </span>
                       </div>
                     </div>
 
                     {/* Title */}
-                    <h4 className="text-base font-bold text-slate-900 dark:text-white leading-snug break-words line-clamp-2 mb-1.5">
+                    <h4 className="text-base font-extrabold text-slate-900 dark:text-white leading-snug break-words line-clamp-2 mb-1.5">
                       {quiz.title}
                     </h4>
 
                     {/* Description */}
-                    <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed mb-4">
+                    <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 font-medium line-clamp-2 leading-relaxed mb-4">
                       {quiz.description}
                     </p>
                   </div>
 
                   {/* Footer Meta & Action */}
-                  <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-3">
+                  <div className="pt-3 border-t border-slate-200 dark:border-slate-800 space-y-3">
                     <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-medium">
                       <span className="flex items-center gap-1">
                         <HelpCircle className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" /> {quiz.questions?.length || 0} Soal
@@ -937,7 +937,7 @@ export const QuizHome: React.FC<QuizHomeProps> = ({
                             playClick();
                             setSelectedQuizForSettings(quiz);
                           }}
-                          className="p-2.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 min-h-[46px] min-w-[46px] flex items-center justify-center transition-colors"
+                          className="p-2.5 text-slate-700 hover:text-slate-900 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-750 rounded-xl border border-slate-300 dark:border-slate-700 min-h-[46px] min-w-[46px] flex items-center justify-center transition-colors shadow-2xs"
                           title="Pengaturan Kuis"
                           aria-label={`Pengaturan kuis ${quiz.title}`}
                         >

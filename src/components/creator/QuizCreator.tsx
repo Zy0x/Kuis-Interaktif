@@ -1494,7 +1494,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col transition-colors duration-200">
       {/* App Header (Sticky Top Bar & Action Hub) */}
-      <header className="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-xs">
+      <header className="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-300 dark:border-slate-800 shadow-xs">
         <div className="max-w-[2000px] mx-auto px-3 xs:px-4 sm:px-8 lg:px-12 h-14 sm:h-16 flex items-center justify-between gap-3">
           
           {/* Header Left: Back Button + Title */}
@@ -1691,7 +1691,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
 
         {/* Sub-Panel Ramping: Konteks & Navigasi Butir Soal (Tier 2) */}
         {isQuestionEditorActive && (
-          <div className="border-t border-slate-200/80 dark:border-slate-800/80 bg-slate-50/95 dark:bg-slate-850/95 backdrop-blur-xs">
+          <div className="border-t border-slate-300 dark:border-slate-800 bg-slate-50/95 dark:bg-slate-850/95 backdrop-blur-xs">
             <div className="max-w-[2000px] mx-auto px-3 xs:px-4 sm:px-8 lg:px-12 py-2 flex items-center justify-between gap-2">
               
               {/* Sisi Kiri: Status & Nomor Butir Soal */}
@@ -1699,7 +1699,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                 <span className="inline-flex items-center px-2.5 py-1 rounded-xl text-xs font-black bg-blue-600 text-white shadow-xs shrink-0">
                   Soal #{currentQuestionNumber}
                 </span>
-                <span className="text-xs font-bold text-slate-600 dark:text-slate-300 truncate">
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate">
                   {editingQuestionId && currentEditingIndex !== -1
                     ? `dari ${questions.length} butir`
                     : 'Butir soal baru'}
@@ -1713,7 +1713,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                     type="button"
                     onClick={() => handleNavigateQuestion('prev')}
                     disabled={currentEditingIndex <= 0}
-                    className="px-2.5 sm:px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center justify-center gap-1 disabled:opacity-30 disabled:pointer-events-none transition-all shadow-2xs active:scale-95 btn-press min-h-[44px] min-w-[44px]"
+                    className="px-2.5 sm:px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 text-slate-750 dark:text-slate-200 text-xs font-bold flex items-center justify-center gap-1 disabled:opacity-30 disabled:pointer-events-none transition-all shadow-2xs active:scale-95 btn-press min-h-[44px] min-w-[44px]"
                     title="Beralih ke Soal Sebelumnya (Konfirmasi jika ada perubahan)"
                     aria-label="Soal Sebelumnya"
                   >
@@ -1727,7 +1727,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                       playClick();
                       setShowQuestionJumpModal(true);
                     }}
-                    className="px-2.5 sm:px-3 py-1 text-xs font-extrabold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-slate-750 hover:border-blue-400 dark:hover:border-blue-500 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xs shrink-0 min-h-[44px] flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95 btn-press group"
+                    className="px-2.5 sm:px-3 py-1 text-xs font-extrabold text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-slate-750 hover:border-blue-400 dark:hover:border-blue-500 rounded-xl border border-slate-300 dark:border-slate-700 shadow-2xs shrink-0 min-h-[44px] flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95 btn-press group"
                     title="Ketuk untuk melihat daftar nomor soal dan melompat langsung"
                     aria-label="Pilih nomor soal untuk melompat"
                   >
@@ -1739,7 +1739,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                     type="button"
                     onClick={() => handleNavigateQuestion('next')}
                     disabled={currentEditingIndex >= questions.length - 1}
-                    className="px-2.5 sm:px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 text-slate-700 dark:text-slate-200 text-xs font-bold flex items-center justify-center gap-1 disabled:opacity-30 disabled:pointer-events-none transition-all shadow-2xs active:scale-95 btn-press min-h-[44px] min-w-[44px]"
+                    className="px-2.5 sm:px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 text-slate-750 dark:text-slate-200 text-xs font-bold flex items-center justify-center gap-1 disabled:opacity-30 disabled:pointer-events-none transition-all shadow-2xs active:scale-95 btn-press min-h-[44px] min-w-[44px]"
                     title="Beralih ke Soal Berikutnya (Konfirmasi jika ada perubahan)"
                     aria-label="Soal Berikutnya"
                   >
@@ -2002,7 +2002,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
       {/* Reset Confirmation Modal */}
       {showResetConfirm && (
         <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 max-w-sm w-full border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 max-w-sm w-full border border-slate-300 dark:border-slate-700/80 shadow-2xl space-y-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-rose-100 dark:bg-rose-950/50 flex items-center justify-center text-rose-600 dark:text-rose-400 shrink-0">
                 <RotateCcw className="w-5 h-5" />
@@ -2012,7 +2012,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                 <p className="text-xs text-slate-500 dark:text-slate-400">Seluruh data judul dan butir soal yang belum disimpan akan dihapus permanen.</p>
               </div>
             </div>
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
               <button
                 type="button"
                 onClick={() => setShowResetConfirm(false)}
@@ -2036,7 +2036,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
       {/* Modal Konfirmasi Racik Ulang dengan AI */}
       {showRacikUlangConfirm && (
         <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-6 max-w-sm w-full border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4 animate-scale-up">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-6 max-w-sm w-full border border-slate-300 dark:border-slate-700/80 shadow-2xl space-y-4 animate-scale-up">
             <div className="flex items-center gap-3">
               <div className="w-11 h-11 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0 shadow-xs">
                 <Sparkles className="w-5 h-5" />
@@ -2047,11 +2047,11 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
               </div>
             </div>
 
-            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-100 dark:border-slate-800">
+            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-200 dark:border-slate-800">
               Anda akan kembali ke tahap pemilihan topik dan format soal. Seluruh pengaturan tetap tersimpan sehingga Anda dapat menyesuaikannya sebelum membuat ulang.
             </p>
 
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
               <button
                 type="button"
                 onClick={() => setShowRacikUlangConfirm(false)}
@@ -2088,7 +2088,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
             if (e.target === e.currentTarget) setShowDistributePointsConfirm(false);
           }}
         >
-          <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-6 max-w-md w-full border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4 animate-scale-up">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-6 max-w-md w-full border border-slate-300 dark:border-slate-700/80 shadow-2xl space-y-4 animate-scale-up">
             {/* Header Dialog */}
             <div className="flex items-start gap-3.5">
               <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/50 flex items-center justify-center shrink-0 shadow-2xs">
@@ -2105,16 +2105,16 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
             </div>
 
             {/* Visual Perbandingan: Sebelum vs Sesudah */}
-            <div className="grid grid-cols-2 gap-2.5 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-800">
+            <div className="grid grid-cols-2 gap-2.5 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-300 dark:border-slate-700/80">
               <div className="space-y-0.5">
-                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
+                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
                   Bobot Saat Ini
                 </span>
                 <div className="flex items-baseline gap-1">
                   <span className="text-lg sm:text-xl font-black text-amber-600 dark:text-amber-400">
                     {totalQuizPoints}
                   </span>
-                  <span className="text-xs font-semibold text-slate-500">Poin</span>
+                  <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Poin</span>
                 </div>
                 <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 block">
                   {totalQuizPoints < 100 
@@ -2122,8 +2122,8 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
                     : `Lebih ${totalQuizPoints - 100} Poin`}
                 </span>
               </div>
-              <div className="space-y-0.5 border-l border-slate-200 dark:border-slate-700/80 pl-3">
-                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">
+              <div className="space-y-0.5 border-l border-slate-300 dark:border-slate-700/80 pl-3">
+                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
                   Target Sempurna
                 </span>
                 <div className="flex items-baseline gap-1">
@@ -2160,12 +2160,12 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
             )}
 
             {/* Catatan Penting */}
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed bg-amber-50/50 dark:bg-amber-950/20 p-2.5 rounded-xl border border-amber-200/50 dark:border-amber-900/30">
+            <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed bg-amber-50/50 dark:bg-amber-950/20 p-2.5 rounded-xl border border-amber-200 dark:border-amber-900/50">
               ⚠️ <em>Perhatian:</em> Penyesuaian ini akan menimpa seluruh bobot nilai butir soal yang telah Anda tentukan secara manual sebelumnya.
             </p>
 
             {/* Action Buttons: Stacked on mobile, touch-friendly min-h-[44px] */}
-            <div className="flex flex-col sm:flex-row-reverse items-stretch sm:items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+            <div className="flex flex-col sm:flex-row-reverse items-stretch sm:items-center gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
               {/* Primary: Ya, Bagi Rata 100 Poin */}
               <button
                 type="button"
@@ -2200,7 +2200,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
           aria-modal="true"
           aria-labelledby="unsaved-modal-title"
         >
-          <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-6 max-w-md w-full border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4 animate-scale-up">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-6 max-w-md w-full border border-slate-300 dark:border-slate-700/80 shadow-2xl space-y-4 animate-scale-up">
             <div className="flex items-start gap-3.5">
               <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 shadow-xs">
                 <AlertTriangle className="w-5 h-5 sm:w-6 sm:h-6" />
@@ -2217,7 +2217,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
               </div>
             </div>
 
-            <div className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-1.5">
+            <div className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-1.5">
               <p>
                 Anda terdeteksi telah memodifikasi butir soal ini. Simpan perubahan sebelum {
                   pendingNavigation?.type === 'prev_question'
@@ -2232,7 +2232,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
             </div>
 
             {/* Action Buttons: Stacked on mobile for easy reach, touch-friendly min-h-[44px] */}
-            <div className="flex flex-col sm:flex-row-reverse items-stretch sm:items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+            <div className="flex flex-col sm:flex-row-reverse items-stretch sm:items-center gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
               {/* Primary: Simpan & Lanjutkan */}
               <button
                 type="button"

@@ -211,10 +211,10 @@ export const UnifiedAuthModal: React.FC<UnifiedAuthModalProps> = ({
       />
 
       {/* Modal Dialog Card */}
-      <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 p-5 sm:p-7 z-10 animate-scale-up my-auto max-h-[92vh] overflow-y-auto">
+      <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-300 dark:border-slate-700/80 p-5 sm:p-7 z-10 animate-scale-up my-auto max-h-[92vh] overflow-y-auto">
         
         {/* Header with Close */}
-        <div className="flex items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+        <div className="flex items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-slate-800">
           <div>
             <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white tracking-tight">
               Masuk / Daftar Akun
@@ -237,7 +237,7 @@ export const UnifiedAuthModal: React.FC<UnifiedAuthModalProps> = ({
         </div>
 
         {/* Role Segmented Tabs (Touch-first >= 44px) */}
-        <div className="grid grid-cols-2 gap-2 mt-4 p-1.5 bg-slate-100 dark:bg-slate-800/80 rounded-2xl">
+        <div className="grid grid-cols-2 gap-2 mt-4 p-1.5 bg-slate-100 dark:bg-slate-850 rounded-2xl border border-slate-200 dark:border-slate-750">
           {/* Tab Guru */}
           <button
             type="button"
@@ -289,7 +289,7 @@ export const UnifiedAuthModal: React.FC<UnifiedAuthModalProps> = ({
         {activeTab === 'teacher' && (
           <div className="mt-4 space-y-4 animate-fade-in">
             {/* Sub-mode Switch: Masuk vs Daftar */}
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
               <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
                 {isTeacherRegister ? 'Daftar Akun Guru Baru' : 'Masuk ke Dashboard Guru'}
               </span>
@@ -439,7 +439,7 @@ export const UnifiedAuthModal: React.FC<UnifiedAuthModalProps> = ({
         {activeTab === 'student' && (
           <div className="mt-4 space-y-4 animate-fade-in">
             {/* Sub-mode Switch: Masuk vs Daftar */}
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
               <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
                 {isStudentRegister ? 'Daftar Akun Siswa Baru' : 'Masuk Akun Siswa Tersimpan'}
               </span>

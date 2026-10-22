@@ -886,7 +886,7 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
       {/* Modal / Bottom Sheet Card */}
       <div
         style={drawerStyle}
-        className="relative bg-white dark:bg-slate-900 w-full sm:max-w-xl md:max-w-2xl rounded-t-3xl sm:rounded-3xl shadow-2xl border-t sm:border border-slate-200/90 dark:border-slate-800 z-10 flex flex-col max-h-[92vh] sm:max-h-[88vh] overflow-hidden animate-spring-up"
+        className="relative bg-white dark:bg-slate-900 w-full sm:max-w-xl md:max-w-2xl rounded-t-3xl sm:rounded-3xl shadow-2xl border-t sm:border border-slate-300 dark:border-slate-800 z-10 flex flex-col max-h-[92vh] sm:max-h-[88vh] overflow-hidden animate-spring-up"
       >
         {/* Mobile Swipe Handle */}
         <div ref={handleRef} className="pt-2 sm:hidden cursor-grab active:cursor-grabbing">
@@ -896,7 +896,7 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
         {/* ======================================================== */}
         {/* MODAL HEADER (Dynamic: Step 1 vs Step 2)                 */}
         {/* ======================================================== */}
-        <div className="px-4 sm:px-6 py-3 sm:py-3.5 border-b border-slate-200/80 dark:border-slate-800 flex items-center justify-between gap-3 flex-shrink-0 bg-slate-50/70 dark:bg-slate-850/70">
+        <div className="px-4 sm:px-6 py-3 sm:py-3.5 border-b border-slate-300 dark:border-slate-800 flex items-center justify-between gap-3 flex-shrink-0 bg-slate-50/70 dark:bg-slate-850/70">
           <div className="flex items-center gap-2.5 min-w-0 flex-1">
             {currentStep === 'configure' ? (
               <div className="flex items-center gap-2 min-w-0">
@@ -967,7 +967,7 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
               <button
                 type="button"
                 onClick={() => handleSelectModeCard('teacher_led')}
-                className="w-full group p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-slate-200/90 dark:border-slate-800 hover:border-blue-500 dark:hover:border-blue-500 bg-white dark:bg-slate-850/80 hover:bg-blue-50/40 dark:hover:bg-blue-950/25 shadow-2xs hover:shadow-md transition-all cursor-pointer flex items-center justify-between gap-3 sm:gap-4 btn-press text-left min-h-[72px]"
+                className="w-full group p-4 sm:p-5 rounded-2xl sm:rounded-3xl border-2 border-slate-300 dark:border-slate-700/80 hover:border-blue-500 dark:hover:border-blue-500 bg-white dark:bg-slate-850 hover:bg-blue-50/40 dark:hover:bg-blue-950/25 shadow-xs hover:shadow-md transition-all cursor-pointer flex items-center justify-between gap-3 sm:gap-4 btn-press text-left min-h-[72px]"
                 aria-label="Pilih Mode Dipandu Guru"
               >
                 <div className="flex items-center gap-3.5 min-w-0">
@@ -997,7 +997,7 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
               <button
                 type="button"
                 onClick={() => handleSelectModeCard('self_paced')}
-                className="w-full group p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-slate-200/90 dark:border-slate-800 hover:border-indigo-500 dark:hover:border-indigo-500 bg-white dark:bg-slate-850/80 hover:bg-indigo-50/40 dark:hover:bg-indigo-950/25 shadow-2xs hover:shadow-md transition-all cursor-pointer flex items-center justify-between gap-3 sm:gap-4 btn-press text-left min-h-[72px]"
+                className="w-full group p-4 sm:p-5 rounded-2xl sm:rounded-3xl border-2 border-slate-300 dark:border-slate-700/80 hover:border-indigo-500 dark:hover:border-indigo-500 bg-white dark:bg-slate-850 hover:bg-indigo-50/40 dark:hover:bg-indigo-950/25 shadow-xs hover:shadow-md transition-all cursor-pointer flex items-center justify-between gap-3 sm:gap-4 btn-press text-left min-h-[72px]"
                 aria-label="Pilih Mode Mandiri & PR"
               >
                 <div className="flex items-center gap-3.5 min-w-0">
@@ -1033,8 +1033,8 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
           <div className="p-4 sm:p-6 overflow-y-auto space-y-4 sm:space-y-5 custom-scrollbar overscroll-contain animate-fade-in">
             
             {/* Quick PIN & Share row (Minimalist) */}
-            <div className="p-3 rounded-2xl bg-slate-50/80 dark:bg-slate-850/70 border border-slate-200/80 dark:border-slate-800 flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 bg-white dark:bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-750 shadow-2xs">
+            <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-850/70 border border-slate-300 dark:border-slate-700/80 flex items-center justify-between gap-2 shadow-2xs">
+              <div className="flex items-center gap-2 bg-white dark:bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700 shadow-2xs">
                 <span className="text-[10px] font-extrabold tracking-wider text-slate-400 uppercase">PIN</span>
                 <span className="font-black text-base text-blue-600 dark:text-blue-400 font-mono tracking-widest leading-none">
                   {currentDisplayPin}
@@ -1053,7 +1053,7 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
               <button
                 type="button"
                 onClick={handleCopyLink}
-                className="py-2.5 px-3.5 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-750 shadow-2xs flex items-center gap-2 min-h-[44px] transition-colors btn-press"
+                className="py-2.5 px-3.5 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-700 shadow-2xs flex items-center gap-2 min-h-[44px] transition-colors btn-press"
               >
                 {isCopiedLink ? (
                   <>
@@ -1091,7 +1091,7 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
                       className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all min-h-[76px] btn-press ${
                         teacherPacingSubMode === 'manual'
                           ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-500 ring-2 ring-blue-400/40 shadow-xs'
-                          : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
+                          : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-500 shadow-2xs'
                       }`}
                     >
                       <div className="flex items-center justify-between">
@@ -1259,7 +1259,7 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
                       />
 
                       {/* Daftar Sakelar Opsi: Acak Soal, Acak Opsi, Leaderboard */}
-                      <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-850 divide-y divide-slate-100 dark:divide-slate-800/80 shadow-2xs overflow-hidden">
+                      <div className="rounded-2xl border border-slate-300 dark:border-slate-700/80 bg-white dark:bg-slate-850 divide-y divide-slate-200 dark:divide-slate-800 shadow-xs overflow-hidden">
                         {/* Acak Urutan Nomor Soal */}
                         <div 
                           onClick={() => {
@@ -1718,14 +1718,14 @@ export const PlayQuizModal: React.FC<PlayQuizModalProps> = ({
         {/* MODAL FOOTER (Only for Step 2 Configuration)             */}
         {/* ======================================================== */}
         {currentStep === 'configure' && (
-          <div className="p-4 sm:p-5 border-t border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center gap-3 flex-shrink-0">
+          <div className="p-4 sm:p-5 border-t border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center gap-3 flex-shrink-0">
             <button
               type="button"
               onClick={() => {
                 playClick();
                 setCurrentStep('select_mode');
               }}
-              className="py-3 px-4 rounded-xl text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200/80 dark:border-slate-800 min-h-[48px] transition-colors btn-press"
+              className="py-3 px-4 rounded-xl text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-700 min-h-[48px] transition-colors btn-press shadow-2xs"
             >
               Ganti Mode
             </button>

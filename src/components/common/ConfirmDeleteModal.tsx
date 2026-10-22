@@ -67,7 +67,7 @@ export const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({
 
       {/* Card Content */}
       <div
-        className="relative z-10 bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-6 max-w-sm w-full shadow-pop border border-slate-200 dark:border-slate-800 text-center space-y-3.5 animate-modal-card-in overscroll-contain"
+        className="relative z-10 bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-6 max-w-sm w-full shadow-pop border border-slate-300 dark:border-slate-700/80 text-center space-y-3.5 animate-modal-card-in overscroll-contain"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Warning Icon Badge */}

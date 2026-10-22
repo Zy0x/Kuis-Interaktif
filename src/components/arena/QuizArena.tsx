@@ -1759,7 +1759,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
     <div className="fixed inset-0 z-30 w-full h-full h-[100dvh] overflow-hidden bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col justify-between select-none">
       
       {/* Top Arena Header - Pinned at top with safe-area support */}
-      <header className="w-full bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800 px-2 sm:px-6 pt-[max(env(safe-area-inset-top),0.625rem)] pb-2 sm:pb-2.5 flex-shrink-0 z-20 shadow-xs">
+      <header className="w-full bg-white dark:bg-slate-900 border-b border-slate-300 dark:border-slate-800 px-2 sm:px-6 pt-[max(env(safe-area-inset-top),0.625rem)] pb-2 sm:pb-2.5 flex-shrink-0 z-20 shadow-xs">
         <div className="w-full max-w-2xl lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl 3xl:max-w-6xl 4k:max-w-7xl mx-auto flex items-center justify-between gap-1.5 sm:gap-3">
           
           {/* Left: Exit Button & Question Info */}
@@ -2160,7 +2160,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 
       {/* Main Quiz Arena Card - Locked to Viewport with Auto-centering & Smooth Top-to-Bottom Overflow */}
       <main className="flex-1 min-h-0 w-full overflow-y-auto px-3 py-2 sm:px-6 sm:py-4 flex flex-col items-center overscroll-contain">
-        <div className="w-full max-w-2xl lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl 3xl:max-w-6xl 4k:max-w-7xl bg-white dark:bg-slate-900 rounded-3xl p-3.5 xs:p-4 sm:p-6 md:p-8 2xl:p-10 border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col gap-2.5 sm:gap-4 xl:gap-5 my-1 sm:my-auto animate-fade-in relative">
+        <div className="w-full max-w-2xl lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl 3xl:max-w-6xl 4k:max-w-7xl bg-white dark:bg-slate-900 rounded-3xl p-3.5 xs:p-4 sm:p-6 md:p-8 2xl:p-10 border border-slate-300 dark:border-slate-700/80 shadow-md flex flex-col gap-2.5 sm:gap-4 xl:gap-5 my-1 sm:my-auto animate-fade-in relative">
           
           {/* Paused Overlay Banner */}
           {isPaused && (
@@ -2516,7 +2516,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
 
               let btnStyle = isCurrentlySpeakingThisOption
                 ? 'bg-blue-50/90 dark:bg-blue-950/60 border-2 border-blue-500 dark:border-blue-400 text-blue-950 dark:text-blue-50 font-bold ring-2 ring-blue-400/40 shadow-sm transition-all duration-200'
-                : 'bg-white dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 hover:border-blue-300 dark:hover:border-blue-500/60 hover:bg-slate-50 dark:hover:bg-slate-750';
+                : 'bg-white dark:bg-slate-800/90 border-2 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 hover:border-blue-500 dark:hover:border-blue-500 hover:bg-slate-50 dark:hover:bg-slate-750 shadow-2xs';
 
               if (isAnswerConfirmed) {
                 if (showAnswersMode === 'immediate') {
@@ -2672,7 +2672,7 @@ export const QuizArena: React.FC<QuizArenaProps> = ({
       </main>
 
       {/* Bottom Footer Control */}
-      <footer className="w-full bg-white dark:bg-slate-900 border-t border-slate-200/80 dark:border-slate-800 px-3 sm:px-6 py-2.5 sm:py-3 pb-[max(env(safe-area-inset-bottom),0.625rem)] flex-shrink-0 z-20 shadow-xs">
+      <footer className="w-full bg-white dark:bg-slate-900 border-t border-slate-300 dark:border-slate-800 px-3 sm:px-6 py-2.5 sm:py-3 pb-[max(env(safe-area-inset-bottom),0.625rem)] flex-shrink-0 z-20 shadow-xs">
         <div className="w-full max-w-2xl lg:max-w-3xl xl:max-w-4xl 2xl:max-w-5xl 3xl:max-w-6xl 4k:max-w-7xl mx-auto flex items-center justify-between gap-2.5 sm:gap-4">
           
           {/* Left Secondary Navigation Controls */}

@@ -218,10 +218,10 @@ export const StudentAnswerAnalysisModal: React.FC<StudentAnswerAnalysisModalProp
       />
 
       {/* Modal Container */}
-      <div className="relative w-full max-w-3xl max-h-[92vh] flex flex-col bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-300/90 dark:border-slate-800 overflow-hidden z-10 text-slate-900 dark:text-white">
+      <div className="relative w-full max-w-3xl max-h-[92vh] flex flex-col bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-300 dark:border-slate-700/80 overflow-hidden z-10 text-slate-900 dark:text-white">
         
         {/* ================= COMPACT HEADER & SUMMARY STRIP ================= */}
-        <div className="p-3.5 sm:p-4 border-b border-slate-200/90 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900 flex-shrink-0">
+        <div className="p-3.5 sm:p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900 flex-shrink-0">
           
           {/* Baris 1: Identitas Ringkas Siswa & Tombol Tutup */}
           <div className="flex items-center justify-between gap-3">
@@ -526,7 +526,7 @@ export const StudentAnswerAnalysisModal: React.FC<StudentAnswerAnalysisModalProp
         </div>
 
         {/* ================= FOOTER ================= */}
-        <div className="p-3 sm:p-3.5 border-t border-slate-200/90 dark:border-slate-800 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 bg-slate-100/70 dark:bg-slate-900 flex-shrink-0">
+        <div className="p-3 sm:p-3.5 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 bg-slate-100/70 dark:bg-slate-900 flex-shrink-0">
           <span className="text-xs text-slate-500 dark:text-slate-400 text-center sm:text-left">
             Menampilkan <strong>{filteredQuestionList.length}</strong> dari <strong>{totalQuestions}</strong> butir soal
           </span>

@@ -484,7 +484,7 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
           </div>
 
           {/* Hub Aksi Sesi (Action Hub) - Jelas, Terstruktur & Berlabel Nyata */}
-          <div className="pt-3.5 border-t border-slate-200/90 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-2.5">
+          <div className="pt-3.5 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-2.5">
             {/* Tombol Utama: Aktifkan Kembali Kuis (Jika sesi telah selesai) */}
             {currentSession.status === 'finished' ? (
               <button
@@ -846,7 +846,7 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
             </div>
 
             {/* Filter Toolbar (Percobaan, Status Ketuntasan & Pencarian Nama/Absen) */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5 pt-3 border-t border-slate-200/90 dark:border-slate-800 print:hidden">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5 pt-3 border-t border-slate-200 dark:border-slate-800 print:hidden">
               
               {/* Filter Percobaan: Semua / Terbaik / Terakhir */}
               <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 scrollbar-none flex-shrink-0">
@@ -994,7 +994,7 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
                             triggerHaptic('light');
                             setSelectedStudentForModal(p);
                           }}
-                          className="hover:bg-blue-50/50 dark:hover:bg-slate-800/60 cursor-pointer transition-colors border-b border-slate-200/90 dark:border-slate-800/60"
+                          className="hover:bg-blue-50/50 dark:hover:bg-slate-800/60 cursor-pointer transition-colors border-b border-slate-200 dark:border-slate-800"
                         >
                           {/* Rank */}
                           <td className="py-3 px-3 text-center font-bold text-slate-500 dark:text-slate-400 tabular-nums">
@@ -1193,9 +1193,9 @@ export const QuizSessionRecapView: React.FC<QuizSessionRecapViewProps> = ({
                 return (
                   <div
                     key={q.id || idx}
-                    className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-6 border border-slate-300/80 dark:border-slate-800 shadow-xs shadow-slate-200/60 dark:shadow-none space-y-4"
+                    className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-6 border border-slate-300 dark:border-slate-700/80 shadow-xs space-y-4"
                   >
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/90 dark:border-slate-800 pb-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
                       <div className="flex items-center gap-2">
                         <span className="px-2.5 py-1 rounded-xl bg-blue-600 text-white font-black text-xs shadow-2xs">
                           Nomor {idx + 1}

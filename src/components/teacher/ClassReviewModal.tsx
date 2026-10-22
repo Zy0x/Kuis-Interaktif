@@ -95,10 +95,10 @@ export const ClassReviewModal: React.FC<ClassReviewModalProps> = ({
       role="dialog"
       aria-modal="true"
     >
-      <div className="bg-white dark:bg-slate-900 border border-slate-300/90 dark:border-slate-800 rounded-3xl w-full max-w-4xl max-h-[92vh] shadow-2xl flex flex-col overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700/80 rounded-3xl w-full max-w-4xl max-h-[92vh] shadow-2xl flex flex-col overflow-hidden">
         
         {/* Header Modal — Aman untuk Proyektor / Smartboard */}
-        <div className="p-3.5 sm:p-4.5 border-b border-slate-200/90 dark:border-slate-800 flex items-center justify-between gap-3 bg-slate-50/70 dark:bg-slate-850/70 flex-shrink-0">
+        <div className="p-3.5 sm:p-4.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3 bg-slate-50/70 dark:bg-slate-850/70 flex-shrink-0">
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center flex-shrink-0 shadow-md shadow-indigo-600/20">
               <BarChart3 className="w-5 h-5" />
@@ -149,7 +149,7 @@ export const ClassReviewModal: React.FC<ClassReviewModalProps> = ({
         </div>
 
         {/* Question Selector Dots / Bar */}
-        <div className="px-4 py-2 border-b border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center gap-1.5 overflow-x-auto scrollbar-none flex-shrink-0">
+        <div className="px-4 py-2 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center gap-1.5 overflow-x-auto scrollbar-none flex-shrink-0">
           {sortedList.map((item, idx) => {
             const isCurrent = idx === currentIdx;
             const isHard = item.accuracy < 60;
@@ -292,7 +292,7 @@ export const ClassReviewModal: React.FC<ClassReviewModalProps> = ({
         </div>
 
         {/* Footer Navigation */}
-        <div className="p-3.5 sm:p-4 border-t border-slate-200/90 dark:border-slate-800 flex items-center justify-between gap-3 bg-slate-100/70 dark:bg-slate-900/70 flex-shrink-0">
+        <div className="p-3.5 sm:p-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3 bg-slate-100/70 dark:bg-slate-900/70 flex-shrink-0">
           <button
             type="button"
             onClick={handlePrev}

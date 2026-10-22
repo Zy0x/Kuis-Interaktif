@@ -51,15 +51,15 @@ interface QuizDetailProps {
 const getSubjectBadge = (subject: string) => {
   switch (subject) {
     case 'Matematika':
-      return 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-900/60';
+      return 'bg-blue-50 dark:bg-blue-950/60 text-blue-800 dark:text-blue-200 border-blue-300 dark:border-blue-800';
     case 'IPA':
-      return 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/60';
+      return 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-200 border-emerald-300 dark:border-emerald-800';
     case 'Bahasa Indonesia':
-      return 'bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-900/60';
+      return 'bg-purple-50 dark:bg-purple-950/60 text-purple-800 dark:text-purple-200 border-purple-300 dark:border-purple-800';
     case 'Pendidikan Pancasila':
-      return 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-900/60';
+      return 'bg-rose-50 dark:bg-rose-950/60 text-rose-800 dark:text-rose-200 border-rose-300 dark:border-rose-800';
     default:
-      return 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700';
+      return 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-700';
   }
 };
 
@@ -335,7 +335,7 @@ export const QuizDetail: React.FC<QuizDetailProps> = ({
       )}
 
       {/* Top Navbar */}
-      <header className="sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800/80 px-3 sm:px-6 py-2.5 shadow-2xs">
+      <header className="sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-300 dark:border-slate-800 px-3 sm:px-6 py-2.5 shadow-2xs">
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-2">
           {/* Back Button */}
           <button
@@ -360,7 +360,7 @@ export const QuizDetail: React.FC<QuizDetailProps> = ({
                 await onDuplicateQuiz(quiz);
                 showToast('✓ Kuis berhasil diduplikasi!');
               }}
-              className="p-2 sm:px-3 sm:py-2 rounded-xl text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 border border-slate-200 dark:border-slate-800 min-h-[44px] flex items-center gap-1.5 text-xs font-bold transition-colors btn-press"
+              className="p-2 sm:px-3 sm:py-2 rounded-xl text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 bg-white dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-950/40 border border-slate-300 dark:border-slate-700 min-h-[44px] flex items-center gap-1.5 text-xs font-bold transition-colors btn-press shadow-2xs"
               title="Duplikat Kuis Ini"
             >
               <CopyPlus className="w-4 h-4 text-blue-500 shrink-0" />
@@ -373,7 +373,7 @@ export const QuizDetail: React.FC<QuizDetailProps> = ({
                 playClick();
                 setShowDeleteModal(true);
               }}
-              className="p-2 sm:px-3 sm:py-2 rounded-xl text-slate-600 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-slate-200 dark:border-slate-800 min-h-[44px] flex items-center gap-1.5 text-xs font-bold transition-colors btn-press"
+              className="p-2 sm:px-3 sm:py-2 rounded-xl text-slate-700 dark:text-slate-200 hover:text-rose-600 dark:hover:text-rose-400 bg-white dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-slate-300 dark:border-slate-700 min-h-[44px] flex items-center gap-1.5 text-xs font-bold transition-colors btn-press shadow-2xs"
               title="Hapus Kuis Ini"
             >
               <Trash2 className="w-4 h-4 text-rose-500 shrink-0" />
@@ -399,12 +399,12 @@ export const QuizDetail: React.FC<QuizDetailProps> = ({
       <main className="max-w-6xl mx-auto px-3 sm:px-6 pt-4 sm:pt-6 space-y-4 sm:space-y-6 flex-1 w-full">
         
         {/* HERO COMMAND CARD: Ultra-clean, unified overview & actions */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-slate-800 p-4 sm:p-6 shadow-xs space-y-4">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl border border-slate-300 dark:border-slate-700/80 p-4 sm:p-6 shadow-xs space-y-4">
           
           {/* Header Row: Cover, Info, Badges */}
           <div className="flex items-start gap-3.5 sm:gap-5">
             {/* Cover Emoji / Visual Badge */}
-            <div className="w-13 h-13 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-800/80 flex items-center justify-center text-2xl sm:text-3xl shrink-0 border border-slate-200 dark:border-slate-700/80 shadow-2xs select-none">
+            <div className="w-13 h-13 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-800/80 flex items-center justify-center text-2xl sm:text-3xl shrink-0 border border-slate-300 dark:border-slate-700 shadow-2xs select-none">
               <QuizCoverDisplay cover={quiz.coverEmoji || '🍎'} />
             </div>
 
@@ -415,7 +415,7 @@ export const QuizDetail: React.FC<QuizDetailProps> = ({
                 <span className={`text-[11px] font-bold px-2 py-0.5 rounded-lg border ${getSubjectBadge(quiz.subject)}`}>
                   {quiz.subject}
                 </span>
-                <span className="text-[11px] font-bold px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                <span className="text-[11px] font-bold px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700">
                   Kelas {quiz.grade} SD
                 </span>
                 {quiz.badgeTitle && (
@@ -489,12 +489,12 @@ export const QuizDetail: React.FC<QuizDetailProps> = ({
           </div>
 
           {/* Unified Action Bar: PIN + Share + Play CTAs in ONE responsive row */}
-          <div className="pt-3.5 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="pt-3.5 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             
             {/* Left: Tactile PIN Chip & Share Button */}
             <div className="flex items-center gap-2 flex-wrap">
               {/* PIN Pill */}
-              <div className="inline-flex items-center bg-slate-100 dark:bg-slate-800 rounded-xl p-1 border border-slate-200 dark:border-slate-700">
+              <div className="inline-flex items-center bg-slate-100 dark:bg-slate-800 rounded-xl p-1 border border-slate-300 dark:border-slate-700 shadow-2xs">
                 <div className="px-2.5 py-0.5">
                   <span className="text-[9px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider block">PIN Kelas</span>
                   <span className="text-base sm:text-lg font-black tracking-widest text-blue-600 dark:text-blue-400 font-mono leading-none">
@@ -504,7 +504,7 @@ export const QuizDetail: React.FC<QuizDetailProps> = ({
                 <button
                   type="button"
                   onClick={handleCopyPin}
-                  className="px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-650 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600 text-xs font-bold inline-flex items-center gap-1 min-h-[36px] transition-colors btn-press shadow-2xs"
+                  className="px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-650 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-600 text-xs font-bold inline-flex items-center gap-1 min-h-[36px] transition-colors btn-press shadow-2xs"
                   title="Salin PIN Kelas"
                 >
                   {copiedPin ? <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" /> : <Copy className="w-3.5 h-3.5 text-slate-500 shrink-0" />}
@@ -516,7 +516,7 @@ export const QuizDetail: React.FC<QuizDetailProps> = ({
               <button
                 type="button"
                 onClick={handleCopyLink}
-                className="px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 text-xs font-bold inline-flex items-center gap-1.5 min-h-[42px] transition-colors btn-press shadow-2xs"
+                className="px-3 py-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 text-xs font-bold inline-flex items-center gap-1.5 min-h-[42px] transition-colors btn-press shadow-2xs"
                 title="Salin Tautan Langsung Kuis"
               >
                 {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" /> : <Share2 className="w-3.5 h-3.5 text-blue-500 shrink-0" />}
@@ -532,7 +532,7 @@ export const QuizDetail: React.FC<QuizDetailProps> = ({
                   playClick();
                   onPrintWorksheet(quiz);
                 }}
-                className="px-3.5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 min-h-[44px] transition-all btn-press shadow-2xs"
+                className="px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 min-h-[44px] transition-all btn-press shadow-2xs"
                 title="Cetak Lembar Kerja Siswa (LKS)"
               >
                 <Printer className="w-4 h-4 text-slate-600 dark:text-slate-300 shrink-0" />
@@ -642,7 +642,7 @@ export const QuizDetail: React.FC<QuizDetailProps> = ({
           <div className="space-y-4 sm:space-y-5 animate-fade-in">
             {/* 4 Crisp Analytics Metric Cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5">
-              <div className="bg-white dark:bg-slate-900 p-3.5 sm:p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs">
+              <div className="bg-white dark:bg-slate-900 p-3.5 sm:p-4 rounded-2xl border border-slate-300 dark:border-slate-700/80 shadow-xs">
                 <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-xs font-semibold mb-1">
                   <div className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-900/60 flex items-center justify-center shrink-0">
                     <Users className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
@@ -654,7 +654,7 @@ export const QuizDetail: React.FC<QuizDetailProps> = ({
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-slate-900 p-3.5 sm:p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs">
+              <div className="bg-white dark:bg-slate-900 p-3.5 sm:p-4 rounded-2xl border border-slate-300 dark:border-slate-700/80 shadow-xs">
                 <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-xs font-semibold mb-1">
                   <div className="w-7 h-7 rounded-lg bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-900/60 flex items-center justify-center shrink-0">
                     <Award className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
@@ -666,7 +666,7 @@ export const QuizDetail: React.FC<QuizDetailProps> = ({
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-slate-900 p-3.5 sm:p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs">
+              <div className="bg-white dark:bg-slate-900 p-3.5 sm:p-4 rounded-2xl border border-slate-300 dark:border-slate-700/80 shadow-xs">
                 <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-xs font-semibold mb-1">
                   <div className="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-900/60 flex items-center justify-center shrink-0">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
@@ -678,7 +678,7 @@ export const QuizDetail: React.FC<QuizDetailProps> = ({
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-slate-900 p-3.5 sm:p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs">
+              <div className="bg-white dark:bg-slate-900 p-3.5 sm:p-4 rounded-2xl border border-slate-300 dark:border-slate-700/80 shadow-xs">
                 <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-xs font-semibold mb-1">
                   <div className="w-7 h-7 rounded-lg bg-purple-50 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-900/60 flex items-center justify-center shrink-0">
                     <Clock className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
@@ -692,9 +692,9 @@ export const QuizDetail: React.FC<QuizDetailProps> = ({
             </div>
 
             {/* Submissions Container */}
-            <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl border border-slate-300 dark:border-slate-700/80 overflow-hidden shadow-xs">
               {/* Table Toolbar: Search & Info */}
-              <div className="p-3.5 sm:p-5 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="p-3.5 sm:p-5 border-b border-slate-300 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <h3 className="font-bold text-sm sm:text-base text-slate-900 dark:text-white">
                     Tabel Hasil Pengerjaan Siswa
@@ -712,7 +712,7 @@ export const QuizDetail: React.FC<QuizDetailProps> = ({
                       value={searchStudent}
                       onChange={(e) => setSearchStudent(e.target.value)}
                       placeholder="Cari nama siswa..."
-                      className="w-full pl-8 pr-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full pl-8 pr-3 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 shadow-2xs"
                     />
                   </div>
                 )}
@@ -800,7 +800,7 @@ export const QuizDetail: React.FC<QuizDetailProps> = ({
                   <div className="hidden sm:block overflow-x-auto">
                     <table className="w-full text-left border-collapse text-xs sm:text-sm">
                       <thead>
-                        <tr className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-bold text-[11px] uppercase tracking-wider">
+                        <tr className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-300 dark:border-slate-800 text-slate-700 dark:text-slate-300 font-bold text-[11px] uppercase tracking-wider">
                           <th className="py-3 px-4">No</th>
                           <th className="py-3 px-4">Nama Siswa</th>
                           <th className="py-3 px-4 text-center">Nilai</th>
@@ -869,14 +869,14 @@ export const QuizDetail: React.FC<QuizDetailProps> = ({
               {(quiz.questions || []).map((q, idx) => (
                 <div
                   key={q.id || idx}
-                  className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-3"
+                  className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700/80 shadow-xs space-y-3"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-2">
                       <span className="w-6 h-6 rounded-lg bg-blue-600 text-white text-xs font-black flex items-center justify-center shrink-0 shadow-2xs">
                         {idx + 1}
                       </span>
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-2 py-0.5 rounded-md">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 px-2 py-0.5 rounded-md">
                         {q.type === 'multiple_choice' ? 'Pilihan Ganda' :
                          q.type === 'true_false' ? 'Benar / Salah' :
                          q.type === 'short_answer' ? 'Isian Singkat' :
@@ -927,7 +927,7 @@ export const QuizDetail: React.FC<QuizDetailProps> = ({
                             className={`p-2.5 sm:p-3 rounded-xl border text-xs sm:text-sm font-semibold flex items-center gap-2.5 shadow-2xs ${
                               isCorrect
                                 ? 'bg-emerald-50 dark:bg-emerald-950/40 border-2 border-emerald-500 text-emerald-900 dark:text-emerald-200 font-bold'
-                                : 'bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'
+                                : 'bg-white dark:bg-slate-800/60 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200'
                             }`}
                           >
                             <span className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-black shrink-0 ${
@@ -953,7 +953,7 @@ export const QuizDetail: React.FC<QuizDetailProps> = ({
                             className={`px-3.5 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 shadow-2xs ${
                               isCorrect
                                 ? 'bg-emerald-50 dark:bg-emerald-950/40 border-2 border-emerald-500 text-emerald-800 dark:text-emerald-200'
-                                : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
+                                : 'bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200'
                             }`}
                           >
                             {isCorrect && <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />}

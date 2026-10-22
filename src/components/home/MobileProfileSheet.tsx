@@ -88,7 +88,7 @@ export const MobileProfileSheet: React.FC<MobileProfileSheetProps> = ({
 
       {/* Bottom Sheet Container */}
       <div 
-        className="relative z-10 w-full bg-white dark:bg-slate-900 rounded-t-3xl border-t border-slate-200/90 dark:border-slate-800 shadow-2xl p-4 xs:p-5 pt-2 animate-slide-up max-h-[88vh] overflow-y-auto overscroll-contain pb-[max(env(safe-area-inset-bottom),1.25rem)]"
+        className="relative z-10 w-full bg-white dark:bg-slate-900 rounded-t-3xl border-t border-slate-300 dark:border-slate-700/80 shadow-2xl p-4 xs:p-5 pt-2 animate-slide-up max-h-[88vh] overflow-y-auto overscroll-contain pb-[max(env(safe-area-inset-bottom),1.25rem)]"
         role="dialog"
         aria-modal="true"
         aria-label="Menu Profil dan Pengaturan Cepat"
@@ -98,8 +98,8 @@ export const MobileProfileSheet: React.FC<MobileProfileSheetProps> = ({
         <DrawerHandle ref={handleRef} className="-mt-1 mb-0.5" />
 
         {/* Header Row */}
-        <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800/80">
-          <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Menu & Profil</span>
+        <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
+          <span className="text-xs font-extrabold text-slate-700 dark:text-slate-300">Menu & Profil</span>
           <button
             type="button"
             onClick={handleClose}
@@ -111,7 +111,7 @@ export const MobileProfileSheet: React.FC<MobileProfileSheetProps> = ({
         </div>
 
         {/* 1. Account Summary Card */}
-        <div className="mt-3.5 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-850 border border-slate-200/80 dark:border-slate-800 flex items-center gap-3">
+        <div className="mt-3.5 p-3.5 rounded-2xl bg-slate-50/90 dark:bg-slate-850 border border-slate-300 dark:border-slate-700/80 flex items-center gap-3 shadow-2xs">
           {teacher ? (
             /* Teacher Identity */
             <>
@@ -193,7 +193,7 @@ export const MobileProfileSheet: React.FC<MobileProfileSheetProps> = ({
                 playClick();
                 onToggleTheme();
               }}
-              className="p-3 rounded-2xl bg-white dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700/80 flex flex-col items-start justify-between min-h-[64px] transition-all hover:bg-slate-50 dark:hover:bg-slate-750 active:scale-98 shadow-xs"
+              className="p-3 rounded-2xl bg-white dark:bg-slate-800/90 border border-slate-300 dark:border-slate-700/80 flex flex-col items-start justify-between min-h-[64px] transition-all hover:bg-slate-50 dark:hover:bg-slate-750 active:scale-98 shadow-2xs"
             >
               <div className="flex items-center justify-between w-full">
                 <div className="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800/60 flex items-center justify-center text-amber-600 dark:text-amber-400">
@@ -207,7 +207,7 @@ export const MobileProfileSheet: React.FC<MobileProfileSheetProps> = ({
                   {isDark ? 'Gelap' : 'Terang'}
                 </span>
               </div>
-              <span className="text-xs font-bold text-slate-700 dark:text-slate-200 mt-2">
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-2">
                 Mode Tampilan
               </span>
             </button>
@@ -219,7 +219,7 @@ export const MobileProfileSheet: React.FC<MobileProfileSheetProps> = ({
                 playClick();
                 onToggleMute();
               }}
-              className="p-3 rounded-2xl bg-white dark:bg-slate-800/90 border border-slate-200/90 dark:border-slate-700/80 flex flex-col items-start justify-between min-h-[64px] transition-all hover:bg-slate-50 dark:hover:bg-slate-750 active:scale-98 shadow-xs"
+              className="p-3 rounded-2xl bg-white dark:bg-slate-800/90 border border-slate-300 dark:border-slate-700/80 flex flex-col items-start justify-between min-h-[64px] transition-all hover:bg-slate-50 dark:hover:bg-slate-750 active:scale-98 shadow-2xs"
             >
               <div className="flex items-center justify-between w-full">
                 <div className={`w-8 h-8 rounded-xl flex items-center justify-center border ${
@@ -237,7 +237,7 @@ export const MobileProfileSheet: React.FC<MobileProfileSheetProps> = ({
                   {isMuted ? 'Senyap' : 'Aktif'}
                 </span>
               </div>
-              <span className="text-xs font-bold text-slate-700 dark:text-slate-200 mt-2">
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 mt-2">
                 Efek Suara (SFX)
               </span>
             </button>
@@ -245,7 +245,7 @@ export const MobileProfileSheet: React.FC<MobileProfileSheetProps> = ({
         </div>
 
         {/* 3. Account Actions */}
-        <div className="mt-4 pt-3.5 border-t border-slate-100 dark:border-slate-800 space-y-2">
+        <div className="mt-4 pt-3.5 border-t border-slate-200 dark:border-slate-800 space-y-2">
           {teacher ? (
             /* Teacher Specific Actions */
             <>
@@ -272,7 +272,7 @@ export const MobileProfileSheet: React.FC<MobileProfileSheetProps> = ({
                   onClose();
                   onOpenTeacherProfileModal();
                 }}
-                className="w-full py-2.5 px-4 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 font-semibold text-xs sm:text-sm flex items-center justify-between min-h-[44px] transition-colors"
+                className="w-full py-2.5 px-4 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-200 font-bold text-xs sm:text-sm flex items-center justify-between min-h-[44px] transition-colors border border-slate-300 dark:border-slate-700 shadow-2xs"
               >
                 <div className="flex items-center gap-2">
                   <User className="w-4 h-4 text-blue-600 dark:text-blue-400" />
@@ -292,7 +292,7 @@ export const MobileProfileSheet: React.FC<MobileProfileSheetProps> = ({
                     onStudentLogout();
                   }
                 }}
-                className="w-full py-2.5 px-4 rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 border border-rose-200/80 dark:border-rose-900/50 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 min-h-[44px] transition-colors"
+                className="w-full py-2.5 px-4 rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 border border-rose-300 dark:border-rose-900/50 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 min-h-[44px] transition-colors shadow-2xs"
               >
                 <LogOut className="w-4 h-4" />
                 <span>Keluar dari Akun Guru</span>
@@ -328,7 +328,7 @@ export const MobileProfileSheet: React.FC<MobileProfileSheetProps> = ({
                     onTeacherLogout();
                   }
                 }}
-                className="w-full py-2.5 px-4 rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 border border-rose-200/80 dark:border-rose-900/50 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 min-h-[44px] transition-colors"
+                className="w-full py-2.5 px-4 rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 border border-rose-300 dark:border-rose-900/50 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 min-h-[44px] transition-colors shadow-2xs"
               >
                 <LogOut className="w-4 h-4" />
                 <span>Keluar Akun Siswa</span>
@@ -360,7 +360,7 @@ export const MobileProfileSheet: React.FC<MobileProfileSheetProps> = ({
                   onClose();
                   onOpenProfileModal();
                 }}
-                className="w-full py-2.5 px-4 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 font-semibold text-xs sm:text-sm flex items-center justify-between min-h-[44px] transition-colors"
+                className="w-full py-2.5 px-4 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-200 font-bold text-xs sm:text-sm flex items-center justify-between min-h-[44px] transition-colors border border-slate-300 dark:border-slate-700 shadow-2xs"
               >
                 <div className="flex items-center gap-2">
                   <Smile className="w-4 h-4 text-amber-500" />

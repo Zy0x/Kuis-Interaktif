@@ -54,10 +54,10 @@ export const CreateQuizMethodModal: React.FC<CreateQuizMethodModalProps> = ({
       aria-modal="true"
       aria-labelledby="modal-create-quiz-title"
     >
-      <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-2xl flex flex-col overflow-hidden transition-all duration-200">
+      <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-3xl border border-slate-300 dark:border-slate-700/80 shadow-2xl flex flex-col overflow-hidden transition-all duration-200">
         
         {/* Header Bersih & Ramah Pendidik */}
-        <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between flex-shrink-0 bg-slate-50/70 dark:bg-slate-850/60">
+        <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between flex-shrink-0 bg-slate-50/70 dark:bg-slate-850/60">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center shadow-xs flex-shrink-0">
               <Sparkles className="w-5 h-5 text-blue-100" />
@@ -131,7 +131,7 @@ export const CreateQuizMethodModal: React.FC<CreateQuizMethodModalProps> = ({
               playClick();
               onSelectManual();
             }}
-            className="w-full text-left p-4 sm:p-4.5 rounded-2xl border-2 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700 shadow-xs hover:shadow-md transition-all group btn-press cursor-pointer relative overflow-hidden"
+            className="w-full text-left p-4 sm:p-4.5 rounded-2xl border-2 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-slate-400 dark:hover:border-slate-600 shadow-xs hover:shadow-md transition-all group btn-press cursor-pointer relative overflow-hidden"
           >
             <div className="flex items-center gap-3.5 sm:gap-4">
               {/* Icon Squircle */}
@@ -158,7 +158,7 @@ export const CreateQuizMethodModal: React.FC<CreateQuizMethodModalProps> = ({
         </div>
 
         {/* Footer Tenang & Ramah Pendidik */}
-        <div className="px-5 py-3.5 bg-slate-50/80 dark:bg-slate-850/60 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
+        <div className="px-5 py-3.5 bg-slate-50/80 dark:bg-slate-850/60 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3">
           <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 font-medium min-w-0">
             <CheckCircle2 className="w-4 h-4 text-emerald-500 dark:text-emerald-400 flex-shrink-0" />
             <span className="truncate">Soal selalu dapat ditinjau & diedit kembali</span>

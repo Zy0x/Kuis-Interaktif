@@ -143,15 +143,15 @@ export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
   };
 
   const renderStudentCardPreview = () => (
-    <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-850 space-y-3">
+    <div className="p-4 rounded-2xl border border-slate-300 dark:border-slate-700/80 bg-slate-50/90 dark:bg-slate-850 space-y-3 shadow-2xs">
       <div className="flex items-start gap-3">
         <QuizCoverDisplay
           cover={coverEmoji}
-          className="w-11 h-11 rounded-xl bg-white dark:bg-slate-800 flex items-center justify-center text-2xl shrink-0 shadow-xs border border-slate-200/80 dark:border-slate-700/80 overflow-hidden"
+          className="w-11 h-11 rounded-xl bg-white dark:bg-slate-800 flex items-center justify-center text-2xl shrink-0 shadow-xs border border-slate-300 dark:border-slate-700 overflow-hidden"
         />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-1 mb-1.5">
-            <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-md bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 whitespace-nowrap">
+            <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-md bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 whitespace-nowrap">
               Kls {grade} {currentFaseInfo.levelLabel}
             </span>
             <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200/70 dark:border-blue-900/60 truncate max-w-[120px]">
@@ -164,12 +164,12 @@ export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
           <h4 className="font-extrabold text-slate-900 dark:text-white text-sm leading-snug line-clamp-2">
             {title.trim() || 'Judul Kuis Interaktif'}
           </h4>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 line-clamp-2 leading-relaxed">
+          <p className="text-[11px] text-slate-600 dark:text-slate-300 mt-1 line-clamp-2 leading-relaxed">
             {description.trim() || 'Petunjuk pengerjaan kuis untuk siswa.'}
           </p>
         </div>
       </div>
-      <div className="pt-2 border-t border-slate-200/70 dark:border-slate-750/70 flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 font-semibold">
+      <div className="pt-2 border-t border-slate-200 dark:border-slate-800 flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400 font-semibold">
         <span>{questionsCount} soal</span>
         <span className="text-slate-300 dark:text-slate-600">·</span>
         <span className="truncate">{subject || 'Mata Pelajaran'}</span>
@@ -205,12 +205,12 @@ export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
 
         {/* KOLOM KIRI: FORM */}
-        <div className="lg:col-span-8 bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-slate-200 dark:border-slate-800 shadow-card space-y-4">
+        <div className="lg:col-span-8 bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-slate-300 dark:border-slate-700/80 shadow-xs space-y-4">
 
           {/* Header dengan AI & badge soal */}
-          <div className="flex items-center justify-between gap-2 pb-3 border-b border-slate-100 dark:border-slate-800">
+          <div className="flex items-center justify-between gap-2 pb-3 border-b border-slate-200 dark:border-slate-800">
             <div className="flex items-center gap-2 min-w-0 flex-1">
-              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 border border-blue-200/60 dark:border-blue-900/40">
                 <BookOpen className="w-4 h-4" />
               </div>
               <h2 className="text-sm sm:text-base font-black text-slate-900 dark:text-white leading-tight truncate">
@@ -229,7 +229,7 @@ export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
                   : <><Sparkles className="w-3.5 h-3.5" /><span>Racik AI</span></>
                 }
               </button>
-              <span className="text-xs font-black min-h-[44px] px-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center whitespace-nowrap">
+              <span className="text-xs font-black min-h-[44px] px-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 flex items-center whitespace-nowrap">
                 {questionsCount} Soal
               </span>
             </div>
@@ -283,7 +283,7 @@ export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
                   className={`py-2 px-1 rounded-xl border text-center min-h-[44px] flex items-center justify-center text-[11px] font-bold btn-press transition-all leading-tight ${
                     currentEducationLevel === item.level
                       ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 ring-1 ring-blue-400/40'
-                      : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 text-slate-600 dark:text-slate-400'
+                      : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 shadow-2xs'
                   }`}
                 >
                   {item.label}
@@ -353,11 +353,11 @@ export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
           </div>
 
           {/* ── Sampul Kuis ── */}
-          <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-800">
+          <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-50/90 dark:bg-slate-850 border border-slate-300 dark:border-slate-700/80 shadow-2xs">
             <div className="flex items-center gap-3 min-w-0">
               <QuizCoverDisplay
                 cover={coverEmoji}
-                className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 flex items-center justify-center text-2xl shrink-0 shadow-xs border border-slate-200 dark:border-slate-700 overflow-hidden"
+                className="w-10 h-10 rounded-xl bg-white dark:bg-slate-800 flex items-center justify-center text-2xl shrink-0 shadow-xs border border-slate-300 dark:border-slate-700 overflow-hidden"
               />
               <div className="min-w-0">
                 <div className="text-xs font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5 flex-wrap">
@@ -366,13 +366,13 @@ export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
                     {isImageCover(coverEmoji) ? 'Gambar Kustom' : (coverEmoji || '📝')}
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">Tampil di katalog & lobi siswa</p>
+                <p className="text-[11px] text-slate-600 dark:text-slate-400 truncate">Tampil di katalog & lobi siswa</p>
               </div>
             </div>
             <button
               type="button"
               onClick={() => { playClick(); setShowCoverModal(true); }}
-              className="px-3 py-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 text-xs font-extrabold transition-all min-h-[44px] flex items-center gap-1.5 btn-press shadow-2xs shrink-0"
+              className="px-3 py-2 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 text-xs font-extrabold transition-all min-h-[44px] flex items-center gap-1.5 btn-press shadow-2xs shrink-0"
             >
               <Palette className="w-4 h-4 text-blue-500" />
               <span>Ubah</span>
@@ -380,23 +380,23 @@ export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
           </div>
 
           {/* MOBILE: Pratinjau collapsible */}
-          <div className="lg:hidden pt-1 border-t border-slate-100 dark:border-slate-800 space-y-2">
+          <div className="lg:hidden pt-1 border-t border-slate-200 dark:border-slate-800 space-y-2">
             <button
               type="button"
               onClick={() => { playClick(); setShowMobilePreview((p) => !p); }}
-              className="w-full py-2.5 px-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-extrabold flex items-center justify-between min-h-[44px] transition-colors btn-press"
+              className="w-full py-2.5 px-3.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs font-extrabold flex items-center justify-between min-h-[44px] transition-colors btn-press shadow-2xs"
             >
               <span className="flex items-center gap-2">
                 <span>👁️ Pratinjau & Status Kesiapan</span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-300">{questionsCount} Soal</span>
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border border-blue-200 dark:border-blue-800">{questionsCount} Soal</span>
               </span>
               {showMobilePreview ? <ChevronUp className="w-4 h-4 shrink-0" /> : <ChevronDown className="w-4 h-4 shrink-0" />}
             </button>
             {showMobilePreview && (
               <div className="space-y-3 animate-fade-in">
                 {renderStudentCardPreview()}
-                <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-800 space-y-2">
-                  <h5 className="font-extrabold text-xs text-slate-600 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-850 border border-slate-300 dark:border-slate-700/80 space-y-2 shadow-2xs">
+                  <h5 className="font-extrabold text-xs text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
                     <Sliders className="w-3.5 h-3.5" />
                     <span>Status Kesiapan</span>
                   </h5>
@@ -407,11 +407,11 @@ export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
           </div>
 
           {/* Footer Navigasi */}
-          <div className="flex flex-col xs:flex-row items-stretch xs:items-center justify-between gap-2.5 pt-3 border-t border-slate-100 dark:border-slate-800">
+          <div className="flex flex-col xs:flex-row items-stretch xs:items-center justify-between gap-2.5 pt-3 border-t border-slate-200 dark:border-slate-800">
             <button
               type="button"
               onClick={() => { playClick(); onBack(); }}
-              className="w-full xs:w-auto px-5 py-3 rounded-2xl font-bold text-xs sm:text-sm text-slate-700 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-750 min-h-[48px] flex items-center justify-center gap-2 transition-colors btn-press order-2 xs:order-1"
+              className="w-full xs:w-auto px-5 py-3 rounded-2xl font-bold text-xs sm:text-sm text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750 min-h-[48px] flex items-center justify-center gap-2 transition-colors btn-press order-2 xs:order-1 shadow-2xs"
             >
               <ArrowLeft className="w-4 h-4 shrink-0" />
               <span>Kembali</span>
@@ -431,15 +431,15 @@ export const InfoKuisStep: React.FC<InfoKuisStepProps> = ({
 
         {/* KOLOM KANAN: DESKTOP SIDEBAR */}
         <div className="hidden lg:block lg:col-span-4 space-y-4 lg:sticky lg:top-20">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200 dark:border-slate-800 shadow-card space-y-3">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-300 dark:border-slate-700/80 shadow-xs space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-extrabold text-slate-500 uppercase tracking-wider">👁️ Pratinjau</span>
+              <span className="text-xs font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">👁️ Pratinjau</span>
               <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200/50 dark:border-blue-800/50">Live</span>
             </div>
             {renderStudentCardPreview()}
           </div>
-          <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200 dark:border-slate-800 shadow-card space-y-3">
-            <h4 className="font-extrabold text-xs text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-300 dark:border-slate-700/80 shadow-xs space-y-3">
+            <h4 className="font-extrabold text-xs text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
               <Sliders className="w-3.5 h-3.5" />
               <span>Status Kesiapan</span>
             </h4>

@@ -596,7 +596,7 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col justify-between select-none">
       {/* Top Header */}
-      <header className="w-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-3 sm:px-8 lg:px-12 pt-[max(env(safe-area-inset-top),0.625rem)] pb-2.5 sm:pb-3 sticky top-0 z-20 shadow-sm">
+      <header className="w-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-300 dark:border-slate-800 px-3 sm:px-8 lg:px-12 pt-[max(env(safe-area-inset-top),0.625rem)] pb-2.5 sm:pb-3 sticky top-0 z-20 shadow-xs">
         <div className="w-full max-w-[2000px] mx-auto flex items-center justify-between gap-2">
           <button
             type="button"
@@ -624,7 +624,7 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
 
       {/* Main Lobby Room */}
       <main className="flex-1 max-w-xl 2xl:max-w-2xl w-full mx-auto p-4 sm:p-6 flex flex-col justify-center my-auto">
-        <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-8 border border-slate-200/90 dark:border-slate-800 shadow-pop space-y-6 animate-fade-in">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 sm:p-8 border border-slate-300 dark:border-slate-700/80 shadow-md space-y-6 animate-fade-in">
           
           {/* ======================================================== */}
           {/* 1. INFO KUIS (Sesuai Konfigurasi yang Ditetapkan Guru)   */}
@@ -655,20 +655,20 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
             </h1>
 
             {/* Meta tags */}
-            <div className="flex items-center justify-center gap-2 flex-wrap text-xs text-slate-500 dark:text-slate-400 font-semibold">
-              <span className="px-2.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+            <div className="flex items-center justify-center gap-2 flex-wrap text-xs font-bold">
+              <span className="px-2.5 py-0.5 rounded-md bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 shadow-2xs">
                 Kelas {quiz.grade}
               </span>
-              <span className="px-2.5 py-0.5 rounded-md bg-blue-100 dark:bg-blue-950/50 text-blue-800 dark:text-blue-300">
+              <span className="px-2.5 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/50 text-blue-800 dark:text-blue-200 border border-blue-200 dark:border-blue-800 shadow-2xs">
                 {quiz.subject}
               </span>
-              <span className="px-2.5 py-0.5 rounded-md bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+              <span className="px-2.5 py-0.5 rounded-md bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 shadow-2xs">
                 Oleh: {teacherName}
               </span>
             </div>
 
             {/* Description */}
-            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed max-w-md mx-auto pt-1">
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed max-w-md mx-auto pt-1 font-medium">
               {quiz.description || 'Kuis interaktif untuk menguji pemahaman dan mengumpulkan Bintang Prestasi!'}
             </p>
           </div>
@@ -710,18 +710,18 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
 
           {/* Konfigurasi Sesi dari Guru (Metadata Cards) */}
           <div className="space-y-2.5">
-            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5 px-0.5">
+            <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5 px-0.5">
               <Info className="w-3.5 h-3.5 text-blue-500" />
               <span>Pengaturan Pengerjaan dari Guru</span>
             </div>
 
             <div className="grid grid-cols-3 gap-2 sm:gap-3">
               {/* Jumlah Soal */}
-              <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-800 text-center">
-                <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium flex items-center justify-center gap-1">
+              <div className="p-3 rounded-2xl bg-slate-50/90 dark:bg-slate-800/60 border border-slate-300 dark:border-slate-700/80 text-center shadow-2xs">
+                <span className="text-[11px] text-slate-600 dark:text-slate-400 font-semibold flex items-center justify-center gap-1">
                   <HelpCircle className="w-3.5 h-3.5 text-blue-500" /> Soal
                 </span>
-                <span className="text-base sm:text-lg font-extrabold text-slate-800 dark:text-slate-100 block mt-0.5">
+                <span className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white block mt-0.5">
                   {quiz.questions && quiz.questions.length > 0
                     ? `${quiz.questions.length} Butir`
                     : (liveSession?.totalQuestions ? `${liveSession.totalQuestions} Butir` : '0 Butir')}
@@ -729,21 +729,21 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
               </div>
 
               {/* Durasi / Soal */}
-              <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-800 text-center">
-                <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium flex items-center justify-center gap-1">
+              <div className="p-3 rounded-2xl bg-slate-50/90 dark:bg-slate-800/60 border border-slate-300 dark:border-slate-700/80 text-center shadow-2xs">
+                <span className="text-[11px] text-slate-600 dark:text-slate-400 font-semibold flex items-center justify-center gap-1">
                   {isUntimed ? <span className="text-sm">🧘</span> : <Clock className="w-3.5 h-3.5 text-amber-500" />} Waktu
                 </span>
-                <span className="text-base sm:text-lg font-extrabold text-slate-800 dark:text-slate-100 block mt-0.5">
+                <span className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white block mt-0.5">
                   {isUntimed ? 'Bebas Waktu' : `${effectiveDuration}d / soal`}
                 </span>
               </div>
 
               {/* Mode Pengerjaan */}
-              <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-800 text-center">
-                <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium flex items-center justify-center gap-1">
+              <div className="p-3 rounded-2xl bg-slate-50/90 dark:bg-slate-800/60 border border-slate-300 dark:border-slate-700/80 text-center shadow-2xs">
+                <span className="text-[11px] text-slate-600 dark:text-slate-400 font-semibold flex items-center justify-center gap-1">
                   <Gamepad2 className="w-3.5 h-3.5 text-purple-500" /> Mode
                 </span>
-                <span className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100 block mt-0.5 truncate" title={modeLabel.title}>
+                <span className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white block mt-0.5 truncate" title={modeLabel.title}>
                   {modeLabel.icon} {modeLabel.title.replace('Mode ', '')}
                 </span>
               </div>
@@ -911,7 +911,7 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
             </div>
           ) : (
             /* Form Pendaftaran Siswa */
-            <form onSubmit={handleStart} className="space-y-5 pt-3 border-t border-slate-200/80 dark:border-slate-800">
+            <form onSubmit={handleStart} className="space-y-5 pt-3 border-t border-slate-200 dark:border-slate-800">
               
               {/* ======================================================== */}
               {/* 2. ISI NAMA                                              */}
@@ -985,14 +985,14 @@ export const StudentLobby: React.FC<StudentLobbyProps> = ({
                           playClick();
                           setSelectedAvatar(avatar.id);
                         }}
-                        className={`p-2.5 rounded-2xl flex flex-col items-center justify-center border transition-all min-h-[58px] ${
+                        className={`p-2.5 rounded-2xl flex flex-col items-center justify-center border transition-all min-h-[58px] shadow-2xs ${
                           isSelected
                             ? 'bg-blue-50 dark:bg-blue-900/40 border-blue-500 ring-2 ring-blue-400 shadow-sm'
-                            : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750'
+                            : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-750'
                         }`}
                       >
                         <span className="text-2xl sm:text-3xl select-none leading-none">{avatar.emoji}</span>
-                        <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-300 mt-1 truncate max-w-full">
+                        <span className="text-[10px] font-bold text-slate-700 dark:text-slate-200 mt-1 truncate max-w-full">
                           {avatar.name.split(' ')[0]}
                         </span>
                       </button>

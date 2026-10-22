@@ -187,7 +187,7 @@ export const QuizSettingsModal: React.FC<QuizSettingsModalProps> = ({
 
       {/* Action Sheet / Settings Modal */}
       <div 
-        className="relative z-10 w-full sm:max-w-md bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xl p-4 sm:p-5 pt-2 animate-slide-up max-h-[85vh] overflow-y-auto overscroll-contain pb-[max(env(safe-area-inset-bottom),1.25rem)] space-y-3 text-left"
+        className="relative z-10 w-full sm:max-w-md bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl border border-slate-300 dark:border-slate-700/80 shadow-2xl p-4 sm:p-5 pt-2 animate-slide-up max-h-[85vh] overflow-y-auto overscroll-contain pb-[max(env(safe-area-inset-bottom),1.25rem)] space-y-3 text-left"
         onClick={(e) => e.stopPropagation()}
         style={drawerStyle}
       >
@@ -195,17 +195,17 @@ export const QuizSettingsModal: React.FC<QuizSettingsModalProps> = ({
         <DrawerHandle ref={handleRef} className="sm:hidden -mt-1 mb-1" />
 
         {/* Minimalist Header */}
-        <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+        <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
           <div className="flex items-center gap-2.5 min-w-0 pr-2">
             <QuizCoverDisplay
               cover={quiz.coverEmoji}
-              className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex-shrink-0 flex items-center justify-center text-xl overflow-hidden"
+              className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex-shrink-0 flex items-center justify-center text-xl overflow-hidden border border-slate-300 dark:border-slate-700"
             />
             <div className="min-w-0">
-              <h3 id="quiz-settings-title" className="text-sm font-bold text-slate-900 dark:text-white truncate">
+              <h3 id="quiz-settings-title" className="text-sm font-extrabold text-slate-900 dark:text-white truncate">
                 {quiz.title}
               </h3>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+              <p className="text-[11px] text-slate-600 dark:text-slate-400 font-semibold truncate">
                 Kelas {quiz.grade} • {quiz.questions.length} Soal
               </p>
             </div>
@@ -218,7 +218,7 @@ export const QuizSettingsModal: React.FC<QuizSettingsModalProps> = ({
               onClose();
             }}
             disabled={isDuplicating || isUpdatingVisibility}
-            className="p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors flex-shrink-0"
+            className="p-2 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl min-h-[44px] min-w-[44px] flex items-center justify-center transition-colors flex-shrink-0"
             aria-label="Tutup"
           >
             <X className="w-5 h-5" />
@@ -233,7 +233,7 @@ export const QuizSettingsModal: React.FC<QuizSettingsModalProps> = ({
         )}
 
         {/* Settings Action List */}
-        <div className="bg-slate-50/70 dark:bg-slate-850/60 rounded-2xl border border-slate-200/80 dark:border-slate-800 divide-y divide-slate-200/60 dark:divide-slate-800 overflow-hidden">
+        <div className="bg-slate-50/70 dark:bg-slate-850/60 rounded-2xl border border-slate-300 dark:border-slate-700/80 divide-y divide-slate-200 dark:divide-slate-800 overflow-hidden shadow-2xs">
           
           {/* 1. Duplikat */}
           <button
@@ -330,7 +330,7 @@ export const QuizSettingsModal: React.FC<QuizSettingsModalProps> = ({
               <button
                 type="button"
                 onClick={handleCopyPin}
-                className="px-2.5 py-1.5 rounded-xl font-semibold text-xs text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-700 flex items-center gap-1 min-h-[44px] transition-colors btn-press"
+                className="px-2.5 py-1.5 rounded-xl font-bold text-xs text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 border border-slate-300 dark:border-slate-700 flex items-center gap-1 min-h-[44px] transition-colors btn-press shadow-2xs"
                 title="Salin PIN"
               >
                 {isCopiedPin ? (
@@ -351,7 +351,7 @@ export const QuizSettingsModal: React.FC<QuizSettingsModalProps> = ({
             <button
               type="button"
               onClick={handleDelete}
-              className="w-full px-3.5 py-3 rounded-2xl bg-rose-50/80 dark:bg-rose-950/30 hover:bg-rose-100 dark:hover:bg-rose-900/40 border border-rose-200/80 dark:border-rose-900/60 flex items-center justify-between text-rose-600 dark:text-rose-400 transition-colors min-h-[48px] btn-press"
+              className="w-full px-3.5 py-3 rounded-2xl bg-rose-50/80 dark:bg-rose-950/30 hover:bg-rose-100 dark:hover:bg-rose-900/40 border border-rose-300 dark:border-rose-900/60 flex items-center justify-between text-rose-600 dark:text-rose-400 transition-colors min-h-[48px] btn-press shadow-2xs"
             >
               <div className="flex items-center gap-3">
                 <Trash2 className="w-4.5 h-4.5 text-rose-500 shrink-0" />

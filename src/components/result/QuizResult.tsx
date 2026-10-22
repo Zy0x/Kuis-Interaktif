@@ -152,7 +152,7 @@ export const QuizResult: React.FC<QuizResultProps> = ({
       <main className="w-full max-w-2xl lg:max-w-4xl xl:max-w-5xl 2xl:max-w-6xl mx-auto p-4 sm:p-6 pb-8 space-y-5 flex-1">
         
         {/* Results Card */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 sm:p-8 border border-slate-200/90 dark:border-slate-800 shadow-card text-center relative overflow-hidden animate-fade-in">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl p-6 sm:p-8 border border-slate-300 dark:border-slate-700/80 shadow-xs text-center relative overflow-hidden animate-fade-in">
           
           {/* Stars */}
           <div className="flex justify-center items-center gap-2 mb-3">
@@ -176,24 +176,24 @@ export const QuizResult: React.FC<QuizResultProps> = ({
           </p>
 
           {/* 4 Stats Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-slate-50 dark:bg-slate-850 p-4 rounded-xl border border-slate-200/80 dark:border-slate-700">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-slate-50 dark:bg-slate-850 p-4 rounded-xl border border-slate-300 dark:border-slate-700 shadow-2xs">
             <div className="text-center">
               <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block">Nilai Akhir</span>
               <p className="text-2xl sm:text-3xl font-extrabold text-blue-600 dark:text-blue-400 mt-0.5">{score}</p>
             </div>
-            <div className="text-center sm:border-l border-slate-200 dark:border-slate-700">
+            <div className="text-center sm:border-l border-slate-300 dark:border-slate-700">
               <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block">Total Poin</span>
               <p className="text-2xl sm:text-3xl font-extrabold text-amber-600 dark:text-amber-400 mt-0.5">
                 {earnedPoints} <span className="text-xs font-bold text-slate-400">/ {maxPoints}</span>
               </p>
             </div>
-            <div className="text-center border-t sm:border-t-0 sm:border-l border-slate-200 dark:border-slate-700 pt-2 sm:pt-0">
+            <div className="text-center border-t sm:border-t-0 sm:border-l border-slate-300 dark:border-slate-700 pt-2 sm:pt-0">
               <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block">Jawaban Benar</span>
               <p className="text-2xl sm:text-3xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-0.5">
                 {correctCount} / {totalCount}
               </p>
             </div>
-            <div className="text-center border-t sm:border-t-0 sm:border-l border-slate-200 dark:border-slate-700 pt-2 sm:pt-0">
+            <div className="text-center border-t sm:border-t-0 sm:border-l border-slate-300 dark:border-slate-700 pt-2 sm:pt-0">
               <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block">Durasi Waktu</span>
               <p className="text-2xl sm:text-3xl font-extrabold text-slate-800 dark:text-slate-200 mt-0.5">{totalTimeSpent}s</p>
             </div>
@@ -202,7 +202,7 @@ export const QuizResult: React.FC<QuizResultProps> = ({
 
         {/* Tab Selector */}
         {showLeaderboardToStudents && (
-          <div className="flex rounded-xl bg-white dark:bg-slate-900 p-1 border border-slate-200 dark:border-slate-800 shadow-sm">
+          <div className="flex rounded-xl bg-white dark:bg-slate-900 p-1 border border-slate-300 dark:border-slate-700/80 shadow-xs">
             <button
               type="button"
               onClick={() => {
@@ -461,7 +461,7 @@ export const QuizResult: React.FC<QuizResultProps> = ({
           </button>
 
           {sessionSettings?.maxAttempts === 1 || sessionSettings?.pacingType === 'homework' ? (
-            <div className="flex-[1.5] xs:flex-[2] py-2 xs:py-2.5 px-2 xs:px-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-bold text-xs sm:text-sm flex items-center justify-center gap-1 sm:gap-1.5 min-h-[44px] min-w-[96px] text-center border border-slate-200 dark:border-slate-700">
+            <div className="flex-[1.5] xs:flex-[2] py-2 xs:py-2.5 px-2 xs:px-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-bold text-xs sm:text-sm flex items-center justify-center gap-1 sm:gap-1.5 min-h-[44px] min-w-[96px] text-center border border-slate-300 dark:border-slate-700">
               <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />
               <span className="whitespace-nowrap">Pengerjaan Selesai (1x)</span>
             </div>
@@ -483,7 +483,7 @@ export const QuizResult: React.FC<QuizResultProps> = ({
           <button
             type="button"
             onClick={handleShare}
-            className="p-2 xs:p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 min-h-[44px] min-w-[44px] flex items-center justify-center btn-press flex-shrink-0"
+            className="p-2 xs:p-2.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 min-h-[44px] min-w-[44px] flex items-center justify-center btn-press flex-shrink-0 shadow-2xs"
             title="Bagikan Tautan Kuis"
             aria-label="Bagikan Tautan Kuis"
           >
