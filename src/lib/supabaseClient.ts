@@ -827,7 +827,7 @@ export const DataManager = {
     // Sync to user Supabase if configured with sanitized DB constraints
     if (supabase) {
       try {
-        const safeGrade = Math.min(Math.max(Number(quiz.grade) || 1, 1), 6);
+        const safeGrade = Math.min(Math.max(Number(quiz.grade) || 1, 1), 12);
         const durNum = typeof quiz.durationPerQuestionSec === 'number' ? quiz.durationPerQuestionSec : 30;
         const safeDuration = durNum >= 10 ? durNum : 30;
         const safeCoverEmoji = (quiz.coverEmoji && quiz.coverEmoji.length <= 16) ? quiz.coverEmoji : '⭐';
@@ -1150,7 +1150,7 @@ export const DataManager = {
             email: updated.email,
             nickname: updated.nickname,
             avatar_id: updated.avatarId || current.avatarId || 'lion',
-            grade_level: Math.min(Math.max(Number(updated.grade || current.grade || 3), 1), 6),
+            grade_level: Math.min(Math.max(Number(updated.grade || current.grade || 3), 1), 12),
             stars_earned: updated.starsEarned ?? current.starsEarned ?? 0,
             total_score: updated.totalScore ?? current.totalScore ?? 0,
             quizzes_completed: updated.quizzesCompleted ?? current.quizzesCompleted ?? 0,
@@ -1248,7 +1248,7 @@ export const DataManager = {
           options: {
             data: {
               nickname,
-              grade_level: Math.min(Math.max(Number(gradeLevel) || 1, 1), 6),
+              grade_level: Math.min(Math.max(Number(gradeLevel) || 1, 1), 12),
             },
           },
         });
@@ -2695,7 +2695,7 @@ export const DataManager = {
         // Ensure quiz entity exists in quizzes table so foreign keys don't fail
         const { data: existingQ } = await supabase.from('quizzes').select('id').eq('id', quiz.id).maybeSingle();
         if (!existingQ) {
-          const safeGrade = Math.min(Math.max(Number(quiz.grade) || 1, 1), 6);
+          const safeGrade = Math.min(Math.max(Number(quiz.grade) || 1, 1), 12);
           const durNum = typeof quiz.durationPerQuestionSec === 'number' ? quiz.durationPerQuestionSec : 30;
           const safeDuration = durNum >= 10 ? durNum : 30;
           const safeCoverEmoji = (quiz.coverEmoji && quiz.coverEmoji.length <= 16) ? quiz.coverEmoji : '⭐';
@@ -3773,7 +3773,7 @@ export const DataManager = {
 
             if (!existingQ) {
               const masterQuiz = this.getAllQuizzes().find((q) => q.id === finishedSession.quizId);
-              const safeGrade = Math.min(Math.max(Number(finishedSession.grade) || 1, 1), 6);
+              const safeGrade = Math.min(Math.max(Number(finishedSession.grade) || 1, 1), 12);
               const durNum = typeof masterQuiz?.durationPerQuestionSec === 'number' ? masterQuiz.durationPerQuestionSec : 30;
               const safeDuration = durNum >= 10 ? durNum : 30;
               const safeCoverEmoji = (finishedSession.quizCover && finishedSession.quizCover.length <= 16) ? finishedSession.quizCover : '⭐';

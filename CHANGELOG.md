@@ -6,6 +6,19 @@ Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen in
 
 
 
+## [2.5.26] - 2026-10-22
+### Audit Ketahanan Menyeluruh: Dukungan Jenjang Kelas Multi-Fase (1-12), Preservasi Mode Santai, dan Protokol Bersih Uji Coba (Rule 1, Rule 2, Rule 9, Rule 11, Rule 15 & Rule 16)
+
+#### 1. Sinkronisasi Skala Jenjang Kelas 1–12 (SD, SMP, SMA)
+- Memperluas pembatasan nilai jenjang kelas pada seluruh fungsi sinkronisasi database ([`supabaseClient.ts`](file:///e:/Data/GitHub/Kuis%20Interaktif/src/lib/supabaseClient.ts)) dari semula maksimal kelas 6 menjadi kelas 12 (`Math.min(..., 12)`).
+- Menjamin seluruh kuis dan profil siswa jenjang SMP (Fase D: Kelas 7–9) dan SMA (Fase E & F: Kelas 10–12) tersimpan dengan identitas kelas aslinya tanpa terdegradasi ke kelas 6.
+
+#### 2. Ketahanan Preservasi Mode Bebas Waktu / Santai pada Pembuat Kuis
+- Memperbaiki logika kalkulasi pada [`QuizCreator.tsx`](file:///e:/Data/GitHub/Kuis%20Interaktif/src/components/creator/QuizCreator.tsx) agar apabila durasi bernilai `0` atau mode dipilih *untimed*, sistem secara konsisten menetapkan durasi `0` dan mode `untimed` tanpa keliru jatuh ke nilai fallback 30 detik.
+
+#### 3. Standarisasi Protokol Kebersihan Data Uji Coba
+- Menegakkan protokol pengujian di mana seluruh kuis dummy atau artefak sesi uji coba langsung dibersihkan dan dihapus dari basis data dan penyimpanan lokal seketika setelah verifikasi berhasil, menjaga kerapian katalog publik dan dasbor guru.
+
 ## [2.5.25] - 2026-10-22
 ### Sinkronisasi Deployment Produksi Vercel & Verifikasi Sukses Penerbitan Kuis AI Mode Santai (Rule 1, Rule 2, Rule 9, Rule 15 & Rule 16)
 

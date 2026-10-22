@@ -247,12 +247,16 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
       subject: subject || editingQuiz?.subject || 'Matematika',
       grade: grade ?? editingQuiz?.grade ?? 3,
       educationLevel: educationLevel || editingQuiz?.educationLevel || (grade >= 10 ? 'SMA' : grade >= 7 ? 'SMP' : 'SD'),
-      durationPerQuestionSec: defaultGameMode === 'untimed' ? 0 : (typeof durationPerQuestionSec === 'number' && durationPerQuestionSec > 0 ? durationPerQuestionSec : (editingQuiz?.durationPerQuestionSec ?? 30)),
+      durationPerQuestionSec: (defaultGameMode === 'untimed' || durationPerQuestionSec === 0)
+        ? 0
+        : (typeof durationPerQuestionSec === 'number' && durationPerQuestionSec > 0 ? durationPerQuestionSec : (editingQuiz?.durationPerQuestionSec ?? 30)),
       coverEmoji: coverEmoji || editingQuiz?.coverEmoji || '🍎',
       badgeTitle: badgeTitle.trim() || editingQuiz?.badgeTitle || 'Bintang Pintar',
       themeColor: editingQuiz?.themeColor || '#2563eb',
       visibility: visibility || editingQuiz?.visibility || 'public',
-      defaultGameMode: defaultGameMode || editingQuiz?.defaultGameMode || 'standard',
+      defaultGameMode: (defaultGameMode === 'untimed' || durationPerQuestionSec === 0)
+        ? 'untimed'
+        : (defaultGameMode || editingQuiz?.defaultGameMode || 'standard'),
       shuffleQuestions: shuffleQuestions ?? editingQuiz?.shuffleQuestions ?? false,
       shuffleOptions: shuffleOptions ?? editingQuiz?.shuffleOptions ?? false,
       questions: currentQuestions,
