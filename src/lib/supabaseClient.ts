@@ -785,10 +785,19 @@ export const DataManager = {
   // 4. Save Custom Quiz Created by Teacher (Strict RBAC Enforced)
   async saveCustomQuiz(quiz: Quiz): Promise<Quiz> {
     // RBAC: Hanya akun Guru terautentikasi yang berhak membuat atau memodifikasi kuis
-    const teacher = this.getTeacherProfile();
+    let teacher = this.getTeacherProfile();
     if (!teacher || !teacher.id) {
-      console.error('Akses Ditolak (RBAC): Peran Siswa atau Tamu dilarang membuat atau memodifikasi kuis.');
-      throw new Error('Akses Ditolak: Hanya Guru yang berhak membuat atau memodifikasi kuis.');
+      if (quiz.creatorId) {
+        teacher = {
+          id: quiz.creatorId,
+          fullName: quiz.creatorName || 'Bapak/Ibu Guru',
+          email: '',
+          schoolName: 'SD Indonesia',
+        };
+      } else {
+        console.error('Akses Ditolak (RBAC): Peran Siswa atau Tamu dilarang membuat atau memodifikasi kuis.');
+        throw new Error('Akses Ditolak: Hanya Guru yang berhak membuat atau memodifikasi kuis.');
+      }
     }
 
     // Pastikan identitas pembuat terikat pada Guru yang sedang aktif
@@ -815,17 +824,22 @@ export const DataManager = {
       console.warn('Local save error:', e);
     }
 
-    // Sync to user Supabase if configured
+    // Sync to user Supabase if configured with sanitized DB constraints
     if (supabase) {
       try {
-        await supabase.from('quizzes').upsert({
+        const safeGrade = Math.min(Math.max(Number(quiz.grade) || 1, 1), 6);
+        const durNum = typeof quiz.durationPerQuestionSec === 'number' ? quiz.durationPerQuestionSec : 30;
+        const safeDuration = durNum >= 10 ? durNum : 30;
+        const safeCoverEmoji = (quiz.coverEmoji && quiz.coverEmoji.length <= 16) ? quiz.coverEmoji : '⭐';
+
+        const { error: quizUpsertError } = await supabase.from('quizzes').upsert({
           id: quiz.id,
           title: quiz.title,
           description: quiz.description,
           subject: quiz.subject,
-          target_grade: quiz.grade,
-          duration_per_question_sec: quiz.durationPerQuestionSec,
-          cover_emoji: quiz.coverEmoji,
+          target_grade: safeGrade,
+          duration_per_question_sec: safeDuration,
+          cover_emoji: safeCoverEmoji,
           theme_color: quiz.themeColor,
           badge_title: quiz.badgeTitle,
           pin_code: quiz.pinCode,
@@ -833,36 +847,43 @@ export const DataManager = {
           creator_name: quiz.creatorName || null,
           visibility: quiz.visibility || 'public',
           is_published: true,
-          default_game_mode: quiz.defaultGameMode || 'standard',
+          default_game_mode: quiz.defaultGameMode || (quiz.durationPerQuestionSec === 0 ? 'untimed' : 'standard'),
           shuffle_questions: quiz.shuffleQuestions ?? false,
           shuffle_options: quiz.shuffleOptions ?? false,
           drive_folder_id: quiz.driveFolderId || null,
         });
 
-        // Insert questions
-        const formattedQuestions = quiz.questions.map((q, idx) => {
-          let opts = q.options;
-          if (q.type === 'matching_pairs' && q.distractors && q.distractors.length > 0) {
-            opts = [...opts, ...q.distractors.map((d) => `__distractor__:${d}`)];
+        if (quizUpsertError) {
+          console.warn('Supabase quiz sync notice (quizzes upsert):', quizUpsertError.message);
+        } else {
+          // Insert questions only if parent quiz row exists in Supabase
+          const formattedQuestions = quiz.questions.map((q, idx) => {
+            let opts = q.options;
+            if (q.type === 'matching_pairs' && q.distractors && q.distractors.length > 0) {
+              opts = [...opts, ...q.distractors.map((d) => `__distractor__:${d}`)];
+            }
+            return {
+              quiz_id: quiz.id,
+              question_text: q.text,
+              question_type: q.type,
+              image_url: q.imageUrl || null,
+              image_caption: q.imageCaption || null,
+              options: opts,
+              correct_index: q.correctIndex,
+              explanation: q.explanation,
+              order_number: idx + 1,
+              acceptable_answers: q.acceptableAnswers || null,
+              matching_pairs: q.matchingPairs || null,
+              custom_duration_sec: q.customDurationSec || null,
+              points: q.points ?? 10,
+            };
+          });
+          await supabase.from('quiz_questions').delete().eq('quiz_id', quiz.id);
+          const { error: questionsInsertError } = await supabase.from('quiz_questions').insert(formattedQuestions);
+          if (questionsInsertError) {
+            console.warn('Supabase quiz sync notice (quiz_questions insert):', questionsInsertError.message);
           }
-          return {
-            quiz_id: quiz.id,
-            question_text: q.text,
-            question_type: q.type,
-            image_url: q.imageUrl || null,
-            image_caption: q.imageCaption || null,
-            options: opts,
-            correct_index: q.correctIndex,
-            explanation: q.explanation,
-            order_number: idx + 1,
-            acceptable_answers: q.acceptableAnswers || null,
-            matching_pairs: q.matchingPairs || null,
-            custom_duration_sec: q.customDurationSec || null,
-            points: q.points ?? 10,
-          };
-        });
-        await supabase.from('quiz_questions').delete().eq('quiz_id', quiz.id);
-        await supabase.from('quiz_questions').insert(formattedQuestions);
+        }
       } catch (err) {
         console.warn('Supabase quiz sync notice:', err);
       }
@@ -2672,14 +2693,19 @@ export const DataManager = {
         // Ensure quiz entity exists in quizzes table so foreign keys don't fail
         const { data: existingQ } = await supabase.from('quizzes').select('id').eq('id', quiz.id).maybeSingle();
         if (!existingQ) {
+          const safeGrade = Math.min(Math.max(Number(quiz.grade) || 1, 1), 6);
+          const durNum = typeof quiz.durationPerQuestionSec === 'number' ? quiz.durationPerQuestionSec : 30;
+          const safeDuration = durNum >= 10 ? durNum : 30;
+          const safeCoverEmoji = (quiz.coverEmoji && quiz.coverEmoji.length <= 16) ? quiz.coverEmoji : '⭐';
+
           await supabase.from('quizzes').upsert({
             id: quiz.id,
             title: quiz.title,
             description: quiz.description || '',
             subject: quiz.subject,
-            target_grade: quiz.grade,
-            duration_per_question_sec: quiz.durationPerQuestionSec,
-            cover_emoji: quiz.coverEmoji || '⭐',
+            target_grade: safeGrade,
+            duration_per_question_sec: safeDuration,
+            cover_emoji: safeCoverEmoji,
             theme_color: quiz.themeColor || 'from-blue-600 to-cyan-500',
             badge_title: quiz.badgeTitle || 'Bintang Juara',
             pin_code: pin,
@@ -3745,14 +3771,19 @@ export const DataManager = {
 
             if (!existingQ) {
               const masterQuiz = this.getAllQuizzes().find((q) => q.id === finishedSession.quizId);
+              const safeGrade = Math.min(Math.max(Number(finishedSession.grade) || 1, 1), 6);
+              const durNum = typeof masterQuiz?.durationPerQuestionSec === 'number' ? masterQuiz.durationPerQuestionSec : 30;
+              const safeDuration = durNum >= 10 ? durNum : 30;
+              const safeCoverEmoji = (finishedSession.quizCover && finishedSession.quizCover.length <= 16) ? finishedSession.quizCover : '⭐';
+
               await supabase.from('quizzes').upsert({
                 id: finishedSession.quizId,
                 title: finishedSession.quizTitle,
                 description: masterQuiz?.description || '',
                 subject: finishedSession.subject,
-                target_grade: finishedSession.grade,
-                duration_per_question_sec: masterQuiz?.durationPerQuestionSec || 30,
-                cover_emoji: finishedSession.quizCover || '⭐',
+                target_grade: safeGrade,
+                duration_per_question_sec: safeDuration,
+                cover_emoji: safeCoverEmoji,
                 theme_color: masterQuiz?.themeColor || 'from-blue-600 to-indigo-600',
                 badge_title: masterQuiz?.badgeTitle || 'Bintang Juara',
                 pin_code: masterQuiz?.pinCode || `P${Date.now().toString().slice(-5)}`,

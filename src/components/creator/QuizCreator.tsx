@@ -136,15 +136,10 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   // Mode pembuatan kuis: dinamis dan terkelola dengan React State
   const [creatorMode, setCreatorMode] = useState<'ai' | 'manual'>(() => {
     if (editingQuiz) return 'manual';
+    if (initialMode === 'manual') return 'manual';
     if (initialMode === 'ai') return 'ai';
-    if (draft?.creatorMode === 'ai') return 'ai';
-    // Draf dari AI Funnel memiliki funnelTopic atau format deskripsi/judul khas generator AI
-    if (draft?.funnelTopic && draft.funnelTopic.trim().length > 0) return 'ai';
-    if (draft?.description && draft.description.includes('Kurikulum Merdeka')) return 'ai';
-    if (draft?.title && (draft.title.startsWith('Eksplorasi') || draft.title.startsWith('Kuis '))) return 'ai';
-    if (Boolean(draft?.aiFunnelActive)) return 'ai';
-    if (draft?.creatorMode) return draft.creatorMode;
-    return initialMode || 'manual';
+    if (draft?.creatorMode === 'ai' || draft?.creatorMode === 'manual') return draft.creatorMode;
+    return 'manual';
   });
 
   const isAiMode = creatorMode === 'ai' && !editingQuiz;
@@ -153,6 +148,7 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
   // AI Creation Funnel state:
   const [aiFunnelActive, setAiFunnelActive] = useState<boolean>(() => {
     if (editingQuiz) return false;
+    if (initialMode === 'manual') return false;
     // Jika user secara eksplisit memilih mode AI saat membuka creator
     if (initialMode === 'ai') {
       // Jika ada draf yang sudah berstatus AI, funnel sudah selesai (false), dan sudah ada soal yang digenerate:
@@ -162,11 +158,8 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
       return true;
     }
     // Jika ada draf dengan status funnel spesifik
-    if (draft && typeof draft.aiFunnelActive === 'boolean') {
+    if (draft?.creatorMode === 'ai' && typeof draft?.aiFunnelActive === 'boolean') {
       return draft.aiFunnelActive;
-    }
-    if (draft?.creatorMode === 'ai') {
-      return true;
     }
     return false;
   });
@@ -210,6 +203,22 @@ export const QuizCreator: React.FC<QuizCreatorProps> = ({
 
   // Questions State
   const [questions, setQuestions] = useState<QuizQuestion[]>(editingQuiz?.questions || draft?.questions || []);
+
+  // Sinkronisasi eksplisit jika initialMode berubah (misal saat berpindah dari modal Buat Kuis Baru)
+  useEffect(() => {
+    if (editingQuiz) {
+      setCreatorMode('manual');
+      setAiFunnelActive(false);
+    } else if (initialMode === 'manual') {
+      setCreatorMode('manual');
+      setAiFunnelActive(false);
+    } else if (initialMode === 'ai') {
+      setCreatorMode('ai');
+      if (questions.length === 0) {
+        setAiFunnelActive(true);
+      }
+    }
+  }, [initialMode, editingQuiz]);
 
   // Notice & Reset states
   const [noticeMessage, setNoticeMessage] = useState<string | null>(null);

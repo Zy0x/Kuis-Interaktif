@@ -6,6 +6,24 @@ Seluruh riwayat rilis dan pembaruan sistem **Kuis Seru** dicatat pada dokumen in
 
 
 
+## [2.5.23] - 2026-10-22
+### Pemulihan Pipeline Deployment Otomatis & Perbaikan Menyeluruh Studio Pembuatan Kuis Guru dan Admin (Rule 1, Rule 2, Rule 9, Rule 11, Rule 15 & Rule 16)
+
+#### 1. Pemulihan Pipeline Deployment Otomatis (*Production CI/CD Activation*)
+- **Aktivasi Kembali Build Produksi Vercel**: Menghapus konfigurasi pengabaian build (`ignoreCommand`) dan mengaktifkan integrasi Git deployment secara penuh pada `vercel.json`.
+- **Aktivasi Pipeline GitHub Actions**: Mengaktifkan kembali pemicu `push` ke branch `main` pada `.github/workflows/deploy.yml` untuk memvalidasi kesehatan rilis produksi secara otomatis.
+
+#### 2. Resolusi Kritis Studio Pembuatan & Penerbitan Kuis (*Quiz Creation & Publishing Fix*)
+- **Perbaikan Rute Pemilihan Mode Pembuatan Kuis**:
+  - Mengatasi kendala di mana pendidik atau admin yang memilih mode *Tulis Kuis Manual* terkunci pada tahapan *Asisten Racik Kuis AI* akibat sisa draf sebelumnya.
+  - Memastikan inisialisasi mode studio kuis (`manual` vs `ai`) dan tahapan funnel selalu sinkron dengan opsi yang dipilih pengguna melalui pengikatan status dinamis (`useEffect`).
+- **Penyelarasan Sinkronisasi Data Kuis & Skema Penyimpanan**:
+  - Memperbaiki penanganan penyimpanan kuis pada data layer agar menjamin kompatibilitas nilai di semua jenjang kelas (SD, SMP, SMA), durasi waktu kuis (termasuk mode santai/tanpa batas waktu), dan format sampul kuis.
+  - Menerapkan pengamanan respon sinkronisasi database agar proses penyimpanan kuis lokal dan cloud berlangsung mulus tanpa hambatan interupsi teknis.
+  - Memperbarui skema dan migrasi database (`docs/setup.sql`) untuk mendukung rentang jenjang kelas hingga 12 dan mode pengerjaan santai secara permanen.
+- **Validasi Teruji**:
+  - Pengujian langsung di browser peramban memastikan guru dan admin dapat membuat kuis secara manual, menambahkan butir soal, mengatur identitas kuis, serta menerbitkan kuis seketika ke Dasbor Guru dan Katalog Kuis.
+
 ## [2.5.22] - 2026-10-22
 ### Redesain Komprehensif Ketegasan Visual, Kontur Border, Pembatas & Keterbacaan Tipografi di Seluruh Halaman Web (Rule 1, Rule 2, Rule 4 & Rule 15)
 

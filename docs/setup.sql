@@ -61,9 +61,9 @@ CREATE TABLE IF NOT EXISTS public.quizzes (
     title VARCHAR(255) NOT NULL,
     description TEXT,
     subject VARCHAR(64) NOT NULL,
-    target_grade SMALLINT NOT NULL CHECK (target_grade BETWEEN 1 AND 6),
-    duration_per_question_sec SMALLINT NOT NULL DEFAULT 30 CHECK (duration_per_question_sec >= 10),
-    cover_emoji VARCHAR(16) DEFAULT '⭐',
+    target_grade SMALLINT NOT NULL CHECK (target_grade BETWEEN 1 AND 12),
+    duration_per_question_sec SMALLINT NOT NULL DEFAULT 30 CHECK (duration_per_question_sec >= 0),
+    cover_emoji TEXT DEFAULT '⭐',
     theme_color VARCHAR(64) DEFAULT 'from-blue-500 to-indigo-600',
     badge_title VARCHAR(64) DEFAULT 'Bintang Juara',
     visibility VARCHAR(16) NOT NULL DEFAULT 'public' CHECK (visibility IN ('public', 'private')),
@@ -114,6 +114,15 @@ ALTER TABLE public.quiz_questions ADD COLUMN IF NOT EXISTS acceptable_answers JS
 ALTER TABLE public.quiz_questions ADD COLUMN IF NOT EXISTS matching_pairs JSONB;
 ALTER TABLE public.quiz_questions ADD COLUMN IF NOT EXISTS custom_duration_sec SMALLINT;
 ALTER TABLE public.quiz_questions ADD COLUMN IF NOT EXISTS points SMALLINT DEFAULT 10;
+
+-- Migrasi Pelonggaran Constraint Kuises (v2.5.23) untuk Jenjang SMP/SMA, Mode Santai & Custom Cover:
+ALTER TABLE public.quizzes DROP CONSTRAINT IF EXISTS quizzes_target_grade_check;
+ALTER TABLE public.quizzes ADD CONSTRAINT quizzes_target_grade_check CHECK (target_grade BETWEEN 1 AND 12);
+
+ALTER TABLE public.quizzes DROP CONSTRAINT IF EXISTS quizzes_duration_per_question_sec_check;
+ALTER TABLE public.quizzes ADD CONSTRAINT quizzes_duration_per_question_sec_check CHECK (duration_per_question_sec >= 0);
+
+ALTER TABLE public.quizzes ALTER COLUMN cover_emoji TYPE TEXT;
 
 -- ==========================================================
 -- 6. TABEL PERCOBAAN KUIS & SKOR (QUIZ_ATTEMPTS)

@@ -3,10 +3,6 @@
   "framework": "vite",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "ignoreCommand": "exit 0",
-  "git": {
-    "deploymentEnabled": false
-  },
   "rewrites": [
     {
       "source": "/(.*)",

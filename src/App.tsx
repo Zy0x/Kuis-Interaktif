@@ -508,11 +508,13 @@ export const App: React.FC = () => {
       setCurrentScreen('home');
       return;
     }
+    DataManager.setTeacherProfile(teacher);
     try {
       await DataManager.saveCustomQuiz(newQuiz);
       playCelebration();
       setEditingQuiz(null);
       setCurrentScreen('teacher-dashboard');
+      saveNavigationState({ screen: 'teacher-dashboard', replace: false });
     } catch (err) {
       console.error('Gagal menyimpan kuis:', err);
     }
@@ -540,6 +542,7 @@ export const App: React.FC = () => {
         isLoggedIn: false,
       });
     }
+    DataManager.setTeacherProfile(teacherProfile);
     setTeacher(teacherProfile);
     playCelebration();
     setIsAuthModalOpen(false);
